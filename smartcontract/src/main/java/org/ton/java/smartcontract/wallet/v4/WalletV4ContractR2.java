@@ -228,8 +228,8 @@ public class WalletV4ContractR2 implements WalletContract {
         if (result.getExit_code() == 0) {
             return result.getStackEntry();
         } else {
-            System.err.println("Error executing get_subscription_data. Exit code " + result.getExit_code());
-            return null;
+            throw new Error("Error executing get_subscription_data. Exit code " + result.getExit_code());
+
         }
     }
 
@@ -245,7 +245,16 @@ public class WalletV4ContractR2 implements WalletContract {
      * @param subscriptionId  to differ subscriptions to the same beneficiary (acts as a nonce)
      * @return Cell
      */
-    public Cell createPluginDataCell(Address wallet, Address beneficiary, BigInteger amount, long period, long startTime, long timeOut, long lastPaymentTime, long lastRequestTime, int failedAttempts, long subscriptionId) {
+    public Cell createPluginDataCell(Address wallet,
+                                     Address beneficiary,
+                                     BigInteger amount,
+                                     long period,
+                                     long startTime,
+                                     long timeOut,
+                                     long lastPaymentTime,
+                                     long lastRequestTime,
+                                     int failedAttempts,
+                                     long subscriptionId) {
 
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeAddress(wallet);
