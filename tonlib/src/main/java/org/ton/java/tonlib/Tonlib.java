@@ -184,7 +184,7 @@ public class Tonlib {
                 String result = super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
                 System.out.println("set verbosityLevel result: " + result);
 
-                String initTemplate = Utils.streamToString(Tonlib.class.getClassLoader().getResourceAsStream("queries\\init.json"));
+                String initTemplate = Utils.streamToString(Tonlib.class.getClassLoader().getResourceAsStream("init.json"));
 
                 String dataQuery = JsonParser.parseString(configData).getAsJsonObject().toString();
 
