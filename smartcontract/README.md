@@ -26,7 +26,7 @@
 ```xml
 
 <dependency>
-    <groupId>com.github.neodiX42.ton-java-temp1</groupId>
+    <groupId>com.github.neodiX42.ton-java</groupId>
     <artifactId>smartcontract</artifactId>
     <version>0.0.1</version>
 </dependency>
@@ -45,10 +45,11 @@ Currently, following wallet types and versions are supported:
 * v3R2
 * v4R1
 * v4R2
+* Lockup
 
 You can also create and deploy any custom wallet (contract), see below.
 
-[Read more about wallet types](README-WALLETS.md)
+[Read more about wallet types here](README-WALLETS.md)
 
 ### Create and deploy SimpleR3 wallet
 
@@ -114,6 +115,17 @@ it.
     var (msg_seqno, valid_until, extra_field) = (cs~load_uint(32), cs~load_uint(32), cs~load_uint(64)); ;; payload in message body, see createSigningMessage()
     throw_if
     
+
+
+
+
+
+
+
+
+
+
+
     (35, valid_until < =  now());
             var ds = get_data().begin_parse();
             var (stored_seqno, public_key, stored_x_data) = (ds~load_uint(32), ds~load_uint(256), ds~load_uint(64)); ;; data in stateInit or in storage. See createDataCell()
@@ -368,6 +380,7 @@ public class CustomContract implements WalletContract {
 Now you are ready to deploy your custom smart contract.
 
 ```java
+
 byte[]secretKey=Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair=TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
@@ -397,11 +410,13 @@ byte[]secretKey=Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F
         msg.signingMessage.print(),
         msg.message.print(),
         Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase());
+
 ```
 
 Send some toincoins to non-bouncelable address above and then upload smart contract using Tonlib
 
 ```java
+import org.ton.java.tonlib.Tonlib;
 Tonlib tonlib=Tonlib.builder().build();
         String base64boc=Utils.bytesToBase64(msg.message.toBoc(false));
         log.info(base64boc);

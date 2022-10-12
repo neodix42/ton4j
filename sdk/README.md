@@ -33,7 +33,7 @@ It will import following modules into your project:
 
 ```xml
 <dependency>
-    <groupId>com.github.neodiX42.ton-java-temp1</groupId>
+    <groupId>com.github.neodiX42.ton-java</groupId>
     <artifactId>sdk</artifactId>
     <version>0.0.1</version>
 </dependency>

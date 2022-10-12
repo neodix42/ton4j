@@ -25,7 +25,7 @@ Java Tonlib library uses JNA to access methods in native Tonlib shared library.
 
 ```xml
 <dependency>
-    <groupId>com.github.neodiX42.ton-java-temp1</groupId>
+    <groupId>com.github.neodiX42.ton-java</groupId>
     <artifactId>tonlib</artifactId>
     <version>0.0.1</version>
 </dependency>
