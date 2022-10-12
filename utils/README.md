@@ -11,7 +11,7 @@
 </dependency>
 ```
 
-## Jitpack [![JitPack][jitpack-svg]][jitpack]
+## Jitpack
 
 ```xml
 
@@ -27,7 +27,7 @@
 
 <dependency>
     <groupId>com.github.neodiX42.ton-java</groupId>
-    <artifactId>smartcontract</artifactId>
+    <artifactId>utils</artifactId>
     <version>0.0.1</version>
 </dependency>
 ```
@@ -159,10 +159,6 @@ static BigDecimal fromNano(long toncoins, int scale)
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/utils
 
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/utils
-
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
-
-[jitpack]: https://jitpack.io/#neodiX42/ton-java/utils
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

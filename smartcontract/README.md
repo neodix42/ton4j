@@ -11,7 +11,7 @@
 </dependency>
 ```
 
-## Jitpack [![JitPack][jitpack-svg]][jitpack]
+## Jitpack
 
 ```xml
 
@@ -445,10 +445,6 @@ tonlib.sendRawMessage(base64bocExtMsg);
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/smartcontract
 
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/smartcontract
-
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
-
-[jitpack]: https://jitpack.io/#neodiX42/ton-java/smartcontract
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

@@ -81,7 +81,7 @@ You can use each sub-module individualy. Click the module below to get more deta
 
 [jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
 
-[jitpack]: https://jitpack.io/#neodiX42/ton-java/sdk
+[jitpack]: https://jitpack.io/#neodiX42/ton-java
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

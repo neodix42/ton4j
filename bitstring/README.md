@@ -10,7 +10,7 @@
 </dependency>
 ```
 
-## Jitpack [![JitPack][jitpack-svg]][jitpack]
+## Jitpack
 
 ```xml
 <repositories>
@@ -51,8 +51,9 @@ More examples on how to work with `BitString` can be found in `TestBitString` cl
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/bitstring
+
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/bitstring
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
-[jitpack]: https://jitpack.io/#neodiX42/ton-java/bitstring
+
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
+
 [ton]: https://ton.org

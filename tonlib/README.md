@@ -12,7 +12,7 @@ Java Tonlib library uses JNA to access methods in native Tonlib shared library.
 </dependency>
 ```
 
-## Jitpack [![JitPack][jitpack-svg]][jitpack]
+## Jitpack
 
 ```xml
 <repositories>
@@ -30,7 +30,9 @@ Java Tonlib library uses JNA to access methods in native Tonlib shared library.
     <version>0.0.1</version>
 </dependency>
 ```
+
 ## Constructor, getLast, lookupBlock, getBlockHeader, getShards
+
 ```java
 // constructor
 Tonlib(String    pathToTonlibSharedLib,   // path to native Tonlib shared library
@@ -196,6 +198,7 @@ seqno:2
 ```
 
 Retrieve past_election_ids
+
 ```java
 Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
 RunResult result = tonlib.runMethod(address,"past_election_ids");
@@ -212,6 +215,7 @@ for(Object o: listResult.getList().getElements()){
 ```
 
 Execute compute_returned_stake with parameter. Supported parameters types:
+
 * num, number, int
 * cell
 * slice
@@ -244,8 +248,9 @@ You can find more examples in `TestTonlibJson` and `TestParseRunMethodResults` c
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/tonlib
+
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/tonlib
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
-[jitpack]: https://jitpack.io/#neodiX42/ton-java/tonlib
+
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
+
 [ton]: https://ton.org

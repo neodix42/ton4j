@@ -1,7 +1,8 @@
 # Aggregator SDK module
 
 Instead of importing modules one by one you can use this aggregator module **sdk**.
-It will import following modules into your project: 
+It will import following modules into your project:
+
 * bitstring
 * address
 * utils
@@ -20,7 +21,7 @@ It will import following modules into your project:
 </dependency>
 ```
 
-## Jitpack [![JitPack][jitpack-svg]][jitpack]
+## Jitpack
 
 ```xml
 <repositories>
@@ -38,9 +39,11 @@ It will import following modules into your project:
     <version>0.0.1</version>
 </dependency>
 ```
+
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/sdk
+
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/sdk
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
-[jitpack]: https://jitpack.io/#neodiX42/ton-java/sdk
+
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
+
 [ton]: https://ton.org

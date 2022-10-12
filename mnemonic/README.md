@@ -10,7 +10,7 @@
 </dependency>
 ```
 
-## Jitpack [![JitPack][jitpack-svg]][jitpack]
+## Jitpack
 
 ```xml
 <repositories>
@@ -43,8 +43,9 @@ More examples on how to work with `Mnemonic` can be found in `TestMnemonic` clas
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/mnemonic
+
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/mnemonic
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
-[jitpack]: https://jitpack.io/#neodiX42/ton-java/mnemonic
+
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
+
 [ton]: https://ton.org

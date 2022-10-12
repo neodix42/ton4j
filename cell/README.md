@@ -10,7 +10,7 @@
 </dependency>
 ```
 
-## Jitpack [![JitPack][jitpack-svg]][jitpack]
+## Jitpack
 
 ```xml
 <repositories>
@@ -24,7 +24,7 @@
 ```xml
 <dependency>
     <groupId>com.github.neodiX42.ton-java</groupId>
-    <artifactId>smartcontract</artifactId>
+    <artifactId>cell</artifactId>
     <version>0.0.1</version>
 </dependency>
 ```
@@ -87,12 +87,14 @@ x{8004B1CA92C714D3015CBA78EC7055FA7E9E65C68905B5F86EA3C66B0B1391BC01A908A98989F_
   x{8000002_}
 ```
 
-More examples on how to construct `Cell` and `BitString` can be found in `TestCell`, `TestHashMap`, `TestCellBuilder` and `TestBitString` classes.
+More examples on how to construct `Cell` and `BitString` can be found in `TestCell`, `TestHashMap`, `TestCellBuilder`
+and `TestBitString` classes.
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/cell
+
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/cell
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
-[jitpack]: https://jitpack.io/#neodiX42/ton-java/cell
+
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
+
 [ton]: https://ton.org

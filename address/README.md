@@ -10,7 +10,7 @@
 </dependency>
 ```
 
-## Jitpack [![JitPack][jitpack-svg]][jitpack]
+## Jitpack
 
 ```xml
 <repositories>
@@ -24,11 +24,13 @@
 ```xml
 <dependency>
     <groupId>com.github.neodiX42.ton-java</groupId>
-    <artifactId>smartcontract</artifactId>
+    <artifactId>address</artifactId>
     <version>0.0.1</version>
 </dependency>
 ```
+
 ## Formatting
+
 Just like in TonWeb toString() method has some arguments that help to format final address:
 
 ```java
@@ -38,6 +40,7 @@ public class Address {
                            boolean isBounceable,
                            boolean isTestOnly);
 ```
+
 ```java
 Address address01 = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
 assertThat(address01.toString()).isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
@@ -69,8 +72,9 @@ assertThat(address07.isBounceable).isTrue();
 More examples on how to construct `Cell` and `BitString` can be found in `TestCell` and `TestBitString` classes.
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/address
+
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/address
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
-[jitpack]: https://jitpack.io/#neodiX42/ton-java/address
+
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
+
 [ton]: https://ton.org
