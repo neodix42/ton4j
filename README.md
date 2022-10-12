@@ -1,12 +1,13 @@
 # Java SDK for The Open Network ([TON])
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton-java-temp1)
-![visitors](https://visitor-badge.glitch.me/badge?page_id=neodiX42.ton-java-temp1.readme&left_color=gray&right_color=red)
+![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton-java)
+![visitors](https://visitor-badge.glitch.me/badge?page_id=neodiX42.ton-java.readme&left_color=gray&right_color=red)
 [![Based on TON][ton-svg]][ton]
 
 Java libraries for interacting with TON blockchain.
 
-✅ If you somehow got here today, keep in mind that this library is not ready for usage. 
+✅ If you somehow got here today, keep in mind that this library is not ready for usage.
 Maven and Jitpack links won't work!
 
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
@@ -29,17 +30,19 @@ Maven and Jitpack links won't work!
     </repository>
 </repositories>
 ```
+
 ```xml
 <dependency>
     <groupId>com.github.neodiX42</groupId>
-    <artifactId>ton-java-temp1</artifactId>
+    <artifactId>ton-java</artifactId>
     <version>0.0.1</version>
 </dependency>
 ```
 
 You can use each sub-module individualy. Click the module below to get more details.
+
 * [Tonlib](tonlib/README.md) - use external Tonlib shared library to communicate with TON blockchain.
-* [SmartContract](smartcontract/README.md) - create and deploy custom and predefined smart-contracts. 
+* [SmartContract](smartcontract/README.md) - create and deploy custom and predefined smart-contracts.
 * [Cell](cell/README.md) - create, read and manipulate Bag of Cells.
 * [BitString](bitstring/README.md) - construct bitstrings. All data in Cells stored in bitstrings.
 * [Address](address/README.md) - create and parse TON wallet addresses.
@@ -57,12 +60,13 @@ You can use each sub-module individualy. Click the module below to get more deta
 * ✅ Send external message
 * ✅ Get block transactions
 * ✅ Get account transactions
-* ✅ Deploy contracts and send external messages
-* ✅ Wallet operations (Simple, V2, V3, V4)
+* ✅ Deploy contracts and send external messages using Tonlib
+* ✅ Wallet operations (Simple, V2, V3, V4, Lockup)
 * ✅ Cell hashmap serialization / deserialization
-### Todo 
+
+### Todo
+
 * Support tuple and list as arguments for runMethod
-* Test Lockup wallet with allowed destinations
 * Add TON DNS support
 * Add TON Payment channel support
 * Add FT (Jetton) and NFT tokens support
@@ -72,8 +76,13 @@ You can use each sub-module individualy. Click the module below to get more deta
 <!-- Badges -->
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/sdk
+
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/sdk
+
 [jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
+
 [jitpack]: https://jitpack.io/#neodiX42/ton-java/sdk
+
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
+
 [ton]: https://ton.org
