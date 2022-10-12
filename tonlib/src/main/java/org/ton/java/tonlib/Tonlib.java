@@ -257,7 +257,9 @@ public class Tonlib {
                     if (sync.getSync_state().getTo_seqno() != 0) {
                         pct = (sync.getSync_state().getCurrent_seqno() * 100) / (double) sync.getSync_state().getTo_seqno();
                     }
-                    System.out.println("Synchronizing: " + String.format("%.2f%%", pct));
+                    if (!synced) {
+                        System.out.println("Synchronizing: " + String.format("%.2f%%", pct));
+                    }
                 }
                 if (isNull(response)) {
                     throw new RuntimeException("Error in waitForSyncDone(), response is null.");

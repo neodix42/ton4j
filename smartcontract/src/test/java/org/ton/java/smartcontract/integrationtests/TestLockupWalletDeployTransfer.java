@@ -8,8 +8,8 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
-import org.ton.java.smartcontract.types.Config;
 import org.ton.java.smartcontract.types.InitExternalMessage;
+import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
@@ -20,7 +20,7 @@ import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -39,14 +39,10 @@ public class TestLockupWalletDeployTransfer {
         Options options = new Options();
         options.publicKey = keyPair.getPublicKey();
         options.wc = 0L;
-        options.config = new Config();
-        options.config.allowedDestinations = new ArrayList<>();
-
-        options.config.allowedDestinations.add(TestFaucet.BOUNCEABLE);
-        options.config.allowedDestinations.add("kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj");
-//        options.config.allowedDestinations.add("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
-
-        options.config.configPublicKey = Utils.bytesToHex(secondPublicKey);
+        options.lockupConfig = LockupConfig.builder()
+                .configPublicKey(Utils.bytesToHex(secondPublicKey))
+                .allowedDestinations(List.of(TestFaucet.BOUNCEABLE, "kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.lockup, options);
         LockupWalletV1 contract = wallet.create();
@@ -112,6 +108,5 @@ public class TestLockupWalletDeployTransfer {
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(2).longValue());
-
     }
 }

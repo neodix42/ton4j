@@ -7,14 +7,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
-import org.ton.java.smartcontract.types.Config;
 import org.ton.java.smartcontract.types.InitExternalMessage;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.utils.Utils;
-
-import java.util.ArrayList;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -31,12 +28,12 @@ public class TestWalletsLockup {
         Options options = new Options();
         options.publicKey = keyPair.getPublicKey();
         options.wc = 0L;
-        options.config = new Config();
-        options.config.allowedDestinations = new ArrayList<>();
+//        options.lockupConfig = new LockupConfig();
+//        options.lockupConfig.allowedDestinations = new ArrayList<>();
 
-        options.config.allowedDestinations.add("Ef9eYuD_Mwol4jAtZ0lxZmhuv_92fvwzLW1hAFbJ657_iqRP");
-        options.config.allowedDestinations.add("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
-        options.config.configPublicKey = Utils.bytesToHex(publicKey);
+        options.lockupConfig.allowedDestinations.add("Ef9eYuD_Mwol4jAtZ0lxZmhuv_92fvwzLW1hAFbJ657_iqRP");
+        options.lockupConfig.allowedDestinations.add("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+        options.lockupConfig.configPublicKey = Utils.bytesToHex(publicKey);
 
         Wallet wallet = new Wallet(WalletVersion.lockup, options);
         LockupWalletV1 contract = wallet.create();

@@ -1,8 +1,9 @@
 package org.ton.java.smartcontract.wallet;
 
-import org.ton.java.cell.Cell;
 import org.ton.java.address.Address;
-import org.ton.java.smartcontract.types.Config;
+import org.ton.java.cell.Cell;
+import org.ton.java.smartcontract.types.LockupConfig;
+import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 
 import java.math.BigInteger;
 
@@ -18,5 +19,6 @@ public class Options {
     public int sendMode;
     public Cell stateInit;
     public Long walletId;
-    public Config config;
+    public LockupConfig lockupConfig;
+    public SubscriptionInfo subscriptionConfig;
 }

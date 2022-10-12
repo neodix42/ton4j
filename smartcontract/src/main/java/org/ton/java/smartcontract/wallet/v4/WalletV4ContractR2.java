@@ -98,7 +98,7 @@ public class WalletV4ContractR2 implements WalletContract {
     /**
      * @param params NewPlugin
      */
-    public ExternalMessage deployAndInstallPlugin(NewPlugin params) {
+    public void deployAndInstallPlugin(Tonlib tonlib, NewPlugin params) {
 
         Cell signingMessage = createSigningMessage(params.seqno, true);
         signingMessage.bits.writeUint(BigInteger.ONE, 8); // op
@@ -106,7 +106,37 @@ public class WalletV4ContractR2 implements WalletContract {
         signingMessage.bits.writeCoins(params.amount); // plugin balance
         signingMessage.refs.add(params.stateInit);
         signingMessage.refs.add(params.body);
-        return createExternalMessage(signingMessage, params.secretKey, params.seqno, false);
+        ExternalMessage extMsg = createExternalMessage(signingMessage, params.secretKey, params.seqno, false);
+
+        String newPluginExtMsgBase64 = Utils.bytesToBase64(extMsg.message.toBoc(false));
+        tonlib.sendRawMessage(newPluginExtMsgBase64);
+    }
+
+    public Cell createPluginStateInit() {
+        // code = boc in hex format, result of fift commands:
+        //      "subscription-plugin-code.fif" include
+        //      2 boc+>B dup Bx. cr
+        // boc of subscription contract
+        Cell code = Cell.fromBoc("B5EE9C7241020F01000262000114FF00F4A413F4BCF2C80B0102012002030201480405036AF230DB3C5335A127A904F82327A128A90401BC5135A0F823B913B0F29EF800725210BE945387F0078E855386DB3CA4E2F82302DB3C0B0C0D0202CD06070121A0D0C9B67813F488DE0411F488DE0410130B048FD6D9E05E8698198FD201829846382C74E2F841999E98F9841083239BA395D497803F018B841083AB735BBED9E702984E382D9C74688462F863841083AB735BBED9E70156BA4E09040B0A0A080269F10FD22184093886D9E7C12C1083239BA39384008646582A803678B2801FD010A65B5658F89659FE4B9FD803FC1083239BA396D9E40E0A04F08E8D108C5F0C708210756E6B77DB3CE00AD31F308210706C7567831EB15210BA8F48305324A126A904F82326A127A904BEF27109FA4430A619F833D078D721D70B3F5260A11BBE8E923036F82370708210737562732759DB3C5077DE106910581047103645135042DB3CE0395F076C2232821064737472BA0A0A0D09011A8E897F821064737472DB3CE0300A006821B39982100400000072FB02DE70F8276F118010C8CB055005CF1621FA0214F40013CB6912CB1F830602948100A032DEC901FB000030ED44D0FA40FA40FA00D31FD31FD31FD31FD31FD307D31F30018021FA443020813A98DB3C01A619F833D078D721D70B3FA070F8258210706C7567228018C8CB055007CF165004FA0215CB6A12CB1F13CB3F01FA02CB00C973FB000E0040C8500ACF165008CF165006FA0214CB1F12CB1FCB1FCB1FCB1FCB07CB1FC9ED54005801A615F833D020D70B078100D1BA95810088D721DED307218100DDBA028100DEBA12B1F2E047D33F30A8AB0FE5855AB4");
+        Cell data = createPluginDataCell(
+                getAddress(),
+                options.subscriptionConfig.getBeneficiary(),
+                options.subscriptionConfig.getSubscriptionFee(),
+                options.subscriptionConfig.getPeriod(),
+                options.subscriptionConfig.getStartTime(),
+                options.subscriptionConfig.getTimeOut(),
+                options.subscriptionConfig.getLastPaymentTime(),
+                options.subscriptionConfig.getLastRequestTime(),
+                options.subscriptionConfig.getFailedAttempts(),
+                options.subscriptionConfig.getSubscriptionId());
+        return createStateInit(code, data);
+    }
+
+    public Cell createPluginBody() {
+        CellBuilder body = CellBuilder.beginCell(); // mgsBody in simple-subscription-plugin.fc is not used
+        body.storeUint(new BigInteger("706c7567", 16).add(new BigInteger("80000000", 16)), 32); //OP
+        return body.endCell();
+
     }
 
     /**
@@ -185,7 +215,8 @@ public class WalletV4ContractR2 implements WalletContract {
      */
     public boolean isPluginInstalled(Tonlib tonlib, Address pluginAddress) {
         pluginAddress = new Address(pluginAddress);
-        String hashPart = "0x" + Utils.bytesToHex(pluginAddress.hashPart);
+//        String hashPart = "0x" + Utils.bytesToHex(pluginAddress.hashPart);
+        String hashPart = new BigInteger(pluginAddress.hashPart).toString();
 
         Address myAddress = getAddress();
 
@@ -222,29 +253,17 @@ public class WalletV4ContractR2 implements WalletContract {
      *
      * @return TvmStackEntryList
      */
-    public List<TvmStackEntry> getSubscriptionData(Tonlib tonlib, Address pluginAddress) {
+    public SubscriptionInfo getSubscriptionData(Tonlib tonlib, Address pluginAddress) {
 
         RunResult result = tonlib.runMethod(pluginAddress, "get_subscription_data");
         if (result.getExit_code() == 0) {
-            return result.getStackEntry();
+            return parseSubscriptionData(result.getStackEntry());
         } else {
             throw new Error("Error executing get_subscription_data. Exit code " + result.getExit_code());
 
         }
     }
 
-    /**
-     * @param beneficiary
-     * @param amount
-     * @param period
-     * @param startTime
-     * @param timeOut
-     * @param lastPaymentTime
-     * @param lastRequestTime
-     * @param failedAttempts
-     * @param subscriptionId  to differ subscriptions to the same beneficiary (acts as a nonce)
-     * @return Cell
-     */
     public Cell createPluginDataCell(Address wallet,
                                      Address beneficiary,
                                      BigInteger amount,
@@ -253,7 +272,7 @@ public class WalletV4ContractR2 implements WalletContract {
                                      long timeOut,
                                      long lastPaymentTime,
                                      long lastRequestTime,
-                                     int failedAttempts,
+                                     long failedAttempts,
                                      long subscriptionId) {
 
         CellBuilder cell = CellBuilder.beginCell();
@@ -268,5 +287,50 @@ public class WalletV4ContractR2 implements WalletContract {
         cell.storeUint(BigInteger.valueOf(failedAttempts), 8);
         cell.storeUint(BigInteger.valueOf(subscriptionId), 32);
         return cell.endCell();
+    }
+
+    private SubscriptionInfo parseSubscriptionData(List<TvmStackEntry> subscriptionData) {
+        TvmStackEntryTuple walletAddr = (TvmStackEntryTuple) subscriptionData.get(0);
+        TvmStackEntryNumber wc = (TvmStackEntryNumber) walletAddr.getTuple().getElements().get(0);
+        TvmStackEntryNumber hash = (TvmStackEntryNumber) walletAddr.getTuple().getElements().get(1);
+
+        TvmStackEntryTuple beneficiaryAddr = (TvmStackEntryTuple) subscriptionData.get(1);
+        TvmStackEntryNumber beneficiaryAddrWc = (TvmStackEntryNumber) beneficiaryAddr.getTuple().getElements().get(0);
+        TvmStackEntryNumber beneficiaryAddrHash = (TvmStackEntryNumber) beneficiaryAddr.getTuple().getElements().get(1);
+
+        TvmStackEntryNumber amount = (TvmStackEntryNumber) subscriptionData.get(2);
+
+        TvmStackEntryNumber period = (TvmStackEntryNumber) subscriptionData.get(3);
+
+        TvmStackEntryNumber startTime = (TvmStackEntryNumber) subscriptionData.get(4);
+
+        TvmStackEntryNumber timeOut = (TvmStackEntryNumber) subscriptionData.get(5);
+
+        TvmStackEntryNumber lastPaymentTime = (TvmStackEntryNumber) subscriptionData.get(6);
+
+        TvmStackEntryNumber lastRequestTime = (TvmStackEntryNumber) subscriptionData.get(7);
+
+        long now = System.currentTimeMillis() / 1000;
+        boolean isPaid = ((now - lastPaymentTime.getNumber().longValue()) < period.getNumber().longValue());
+        boolean paymentReady = !isPaid & ((now - lastRequestTime.getNumber().longValue()) > timeOut.getNumber().longValue());
+
+        TvmStackEntryNumber failedAttempts = (TvmStackEntryNumber) subscriptionData.get(8);
+
+        TvmStackEntryNumber subscriptionId = (TvmStackEntryNumber) subscriptionData.get(9);
+
+        return SubscriptionInfo.builder()
+                .walletAddress(Address.of(wc.getNumber() + ":" + hash.getNumber().toString(16)))
+                .beneficiary(Address.of(beneficiaryAddrWc.getNumber() + ":" + beneficiaryAddrHash.getNumber().toString(16)))
+                .subscriptionFee(amount.getNumber())
+                .period(period.getNumber().longValue())
+                .startTime(startTime.getNumber().longValue())
+                .timeOut(timeOut.getNumber().longValue())
+                .lastPaymentTime(lastPaymentTime.getNumber().longValue())
+                .lastRequestTime(lastRequestTime.getNumber().longValue())
+                .isPaid(isPaid)
+                .isPaymentready(paymentReady)
+                .failedAttempts(failedAttempts.getNumber().longValue())
+                .subscriptionId(subscriptionId.getNumber().longValue())
+                .build();
     }
 }

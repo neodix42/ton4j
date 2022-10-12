@@ -107,13 +107,13 @@ public class LockupWalletV1 implements WalletContract {
         cell.storeUint(BigInteger.ZERO, 32); // seqno
         cell.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
         cell.storeBytes(getOptions().publicKey); //256
-        cell.storeBytes(Utils.hexToBytes(options.config.configPublicKey)); // 256
+        cell.storeBytes(Utils.hexToBytes(options.lockupConfig.configPublicKey)); // 256
 
         int dictKeySize = 267;
         TonPfxHashMapE dictAllowedDestinations = new TonPfxHashMapE(dictKeySize);
 
-        if ((options.config.allowedDestinations != null) && (!options.config.allowedDestinations.isEmpty())) {
-            for (String addr : options.config.allowedDestinations) {
+        if ((options.lockupConfig.allowedDestinations != null) && (!options.lockupConfig.allowedDestinations.isEmpty())) {
+            for (String addr : options.lockupConfig.allowedDestinations) {
                 dictAllowedDestinations.elements.put(Address.of(addr), (byte) 1);
             }
         }
