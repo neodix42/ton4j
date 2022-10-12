@@ -1,9 +1,8 @@
 # Java SDK for The Open Network (TON)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton-java)
-![visitors](https://visitor-badge.glitch.me/badge?page_id=neodiX42.ton-java.readme&left_color=gray&right_color=red)
 [![Based on TON][ton-svg]][ton]
+![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton-java)
 
 Java libraries for interacting with TON blockchain.
 
