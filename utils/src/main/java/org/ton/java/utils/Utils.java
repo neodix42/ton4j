@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32C;
 import java.util.zip.Checksum;
@@ -503,5 +504,14 @@ public class Utils {
 
     public static String formatNanoValue(String value, int scale) {
         return String.format("%,." + scale + "f", new BigDecimal(value).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.CEILING));
+    }
+
+    public static void sleep(long seconds) {
+        try {
+            System.out.println("pause " + seconds + " seconds");
+            TimeUnit.SECONDS.sleep(seconds);
+        } catch (Throwable e) {
+            System.out.println(e.getMessage());
+        }
     }
 }

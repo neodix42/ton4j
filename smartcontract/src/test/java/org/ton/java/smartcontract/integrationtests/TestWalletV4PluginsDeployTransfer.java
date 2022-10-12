@@ -20,7 +20,6 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -75,6 +74,7 @@ public class TestWalletV4PluginsDeployTransfer {
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
                 .build();
+
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
         log.info("new wallet balance: {}", Utils.formatNanoValue(balance));
 
@@ -84,11 +84,9 @@ public class TestWalletV4PluginsDeployTransfer {
         //check if state of the new contract/wallet has changed from un-init to active
         FullAccountState state;
         do {
-            TimeUnit.SECONDS.sleep(5);
+            Utils.sleep(5);
             state = tonlib.getAccountState(walletAddress);
         } while (state.getAccount_state().getCode() == null);
-
-        TimeUnit.SECONDS.sleep(5);
 
         long walletCurrentSeqno = contract.getSeqno(tonlib);
         log.info("walletV4 balance: {}", Utils.formatNanoValue(state.getBalance()));
@@ -97,10 +95,10 @@ public class TestWalletV4PluginsDeployTransfer {
         log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey(tonlib)));
         log.info("pluginsList: {}", contract.getPluginsList(tonlib));
 
-        // create and deploy plugin ------- start -----------------
+        // create and deploy plugin -- start
 
         do {
-            TimeUnit.SECONDS.sleep(5);
+            Utils.sleep(5);
             state = tonlib.getAccountState(options.subscriptionConfig.getBeneficiary());
         } while (state.getAccount_state().getCode() == null);
 
@@ -109,7 +107,7 @@ public class TestWalletV4PluginsDeployTransfer {
         NewPlugin plugin = NewPlugin.builder()
                 .secretKey(keyPair.getSecretKey())
                 .seqno(walletCurrentSeqno)
-                .pluginWc(options.wc)
+                .pluginWc(options.wc) // reuse wc of the wallet
                 .amount(Utils.toNano(0.1)) // initial plugin balance, will be taken from wallet-v4
                 .stateInit(contract.createPluginStateInit())
                 .body(contract.createPluginBody())
@@ -117,9 +115,9 @@ public class TestWalletV4PluginsDeployTransfer {
 
         contract.deployAndInstallPlugin(tonlib, plugin);
 
-        TimeUnit.SECONDS.sleep(30);
+        Utils.sleep(45);
 
-        // create and deploy plugin -------- end ----------------
+        // create and deploy plugin -- end
 
         // get plugin list
         List<String> plugins = contract.getPluginsList(tonlib);
@@ -135,22 +133,23 @@ public class TestWalletV4PluginsDeployTransfer {
         log.info("plugin {} installed {}", pluginAddress, contract.isPluginInstalled(tonlib, pluginAddress));
 
         // Collect very first service fee
+
         Cell header = Contract.createExternalMessageHeader(pluginAddress);
         Cell extMessage = Contract.createCommonMsgInfo(header, null, null); // dummy external message, only destination address is relevant
         String extMessageBase64boc = Utils.bytesToBase64(extMessage.toBoc(false));
         tonlib.sendRawMessage(extMessageBase64boc);
 
-        TimeUnit.SECONDS.sleep(20);
+        Utils.sleep(30);
 
         do {
-            TimeUnit.SECONDS.sleep(5);
+            Utils.sleep(5);
             state = tonlib.getAccountState(options.subscriptionConfig.getBeneficiary());
         } while (state.getAccount_state().getCode() == null);
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(state.getBalance()));
 
         do {
-            TimeUnit.SECONDS.sleep(5);
+            Utils.sleep(5);
             state = tonlib.getAccountState(walletAddress);
         } while (state.getAccount_state().getCode() == null);
 
@@ -161,8 +160,9 @@ public class TestWalletV4PluginsDeployTransfer {
 
         assertThat(subscriptionInfo.getLastPaymentTime()).isNotEqualTo(0);
 
-        //------------ collect fee again
-        TimeUnit.SECONDS.sleep(90);
+        // collect fee again
+
+        Utils.sleep(90);
 
         header = Contract.createExternalMessageHeader(pluginAddress);
         extMessage = Contract.createCommonMsgInfo(header, null, null);
@@ -170,14 +170,14 @@ public class TestWalletV4PluginsDeployTransfer {
         tonlib.sendRawMessage(extMessageBase64boc);
 
         do {
-            TimeUnit.SECONDS.sleep(5);
+            Utils.sleep(5);
             state = tonlib.getAccountState(options.subscriptionConfig.getBeneficiary());
         } while (state.getAccount_state().getCode() == null);
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(state.getBalance()));
 
         do {
-            TimeUnit.SECONDS.sleep(5);
+            Utils.sleep(5);
             state = tonlib.getAccountState(walletAddress);
         } while (state.getAccount_state().getCode() == null);
 
@@ -186,9 +186,10 @@ public class TestWalletV4PluginsDeployTransfer {
         subscriptionInfo = contract.getSubscriptionData(tonlib, pluginAddress);
         log.info("{}", subscriptionInfo);
 
+        // uninstall/remove plugin from the wallet -- start
+
         log.info("Uninstalling plugin {}", Address.of(contract.getPluginsList(tonlib).get(0)));
 
-        // uninstall plugin -- start
         walletCurrentSeqno = contract.getSeqno(tonlib);
         DeployedPlugin deployedPlugin = DeployedPlugin.builder()
                 .seqno(walletCurrentSeqno)
@@ -201,9 +202,10 @@ public class TestWalletV4PluginsDeployTransfer {
         ExternalMessage extMsgRemovePlugin = contract.removePlugin(deployedPlugin);
         String extMsgRemovePluginBase64boc = Utils.bytesToBase64(extMsgRemovePlugin.message.toBoc(false));
         tonlib.sendRawMessage(extMsgRemovePluginBase64boc);
+
         // uninstall plugin -- end
 
-        TimeUnit.SECONDS.sleep(30);
+        Utils.sleep(30);
         List<String> list = contract.getPluginsList(tonlib);
         log.info("pluginsList: {}", list);
         assertThat(list.isEmpty()).isTrue();

@@ -96,6 +96,9 @@ public class WalletV4ContractR2 implements WalletContract {
     }
 
     /**
+     * Deploy and install/assigns subscription plugin.
+     * One can also deploy plugin separately and later install into the wallet. See installPlugin().
+     *
      * @param params NewPlugin
      */
     public void deployAndInstallPlugin(Tonlib tonlib, NewPlugin params) {
@@ -136,7 +139,10 @@ public class WalletV4ContractR2 implements WalletContract {
         CellBuilder body = CellBuilder.beginCell(); // mgsBody in simple-subscription-plugin.fc is not used
         body.storeUint(new BigInteger("706c7567", 16).add(new BigInteger("80000000", 16)), 32); //OP
         return body.endCell();
+    }
 
+    public Cell createPluginSelfDestructBody() {
+        return CellBuilder.beginCell().storeUint(0x64737472, 32).endCell();
     }
 
     /**
@@ -145,12 +151,10 @@ public class WalletV4ContractR2 implements WalletContract {
      */
     ExternalMessage setPlugin(DeployedPlugin params, boolean isInstall) {
 
-        Address pluginAddress = Address.of(params.pluginAddress);
-
         Cell signingMessage = createSigningMessage(params.seqno, true);
         signingMessage.bits.writeUint(isInstall ? BigInteger.TWO : BigInteger.valueOf(3), 8); // op
         signingMessage.bits.writeInt(BigInteger.valueOf(params.pluginAddress.wc), 8);
-        signingMessage.bits.writeBytes(pluginAddress.hashPart);
+        signingMessage.bits.writeBytes(params.pluginAddress.hashPart);
         signingMessage.bits.writeCoins(BigInteger.valueOf(params.amount.longValue()));
         signingMessage.bits.writeUint(BigInteger.valueOf(params.queryId), 64);
 
@@ -214,7 +218,6 @@ public class WalletV4ContractR2 implements WalletContract {
      * @return boolean
      */
     public boolean isPluginInstalled(Tonlib tonlib, Address pluginAddress) {
-        pluginAddress = Address.of(pluginAddress);
         String hashPart = new BigInteger(pluginAddress.hashPart).toString();
 
         Address myAddress = getAddress();

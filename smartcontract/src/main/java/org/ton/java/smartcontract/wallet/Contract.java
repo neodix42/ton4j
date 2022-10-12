@@ -151,10 +151,10 @@ public interface Contract {
         if ((bounce != null)) {
             message.storeBit(bounce);
         } else {
-            message.storeBit((Address.of(dest)).isBounceable);
+            message.storeBit(dest.isBounceable);
         }
         message.storeBit(bounced);
-        message.storeAddress(src != null ? Address.of(src) : null);
+        message.storeAddress(src);
         message.storeAddress(dest);
         message.storeCoins(gramValue);
         if (currencyCollection.length != 0) {

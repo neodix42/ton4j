@@ -21,7 +21,6 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -79,7 +78,7 @@ public class TestLockupWalletDeployTransfer {
         //check if state of the new contract changed from uninit to active
         AccountState state;
         do {
-            TimeUnit.SECONDS.sleep(5);
+            Utils.sleep(5);
             state = tonlib.getAccountState(address).getAccount_state();
         } while (state.getCode() == null);
 
@@ -100,7 +99,7 @@ public class TestLockupWalletDeployTransfer {
         log.info("sending toncoins to allowed address...");
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(8));
 
-        TimeUnit.SECONDS.sleep(20);
+        Utils.sleep(30);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
