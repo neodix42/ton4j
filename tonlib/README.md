@@ -244,6 +244,9 @@ result = tonlib.runMethod(address, "compute_returned_stake", stack);
 log.info("result: {} ", result);
 ```
 
+More examples in [TestTonlibJson](../tonlib/src/test/java/org/ton/java/tonlib/TestTonlibJson.java) and
+[TestParseRunMethodResults](../tonlib/src/test/java/org/ton/java/tonlib/TestParseRunMethodResults.java) class.
+
 You can find more examples in `TestTonlibJson` and `TestParseRunMethodResults` classes.
 
 

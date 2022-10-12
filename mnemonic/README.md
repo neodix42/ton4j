@@ -39,8 +39,8 @@ String mnemonicPhrase = String.join(" ", mnemonic);
 <<mnemonicPhrase containing 24 random words>>
 ```
 
-More examples on how to work with `Mnemonic` can be found in `TestMnemonic` class.
-
+More examples on how to construct [Mnemonic](../mnemonic/src/main/java/org/ton/java/mnemonic/Mnemonic.java) can be
+found in [TestMnemonic](../mnemonic/src/test/java/org/ton/java/mnemonic/TestMnemonic.java) class.
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/mnemonic
 

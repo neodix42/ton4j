@@ -87,8 +87,12 @@ x{8004B1CA92C714D3015CBA78EC7055FA7E9E65C68905B5F86EA3C66B0B1391BC01A908A98989F_
   x{8000002_}
 ```
 
-More examples on how to construct `Cell` and `BitString` can be found in `TestCell`, `TestHashMap`, `TestCellBuilder`
-and `TestBitString` classes.
+More examples on how to construct [Cell](../cell/src/main/java/org/ton/java/cell/Cell.java)
+and [BitString](../bitstring/src/main/java/org/ton/java/bitstring/BitString.java) can be
+found in [TestCell](../cell/src/test/java/org/ton/java/cell/TestCell.java)
+, [TestCellBuilder](../cell/src/test/java/org/ton/java/cell/TestCellBuilder.java)
+, [TestHashMap](../cell/src/test/java/org/ton/java/cell/TestHashMap.java)
+and [TestBitString](../bitstring/src/test/java/org/ton/java/bitstring/TestBitString.java) classes.
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/cell
