@@ -37,7 +37,7 @@ public interface WalletContract extends Contract {
      * @return Cell
      */
     default Cell createSigningMessage(long seqno) {
-        return  CellBuilder.beginCell().storeUint(BigInteger.valueOf(seqno), 32).endCell();
+        return CellBuilder.beginCell().storeUint(BigInteger.valueOf(seqno), 32).endCell();
     }
 
     /**
@@ -191,7 +191,7 @@ public interface WalletContract extends Contract {
 
         Cell payload = null;
         Cell stateInit = null;
-        return createTransferMessage(secretKey, new Address(address), amount, seqno, payload, (byte) 3, false, stateInit);
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, (byte) 3, false, stateInit);
     }
 
     /**
@@ -214,7 +214,7 @@ public interface WalletContract extends Contract {
             byte sendMode,
             boolean dummySignature,
             Cell stateInit) {
-        return createTransferMessage(secretKey, new Address(address), amount, seqno, payload, sendMode, dummySignature, stateInit);
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, dummySignature, stateInit);
     }
 
     /**
@@ -263,7 +263,7 @@ public interface WalletContract extends Contract {
             byte sendMode,
             boolean dummySignature,
             Cell stateInit) {
-        return createTransferMessage(secretKey, new Address(address), amount, seqno, payload, sendMode, dummySignature, stateInit);
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, dummySignature, stateInit);
     }
 
     /**
@@ -320,6 +320,6 @@ public interface WalletContract extends Contract {
             byte sendMode,
             boolean dummySignature,
             Cell stateInit) {
-        return createTransferMessage(secretKey, new Address(address), amount, seqno, payload, sendMode, dummySignature, stateInit);
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, dummySignature, stateInit);
     }
 }

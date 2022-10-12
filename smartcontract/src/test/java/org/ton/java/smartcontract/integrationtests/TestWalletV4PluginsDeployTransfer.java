@@ -32,19 +32,20 @@ public class TestWalletV4PluginsDeployTransfer {
     public void testPlugins() throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
-        options.subscriptionConfig = SubscriptionInfo.builder()
-                .beneficiary(Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka"))
-                .subscriptionFee(Utils.toNano(2))
-                .period(60)
-                .startTime(0)
-                .timeOut(30)
-                .lastPaymentTime(0)
-                .lastRequestTime(0)
-                .failedAttempts(0)
-                .subscriptionId(12345)
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .subscriptionConfig(SubscriptionInfo.builder()
+                        .beneficiary(Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka"))
+                        .subscriptionFee(Utils.toNano(2))
+                        .period(60)
+                        .startTime(0)
+                        .timeOut(30)
+                        .lastPaymentTime(0)
+                        .lastRequestTime(0)
+                        .failedAttempts(0)
+                        .subscriptionId(12345)
+                        .build())
                 .build();
 
         Wallet wallet = new Wallet(WalletVersion.v4R2, options);
@@ -74,7 +75,7 @@ public class TestWalletV4PluginsDeployTransfer {
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
                 .build();
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(10));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
         log.info("new wallet balance: {}", Utils.formatNanoValue(balance));
 
         // deploy wallet-v4
@@ -93,7 +94,7 @@ public class TestWalletV4PluginsDeployTransfer {
         log.info("walletV4 balance: {}", Utils.formatNanoValue(state.getBalance()));
         log.info("seqno: {}", walletCurrentSeqno);
         log.info("subWalletId: {}", contract.getWalletId(tonlib));
-        log.info("pubKey: {}", contract.getPublicKey(tonlib));
+        log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey(tonlib)));
         log.info("pluginsList: {}", contract.getPluginsList(tonlib));
 
         // create and deploy plugin ------- start -----------------
@@ -116,7 +117,7 @@ public class TestWalletV4PluginsDeployTransfer {
 
         contract.deployAndInstallPlugin(tonlib, plugin);
 
-        TimeUnit.SECONDS.sleep(20);
+        TimeUnit.SECONDS.sleep(30);
 
         // create and deploy plugin -------- end ----------------
 
@@ -202,7 +203,7 @@ public class TestWalletV4PluginsDeployTransfer {
         tonlib.sendRawMessage(extMsgRemovePluginBase64boc);
         // uninstall plugin -- end
 
-        TimeUnit.SECONDS.sleep(20);
+        TimeUnit.SECONDS.sleep(30);
         List<String> list = contract.getPluginsList(tonlib);
         log.info("pluginsList: {}", list);
         assertThat(list.isEmpty()).isTrue();

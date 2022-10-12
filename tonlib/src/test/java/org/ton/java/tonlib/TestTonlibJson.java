@@ -143,7 +143,7 @@ public class TestTonlibJson {
 
         String address = blockTransactions.getTransactions().get(0).getAccount();
         String addressHex = Utils.base64ToHexString(address);
-        Address address01 = new Address("-1:" + addressHex);
+        Address address01 = Address.of("-1:" + addressHex);
         log.info("address: {}", address01);
 
         long lt = blockTransactions.getTransactions().get(0).getLt();
@@ -157,7 +157,7 @@ public class TestTonlibJson {
     public void testTonlibGetTxsByAddress() {
         Tonlib tonlib = Tonlib.builder().build();
 
-        Address address = new Address(TON_FOUNDATION);
+        Address address = Address.of(TON_FOUNDATION);
 
         log.info("address: " + address.toString(true));
 
@@ -183,7 +183,7 @@ public class TestTonlibJson {
     public void testTonlibGetAllTxsByAddress() {
         Tonlib tonlib = Tonlib.builder().build();
 
-        Address address = new Address(TON_FOUNDATION);
+        Address address = Address.of(TON_FOUNDATION);
 
         log.info("address: " + address.toString(true));
 
@@ -284,7 +284,7 @@ public class TestTonlibJson {
     public void testTonlibAccountState() {
         Tonlib tonlib = Tonlib.builder().build();
 
-        Address addr = new Address("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
+        Address addr = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
         log.info("address: " + addr.toString(true));
 
         AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
@@ -303,7 +303,7 @@ public class TestTonlibJson {
                 .keystoreInMemory(false)
                 .keystorePath("D://")
                 .build();
-        Address address = new Address("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
+        Address address = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
         RunResult result = tonlib.runMethod(address, "seqno");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
         TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
@@ -316,7 +316,7 @@ public class TestTonlibJson {
         Tonlib tonlib = Tonlib.builder()
                 .verbosityLevel(VerbosityLevel.FATAL)
                 .build();
-        Address address = new Address(TON_FOUNDATION);
+        Address address = Address.of(TON_FOUNDATION);
         RunResult result = tonlib.runMethod(address, "seqno");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
         TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
@@ -327,7 +327,7 @@ public class TestTonlibJson {
     @Test
     public void testTonlibRunMethodGetJetton() {
         Tonlib tonlib = Tonlib.builder().build();
-        Address address = new Address("EQBYzFXx0QTPW5Lo63ArbNasI_GWRj7NwcAcJR2IWo7_3nTp");
+        Address address = Address.of("EQBYzFXx0QTPW5Lo63ArbNasI_GWRj7NwcAcJR2IWo7_3nTp");
         RunResult result = tonlib.runMethod(address, "get_jetton_data");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
         log.info("result: {}", result);
@@ -338,7 +338,7 @@ public class TestTonlibJson {
     public void testTonlibRunMethodParticipantsList() {
         Tonlib tonlib = Tonlib.builder().build();
 
-        Address address = new Address("-1:3333333333333333333333333333333333333333333333333333333333333333");
+        Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
 
         RunResult result = tonlib.runMethod(address, "participant_list");
         log.info(result.toString());
@@ -356,7 +356,7 @@ public class TestTonlibJson {
     @Test
     public void testTonlibRunMethodActiveElectionId() {
         Tonlib tonlib = Tonlib.builder().build();
-        Address address = new Address("-1:3333333333333333333333333333333333333333333333333333333333333333");
+        Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
         RunResult result = tonlib.runMethod(address, "active_election_id");
         TvmStackEntryNumber electionId = (TvmStackEntryNumber) result.getStackEntry().get(0);
         log.info("electionId: {}", electionId.getNumber());
@@ -366,7 +366,7 @@ public class TestTonlibJson {
     @Test
     public void testTonlibRunMethodPastElectionsId() {
         Tonlib tonlib = Tonlib.builder().build();
-        Address address = new Address("-1:3333333333333333333333333333333333333333333333333333333333333333");
+        Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
         RunResult result = tonlib.runMethod(address, "past_election_ids");
         TvmStackEntryList listResult = (TvmStackEntryList) result.getStackEntry().get(0);
         for (Object o : listResult.getList().getElements()) {
@@ -379,7 +379,7 @@ public class TestTonlibJson {
     @Test
     public void testTonlibRunMethodPastElections() {
         Tonlib tonlib = Tonlib.builder().build();
-        Address address = new Address("-1:3333333333333333333333333333333333333333333333333333333333333333");
+        Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
         RunResult result = tonlib.runMethod(address, "past_elections");
         TvmStackEntryList listResult = (TvmStackEntryList) result.getStackEntry().get(0);
         log.info("pastElections: {}", listResult);
@@ -392,13 +392,13 @@ public class TestTonlibJson {
         Tonlib tonlib = Tonlib.builder()
                 .build();
 
-        Address elector = new Address(ELECTOR_ADDRESSS);
+        Address elector = Address.of(ELECTOR_ADDRESSS);
         RunResult result = tonlib.runMethod(elector, "compute_returned_stake", null);
         log.info("result: {}", result);
         assertThat(result.getExit_code()).isEqualTo(2); // error since compute_returned_stake requires an argument
 
         Deque<String> stack = new ArrayDeque<>();
-        Address validatorAddress = new Address("Ef_sR2c8U-tNfCU5klvd60I5VMXUd_U9-22uERrxrrt3uzYi");
+        Address validatorAddress = Address.of("Ef_sR2c8U-tNfCU5klvd60I5VMXUd_U9-22uERrxrrt3uzYi");
         stack.offer("[num," + validatorAddress.toDecimal() + "]");
 
         result = tonlib.runMethod(elector, "compute_returned_stake", stack);

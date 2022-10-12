@@ -20,58 +20,58 @@ public class TestAddress {
     @Test
     public void testAddress() {
 
-        Address address01 = new Address(TEST_ADDRESS_0);
+        Address address01 = Address.of(TEST_ADDRESS_0);
 
         assertThat(address01.toString()).isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
 
-        Address address02 = new Address(TEST_ADDRESS_1);
+        Address address02 = Address.of(TEST_ADDRESS_1);
         assertThat(address02.toString()).isEqualTo(TEST_ADDRESS_1);
         assertThat(address02.isBounceable).isTrue();
 
-        Address address03 = new Address(TEST_ADDRESS_3);
+        Address address03 = Address.of(TEST_ADDRESS_3);
         assertThat(address03.toString()).isEqualTo(TEST_ADDRESS_3);
 
-        Address address04 = new Address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
+        Address address04 = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
         assertThat(address04.toString(true, true, false)).isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
         assertThat(address04.isBounceable).isFalse();
 
-        Address address05 = new Address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
+        Address address05 = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
         assertThat(address05.toString(true, true, true)).isEqualTo(TEST_ADDRESS_1);
         assertThat(address05.isBounceable).isFalse();
 
-        Address address06 = new Address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
+        Address address06 = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
         assertThat(address06.toString(false)).isEqualTo(TEST_ADDRESS_3);
         assertThat(address06.isBounceable).isFalse();
 
-        Address address07 = new Address(TEST_ADDRESS_1);
+        Address address07 = Address.of(TEST_ADDRESS_1);
         assertThat(address07.toString(true, true, false)).isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
         assertThat(address07.isBounceable).isTrue();
 
-        Address address08 = new Address(TEST_ADDRESS_1);
+        Address address08 = Address.of(TEST_ADDRESS_1);
         assertThat(address08.toString(true, true, true)).isEqualTo(TEST_ADDRESS_1);
         assertThat(address08.isBounceable).isTrue();
 
-        Address address09 = new Address(TEST_ADDRESS_1);
+        Address address09 = Address.of(TEST_ADDRESS_1);
         assertThat(address09.toString(false)).isEqualTo(TEST_ADDRESS_3);
         assertThat(address09.isBounceable).isTrue();
 
-        Address address10 = new Address(TEST_ADDRESS_3);
+        Address address10 = Address.of(TEST_ADDRESS_3);
         assertThat(address10.toString(true, true, false, true)).isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
 
-        Address address11 = new Address(TEST_ADDRESS_3);
+        Address address11 = Address.of(TEST_ADDRESS_3);
         assertThat(address11.toString(true, true, true, true)).isEqualTo(TEST_ADDRESS_1);
 
-        Address address12 = new Address(TEST_ADDRESS_3);
+        Address address12 = Address.of(TEST_ADDRESS_3);
         assertThat(address12.toString(false)).isEqualTo(TEST_ADDRESS_3);
 
-        Address address13 = new Address("-1:3333333333333333333333333333333333333333333333333333333333333333");
+        Address address13 = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
         assertThat(address13.toString(true, false, true, false)).isEqualTo("Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF");
         assertThat(address13.toString(true, false, false, false)).isEqualTo("Uf8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxYA");
         assertThat(Utils.bytesToHex(address13.hashPart)).isEqualTo("3333333333333333333333333333333333333333333333333333333333333333");
         assertThat(address13.hashPart.length).isEqualTo(32);
         assertThat(address13.wc).isEqualTo((byte) -1);
 
-        Address address14 = new Address(TEST_ADDRESS_4);
+        Address address14 = Address.of(TEST_ADDRESS_4);
         assertThat(address14.isTestOnly).isTrue();
 
         assertThat(Address.isValid(TEST_ADDRESS_0)).isTrue();
@@ -84,20 +84,20 @@ public class TestAddress {
     @Test
     public void testBadAddress() {
         assertThrows(Error.class, () -> {
-            new Address("");
-            new Address("bad_input");
-            new Address("kf_8uRo6OBbQ97jCx2EIuKm8Wmt6Vb15-KsQHFLbKSMiYInz");
-            new Address("ov_8uRo6OBbQ97jCx2EIuKm8Wmt6Vb15-KsQHFLbKSMiYMg3");
+            Address.of("");
+            Address.of("bad_input");
+            Address.of("kf_8uRo6OBbQ97jCx2EIuKm8Wmt6Vb15-KsQHFLbKSMiYInz");
+            Address.of("ov_8uRo6OBbQ97jCx2EIuKm8Wmt6Vb15-KsQHFLbKSMiYMg3");
         });
     }
 
     @Test
     public void testCompareAddress() {
-        Address a = new Address(TEST_ADDRESS_0);
-        Address b = new Address(TEST_ADDRESS_4);
+        Address a = Address.of(TEST_ADDRESS_0);
+        Address b = Address.of(TEST_ADDRESS_4);
         assertThat(a).isNotEqualTo(b);
 
-        b = new Address(TEST_ADDRESS_1);
+        b = Address.of(TEST_ADDRESS_1);
         assertThat(a).isNotEqualTo(b);
 
     }

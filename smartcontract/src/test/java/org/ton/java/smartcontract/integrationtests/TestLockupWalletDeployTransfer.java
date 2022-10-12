@@ -16,7 +16,6 @@ import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.AccountState;
 import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -36,12 +35,13 @@ public class TestLockupWalletDeployTransfer {
         byte[] secondSecretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
-        options.lockupConfig = LockupConfig.builder()
-                .configPublicKey(Utils.bytesToHex(secondPublicKey))
-                .allowedDestinations(List.of(TestFaucet.BOUNCEABLE, "kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .lockupConfig(LockupConfig.builder()
+                        .configPublicKey(Utils.bytesToHex(secondPublicKey))
+                        .allowedDestinations(List.of(TestFaucet.BOUNCEABLE, "kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
+                        .build())
                 .build();
 
         Wallet wallet = new Wallet(WalletVersion.lockup, options);
@@ -63,10 +63,7 @@ public class TestLockupWalletDeployTransfer {
         assertThat(msg.code).isNotNull();
 
         // top up new wallet using test-faucet-wallet
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
+        Tonlib tonlib = Tonlib.builder().testnet(true).build();
 
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(10));
         log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));

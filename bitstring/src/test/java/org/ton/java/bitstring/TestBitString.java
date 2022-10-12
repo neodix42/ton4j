@@ -134,7 +134,7 @@ public class TestBitString {
 
     @Test
     public void testBitStringAddress() {
-        Address address01 = new Address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
+        Address address01 = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
         assertThat(address01.toString()).isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
         BitString bitString = new BitString(34 * 8); // whole address is 36 bytes. tag[1]+wc[1]+addr[32]+crc[2]
         bitString.writeAddress(address01);
@@ -291,7 +291,7 @@ public class TestBitString {
         bitString.writeUint(BigInteger.valueOf(200), 9);
         bitString.writeCoins(BigInteger.TEN);
         bitString.writeString("A");
-        Address address = new Address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
+        Address address = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
         bitString.writeAddress(address);
     }
 }

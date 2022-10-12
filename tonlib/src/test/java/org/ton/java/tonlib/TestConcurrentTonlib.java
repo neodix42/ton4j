@@ -34,7 +34,7 @@ public class TestConcurrentTonlib {
         MasterChainInfo last = tonlib.getLast();
         log.info("last: {}", last);
 
-        Address elector = new Address(ELECTOR_ADDRESSS);
+        Address elector = Address.of(ELECTOR_ADDRESSS);
         Deque<String> stack = new ArrayDeque<>();
         Address address = Address.of("Ef_sR2c8U-tNfCU5klvd60I5VMXUd_U9-22uERrxrrt3uzYi");
         stack.offer("[num, " + address.toDecimal() + "]");

@@ -153,7 +153,7 @@ public class Address {
 
     public static boolean isValid(String address) {
         try {
-            new Address(address);
+            Address.of(address);
             return true;
         } catch (Throwable e) {
             return false;

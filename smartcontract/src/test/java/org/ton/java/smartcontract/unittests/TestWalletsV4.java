@@ -28,9 +28,10 @@ public class TestWalletsV4 {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.v4R2, options);
         WalletV4ContractR2 contract = wallet.create();

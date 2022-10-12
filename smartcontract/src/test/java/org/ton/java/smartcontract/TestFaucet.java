@@ -35,9 +35,10 @@ public class TestFaucet {
         byte[] secretKey = Utils.hexToBytes(SECRET_KEY);
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
         SimpleWalletContractR3 contract = wallet.create();
@@ -47,6 +48,7 @@ public class TestFaucet {
 
         BigInteger newBalance;
         do {
+            log.info("topping up the wallet...");
             TimeUnit.SECONDS.sleep(5);
             newBalance = new BigInteger(tonlib.getAccountState(destinationAddress).getBalance());
         } while (newBalance.compareTo(BigInteger.ZERO) < 1);
@@ -67,9 +69,10 @@ public class TestFaucet {
     public void createFaucetWallet() {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
         SimpleWalletContractR3 contract = wallet.create();
@@ -90,9 +93,10 @@ public class TestFaucet {
         byte[] secretKey = Utils.hexToBytes(SECRET_KEY);
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
         SimpleWalletContractR3 contract = wallet.create();

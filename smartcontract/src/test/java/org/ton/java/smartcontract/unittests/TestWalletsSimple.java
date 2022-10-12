@@ -37,9 +37,10 @@ public class TestWalletsSimple {
         byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
         SimpleWalletContractR3 contract = wallet.create();
@@ -77,9 +78,10 @@ public class TestWalletsSimple {
         byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
         SimpleWalletContractR3 contract = wallet.create();
@@ -129,9 +131,10 @@ public class TestWalletsSimple {
         byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.simpleR1, options);
         SimpleWalletContractR1 contract = wallet.create();
@@ -147,9 +150,10 @@ public class TestWalletsSimple {
         log.info("pubkey " + Utils.bytesToHex(keyPair.getPublicKey()));
         log.info("seckey " + Utils.bytesToHex(keyPair.getSecretKey()));
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.simpleR2, options);
         SimpleWalletContractR2 contract = wallet.create();
@@ -164,9 +168,10 @@ public class TestWalletsSimple {
         log.info("pubkey " + Utils.bytesToHex(keyPair.getPublicKey()));
         log.info("seckey " + Utils.bytesToHex(keyPair.getSecretKey()));
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.simpleR2, options);
         SimpleWalletContractR2 contract = wallet.create();

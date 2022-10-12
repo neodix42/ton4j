@@ -48,7 +48,7 @@ public interface Contract {
 
         byte[] stateInitHash = stateInit.hash();
 
-        Address address = new Address(getOptions().wc + ":" + Utils.bytesToHex(stateInitHash));
+        Address address = Address.of(getOptions().wc + ":" + Utils.bytesToHex(stateInitHash));
         return new StateInit(stateInit, address, codeCell, dataCell);
     }
 
@@ -151,10 +151,10 @@ public interface Contract {
         if ((bounce != null)) {
             message.storeBit(bounce);
         } else {
-            message.storeBit((new Address(dest)).isBounceable);
+            message.storeBit((Address.of(dest)).isBounceable);
         }
         message.storeBit(bounced);
-        message.storeAddress(src != null ? new Address(src) : null);
+        message.storeAddress(src != null ? Address.of(src) : null);
         message.storeAddress(dest);
         message.storeCoins(gramValue);
         if (currencyCollection.length != 0) {
@@ -180,7 +180,7 @@ public interface Contract {
                                              BigInteger createdLt,
                                              BigInteger createdAt) {
         return createInternalMessageHeader(
-                new Address(dest), gramValue, ihrDisabled, bounce, bounced,
+                Address.of(dest), gramValue, ihrDisabled, bounce, bounced,
                 src, currencyCollection, ihrFees, fwdFees,
                 createdLt, createdAt);
     }
@@ -202,7 +202,7 @@ public interface Contract {
 
     static Cell createInternalMessageHeader(String dest, BigInteger gramValue) {
         return createInternalMessageHeader(
-                new Address(dest),
+                Address.of(dest),
                 gramValue,
                 true,
                 null,
@@ -240,7 +240,7 @@ public interface Contract {
      * @return Cell
      */
     static Cell createExternalMessageHeader(String dest, Address src, BigInteger importFee) {
-        return createExternalMessageHeader(new Address(dest), src, importFee);
+        return createExternalMessageHeader(Address.of(dest), src, importFee);
     }
 
     /**
@@ -250,7 +250,7 @@ public interface Contract {
      * @return Cell
      */
     static Cell createExternalMessageHeader(String dest, String src, BigInteger importFee) {
-        return createExternalMessageHeader(new Address(dest), new Address(src), importFee);
+        return createExternalMessageHeader(Address.of(dest), Address.of(src), importFee);
     }
 
     static Cell createExternalMessageHeader(Address dest) {
@@ -258,7 +258,7 @@ public interface Contract {
     }
 
     static Cell createExternalMessageHeader(String dest) {
-        return createExternalMessageHeader(new Address(dest), null, BigInteger.ZERO);
+        return createExternalMessageHeader(Address.of(dest), null, BigInteger.ZERO);
     }
 
     //tblkch.pdf, page 57

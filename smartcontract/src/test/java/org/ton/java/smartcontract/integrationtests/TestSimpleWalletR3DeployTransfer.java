@@ -29,9 +29,10 @@ public class TestSimpleWalletR3DeployTransfer {
     public void testNewWalletSimple() throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
         SimpleWalletContractR3 contract = wallet.create();

@@ -109,7 +109,7 @@ Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF <<<<< Ef99gz58SExDexFVJteOSZcPD
 
 ```java
 Tonlib tonlib = Tonlib.builder().build();
-Address address = new Address(MY_TESTNET_VALIDATOR_ADDR);
+Address address = Address.of(MY_TESTNET_VALIDATOR_ADDR);
 log.info("address: " + address.toString(true));
 RawTransactions rawTransactions = tonlib.getRawTransactions(address.toString(false), null, null);
 log.info("total txs: {}", rawTransactions.getTransactions().size());
@@ -145,7 +145,7 @@ total txs:10
 ```java
 Tonlib tonlib = Tonlib.builder().build();
 
-Address addr = new Address("kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E");
+Address addr = Address.of("kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E");
 log.info("address: " + addr.toString(true));
 AccountAddressOnly accountAddressOnly=AccountAddressOnly.builder()
                     .account_address(addr.toString(true))
@@ -182,7 +182,7 @@ Get seqno
 
 ```java
 Tonlib tonlib = Tonlib.builder().build();
-Address address = new Address("kQB7wRCSr02IwL1nOxkEipop3goYb4oN6ZehZMS2jImwyS1t");
+Address address = Address.of("kQB7wRCSr02IwL1nOxkEipop3goYb4oN6ZehZMS2jImwyS1t");
 RunResult result = tonlib.runMethod(address, "seqno");
 
 log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
@@ -197,7 +197,7 @@ seqno:2
 
 Retrieve past_election_ids
 ```java
-Address address = new Address("-1:3333333333333333333333333333333333333333333333333333333333333333");
+Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
 RunResult result = tonlib.runMethod(address,"past_election_ids");
 TvmStackEntryList listResult = (TvmStackEntryList)result.getStackEntry().get(0);
 
@@ -227,13 +227,13 @@ Use as array of strings:
 ```java
 Tonlib tonlib = Tonlib.builder().build();
 
-Address address = new Address("-1:3333333333333333333333333333333333333333333333333333333333333333");
+Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
 RunResult result = tonlib.runMethod(address, "compute_returned_stake", null);
 log.info("result: {}", result);
 assertThat(result.getExit_code()).isEqualTo(2); // error since compute_returned_stake requires an argument
 
 Deque<String> stack = new ArrayDeque<>();
-address = new Address(TESTNET_VALIDATOR_ADDR);
+address = Address.of(TESTNET_VALIDATOR_ADDR);
 stack.offer("[num, " + address.toDecimal() + "]");
 
 result = tonlib.runMethod(address, "compute_returned_stake", stack);

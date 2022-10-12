@@ -37,7 +37,7 @@ bitString.writeUint(BigInteger.valueOf(200), 8);
 bitString.writeInt(BigInteger.valueOf(200), 9);
 bitString.writeCoins(BigInteger.TEN);
 bitString.writeString("A");
-Address address = new Address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
+Address address = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
 bitString.writeAddress(address);
 log.info(bitString.toString());
 log.info(bitString.toBitString());

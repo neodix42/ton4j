@@ -21,9 +21,10 @@ public class TestCustomContract {
         //TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(secretKey);
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
 
         log.info("pubkey {}", Utils.bytesToHex(options.publicKey));
 
@@ -61,7 +62,7 @@ public class TestCustomContract {
         TvmStackEntryNumber extra_field = (TvmStackEntryNumber) result.getStackEntry().get(0);
         log.info("extra_field: {}", extra_field.getNumber());
 
-        Address destinationAddress = new Address("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+        Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
         BigInteger amount = Utils.toNano(2); //2 Toncoins or 2bln nano-toncoins
         long seqNumber = 1;
         ExternalMessage extMsg = customContract.createTransferMessage(keyPair.getSecretKey(), destinationAddress, amount, seqNumber);

@@ -515,7 +515,7 @@ public class Tonlib {
         BlockTransactions blockTransactions = getBlockTransactions(fullblock, count, afterTx);
         for (ShortTxId tx : blockTransactions.getTransactions()) {
             String addressHex = Utils.base64ToHexString(tx.getAccount());
-            String address = new Address(fullblock.getWorkchain() + ":" + addressHex).toString(false);
+            String address = Address.of(fullblock.getWorkchain() + ":" + addressHex).toString(false);
             RawTransactions rawTransactions = getRawTransactions(address, BigInteger.valueOf(tx.getLt()), tx.getHash());
             totalTxs.put(address + "|" + tx.getLt(), rawTransactions);
         }

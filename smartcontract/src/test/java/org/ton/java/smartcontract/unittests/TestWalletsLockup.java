@@ -8,10 +8,13 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
 import org.ton.java.smartcontract.types.InitExternalMessage;
+import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.utils.Utils;
+
+import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -25,15 +28,16 @@ public class TestWalletsLockup {
         byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = new Options();
-        options.publicKey = keyPair.getPublicKey();
-        options.wc = 0L;
-//        options.lockupConfig = new LockupConfig();
-//        options.lockupConfig.allowedDestinations = new ArrayList<>();
-
-        options.lockupConfig.allowedDestinations.add("Ef9eYuD_Mwol4jAtZ0lxZmhuv_92fvwzLW1hAFbJ657_iqRP");
-        options.lockupConfig.allowedDestinations.add("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
-        options.lockupConfig.configPublicKey = Utils.bytesToHex(publicKey);
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .lockupConfig(LockupConfig.builder()
+                        .allowedDestinations(
+                                List.of("Ef9eYuD_Mwol4jAtZ0lxZmhuv_92fvwzLW1hAFbJ657_iqRP",
+                                        "kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka"))
+                        .configPublicKey(Utils.bytesToHex(publicKey))
+                        .build())
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.lockup, options);
         LockupWalletV1 contract = wallet.create();

@@ -430,6 +430,6 @@ public class CellSlice {
         BigInteger hashPart = loadUint(256);
 
         String address = workchain + ":" + String.format("%64s", hashPart.toString(16)).replace(' ', '0');
-        return new Address(address);
+        return Address.of(address);
     }
 }

@@ -35,7 +35,7 @@ public class TestCellSlice {
                 .storeUint(200, 8)
                 .endCell();
 
-        Address addr = new Address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
+        Address addr = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
 
         Cell c0 = CellBuilder.beginCell()
                 .storeUint(10, 8)
@@ -58,7 +58,7 @@ public class TestCellSlice {
         assertThat(cs0.loadUint(8).longValue()).isEqualTo(40);
         assertThat(csRef1.loadUint(3)).isEqualTo(2);
         assertThat(csRef1.loadUint(8)).isEqualTo(200);
-        assertThat(cs0.loadAddress().toString(false)).isEqualTo(new Address("0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3").toString(false));
+        assertThat(cs0.loadAddress().toString(false)).isEqualTo(Address.of("0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3").toString(false));
     }
 
     @Test

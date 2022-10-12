@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Builder
@@ -19,5 +20,5 @@ public class LockupConfig {
     /**
      * Whitelist of allowed destinations
      */
-    public List<String> allowedDestinations;
+    public List<String> allowedDestinations = new ArrayList<>();
 }

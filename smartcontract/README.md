@@ -3,6 +3,7 @@
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
 ```xml
+
 <dependency>
     <groupId>org.ton.java</groupId>
     <artifactId>smartcontract</artifactId>
@@ -13,6 +14,7 @@
 ## Jitpack [![JitPack][jitpack-svg]][jitpack]
 
 ```xml
+
 <repositories>
     <repository>
         <id>jitpack.io</id>
@@ -22,6 +24,7 @@
 ```
 
 ```xml
+
 <dependency>
     <groupId>com.github.neodiX42.ton-java-temp1</groupId>
     <artifactId>smartcontract</artifactId>
@@ -47,51 +50,51 @@ You can also create and deploy any custom wallet (contract), see below.
 
 [Read more about wallet types](README-WALLETS.md)
 
-
 ### Create and deploy SimpleR3 wallet
 
 ```java
-byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
-TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+byte[]secretKey=Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        TweetNaclFast.Signature.KeyPair keyPair=TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-Options options = new Options();
-options.publicKey = keyPair.getPublicKey();
-options.wc = 0L;
+        Options options=Options.builder()
+        .publicKey(keyPair.getPublicKey())
+        .wc(0L)
+        .build();
 
-Wallet wallet = new Wallet(WalletVersions.simpleR3, options);
-SimpleWalletContractR3 contract = wallet.create();
-InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
-Address walletAddress = msg.address;
+        Wallet wallet=new Wallet(WalletVersions.simpleR3,options);
+        SimpleWalletContractR3 contract=wallet.create();
+        InitExternalMessage msg=contract.createInitExternalMessage(keyPair.getSecretKey());
+        Address walletAddress=msg.address;
 
-log.info("new wallet address = {}", walletAddress.toString(false));
-log.info("Non-bounceable address (for init): {}", walletAddress.toString(true,true,false,true));
-log.info("Bounceable address (for later access): {}", walletAddress.toString(true,true,true,true));
+        log.info("new wallet address = {}",walletAddress.toString(false));
+        log.info("Non-bounceable address (for init): {}",walletAddress.toString(true,true,false,true));
+        log.info("Bounceable address (for later access): {}",walletAddress.toString(true,true,true,true));
 
 // Before sending wallet's smart contract code, send some Toncoins to non-bouncelable address.
 
 // deploy
-Tonlib tonlib = Tonlib.builder().build();
-String base64boc = Utils.bytesToBase64(msg.message.toBoc(false));
-tonlib.sendRawMessage(base64boc);
+        Tonlib tonlib=Tonlib.builder().build();
+        String base64boc=Utils.bytesToBase64(msg.message.toBoc(false));
+        tonlib.sendRawMessage(base64boc);
 ```
 
 ### Send Toncoins
 
 ```java
 ...
-ExternalMessage msg = contract.createTransferMessage(keyPair.getSecretKey(),
+        ExternalMessage msg=contract.createTransferMessage(keyPair.getSecretKey(),
         "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d", //destination address
         Utils.toNano(1), // toncoin
         1L); // seqno
-Address address = msg.address;
-log.info("Source wallet address = {}",address.toString(false));
-log.info("signing message: {}",msg.signingMessage.print());
-log.info("resulting external message: {}",msg.message.print());
+        Address address=msg.address;
+        log.info("Source wallet address = {}",address.toString(false));
+        log.info("signing message: {}",msg.signingMessage.print());
+        log.info("resulting external message: {}",msg.message.print());
 
 // send external message 
-Tonlib tonlib = Tonlib.builder().build();
-String base64boc = Utils.bytesToBase64(msg.message.toBoc(false));
-tonlib.sendRawMessage(base64boc);
+        Tonlib tonlib=Tonlib.builder().build();
+        String base64boc=Utils.bytesToBase64(msg.message.toBoc(false));
+        tonlib.sendRawMessage(base64boc);
 ```
 
 ### Deploy custom contract
@@ -109,20 +112,22 @@ it.
     var signature = in_msg~load_bits(512); ;; signature in msg body, see createInitExternalMessage()
     var cs = in_msg;
     var (msg_seqno, valid_until, extra_field) = (cs~load_uint(32), cs~load_uint(32), cs~load_uint(64)); ;; payload in message body, see createSigningMessage()
-    throw_if(35, valid_until < =  now());
-    var ds = get_data().begin_parse();
-    var (stored_seqno, public_key, stored_x_data) = (ds~load_uint(32), ds~load_uint(256), ds~load_uint(64)); ;; data in stateInit or in storage. See createDataCell()
-    ;; ds.end_parse();
-    throw_unless(33, msg_seqno = =  stored_seqno);
-    throw_unless(34, check_signature(slice_hash(in_msg), signature, public_key));
-    accept_message();
-    cs~touch(); ;; process data stored in ext message refs
-    while (cs.slice_refs()) { ;; transfer msg. Data inside the body of external msg. See 
-        var mode = cs~load_uint(8);
-        send_raw_message(cs~load_ref(), mode);
-    }
+    throw_if
+    
+    (35, valid_until < =  now());
+            var ds = get_data().begin_parse();
+            var (stored_seqno, public_key, stored_x_data) = (ds~load_uint(32), ds~load_uint(256), ds~load_uint(64)); ;; data in stateInit or in storage. See createDataCell()
+            ;; ds.end_parse();
+            throw_unless(33, msg_seqno ==  stored_seqno);
+            throw_unless(34, check_signature(slice_hash(in_msg), signature, public_key));
+            accept_message();
+            cs~touch(); ;; process data stored in ext message refs
+            while (cs.slice_refs()) { ;; transfer msg. Data inside the body of external msg. See 
+            var mode = cs~load_uint(8);
+            send_raw_message(cs~load_ref(), mode);
+            }
     cs.end_parse();
-    set_data(begin_cell().store_uint(stored_seqno + 1, 32).store_uint(public_key, 256).store_uint(stored_x_data, 64).store_uint(extra_field, 64).end_cell());
+            set_data(begin_cell().store_uint(stored_seqno + 1, 32).store_uint(public_key, 256).store_uint(stored_x_data, 64).store_uint(extra_field, 64).end_cell());
 }
 
 int seqno() method_id {
@@ -279,7 +284,8 @@ Print our BoC in hex format:
 B5EE9C7241010C0100B2000114FF00F4A413F4BCF2C80B01020120020302014804050094F28308D71820D31FD31FD33F02F823BBF263ED44D0D31FD3FFD33F305152BAF2A105F901541065F910F2A2F800019320D74A96D307D402FB00E8D103A4C8CB1F12CBFFCB3FCB3FC9ED540004D03002012006070201200809001DBDC3676A268698F98E9FF98EB859FC0017BB39CED44D0D31F31D70BFF80202710A0B0022AA77ED44D0D31F31D3FF31D33F31D70B3F0010A897ED44D0D70B1F56A9826C
 ```
 
-Create CustomContract that implements WalletContract and override `createDataCell()` and `createSigningMessage()` methods.
+Create CustomContract that implements WalletContract and override `createDataCell()` and `createSigningMessage()`
+methods.
 
 Copy above BoC in hex format into CustomContract consturctor, see below.
 
@@ -362,83 +368,88 @@ public class CustomContract implements WalletContract {
 Now you are ready to deploy your custom smart contract.
 
 ```java
-byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
-TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+byte[]secretKey=Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        TweetNaclFast.Signature.KeyPair keyPair=TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-Options options = new Options();
-options.publicKey = keyPair.getPublicKey();
-options.wc = 0L;
+        Options options=Options.builder()
+        .publicKey(keyPair.getPublicKey())
+        .wc(0L)
+        .build();
 
-CustomContract customContract = new CustomContract(options);
+        CustomContract customContract=new CustomContract(options);
 
-InitExternalMessage msg = customContract.createInitExternalMessage(keyPair.getSecretKey());
-Address address = msg.address;
+        InitExternalMessage msg=customContract.createInitExternalMessage(keyPair.getSecretKey());
+        Address address=msg.address;
 
-log.info("Creating new wallet in workchain {} \n" +
-        "Loading private key from file new-wallet.pk\n" +
-        "StateInit: {}\nnew wallet address = {}\n" +
-        "(Saving address to file new-wallet.addr)\n" +
-        "Non-bounceable address (for init): {}\n" +
-        "Bounceable address (for later access): {}\n" +
-        "signing message: {}\n" +
-        "External message for initialization is {}\n" +
-        "{}\n(Saved wallet creating query to file new-wallet-query.boc)"        
-      , options.wc,msg.stateInit.print(),
+        log.info("Creating new wallet in workchain {} \n"+
+        "Loading private key from file new-wallet.pk\n"+
+        "StateInit: {}\nnew wallet address = {}\n"+
+        "(Saving address to file new-wallet.addr)\n"+
+        "Non-bounceable address (for init): {}\n"+
+        "Bounceable address (for later access): {}\n"+
+        "signing message: {}\n"+
+        "External message for initialization is {}\n"+
+        "{}\n(Saved wallet creating query to file new-wallet-query.boc)"
+        ,options.wc,msg.stateInit.print(),
         address.toString(false),
-        address.toString(true,true,false,true), 
+        address.toString(true,true,false,true),
         address.toString(true,true,true,true),
-        msg.signingMessage.print(), 
-        msg.message.print(), 
+        msg.signingMessage.print(),
+        msg.message.print(),
         Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase());
 ```
 
 Send some toincoins to non-bouncelable address above and then upload smart contract using Tonlib
 
 ```java
-Tonlib tonlib = Tonlib.builder().build();
-String base64boc = Utils.bytesToBase64(msg.message.toBoc(false));
-log.info(base64boc);
-tonlib.sendRawMessage(base64boc);
+Tonlib tonlib=Tonlib.builder().build();
+        String base64boc=Utils.bytesToBase64(msg.message.toBoc(false));
+        log.info(base64boc);
+        tonlib.sendRawMessage(base64boc);
 ```
 
 Check if contract was deployed successfully
 
 ```java
-Tonlib tonlib = Tonlib.builder().build();
+Tonlib tonlib=Tonlib.builder().build();
 
-RunResult result = tonlib.runMethod(address,"seqno");
-TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry();
-log.info("seqno: {}", seqno.getNumber());
+        RunResult result=tonlib.runMethod(address,"seqno");
+        TvmStackEntryNumber seqno=(TvmStackEntryNumber)result.getStackEntry();
+        log.info("seqno: {}",seqno.getNumber());
 
-result = tonlib.runMethod(address,"get_x_data");
-TvmStackEntryNumber x_data = (TvmStackEntryNumber) result.getStackEntry();
-log.info("x_data: {}", seqno.getNumber());
+        result=tonlib.runMethod(address,"get_x_data");
+        TvmStackEntryNumber x_data=(TvmStackEntryNumber)result.getStackEntry();
+        log.info("x_data: {}",seqno.getNumber());
 
-result = tonlib.runMethod(address, "get_extra_field");
-TvmStackEntryNumber extra_field = (TvmStackEntryNumber) result.getStackEntry();
-log.info("extra_field: {}", seqno.getNumber());
+        result=tonlib.runMethod(address,"get_extra_field");
+        TvmStackEntryNumber extra_field=(TvmStackEntryNumber)result.getStackEntry();
+        log.info("extra_field: {}",seqno.getNumber());
 
 // result
-seqno:1
-x_data:2
-extra_field:4
+        seqno:1
+        x_data:2
+        extra_field:4
 ```
 
 Transfer Toncoins
 
 ```java
-Address destinationAddress = new Address("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
-BigInteger amount = Utils.toNano(2); //2 Toncoins or 2bln nano-toncoins
-long seqNumber = 1;
-ExternalMessage extMsg = customContract.createTransferMessage(keyPair.getSecretKey(), destinationAddress, amount, seqNumber);
-String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBoc(false));
-tonlib.sendRawMessage(base64bocExtMsg);  
+Address destinationAddress=Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+        BigInteger amount=Utils.toNano(2); //2 Toncoins or 2bln nano-toncoins
+        long seqNumber=1;
+        ExternalMessage extMsg=customContract.createTransferMessage(keyPair.getSecretKey(),destinationAddress,amount,seqNumber);
+        String base64bocExtMsg=Utils.bytesToBase64(extMsg.message.toBoc(false));
+        tonlib.sendRawMessage(base64bocExtMsg);  
 ```
 
-
 [maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/smartcontract
+
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/smartcontract
+
 [jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
+
 [jitpack]: https://jitpack.io/#neodiX42/ton-java/smartcontract
+
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
+
 [ton]: https://ton.org
