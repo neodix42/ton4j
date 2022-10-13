@@ -13,11 +13,10 @@
     <artifactId>sdk</artifactId>
     <packaging>pom</packaging>
 
-    <name>TON Java SDK</name>
     <description>Construct bag of cells, slices, bitStrings, create standard and custom smart contracts and send them to
         the blockchain using Tonlib shared library.
     </description>
-    <url>https://github.com/neodiX42/ton-java</url>
+    <url>https://github.com/neodiX42/ton4j</url>
 
     <licenses>
         <license>
@@ -34,9 +33,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/neodiX42/ton-java.git</connection>
-        <developerConnection>scm:git:ssh://github.com/neodiX42/ton-java.git</developerConnection>
-        <url>https://github.com/neodiX42/ton-java/tree/main</url>
+        <connection>scm:git:git://github.com/neodiX42/ton4j.git</connection>
+        <developerConnection>scm:git:ssh://github.com/neodiX42/ton4j.git</developerConnection>
+        <url>https://github.com/neodiX42/ton4j/tree/main</url>
     </scm>
 
     <dependencies>

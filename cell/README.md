@@ -23,7 +23,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.github.neodiX42.ton-java</groupId>
+    <groupId>com.github.neodiX42.ton4j</groupId>
     <artifactId>cell</artifactId>
     <version>0.0.1</version>
 </dependency>

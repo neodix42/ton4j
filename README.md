@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Based on TON][ton-svg]][ton]
-![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton-java)
+![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton4j)
 
 Java libraries for interacting with TON blockchain.
 
@@ -33,7 +33,7 @@ Maven and Jitpack links won't work!
 ```xml
 <dependency>
     <groupId>com.github.neodiX42</groupId>
-    <artifactId>ton-java</artifactId>
+    <artifactId>ton4j</artifactId>
     <version>0.0.1</version>
 </dependency>
 ```
@@ -78,9 +78,9 @@ You can use each sub-module individualy. Click the module below to get more deta
 
 [maven-central]: https://mvnrepository.com/artifact/org.ton.java/sdk
 
-[jitpack-svg]: https://jitpack.io/v/neodiX42/ton-java.svg
+[jitpack-svg]: https://jitpack.io/v/neodiX42/ton4j.svg
 
-[jitpack]: https://jitpack.io/#neodiX42/ton-java
+[jitpack]: https://jitpack.io/#neodiX42/ton4j
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 
