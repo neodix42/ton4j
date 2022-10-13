@@ -15,7 +15,7 @@ Maven and Jitpack links won't work!
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 
@@ -34,7 +34,7 @@ Maven and Jitpack links won't work!
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>ton4j</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 

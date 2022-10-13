@@ -6,7 +6,7 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>bitstring</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 
@@ -25,7 +25,7 @@
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>bitstring</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 
