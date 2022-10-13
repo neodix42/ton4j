@@ -15,16 +15,6 @@
 
 ```xml
 
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-```
-
-```xml
-
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>smartcontract</artifactId>
@@ -57,10 +47,7 @@ You can also create and deploy any custom wallet (contract), see below.
 byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
 TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-Options options = Options.builder()
-    .publicKey(keyPair.getPublicKey())
-    .wc(0L)
-    .build();
+Options options = Options.builder().publicKey(keyPair.getPublicKey()).wc(0L).build();
 
 Wallet wallet = new Wallet(WalletVersions.simpleR3,options);
 SimpleWalletContractR3 contract = wallet.create();
@@ -75,18 +62,18 @@ log.info("Bounceable address (for later access): {}", walletAddress.toString(tru
 
 // deploy
 Tonlib tonlib = Tonlib.builder().build();
-String base64boc = Utils.bytesToBase64(msg.message.toBoc(false));
-tonlib.sendRawMessage(base64boc);
+tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
 ```
 
 ### Send Toncoins
 
 ```java
 ...
-ExternalMessage msg = contract.createTransferMessage(keyPair.getSecretKey(),
-"0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d", //destination address
-    Utils.toNano(1), // toncoin
-    1L); // seqno
+ExternalMessage msg = contract.createTransferMessage(
+        keyPair.getSecretKey(),
+        "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d", //destination address
+        Utils.toNano(1), // toncoin
+        1L); // seqno
 Address address = msg.address;
 log.info("Source wallet address = {}", address.toString(false));
 log.info("signing message: {}", msg.signingMessage.print());
@@ -94,8 +81,7 @@ log.info("resulting external message: {}", msg.message.print());
 
 // send external message 
 Tonlib tonlib = Tonlib.builder().build();
-String base64boc = Utils.bytesToBase64(msg.message.toBoc(false));
-tonlib.sendRawMessage(base64boc);
+tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
 ```
 
 ### Deploy custom contract

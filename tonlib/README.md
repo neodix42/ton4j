@@ -15,15 +15,6 @@ Java Tonlib library uses JNA to access methods in native Tonlib shared library.
 ## Jitpack
 
 ```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-```
-
-```xml
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>tonlib</artifactId>

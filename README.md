@@ -4,10 +4,7 @@
 [![Based on TON][ton-svg]][ton]
 ![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton4j)
 
-Java libraries for interacting with TON blockchain.
-
-✅ If you somehow got here today, keep in mind that this library is not ready for usage.
-Maven and Jitpack links won't work!
+Java libraries for interacting with TON blockchain. 
 
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 

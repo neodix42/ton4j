@@ -15,16 +15,6 @@
 
 ```xml
 
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-```
-
-```xml
-
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>utils</artifactId>
