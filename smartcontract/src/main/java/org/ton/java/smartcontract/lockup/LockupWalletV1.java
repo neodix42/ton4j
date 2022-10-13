@@ -153,7 +153,7 @@ public class LockupWalletV1 implements WalletContract {
         return pubkey.getNumber().toString(16);
     }
 
-    public int check_destination(Tonlib tonlib, String destination) {
+    public boolean check_destination(Tonlib tonlib, String destination) {
 
         Address myAddress = getAddress();
 
@@ -166,7 +166,7 @@ public class LockupWalletV1 implements WalletContract {
         RunResult result = tonlib.runMethod(myAddress, "check_destination", stack);
         TvmStackEntryNumber found = (TvmStackEntryNumber) result.getStackEntry().get(0);
 
-        return found.getNumber().intValue();
+        return (found.getNumber().intValue() == -1);
     }
 
     /**
