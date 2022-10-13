@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.ton.java</groupId>
+    <groupId>com.github.neodix42</groupId>
     <artifactId>top</artifactId>
     <packaging>pom</packaging>
     <version>0.0.1</version>
@@ -38,6 +38,33 @@
         <jna.version>5.11.0</jna.version>
         <concurrent.version>1.0.2</concurrent.version>
     </properties>
+
+    <name>TON Java SDK</name>
+    <description>Construct bag of cells, slices, bitStrings, create standard and custom smart contracts and send them to
+        the blockchain using Tonlib shared library.
+    </description>
+
+    <url>https://github.com/neodiX42/ton-java</url>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>neodiX</name>
+            <email>neodiX@ton.org</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/neodiX42/ton-java.git</connection>
+        <developerConnection>scm:git:ssh://github.com/neodiX42/ton-java.git</developerConnection>
+        <url>https://github.com/neodiX42/ton-java/tree/main</url>
+    </scm>
 
     <dependencyManagement>
         <dependencies>
@@ -101,8 +128,39 @@
         </dependencies>
     </dependencyManagement>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <plugins>
+            <!--
+            <plugin>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
+                <version>1.18.20.0</version>
+                <configuration>
+                    <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                    <outputDirectory>${project.basedir}/delombok</outputDirectory>
+                    <addOutputDirectory>false</addOutputDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>delombok</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -122,7 +180,9 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.4.1</version>
                 <configuration>
+                    <!-- <sourcepath>${delombok.output}</sourcepath> -->
                     <doclint>none</doclint>
+
                 </configuration>
                 <executions>
                     <execution>
@@ -134,6 +194,7 @@
                 </executions>
             </plugin>
 
+            <!-- Maven GPG plugin  used to sign the components. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
@@ -149,6 +210,33 @@
                 </executions>
             </plugin>
 
+            <!-- Nexus Staging Maven Plugin for Deployment and Release -->
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.7</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+
+            <!-- Release Deployment with the Maven Release Plugin -->
+            <!--
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <useReleaseProfile>false</useReleaseProfile>
+                    <releaseProfiles>release</releaseProfiles>
+                    <goals>deploy</goals>
+                </configuration>
+            </plugin>
+            -->
         </plugins>
     </build>
 </project>

@@ -4,7 +4,7 @@
 
 ```xml
 <dependency>
-    <groupId>org.ton.java</groupId>
+    <groupId>com.github.neodix42</groupId>
     <artifactId>cell</artifactId>
     <version>0.0.1</version>
 </dependency>

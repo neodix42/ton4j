@@ -34,7 +34,7 @@ public class TestTonlibJson {
     public static final String TON_FOUNDATION = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
     public static final String ELECTOR_ADDRESSS = "-1:3333333333333333333333333333333333333333333333333333333333333333";
 
-    public String INIT_TEMPLATE = Utils.streamToString(Objects.requireNonNull(TestTonlibJson.class.getClassLoader().getResourceAsStream("queries\\init.json")));
+    public String INIT_TEMPLATE = Utils.streamToString(Objects.requireNonNull(TestTonlibJson.class.getClassLoader().getResourceAsStream("init.json")));
 
     Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 

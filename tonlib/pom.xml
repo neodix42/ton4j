@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <parent>
-        <groupId>org.ton.java</groupId>
+        <groupId>com.github.neodix42</groupId>
         <artifactId>top</artifactId>
         <version>0.0.1</version>
     </parent>
@@ -15,19 +15,19 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.ton.java</groupId>
+            <groupId>com.github.neodix42</groupId>
             <artifactId>utils</artifactId>
             <version>${project.parent.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.ton.java</groupId>
+            <groupId>com.github.neodix42</groupId>
             <artifactId>address</artifactId>
             <version>${project.parent.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.ton.java</groupId>
+            <groupId>com.github.neodix42</groupId>
             <artifactId>cell</artifactId>
             <version>${project.parent.version}</version>
             <scope>compile</scope>
@@ -76,7 +76,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.ton.java</groupId>
+            <groupId>com.github.neodix42</groupId>
             <artifactId>mnemonic</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
