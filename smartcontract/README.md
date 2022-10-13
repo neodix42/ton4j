@@ -445,9 +445,9 @@ tonlib.sendRawMessage(base64bocExtMsg);
 More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/java/smartcontract) can be
 found in [tests](../smartcontract/src/test/java/org/ton/java/smartcontract) class.
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/smartcontract
+[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/smartcontract
 
-[maven-central]: https://mvnrepository.com/artifact/org.ton.java/smartcontract
+[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/smartcontract
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

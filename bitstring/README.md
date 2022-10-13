@@ -51,9 +51,9 @@ More examples on how to construct [BitString](../bitstring/src/main/java/org/ton
 found in [TestBitString](../bitstring/src/test/java/org/ton/java/bitstring/TestBitString.java) class.
 
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/bitstring
+[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/bitstring
 
-[maven-central]: https://mvnrepository.com/artifact/org.ton.java/bitstring
+[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/bitstring
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

@@ -95,9 +95,9 @@ found in [TestCell](../cell/src/test/java/org/ton/java/cell/TestCell.java)
 and [TestBitString](../bitstring/src/test/java/org/ton/java/bitstring/TestBitString.java) classes.
 
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/cell
+[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/cell
 
-[maven-central]: https://mvnrepository.com/artifact/org.ton.java/cell
+[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/cell
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

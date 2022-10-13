@@ -72,9 +72,9 @@ assertThat(address07.isBounceable).isTrue();
 More examples on how to construct [Cell](../cell/src/main/java/org/ton/java/cell/Cell.java) and [BitString](../bitstring/src/main/java/org/ton/java/bitstring/BitString.java) can be
 found in [TestCell](../cell/src/test/java/org/ton/java/cell/TestCell.java) and [TestBitString](../bitstring/src/test/java/org/ton/java/bitstring/TestBitString.java) classes.
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/address
+[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/address
 
-[maven-central]: https://mvnrepository.com/artifact/org.ton.java/address
+[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/address
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

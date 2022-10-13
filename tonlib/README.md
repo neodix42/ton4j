@@ -250,9 +250,9 @@ More examples in [TestTonlibJson](../tonlib/src/test/java/org/ton/java/tonlib/Te
 You can find more examples in `TestTonlibJson` and `TestParseRunMethodResults` classes.
 
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/tonlib
+[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/tonlib
 
-[maven-central]: https://mvnrepository.com/artifact/org.ton.java/tonlib
+[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/tonlib
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

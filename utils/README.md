@@ -158,9 +158,9 @@ static BigDecimal fromNano(long toncoins, int scale)
 
 More examples in [TestUtils](../utils/src/test/java/org/ton/java/utils/TestUtils.java) class.
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/utils
+[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/utils
 
-[maven-central]: https://mvnrepository.com/artifact/org.ton.java/utils
+[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/utils
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 

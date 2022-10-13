@@ -40,9 +40,9 @@ It will import following modules into your project:
 </dependency>
 ```
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/org.ton.java/sdk
+[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/sdk
 
-[maven-central]: https://mvnrepository.com/artifact/org.ton.java/sdk
+[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/sdk
 
 [ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
 
