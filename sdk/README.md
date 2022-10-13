@@ -15,7 +15,7 @@ It will import following modules into your project:
 
 ```xml
 <dependency>
-    <groupId>com.github.neodix42</groupId>
+    <groupId>io.github.neodix42</groupId>
     <artifactId>sdk</artifactId>
     <version>0.0.1</version>
 </dependency>
@@ -34,7 +34,7 @@ It will import following modules into your project:
 
 ```xml
 <dependency>
-    <groupId>com.github.neodiX42.ton4j</groupId>
+    <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>sdk</artifactId>
     <version>0.0.1</version>
 </dependency>

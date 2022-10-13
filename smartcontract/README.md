@@ -5,7 +5,7 @@
 ```xml
 
 <dependency>
-    <groupId>com.github.neodix42</groupId>
+    <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
     <version>0.0.1</version>
 </dependency>
@@ -26,7 +26,7 @@
 ```xml
 
 <dependency>
-    <groupId>com.github.neodiX42.ton4j</groupId>
+    <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>smartcontract</artifactId>
     <version>0.0.1</version>
 </dependency>
