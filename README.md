@@ -14,7 +14,7 @@ Maven and Jitpack links won't work!
 ```xml
 <dependency>
     <groupId>io.github.neodix42</groupId>
-    <artifactId>sdk</artifactId>
+    <artifactId>smartcontract</artifactId>
     <version>0.0.1</version>
 </dependency>
 ```
@@ -74,9 +74,9 @@ You can use each sub-module individualy. Click the module below to get more deta
 
 <!-- Badges -->
 
-[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/sdk
+[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/smartcontract
 
-[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/sdk
+[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/smartcontract
 
 [jitpack-svg]: https://jitpack.io/v/neodiX42/ton4j.svg
 

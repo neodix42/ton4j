@@ -16,7 +16,6 @@
         <module>cell</module>
         <module>smartcontract</module>
         <module>tonlib</module>
-        <module>sdk</module>
         <module>mnemonic</module>
     </modules>
 
@@ -185,7 +184,7 @@
                 <configuration>
                     <!-- <sourcepath>${delombok.output}</sourcepath> -->
                     <doclint>none</doclint>
-
+                    <excludePackageNames>org.ton.java.tonlib</excludePackageNames>
                 </configuration>
                 <executions>
                     <execution>
