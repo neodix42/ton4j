@@ -7,9 +7,35 @@
         <groupId>io.github.neodix42</groupId>
         <version>0.0.2</version>
     </parent>
+
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>mnemonic</artifactId>
+    <name>TON Java Mnemonic</name>
+
+    <description>Help quickly generate and part TON compatible mnemonics.</description>
+
+    <url>https://github.com/neodiX42/ton4j</url>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>neodiX</name>
+            <email>neodiX@ton.org</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/neodiX42/ton4j.git</connection>
+        <developerConnection>scm:git:ssh://github.com/neodiX42/ton4j.git</developerConnection>
+        <url>https://github.com/neodiX42/ton4j/tree/main</url>
+    </scm>
 
     <dependencies>
         <dependency>

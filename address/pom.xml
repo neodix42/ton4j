@@ -12,6 +12,31 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>address</artifactId>
+    <name>TON Java address</name>
+
+    <description>Parse and construct TON compatible addresses.</description>
+
+    <url>https://github.com/neodiX42/ton4j</url>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>neodiX</name>
+            <email>neodiX@ton.org</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/neodiX42/ton4j.git</connection>
+        <developerConnection>scm:git:ssh://github.com/neodiX42/ton4j.git</developerConnection>
+        <url>https://github.com/neodiX42/ton4j/tree/main</url>
+    </scm>
 
     <dependencies>
         <dependency>
