@@ -32,5 +32,5 @@ public class BlockHeader {
     String start_lt;
     String end_lt;
     long gen_utime;
-    List<BlockId> prev_blocks;
+    List<BlockIdExt> prev_blocks;
 }

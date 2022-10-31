@@ -445,6 +445,31 @@ public class Tonlib {
         return gson.fromJson(result, RawTransactions.class);
     }
 
+    public RawTransaction getRawTransaction(byte workchain, ShortTxId tx) {
+        String addressHex = Utils.base64ToHexString(tx.getAccount());
+        String address = Address.of(workchain + ":" + addressHex).toString(false);
+        GetRawTransactionsV2Query getRawTransactionsQuery = GetRawTransactionsV2Query.builder()
+                .account_address(AccountAddressOnly.builder().account_address(address).build())
+                .from_transaction_id(LastTransactionId.builder()
+                        .lt(BigInteger.valueOf(tx.getLt()))
+                        .hash(tx.getHash())
+                        .build())
+                .count(1)
+                .try_decode_message(false)
+                .build();
+
+        send(gson.toJson(getRawTransactionsQuery));
+
+        String result = syncAndRead();
+        RawTransactions res = gson.fromJson(result, RawTransactions.class);
+        List<RawTransaction> t = res.getTransactions ();
+        if (t.size() >= 1) {
+          return t.get(0);
+        } else {
+          return RawTransaction.builder().build();
+        }
+    }
+
     public RawTransactions getAllRawTransactions(String address, BigInteger fromTxLt, String fromTxHash, long historyLimit) {
 
         List<RawTransaction> transactions = new ArrayList<>();
