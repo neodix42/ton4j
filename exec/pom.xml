@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <parent>
+        <groupId>io.github.neodix42</groupId>
+        <artifactId>top</artifactId>
+        <version>0.0.2</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>exec</artifactId>
+    <name>exec</name>
+
+    <description>test exec</description>
+
+    <url>https://github.com/neodiX42/ton4j</url>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+        </license>
+    </licenses>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>utils</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>address</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>cell</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>tonlib</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-dependency-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>copy-dependencies</id>
+                  <phase>prepare-package</phase>
+                  <goals>
+                    <goal>copy-dependencies</goal>
+                  </goals>
+                  <configuration>
+                    <outputDirectory>
+                      ${project.build.directory}/libs
+                    </outputDirectory>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-jar-plugin</artifactId>
+              <configuration>
+                <archive>
+                  <manifest>
+                    <addClasspath>true</addClasspath>
+                    <classpathPrefix>libs/</classpathPrefix>
+                    <mainClass>
+                      org.ton.java.exec.Exec
+                    </mainClass>
+                  </manifest>
+                </archive>
+              </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
