@@ -313,8 +313,8 @@ public class Cell {
         ArrayList<BigInteger> sizeIndex = new ArrayList<>();
 
         for (TopologicalOrderArray cell_info : topologicalOrder) {
-            sizeIndex.add(fullSize);
             fullSize = fullSize.add(BigInteger.valueOf(cell_info.cell.bocSerializationSize(cellsIndex)));
+            sizeIndex.add(fullSize);
         }
 
         int offsetBits = fullSize.toString(2).length();
