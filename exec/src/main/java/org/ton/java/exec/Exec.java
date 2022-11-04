@@ -42,40 +42,89 @@ public class Exec {
     Cell cell = cb.endCell ();
     return new Address ("0:" + Utils.bytesToHex(cell.hash()));
   }
-  private static Cell create_message (byte [] signature, int seqno, int valid_until, String payload, Address dst, long grams) {
+  private static Cell create_message (byte [] signature, int seqno, int valid_until, String payload, byte key[], Address src, Address dst, long grams) {
     CellBuilder cb = CellBuilder.beginCell ();
-    cb.storeBytes(signature);
+    if (signature.length > 0) {
+      // 10 - external message
+      // 00 - src addr none 
+      // 10 - addr-std
+      // 0 - not anycast
+      boolean []b01 = {true, false, false, false, true, false, false};
+      cb.storeBits(b01);
+      cb.storeInt (src.wc, 8);
+      cb.storeBytes (src.hashPart);
+      cb.storeCoins (BigInteger.valueOf(0)); // import fee
+      if (seqno == 1) {
+        cb.storeBit(true); // has_state
+        cb.storeBit(false); // state is inlined
+        cb.storeBit(false); // splitdepth
+        cb.storeBit(false); // special
+        cb.storeBit(true); // code
+        cb.storeBit(true); // data
+        cb.storeBit(false); // libraries
+
+        CellBuilder cb_code = CellBuilder.beginCell ();
+        cb_code.storeBytes (Utils.hexToBytes ("FF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED54"));
+        cb.storeRef (cb_code.endCell ());
+
+        CellBuilder cb_data = CellBuilder.beginCell ();
+        cb_data.storeInt (0, 32); // seqno
+        cb_data.storeInt (0, 32); // subwallet
+        cb_data.storeBytes (key);
+        cb.storeRef (cb_data.endCell ());
+      } else {
+        cb.storeBit(false);
+      }
+      cb.storeBit(false); // body inlined
+      cb.storeBytes(signature); // signature
+    }
     cb.storeInt (0, 32); //subwallet
     cb.storeInt (valid_until, 32); //unix_time
     cb.storeInt (seqno, 32); //seqno
     cb.storeInt (3, 8); // send mode
     
-    boolean []b1 = {false, true};
-    boolean []b2 = {false, false, false, true, false, false};
-
     CellBuilder cb2 = CellBuilder.beginCell ();
+    // 0 - internal message
+    // 1 - ihr disabled
+    boolean []b1 = {false, true};
     cb2.storeBits (b1);
     cb2.storeBit (dst.isBounceable);
+    // 0 - bounced
+    // 00 - src address is omitted
+    // 10 - msg addr std
+    // 0 - not anycast
+    boolean []b2 = {false, false, false, true, false, false};
     cb2.storeBits (b2);
     cb2.storeInt (dst.wc, 8);
     cb2.storeBytes (dst.hashPart);
     cb2.storeCoins (BigInteger.valueOf(grams));
-    for (int i = 0; i < 9 + 64 + 32 + 1 + 1 + 32; i++) {
+
+    // magic:
+    //   0 - empty extra currency collection 
+    //   8 bits ??
+    //   ihr_fee = 0G, 1 bit
+    //   fwd_fee = 0G, 1 bit
+    //   created_lt = 0LL, 64 bits
+    //   created_at = 0I, 32 bits
+    for (int i = 0; i < 9 + 1 + 1 + 64 + 32; i++) {
       cb2.storeBit (false);
+    }
+    if (payload.length() > 0) {
+      cb2.storeInt (0, 32);
     }
     cb2.storeString (payload);
     cb.storeRef (cb2.endCell ());
     return cb.endCell ();
   }
-  private static Cell create_unsigned_message(int seqno, int valid_until, String payload, Address dst, long grams) {
+  private static Cell create_unsigned_message(int seqno, int valid_until, String payload, byte key[], Address src, Address dst, long grams) {
     byte [] signature = {};
-    return create_message (signature, seqno, valid_until, payload, dst, grams); 
+    return create_message (signature, seqno, valid_until, payload, key, src, dst, grams); 
   }
-  public static byte[] create_data_to_sign(int seqno, int valid_until, String payload, Address dst, long grams) {
-    return create_unsigned_message (seqno, valid_until, payload, dst, grams).hash (); 
+  public static byte[] create_data_to_sign(int seqno, int valid_until, String payload, byte key[], Address src, Address dst, long grams) {
+    return create_unsigned_message (seqno, valid_until, payload, key, src, dst, grams).hash (); 
   }
-  public static byte[] create_signed_message(byte [] signature, int seqno, int valid_until, String payload, Address dst, long grams) {
-    return create_message (signature, seqno, valid_until, payload, dst, grams).toBoc (); 
+  public static byte[] create_signed_message(byte [] signature, int seqno, int valid_until, String payload, byte key[], Address src, Address dst, long grams) {
+    return create_message (signature, seqno, valid_until, payload, key, src, dst, grams).toBoc (); 
   }
 
   public static String uniform_account_name (byte workchain, ShortTxId tx) {
@@ -243,22 +292,22 @@ public class Exec {
   }
 
   public static void main (String args[]) {
-    byte key[] = Utils.hexToBytes ("92812C9F75B591BE9AEE9906137E54815AB2F865C67C58DB30ED4BDB357B4631");
+    byte key[] = Utils.hexToBytes ("C0D44790AA94DB9895CDB806605CAADA4C7657FFFB5E20E61825DE2D5E9923AA");
     Address res = get_address_by_key (key);
-    System.out.println("address: " + res.toString () + " or " + res.toString (true));
+    System.out.println("address: " + res.toString () + " or " + res.toString (true, true, false, false));
 
-    Address a = new Address ("Ef8h5pd9_ZuWJOlilBH6a_LOACxl_R6DJbWHhut7QLDLWSgf"); 
-    Cell c = create_unsigned_message (4, 0x63598F8E, "d", a, 650000000000000L);
+    Address a = new Address ("UQAmezS260aY9rgTkxr8c8WVo_F37krzwvi8bSZ9dzbMw0rQ"); 
+    Cell c = create_unsigned_message (1, 0x63650A75, "aba", key, a, a, 50000000L);
     System.out.println(c.print ());
 
-    byte sign[] = Utils.hexToBytes ("3885617F4FD30C0B7C1F3985C76D44D3FED572EB67825FEA366C2F95B9FE30BA0E9A65AD93F7ED99AEDC64933E46DB17CF875ABB02F3E6D4585D2208A46EC102"); 
-    byte e[] = create_signed_message (sign, 10, 0x62DE86B7, "d", a, 650000000000000L);
+    byte sign[] = Utils.hexToBytes ("1cb184a734fd5009889bfe7038dad98998c41c72e992a7ef9f9867fd8d6ac8d468418e80c218f0ce8d3753c2eabeb6e0475eccede824d07d289dc3ec050514d1"); 
+    byte e[] = create_signed_message (sign, 1, 0x63650A75, "aba", key, a, a, 50000000L);
     System.out.println(Utils.bytesToHex (e));
 
     Cell g = Cell.fromBoc (e); 
     System.out.println(g.print ());
 
-    Exec exc = new Exec ();
-    exc.run ();
+    //Exec exc = new Exec ();
+    //exc.run ();
   }
 }
