@@ -67,6 +67,8 @@ public class Tonlib {
 
     private String keystorePath;
 
+    private String configData;
+
     /**
      * Default value 3
      */
@@ -139,8 +141,8 @@ public class Tonlib {
 
                 super.synced = false;
 
-                String configData;
-                if (isNull(super.pathToGlobalConfig)) {
+                String configData = null;
+                if (isNull(super.pathToGlobalConfig) && isNull(super.configData)) {
                     InputStream config;
                     if (super.testnet) {
                         super.pathToGlobalConfig = "testnet-global.config.json (integrated resource)";
@@ -154,12 +156,16 @@ public class Tonlib {
                     if (nonNull(config)) {
                         config.close();
                     }
-                } else {
+                }
+                else if(nonNull(super.pathToGlobalConfig) && isNull(super.configData)) {
                     if (Files.exists(Paths.get(super.pathToGlobalConfig))) {
                         configData = new String(Files.readAllBytes(Paths.get(super.pathToGlobalConfig)));
                     } else {
                         throw new RuntimeException("Global config is not found in path: " + super.pathToGlobalConfig);
                     }
+                }
+                else if(isNull(super.pathToGlobalConfig)){
+                    configData = super.configData;
                 }
 
                 super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
@@ -172,10 +178,11 @@ public class Tonlib {
                                 "Keystore path: %s\nPath to global config: %s\n" +
                                 "Testnet: %s\n" +
                                 "Receive timeout: %s seconds\n" +
-                                "Receive retry times: %s%n",
+                                "Receive retry times: %s%n\n",
+                                "Raw configuration: %s%n",
                         super.pathToTonlibSharedLib, super.verbosityLevel, super.verbosityLevel.ordinal(),
                         super.keystoreInMemory, super.keystorePath, super.pathToGlobalConfig,
-                        super.testnet, super.receiveTimeout, super.receiveRetryTimes);
+                        super.testnet, super.receiveTimeout, super.receiveRetryTimes,super.configData);
 
                 VerbosityLevelQuery verbosityLevelQuery = VerbosityLevelQuery.builder().new_verbosity_level(super.verbosityLevel.ordinal()).build();
 
