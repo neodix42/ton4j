@@ -237,8 +237,8 @@ public class BitString {
      * @param ui8 byte[]
      */
     public void writeBytes(byte[] ui8) {
-        for (int i = 0; i < ui8.length; i++) {
-            writeUint8(ui8[i] & 0xff);
+        for (byte b : ui8) {
+            writeUint8(b & 0xff);
         }
     }
 
@@ -299,7 +299,6 @@ public class BitString {
      */
     public void writeBitString(BitString anotherBitString) {
         for (int i = anotherBitString.readCursor; i < anotherBitString.writeCursor; i++) {
-//        for (int i = anotherBitString.readCursor; i < anotherBitString.writeCursor; i++) {
             writeBit(anotherBitString.get(i));
         }
     }
@@ -361,7 +360,7 @@ public class BitString {
      * Read bits of bitLength without moving readCursor, i.e. modifying BitString
      *
      * @param bitLength
-     * @return
+     * @return BigInteger
      */
     public BigInteger preReadUint(int bitLength) {
         int oldReadCursor = readCursor;
@@ -527,8 +526,16 @@ public class BitString {
 
     public boolean[] toBitArray() {
         boolean[] result = new boolean[writeCursor];
-        for (int i = readCursor; i < writeCursor; i++) { // todo haja
+        for (int i = readCursor; i < writeCursor; i++) {
             result[i] = get(i);
+        }
+        return result;
+    }
+
+    public int[] toZeroOneArray() {
+        int[] result = new int[writeCursor];
+        for (int i = readCursor; i < writeCursor; i++) {
+            result[i] = get(i) ? 1 : 0;
         }
         return result;
     }
@@ -538,6 +545,15 @@ public class BitString {
         result.array = Arrays.copyOfRange(array, 0, array.length);
         result.length = length;
         result.writeCursor = writeCursor;
+        result.readCursor = readCursor;
+        return result;
+    }
+
+    public BitString cloneFrom(int from) {
+        BitString result = new BitString(0);
+        result.array = Arrays.copyOfRange(array, from, array.length);
+        result.length = length;
+        result.writeCursor = writeCursor - (from * 8);
         result.readCursor = readCursor;
         return result;
     }
@@ -578,7 +594,6 @@ public class BitString {
     public void setTopUppedArray(byte[] arr, boolean fulfilledBytes) {
         length = arr.length * 8;
         array = arr;
-//        System.out.println(Utils.bytesToHex(array));
         writeCursor = length;
 
         if (!(fulfilledBytes || (length == 0))) {
@@ -609,8 +624,6 @@ public class BitString {
                 ret.writeBit(false);
             }
         }
-//        System.out.println(Utils.bytesToBitString(ret.array));
-//        System.out.println(Utils.bytesToHex(ret.array));
         ret.array = Arrays.copyOfRange(ret.array, 0, (int) Math.ceil(ret.writeCursor / (double) 8));
         return ret.array;
     }

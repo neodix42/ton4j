@@ -29,4 +29,14 @@ public class Options {
     public Long walletId;
     public LockupConfig lockupConfig;
     public SubscriptionInfo subscriptionConfig;
+    public int index;
+    public Address collectionAddress;
+
+    public Cell collectionContent;
+    public String dnsItemCodeHex;
+
+    public Address adminAddress;
+    public String jettonContentUri;
+    public String jettonWalletCodeHex;
+
 }

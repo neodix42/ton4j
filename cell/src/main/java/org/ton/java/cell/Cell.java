@@ -530,6 +530,10 @@ public class Cell {
         serializedBoc = Arrays.copyOfRange(serializedBoc, size_bytes, serializedBoc.length);
         int totCellsSize = Utils.readNBytesFromArray(offsetBytes, serializedBoc);
 
+        if (totCellsSize < 0) {
+            throw new Error("Cannot calculate total cell size");
+        }
+
         serializedBoc = Arrays.copyOfRange(serializedBoc, offsetBytes, serializedBoc.length);
 
         if (serializedBoc.length < (rootsNum * size_bytes)) {

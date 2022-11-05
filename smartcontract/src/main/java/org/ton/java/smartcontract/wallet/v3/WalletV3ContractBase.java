@@ -3,8 +3,13 @@ package org.ton.java.smartcontract.wallet.v3;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
+import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.RunResult;
+import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.Date;
@@ -75,4 +80,29 @@ public class WalletV3ContractBase implements WalletContract {
         return cell.endCell();
     }
 
+    /**
+     * Get current seqno
+     *
+     * @return long
+     */
+    public long getSeqno(Tonlib tonlib) {
+
+        Address myAddress = getAddress();
+        RunResult result = tonlib.runMethod(myAddress, "seqno");
+        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
+
+        return seqno.getNumber().longValue();
+    }
+
+    public boolean sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
+        try {
+            long seqno = getSeqno(tonlib);
+            ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
+            tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+            return true;
+        } catch (Throwable e) {
+            System.err.println("Error sending TonCoins to " + destinationAddress.toString() + ". " + e.getMessage());
+            return false;
+        }
+    }
 }

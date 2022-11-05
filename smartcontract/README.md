@@ -36,6 +36,7 @@ Currently, following wallet types and versions are supported:
 * v4R1
 * v4R2
 * Lockup
+* Dns
 
 You can also create and deploy any custom wallet (contract), see below.
 
@@ -44,44 +45,44 @@ You can also create and deploy any custom wallet (contract), see below.
 ### Create and deploy SimpleR3 wallet
 
 ```java
-byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
-TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+byte[]secretKey=Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        TweetNaclFast.Signature.KeyPair keyPair=TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-Options options = Options.builder().publicKey(keyPair.getPublicKey()).wc(0L).build();
+        Options options=Options.builder().publicKey(keyPair.getPublicKey()).wc(0L).build();
 
-Wallet wallet = new Wallet(WalletVersions.simpleR3,options);
-SimpleWalletContractR3 contract = wallet.create();
-InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
-Address walletAddress = msg.address;
+        Wallet wallet=new Wallet(WalletVersions.simpleR3,options);
+        SimpleWalletContractR3 contract=wallet.create();
+        InitExternalMessage msg=contract.createInitExternalMessage(keyPair.getSecretKey());
+        Address walletAddress=msg.address;
 
-log.info("new wallet address = {}", walletAddress.toString(false));
-log.info("Non-bounceable address (for init): {}", walletAddress.toString(true,true,false,true));
-log.info("Bounceable address (for later access): {}", walletAddress.toString(true,true,true,true));
+        log.info("new wallet address = {}",walletAddress.toString(false));
+        log.info("Non-bounceable address (for init): {}",walletAddress.toString(true,true,false,true));
+        log.info("Bounceable address (for later access): {}",walletAddress.toString(true,true,true,true));
 
 // Before sending wallet's smart contract code, send some Toncoins to non-bouncelable address.
 
 // deploy
-Tonlib tonlib = Tonlib.builder().build();
-tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+        Tonlib tonlib=Tonlib.builder().build();
+        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
 ```
 
 ### Send Toncoins
 
 ```java
 ...
-ExternalMessage msg = contract.createTransferMessage(
+        ExternalMessage msg=contract.createTransferMessage(
         keyPair.getSecretKey(),
         "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d", //destination address
         Utils.toNano(1), // toncoin
         1L); // seqno
-Address address = msg.address;
-log.info("Source wallet address = {}", address.toString(false));
-log.info("signing message: {}", msg.signingMessage.print());
-log.info("resulting external message: {}", msg.message.print());
+        Address address=msg.address;
+        log.info("Source wallet address = {}",address.toString(false));
+        log.info("signing message: {}",msg.signingMessage.print());
+        log.info("resulting external message: {}",msg.message.print());
 
 // send external message 
-Tonlib tonlib = Tonlib.builder().build();
-tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+        Tonlib tonlib=Tonlib.builder().build();
+        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
 ```
 
 ### Deploy custom contract
@@ -353,20 +354,20 @@ public class CustomContract implements WalletContract {
 Now you are ready to deploy your custom smart contract.
 
 ```java
-byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
-TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+byte[]secretKey=Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        TweetNaclFast.Signature.KeyPair keyPair=TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-Options options = Options.builder()
-    .publicKey(keyPair.getPublicKey())
-    .wc(0L)
-    .build();
+        Options options=Options.builder()
+        .publicKey(keyPair.getPublicKey())
+        .wc(0L)
+        .build();
 
-CustomContract customContract = new CustomContract(options);
+        CustomContract customContract=new CustomContract(options);
 
-InitExternalMessage msg = customContract.createInitExternalMessage(keyPair.getSecretKey());
-Address address = msg.address;
+        InitExternalMessage msg=customContract.createInitExternalMessage(keyPair.getSecretKey());
+        Address address=msg.address;
 
-log.info("Creating new wallet in workchain {} \n"+
+        log.info("Creating new wallet in workchain {} \n"+
         "Loading private key from file new-wallet.pk\n"+
         "StateInit: {}\nnew wallet address = {}\n"+
         "(Saving address to file new-wallet.addr)\n"+
@@ -388,44 +389,44 @@ log.info("Creating new wallet in workchain {} \n"+
 Send some toincoins to non-bouncelable address above and then upload smart contract using Tonlib
 
 ```java
-Tonlib tonlib =Tonlib.builder().build();
-String base64boc = Utils.bytesToBase64(msg.message.toBoc(false));
-log.info(base64boc);
-tonlib.sendRawMessage(base64boc);
+Tonlib tonlib=Tonlib.builder().build();
+        String base64boc=Utils.bytesToBase64(msg.message.toBoc(false));
+        log.info(base64boc);
+        tonlib.sendRawMessage(base64boc);
 ```
 
 Check if contract was deployed successfully
 
 ```java
-Tonlib tonlib = Tonlib.builder().build();
+Tonlib tonlib=Tonlib.builder().build();
 
-RunResult result = tonlib.runMethod(address,"seqno");
-TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry();
-log.info("seqno: {}", seqno.getNumber());
+        RunResult result=tonlib.runMethod(address,"seqno");
+        TvmStackEntryNumber seqno=(TvmStackEntryNumber)result.getStackEntry();
+        log.info("seqno: {}",seqno.getNumber());
 
-result=tonlib.runMethod(address,"get_x_data");
-TvmStackEntryNumber x_data = (TvmStackEntryNumber) result.getStackEntry();
-log.info("x_data: {}", seqno.getNumber());
+        result=tonlib.runMethod(address,"get_x_data");
+        TvmStackEntryNumber x_data=(TvmStackEntryNumber)result.getStackEntry();
+        log.info("x_data: {}",seqno.getNumber());
 
-result=tonlib.runMethod(address,"get_extra_field");
-TvmStackEntryNumber extra_field = (TvmStackEntryNumber) result.getStackEntry();
-log.info("extra_field: {}", seqno.getNumber());
+        result=tonlib.runMethod(address,"get_extra_field");
+        TvmStackEntryNumber extra_field=(TvmStackEntryNumber)result.getStackEntry();
+        log.info("extra_field: {}",seqno.getNumber());
 
 // result
-seqno:1
-x_data:2
-extra_field:4
+        seqno:1
+        x_data:2
+        extra_field:4
 ```
 
 Transfer Toncoins
 
 ```java
-Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
-BigInteger amount = Utils.toNano(2); //2 Toncoins or 2bln nano-toncoins
-long seqNumber = 1;
-ExternalMessage extMsg = customContract.createTransferMessage(keyPair.getSecretKey(),destinationAddress,amount,seqNumber);
-String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBoc(false));
-tonlib.sendRawMessage(base64bocExtMsg);  
+Address destinationAddress=Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+        BigInteger amount=Utils.toNano(2); //2 Toncoins or 2bln nano-toncoins
+        long seqNumber=1;
+        ExternalMessage extMsg=customContract.createTransferMessage(keyPair.getSecretKey(),destinationAddress,amount,seqNumber);
+        String base64bocExtMsg=Utils.bytesToBase64(extMsg.message.toBoc(false));
+        tonlib.sendRawMessage(base64bocExtMsg);  
 ```
 
 More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/java/smartcontract) can be

@@ -69,11 +69,7 @@ public interface Contract {
      * @param ticktock   null
      * @return Cell
      */
-    default Cell createStateInit(Cell code,
-                                 Cell data,
-                                 Cell library,
-                                 Cell splitDepth,
-                                 Cell ticktock) {
+    default Cell createStateInit(Cell code, Cell data, Cell library, Cell splitDepth, Cell ticktock) {
 
         if (library != null) {
             throw new Error("Library in state init is not implemented");

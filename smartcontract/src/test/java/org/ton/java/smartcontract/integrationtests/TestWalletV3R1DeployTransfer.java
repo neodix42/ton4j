@@ -12,9 +12,9 @@ import org.ton.java.smartcontract.types.InitExternalMessage;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR3;
+import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.AccountState;
+import org.ton.java.tonlib.types.RawAccountState;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -23,10 +23,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestSimpleWalletR3DeployTransfer {
+public class TestWalletV3R1DeployTransfer {
 
     @Test
-    public void testNewWalletSimple() throws InterruptedException {
+    public void testWalletV3R1() throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -34,8 +34,8 @@ public class TestSimpleWalletR3DeployTransfer {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
-        SimpleWalletContractR3 contract = wallet.create();
+        Wallet wallet = new Wallet(WalletVersion.v3R1, options);
+        WalletV3ContractR1 contract = wallet.create();
 
         InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
         Address address = msg.address;
@@ -59,16 +59,16 @@ public class TestSimpleWalletR3DeployTransfer {
         // top up new wallet using test-faucet-wallet
         Tonlib tonlib = Tonlib.builder().testnet(true).build();
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
-        log.info("new wallet V1R3 balance: {}", Utils.formatNanoValue(balance));
+        log.info("new wallet V3R1 balance: {}", Utils.formatNanoValue(balance));
 
         // deploy new wallet
         tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
 
         //check if state of the new contract/wallet has changed from un-init to active
-        AccountState state;
+        RawAccountState state;
         do {
             Utils.sleep(5);
-            state = tonlib.getAccountState(address).getAccount_state();
+            state = tonlib.getRawAccountState(address);
         } while (StringUtils.isEmpty(state.getCode()));
 
         log.info("new wallet state: {}", state);
@@ -79,7 +79,7 @@ public class TestSimpleWalletR3DeployTransfer {
         Utils.sleep(15);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
-        log.info("new wallet V1R3 balance: {}", Utils.formatNanoValue(balance));
+        log.info("new wallet V3R1 balance: {}", Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
     }
 }

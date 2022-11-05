@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
+import org.ton.java.cell.Cell;
 import org.ton.java.mnemonic.Mnemonic;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -281,6 +282,23 @@ public class TestTonlibJson {
     }
 
     @Test
+    public void testTonlibRawAccountState() {
+        Tonlib tonlib = Tonlib.builder().build();
+
+        Address addr = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
+        log.info("address: " + addr.toString(true));
+
+        AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+                .account_address(addr.toString(true))
+                .build();
+
+        RawAccountState accountState = tonlib.getRawAccountState(accountAddressOnly);
+        log.info(accountState.toString());
+        log.info("balance: {}", accountState.getBalance());
+        assertThat(accountState.getCode()).isNotBlank();
+    }
+
+    @Test
     public void testTonlibAccountState() {
         Tonlib tonlib = Tonlib.builder().build();
 
@@ -385,6 +403,16 @@ public class TestTonlibJson {
         log.info("pastElections: {}", listResult);
 
         assertThat(result.getExit_code()).isZero();
+    }
+
+    @Test
+    public void testTonlibGetConfig() {
+        Tonlib tonlib = Tonlib.builder()
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+        MasterChainInfo mc = tonlib.getLast();
+        Cell c = tonlib.getConfigParam(mc.getLast(), 22);
+        log.info(c.print());
     }
 
     @Test

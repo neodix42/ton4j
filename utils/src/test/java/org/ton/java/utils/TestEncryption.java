@@ -66,6 +66,7 @@ public class TestEncryption {
         byte[] secKey = keyPair.getSecretKey(); // 64 bytes
 
         log.info("pubKey: {}", Utils.bytesToHex(pubKey));
+        log.info("pubKeyBase64: {}", Utils.bytesToBase64(pubKey));
         log.info("secKey: {}", Utils.bytesToHex(secKey));
 
         String msg = "ABC";

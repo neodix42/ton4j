@@ -8,6 +8,8 @@ import com.sun.jna.Native;
 import lombok.Builder;
 import lombok.extern.java.Log;
 import org.ton.java.address.Address;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.tonlib.queries.*;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -320,6 +322,10 @@ public class Tonlib {
         return gson.fromJson(result, MasterChainInfo.class);
     }
 
+    public MasterChainInfo getMasterChainInfo() {
+        return getLast();
+    }
+
     public Shards getShards(BlockIdExt id) {
         GetShardsQuery getShardsQuery = GetShardsQuery.builder()
                 .id(id)
@@ -531,7 +537,21 @@ public class Tonlib {
         return gson.fromJson(result, RawAccountState.class);
     }
 
+    public RawAccountState getRawAccountState(Address address) {
+        AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+                .account_address(address.toString(false))
+                .build();
+
+        GetRawAccountStateQueryOnly getAccountStateQuery = GetRawAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+
+        send(gson.toJson(getAccountStateQuery));
+
+        String result = syncAndRead();
+        return gson.fromJson(result, RawAccountState.class);
+    }
+
     public FullAccountState getAccountState(AccountAddressOnly address) {
+
         GetAccountStateQueryOnly getAccountStateQuery = GetAccountStateQueryOnly.builder().account_address(address).build();
 
         send(gson.toJson(getAccountStateQuery));
@@ -553,30 +573,21 @@ public class Tonlib {
     }
 
 
-
-    /*
-    public String getConfigParam(BlockIdExt id, long param, long mode) throws InterruptedException {
+    public Cell getConfigParam(BlockIdExt id, long param) {
 
         GetConfigParamQuery configParamQuery = GetConfigParamQuery.builder()
                 .id(id)
                 .param(param)
                 .build();
 
-        Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+        send(gson.toJson(configParamQuery));
 
-        String query = gson.toJson(configParamQuery);
-        log.info(query);
-        send(query);
-        String result = receive();
-
-        waitForSyncDone(result);
-
-        result = receive();
-
-        log.info(result);
-        return "";//gson.fromJson(result, FullAccountState.class);
+        String result = syncAndRead();
+        System.out.println(result);
+        ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
+        return CellBuilder.fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes()));
     }
-    */
+
 
     public long loadContract(AccountAddressOnly address) {
         LoadContractQuery loadContractQuery = LoadContractQuery.builder()
@@ -632,6 +643,7 @@ public class Tonlib {
 
         RunResultGeneric<String> g = gson.fromJson(result, RunResultGeneric.class);
 
+        //bytes -> te6cckEBAQEAJgAAR7qTgBxn2mdIXWQGQLPy+yGODfCAF2StpkJzlOD+Ksla0zj7sO/0J1M=
         return ParseRunResult.getTypedRunResult(g.getStack(), g.getExit_code(), g.getGas_used(), g.getExtra());
     }
 

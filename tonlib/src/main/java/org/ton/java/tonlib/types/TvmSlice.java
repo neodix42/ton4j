@@ -13,6 +13,6 @@ import lombok.ToString;
 public class TvmSlice extends TvmEntry {
     @SerializedName("@type")
     final String type = "tvm.slice";
-    String bytes;
+    String bytes;  //base64?
 }
 

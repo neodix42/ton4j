@@ -2,6 +2,7 @@ package org.ton.java.smartcontract.integrationtests;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -86,7 +87,7 @@ public class TestWalletV4PluginsDeployTransfer {
         do {
             Utils.sleep(5);
             state = tonlib.getAccountState(walletAddress);
-        } while (state.getAccount_state().getCode() == null);
+        } while (StringUtils.isEmpty(state.getAccount_state().getCode()));
 
         long walletCurrentSeqno = contract.getSeqno(tonlib);
         log.info("walletV4 balance: {}", Utils.formatNanoValue(state.getBalance()));

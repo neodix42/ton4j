@@ -2,6 +2,7 @@ package org.ton.java.smartcontract.integrationtests;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -80,7 +81,7 @@ public class TestLockupWalletDeployTransfer {
         do {
             Utils.sleep(5);
             state = tonlib.getAccountState(address).getAccount_state();
-        } while (state.getCode() == null);
+        } while (StringUtils.isEmpty(state.getCode()));
 
         log.info("Deployed! new lockup wallet state: {}", state);
 

@@ -1,5 +1,7 @@
 package org.ton.java.smartcontract.wallet;
 
+import org.ton.java.smartcontract.dns.DnsCollection;
+import org.ton.java.smartcontract.dns.DnsRoot;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR1;
@@ -19,6 +21,11 @@ public class Wallet {
     public Wallet(WalletVersion walletVersion, Options options) {
         this.walletVersion = walletVersion;
         this.options = options;
+    }
+
+    public Wallet(WalletVersion walletVersion) {
+        this.walletVersion = walletVersion;
+        this.options = Options.builder().build();
     }
 
     public <T extends Contract> T create() {
@@ -52,6 +59,12 @@ public class Wallet {
                 break;
             case lockup:
                 result = new LockupWalletV1(options);
+                break;
+            case dnsRoot:
+                result = new DnsRoot(options);
+                break;
+            case dnsCollection:
+                result = new DnsCollection(options);
                 break;
         }
         return (T) result;

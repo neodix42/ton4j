@@ -325,8 +325,10 @@ public class Utils {
         while (processResult.contains(template)) {
             String oldCell = sbb(processResult, "{" + template);
             String oldCellBytes = oldCell.substring(oldCell.indexOf("bytes=") + 6, oldCell.length() - 1);
-            String newCellBytes = oldCellBytes.replace("+", ".").replace("/", "_").replace("=", "-");
-            String newCell = oldCell.replace(oldCellBytes, newCellBytes);
+
+            byte[] newCellBytes = Utils.base64ToBytes(oldCellBytes);
+            String newCellBytesString = Utils.bytesToBase64SafeUrl(newCellBytes);
+            String newCell = oldCell.replace(oldCellBytes, newCellBytesString);
 
             originalResult = originalResult.replace(oldCell, newCell);
             processResult = processResult.replace(oldCell, "");

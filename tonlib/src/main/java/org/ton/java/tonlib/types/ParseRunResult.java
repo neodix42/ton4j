@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.google.gson.internal.LinkedTreeMap;
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.utils.Utils;
 
@@ -12,7 +13,10 @@ import java.util.*;
 import static java.util.Objects.isNull;
 
 public class ParseRunResult {
-    private static final Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
+    private static final Gson gson = new GsonBuilder()
+            .setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL)
+            .setLenient()
+            .create();
 
     /**
      * @param elementType - "num", "number", "int", "cell", "slice"
@@ -233,10 +237,24 @@ public class ParseRunResult {
                 TvmStackEntryNumber number = gson.fromJson(resultEscaped, TvmStackEntryNumber.class);
                 resultStack.add(number);
             } else if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntryCell")) {
-                TvmStackEntryCell cell = gson.fromJson(resultEscaped, TvmStackEntryCell.class);
+//                System.out.println(resultEscaped);
+//                TvmStackEntryCell cell = gson.fromJson(resultEscaped, TvmStackEntryCell.class);
+                String urlSafeBase64 = StringUtils.substringBetween(resultEscaped, "bytes=", "}");
+                TvmStackEntryCell cell = TvmStackEntryCell.builder()
+                        .cell(TvmCell.builder()
+                                .bytes(urlSafeBase64)
+                                .build())
+                        .build();
+
                 resultStack.add(cell);
             } else if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntrySlice")) {
-                TvmStackEntrySlice slice = gson.fromJson(resultEscaped, TvmStackEntrySlice.class);
+//                TvmStackEntrySlice slice = gson.fromJson(resultEscaped, TvmStackEntrySlice.class);
+                String urlSafeBase64 = StringUtils.substringBetween(resultEscaped, "bytes=", "}");
+                TvmStackEntrySlice slice = TvmStackEntrySlice.builder()
+                        .slice(TvmSlice.builder()
+                                .bytes(urlSafeBase64)
+                                .build())
+                        .build();
                 resultStack.add(slice);
             } else {
                 throw new Error("Unknown type in TVM stack");
