@@ -3,6 +3,8 @@ package org.ton.java.smartcontract.wallet;
 import org.ton.java.smartcontract.dns.DnsCollection;
 import org.ton.java.smartcontract.dns.DnsRoot;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
+import org.ton.java.smartcontract.token.ft.JettonMinter;
+import org.ton.java.smartcontract.token.ft.JettonWallet;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR1;
 import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR2;
@@ -66,6 +68,13 @@ public class Wallet {
             case dnsCollection:
                 result = new DnsCollection(options);
                 break;
+            case jettonMinter:
+                result = new JettonMinter(options);
+                break;
+            case jettonWallet:
+                result = new JettonWallet(options);
+                break;
+
         }
         return (T) result;
     }

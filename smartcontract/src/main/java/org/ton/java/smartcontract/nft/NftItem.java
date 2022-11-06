@@ -30,6 +30,14 @@ public class NftItem implements Contract {
      */
     public NftItem(Options options) {
         this.options = options;
+
+        if (nonNull(options.address)) {
+            this.address = Address.of(options.address);
+        }
+        if (isNull(options.wc)) {
+            options.wc = nonNull(this.address) ? this.address.wc : 0;
+        }
+        
         if (isNull(options.code)) {
             options.code = Cell.fromBoc(NFT_ITEM_CODE_HEX);
         }

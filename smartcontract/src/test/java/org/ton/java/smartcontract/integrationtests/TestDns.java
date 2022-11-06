@@ -57,7 +57,7 @@ public class TestDns {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
-                .wc(0L)
+                .wc(0)
                 .build();
 
         Wallet walletcontract = new Wallet(WalletVersion.v3R1, options);

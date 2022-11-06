@@ -16,6 +16,7 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 public class JettonWallet implements Contract {
 
@@ -30,6 +31,11 @@ public class JettonWallet implements Contract {
     public JettonWallet(Options options) {
         this.options = options;
         this.options.wc = 0;
+
+        if (nonNull(options.address)) {
+            this.address = Address.of(options.address);
+        }
+
         if (isNull(options.code)) {
             options.code = Cell.fromBoc(JETTON_WALLET_CODE_HEX);
         }
@@ -46,10 +52,10 @@ public class JettonWallet implements Contract {
 
     @Override
     public Address getAddress() {
-        if (address == null) {
+        if (this.address == null) {
             return (createStateInit()).address;
         }
-        return address;
+        return this.address;
     }
 
     @Override
@@ -92,23 +98,24 @@ public class JettonWallet implements Contract {
 
     public JettonWalletData getData(Tonlib tonlib) {
         Address myAddress = this.getAddress();
+        System.out.println("jetton wallet myAddress " + myAddress.toString(true, true, true));
         RunResult result = tonlib.runMethod(myAddress, "get_wallet_data");
 
         if (result.getExit_code() < 0) {
-            throw new Error("method get_nft_data, returned an exit code " + result.getExit_code());
+            throw new Error("method get_wallet_data, returned an exit code " + result.getExit_code());
         }
 
         TvmStackEntryNumber balanceNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
         BigInteger balance = balanceNumber.getNumber();
 
         TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStackEntry().get(1);
-        Address ownerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(ownerAddr.getCell().getBytes()))); // base64url
+        Address ownerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(ownerAddr.getCell().getBytes())));
 
         TvmStackEntryCell jettonMinterAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
-        Address jettonMinterAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(jettonMinterAddr.getCell().getBytes()))); // base64url
+        Address jettonMinterAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(jettonMinterAddr.getCell().getBytes())));
 
         TvmStackEntryCell jettonWallet = (TvmStackEntryCell) result.getStackEntry().get(3);
-        Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64ToBytes(jettonWallet.getCell().getBytes()));
+        Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(jettonWallet.getCell().getBytes()));
         return JettonWalletData.builder()
                 .balance(balance)
                 .ownerAddress(ownerAddress)

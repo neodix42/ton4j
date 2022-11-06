@@ -33,16 +33,21 @@ public class DnsItem implements Contract {
      */
     public DnsItem(Options options) {
         this.options = options;
+        if (nonNull(options.address)) {
+            this.address = Address.of(options.address);
+        }
+        if (options.wc == 0) {
+            options.wc = nonNull(this.address) ? this.address.wc : 0;
+        }
         if (isNull(options.code)) {
             options.code = Cell.fromBoc(NFT_ITEM_CODE_HEX);
         }
     }
 
     public DnsItem(Address address) {
-
-        this.options = Options.builder()
+        this(Options.builder()
                 .address(address)
-                .build();
+                .build());
     }
 
     public String getName() {

@@ -17,7 +17,6 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -34,7 +33,7 @@ public class TestJetton {
     static WalletV3ContractR1 wallet;
     static Tonlib tonlib = Tonlib.builder()
             .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
+//            .verbosityLevel(VerbosityLevel.DEBUG)
             .build();
 
     @BeforeClass
@@ -66,7 +65,10 @@ public class TestJetton {
         String nonBounceableAddress = address.toString(true, true, false, true);
         String bounceableAddress = address.toString(true, true, true, true);
 
-        log.info("\nNon-bounceable address (for init): {}\nBounceable address (for later access): {}\nraw: {}", nonBounceableAddress, bounceableAddress, address.toString(false));
+        log.info("\nNon-bounceable address (for init): {}\nBounceable address (for later access): {}\nraw: {}",
+                nonBounceableAddress,
+                bounceableAddress,
+                address.toString(false));
 
         if (StringUtils.isEmpty(predefinedSecretKey)) {
             BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(50));
@@ -80,8 +82,26 @@ public class TestJetton {
     }
 
     @Test
-    public void testDeployMinter() {
+    public void testJetton() {
 
+        JettonMinter minter = delployMinter();
+        Utils.sleep(15);
+        getMinterInfo(minter);
+        mint(minter);
+
+        log.info("jettonWalletAddress {}", JETTON_WALLET_ADDRESS);
+
+        JettonWallet jettonWallet = getJettonWalletInfo();
+
+        editContent(minter);
+        changeAdmin(minter);
+
+        transfer(jettonWallet);
+        burn(jettonWallet);
+
+    }
+
+    private JettonMinter delployMinter() {
         Options options = Options.builder()
                 .adminAddress(wallet.getAddress())
                 .jettonContentUri("https://ton.org/jetton.json")
@@ -92,7 +112,7 @@ public class TestJetton {
         Wallet jettonMinter = new Wallet(WalletVersion.jettonMinter, options);
         JettonMinter minter = jettonMinter.create();
         log.info("jetton minter address {}", minter.getAddress().toString(true, true, true));
-
+// EQCWdvNy5xvwdhJYVRhEoN_QDUAMsZgSDL-Ga9Y_Wo9b-0dn
 
         long seqno = wallet.getSeqno(tonlib);
 
@@ -109,14 +129,10 @@ public class TestJetton {
 
         String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBoc(false));
         tonlib.sendRawMessage(base64bocExtMsg);
+        return minter;
+    }
 
-        getMinterInfo(minter);
-        mint(minter);
-        editContent(minter);
-        changeAdmin(minter);
-
-        log.info("jettonWalletAddress {}", JETTON_WALLET_ADDRESS);
-
+    private JettonWallet getJettonWalletInfo() {
         Options optionsJettonWallet = Options.builder()
                 .address(Address.of(JETTON_WALLET_ADDRESS))
                 .build();
@@ -126,18 +142,19 @@ public class TestJetton {
 
         JettonWalletData data = jettonWallet.getData(tonlib);
         log.info("jettonWalletData {}", data);
-
-        transfer(jettonWallet);
-        burn(jettonWallet);
-
+        return jettonWallet;
     }
 
     private void getMinterInfo(JettonMinter minter) {
         JettonMinterData data = minter.getJettonData(tonlib);
-        log.info(data.toString());
+        log.info("JettonMinterData {}", data);
+        log.info("JettonMinterData adminAddress {}", data.getAdminAddress().toString(true, true, true));
+//        log.info("JettonMinterData contentCell {}", data.getJettonContentCell().toHex());
+//        log.info("JettonMinterData jettonWalletCode {}", data.getJettonWalletCode().toHex());
 
         Address jettonWalletAddress = minter.getJettonWalletAddress(tonlib, wallet.getAddress());
         log.info("getJettonWalletAddress {}", jettonWalletAddress.toString(true, true, true));
+        log.info("getJettonWalletAddress {}", jettonWalletAddress);
     }
 
     private void mint(JettonMinter minter) {
@@ -154,8 +171,8 @@ public class TestJetton {
                 null
         );
 
-        String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBoc(false));
-        tonlib.sendRawMessage(base64bocExtMsg);
+
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
     }
 
     private void editContent(JettonMinter minter) {

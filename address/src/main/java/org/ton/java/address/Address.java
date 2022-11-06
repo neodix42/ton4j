@@ -94,6 +94,10 @@ public class Address {
         return new Address(address);
     }
 
+    public static Address of(Address address) {
+        return new Address(address);
+    }
+
     public String toDecimal() {
         return new BigInteger(Utils.bytesToHex(hashPart), 16).toString(10);
     }

@@ -20,6 +20,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 public class DnsCollection implements Contract {
 
@@ -35,6 +36,10 @@ public class DnsCollection implements Contract {
     public DnsCollection(Options options) {
         this.options = options;
         this.options.wc = 0;
+
+        if (nonNull(options.address)) {
+            this.address = Address.of(options.address);
+        }
 
         if (isNull(options.getCollectionContent()) && isNull(options.getAddress())) {
             throw new Error("Required collecntionContent cell");

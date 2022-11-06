@@ -10,7 +10,7 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 
 /**
- * abstract class for all smart contract objects in TonWeb.
+ * Interface for all smart contract objects in ton4j.
  */
 public interface Contract {
 

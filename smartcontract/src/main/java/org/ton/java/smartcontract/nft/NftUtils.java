@@ -4,12 +4,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.Royalty;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 
 import java.math.BigInteger;
-import java.net.URI;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static java.util.Objects.nonNull;
@@ -28,7 +31,9 @@ public class NftUtils {
      */
     public static byte[] serializeUri(String uri) {
         try {
-            return new URI(uri).toString().getBytes();
+//            byte[] a = new URI(uri).toString().getBytes();
+            byte[] b = URLEncoder.encode(uri, StandardCharsets.UTF_8).getBytes();
+            return b;
         } catch (Exception e) {
             throw new Error("Cannot serialize URI " + uri);
         }
@@ -39,7 +44,7 @@ public class NftUtils {
      * @return String
      */
     static String parseUri(byte[] bytes) {
-        return new String(bytes);
+        return URLDecoder.decode(new String(bytes), StandardCharsets.UTF_8);
     }
 
     /**
@@ -47,10 +52,10 @@ public class NftUtils {
      * @return {Cell}
      */
     public static Cell createOffchainUriCell(String uri) {
-        Cell cell = new Cell();
-        cell.bits.writeUint(OFFCHAIN_CONTENT_PREFIX, 8);
-        cell.bits.writeBytes(serializeUri(uri));
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(OFFCHAIN_CONTENT_PREFIX, 8);
+        cell.storeBytes(serializeUri(uri));
+        return cell.endCell();
     }
 
     /**
@@ -65,8 +70,12 @@ public class NftUtils {
         int length = 0;
         Cell c = cell;
         while (nonNull(c)) {
-            length += c.bits.toBitArray().length;
-            c = c.refs.get(0);
+            length += c.bits.toByteArray().length;
+            if (c.getUsedRefs() != 0) {
+                c = c.refs.get(0);
+            } else {
+                c = null;
+            }
         }
 
         byte[] bytes = new byte[length];
@@ -75,8 +84,13 @@ public class NftUtils {
         while (nonNull(c)) {
             bytes = Arrays.copyOfRange(c.bits.toByteArray(), 0, length);
 //            bytes.set(c.bits.array, length);
-            length += c.bits.toBitArray().length;
-            c = c.refs.get(0);
+            length += c.bits.toByteArray().length;
+            if (c.getUsedRefs() != 0) {
+                c = c.refs.get(0);
+            } else {
+                bytes = Arrays.copyOfRange(c.bits.toByteArray(), 0, length);
+                c = null;
+            }
         }
 //        return parseUri( bytes.slice(1)); // slice OFFCHAIN_CONTENT_PREFIX
         return parseUri(Arrays.copyOfRange(bytes, 1, bytes.length)); // slice OFFCHAIN_CONTENT_PREFIX

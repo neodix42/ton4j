@@ -18,6 +18,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 public class JettonMinter implements Contract {
 
@@ -32,6 +33,10 @@ public class JettonMinter implements Contract {
     public JettonMinter(Options options) {
         this.options = options;
         this.options.wc = 0;
+        
+        if (nonNull(options.address)) {
+            this.address = Address.of(options.address);
+        }
         if (isNull(options.code)) {
             options.code = Cell.fromBoc(JETTON_MINTER_CODE_HEX);
         }
@@ -55,7 +60,7 @@ public class JettonMinter implements Contract {
     }
 
     /**
-     * @return Cell cell contains nft data
+     * @return Cell cell - contains jetton data cell
      */
     @Override
     public Cell createDataCell() {
@@ -142,10 +147,10 @@ public class JettonMinter implements Contract {
         boolean isMutable = ((TvmStackEntryNumber) result.getStackEntry().get(1)).getNumber().longValue() == -1;
 
         TvmStackEntryCell adminAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
-        Address adminAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(adminAddr.getCell().getBytes()))); // base64url
+        Address adminAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(adminAddr.getCell().getBytes())));
 
         TvmStackEntryCell jettonContent = (TvmStackEntryCell) result.getStackEntry().get(3);
-        Cell jettonContentCell = CellBuilder.fromBoc(Utils.base64ToBytes(jettonContent.getCell().getBytes()));
+        Cell jettonContentCell = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(jettonContent.getCell().getBytes()));
         String jettonContentUri = null;
         try {
             jettonContentUri = NftUtils.parseOffchainUriCell(jettonContentCell);
@@ -154,7 +159,7 @@ public class JettonMinter implements Contract {
         }
 
         TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStackEntry().get(4);
-        Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64ToBytes(contentC.getCell().getBytes()));
+        Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(contentC.getCell().getBytes()));
 
         return JettonMinterData.builder()
                 .totalSupply(totalSupply)
@@ -173,12 +178,11 @@ public class JettonMinter implements Contract {
 
         Deque<String> stack = new ArrayDeque<>();
 
-
-        stack.offer("[slice, " + cell.endCell().toHex(true) + "]"); //  [['tvm.Slice', bytesToBase64(await cell.toBoc(false))]], // todo byte to base64 - not hex
+        stack.offer("[slice, " + cell.endCell().toHex(true) + "]");
 
         RunResult result = tonlib.runMethod(myAddress, "get_wallet_address", stack);
 
         TvmStackEntryCell addr = (TvmStackEntryCell) result.getStackEntry().get(0);
-        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(addr.getCell().getBytes()))); // base64url
+        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(addr.getCell().getBytes()))); // base64url
     }
 }

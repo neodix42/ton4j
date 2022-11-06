@@ -30,13 +30,13 @@ public class Options {
     public LockupConfig lockupConfig;
     public SubscriptionInfo subscriptionConfig;
     public int index;
-    public Address collectionAddress;
+    public Address collectionAddress; // todo dns config
 
     public Cell collectionContent;
     public String dnsItemCodeHex;
 
     public Address adminAddress;
-    public String jettonContentUri;
+    public String jettonContentUri; // todo jetton config
     public String jettonWalletCodeHex;
 
 }

@@ -7,6 +7,7 @@ import org.ton.java.smartcontract.wallet.WalletContract;
 
 public class SimpleWalletContractR1 implements WalletContract {
 
+    public static final String V1_R1_CODE_HEX = "B5EE9C72410101010044000084FF0020DDA4F260810200D71820D70B1FED44D0D31FD3FFD15112BAF2A122F901541044F910F2A2F80001D31F3120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED5441FDF089";
     Options options;
     Address address;
 
@@ -15,12 +16,12 @@ public class SimpleWalletContractR1 implements WalletContract {
      */
     public SimpleWalletContractR1(Options options) {
         this.options = options;
-        options.code = Cell.fromBoc("B5EE9C72410101010044000084FF0020DDA4F260810200D71820D70B1FED44D0D31FD3FFD15112BAF2A122F901541044F910F2A2F80001D31F3120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED5441FDF089");
+        options.code = Cell.fromBoc(V1_R1_CODE_HEX);
     }
 
     @Override
     public String getName() {
-        return "simpleR2";
+        return "simpleR1";
     }
 
     @Override
