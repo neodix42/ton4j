@@ -48,8 +48,8 @@ public class NftUtils {
     }
 
     /**
-     * @param uri {string}
-     * @return {Cell}
+     * @param uri String
+     * @return Cell
      */
     public static Cell createOffchainUriCell(String uri) {
         CellBuilder cell = CellBuilder.beginCell();
@@ -96,6 +96,23 @@ public class NftUtils {
         return parseUri(Arrays.copyOfRange(bytes, 1, bytes.length)); // slice OFFCHAIN_CONTENT_PREFIX
     }
 
+    /**
+     * TODO onchain content
+     * The first byte is 0x00 and the rest is key/value dictionary.
+     * Key is sha256 hash of string.
+     * Value is data encoded as described in "Data serialization" paragraph.
+     *
+     * @param name        String name of Jetton
+     * @param description String description of Jetton
+     * @return cell Cell
+     */
+    public static Cell createOnchainDataCell(String name, String description) { // https://github.com/ton-blockchain/TIPs/issues/64
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(ONCHAIN_CONTENT_PREFIX, 8);
+        cell.storeBytes(serializeUri(name));
+        cell.storeString(description);
+        return cell.endCell();
+    }
 
     /**
      * @param bs     BitString

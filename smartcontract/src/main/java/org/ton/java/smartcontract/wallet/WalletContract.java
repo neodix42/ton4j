@@ -7,6 +7,9 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.InitExternalMessage;
 import org.ton.java.smartcontract.types.StateInit;
+import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.RunResult;
+import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -156,6 +159,24 @@ public interface WalletContract extends Contract {
         signingMessage.refs.add(order);
 
         return createExternalMessage(signingMessage, secretKey, seqno, dummySignature);
+    }
+
+    /**
+     * @param secretKey byte[]  nacl.KeyPair.secretKey
+     * @param address   Address
+     * @param amount    BigInteger in nano-coins
+     * @param seqno     long
+     * @return ExternalMessage
+     */
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            Address address,
+            BigInteger amount,
+            long seqno,
+            Cell payload) {
+
+        Cell stateInit = null;
+        return createTransferMessage(secretKey, address, amount, seqno, payload, (byte) 3, false, stateInit);
     }
 
     /**
@@ -321,5 +342,19 @@ public interface WalletContract extends Contract {
             boolean dummySignature,
             Cell stateInit) {
         return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, dummySignature, stateInit);
+    }
+
+    /**
+     * Get current seqno
+     *
+     * @return long
+     */
+    default long getSeqno(Tonlib tonlib) {
+
+        Address myAddress = getAddress();
+        RunResult result = tonlib.runMethod(myAddress, "seqno");
+        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
+
+        return seqno.getNumber().longValue();
     }
 }

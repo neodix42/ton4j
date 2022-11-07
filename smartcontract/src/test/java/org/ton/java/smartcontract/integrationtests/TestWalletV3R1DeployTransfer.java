@@ -59,7 +59,7 @@ public class TestWalletV3R1DeployTransfer {
         // top up new wallet using test-faucet-wallet
         Tonlib tonlib = Tonlib.builder().testnet(true).build();
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
-        log.info("new wallet V3R1 balance: {}", Utils.formatNanoValue(balance));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
         tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));

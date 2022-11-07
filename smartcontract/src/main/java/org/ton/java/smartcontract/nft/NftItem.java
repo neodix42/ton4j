@@ -37,7 +37,7 @@ public class NftItem implements Contract {
         if (isNull(options.wc)) {
             options.wc = nonNull(this.address) ? this.address.wc : 0;
         }
-        
+
         if (isNull(options.code)) {
             options.code = Cell.fromBoc(NFT_ITEM_CODE_HEX);
         }
@@ -81,7 +81,7 @@ public class NftItem implements Contract {
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_nft_data");
 
-        if (result.getExit_code() < 0) {
+        if (result.getExit_code() != 0) {
             throw new Error("method get_nft_data, returned an exit code " + result.getExit_code());
         }
 

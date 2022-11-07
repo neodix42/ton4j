@@ -1,12 +1,15 @@
 package org.ton.java.smartcontract.token.ft;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.nft.NftUtils;
+import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.JettonMinterData;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
+import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
@@ -33,7 +36,7 @@ public class JettonMinter implements Contract {
     public JettonMinter(Options options) {
         this.options = options;
         this.options.wc = 0;
-        
+
         if (nonNull(options.address)) {
             this.address = Address.of(options.address);
         }
@@ -80,19 +83,34 @@ public class JettonMinter implements Contract {
      * @return Cell
      */
     public Cell createMintBody(long queryId, Address destination, BigInteger amount, BigInteger jettonAmount) {
+
+        return createMintBody(queryId, destination, amount, jettonAmount, null, null, BigInteger.ZERO);
+    }
+
+    /**
+     * @param queryId         long
+     * @param destination     Address
+     * @param amount          BigInteger
+     * @param jettonAmount    BigInteger
+     * @param fromAddress     Address
+     * @param responseAddress Address
+     * @param forwardAmount   BigInteger
+     * @return Cell
+     */
+    public Cell createMintBody(long queryId, Address destination, BigInteger amount, BigInteger jettonAmount, Address fromAddress, Address responseAddress, BigInteger forwardAmount) {
         CellBuilder body = CellBuilder.beginCell();
         body.storeUint(21, 32); // OP mint
         body.storeUint(queryId, 64); // query_id, default 0
         body.storeAddress(destination);
-        body.storeCoins(amount); // in Toncoins ! //todo
+        body.storeCoins(amount);
 
         CellBuilder transferBody = CellBuilder.beginCell(); // internal transfer
         transferBody.storeUint(0x178d4519, 32); // internal_transfer op
         transferBody.storeUint(queryId, 64); // default 0
         transferBody.storeCoins(jettonAmount);
-        transferBody.storeAddress(null); // from_address
-        transferBody.storeAddress(null); // response_address
-        transferBody.storeCoins(BigInteger.ZERO); // forward_amount
+        transferBody.storeAddress(fromAddress); // from_address
+        transferBody.storeAddress(responseAddress); // response_address
+        transferBody.storeCoins(forwardAmount); // forward_amount
         transferBody.storeBit(false); // forward_payload in this slice, not separate cell
 
         body.storeRef(transferBody);
@@ -135,14 +153,16 @@ public class JettonMinter implements Contract {
      */
     public JettonMinterData getJettonData(Tonlib tonlib) {
         Address myAddress = this.getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "get_jetton_data");
+        RunResult result = tonlib.runMethod(myAddress, "get_jetton_data"); //minter
 
-        if (result.getExit_code() < 0) {
+        if (result.getExit_code() != 0) {
             throw new Error("method get_nft_data, returned an exit code " + result.getExit_code());
         }
 
         TvmStackEntryNumber totalSupplyNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
         BigInteger totalSupply = totalSupplyNumber.getNumber();
+
+        System.out.println("minter totalSupply: " + Utils.formatNanoValue(totalSupply));
 
         boolean isMutable = ((TvmStackEntryNumber) result.getStackEntry().get(1)).getNumber().longValue() == -1;
 
@@ -171,6 +191,23 @@ public class JettonMinter implements Contract {
                 .build();
     }
 
+    public BigInteger getTotalSupply(Tonlib tonlib) {
+        Address myAddress = this.getAddress();
+        RunResult result = tonlib.runMethod(myAddress, "get_jetton_data"); //minter
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_jetton_data, returned an exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryNumber totalSupplyNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        return totalSupplyNumber.getNumber();
+    }
+
+    /**
+     * @param tonlib       Tonlib
+     * @param ownerAddress Address
+     * @return Address user_jetton_wallet_address
+     */
     public Address getJettonWalletAddress(Tonlib tonlib, Address ownerAddress) {
         Address myAddress = this.getAddress();
         CellBuilder cell = CellBuilder.beginCell();
@@ -182,7 +219,41 @@ public class JettonMinter implements Contract {
 
         RunResult result = tonlib.runMethod(myAddress, "get_wallet_address", stack);
 
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_wallet_address, returned an exit code " + result.getExit_code());
+        }
+
         TvmStackEntryCell addr = (TvmStackEntryCell) result.getStackEntry().get(0);
-        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(addr.getCell().getBytes()))); // base64url
+        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(addr.getCell().getBytes())));
+    }
+
+    public void deploy(Tonlib tonlib, WalletContract adminWallet, BigInteger walletMsgValue, TweetNaclFast.Signature.KeyPair keyPair) {
+        long seqno = adminWallet.getSeqno(tonlib);
+
+        ExternalMessage extMsg = adminWallet.createTransferMessage(
+                keyPair.getSecretKey(),
+                this.getAddress(),
+                walletMsgValue,
+                seqno,
+                (Cell) null, // body
+                (byte) 3, //send mode
+                false, //dummy signature
+                this.createStateInit().stateInit);
+
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    }
+
+    public void mint(Tonlib tonlib, WalletContract adminWallet, Address destination, BigInteger walletMsgValue, BigInteger mintMsgValue, BigInteger jettonToMintAmount, TweetNaclFast.Signature.KeyPair keyPair) {
+
+        long seqno = adminWallet.getSeqno(tonlib);
+
+        ExternalMessage extMsg = adminWallet.createTransferMessage(
+                keyPair.getSecretKey(),
+                this.getAddress(),
+                walletMsgValue,
+                seqno,
+                this.createMintBody(0, destination, mintMsgValue, jettonToMintAmount));
+
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
     }
 }

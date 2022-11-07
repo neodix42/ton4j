@@ -85,7 +85,7 @@ public class DnsItem implements Contract {
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_nft_data");
 
-        if (result.getExit_code() < 0) {
+        if (result.getExit_code() != 0) {
             throw new Error("method get_nft_data, returned an exit code " + result.getExit_code());
         }
 

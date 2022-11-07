@@ -60,13 +60,13 @@ public class JettonWallet implements Contract {
 
     @Override
     public Cell createDataCell() {
-        return CellBuilder.beginCell().endCell(); // todo
+        return CellBuilder.beginCell().endCell();
     }
 
     /**
      * @return Cell cell contains nft data
      */
-    public Cell createTransferBody(long queryId, BigInteger jettonAmount, Address toAddress, Address responseAddress, BigInteger forwardAmount, byte[] forwardPayload) {
+    public static Cell createTransferBody(long queryId, BigInteger jettonAmount, Address toAddress, Address responseAddress, BigInteger forwardAmount, byte[] forwardPayload) {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(0xf8a7ea5, 32);
         cell.storeUint(queryId, 64); // default
@@ -87,7 +87,7 @@ public class JettonWallet implements Contract {
      * @param jettonAmount    BigInteger
      * @param responseAddress Address
      */
-    public Cell createBurnBody(long queryId, BigInteger jettonAmount, Address responseAddress) {
+    public static Cell createBurnBody(long queryId, BigInteger jettonAmount, Address responseAddress) {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(0x595f07bc, 32); //burn up
         cell.bits.writeUint(queryId, 64);
@@ -98,10 +98,9 @@ public class JettonWallet implements Contract {
 
     public JettonWalletData getData(Tonlib tonlib) {
         Address myAddress = this.getAddress();
-        System.out.println("jetton wallet myAddress " + myAddress.toString(true, true, true));
         RunResult result = tonlib.runMethod(myAddress, "get_wallet_data");
 
-        if (result.getExit_code() < 0) {
+        if (result.getExit_code() != 0) {
             throw new Error("method get_wallet_data, returned an exit code " + result.getExit_code());
         }
 
@@ -122,5 +121,17 @@ public class JettonWallet implements Contract {
                 .jettonMinterAddress(jettonMinterAddress)
                 .jettonWalletCode(jettonWalletCode)
                 .build();
+    }
+
+    public BigInteger getBalance(Tonlib tonlib) {
+        Address myAddress = this.getAddress();
+        RunResult result = tonlib.runMethod(myAddress, "get_wallet_data");
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_wallet_data, returned an exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryNumber balanceNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        return balanceNumber.getNumber();
     }
 }
