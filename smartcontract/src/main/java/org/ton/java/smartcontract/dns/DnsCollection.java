@@ -1,18 +1,20 @@
 package org.ton.java.smartcontract.dns;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.nft.NftUtils;
-import org.ton.java.smartcontract.types.CollectionInfo;
-import org.ton.java.smartcontract.types.DnsData;
+import org.ton.java.smartcontract.types.CollectionData;
+import org.ton.java.smartcontract.types.ExternalMessage;
+import org.ton.java.smartcontract.types.ItemData;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
+import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
-import org.ton.java.tonlib.types.TvmStackEntrySlice;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -28,10 +30,10 @@ public class DnsCollection implements Contract {
     Address address;
 
     /**
-     * CollectionContent: Cell
-     * dnsItemCodeHex: string
-     * address: Address | string
-     * code: Cell
+     * Options
+     * collectionContent: Cell
+     * dnsItemCodeHex String
+     * address: Address String
      */
     public DnsCollection(Options options) {
         this.options = options;
@@ -77,21 +79,25 @@ public class DnsCollection implements Contract {
     /**
      * @return CollectionInfo
      */
-    public CollectionInfo getCollectionData(Tonlib tonlib) {
+    public CollectionData getCollectionData(Tonlib tonlib) {
         Address myAddress = this.getAddress();
 
         RunResult result = tonlib.runMethod(myAddress, "get_collection_data");
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_collection_data, returned an exit code " + result.getExit_code());
+        }
+
         TvmStackEntryNumber nextItemIndexResult = (TvmStackEntryNumber) result.getStackEntry().get(0);
         long nextItemIndex = nextItemIndexResult.getNumber().longValue();
 
         TvmStackEntryCell collectionContentResult = (TvmStackEntryCell) result.getStackEntry().get(1); // cell or slice
         Cell collectionContent = Cell.fromBoc(Utils.base64SafeUrlToBytes(collectionContentResult.getCell().getBytes()));
-//        Cell collectionContent = Cell.fromBoc(Utils.base64ToBytes(collectionContentResult.getCell().getBytes()));
         String collectionContentUri = NftUtils.parseOffchainUriCell(collectionContent);
 
-        return CollectionInfo.builder()
+        return CollectionData.builder()
                 .collectionContentUri(collectionContentUri)
-                .collectionContent(collectionContent)
+                .collectionContentCell(collectionContent)
                 .ownerAddress(null)
                 .nextItemIndex(nextItemIndex)
                 .build();
@@ -101,7 +107,7 @@ public class DnsCollection implements Contract {
      * @param nftItem DnsItem
      * @return NftItemInfo
      */
-    public DnsData getNftItemContent(Tonlib tonlib, DnsItem nftItem) {
+    public ItemData getNftItemContent(Tonlib tonlib, DnsItem nftItem) {
         return nftItem.getData(tonlib);
     }
 
@@ -115,18 +121,40 @@ public class DnsCollection implements Contract {
 
         stack.offer("[num, " + index.toString() + "]");
         RunResult result = tonlib.runMethod(myAddress, "get_nft_address_by_index", stack);
-        TvmStackEntrySlice addr = (TvmStackEntrySlice) result.getStackEntry().get(0); //cell or slice
-        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(addr.getSlice().getBytes()))); // todo
+        TvmStackEntryCell addr = (TvmStackEntryCell) result.getStackEntry().get(0);
+        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(addr.getCell().getBytes())));
     }
 
     /**
      * @param domain    String e.g "sub.alice.ton"
      * @param category? String category of requested DNS record, null for all categories
-     * @param oneStep?  bboolean non-recursive
+     * @param oneStep?  boolean non-recursive
      * @return Cell | Address | AdnlAddress | null
      */
     public Object resolve(Tonlib tonlib, String domain, String category, boolean oneStep) {
         Address myAddress = this.getAddress();
         return DnsUtils.dnsResolve(tonlib, myAddress, domain, category, oneStep);
+    }
+
+    public void deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, TweetNaclFast.Signature.KeyPair keyPair) {
+
+        long seqno = wallet.getSeqno(tonlib);
+
+        CellBuilder payload = CellBuilder.beginCell();
+        payload.storeUint(0x370fec51, 32); // op::fill_up, https://github.com/ton-blockchain/dns-contract/blob/main/func/dns-utils.fc
+        payload.storeUint(0, 6);
+
+        ExternalMessage extMsg = wallet.createTransferMessage(
+                keyPair.getSecretKey(),
+                this.getAddress(),
+                msgValue,
+                seqno,
+                payload.endCell(),
+                (byte) 3, //send mode
+                false, //dummy signature
+                this.createStateInit().stateInit
+        );
+
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
     }
 }

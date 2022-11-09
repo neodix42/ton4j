@@ -10,9 +10,9 @@ public enum WalletVersion {
     v3R2,
     v4R2,
     lockup,
-
-    dnsRoot,
     dnsCollection,
+    dnsItem,
     jettonMinter,
-    jettonWallet
+    jettonWallet,
+    nftCollection,
 }

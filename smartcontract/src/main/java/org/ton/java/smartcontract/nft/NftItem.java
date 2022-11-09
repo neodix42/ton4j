@@ -3,7 +3,7 @@ package org.ton.java.smartcontract.nft;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.DnsData;
+import org.ton.java.smartcontract.types.ItemData;
 import org.ton.java.smartcontract.types.Royalty;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
@@ -66,18 +66,16 @@ public class NftItem implements Contract {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(options.index, 256);
+        cell.storeUint(options.index, 64);
         cell.storeAddress(options.collectionAddress);
         return cell.endCell();
     }
-
-    // todo
 
 
     /**
      * @return DnsData
      */
-    public DnsData getData(Tonlib tonlib) {
+    public ItemData getData(Tonlib tonlib) {
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_nft_data");
 
@@ -91,20 +89,29 @@ public class NftItem implements Contract {
         BigInteger index = ((TvmStackEntryNumber) result.getStackEntry().get(1)).getNumber(); // todo  https://github.com/toncenter/tonweb/blob/a821484df7c5f52c022f8c6864f039c7e0ec9b44/src/contract/token/nft/NftItem.js#L43
 
         TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
-        Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(collectionAddr.getCell().getBytes())));
+        Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(collectionAddr.getCell().getBytes())));
 
         TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStackEntry().get(3);
-        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(ownerAddr.getCell().getBytes()))) : null;
+        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(ownerAddr.getCell().getBytes()))) : null;
 
-        TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStackEntry().get(4);
-        Cell contentCell = CellBuilder.fromBoc(Utils.base64ToBytes(contentC.getCell().getBytes())); //base64 url ?
+        TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStackEntry().get(4);
+        Cell cell = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(contentCell.getCell().getBytes()));
 
-        return DnsData.builder()
+        String contentUri = null;
+        try {
+            if (isInitialized && nonNull(collectionAddress)) {
+                contentUri = NftUtils.parseOffchainUriCell(cell);
+            }
+        } catch (Error e) {
+            //todo
+        }
+        return ItemData.builder()
                 .isInitialized(isInitialized)
                 .index(index)
                 .collectionAddress(collectionAddress)
                 .ownerAddress(ownerAddress)
-                .contentCell(contentCell)
+                .contentCell(cell)
+                .contentUri(contentUri)
                 .build();
     }
 
@@ -116,7 +123,7 @@ public class NftItem implements Contract {
      * @param forwardPayload  byte[] optional, default null
      * @param responseAddress Address
      */
-    public Cell createTransferBody(long queryId, Address newOwnerAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress) {
+    public static Cell createTransferBody(long queryId, Address newOwnerAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress) {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(0x5fcc3d14, 32); // transfer op
         cell.storeUint(queryId, 64);
@@ -133,12 +140,12 @@ public class NftItem implements Contract {
     }
 
     /**
-     * @param queryId long
+     * @param queryId long, default 0
      * @return Cell
      */
-    public Cell createGetStaticDataBody(long queryId) {
+    public static Cell createGetStaticDataBody(long queryId) {
         CellBuilder body = CellBuilder.beginCell();
-        body.storeUint(0x2fcb26a2, 32); // OP
+        body.storeUint(0x2fcb26a2, 32); // op::get_static_data() asm "0x2fcb26a2 PUSHINT";
         body.storeUint(queryId, 64); // query_id
         return body.endCell();
     }
@@ -149,7 +156,7 @@ public class NftItem implements Contract {
      *
      * @return Roaylty
      */
-    Royalty getRoyaltyParams(Tonlib tonlib) {
+    public Royalty getRoyaltyParams(Tonlib tonlib) {
         Address myAddress = this.getAddress();
         return NftUtils.getRoyaltyParams(tonlib, myAddress);
     }

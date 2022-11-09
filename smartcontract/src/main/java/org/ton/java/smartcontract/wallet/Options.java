@@ -29,14 +29,27 @@ public class Options {
     public Long walletId;
     public LockupConfig lockupConfig;
     public SubscriptionInfo subscriptionConfig;
-    public int index;
+    public String index; //dns item index, sha256
     public Address collectionAddress; // todo dns config
 
     public Cell collectionContent;
+    public String collectionContentUri;
+    public String collectionContentBaseUri;
     public String dnsItemCodeHex;
 
     public Address adminAddress;
     public String jettonContentUri; // todo jetton config
     public String jettonWalletCodeHex;
+
+    public Address marketplaceAddress;
+    public Address nftItemAddress;
+    public String nftItemCodeHex;
+    public BigInteger fullPrice;
+    public BigInteger marketplaceFee;
+    public Address royaltyAddress;
+    public BigInteger royaltyAmount;
+    public double royalty;
+
+    public String nftItemContentBaseUri;
 
 }

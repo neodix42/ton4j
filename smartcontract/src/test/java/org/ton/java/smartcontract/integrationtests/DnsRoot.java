@@ -1,10 +1,15 @@
-package org.ton.java.smartcontract.dns;
+package org.ton.java.smartcontract.integrationtests;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
+import org.ton.java.smartcontract.wallet.WalletContract;
+import org.ton.java.tonlib.Tonlib;
+import org.ton.java.utils.Utils;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -18,7 +23,7 @@ public class DnsRoot implements Contract {
     public DnsRoot(Options options) {
         this.options = options;
         this.options.wc = -1;
-        
+
         if (nonNull(options.address)) {
             this.address = Address.of(options.address);
         }
@@ -26,6 +31,10 @@ public class DnsRoot implements Contract {
         if (isNull(options.code)) {
             this.options.code = Cell.fromBoc(DNS_ROOT_CODE_HEX);
         }
+    }
+
+    public DnsRoot() {
+        this(Options.builder().build());
     }
 
     public String getName() {
@@ -55,5 +64,22 @@ public class DnsRoot implements Contract {
         cell.storeAddress(Address.of("EQCA14o1-VWhS2efqoh_9M1b_A9DtKTuoqfmkn83AbJzwnPi"));
         cell.storeAddress(Address.of("EQB43-VCmf17O7YMd51fAvOjcMkCw46N_3JMCoegH_ZDo40e"));
         return cell.endCell();
+    }
+
+    public void deploy(Tonlib tonlib, WalletContract wallet, TweetNaclFast.Signature.KeyPair keyPair) {
+        long seqno = wallet.getSeqno(tonlib);
+
+        ExternalMessage extMsg = wallet.createTransferMessage(
+                keyPair.getSecretKey(),
+                this.getAddress(),
+                Utils.toNano(0.1),
+                seqno,
+                (Cell) null, // payload body
+                (byte) 3, //send mode
+                false, //dummy signature
+                this.createStateInit().stateInit
+        );
+
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
     }
 }

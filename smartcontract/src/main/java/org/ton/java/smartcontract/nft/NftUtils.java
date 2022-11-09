@@ -8,6 +8,9 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.Royalty;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
+import org.ton.java.tonlib.types.TvmStackEntryCell;
+import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.net.URLDecoder;
@@ -31,9 +34,7 @@ public class NftUtils {
      */
     public static byte[] serializeUri(String uri) {
         try {
-//            byte[] a = new URI(uri).toString().getBytes();
-            byte[] b = URLEncoder.encode(uri, StandardCharsets.UTF_8).getBytes();
-            return b;
+            return URLEncoder.encode(uri, StandardCharsets.UTF_8).getBytes();
         } catch (Exception e) {
             throw new Error("Cannot serialize URI " + uri);
         }
@@ -153,15 +154,23 @@ public class NftUtils {
      * @return Royalty
      */
     public static Royalty getRoyaltyParams(Tonlib tonlib, Address address) {
-        RunResult result = tonlib.runMethod(address, "'royalty_params'");
-        System.out.println(result); // todo
+        RunResult result = tonlib.runMethod(address, "royalty_params");
 
-//    const royaltyFactor = result[0].toNumber();
-//    const royaltyBase = result[1].toNumber();
-//    const royalty = royaltyFactor / royaltyBase;
-//    const royaltyAddress = parseAddress(result[2]);
-//
-//        return {royalty, royaltyBase, royaltyFactor, royaltyAddress};
-        return Royalty.builder().build();
+        TvmStackEntryNumber royaltyFactorNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        BigInteger royaltyFactor = royaltyFactorNumber.getNumber();
+
+        TvmStackEntryNumber royaltyBaseNumber = (TvmStackEntryNumber) result.getStackEntry().get(1);
+        BigInteger royaltyBase = royaltyBaseNumber.getNumber();
+
+        double royalty = royaltyFactor.divide(royaltyBase).doubleValue();
+        TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStackEntry().get(2);
+        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(royaltyAddressCell.getCell().getBytes())));
+
+        return Royalty.builder()
+                .royaltyFactor(royaltyFactor)
+                .royaltyBase(royaltyBase)
+                .royalty(royalty)
+                .royaltyAddress(royaltyAddress)
+                .build();
     }
 }

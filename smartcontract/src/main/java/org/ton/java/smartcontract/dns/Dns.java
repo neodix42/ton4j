@@ -29,7 +29,7 @@ public class Dns {
 
     public Object resolve(String domain, String category, boolean oneStep) {
         Address rootDnsAddress = getRootDnsAddress();
-        
+
         return DnsUtils.dnsResolve(tonlib, rootDnsAddress, domain, category, oneStep);
     }
 
@@ -38,7 +38,7 @@ public class Dns {
     }
 
     /**
-     * @param domain {string} e.g "sub.alice.ton"
+     * @param domain String e.g "sub.alice.ton"
      * @return Address | null
      */
     public Object getWalletAddress(String domain) {

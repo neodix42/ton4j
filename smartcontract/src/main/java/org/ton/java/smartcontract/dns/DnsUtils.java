@@ -41,7 +41,7 @@ public class DnsUtils {
      * @param smartContractAddress Address
      * @return Cell
      */
-    Cell createSmartContractAddressRecord(Address smartContractAddress) {
+    public static Cell createSmartContractAddressRecord(Address smartContractAddress) {
         CellBuilder cellBuilder = CellBuilder.beginCell();
         cellBuilder.storeUint(0x9fd3, 16); // https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L827
         cellBuilder.storeAddress(smartContractAddress);
@@ -53,7 +53,7 @@ public class DnsUtils {
      * @param adnlAddress AdnlAddress
      * @return Cell
      */
-    Cell createAdnlAddressRecord(AdnlAddress adnlAddress) {
+    public static Cell createAdnlAddressRecord(AdnlAddress adnlAddress) {
         CellBuilder cellBuilder = CellBuilder.beginCell();
         cellBuilder.storeUint(0xad01, 16); // https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L821
         cellBuilder.storeBytes(adnlAddress.getBytes());
@@ -65,7 +65,7 @@ public class DnsUtils {
      * @param smartContractAddress Address
      * @return Cell
      */
-    Cell createNextResolverRecord(Address smartContractAddress) {
+    public static Cell createNextResolverRecord(Address smartContractAddress) {
         CellBuilder cellBuilder = CellBuilder.beginCell();
         cellBuilder.storeUint(0xba93, 16); // https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L819
         cellBuilder.storeAddress(smartContractAddress);
@@ -140,15 +140,15 @@ public class DnsUtils {
         if (result.getStackEntry().size() != 2) {
             throw new Error("Invalid dnsresolve response");
         }
+
+        Cell cell = null;
+
         int resultLen = ((TvmStackEntryNumber) result.getStackEntry().get(0)).getNumber().intValue();
-        TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStackEntry().get(1);
-//        System.out.println(cellResult.getCell().getBytes());
-//        System.out.println(cellResult.toString());
-        Cell cell = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(cellResult.getCell().getBytes()));
-//bytes to base64. or base64 decrypt
-//        if (isNull(cell)) {
-//            cell = null;
-//        }
+        Object r = result.getStackEntry().get(1);
+        if (r instanceof TvmStackEntryCell) {
+            TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStackEntry().get(1);
+            cell = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(cellResult.getCell().getBytes()));
+        }
 
         if ((nonNull(cell)) && (isNull(cell.bits))) {
             throw new Error("Invalid dnsresolve response");
@@ -165,12 +165,15 @@ public class DnsUtils {
         if (resultLen > len) {
             throw new Error("Invalid response " + resultLen + "/" + len);
         } else if (resultLen == len) {
-            return switch (category) {
-                case DNS_CATEGORY_NEXT_RESOLVER -> nonNull(cell) ? parseNextResolverRecord(cell) : null;
-                case DNS_CATEGORY_WALLET -> nonNull(cell) ? parseSmartContractAddressRecord(cell) : null;
-                case DNS_CATEGORY_SITE -> nonNull(cell) ? parseAdnlAddressRecord(cell) : null;
-                default -> cell;
-            };
+            if (DNS_CATEGORY_NEXT_RESOLVER.equals(category)) {
+                return nonNull(cell) ? parseNextResolverRecord(cell) : null;
+            } else if (DNS_CATEGORY_WALLET.equals(category)) {
+                return nonNull(cell) ? parseSmartContractAddressRecord(cell) : null;
+            } else if (DNS_CATEGORY_SITE.equals(category)) {
+                return nonNull(cell) ? parseAdnlAddressRecord(cell) : null;
+            } else {
+                return null;
+            }
         } else {
             if (isNull(cell)) {
                 return null; // domain cannot be resolved

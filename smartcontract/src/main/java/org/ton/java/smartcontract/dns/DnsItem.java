@@ -5,14 +5,13 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.nft.NftUtils;
 import org.ton.java.smartcontract.types.AuctionInfo;
-import org.ton.java.smartcontract.types.DnsData;
+import org.ton.java.smartcontract.types.ItemData;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
-import org.ton.java.tonlib.types.TvmStackEntrySlice;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -29,7 +28,7 @@ public class DnsItem implements Contract {
     Address address;
 
     /**
-     * @param options Options
+     * @param options Options - index, collectionAddress
      */
     public DnsItem(Options options) {
         this.options = options;
@@ -42,12 +41,6 @@ public class DnsItem implements Contract {
         if (isNull(options.code)) {
             options.code = Cell.fromBoc(NFT_ITEM_CODE_HEX);
         }
-    }
-
-    public DnsItem(Address address) {
-        this(Options.builder()
-                .address(address)
-                .build());
     }
 
     public String getName() {
@@ -73,7 +66,7 @@ public class DnsItem implements Contract {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(options.index, 256);
+        cell.storeUint(new BigInteger(options.index, 16), 256);
         cell.storeAddress(options.collectionAddress);
         return cell.endCell();
     }
@@ -81,7 +74,7 @@ public class DnsItem implements Contract {
     /**
      * @return DnsData
      */
-    public DnsData getData(Tonlib tonlib) {
+    public ItemData getData(Tonlib tonlib) {
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_nft_data");
 
@@ -97,12 +90,12 @@ public class DnsItem implements Contract {
         Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(collectionAddr.getCell().getBytes())));
 
         TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStackEntry().get(3);
-        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(ownerAddr.getCell().getBytes()))) : null;
+        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(ownerAddr.getCell().getBytes()))) : null;
 
         TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStackEntry().get(4);
-        Cell contentCell = CellBuilder.fromBoc(Utils.base64ToBytes(contentC.getCell().getBytes()));
+        Cell contentCell = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(contentC.getCell().getBytes()));
 
-        return DnsData.builder()
+        return ItemData.builder()
                 .isInitialized(isInitialized)
                 .index(index)
                 .collectionAddress(collectionAddress)
@@ -139,7 +132,7 @@ public class DnsItem implements Contract {
      * @param queryId long
      * @return Cell
      */
-    public Cell createGetStaticDataBody(long queryId) {
+    public Cell createStaticDataBody(long queryId) {
         CellBuilder body = CellBuilder.beginCell();
         body.storeUint(0x2fcb26a2, 32); // OP
         body.storeUint(queryId, 64); // query_id
@@ -152,9 +145,13 @@ public class DnsItem implements Contract {
     public String getDomain(Tonlib tonlib) {
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_domain");
-        //TvmStackEntry isInitializedNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
-        //return new TextDecoder().decode(result.bits.array.buffer);
-        return null;
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_domain, returned an exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStackEntry().get(0);
+        return new String(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(domainCell.getCell().getBytes())).bits.toByteArray());
     }
 
     /**
@@ -163,12 +160,20 @@ public class DnsItem implements Contract {
     public AuctionInfo getAuctionInfo(Tonlib tonlib) {
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_auction_info");
-        TvmStackEntrySlice maxBidAddressAddr = (TvmStackEntrySlice) result.getStackEntry().get(0);
-        Address maxBidAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(maxBidAddressAddr.getSlice().getBytes()))); // todo
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_auction_info, returned an exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryCell maxBidAddressCell = (TvmStackEntryCell) result.getStackEntry().get(0);
+        Address maxBidAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(maxBidAddressCell.getCell().getBytes())));
+
         TvmStackEntryNumber maxBidAmountNumber = (TvmStackEntryNumber) result.getStackEntry().get(1);
         BigInteger maxBidAmount = maxBidAmountNumber.getNumber();
+
         TvmStackEntryNumber auctionEndTimeNumber = (TvmStackEntryNumber) result.getStackEntry().get(2);
         long auctionEndTime = auctionEndTimeNumber.getNumber().longValue();
+
         return AuctionInfo.builder()
                 .maxBidAddress(maxBidAddress)
                 .maxBidAmount(maxBidAmount)
@@ -179,6 +184,11 @@ public class DnsItem implements Contract {
     public long getLastFillUpTime(Tonlib tonlib) {
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_last_fill_up_time");
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_last_fill_up_time, returned an exit code " + result.getExit_code());
+        }
+
         TvmStackEntryNumber time = (TvmStackEntryNumber) result.getStackEntry().get(0);
         return time.getNumber().longValue();
     }
@@ -194,18 +204,26 @@ public class DnsItem implements Contract {
         return DnsUtils.dnsResolve(tonlib, myAddress, domain, category, oneStep);
     }
 
+    public Object resolve(Tonlib tonlib, String domain) {
+        Address myAddress = this.getAddress();
+        return DnsUtils.dnsResolve(tonlib, myAddress, domain, null, false);
+    }
+
     /**
-     * params   {{category: string, value: Cell|null, queryId?: number}}
+     * Creates op::change_dns_record = 0x4eb1f0f9; body request
      *
+     * @param category String
+     * @param value:   Cell
+     * @param queryId  long
      * @return Cell
      */
-    public Cell createChangeContentEntryBody(String category, Cell value, long queryId) {
+    public static Cell createChangeContentEntryBody(String category, Cell value, long queryId) {
         CellBuilder body = CellBuilder.beginCell();
-        body.storeUint(0x4eb1f0f9, 32); // OP
+        body.storeUint(0x4eb1f0f9, 32); // op::change_dns_record = 0x4eb1f0f9;
         body.storeUint(queryId, 64); // query_id
         body.storeUint(DnsUtils.categoryToInt(category), 256);
         if (nonNull(value)) {
-            body.storeRef(value); // body.refs[0] = params.value; --------------- very first
+            body.storeRef(value);
         }
         return body.endCell();
     }
