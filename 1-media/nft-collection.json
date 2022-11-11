@@ -1,6 +1,6 @@
 {
   "name": "Neo TON",
   "description": "Neo TONs — a collection of 9 test NFTs created for the TON blockchain. Freedom to all the rabbits!",
-  "image": "https://github.com/neodiX42/ton4j/blob/dns-smc/1-media/nft-col-logo.png",
-  "cover_image": "https://github.com/neodiX42/ton4j/blob/dns-smc/1-media/nft-col-cover.png"
+  "image": "https://github.com/neodiX42/ton4j/raw/dns-smc/1-media/nft-col-logo.png",
+  "cover_image": "https://github.com/neodiX42/ton4j/raw/dns-smc/1-media/nft-col-cover.png"
 }

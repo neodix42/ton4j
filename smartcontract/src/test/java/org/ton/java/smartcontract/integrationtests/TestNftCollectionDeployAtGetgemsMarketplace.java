@@ -102,11 +102,14 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
 
         log.info("admin wallet address {}", adminWallet.getAddress().toString(true, true, true));
 
+
+        editNftCollectionContent(tonlib, adminWallet, Utils.toNano(0.055), Address.of("EQBaZHMSUNxfV67ud8uwOlwK2ox5kH4dNgvfqJsOxDbTcP-3"), "https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/nft-collection.json", "https://github.com/neodiX42/ton4j/blob/dns-smc/1-media/", 0.16, adminWallet.getAddress(), adminKeyPair1);
+
         Options optionsNftCollection = Options.builder()
                 .adminAddress(adminWallet.getAddress())
                 .royalty(0.13)
                 .royaltyAddress(adminWallet.getAddress())
-                .collectionContentUri("https://github.com/neodiX42/ton4j/blob/dns-smc/1-media/nft-collection.json")
+                .collectionContentUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/nft-collection.json")
                 .collectionContentBaseUri("https://github.com/neodiX42/ton4j/blob/dns-smc/1-media/")
                 .nftItemCodeHex(NftItem.NFT_ITEM_CODE_HEX)
                 .build();
@@ -119,11 +122,10 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
 
         Utils.sleep(15);
         getNftCollectionInfo(nftCollection);
-        getRoyaltyParams(tonlib, adminWallet, Utils.toNano(0.0777), nftCollection.getAddress(), adminKeyPair1);
 
         // create and deploy NFT Item
         deployNftItem(tonlib, adminWallet, Utils.toNano(0.06), nftCollection.getAddress(),
-                "https://github.com/neodiX42/ton4j/blob/dns-smc/1-media/nft-item-1.json", adminKeyPair1);
+                "https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/nft-item-1.json", adminKeyPair1);
         Utils.sleep(15);
 
         // get nft info -- fails
@@ -162,7 +164,7 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
         nftSale.cancel(tonlib, adminWallet, Utils.toNano(1), nftSale.getAddress(), 0, adminKeyPair1);
 
         //after changed owner this will fail with 401 error
-        editNftCollectionContent(tonlib, adminWallet, Utils.toNano(0.055), nftCollection.getAddress(), "ton://my-nft/collection.json", "ton://my-nft/", 0.16, Address.of(WALLET2_ADDRESS), adminKeyPair1);
+        editNftCollectionContent(tonlib, adminWallet, Utils.toNano(0.055), nftCollection.getAddress(), "https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/nft-collection.json", "ton://my-nft/", 0.16, Address.of(WALLET2_ADDRESS), adminKeyPair1);
 
         //tested ok!
         changeNftCollectionOwner(tonlib, adminWallet, Utils.toNano(0.06), nftCollection.getAddress(), Address.of(WALLET2_ADDRESS), adminKeyPair1);
