@@ -193,7 +193,7 @@ public class JettonMinter implements Contract {
 
     public BigInteger getTotalSupply(Tonlib tonlib) {
         Address myAddress = this.getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "get_jetton_data"); //minter
+        RunResult result = tonlib.runMethod(myAddress, "get_jetton_data");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_jetton_data, returned an exit code " + result.getExit_code());

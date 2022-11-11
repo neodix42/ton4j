@@ -111,6 +111,8 @@ public class TestJetton {
         // sequential calls to min() sum up to totalSupply;
         minter.mint(tonlib, adminWallet, adminWallet.getAddress(), Utils.toNano(0.05), Utils.toNano(0.04), Utils.toNano(100500), keyPairAdmin1);
 
+        log.info("jetton total supply {}", minter.getTotalSupply(tonlib));
+
         //owner of adminWallet holds his jettons on jettonWallet
         Address adminJettonWalletAddress = minter.getJettonWalletAddress(tonlib, adminWallet.getAddress());
         log.info("admin JettonWalletAddress {}", adminJettonWalletAddress.toString(true, true, true));

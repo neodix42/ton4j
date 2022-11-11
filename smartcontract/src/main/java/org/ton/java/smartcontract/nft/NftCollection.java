@@ -33,7 +33,8 @@ public class NftCollection implements Contract {
     Address address;
 
     /**
-     * required:
+     * Creates editable NFT collection
+     * required parameters:
      * ownerAddress: Address
      * collectionContentUri: String
      * collectionContentBaseUri: String

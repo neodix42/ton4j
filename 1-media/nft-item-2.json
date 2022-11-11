@@ -1,0 +1,31 @@
+{
+  "name": "Neo TON #2",
+  "description": "Legend of the legends",
+  "image": "https://github.com/neodiX42/ton4j/blob/dns-smc/1-media/nft-item-2.png",
+  "attributes": [
+    {
+      "trait_type": "Type",
+      "value": "Female"
+    },
+    {
+      "trait_type": "Attributes",
+      "value": "3"
+    },
+    {
+      "trait_type": "Attribute 1",
+      "value": "Violet Short Hair"
+    },
+    {
+      "trait_type": "Attribute 2",
+      "value": "Blue Chain"
+    },
+    {
+      "trait_type": "Attribute 3",
+      "value": "Blue Eye Shadows"
+    },
+    {
+      "trait_type": "Background",
+      "value": "Monotone 1"
+    }
+  ]
+}
