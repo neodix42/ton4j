@@ -147,11 +147,14 @@ public class NftSale implements Contract {
 
         long seqno = wallet.getSeqno(tonlib);
 
+        System.out.println("seqno " + seqno);
+
         CellBuilder body = CellBuilder.beginCell();
         body.storeUint(1, 32);
         body.storeCoins(msgValue);
         body.storeRef(this.createStateInit().stateInit);
-        body.storeRef(new Cell());
+        body.storeRef(CellBuilder.beginCell().endCell());
+//        body.storeRef(this.createStateInit().stateInit);
 
         ExternalMessage extMsg = wallet.createTransferMessage(
                 keyPair.getSecretKey(),

@@ -516,4 +516,13 @@ public class Utils {
             System.out.println(e.getMessage());
         }
     }
+
+    public static void sleep(long seconds, String text) {
+        try {
+            System.out.println("pause " + seconds + " seconds, " + text);
+            TimeUnit.SECONDS.sleep(seconds);
+        } catch (Throwable e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }

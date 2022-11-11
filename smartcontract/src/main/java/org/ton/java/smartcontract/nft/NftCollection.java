@@ -18,6 +18,7 @@ import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -86,7 +87,7 @@ public class NftCollection implements Contract {
     private static Cell createContentCell(String collectionContentUri, String collectionContentBaseUri) {
         Cell collectionContentCell = NftUtils.createOffchainUriCell(collectionContentUri);
         CellBuilder commonContentCell = CellBuilder.beginCell();
-        commonContentCell.storeBytes(NftUtils.serializeUri(collectionContentBaseUri));
+        commonContentCell.storeBytes(collectionContentBaseUri.getBytes(StandardCharsets.UTF_8));
 
         CellBuilder contentCell = CellBuilder.beginCell();
         contentCell.storeRef(collectionContentCell);
@@ -231,6 +232,9 @@ public class NftCollection implements Contract {
     public ItemData getNftItemContent(Tonlib tonlib, NftItem nftItem) {
         Address myAddress = this.getAddress();
         ItemData nftData = nftItem.getData(tonlib);
+
+        System.out.println("nft data " + nftData);
+
         if (nftData.isInitialized()) {
             Deque<String> stack = new ArrayDeque<>();
             stack.offer("[num, " + nftData.getIndex().toString(10) + "]");
@@ -242,10 +246,11 @@ public class NftCollection implements Contract {
                 throw new Error("method get_nft_content, returned an exit code " + result.getExit_code());
             }
 
-            TvmStackEntryCell resultCell = (TvmStackEntryCell) result.getStackEntry().get(2);
+            TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStackEntry().get(2);
+            Cell content = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(contentCell.getCell().getBytes()));
 
             try {
-                nftData.setContentUri(NftUtils.parseOffchainUriCell(Cell.fromBoc(resultCell.getCell().getBytes())));
+                nftData.setContentUri(NftUtils.parseOffchainUriCell(content));
             } catch (Error e) {
                 //todo
             }
@@ -280,12 +285,12 @@ public class NftCollection implements Contract {
     public void deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, TweetNaclFast.Signature.KeyPair keyPair) {
 
         long seqno = wallet.getSeqno(tonlib);
-
+        System.out.println("seqno " + seqno);
         Cell payload = null;
 
         ExternalMessage extMsg = wallet.createTransferMessage(
                 keyPair.getSecretKey(),
-                this.getAddress(), // non bouncebale?
+                this.getAddress().toString(true, true, false), // non bouncebale?
                 msgValue,
                 seqno,
                 payload,

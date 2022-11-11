@@ -115,13 +115,13 @@ public class TestNft {
 
         nftCollection.deploy(tonlib, adminWallet, Utils.toNano(1), adminKeyPair1);
 
-        Utils.sleep(15);
+        Utils.sleep(15, "deploying nft collection");
 
 
         getNftCollectionInfo(nftCollection);
 
         deployNftItem(tonlib, adminWallet, Utils.toNano(0.06), nftCollection.getAddress(), "my_nft.json", adminKeyPair1);
-        Utils.sleep(15);
+        Utils.sleep(15, "deploying nft item");
 
         // get nft info -- fails
         NftItem nftItem = new NftItem(Options.builder().address(nftItem1).build());
@@ -133,7 +133,7 @@ public class TestNft {
         log.info("nft marketplace address {}", marketplace.getAddress().toString(true, true, true));
         marketplace.deploy(tonlib, adminWallet, Utils.toNano(1.1), adminKeyPair1);
 
-        Utils.sleep(15);
+        Utils.sleep(15, "deploying nft marketplace");
 
         //deploy nft sale
         Options optionsNftSale = Options.builder()

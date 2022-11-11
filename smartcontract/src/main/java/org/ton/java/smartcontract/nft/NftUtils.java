@@ -55,7 +55,7 @@ public class NftUtils {
     public static Cell createOffchainUriCell(String uri) {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(OFFCHAIN_CONTENT_PREFIX, 8);
-        cell.storeBytes(serializeUri(uri));
+        cell.storeBytes(uri.getBytes(StandardCharsets.UTF_8));
         return cell.endCell();
     }
 
@@ -110,7 +110,7 @@ public class NftUtils {
     public static Cell createOnchainDataCell(String name, String description) { // https://github.com/ton-blockchain/TIPs/issues/64
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(ONCHAIN_CONTENT_PREFIX, 8);
-        cell.storeBytes(serializeUri(name));
+        cell.storeBytes(name.getBytes(StandardCharsets.UTF_8));
         cell.storeString(description);
         return cell.endCell();
     }

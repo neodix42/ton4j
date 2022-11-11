@@ -19,6 +19,7 @@ import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -51,15 +52,15 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
     static WalletV3ContractR1 adminWallet;
     static Tonlib tonlib = Tonlib.builder()
             .testnet(true)
-//            .verbosityLevel(VerbosityLevel.DEBUG)
+            .verbosityLevel(VerbosityLevel.DEBUG)
             .build();
 
     @BeforeClass
     public static void setUpClass() throws InterruptedException {
-        String predefinedSecretKey = "f437d871b3ca5f110d49662f5d702f85ff36c282c22c201e9f4ee7e7b01dc41f759fe2cd7dadfa0aa420b831a0374c2462201f8af379671bc9a75a2fc209aea9";
-//        String predefinedSecretKey = "";
-//        EQA7qttYjKB46KonCtvTFnj0uv4LySr6jg6qHwYHC5ukH-Hg
-//        0:3baadb588ca078e8aa270adbd31678f4bafe0bc92afa8e0eaa1f06070b9ba41f
+//        String predefinedSecretKey = "955e795bb5ae3f912080c6223a272a308db44dc8643750a91b99c3a557feabe25aa151b2072004dc9e7c4d751bf19e8a0b0a09fdadaa816ad848dac7256bf28e";
+        String predefinedSecretKey = "";
+//        kQD54CgV4MSeKTD1DYatJt_AZwW5sb0loN0rEy5VojbU-upC
+//        0:f9e02815e0c49e2930f50d86ad26dfc06705b9b1bd25a0dd2b132e55a236d4fa
 
         if (StringUtils.isEmpty(predefinedSecretKey)) {
             adminKeyPair1 = Utils.generateSignatureKeyPair();
@@ -88,13 +89,11 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
         if (StringUtils.isEmpty(predefinedSecretKey)) {
             BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(15));
             log.info("new wallet balance {}", Utils.formatNanoValue(balance));
-            Utils.sleep(10);
+
             // deploy new wallet
             tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+            Utils.sleep(15);
         }
-
-        long seqno = adminWallet.getSeqno(tonlib);
-        log.info("wallet seqno {}", seqno);
     }
 
     @Test
@@ -102,15 +101,20 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
 
         log.info("admin wallet address {}", adminWallet.getAddress().toString(true, true, true));
 
-
-        editNftCollectionContent(tonlib, adminWallet, Utils.toNano(0.055), Address.of("EQBaZHMSUNxfV67ud8uwOlwK2ox5kH4dNgvfqJsOxDbTcP-3"), "https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/nft-collection.json", "https://github.com/neodiX42/ton4j/blob/dns-smc/1-media/", 0.16, adminWallet.getAddress(), adminKeyPair1);
+//        editNftCollectionContent(tonlib, adminWallet, Utils.toNano(0.055),
+//                Address.of("EQCfjT1nWNdOI-6OyCGVVKZLkWmbbS1U4ibMgPVPtRORkd2R"),
+//                "https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/nft-collection.json",
+//                "https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/",
+//                0.16,
+//                adminWallet.getAddress(),
+//                adminKeyPair1);
 
         Options optionsNftCollection = Options.builder()
                 .adminAddress(adminWallet.getAddress())
                 .royalty(0.13)
                 .royaltyAddress(adminWallet.getAddress())
                 .collectionContentUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/nft-collection.json")
-                .collectionContentBaseUri("https://github.com/neodiX42/ton4j/blob/dns-smc/1-media/")
+                .collectionContentBaseUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/")
                 .nftItemCodeHex(NftItem.NFT_ITEM_CODE_HEX)
                 .build();
 
@@ -120,24 +124,30 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
 
         nftCollection.deploy(tonlib, adminWallet, Utils.toNano(1), adminKeyPair1);
 
-        Utils.sleep(15);
+        Utils.sleep(15, "deploying NFT collection");
         getNftCollectionInfo(nftCollection);
 
         // create and deploy NFT Item
-        deployNftItem(tonlib, adminWallet, Utils.toNano(0.06), nftCollection.getAddress(),
-                "https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/nft-item-1.json", adminKeyPair1);
-        Utils.sleep(15);
+        deployNftItem(tonlib, adminWallet, BigInteger.ZERO, Utils.toNano(0.06), nftCollection.getAddress(), "nft-item-1.json", adminKeyPair1);
+        Utils.sleep(15, "deploying NFT item #1");
 
-        // get nft info -- fails
-        NftItem nftItem = new NftItem(Options.builder().address(nftItem1).build());
-//        getNftItemInfo(nftCollection, nftItem);
-//        getSingleNftItemInfo(new NftItem(Options.builder().address(nftItem2).build()));
+        deployNftItem(tonlib, adminWallet, BigInteger.ONE, Utils.toNano(0.06), nftCollection.getAddress(), "nft-item-2.json", adminKeyPair1);
+        Utils.sleep(25, "deploying NFT item #2");
+
+        getNftCollectionInfo(nftCollection);
+
+        NftItem item1 = new NftItem(Options.builder().address(nftItem1).build());
+        NftItem item2 = new NftItem(Options.builder().address(nftItem2).build());
+//        getNftItemInfo(nftCollection, item1);
+//        getNftItemInfo(nftCollection, item2);
+
 
         // get getgems test nft marketplace
-        NftMarketplace marketplace = new NftMarketplace(Options.builder().adminAddress(Address.of(TESTNET_GETGEMS_NFT_MARKETPLACE_ADDRESS)).build());
+        NftMarketplace marketplace = new NftMarketplace(Options.builder().address(Address.of(TESTNET_GETGEMS_NFT_MARKETPLACE_ADDRESS)).build());
         log.info("getgems testnet nft marketplace address {}", marketplace.getAddress().toString(true, true, true));
 
-        //deploy nft sale smart-contract, so we could sell our nft collection on marketplace
+        // deploy nft sale smart-contract, so we could sell our nft collection on marketplace
+        // set the price, royalty and fee for your nft item
         Options optionsNftSale = Options.builder()
                 .marketplaceAddress(marketplace.getAddress())
                 .nftItemAddress(Address.of(nftItem1))
@@ -149,16 +159,17 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
 
         NftSale nftSale = new NftSale(optionsNftSale);
         log.info("nft sale address {}", nftSale.getAddress().toString(true, true, true));
-        nftSale.deploy(tonlib, adminWallet, Utils.toNano(0.06), marketplace.getAddress(), adminKeyPair1);
-        Utils.sleep(15);
+
+        nftSale.deploy(tonlib, adminWallet, Utils.toNano(0.6), marketplace.getAddress(), adminKeyPair1);
+        Utils.sleep(15, "deploying NFT sale smart-contract for nft item #1");
         //our nft item is now visible on testnet getgems nft marketplace
 
         // get nft item data
         NftSaleData data = nftSale.getData(tonlib);
-        log.info("nftSale data {}", data);
+        log.info("nftSale data for nft item #1 {}", data);
 
         // transfer nft item to nft sale smart-contract (send amount > full_price+1ton)
-        transferNftItem(tonlib, adminWallet, Utils.toNano(1.5), nftItem, nftSale.getAddress(), Utils.toNano(0.02), "gift".getBytes(), adminWallet.getAddress(), adminKeyPair1);
+        transferNftItem(tonlib, adminWallet, Utils.toNano(1.5), item1, nftSale.getAddress(), Utils.toNano(0.02), "gift".getBytes(), adminWallet.getAddress(), adminKeyPair1);
 
         // removes nft-sale smc?
         nftSale.cancel(tonlib, adminWallet, Utils.toNano(1), nftSale.getAddress(), 0, adminKeyPair1);
@@ -173,7 +184,7 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
     private void getNftCollectionInfo(NftCollection nftCollection) {
         CollectionData data = nftCollection.getCollectionData(tonlib);
         log.info("nft collection info {}", data);
-        log.info("nft collection item count {}", data.getItemsCount());
+        log.info("nft collection item count {}", data.getNextItemIndex());
         log.info("nft collection owner {}", data.getOwnerAddress());
 
         nftItem1 = nftCollection.getNftItemAddressByIndex(tonlib, BigInteger.ZERO);
@@ -187,10 +198,10 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
         log.info("nft collection royalty address {}", royaltyAddress.toString(true, true, true));
     }
 
-    public void deployNftItem(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address nftCollectionAddress, String nftItemContentUri, TweetNaclFast.Signature.KeyPair keyPair) {
+    public void deployNftItem(Tonlib tonlib, WalletContract wallet, BigInteger index, BigInteger msgValue, Address nftCollectionAddress, String nftItemContentUri, TweetNaclFast.Signature.KeyPair keyPair) {
 
         long seqno = wallet.getSeqno(tonlib);
-
+        System.out.println("seqno " + seqno);
         ExternalMessage extMsg = wallet.createTransferMessage(
                 keyPair.getSecretKey(),
                 nftCollectionAddress,
@@ -198,7 +209,7 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
                 seqno,
                 NftCollection.createMintBody(
                         0,
-                        BigInteger.ZERO,
+                        index,
                         msgValue,
                         wallet.getAddress(),
                         nftItemContentUri));

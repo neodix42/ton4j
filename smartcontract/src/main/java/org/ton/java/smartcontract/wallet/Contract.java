@@ -9,6 +9,8 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.nonNull;
+
 /**
  * Interface for all smart contract objects in ton4j.
  */
@@ -272,7 +274,7 @@ public interface Contract {
 
         commonMsgInfo.writeCell(header);
 
-        if (stateInit != null) {
+        if (nonNull(stateInit)) {
             commonMsgInfo.storeBit(true);
             //-1:  need at least one bit for body
             if (commonMsgInfo.getFreeBits() - 1 >= stateInit.bits.getUsedBits()) {
@@ -286,7 +288,7 @@ public interface Contract {
             commonMsgInfo.storeBit(false);
         }
 
-        if (body != null) {
+        if (nonNull(body)) {
             if ((commonMsgInfo.getFreeBits() >= body.bits.getUsedBits()) && commonMsgInfo.getFreeRefs() >= body.getUsedRefs()) {
                 commonMsgInfo.storeBit(false);
                 commonMsgInfo.writeCell(body);
