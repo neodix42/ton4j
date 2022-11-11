@@ -41,8 +41,12 @@ public class Cell {
         refsInt = new ArrayList<>(Collections.nCopies(r, 0));
     }
 
+//    public String toString() {
+//        return bits.toBitString();
+//    }
+
     public String toString() {
-        return bits.toBitString();
+        return bits.toHex();
     }
 
     public Cell clone() {
