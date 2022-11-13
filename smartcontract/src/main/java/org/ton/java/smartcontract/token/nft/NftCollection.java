@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract.nft;
+package org.ton.java.smartcontract.token.nft;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
@@ -25,7 +25,8 @@ import java.util.Deque;
 import static java.util.Objects.isNull;
 
 public class NftCollection implements Contract {
-    // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-collection-editable.fc
+    // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-collection.fc
+    // not editable
     public static final String NFT_COLLECTION_CODE_HEX = "B5EE9C724102140100021F000114FF00F4A413F4BCF2C80B0102016202030202CD04050201200E0F04E7D10638048ADF000E8698180B8D848ADF07D201800E98FE99FF6A2687D20699FEA6A6A184108349E9CA829405D47141BAF8280E8410854658056B84008646582A802E78B127D010A65B509E58FE59F80E78B64C0207D80701B28B9E382F970C892E000F18112E001718112E001F181181981E0024060708090201200A0B00603502D33F5313BBF2E1925313BA01FA00D43028103459F0068E1201A44343C85005CF1613CB3FCCCCCCC9ED54925F05E200A6357003D4308E378040F4966FA5208E2906A4208100FABE93F2C18FDE81019321A05325BBF2F402FA00D43022544B30F00623BA9302A402DE04926C21E2B3E6303250444313C85005CF1613CB3FCCCCCCC9ED54002C323401FA40304144C85005CF1613CB3FCCCCCCC9ED54003C8E15D4D43010344130C85005CF1613CB3FCCCCCCC9ED54E05F04840FF2F00201200C0D003D45AF0047021F005778018C8CB0558CF165004FA0213CB6B12CCCCC971FB008002D007232CFFE0A33C5B25C083232C044FD003D0032C03260001B3E401D3232C084B281F2FFF2742002012010110025BC82DF6A2687D20699FEA6A6A182DE86A182C40043B8B5D31ED44D0FA40D33FD4D4D43010245F04D0D431D430D071C8CB0701CF16CCC980201201213002FB5DAFDA89A1F481A67FA9A9A860D883A1A61FA61FF480610002DB4F47DA89A1F481A67FA9A9A86028BE09E008E003E00B01A500C6E";
 
     long royaltyBase = 1000;
@@ -225,7 +226,6 @@ public class NftCollection implements Contract {
                 .build();
     }
 
-
     /**
      * @return DnsData
      */
@@ -233,12 +233,10 @@ public class NftCollection implements Contract {
         Address myAddress = this.getAddress();
         ItemData nftData = nftItem.getData(tonlib);
 
-        System.out.println("nft data " + nftData);
-
         if (nftData.isInitialized()) {
             Deque<String> stack = new ArrayDeque<>();
-            stack.offer("[num, " + nftData.getIndex().toString(10) + "]");
-            stack.offer("[slice, " + nftData.getContentCell().toHex(false) + "]");
+            stack.offer("[num, " + nftData.getIndex() + "]");
+            stack.offer("[slice, " + nftData.getContentCell().toHex(true) + "]");
 
             RunResult result = tonlib.runMethod(myAddress, "get_nft_content", stack);
 
@@ -255,6 +253,7 @@ public class NftCollection implements Contract {
                 //todo
             }
         }
+
         return nftData;
     }
 
@@ -285,12 +284,12 @@ public class NftCollection implements Contract {
     public void deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, TweetNaclFast.Signature.KeyPair keyPair) {
 
         long seqno = wallet.getSeqno(tonlib);
-        System.out.println("seqno " + seqno);
+
         Cell payload = null;
 
         ExternalMessage extMsg = wallet.createTransferMessage(
                 keyPair.getSecretKey(),
-                this.getAddress().toString(true, true, false), // non bouncebale?
+                this.getAddress().toString(true, true, false),
                 msgValue,
                 seqno,
                 payload,

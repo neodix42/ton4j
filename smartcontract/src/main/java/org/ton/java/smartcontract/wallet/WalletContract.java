@@ -94,6 +94,7 @@ public interface WalletContract extends Contract {
         if (dummySignature) {
             signature = new byte[64];
         } else {
+            //todo get pubkey from secretKey
             signature = Utils.signData(getOptions().publicKey, secretKey, signingMessage.hash());
         }
 

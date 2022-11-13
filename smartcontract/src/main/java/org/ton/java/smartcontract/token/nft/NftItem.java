@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract.nft;
+package org.ton.java.smartcontract.token.nft;
 
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
@@ -86,7 +86,7 @@ public class NftItem implements Contract {
         TvmStackEntryNumber isInitializedNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
         boolean isInitialized = isInitializedNumber.getNumber().longValue() == -1;
 
-        BigInteger index = ((TvmStackEntryNumber) result.getStackEntry().get(1)).getNumber(); // todo  https://github.com/toncenter/tonweb/blob/a821484df7c5f52c022f8c6864f039c7e0ec9b44/src/contract/token/nft/NftItem.js#L43
+        BigInteger index = ((TvmStackEntryNumber) result.getStackEntry().get(1)).getNumber();
 
         TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
         Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(collectionAddr.getCell().getBytes())));

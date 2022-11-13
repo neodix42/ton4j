@@ -4,7 +4,7 @@ import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.nft.NftUtils;
+import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.CollectionData;
 import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.ItemData;

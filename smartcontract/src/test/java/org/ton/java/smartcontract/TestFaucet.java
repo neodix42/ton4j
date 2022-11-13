@@ -47,13 +47,13 @@ public class TestFaucet {
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), destinationAddress, amount);
 
         BigInteger newBalance;
-        int i =0;
+        int i = 0;
         do {
             log.info("topping up the wallet...");
             TimeUnit.SECONDS.sleep(5);
             newBalance = new BigInteger(tonlib.getAccountState(destinationAddress).getBalance());
             if (++i > 10) {
-                throw new Error("cannot top up the contract "+destinationAddress);
+                throw new Error("cannot top up the contract " + destinationAddress);
             }
         } while (newBalance.compareTo(BigInteger.ZERO) < 1);
 

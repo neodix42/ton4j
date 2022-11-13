@@ -3,7 +3,7 @@ package org.ton.java.smartcontract.dns;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.nft.NftUtils;
+import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.AuctionInfo;
 import org.ton.java.smartcontract.types.ItemData;
 import org.ton.java.smartcontract.wallet.Contract;

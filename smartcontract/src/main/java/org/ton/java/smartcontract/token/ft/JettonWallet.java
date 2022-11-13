@@ -3,7 +3,7 @@ package org.ton.java.smartcontract.token.ft;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.nft.NftUtils;
+import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.JettonWalletData;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;

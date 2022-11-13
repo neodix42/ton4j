@@ -9,17 +9,16 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.TestFaucet;
-import org.ton.java.smartcontract.nft.NftCollection;
-import org.ton.java.smartcontract.nft.NftItem;
-import org.ton.java.smartcontract.nft.NftMarketplace;
-import org.ton.java.smartcontract.nft.NftSale;
+import org.ton.java.smartcontract.token.nft.NftCollection;
+import org.ton.java.smartcontract.token.nft.NftItem;
+import org.ton.java.smartcontract.token.nft.NftMarketplace;
+import org.ton.java.smartcontract.token.nft.NftSale;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -52,7 +51,7 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
     static WalletV3ContractR1 adminWallet;
     static Tonlib tonlib = Tonlib.builder()
             .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
+//            .verbosityLevel(VerbosityLevel.DEBUG)
             .build();
 
     @BeforeClass
@@ -87,7 +86,7 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
         log.info("\nNon-bounceable address (for init): {}\nBounceable address (for later access): {}\nraw: {}", nonBounceableAddress, bounceableAddress, address.toString(false));
 
         if (StringUtils.isEmpty(predefinedSecretKey)) {
-            BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(15));
+            BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
             log.info("new wallet balance {}", Utils.formatNanoValue(balance));
 
             // deploy new wallet
@@ -142,14 +141,17 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
 //        getNftItemInfo(nftCollection, item2);
 
 
-        // get getgems test nft marketplace
+        // get getgems test-nft-marketplace address
         NftMarketplace marketplace = new NftMarketplace(Options.builder().address(Address.of(TESTNET_GETGEMS_NFT_MARKETPLACE_ADDRESS)).build());
         log.info("getgems testnet nft marketplace address {}", marketplace.getAddress().toString(true, true, true));
+        // getgems protected their nft marketplace, so we cannot place our nft-sale on it
 
-        // deploy nft sale smart-contract, so we could sell our nft collection on marketplace
+        // instead of nft-marketplace address we can specify any other your wallet
         // set the price, royalty and fee for your nft item
+        log.info("wallet2 {}", WALLET2_ADDRESS);
         Options optionsNftSale = Options.builder()
-                .marketplaceAddress(marketplace.getAddress())
+//                .marketplaceAddress(marketplace.getAddress())
+                .marketplaceAddress(adminWallet.getAddress())
                 .nftItemAddress(Address.of(nftItem1))
                 .fullPrice(Utils.toNano(1.1))
                 .marketplaceFee(Utils.toNano(0.4))
@@ -160,18 +162,18 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
         NftSale nftSale = new NftSale(optionsNftSale);
         log.info("nft sale address {}", nftSale.getAddress().toString(true, true, true));
 
-        nftSale.deploy(tonlib, adminWallet, Utils.toNano(0.6), marketplace.getAddress(), adminKeyPair1);
+        nftSale.deploy(tonlib, adminWallet, Utils.toNano(0.6), adminWallet.getAddress(), adminKeyPair1);
         Utils.sleep(15, "deploying NFT sale smart-contract for nft item #1");
-        //our nft item is now visible on testnet getgems nft marketplace
 
         // get nft item data
         NftSaleData data = nftSale.getData(tonlib);
         log.info("nftSale data for nft item #1 {}", data);
 
-        // transfer nft item to nft sale smart-contract (send amount > full_price+1ton)
+        // transfer nft item to nft-sale smart-contract (send amount > full_price+1ton)
         transferNftItem(tonlib, adminWallet, Utils.toNano(1.5), item1, nftSale.getAddress(), Utils.toNano(0.02), "gift".getBytes(), adminWallet.getAddress(), adminKeyPair1);
 
-        // removes nft-sale smc?
+
+        // changed my mind, remove nft-sale smc
         nftSale.cancel(tonlib, adminWallet, Utils.toNano(1), nftSale.getAddress(), 0, adminKeyPair1);
 
         //after changed owner this will fail with 401 error
@@ -201,7 +203,7 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
     public void deployNftItem(Tonlib tonlib, WalletContract wallet, BigInteger index, BigInteger msgValue, Address nftCollectionAddress, String nftItemContentUri, TweetNaclFast.Signature.KeyPair keyPair) {
 
         long seqno = wallet.getSeqno(tonlib);
-        System.out.println("seqno " + seqno);
+
         ExternalMessage extMsg = wallet.createTransferMessage(
                 keyPair.getSecretKey(),
                 nftCollectionAddress,
@@ -279,7 +281,7 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
         log.info("nftItem royalty {}", royalty);
     }
 
-    private void transferNftItem(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, NftItem nftItem, Address saleAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
+    private void transferNftItem(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, NftItem nftItem, Address nftSaleAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
 
         long seqno = wallet.getSeqno(tonlib);
 
@@ -290,7 +292,7 @@ public class TestNftCollectionDeployAtGetgemsMarketplace {
                 seqno,
                 NftItem.createTransferBody(
                         0,
-                        saleAddress, //new owner
+                        nftSaleAddress, //new owner
                         forwardAmount,
                         forwardPayload,
                         responseAddress)

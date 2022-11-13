@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract.nft;
+package org.ton.java.smartcontract.token.nft;
 
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;

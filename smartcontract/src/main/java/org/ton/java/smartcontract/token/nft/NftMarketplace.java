@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract.nft;
+package org.ton.java.smartcontract.token.nft;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;

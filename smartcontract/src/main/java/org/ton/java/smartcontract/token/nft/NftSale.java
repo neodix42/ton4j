@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract.nft;
+package org.ton.java.smartcontract.token.nft;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
@@ -143,18 +143,31 @@ public class NftSale implements Contract {
         return cell.endCell();
     }
 
+    private byte[] buildSignature(TweetNaclFast.Signature.KeyPair keyPair, Cell stateInit, Cell msgBody) {
+        Cell c = CellBuilder.beginCell()
+                .storeRef(stateInit)
+                .storeRef(msgBody)
+                .endCell();
+        return Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), c.hash());
+    }
+
+    /**
+     * Deploys nft-sale smc to marketplaceAddress
+     */
     public void deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address marketplaceAddress, TweetNaclFast.Signature.KeyPair keyPair) {
 
         long seqno = wallet.getSeqno(tonlib);
 
-        System.out.println("seqno " + seqno);
+        Cell emptyBody = CellBuilder.beginCell().endCell();
+
+        byte[] signature = buildSignature(keyPair, this.createStateInit().stateInit, emptyBody);
 
         CellBuilder body = CellBuilder.beginCell();
         body.storeUint(1, 32);
+//        body.storeBytes(signature);
         body.storeCoins(msgValue);
         body.storeRef(this.createStateInit().stateInit);
-        body.storeRef(CellBuilder.beginCell().endCell());
-//        body.storeRef(this.createStateInit().stateInit);
+        body.storeRef(emptyBody);
 
         ExternalMessage extMsg = wallet.createTransferMessage(
                 keyPair.getSecretKey(),

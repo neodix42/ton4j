@@ -1,6 +1,5 @@
 package org.ton.java.smartcontract.integrationtests;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.BeforeClass;
@@ -10,16 +9,19 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.GenerateWallet;
+import org.ton.java.smartcontract.TestWallet;
 import org.ton.java.smartcontract.dns.Dns;
 import org.ton.java.smartcontract.dns.DnsCollection;
 import org.ton.java.smartcontract.dns.DnsItem;
 import org.ton.java.smartcontract.dns.DnsUtils;
-import org.ton.java.smartcontract.nft.NftUtils;
-import org.ton.java.smartcontract.types.*;
+import org.ton.java.smartcontract.token.nft.NftUtils;
+import org.ton.java.smartcontract.types.CollectionData;
+import org.ton.java.smartcontract.types.ExternalMessage;
+import org.ton.java.smartcontract.types.ItemData;
+import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RawAccountState;
 import org.ton.java.utils.Utils;
@@ -32,58 +34,32 @@ import static org.ton.java.smartcontract.dns.Dns.DNS_CATEGORY_WALLET;
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestDns {
-    static TweetNaclFast.Signature.KeyPair adminKeyPair1;
-    static WalletV3ContractR1 adminWallet;
+
+    static TestWallet adminWallet;
+
     static Tonlib tonlib = Tonlib.builder()
             .testnet(true)
-//            .verbosityLevel(VerbosityLevel.DEBUG)
             .build();
 
     @BeforeClass
     public static void setUpClass() throws InterruptedException {
-        String predefinedSecretKey = "9a98f996e91dea81560cd539f725ef01456705220ca2eb314ac547ed21bbc161235dc8daef9f3e9282963356a668b4b71329ad4743dc709674aec4a826fc750b";
-//        String predefinedSecretKey = "";
-//        test-wallet init address 0QDbgKZ6Xd3u-q6PuDHbZTwFiBv1N2-FHIJuQ8xzd27X6tw-
-//        raw address 0:db80a67a5dddeefaae8fb831db653c05881bf5376f851c826e43cc73776ed7ea
-
-        if (StringUtils.isEmpty(predefinedSecretKey)) {
-            adminKeyPair1 = Utils.generateSignatureKeyPair();
-        } else {
-            adminKeyPair1 = Utils.generateSignatureKeyPairFromSeed(Utils.hexToBytes(predefinedSecretKey));
-        }
-
-        log.info("pubKey {}, prvKey {}", Utils.bytesToHex(adminKeyPair1.getPublicKey()), Utils.bytesToHex(adminKeyPair1.getSecretKey()));
-
-        Options options = Options.builder()
-                .publicKey(adminKeyPair1.getPublicKey())
-                .wc(0)
-                .build();
-
-        Wallet walletcontract = new Wallet(WalletVersion.v3R1, options);
-        adminWallet = walletcontract.create();
-
-        InitExternalMessage msg = adminWallet.createInitExternalMessage(adminKeyPair1.getSecretKey());
-        Address address = msg.address;
-
-        String nonBounceableAddress = address.toString(true, true, false, true);
-        String bounceableAddress = address.toString(true, true, true, true);
-
-        log.info("\nNon-bounceable address (for init): {}\nBounceable address (for later access): {}\nraw: {}", nonBounceableAddress, bounceableAddress, address.toString(false));
-
-        if (StringUtils.isEmpty(predefinedSecretKey)) {
-            BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(50));
-            log.info("new wallet balance {}", Utils.formatNanoValue(balance));
-            // deploy new wallet
-            tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
-        }
-
-        long seqno = adminWallet.getSeqno(tonlib);
-        log.info("wallet seqno {}", seqno);
+        adminWallet = GenerateWallet.random(tonlib, 15);
     }
 
     @Test
-    public void testDnsResolve() {
+    public void testDnsResolveTestnet() {
+        Tonlib tonlib = Tonlib.builder().testnet(true).build();
+        Dns dns = new Dns(tonlib);
+        Address rootAddress = dns.getRootDnsAddress();
+        log.info("root DNS address = {}", rootAddress.toString(true, true, true));
 
+        Object result = dns.resolve("apple.ton", DNS_CATEGORY_NEXT_RESOLVER, true);
+        log.info("apple.ton resolved to {}", ((Address) result).toString(true, true, true));
+    }
+
+    @Test
+    public void testDnsResolveMainnet() {
+        Tonlib tonlib = Tonlib.builder().build();
         Dns dns = new Dns(tonlib);
         Address rootAddress = dns.getRootDnsAddress();
         log.info("root DNS address = {}", rootAddress.toString(true, true, true));
@@ -91,16 +67,17 @@ public class TestDns {
         Object result = dns.resolve("apple.ton", DNS_CATEGORY_NEXT_RESOLVER, true);
         log.info("apple.ton resolved to {}", ((Address) result).toString(true, true, true));
 
-//        Address addr = (Address) dns.getWalletAddress("foundation.ton"); // not in current test net?
-//        log.info(addr.toString(true, true, true));
+        Address addr = (Address) dns.getWalletAddress("foundation.ton"); // not in current test net?
+        log.info("foundation.ton resolved to {}", addr.toString(true, true, true));
     }
 
     @Test
     public void testDnsRootDeploy() {
+
         DnsRoot dnsRoot = new DnsRoot();
         log.info("new root DNS address {}", dnsRoot.getAddress().toString(true, true, true));
 
-        dnsRoot.deploy(tonlib, adminWallet, adminKeyPair1);
+        dnsRoot.deploy(tonlib, adminWallet.getWallet(), adminWallet.getKeyPair());
 
         Utils.sleep(20);
 
@@ -119,16 +96,16 @@ public class TestDns {
         String dnsCollectionCodeHex = "B5EE9C7241021D010002C7000114FF00F4A413F4BCF2C80B0102016202030202CC040502012017180201200607020120131402012008090201200D0E016D420C70094840FF2F0DE01D0D3030171B0925F03E0FA403001D31FED44D0D4D4303122C000E30210245F048210370FEC51BADC840FF2F080A0201200B0C00D032F82320821062E44069BCF2E0C701F00420D74920C218F2E0C8208103F0BBF2E0C92078A908C000F2E0CA21F005F2E0CB58F00714BEF2E0CC22F9018050F833206EB38E10D0F4043052108307F40E6FA131F2D0CD9130E2C85004CF16C9C85003CF1612CCC9F00C000D1C3232C072742000331C27C074C1C07000082CE500A98200B784B98C4830003CB432600201200F100201201112004F3223880875D244B5C61673C58875D2883000082CE6C070007CB83280B50C3400A44C78B98C727420007F1C0875D2638D572E882CE38B8C00B4C1C8700B48F0802C0929BE14902E6C08B08BC8F04EAC2C48B09800F05EC4EC04AC6CC82CE500A98200B784F7B99B04AEA00093083001258C2040FA201938083001658C20407D200CB8083001A58C204064200A38083001E58C20404B2007B8083002258C204032200538083002650C20191EB83002A4E00C9D781E9C600069006AC0BC018060840EE6B2802A0060840EE6B2802A00A08418B9101A68608209E3402A410830856456F81B04A5A9D6A0192A41392002015815160039D2CF8053810F805BBC00C646582AC678B387D0165B5E66664C0207D804002D007232FFFE0A33C5B25C083232C044FD003D0032C03260001B3E401D3232C084B281F2FFF27420020120191A0201201B1C0007B8B5D318001FBA7A3ED44D0D4D43031F00A7001F00B8001BB905BED44D0D4D430307FF002128009DBA30C3020D74978A908C000F2E04620D70A07C00021D749C0085210B0935B786DE0209501D3073101DE21F0035122D71830F9018200BA93C8CB0F01820167A3ED43D8CF16C90191789170E212A0018F83DF327";
 
         Options optionsDnsCollection = Options.builder()
-                .collectionContent(NftUtils.createOffchainUriCell("https://dns.ton.org/collection.json"))
+                .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/dns-collection.json"))
                 .dnsItemCodeHex(dnsItemCodeHex)
                 .code(Cell.fromBoc(dnsCollectionCodeHex))
                 .build();
 
         Wallet dnsCollectionWallet = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection);
         DnsCollection dnsCollection = dnsCollectionWallet.create();
-        log.info("DNS collection address {}", dnsCollection.getAddress().toString(true, true, true)); // EQDZ3EPcM7LgboM68eyfNoqjM365gB2Edj4DtLxfObt-u4Cy
+        log.info("DNS collection address {}", dnsCollection.getAddress().toString(true, true, true));
 
-        dnsCollection.deploy(tonlib, adminWallet, Utils.toNano(0.5), adminKeyPair1);
+        dnsCollection.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.5), adminWallet.getKeyPair());
 
         Utils.sleep(15);
 
@@ -147,7 +124,7 @@ public class TestDns {
 //        DnsItem dnsItem = dnsItemWallet.create();
 //        log.info("dns item address {}", dnsItem.getAddress().toString(true, true, true));
 
-        Address dnsItemAddress = Address.of("EQDEwJoXDBqBFI-0pvYJOuI5MEuvYthhwkl56qi5oclHMyGC"); // EQBZY9r6QJ23rNi6KJBtApZjmt5Qj-wLABQHpRhtjpmpcNsG
+        Address dnsItemAddress = Address.of("EQDEwJoXDBqBFI-0pvYJOuI5MEuvYthhwkl56qi5oclHMyGC");
         log.info("dns item address {}", dnsItemAddress.toString(true, true, true));
 
         Options optionsDnsItem = Options.builder()
@@ -216,10 +193,10 @@ public class TestDns {
     }
 
     private void setWalletRecord(DnsItem dnsItem) {
-        long seqno = adminWallet.getSeqno(tonlib);
+        long seqno = adminWallet.getWallet().getSeqno(tonlib);
 
-        ExternalMessage extMsg = adminWallet.createTransferMessage(
-                adminKeyPair1.getSecretKey(),
+        ExternalMessage extMsg = adminWallet.getWallet().createTransferMessage(
+                adminWallet.getKeyPair().getSecretKey(),
                 dnsItem.getAddress(), // toAddress
                 Utils.toNano(0.1),
                 seqno,
@@ -231,10 +208,10 @@ public class TestDns {
     }
 
     private void transferDnsItem(DnsItem dnsItem) {
-        long seqno = adminWallet.getSeqno(tonlib);
+        long seqno = adminWallet.getWallet().getSeqno(tonlib);
 
-        ExternalMessage extMsg = adminWallet.createTransferMessage(
-                adminKeyPair1.getSecretKey(),
+        ExternalMessage extMsg = adminWallet.getWallet().createTransferMessage(
+                adminWallet.getKeyPair().getSecretKey(),
                 dnsItem.getAddress(), // toAddress
                 Utils.toNano(0.05),
                 seqno,
@@ -243,20 +220,20 @@ public class TestDns {
                         Address.of("EQBs7JfxnH2jNAlo0ytfKc77sSHQsUBzofngOkcLZyJlmm3j"),
                         Utils.toNano(0.02),
                         "gift".getBytes(),
-                        adminWallet.getAddress()));
+                        adminWallet.getWallet().getAddress()));
 
         tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
     }
 
     private void releaseDnsItem(DnsItem dnsItem) {
-        long seqno = adminWallet.getSeqno(tonlib);
+        long seqno = adminWallet.getWallet().getSeqno(tonlib);
 
         CellBuilder payload = CellBuilder.beginCell();
         payload.storeUint(0x4ed14b65, 32); // op::dns_balance_release = 0x4ed14b65;
         payload.storeUint(123, 6);
 
-        ExternalMessage extMsg = adminWallet.createTransferMessage(
-                adminKeyPair1.getSecretKey(),
+        ExternalMessage extMsg = adminWallet.getWallet().createTransferMessage(
+                adminWallet.getKeyPair().getSecretKey(),
                 dnsItem.getAddress(), // toAddress
                 Utils.toNano(5),
                 seqno,
@@ -266,14 +243,14 @@ public class TestDns {
     }
 
     private void govDnsItem(DnsItem dnsItem) {
-        long seqno = adminWallet.getSeqno(tonlib);
+        long seqno = adminWallet.getWallet().getSeqno(tonlib);
 
         CellBuilder payload = CellBuilder.beginCell();
         payload.storeUint(0x44beae41, 32); // op::process_governance_decision = 0x44beae41;
         payload.storeUint(123, 6);
 
-        ExternalMessage extMsg = adminWallet.createTransferMessage(
-                adminKeyPair1.getSecretKey(),
+        ExternalMessage extMsg = adminWallet.getWallet().createTransferMessage(
+                adminWallet.getKeyPair().getSecretKey(),
                 dnsItem.getAddress(), // toAddress
                 Utils.toNano(1),
                 seqno,
@@ -283,10 +260,10 @@ public class TestDns {
     }
 
     private void getStaticData(DnsItem dnsItem) {
-        long seqno = adminWallet.getSeqno(tonlib);
+        long seqno = adminWallet.getWallet().getSeqno(tonlib);
 
-        ExternalMessage extMsg = adminWallet.createTransferMessage(
-                adminKeyPair1.getSecretKey(),
+        ExternalMessage extMsg = adminWallet.getWallet().createTransferMessage(
+                adminWallet.getKeyPair().getSecretKey(),
                 dnsItem.getAddress(), // toAddress
                 Utils.toNano(0.05),
                 seqno,
@@ -297,12 +274,11 @@ public class TestDns {
 
     // deployRootDns();
     // dnsResolve();
-//    deployDnsCollection();
-//    getDnsCollectionInfo
+    // deployDnsCollection();
+    // getDnsCollectionInfo
     // setWalletRecord();
     // transferDnsItem();
     // releaseDnsItem();
     // govDnsItem();
     // getStaticData();
-
 }
