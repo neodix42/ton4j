@@ -263,8 +263,8 @@ public class NftCollection implements Contract {
     public Address getNftItemAddressByIndex(Tonlib tonlib, BigInteger index) {
         Address myAddress = this.getAddress();
         Deque<String> stack = new ArrayDeque<>();
-        stack.offer("[num, " + index.toString(10) + "]");
 
+        stack.offer("[num, " + index.toString(10) + "]");
         RunResult result = tonlib.runMethod(myAddress, "get_nft_address_by_index", stack);
 
         if (result.getExit_code() != 0) {

@@ -174,7 +174,7 @@ public class DnsUtils {
             } else {
                 return null;
             }
-        } else {
+        } else { // partial resolved
             if (isNull(cell)) {
                 return null; // domain cannot be resolved
             } else {
@@ -237,7 +237,7 @@ public class DnsUtils {
             rawDomain = '\0' + rawDomain;
         }
 
-        return rawDomain.getBytes(); // new TextEncoder().encode(rawDomain);
+        return rawDomain.getBytes();
     }
 
     /**

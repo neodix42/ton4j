@@ -170,7 +170,7 @@ public class TestNft {
         return data.getNextItemIndex();
     }
 
-    public void deployNftItem(Tonlib tonlib, WalletContract wallet, BigInteger index, BigInteger msgValue, Address nftCollectionAddress, String nftItemContentUri, TweetNaclFast.Signature.KeyPair keyPair) {
+    private void deployNftItem(Tonlib tonlib, WalletContract wallet, BigInteger index, BigInteger msgValue, Address nftCollectionAddress, String nftItemContentUri, TweetNaclFast.Signature.KeyPair keyPair) {
 
         long seqno = wallet.getSeqno(tonlib);
 
