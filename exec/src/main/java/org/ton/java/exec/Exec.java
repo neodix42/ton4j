@@ -126,6 +126,9 @@ public class Exec {
   public static byte[] create_signed_message(byte [] signature, int seqno, int valid_until, String payload, byte key[], Address src, Address dst, long grams) {
     return create_message (signature, seqno, valid_until, payload, key, src, dst, grams).toBoc (); 
   }
+  public static byte[] create_in_msg_hash (byte [] signature, int seqno, int valid_until, String payload, byte key[], Address src, Address dst, long grams) {
+    return create_message (signature, seqno, valid_until, payload, key, src, dst, grams).toBoc (); 
+  }
 
   public static String uniform_account_name (byte workchain, ShortTxId tx) {
     var addr = new Address (workchain + ":" + Utils.base64ToHexString(tx.getAccount()));
@@ -287,8 +290,24 @@ public class Exec {
     for (BlockIdExt shard : shards) {
       last_shards.add (shard.toString ());  
     }
+    System.out.println (mi);
+  }
 
-    loop();
+  public long get_seqno (Address addr) {
+    AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+            .account_address(addr.toString(false))
+            .build();
+    var account_state = tonlib.getRawAccountState(accountAddressOnly);
+    if (account_state == null) {
+      return 0;
+    }
+    var account_data = account_state.getData ();
+    if (account_data == null) {
+      return 0;
+    }
+    var cell = Cell.fromBoc (Utils.base64ToBytes (account_data));
+    System.out.println (cell);
+    return cell.bits.preReadUint (32).intValue ();
   }
 
   public static void main (String args[]) {
@@ -307,7 +326,9 @@ public class Exec {
     Cell g = Cell.fromBoc (e); 
     System.out.println(g.print ());
 
-    //Exec exc = new Exec ();
-    //exc.run ();
+    Exec exc = new Exec ();
+    exc.run ();
+    var seqno = exc.get_seqno (new Address ("UQD8_APnOuqlPiHEzuf92UAtO67ljhmS3-8KQypVuovzn5my"));
+    System.out.println (seqno);
   }
 }

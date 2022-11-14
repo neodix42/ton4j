@@ -16,6 +16,6 @@ public class RawAccountState {
     String balance;
     String code;
     String data;
-    String last_transaction_id;
+    LastTransactionId last_transaction_id;
     long sync_utime;
 }
