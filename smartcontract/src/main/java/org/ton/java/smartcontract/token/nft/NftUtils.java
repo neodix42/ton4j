@@ -135,17 +135,23 @@ public class NftUtils {
      * @return Address|null
      */
     public static Address parseAddress(Cell cell) {
-        BigInteger n = readIntFromBitString(cell.bits, 3, 8);
-        if (n.compareTo(BigInteger.valueOf(127L)) > 0) {
-            n = n.subtract(BigInteger.valueOf(256L));
-        }
-        BigInteger hashPart = readIntFromBitString(cell.bits, 3 + 8, 256);
-        if ((n.toString(10) + ":" + hashPart.toString(16)).equals("0:0")) { // todo
+        String result;
+
+        try {
+            BigInteger n = readIntFromBitString(cell.bits, 3, 8);
+            if (n.compareTo(BigInteger.valueOf(127L)) > 0) {
+                n = n.subtract(BigInteger.valueOf(256L));
+            }
+            BigInteger hashPart = readIntFromBitString(cell.bits, 3 + 8, 256);
+            if ((n.toString(10) + ":" + hashPart.toString(16)).equals("0:0")) {
+                return null;
+            }
+
+            result = n.toString(10) + ":" + StringUtils.leftPad(hashPart.toString(16), 64, '0');
+        } catch (Exception e) {
             return null;
         }
-
-        String s = n.toString(10) + ":" + StringUtils.leftPad(hashPart.toString(16), 64, '0');
-        return new Address(s);
+        return new Address(result);
     }
 
     /**

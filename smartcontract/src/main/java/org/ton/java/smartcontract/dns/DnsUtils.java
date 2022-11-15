@@ -187,7 +187,8 @@ public class DnsUtils {
                     }
                 } else {
 //                    dnsResolveImpl(tonlib, nextAddress.toString(), rawDomainBytes.slice(resultLen / 8), category, false);
-                    return dnsResolveImpl(tonlib, nextAddress, Arrays.copyOfRange(rawDomainBytes, resultLen / 8, rawDomainBytes.length), category, false);// rawDomainBytes.slice(resultLen / 8), category, false);
+                    return dnsResolveImpl(tonlib, nextAddress, Arrays.copyOfRange(rawDomainBytes, resultLen / 8, rawDomainBytes.length), category, false);
+                    // rawDomainBytes.slice(resultLen / 8), category, false);
 //                    return dnsResolveImpl(tonlib, nextAddress, Arrays.copyOfRange(rawDomainBytes, 0, resultLen / 8), category, false);// rawDomainBytes.slice(resultLen / 8), category, false);
                 }
             }

@@ -12,6 +12,8 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
+
 public class SimpleWalletContractR3 implements WalletContract {
 
     public static final String V1_R3_CODE_HEX = "B5EE9C7241010101005F0000BAFF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F260810200D71820D70B1FED44D0D31FD3FFD15112BAF2A122F901541044F910F2A2F80001D31F3120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED54B5B86E42";
@@ -52,9 +54,30 @@ public class SimpleWalletContractR3 implements WalletContract {
     public long getSeqno(Tonlib tonlib) {
 
         Address myAddress = getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "seqno");
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
 
+        int i = 0;
+        TvmStackEntryNumber seqno = null;
+        do {
+            try {
+                RunResult result = tonlib.runMethod(myAddress, "seqno");
+                seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
+
+            } catch (Exception e) {
+                //todo
+            }
+            if (++i > 10) {
+                throw new Error("cannot get seqno from contract " + myAddress.toString(true, true, true));
+            }
+            try {
+                if (isNull(seqno)) {
+                    Thread.sleep(5000);
+                }
+            } catch (Exception e) {
+                //todo
+            }
+
+
+        } while (isNull(seqno));
         return seqno.getNumber().longValue();
     }
 

@@ -50,7 +50,7 @@ public class DnsCollection implements Contract {
         }
 
         if (isNull(options.getCollectionContent()) && isNull(options.getAddress())) {
-            throw new Error("Required collecntionContent cell");
+            throw new Error("Required collectionContent cell");
         }
     }
 
@@ -105,7 +105,7 @@ public class DnsCollection implements Contract {
                 .collectionContentUri(collectionContentUri)
                 .collectionContentCell(collectionContent)
                 .ownerAddress(null)
-                .nextItemIndex(nextItemIndex)
+                .nextItemIndex(nextItemIndex) //always -1
                 .build();
     }
 
@@ -134,6 +134,13 @@ public class DnsCollection implements Contract {
 
         TvmStackEntryCell addr = (TvmStackEntryCell) result.getStackEntry().get(0);
         return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(addr.getCell().getBytes())));
+    }
+
+    public Address getNftItemAddressByDomain(Tonlib tonlib, String domain) {
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeString(domain);
+        String cellHash = Utils.bytesToHex(cell.endCell().hash());
+        return getNftItemAddressByIndex(tonlib, new BigInteger(cellHash, 16));
     }
 
     /**

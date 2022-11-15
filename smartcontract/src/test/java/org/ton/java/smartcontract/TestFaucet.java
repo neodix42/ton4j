@@ -19,6 +19,7 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.nonNull;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
@@ -41,17 +42,28 @@ public class TestFaucet {
                 .build();
 
         Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
-        SimpleWalletContractR3 contract = wallet.create();
-        log.info("faucet address {}", contract.getAddress().toString(false));
+        SimpleWalletContractR3 faucet = wallet.create();
 
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), destinationAddress, amount);
+        try {
+            BigInteger faucetBalance = new BigInteger(tonlib.getAccountState(faucet.getAddress()).getBalance());
+            log.info("faucet address {}, balance {}", faucet.getAddress().toString(true, true, true), Utils.formatNanoValue(faucetBalance));
+            if (faucetBalance.compareTo(amount) < 0) {
+                throw new Error("faucet does not have that much toncoins. faucet balance" + Utils.formatNanoValue(faucetBalance) + ", requested " + Utils.formatNanoValue(amount));
+            }
+        } catch (Exception e) {
+            throw new Error("cannot get faucet balance. restart");
+        }
 
-        BigInteger newBalance;
+        faucet.sendTonCoins(tonlib, keyPair.getSecretKey(), destinationAddress, amount);
+
+        BigInteger newBalance = BigInteger.ZERO;
         int i = 0;
         do {
             log.info("topping up the wallet...");
             TimeUnit.SECONDS.sleep(5);
-            newBalance = new BigInteger(tonlib.getAccountState(destinationAddress).getBalance());
+            if (nonNull(tonlib.getAccountState(destinationAddress).getBalance())) {
+                newBalance = new BigInteger(tonlib.getAccountState(destinationAddress).getBalance());
+            }
             if (++i > 10) {
                 throw new Error("cannot top up the contract " + destinationAddress);
             }

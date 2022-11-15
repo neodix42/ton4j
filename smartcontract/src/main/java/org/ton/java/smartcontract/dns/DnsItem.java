@@ -85,10 +85,11 @@ public class DnsItem implements Contract {
 
         TvmStackEntryNumber isInitializedNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
         boolean isInitialized = isInitializedNumber.getNumber().longValue() == -1;
+
         BigInteger index = ((TvmStackEntryNumber) result.getStackEntry().get(1)).getNumber();
 
         TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
-        Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(collectionAddr.getCell().getBytes())));
+        Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(collectionAddr.getCell().getBytes())));
 
         TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStackEntry().get(3);
         Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(ownerAddr.getCell().getBytes()))) : null;
@@ -153,6 +154,18 @@ public class DnsItem implements Contract {
 
         TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStackEntry().get(0);
         return new String(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(domainCell.getCell().getBytes())).bits.toByteArray());
+    }
+
+    public Address getEditor(Tonlib tonlib) {
+        Address myAddress = this.getAddress();
+        RunResult result = tonlib.runMethod(myAddress, "get_editor");
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_editor, returned an exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryCell editorCell = (TvmStackEntryCell) result.getStackEntry().get(0);
+        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(editorCell.getCell().getBytes())));
     }
 
     /**
