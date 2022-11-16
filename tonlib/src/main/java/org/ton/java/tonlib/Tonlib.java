@@ -46,10 +46,20 @@ public class Tonlib {
      */
     private String pathToTonlibSharedLib;
     /**
-     * if not specified then integrated global-config.json is used;
+     * if not specified and globalConfigAsString is null then integrated global-config.json is used;
+     * <p>
+     * if not specified and globalConfigAsString is filled then globalConfigAsString is used;
+     * <p>
      * If not specified and testnet=true then integrated testnet-global.config.json is used;
      */
     private String pathToGlobalConfig;
+
+    /**
+     * if not specified and pathToGlobalConfig is null then integrated global-config.json is used;
+     * <p>
+     * if not specified and pathToGlobalConfig is filled then pathToGlobalConfig is used;
+     */
+    private String globalConfigAsString;
     /**
      * Valid values are:<br>
      * 0 - FATAL<br>
@@ -143,18 +153,23 @@ public class Tonlib {
 
                 String configData;
                 if (isNull(super.pathToGlobalConfig)) {
-                    InputStream config;
-                    if (super.testnet) {
-                        super.pathToGlobalConfig = "testnet-global.config.json (integrated resource)";
-                        config = Tonlib.class.getClassLoader().getResourceAsStream("testnet-global.config.json");
-                    } else {
-                        super.pathToGlobalConfig = "global-config.json (integrated resource)";
-                        config = Tonlib.class.getClassLoader().getResourceAsStream("global-config.json");
-                    }
-                    configData = Utils.streamToString(config);
 
-                    if (nonNull(config)) {
-                        config.close();
+                    if (isNull(super.globalConfigAsString)) {
+                        InputStream config;
+                        if (super.testnet) {
+                            super.pathToGlobalConfig = "testnet-global.config.json (integrated resource)";
+                            config = Tonlib.class.getClassLoader().getResourceAsStream("testnet-global.config.json");
+                        } else {
+                            super.pathToGlobalConfig = "global-config.json (integrated resource)";
+                            config = Tonlib.class.getClassLoader().getResourceAsStream("global-config.json");
+                        }
+                        configData = Utils.streamToString(config);
+
+                        if (nonNull(config)) {
+                            config.close();
+                        }
+                    } else {
+                        configData = super.globalConfigAsString;
                     }
                 } else {
                     if (Files.exists(Paths.get(super.pathToGlobalConfig))) {
@@ -171,12 +186,15 @@ public class Tonlib {
                                 "Location: %s\n" +
                                 "Verbosity level: %s (%s)\n" +
                                 "Keystore in memory: %s\n" +
-                                "Keystore path: %s\nPath to global config: %s\n" +
+                                "Keystore path: %s\n" +
+                                "Path to global config: %s\n" +
+                                "Global config as string: %s\n" +
                                 "Testnet: %s\n" +
                                 "Receive timeout: %s seconds\n" +
                                 "Receive retry times: %s%n",
                         super.pathToTonlibSharedLib, super.verbosityLevel, super.verbosityLevel.ordinal(),
                         super.keystoreInMemory, super.keystorePath, super.pathToGlobalConfig,
+                        isNull(super.globalConfigAsString) ? "" : super.globalConfigAsString.substring(0, 33),
                         super.testnet, super.receiveTimeout, super.receiveRetryTimes);
 
                 VerbosityLevelQuery verbosityLevelQuery = VerbosityLevelQuery.builder().new_verbosity_level(super.verbosityLevel.ordinal()).build();
@@ -643,7 +661,6 @@ public class Tonlib {
 
         RunResultGeneric<String> g = gson.fromJson(result, RunResultGeneric.class);
 
-        //bytes -> te6cckEBAQEAJgAAR7qTgBxn2mdIXWQGQLPy+yGODfCAF2StpkJzlOD+Ksla0zj7sO/0J1M=
         return ParseRunResult.getTypedRunResult(g.getStack(), g.getExit_code(), g.getGas_used(), g.getExtra());
     }
 

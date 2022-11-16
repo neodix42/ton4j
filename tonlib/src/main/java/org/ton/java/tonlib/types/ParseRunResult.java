@@ -223,6 +223,7 @@ public class ParseRunResult {
 
             stackElement = Utils.getSafeString(stackElement, processResult, "@type=tvm.cell");
             stackElement = Utils.getSafeString(stackElement, stackElement, "@type=tvm.slice");
+//            stackElement = Utils.getSafeString(stackElement, stackElement, "@type=tvm.tuple");
 
             String resultEscaped = stackElement;
             if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntryList")) {
