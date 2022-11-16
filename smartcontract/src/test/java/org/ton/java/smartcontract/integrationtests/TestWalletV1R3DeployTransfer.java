@@ -23,7 +23,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestSimpleWalletR3DeployTransfer {
+public class TestWalletV1R3DeployTransfer {
 
     @Test
     public void testNewWalletSimple() throws InterruptedException {
@@ -59,7 +59,7 @@ public class TestSimpleWalletR3DeployTransfer {
         // top up new wallet using test-faucet-wallet
         Tonlib tonlib = Tonlib.builder().testnet(true).build();
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
-        log.info("new wallet V1R3 balance: {}", Utils.formatNanoValue(balance));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
         tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
@@ -73,13 +73,16 @@ public class TestSimpleWalletR3DeployTransfer {
 
         log.info("new wallet state: {}", state);
 
-        // try to transfer coins from new wallet (back to faucet)
+        // transfer coins from new wallet (back to faucet)
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
 
         Utils.sleep(15);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
-        log.info("new wallet V1R3 balance: {}", Utils.formatNanoValue(balance));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
+
+        log.info("seqno {}", contract.getSeqno(tonlib));
+        log.info("pubkey {}", contract.getPublicKey(tonlib));
     }
 }

@@ -31,16 +31,13 @@ public class Options {
     public SubscriptionInfo subscriptionConfig;
     public String index; //dns item index, sha256
     public Address collectionAddress; // todo dns config
-
     public Cell collectionContent;
     public String collectionContentUri;
     public String collectionContentBaseUri;
     public String dnsItemCodeHex;
-
     public Address adminAddress;
     public String jettonContentUri; // todo jetton config
     public String jettonWalletCodeHex;
-
     public Address marketplaceAddress;
     public Address nftItemAddress;
     public String nftItemCodeHex;

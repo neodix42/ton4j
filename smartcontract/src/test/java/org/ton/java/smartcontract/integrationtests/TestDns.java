@@ -399,14 +399,4 @@ public class TestDns {
 
         tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
     }
-
-    // deployRootDns();
-    // dnsResolve();
-    // deployDnsCollection();
-    // getDnsCollectionInfo
-    // setWalletRecord();
-    // transferDnsItem();
-    // releaseDnsItem();
-    // govDnsItem();
-    // getStaticData();
 }

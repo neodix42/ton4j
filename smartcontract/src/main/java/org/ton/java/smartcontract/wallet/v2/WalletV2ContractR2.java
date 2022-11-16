@@ -1,7 +1,11 @@
 package org.ton.java.smartcontract.wallet.v2;
 
+import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.smartcontract.wallet.Options;
+import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.RunResult;
+import org.ton.java.tonlib.types.TvmStackEntryNumber;
 
 public class WalletV2ContractR2 extends WalletV2ContractBase {
 
@@ -18,5 +22,18 @@ public class WalletV2ContractR2 extends WalletV2ContractBase {
     @Override
     public String getName() {
         return "v2R2";
+    }
+
+    public String getPublicKey(Tonlib tonlib) {
+
+        Address myAddress = this.getAddress();
+        RunResult result = tonlib.runMethod(myAddress, "get_public_key");
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_public_key, returned an exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryNumber publicKeyNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        return publicKeyNumber.getNumber().toString(16);
     }
 }

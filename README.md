@@ -35,15 +35,15 @@ Java libraries for interacting with TON blockchain.
 </dependency>
 ```
 
-You can use each sub-module individualy. Click the module below to get more details.
+You can use each submodule individually. Click the module below to get more details.
 
 * [Tonlib](tonlib/README.md) - use external Tonlib shared library to communicate with TON blockchain.
 * [SmartContract](smartcontract/README.md) - create and deploy custom and predefined smart-contracts.
 * [Cell](cell/README.md) - create, read and manipulate Bag of Cells.
-* [BitString](bitstring/README.md) - construct bitstrings. All data in Cells stored in bitstrings.
+* [BitString](bitstring/README.md) - construct bit-strings.
 * [Address](address/README.md) - create and parse TON wallet addresses.
 * [Mnemonic](mnemonic/README.md) - helpful methods for generating deterministic keys for TON blockchain.
-* [Utils](utils/README.md) - create private and public keys, convert data.
+* [Utils](utils/README.md) - create private and public keys, convert data, etc.
 
 ### Features
 
@@ -57,15 +57,14 @@ You can use each sub-module individualy. Click the module below to get more deta
 * ✅ Get block transactions
 * ✅ Get account transactions
 * ✅ Deploy contracts and send external messages using Tonlib
-* ✅ Wallet operations (Simple, V2, V3, V4, Lockup)
+* ✅ Wallet operations (Simple, V2, V3, V4, Lockup, DNS, Jetton, NFT)
 * ✅ Cell hashmap serialization / deserialization
 
 ### Todo
 
 * Support tuple and list as arguments for runMethod
-* Add TON DNS support
 * Add TON Payment channel support
-* Add FT (Jetton) and NFT tokens support
+* Add highload wallet support
 * Fix dictionary de/serialization with one entry
 * Improve test coverage and add more integration tests
 

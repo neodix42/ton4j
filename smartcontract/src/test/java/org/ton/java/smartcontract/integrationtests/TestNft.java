@@ -38,7 +38,6 @@ public class TestNft {
     static TestWallet nftItemBuyer;
     static Tonlib tonlib = Tonlib.builder()
             .testnet(true)
-//            .verbosityLevel(VerbosityLevel.DEBUG)
             .build();
 
     @BeforeClass

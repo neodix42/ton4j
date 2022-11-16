@@ -26,7 +26,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV4PluginsDeployTransfer {
+public class TestWalletV4R2PluginsDeployTransfer {
 
     @Test
     public void testPlugins() throws InterruptedException {
@@ -77,7 +77,7 @@ public class TestWalletV4PluginsDeployTransfer {
                 .build();
 
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
-        log.info("new wallet balance: {}", Utils.formatNanoValue(balance));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy wallet-v4
         tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));

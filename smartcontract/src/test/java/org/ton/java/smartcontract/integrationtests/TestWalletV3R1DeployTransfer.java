@@ -79,7 +79,7 @@ public class TestWalletV3R1DeployTransfer {
         Utils.sleep(15);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
-        log.info("new wallet V3R1 balance: {}", Utils.formatNanoValue(balance));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
     }
 }

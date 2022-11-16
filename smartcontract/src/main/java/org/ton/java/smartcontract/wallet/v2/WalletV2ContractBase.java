@@ -3,8 +3,12 @@ package org.ton.java.smartcontract.wallet.v2;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.smartcontract.types.ExternalMessage;
+import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
+import org.ton.java.tonlib.Tonlib;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.Date;
@@ -39,7 +43,7 @@ public class WalletV2ContractBase implements WalletContract {
             }
         } else {
             Date date = new Date();
-            long timestamp = (long) Math.floor(date.getTime() / (double) 1e3);
+            long timestamp = (long) Math.floor(date.getTime() / 1e3);
             message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
         }
         return message.endCell();
@@ -56,5 +60,89 @@ public class WalletV2ContractBase implements WalletContract {
             return (createStateInit()).address;
         }
         return address;
+    }
+
+    public void deploy(Tonlib tonlib, byte[] secretKey) {
+        tonlib.sendRawMessage(Utils.bytesToBase64(createInitExternalMessage(secretKey).message.toBoc(false)));
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
+        long seqno = getSeqno(tonlib);
+        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
+        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount) {
+        long seqno = getSeqno(tonlib);
+
+        Cell orderHeader1 = Contract.createInternalMessageHeader(destinationAddress1, amount);
+        Cell order1 = Contract.createCommonMsgInfo(orderHeader1, null, null);
+
+        Cell orderHeader2 = Contract.createInternalMessageHeader(destinationAddress2, amount);
+        Cell order2 = Contract.createCommonMsgInfo(orderHeader2, null, null);
+
+        Cell signingMessageAll = createSigningMessage(seqno);
+        signingMessageAll.bits.writeUint8(3 & 0xff);
+        signingMessageAll.bits.writeUint8(3 & 0xff);
+        signingMessageAll.refs.add(order1);
+        signingMessageAll.refs.add(order2);
+
+        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
+        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, BigInteger amount) {
+        long seqno = getSeqno(tonlib);
+
+        Cell orderHeader1 = Contract.createInternalMessageHeader(destinationAddress1, amount);
+        Cell order1 = Contract.createCommonMsgInfo(orderHeader1, null, null);
+
+        Cell orderHeader2 = Contract.createInternalMessageHeader(destinationAddress2, amount);
+        Cell order2 = Contract.createCommonMsgInfo(orderHeader2, null, null);
+
+        Cell orderHeader3 = Contract.createInternalMessageHeader(destinationAddress3, amount);
+        Cell order3 = Contract.createCommonMsgInfo(orderHeader3, null, null);
+
+        Cell signingMessageAll = createSigningMessage(seqno);
+        signingMessageAll.bits.writeUint8(3 & 0xff);
+        signingMessageAll.bits.writeUint8(3 & 0xff);
+        signingMessageAll.bits.writeUint8(3 & 0xff);
+
+        signingMessageAll.refs.add(order1);
+        signingMessageAll.refs.add(order2);
+        signingMessageAll.refs.add(order3);
+
+        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
+        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount) {
+        long seqno = getSeqno(tonlib);
+
+        Cell orderHeader1 = Contract.createInternalMessageHeader(destinationAddress1, amount);
+        Cell order1 = Contract.createCommonMsgInfo(orderHeader1, null, null);
+
+        Cell orderHeader2 = Contract.createInternalMessageHeader(destinationAddress2, amount);
+        Cell order2 = Contract.createCommonMsgInfo(orderHeader2, null, null);
+
+        Cell orderHeader3 = Contract.createInternalMessageHeader(destinationAddress3, amount);
+        Cell order3 = Contract.createCommonMsgInfo(orderHeader3, null, null);
+
+        Cell orderHeader4 = Contract.createInternalMessageHeader(destinationAddress4, amount);
+        Cell order4 = Contract.createCommonMsgInfo(orderHeader4, null, null);
+
+        Cell signingMessageAll = createSigningMessage(seqno);
+        signingMessageAll.bits.writeUint8(3 & 0xff);
+        signingMessageAll.bits.writeUint8(3 & 0xff);
+        signingMessageAll.bits.writeUint8(3 & 0xff);
+        signingMessageAll.bits.writeUint8(3 & 0xff);
+
+        signingMessageAll.refs.add(order1);
+        signingMessageAll.refs.add(order2);
+        signingMessageAll.refs.add(order3);
+        signingMessageAll.refs.add(order4);
+
+        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
+        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
     }
 }

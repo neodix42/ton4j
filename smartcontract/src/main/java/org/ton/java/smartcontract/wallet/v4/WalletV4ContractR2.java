@@ -180,22 +180,9 @@ public class WalletV4ContractR2 implements WalletContract {
         return setPlugin(params, false);
     }
 
-    /**
-     * Get current seqno of wallet-v4
-     *
-     * @return long
-     */
-    public long getSeqno(Tonlib tonlib) {
-
-        Address myAddress = getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "seqno");
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
-
-        return seqno.getNumber().longValue();
-    }
 
     /**
-     * @return long subwallet-id
+     * @return subwallet-id long
      */
     public long getWalletId(Tonlib tonlib) {
 

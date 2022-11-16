@@ -77,26 +77,10 @@ public class WalletV3ContractBase implements WalletContract {
         cell.storeBytes(getOptions().publicKey);
         return cell.endCell();
     }
-
-
-//    public long getSeqno(Tonlib tonlib) {
-//
-//        Address myAddress = getAddress();
-//        RunResult result = tonlib.runMethod(myAddress, "seqno");
-//        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
-//
-//        return seqno.getNumber().longValue();
-//    }
-
-    public boolean sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
-        try {
-            long seqno = getSeqno(tonlib);
-            ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-            tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
-            return true;
-        } catch (Throwable e) {
-            System.err.println("Error sending TonCoins to " + destinationAddress.toString() + ". " + e.getMessage());
-            return false;
-        }
+    
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
+        long seqno = getSeqno(tonlib);
+        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
+        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
     }
 }
