@@ -36,16 +36,16 @@ Currently, following wallet versions and revisions are supported:
 * v3R1
 * v3R2 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV3R2DeployTransferShort.java)
 * v4R1
-* v4R2 - subscription, plugins [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV4R2PluginsDeployTransfer.java)
-* Lockup - restricted
+* v4R2 - subscription, plugins [(see usage example)](plugin-example.md)
+* ~~Lockup - restricted [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestLockupWalletDeployTransfer.java)~~
 * Dns [(see usage example)](dns-example.md)
 * Jetton [(see usage example)](jetton-example.md)
-* NFT
+* NFT [(see usage example)](nft-example.md)
 * Custom contract [(see usage example)](custom-smc-example.md)
 
 
 More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/java/smartcontract) can be
-found in [tests](../smartcontract/src/test/java/org/ton/java/smartcontract).
+found in [here](../smartcontract/src/test/java/org/ton/java/smartcontract).
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/smartcontract
 

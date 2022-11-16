@@ -26,7 +26,8 @@ log.info("minter totalSupply {}", Utils.formatNanoValue(data.getTotalSupply()));
 ### Mint jettons
 ```java
 // sequential calls to mint() sum up to totalSupply;
-minter.mint(tonlib, adminWallet.getWallet(), adminWallet.getWallet().getAddress(), Utils.toNano(0.05), Utils.toNano(0.04), Utils.toNano(100500), adminWallet.getKeyPair());
+minter.mint(tonlib, adminWallet.getWallet(), adminWallet.getWallet().getAddress(), 
+            Utils.toNano(0.05), Utils.toNano(0.04), Utils.toNano(100500), adminWallet.getKeyPair());
 
 // now total supply is available
 log.info("jetton total supply {}", minter.getTotalSupply(tonlib));
@@ -60,7 +61,8 @@ log.info("admin JettonWalletAddress {}", adminJettonWalletAddress.toString(true,
 
 ### Edit minter content
 ```java
-private void editMinterContent(WalletContract adminWallet, JettonMinter minter, String newUriContent, TweetNaclFast.Signature.KeyPair keyPair) {
+private void editMinterContent(WalletContract adminWallet, JettonMinter minter, 
+                               String newUriContent, TweetNaclFast.Signature.KeyPair keyPair) {
 
     long seqno = adminWallet.getSeqno(tonlib);
 
@@ -77,7 +79,8 @@ private void editMinterContent(WalletContract adminWallet, JettonMinter minter, 
 
 ### Change minter owner
 ```java
-private void changeMinterAdmin(WalletContract adminWallet, JettonMinter minter, Address newAdmin, TweetNaclFast.Signature.KeyPair keyPair) {
+private void changeMinterAdmin(WalletContract adminWallet, JettonMinter minter, 
+                               Address newAdmin, TweetNaclFast.Signature.KeyPair keyPair) {
 
     long seqno = adminWallet.getSeqno(tonlib);
 
@@ -94,7 +97,8 @@ private void changeMinterAdmin(WalletContract adminWallet, JettonMinter minter, 
 
 ### Transfer jettons
 ```java
-private void transfer(WalletContract admin, Address jettonWalletAddress, Address toAddress, BigInteger jettonAmount, TweetNaclFast.Signature.KeyPair keyPair) {
+private void transfer(WalletContract admin, Address jettonWalletAddress, Address toAddress, 
+                      BigInteger jettonAmount, TweetNaclFast.Signature.KeyPair keyPair) {
     
     long seqno = admin.getSeqno(tonlib);
 
@@ -119,7 +123,8 @@ private void transfer(WalletContract admin, Address jettonWalletAddress, Address
 
 ### Burn jettons
 ```java
-private void burn(WalletContract admin, Address jettonWalletAddress, BigInteger jettonAmount, Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
+private void burn(WalletContract admin, Address jettonWalletAddress, BigInteger jettonAmount, 
+                  Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
 
     long seqno = admin.getSeqno(tonlib);
 

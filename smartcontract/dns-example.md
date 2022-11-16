@@ -47,7 +47,8 @@ log.info("dns collection info {}", data);
 
 ### Deploy DNS item to the collection
 ```java
-private void deployDnsItem(Tonlib tonlib, WalletContract adminWallet, BigInteger msgValue, Address dnsCollectionAddress, String domainName, TweetNaclFast.Signature.KeyPair keyPair) {
+private void deployDnsItem(Tonlib tonlib, WalletContract adminWallet, BigInteger msgValue, 
+                           Address dnsCollectionAddress, String domainName, TweetNaclFast.Signature.KeyPair keyPair) {
 
     long seqno = adminWallet.getSeqno(tonlib);
 
@@ -56,11 +57,11 @@ private void deployDnsItem(Tonlib tonlib, WalletContract adminWallet, BigInteger
     body.storeRef(CellBuilder.beginCell().storeString(domainName).endCell());
 
     ExternalMessage extMsg = adminWallet.createTransferMessage(
-    keyPair.getSecretKey(),
-    dnsCollectionAddress,
-    msgValue,
-    seqno,
-    body.endCell()
+        keyPair.getSecretKey(),
+        dnsCollectionAddress,
+        msgValue,
+        seqno,
+        body.endCell()
     );
 
     tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
@@ -81,7 +82,8 @@ private void getDnsItemInfo(DnsCollection dnsCollection, DnsItem dnsItem) {
         AuctionInfo auctionInfo = dnsItem.getAuctionInfo(tonlib);
         Address maxBidAddress = auctionInfo.getMaxBidAddress();
         BigInteger maxBidAmount = auctionInfo.getMaxBidAmount();
-        log.info("AUCTION: maxBid {}, maxBidAddress {}, endTime {}", Utils.formatNanoValue(maxBidAmount), maxBidAddress.toString(true, true, true), Utils.toUTC(auctionInfo.getAuctionEndTime()));
+        log.info("AUCTION: maxBid {}, maxBidAddress {}, endTime {}", Utils.formatNanoValue(maxBidAmount), 
+                    maxBidAddress.toString(true, true, true), Utils.toUTC(auctionInfo.getAuctionEndTime()));
     } else {
         log.info("SOLD to {}", data.getOwnerAddress().toString(true, true, true));
     }
@@ -95,7 +97,7 @@ private void getDnsItemInfo(DnsCollection dnsCollection, DnsItem dnsItem) {
 
 ### Make a bid on auction
 In order to purchase a domain name you have to make a bid on auction for the interested DNS item. 
-This can be done by simply sending toncoins to the DNS item smart-contract address. 
+This can be done by sending toncoins to the DNS item smart-contract address. 
 ```java
 buyerWallet.getWallet().sendTonCoins(tonlib, buyerWallet.getKeyPair().getSecretKey(), dnsItem1Address, Utils.toNano(13));
 ```
@@ -109,13 +111,14 @@ private void changeDnsRecord(TestWallet ownerWallet, DnsItem dnsItem, Address ne
     long seqno = ownerWallet.getWallet().getSeqno(tonlib);
 
     ExternalMessage extMsg = ownerWallet.getWallet().createTransferMessage(
-    ownerWallet.getKeyPair().getSecretKey(),
-    dnsItem.getAddress(), // toAddress
-    Utils.toNano(0.07),
-    seqno,
-    DnsItem.createChangeContentEntryBody(DNS_CATEGORY_WALLET,
-    DnsUtils.createSmartContractAddressRecord(newSmartContract),
-    0));
+        ownerWallet.getKeyPair().getSecretKey(),
+        dnsItem.getAddress(), // toAddress
+        Utils.toNano(0.07),
+        seqno,
+        DnsItem.createChangeContentEntryBody(DNS_CATEGORY_WALLET,
+        DnsUtils.createSmartContractAddressRecord(newSmartContract),
+        0)
+    );
 
     tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
 }
@@ -126,11 +129,12 @@ private void getStaticData(TestWallet ownerWallet, DnsItem dnsItem) {
     long seqno = ownerWallet.getWallet().getSeqno(tonlib);
 
     ExternalMessage extMsg = ownerWallet.getWallet().createTransferMessage(
-    ownerWallet.getKeyPair().getSecretKey(),
-    dnsItem.getAddress(), // toAddress
-    Utils.toNano(0.05),
-    seqno,
-    dnsItem.createStaticDataBody(661));
+        ownerWallet.getKeyPair().getSecretKey(),
+        dnsItem.getAddress(), // toAddress
+        Utils.toNano(0.05),
+        seqno,
+        dnsItem.createStaticDataBody(661)
+    );
 
     tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
 }
@@ -170,11 +174,12 @@ private void releaseDnsItem(TestWallet ownerWallet, DnsItem dnsItem, BigInteger 
     payload.storeUint(123, 64);
 
     ExternalMessage extMsg = ownerWallet.getWallet().createTransferMessage(
-    ownerWallet.getKeyPair().getSecretKey(),
-    dnsItem.getAddress(), // toAddress
-    amount,
-    seqno,
-    payload.endCell());
+        ownerWallet.getKeyPair().getSecretKey(),
+        dnsItem.getAddress(), // toAddress
+        amount,
+        seqno,
+        payload.endCell()
+    );
 
     tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
 }

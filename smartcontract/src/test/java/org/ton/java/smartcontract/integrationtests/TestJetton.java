@@ -128,7 +128,7 @@ public class TestJetton {
 
 
     private void editMinterContent(WalletContract adminWallet, JettonMinter minter, String newUriContent, TweetNaclFast.Signature.KeyPair keyPair) {
-        log.info("edit content");
+
         long seqno = adminWallet.getSeqno(tonlib);
 
         ExternalMessage extMsg = adminWallet.createTransferMessage(
@@ -142,7 +142,7 @@ public class TestJetton {
     }
 
     private void changeMinterAdmin(WalletContract adminWallet, JettonMinter minter, Address newAdmin, TweetNaclFast.Signature.KeyPair keyPair) {
-        log.info("change admin");
+
         long seqno = adminWallet.getSeqno(tonlib);
 
         ExternalMessage extMsg = adminWallet.createTransferMessage(

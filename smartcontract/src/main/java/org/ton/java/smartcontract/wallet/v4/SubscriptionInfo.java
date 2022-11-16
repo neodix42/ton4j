@@ -13,7 +13,6 @@ import java.math.BigInteger;
 @Setter
 @ToString
 public class SubscriptionInfo {
-
     Address walletAddress;
     Address beneficiary;
     BigInteger subscriptionFee;
@@ -23,7 +22,7 @@ public class SubscriptionInfo {
     long lastPaymentTime;
     long lastRequestTime;
     boolean isPaid;
-    boolean isPaymentready;
+    boolean isPaymentReady;
     long failedAttempts;
     long subscriptionId;
 }

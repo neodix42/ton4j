@@ -142,7 +142,7 @@ public class JettonMinter implements Contract {
      */
     public Cell createEditContentBody(String jettonContentUri, long queryId) {
         CellBuilder body = CellBuilder.beginCell();
-        body.storeUint(4, 32); // OP
+        body.storeUint(4, 32); // OP change content
         body.storeUint(queryId, 64); // query_id
         body.storeRef(NftUtils.createOffchainUriCell(jettonContentUri));
         return body;

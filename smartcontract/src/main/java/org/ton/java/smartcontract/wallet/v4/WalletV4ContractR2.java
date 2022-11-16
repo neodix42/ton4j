@@ -83,7 +83,7 @@ public class WalletV4ContractR2 implements WalletContract {
             }
         } else {
             Date date = new Date();
-            long timestamp = (long) Math.floor(date.getTime() / (double) 1e3);
+            long timestamp = (long) Math.floor(date.getTime() / 1e3);
             message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
         }
 
@@ -310,7 +310,7 @@ public class WalletV4ContractR2 implements WalletContract {
                 .lastPaymentTime(lastPaymentTime.getNumber().longValue())
                 .lastRequestTime(lastRequestTime.getNumber().longValue())
                 .isPaid(isPaid)
-                .isPaymentready(paymentReady)
+                .isPaymentReady(paymentReady)
                 .failedAttempts(failedAttempts.getNumber().longValue())
                 .subscriptionId(subscriptionId.getNumber().longValue())
                 .build();

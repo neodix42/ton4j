@@ -8,7 +8,6 @@ import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
@@ -20,7 +19,7 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * https://github.com/toncenter/tonweb/tree/master/src/contract/lockup
+ * <a href="https://github.com/toncenter/tonweb/tree/master/src/contract/lockup">lockup contract</a>
  * Funding the wallet with custom time-locks is out of scope for this implementation at the time. This can be performed by specialized software.
  */
 public class LockupWalletV1 implements WalletContract {
@@ -213,11 +212,6 @@ public class LockupWalletV1 implements WalletContract {
         );
     }
 
-    /**
-     * Get current seqno
-     *
-     * @return long
-     */
     public long getSeqno(Tonlib tonlib) {
 
         Address myAddress = getAddress();
@@ -227,17 +221,9 @@ public class LockupWalletV1 implements WalletContract {
         return seqno.getNumber().longValue();
     }
 
-    public boolean sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
-        try {
-            long seqno = getSeqno(tonlib);
-            //createTransferMessage with payload - no , see createInternalMessageHeader contains src and dest
-            ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-            ExtMessageInfo result = tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
-            System.out.println(result);
-            return true;
-        } catch (Throwable e) {
-            System.err.println("Error sending TonCoins to " + destinationAddress.toString() + ". " + e.getMessage());
-            return false;
-        }
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
+        long seqno = getSeqno(tonlib);
+        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
+        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
     }
 }

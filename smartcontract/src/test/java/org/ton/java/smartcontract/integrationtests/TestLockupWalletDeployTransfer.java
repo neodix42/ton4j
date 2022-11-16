@@ -65,7 +65,7 @@ public class TestLockupWalletDeployTransfer {
         // top up new wallet using test-faucet-wallet
         Tonlib tonlib = Tonlib.builder().testnet(true).build();
 
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(10));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(3));
         log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
 
         // deploy new wallet
@@ -95,15 +95,23 @@ public class TestLockupWalletDeployTransfer {
         // below returns -1 - means true
         log.info("destination allowed {}", contract.check_destination(tonlib, TestFaucet.BOUNCEABLE));
         log.info("destination allowed {}", contract.check_destination(tonlib, "kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"));
+        log.info("destination allowed {}", contract.check_destination(tonlib, "EQDZno6LOWYJRHPpRv-MM3qrhFPk6OHOxVOg1HvEEAtJxK3y"));
 
         // try to transfer coins from new lockup wallet to allowed address (back to faucet)
         log.info("sending toncoins to allowed address...");
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(8));
-
-        Utils.sleep(30);
+        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(1));
+        Utils.sleep(25);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(2).longValue());
+
+        log.info("sending toncoins to not-allowed address...");
+        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of("EQDZno6LOWYJRHPpRv-MM3qrhFPk6OHOxVOg1HvEEAtJxK3y"), Utils.toNano(1.5));
+        Utils.sleep(25);
+
+        balance = new BigInteger(tonlib.getAccountState(address).getBalance());
+        log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
+//        assertThat(balance.longValue()).isLessThan(Utils.toNano(2).longValue());
     }
 }

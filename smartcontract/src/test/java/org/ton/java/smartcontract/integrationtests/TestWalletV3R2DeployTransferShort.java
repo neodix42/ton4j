@@ -58,7 +58,6 @@ public class TestWalletV3R2DeployTransferShort {
         log.info("non-bounceable address 2: {}", nonBounceableAddress2);
         log.info("    bounceable address 2: {}", bounceableAddress2);
 
-
         // top up new wallet using test-faucet-wallet
         BigInteger balance1 = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress1), Utils.toNano(1));
         log.info("walletId {} new wallet {} balance: {}", contract1.getWalletId(), contract1.getName(), Utils.formatNanoValue(balance1));
@@ -66,14 +65,12 @@ public class TestWalletV3R2DeployTransferShort {
         BigInteger balance2 = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress2), Utils.toNano(1));
         log.info("walletId {} new wallet {} balance: {}", contract2.getWalletId(), contract2.getName(), Utils.formatNanoValue(balance2));
 
-
         contract1.deploy(tonlib, keyPair.getSecretKey());
 
         contract2.deploy(tonlib, keyPair.getSecretKey());
 
         Utils.sleep(25);
-
-
+        
         // transfer coins from new wallet (back to faucet)
         contract1.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
         Utils.sleep(15);

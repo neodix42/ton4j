@@ -47,7 +47,9 @@ You can use each submodule individually. Click the module below to get more deta
 
 ### Features
 
+* ✅ BitString manipulations
 * ✅ Cells serialization / deserialization
+* ✅ Cell builder and cell slicer (reader)
 * ✅ Support num, cell and slice as arguments for runMethod
 * ✅ Render List, Tuple, Slice, Cell and Number results from runMethod
 * ✅ Generate or import private key, sign, encrypt and decrypt using Tonlib
@@ -57,16 +59,17 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ Get block transactions
 * ✅ Get account transactions
 * ✅ Deploy contracts and send external messages using Tonlib
-* ✅ Wallet operations (Simple, V2, V3, V4, Lockup, DNS, Jetton, NFT)
-* ✅ Cell hashmap serialization / deserialization
+* ✅ Wallet operations (Simple (V1), V2, V3, V4 (plugins), ~~Lockup~~, DNS, Jetton, NFT)
+* ✅ HashMap, HashMapE, PfxHashMap and PfxHashMapE serialization / deserialization
 
 ### Todo
-
+* Re-test lockup (restricted) wallet
 * Support tuple and list as arguments for runMethod
 * Add TON Payment channel support
 * Add highload wallet support
 * Fix dictionary de/serialization with one entry
 * Improve test coverage and add more integration tests
+* Add methods to store jettons metadata onchain
 
 <!-- Badges -->
 
