@@ -77,7 +77,15 @@ public class WalletV3ContractBase implements WalletContract {
         cell.storeBytes(getOptions().publicKey);
         return cell.endCell();
     }
-    
+
+    public long getWalletId() {
+        return getOptions().walletId;
+    }
+
+    public void deploy(Tonlib tonlib, byte[] secretKey) {
+        tonlib.sendRawMessage(Utils.bytesToBase64(createInitExternalMessage(secretKey).message.toBoc(false)));
+    }
+
     public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
