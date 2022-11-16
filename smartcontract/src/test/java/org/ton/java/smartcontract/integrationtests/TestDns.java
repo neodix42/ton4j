@@ -35,10 +35,6 @@ import static org.ton.java.smartcontract.dns.Dns.DNS_CATEGORY_WALLET;
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestDns {
-
-    private Address dnsItem1Address;
-    private Address dnsItem2Address;
-
     static TestWallet adminWallet;
     static TestWallet buyerWallet;
 
@@ -260,9 +256,6 @@ public class TestDns {
         Address apple = dnsCollection.getNftItemAddressByIndex(tonlib, new BigInteger(hashApple, 16));
         Address alice3 = dnsCollection.getNftItemAddressByIndex(tonlib, new BigInteger(hash3Alices, 16));
         Address aliceX = dnsCollection.getNftItemAddressByIndex(tonlib, new BigInteger(hashAlices, 16));
-
-        dnsItem1Address = Address.of(apple);
-        dnsItem2Address = Address.of(alice3);
 
         log.info("address at index hash(apple)             {} = {}", hashApple, apple.toString(true, true, true));
         log.info("address at index hash(alice-alice-alice) {} = {}", hash3Alices, alice3.toString(true, true, true));

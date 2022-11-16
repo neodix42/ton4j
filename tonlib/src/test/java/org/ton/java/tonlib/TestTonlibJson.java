@@ -105,8 +105,6 @@ public class TestTonlibJson {
 
         Tonlib tonlib = Tonlib.builder().build();
 
-        //lookupBlock
-        //BlockIdExt fullblock = tonlib.lookupBlock(23512002, -1, -9223372036854775808L, 0, 0);
         BlockIdExt fullblock = tonlib.getLast().getLast();
         assertThat(fullblock).isNotNull();
 
@@ -132,26 +130,31 @@ public class TestTonlibJson {
     public void testTonlibGetBlockTransactions() {
         Tonlib tonlib = Tonlib.builder().build();
 
-        MasterChainInfo lastBlock = tonlib.getLast();
-        log.info(lastBlock.toString());
+        for (int i = 0; i < 2; i++) {
 
-        //lookupBlock
-        BlockIdExt fullblock = tonlib.lookupBlock(444699, -1, -9223372036854775808L, 0, 0);
-        log.info(fullblock.toString());
+            MasterChainInfo lastBlock = tonlib.getLast();
+            log.info(lastBlock.toString());
 
-        BlockTransactions blockTransactions = tonlib.getBlockTransactions(fullblock, 100);
-        log.info(gs.toJson(blockTransactions));
+            BlockTransactions blockTransactions = tonlib.getBlockTransactions(lastBlock.getLast(), 100);
+            log.info(gs.toJson(blockTransactions));
 
-        String address = blockTransactions.getTransactions().get(0).getAccount();
-        String addressHex = Utils.base64ToHexString(address);
-        Address address01 = Address.of("-1:" + addressHex);
-        log.info("address: {}", address01);
-
-        long lt = blockTransactions.getTransactions().get(0).getLt();
-        String hash = blockTransactions.getTransactions().get(0).getHash(); //base64
-        RawTransactions rawTransactions = tonlib.getRawTransactions(address01.toString(false), BigInteger.valueOf(lt), hash);
-        log.info(gs.toJson(rawTransactions));
-        assertThat(rawTransactions.getTransactions().get(0)).isNotNull();
+            for (ShortTxId shortTxId : blockTransactions.getTransactions()) {
+                Address acccount = Address.of("-1:" + Utils.base64ToHexString(shortTxId.getAccount()));
+                log.info("lt {}, hash {}, account {}", shortTxId.getLt(), shortTxId.getHash(), acccount.toString(false));
+                RawTransactions rawTransactions = tonlib.getRawTransactions(acccount.toString(false), BigInteger.valueOf(shortTxId.getLt()), shortTxId.getHash());
+                for (RawTransaction tx : rawTransactions.getTransactions()) {
+                    if ((tx.getIn_msg() != null) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+                        log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
+                    }
+                    if (tx.getOut_msgs() != null) {
+                        for (RawMessage msg : tx.getOut_msgs()) {
+                            log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
+                        }
+                    }
+                }
+            }
+            Utils.sleep(10, "wait for next block");
+        }
     }
 
     @Test

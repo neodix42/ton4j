@@ -182,16 +182,17 @@ public class Tonlib {
                 super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
                 super.tonlib = super.tonlibJson.tonlib_client_json_create();
 
-                System.out.printf("Java Tonlib configuration:\n" +
-                                "Location: %s\n" +
-                                "Verbosity level: %s (%s)\n" +
-                                "Keystore in memory: %s\n" +
-                                "Keystore path: %s\n" +
-                                "Path to global config: %s\n" +
-                                "Global config as string: %s\n" +
-                                "Testnet: %s\n" +
-                                "Receive timeout: %s seconds\n" +
-                                "Receive retry times: %s%n",
+                System.out.printf("""
+                                Java Tonlib configuration:
+                                Location: %s
+                                Verbosity level: %s (%s)
+                                Keystore in memory: %s
+                                Keystore path: %s
+                                Path to global config: %s
+                                Global config as string: %s
+                                Testnet: %s
+                                Receive timeout: %s seconds
+                                Receive retry times: %s%n""",
                         super.pathToTonlibSharedLib, super.verbosityLevel, super.verbosityLevel.ordinal(),
                         super.keystoreInMemory, super.keystorePath, super.pathToGlobalConfig,
                         isNull(super.globalConfigAsString) ? "" : super.globalConfigAsString.substring(0, 33),
@@ -450,7 +451,7 @@ public class Tonlib {
     //@formatter:on
     public RawTransactions getRawTransactions(String address, BigInteger fromTxLt, String fromTxHash) {
 
-        if ((fromTxLt == null) || (fromTxHash == null)) {
+        if (isNull(fromTxLt) || isNull(fromTxHash)) {
             FullAccountState fullAccountState = getAccountState(AccountAddressOnly.builder().account_address(address).build());
             fromTxLt = fullAccountState.getLast_transaction_id().getLt();
             fromTxHash = fullAccountState.getLast_transaction_id().getHash();
@@ -503,11 +504,11 @@ public class Tonlib {
 
     public BlockTransactions getBlockTransactions(BlockIdExt fullblock, long count, AccountTransactionId afterTx) {
         int mode = 7;
-        if (afterTx != null) {
+        if (nonNull(afterTx)) {
             mode = 7 + 128;
         }
 
-        if (afterTx == null) {
+        if (isNull(afterTx)) {
             afterTx = AccountTransactionId.builder()
                     .account("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
                     .lt(0)
