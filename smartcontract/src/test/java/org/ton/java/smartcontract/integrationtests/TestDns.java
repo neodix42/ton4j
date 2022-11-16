@@ -381,15 +381,15 @@ public class TestDns {
         tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
     }
 
-    private void deployDnsItem(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address dnsCollectionAddress, String domainName, TweetNaclFast.Signature.KeyPair keyPair) {
+    private void deployDnsItem(Tonlib tonlib, WalletContract adminWallet, BigInteger msgValue, Address dnsCollectionAddress, String domainName, TweetNaclFast.Signature.KeyPair keyPair) {
 
-        long seqno = wallet.getSeqno(tonlib);
+        long seqno = adminWallet.getSeqno(tonlib);
 
         CellBuilder body = CellBuilder.beginCell();
         body.storeUint(0, 32);  // OP deploy new nft
         body.storeRef(CellBuilder.beginCell().storeString(domainName).endCell());
 
-        ExternalMessage extMsg = wallet.createTransferMessage(
+        ExternalMessage extMsg = adminWallet.createTransferMessage(
                 keyPair.getSecretKey(),
                 dnsCollectionAddress,
                 msgValue,

@@ -35,6 +35,7 @@ public class TestWalletV4R2PluginsDeployTransfer {
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
                 .wc(0L)
+                .walletId(42L)
                 .subscriptionConfig(SubscriptionInfo.builder()
                         .beneficiary(Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka"))
                         .subscriptionFee(Utils.toNano(2))

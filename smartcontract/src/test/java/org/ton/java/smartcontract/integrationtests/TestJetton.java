@@ -63,12 +63,12 @@ public class TestJetton {
 
         JettonWallet adminJettonWallet = getJettonWalletInfo(adminJettonWalletAddress);
 
-        editMinterContent(minter, "http://localhost/nft-marketplace/my_collection.1");
+        editMinterContent(adminWallet.getWallet(), minter, "http://localhost/nft-marketplace/my_collection.1", adminWallet.getKeyPair());
         Utils.sleep(20);
         getMinterInfo(minter);
 
         log.info("newAdmin {}", Address.of(NEW_ADMIN2).toString(false));
-        changeMinterAdmin(minter, Address.of(NEW_ADMIN2));
+        changeMinterAdmin(adminWallet.getWallet(), minter, Address.of(NEW_ADMIN2), adminWallet.getKeyPair());
         Utils.sleep(20);
         getMinterInfo(minter);
 
@@ -93,9 +93,8 @@ public class TestJetton {
 
         Options options = Options.builder()
                 .adminAddress(adminWallet.getWallet().getAddress())
-                .jettonContentUri("https://ton.org/jetton.json")
+                .jettonContentUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/neo-jetton.json")
                 .jettonWalletCodeHex(JettonWallet.JETTON_WALLET_CODE_HEX)
-                .wc(0L)
                 .build();
 
         Wallet jettonMinter = new Wallet(WalletVersion.jettonMinter, options);
@@ -128,12 +127,12 @@ public class TestJetton {
     }
 
 
-    private void editMinterContent(JettonMinter minter, String newUriContent) {
+    private void editMinterContent(WalletContract adminWallet, JettonMinter minter, String newUriContent, TweetNaclFast.Signature.KeyPair keyPair) {
         log.info("edit content");
-        long seqno = adminWallet.getWallet().getSeqno(tonlib);
+        long seqno = adminWallet.getSeqno(tonlib);
 
-        ExternalMessage extMsg = adminWallet.getWallet().createTransferMessage(
-                adminWallet.getKeyPair().getSecretKey(),
+        ExternalMessage extMsg = adminWallet.createTransferMessage(
+                keyPair.getSecretKey(),
                 minter.getAddress(),
                 Utils.toNano(0.05),
                 seqno,
@@ -142,12 +141,12 @@ public class TestJetton {
         tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
     }
 
-    private void changeMinterAdmin(JettonMinter minter, Address newAdmin) {
+    private void changeMinterAdmin(WalletContract adminWallet, JettonMinter minter, Address newAdmin, TweetNaclFast.Signature.KeyPair keyPair) {
         log.info("change admin");
-        long seqno = adminWallet.getWallet().getSeqno(tonlib);
+        long seqno = adminWallet.getSeqno(tonlib);
 
-        ExternalMessage extMsg = adminWallet.getWallet().createTransferMessage(
-                adminWallet.getKeyPair().getSecretKey(),
+        ExternalMessage extMsg = adminWallet.createTransferMessage(
+                keyPair.getSecretKey(),
                 minter.getAddress(),
                 Utils.toNano(0.05),
                 seqno,
@@ -163,7 +162,7 @@ public class TestJetton {
      * @param keyPair             KeyPair
      */
     private void transfer(WalletContract admin, Address jettonWalletAddress, Address toAddress, BigInteger jettonAmount, TweetNaclFast.Signature.KeyPair keyPair) {
-        log.info("transfer");
+
         long seqno = admin.getSeqno(tonlib);
 
         ExternalMessage extMsg = admin.createTransferMessage(
@@ -176,15 +175,15 @@ public class TestJetton {
                         jettonAmount,
                         Address.of(toAddress), // destination
                         admin.getAddress(), // response address
-                        Utils.toNano("0.01"),
-                        "gift".getBytes()
+                        Utils.toNano("0.01"), // forward amount
+                        "gift".getBytes() // forward payload
                 ));
 
         tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
     }
 
     private void burn(WalletContract admin, Address jettonWalletAddress, BigInteger jettonAmount, Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
-        log.info("burn");
+
         long seqno = admin.getSeqno(tonlib);
 
         ExternalMessage extMsg = admin.createTransferMessage(
