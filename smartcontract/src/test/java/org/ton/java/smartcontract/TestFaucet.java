@@ -60,8 +60,8 @@ public class TestFaucet {
                 }
             } catch (Exception e) {
                 log.info("Cannot get faucet balance. Restarting...");
+                Utils.sleep(5, "waiting for faucet balance");
             }
-            Utils.sleep(5, "waiting for faucet balance");
         } while (isNull(faucetBalance));
 
         faucet.sendTonCoins(tonlib, keyPair.getSecretKey(), destinationAddress, amount);
