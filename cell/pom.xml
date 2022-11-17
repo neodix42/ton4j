@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.0.2</version>
+        <version>0.0.3</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -14,7 +14,9 @@
     <artifactId>cell</artifactId>
     <name>TON Java Cell</name>
 
-    <description>This library includes CellBuilder, CellSlice and Cell classes, as well as implementation of HashMap/E, PfxHashMap/E.</description>
+    <description>This library includes CellBuilder, CellSlice and Cell classes, as well as implementation of HashMap/E,
+        PfxHashMap/E.
+    </description>
 
     <url>https://github.com/neodiX42/ton4j</url>
 

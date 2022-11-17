@@ -7,7 +7,7 @@
     <groupId>io.github.neodix42</groupId>
     <artifactId>top</artifactId>
     <packaging>pom</packaging>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
 
     <modules>
         <module>bitstring</module>
@@ -41,6 +41,30 @@
         <maven.compiler.plugin>3.10.1</maven.compiler.plugin>
         <maven.deploy.plugin>3.0.0</maven.deploy.plugin>
     </properties>
+
+    <description>Parent POM maven module</description>
+
+    <url>https://github.com/neodiX42/ton4j</url>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>neodiX</name>
+            <email>neodiX@ton.org</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/neodiX42/ton4j.git</connection>
+        <developerConnection>scm:git:ssh://github.com/neodiX42/ton4j.git</developerConnection>
+        <url>https://github.com/neodiX42/ton4j/tree/main</url>
+    </scm>
 
     <dependencyManagement>
         <dependencies>

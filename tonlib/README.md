@@ -8,7 +8,7 @@ Java Tonlib library uses JNA to access methods in native Tonlib shared library.
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>tonlib</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
 </dependency>
 ```
 
@@ -18,7 +18,7 @@ Java Tonlib library uses JNA to access methods in native Tonlib shared library.
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>tonlib</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
 </dependency>
 ```
 

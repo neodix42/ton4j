@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.0.2</version>
+        <version>0.0.3</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -14,7 +14,8 @@
     <artifactId>bitstring</artifactId>
     <name>TON Java BitString</name>
 
-    <description>Data in a Cell stored in BitString format. This library allows you to construct and parse BitStrings.</description>
+    <description>Data in a Cell stored in BitString format. This library allows you to construct and parse BitStrings.
+    </description>
 
     <url>https://github.com/neodiX42/ton4j</url>
 
