@@ -18,8 +18,5 @@ public class RunResultGeneric<T> {
     long gas_used;
     List<T> stack;
     long exit_code;
-
-    @SerializedName("@extra")
-    String extra;
 }
 

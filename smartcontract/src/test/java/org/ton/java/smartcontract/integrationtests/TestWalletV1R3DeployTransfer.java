@@ -62,13 +62,17 @@ public class TestWalletV1R3DeployTransfer {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
-        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
 
         //check if state of the new contract/wallet has changed from un-init to active
         AccountState state;
+        int i = 0;
         do {
             Utils.sleep(5);
             state = tonlib.getAccountState(address).getAccount_state();
+            if (i++ > 10) {
+                throw new Error("time out getting account state");
+            }
         } while (StringUtils.isEmpty(state.getCode()));
 
         log.info("new wallet state: {}", state);

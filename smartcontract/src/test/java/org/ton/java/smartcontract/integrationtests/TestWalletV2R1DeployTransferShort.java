@@ -53,9 +53,13 @@ public class TestWalletV2R1DeployTransferShort {
 
         //check if state of the new contract/wallet has changed from un-init to active
         AccountState state;
+        int i = 0;
         do {
             Utils.sleep(5);
             state = tonlib.getAccountState(Address.of(bounceableAddress)).getAccount_state();
+            if (i++ > 10) {
+                throw new Error("time out getting account state");
+            }
         } while (StringUtils.isEmpty(state.getCode()));
 
         log.info("new wallet state: {}", state);

@@ -10,7 +10,6 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -112,8 +111,7 @@ public class WalletV4ContractR2 implements WalletContract {
         signingMessage.refs.add(params.body);
         ExternalMessage extMsg = createExternalMessage(signingMessage, params.secretKey, params.seqno, false);
 
-        String newPluginExtMsgBase64 = Utils.bytesToBase64(extMsg.message.toBoc(false));
-        tonlib.sendRawMessage(newPluginExtMsgBase64);
+        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
     }
 
     public Cell createPluginStateInit() {

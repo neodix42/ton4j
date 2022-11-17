@@ -81,13 +81,17 @@ public class TestWalletV4R2PluginsDeployTransfer {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy wallet-v4
-        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
 
         //check if state of the new contract/wallet has changed from un-init to active
         FullAccountState state;
+        int i = 0;
         do {
-            Utils.sleep(5);
+            Utils.sleep(5, "waiting for account state");
             state = tonlib.getAccountState(walletAddress);
+            if (i++ > 10) {
+                throw new Error("time out getting account state");
+            }
         } while (StringUtils.isEmpty(state.getAccount_state().getCode()));
 
         long walletCurrentSeqno = contract.getSeqno(tonlib);
@@ -98,10 +102,13 @@ public class TestWalletV4R2PluginsDeployTransfer {
         log.info("pluginsList: {}", contract.getPluginsList(tonlib));
 
         // create and deploy plugin -- start
-
+        i = 0;
         do {
             Utils.sleep(5);
             state = tonlib.getAccountState(options.subscriptionConfig.getBeneficiary());
+            if (i++ > 10) {
+                throw new Error("time out getting account state");
+            }
         } while (state.getAccount_state().getCode() == null);
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(state.getBalance()));
@@ -142,17 +149,24 @@ public class TestWalletV4R2PluginsDeployTransfer {
         tonlib.sendRawMessage(extMessageBase64boc);
 
         Utils.sleep(30);
-
+        i = 0;
         do {
             Utils.sleep(5);
             state = tonlib.getAccountState(options.subscriptionConfig.getBeneficiary());
+            if (i++ > 10) {
+                throw new Error("time out getting account state");
+            }
         } while (state.getAccount_state().getCode() == null);
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(state.getBalance()));
 
+        i = 0;
         do {
             Utils.sleep(5);
             state = tonlib.getAccountState(walletAddress);
+            if (i++ > 10) {
+                throw new Error("time out getting account state");
+            }
         } while (state.getAccount_state().getCode() == null);
 
         log.info("walletV4 balance: {}", Utils.formatNanoValue(state.getBalance()));
@@ -171,16 +185,24 @@ public class TestWalletV4R2PluginsDeployTransfer {
         extMessageBase64boc = Utils.bytesToBase64(extMessage.toBoc(false));
         tonlib.sendRawMessage(extMessageBase64boc);
 
+        i = 0;
         do {
             Utils.sleep(5);
             state = tonlib.getAccountState(options.subscriptionConfig.getBeneficiary());
+            if (i++ > 10) {
+                throw new Error("time out getting account state");
+            }
         } while (state.getAccount_state().getCode() == null);
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(state.getBalance()));
 
+        i = 0;
         do {
             Utils.sleep(5);
             state = tonlib.getAccountState(walletAddress);
+            if (i++ > 10) {
+                throw new Error("time out getting account state");
+            }
         } while (state.getAccount_state().getCode() == null);
 
         log.info("walletV4 balance: {}", Utils.formatNanoValue(state.getBalance()));

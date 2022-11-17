@@ -99,15 +99,15 @@ public class NftSale implements Contract {
         }
 
         TvmStackEntryCell marketplaceAddressCell = (TvmStackEntryCell) result.getStackEntry().get(0);
-        Address marketplaceAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(marketplaceAddressCell.getCell().getBytes())));
+        Address marketplaceAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(marketplaceAddressCell.getCell().getBytes())));
 
         TvmStackEntryCell nftAddressCell = (TvmStackEntryCell) result.getStackEntry().get(1);
-        Address nftAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(nftAddressCell.getCell().getBytes())));
+        Address nftAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(nftAddressCell.getCell().getBytes())));
 
         TvmStackEntryCell nftOwnerAddressCell = (TvmStackEntryCell) result.getStackEntry().get(2);
         Address nftOwnerAddress = null;
         try {
-            nftOwnerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(nftOwnerAddressCell.getCell().getBytes())));
+            nftOwnerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(nftOwnerAddressCell.getCell().getBytes())));
         } catch (Exception e) {
             //todo
         }
@@ -119,7 +119,7 @@ public class NftSale implements Contract {
         BigInteger marketplaceFee = marketplaceFeeNumber.getNumber();
 
         TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStackEntry().get(5);
-        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(royaltyAddressCell.getCell().getBytes())));
+        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(royaltyAddressCell.getCell().getBytes())));
 
         TvmStackEntryNumber royaltyAmountNumber = (TvmStackEntryNumber) result.getStackEntry().get(6);
         BigInteger royaltyAmount = royaltyAmountNumber.getNumber();

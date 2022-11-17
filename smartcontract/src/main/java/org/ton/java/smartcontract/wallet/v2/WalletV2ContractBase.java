@@ -8,7 +8,6 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.Date;
@@ -63,13 +62,13 @@ public class WalletV2ContractBase implements WalletContract {
     }
 
     public void deploy(Tonlib tonlib, byte[] secretKey) {
-        tonlib.sendRawMessage(Utils.bytesToBase64(createInitExternalMessage(secretKey).message.toBoc(false)));
+        tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBocBase64(false));
     }
 
     public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount) {
@@ -88,7 +87,7 @@ public class WalletV2ContractBase implements WalletContract {
         signingMessageAll.refs.add(order2);
 
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
-        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, BigInteger amount) {
@@ -113,7 +112,7 @@ public class WalletV2ContractBase implements WalletContract {
         signingMessageAll.refs.add(order3);
 
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
-        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount) {
@@ -143,6 +142,6 @@ public class WalletV2ContractBase implements WalletContract {
         signingMessageAll.refs.add(order4);
 
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
-        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 }

@@ -67,7 +67,7 @@ public class Cell {
      */
     public static Cell fromHex(String hexBitString) {
         try {
-            boolean incomplete = ((hexBitString.length() != 0) && (hexBitString.substring(hexBitString.length() - 1).equals("_")));
+            boolean incomplete = hexBitString.endsWith("_");
 
             hexBitString = hexBitString.replaceAll("_", "");
             byte[] b = Hex.decodeHex(hexBitString);
@@ -374,9 +374,39 @@ public class Cell {
         return toBoc(true, true, false, 0);
     }
 
+    public String toBocBase64() {
+        return Utils.bytesToBase64(toBoc(true, true, false, 0));
+    }
+
+    public String toBocBase64(boolean hasIdx) {
+        return Utils.bytesToBase64(toBoc(hasIdx, true, false, 0));
+    }
+
+    public String toBocBase64(boolean hasIdx, boolean hashCrc32) {
+        return Utils.bytesToBase64(toBoc(hasIdx, hashCrc32, false, 0));
+    }
+
+    public String toBocBase64(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits) {
+        return Utils.bytesToBase64(toBoc(hasIdx, hashCrc32, hasCacheBits, 0));
+    }
+
+    /**
+     * Convert Cell to BoC
+     *
+     * @param hasIdx       boolean, default true
+     * @param hashCrc32    boolean, default true
+     * @param hasCacheBits boolean, default false
+     * @param flags        int, default 0
+     * @return String in base64
+     */
+    public String toBocBase64(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits, int flags) {
+        return Utils.bytesToBase64(toBoc(hasIdx, hashCrc32, hasCacheBits, flags));
+    }
+
     public String toHex(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits, int flags) {
         return Utils.bytesToHex(toBoc(hasIdx, hashCrc32, hasCacheBits, flags));
     }
+
 
     public String toHex(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits) {
         return Utils.bytesToHex(toBoc(hasIdx, hashCrc32, hasCacheBits, 0));

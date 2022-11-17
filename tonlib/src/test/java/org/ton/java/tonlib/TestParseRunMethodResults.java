@@ -7,12 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
@@ -107,6 +105,17 @@ public class TestParseRunMethodResults {
         log.info("g: {}", g);
         RunResult result = ParseRunResult.getTypedRunResult(g.getStack(), 0, 0);
         log.info(result.toString());
+    }
+
+    @Test
+    public void testGetTypeRunResultStackEntryListPastElections() {
+        String stackTuple = Utils.streamToString(Objects.requireNonNull(TestTonlibJson.class.getClassLoader().getResourceAsStream("RunMethodResultPastElections.json")));
+
+        RunResultGeneric<String> g = gson.fromJson(stackTuple, RunResultGeneric.class);
+        log.info("g: {}", g);
+        RunResult result = ParseRunResult.getTypedRunResult(g.getStack(), 0, 0);
+        log.info("result {}", result.toString());
+        log.info("{}", ParseRunResult.markers.size());
     }
 
     @Test

@@ -611,7 +611,6 @@ public class Tonlib {
     public long loadContract(AccountAddressOnly address) {
         LoadContractQuery loadContractQuery = LoadContractQuery.builder()
                 .account_address(address)
-                .extra(UUID.randomUUID().toString())
                 .build();
 
         send(gson.toJson(loadContractQuery));
@@ -645,7 +644,7 @@ public class Tonlib {
     public RunResult runMethod(long contractId, String methodName, Deque<String> stackData) {
 
         Deque<TvmStackEntry> stack = null;
-        if (stackData != null) {
+        if (nonNull(stackData)) {
             stack = ParseRunResult.renderTvmStack(stackData);
         }
 
@@ -653,7 +652,6 @@ public class Tonlib {
                 .id(contractId)
                 .method(MethodString.builder().name(methodName).build())
                 .stack(stack)
-                .extra(UUID.randomUUID().toString())
                 .build();
 
         send(gson.toJson(runMethodQuery));
@@ -662,7 +660,7 @@ public class Tonlib {
 
         RunResultGeneric<String> g = gson.fromJson(result, RunResultGeneric.class);
 
-        return ParseRunResult.getTypedRunResult(g.getStack(), g.getExit_code(), g.getGas_used(), g.getExtra());
+        return ParseRunResult.getTypedRunResult(g.getStack(), g.getExit_code(), g.getGas_used());
     }
 
     /**

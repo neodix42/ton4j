@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.google.gson.internal.LinkedTreeMap;
-import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.utils.Utils;
 
@@ -17,6 +16,9 @@ public class ParseRunResult {
             .setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL)
             .setLenient()
             .create();
+
+    // key - marker(UUID), value - original string
+    public static Map<String, String> markers = new HashMap<>();
 
     /**
      * @param elementType - "num", "number", "int", "cell", "slice"
@@ -123,12 +125,19 @@ public class ParseRunResult {
                     resultElements.add(stackNumber);
                 } else if (v1.equals("tvm.stackEntryCell")) {
                     TvmCell cell = gson.fromJson(String.valueOf(v2), TvmCell.class);
+                    String key = cell.getBytes();
+                    cell.setBytes(markers.get(key));
+                    markers.remove(key);
                     TvmStackEntryCell stackCell = TvmStackEntryCell.builder()
                             .cell(cell)
                             .build();
                     resultElements.add(stackCell);
                 } else if (v1.equals("tvm.stackEntrySlice")) {
                     TvmSlice slice = gson.fromJson(String.valueOf(v2), TvmSlice.class);
+                    String key = slice.getBytes();
+                    slice.setBytes(markers.get(key));
+                    markers.remove(key);
+
                     TvmStackEntrySlice stackSlice = TvmStackEntrySlice.builder()
                             .slice(slice)
                             .build();
@@ -145,19 +154,17 @@ public class ParseRunResult {
             }
 
             if (val1.equals("tvm.tuple")) {
-                TvmTuple tvmTuple = TvmTuple.builder()
-                        .elements(resultElements)
-                        .build();
-
                 return TvmStackEntryTuple.builder()
-                        .tuple(tvmTuple)
+                        .tuple(TvmTuple.builder()
+                                .elements(resultElements)
+                                .build())
                         .build();
             } else if (val1.equals("tvm.list")) {
-                TvmList tvmList = TvmList.builder()
-                        .elements(resultElements)
-                        .build();
+
                 return TvmStackEntryList.builder()
-                        .list(tvmList)
+                        .list(TvmList.builder()
+                                .elements(resultElements)
+                                .build())
                         .build();
             }
         } else if (key2.equals("number")) {
@@ -210,22 +217,16 @@ public class ParseRunResult {
     }
 
     public static RunResult getTypedRunResult(List<String> stack, long exitCode, long gasUsed) {
-        return getTypedRunResult(stack, exitCode, gasUsed, null);
-    }
-
-    public static RunResult getTypedRunResult(List<String> stack, long exitCode, long gasUsed, String extra) {
 
         List<TvmStackEntry> resultStack = new ArrayList<>();
         for (int i = 0; i < stack.size(); i++) {
             String stackElement = String.valueOf(stack.get(i));
-
-            String processResult = stackElement;
-
-            stackElement = Utils.getSafeString(stackElement, processResult, "@type=tvm.cell");
-            stackElement = Utils.getSafeString(stackElement, stackElement, "@type=tvm.slice");
-//            stackElement = Utils.getSafeString(stackElement, stackElement, "@type=tvm.tuple");
+            
+            stackElement = temporaryReplaceBase64(stackElement, stackElement, "@type=tvm.cell");
+            stackElement = temporaryReplaceBase64(stackElement, stackElement, "@type=tvm.slice");
 
             String resultEscaped = stackElement;
+
             if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntryList")) {
                 TvmStackEntryList list = gson.fromJson(resultEscaped, TvmStackEntryList.class);
                 list = parseTvmEntryListStack(list);
@@ -238,24 +239,16 @@ public class ParseRunResult {
                 TvmStackEntryNumber number = gson.fromJson(resultEscaped, TvmStackEntryNumber.class);
                 resultStack.add(number);
             } else if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntryCell")) {
-//                System.out.println(resultEscaped);
-//                TvmStackEntryCell cell = gson.fromJson(resultEscaped, TvmStackEntryCell.class);
-                String urlSafeBase64 = StringUtils.substringBetween(resultEscaped, "bytes=", "}");
-                TvmStackEntryCell cell = TvmStackEntryCell.builder()
-                        .cell(TvmCell.builder()
-                                .bytes(urlSafeBase64)
-                                .build())
-                        .build();
-
+                TvmStackEntryCell cell = gson.fromJson(resultEscaped, TvmStackEntryCell.class);
+                String key = cell.getCell().getBytes();
+                cell.getCell().setBytes(markers.get(key));
+                markers.remove(key);
                 resultStack.add(cell);
             } else if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntrySlice")) {
-//                TvmStackEntrySlice slice = gson.fromJson(resultEscaped, TvmStackEntrySlice.class);
-                String urlSafeBase64 = StringUtils.substringBetween(resultEscaped, "bytes=", "}");
-                TvmStackEntrySlice slice = TvmStackEntrySlice.builder()
-                        .slice(TvmSlice.builder()
-                                .bytes(urlSafeBase64)
-                                .build())
-                        .build();
+                TvmStackEntrySlice slice = gson.fromJson(resultEscaped, TvmStackEntrySlice.class);
+                String key = slice.getSlice().getBytes();
+                slice.getSlice().setBytes(markers.get(key));
+                markers.remove(key);
                 resultStack.add(slice);
             } else {
                 throw new Error("Unknown type in TVM stack");
@@ -265,7 +258,6 @@ public class ParseRunResult {
                 .stackEntry(resultStack)
                 .exit_code(exitCode)
                 .gas_used(gasUsed)
-                .extra(extra)
                 .build();
     }
 
@@ -317,5 +309,23 @@ public class ParseRunResult {
             }
         }
         return -1;
+    }
+
+    /**
+     * workaround since Gson cannot deserialize deep nested long base64 strings;
+     * replace cell values in a "bytes" field with the UUID, after deserialization to gson, replace UUID with original values
+     */
+    private static String temporaryReplaceBase64(String originalResult, String processResult, String template) {
+        while (processResult.contains(template)) {
+            String oldCell = sbb(processResult, "{" + template);
+            String oldCellBytes = oldCell.substring(oldCell.indexOf("bytes=") + 6, oldCell.length() - 1);
+
+            String uuid = UUID.randomUUID().toString();
+            String newCell = oldCell.replace(oldCellBytes, uuid);
+            markers.put(uuid, oldCellBytes);
+            originalResult = originalResult.replace(oldCell, newCell);
+            processResult = processResult.replace(oldCell, "");
+        }
+        return originalResult;
     }
 }

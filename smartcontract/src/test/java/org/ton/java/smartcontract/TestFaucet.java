@@ -122,6 +122,6 @@ public class TestFaucet {
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
                 .build();
-        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 }

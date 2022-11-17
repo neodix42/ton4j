@@ -167,10 +167,10 @@ public class JettonMinter implements Contract {
         boolean isMutable = ((TvmStackEntryNumber) result.getStackEntry().get(1)).getNumber().longValue() == -1;
 
         TvmStackEntryCell adminAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
-        Address adminAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(adminAddr.getCell().getBytes())));
+        Address adminAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(adminAddr.getCell().getBytes())));
 
         TvmStackEntryCell jettonContent = (TvmStackEntryCell) result.getStackEntry().get(3);
-        Cell jettonContentCell = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(jettonContent.getCell().getBytes()));
+        Cell jettonContentCell = CellBuilder.fromBoc(Utils.base64ToBytes(jettonContent.getCell().getBytes()));
         String jettonContentUri = null;
         try {
             jettonContentUri = NftUtils.parseOffchainUriCell(jettonContentCell);
@@ -179,7 +179,7 @@ public class JettonMinter implements Contract {
         }
 
         TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStackEntry().get(4);
-        Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(contentC.getCell().getBytes()));
+        Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64ToBytes(contentC.getCell().getBytes()));
 
         return JettonMinterData.builder()
                 .totalSupply(totalSupply)
@@ -224,7 +224,7 @@ public class JettonMinter implements Contract {
         }
 
         TvmStackEntryCell addr = (TvmStackEntryCell) result.getStackEntry().get(0);
-        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(addr.getCell().getBytes())));
+        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(addr.getCell().getBytes())));
     }
 
     public void deploy(Tonlib tonlib, WalletContract adminWallet, BigInteger walletMsgValue, TweetNaclFast.Signature.KeyPair keyPair) {

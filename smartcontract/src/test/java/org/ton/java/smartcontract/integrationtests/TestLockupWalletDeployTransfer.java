@@ -78,9 +78,13 @@ public class TestLockupWalletDeployTransfer {
 
         //check if state of the new contract changed from uninit to active
         AccountState state;
+        int i = 0;
         do {
             Utils.sleep(5);
             state = tonlib.getAccountState(address).getAccount_state();
+            if (i++ > 10) {
+                throw new Error("time out getting account state");
+            }
         } while (StringUtils.isEmpty(state.getCode()));
 
         log.info("Deployed! new lockup wallet state: {}", state);

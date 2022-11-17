@@ -108,13 +108,13 @@ public class JettonWallet implements Contract {
         BigInteger balance = balanceNumber.getNumber();
 
         TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStackEntry().get(1);
-        Address ownerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(ownerAddr.getCell().getBytes())));
+        Address ownerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(ownerAddr.getCell().getBytes())));
 
         TvmStackEntryCell jettonMinterAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
-        Address jettonMinterAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(jettonMinterAddr.getCell().getBytes())));
+        Address jettonMinterAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(jettonMinterAddr.getCell().getBytes())));
 
         TvmStackEntryCell jettonWallet = (TvmStackEntryCell) result.getStackEntry().get(3);
-        Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64SafeUrlToBytes(jettonWallet.getCell().getBytes()));
+        Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64ToBytes(jettonWallet.getCell().getBytes()));
         return JettonWalletData.builder()
                 .balance(balance)
                 .ownerAddress(ownerAddress)

@@ -80,6 +80,6 @@ public class DnsRoot implements Contract {
                 this.createStateInit().stateInit
         );
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
     }
 }

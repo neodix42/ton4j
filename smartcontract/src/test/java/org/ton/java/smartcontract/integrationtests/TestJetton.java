@@ -138,7 +138,7 @@ public class TestJetton {
                 seqno,
                 minter.createEditContentBody(newUriContent, 0));
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
     }
 
     private void changeMinterAdmin(WalletContract adminWallet, JettonMinter minter, Address newAdmin, TweetNaclFast.Signature.KeyPair keyPair) {
@@ -152,7 +152,7 @@ public class TestJetton {
                 seqno,
                 minter.createChangeAdminBody(0, newAdmin));
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
     }
 
     /**
@@ -179,7 +179,7 @@ public class TestJetton {
                         "gift".getBytes() // forward payload
                 ));
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
     }
 
     private void burn(WalletContract admin, Address jettonWalletAddress, BigInteger jettonAmount, Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
@@ -197,6 +197,6 @@ public class TestJetton {
                         responseAddress
                 ));
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
     }
 }
