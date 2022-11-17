@@ -1,11 +1,13 @@
 package org.ton.java.smartcontract.wallet;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.smartcontract.payments.ClosingConfig;
 import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 
@@ -49,4 +51,17 @@ public class Options {
 
     public String nftItemContentBaseUri;
 
+    //payments
+    public BigInteger channelId;
+    public byte[] publicKeyA;
+    public byte[] publicKeyB;
+    public boolean isA;
+    public TweetNaclFast.Signature.KeyPair myKeyPair;
+    public byte[] hisPublicKey;
+    public BigInteger initBalanceA;
+    public BigInteger initBalanceB;
+    public Address addressA;
+    public Address addressB;
+    public BigInteger excessFee;
+    public ClosingConfig closingConfig;
 }

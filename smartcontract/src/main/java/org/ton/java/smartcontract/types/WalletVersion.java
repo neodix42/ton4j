@@ -15,4 +15,5 @@ public enum WalletVersion {
     jettonMinter,
     jettonWallet,
     nftCollection,
+    payments,
 }

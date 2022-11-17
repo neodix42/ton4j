@@ -3,6 +3,7 @@ package org.ton.java.smartcontract.wallet;
 import org.ton.java.smartcontract.dns.DnsCollection;
 import org.ton.java.smartcontract.dns.DnsItem;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
+import org.ton.java.smartcontract.payments.PaymentChannel;
 import org.ton.java.smartcontract.token.ft.JettonMinter;
 import org.ton.java.smartcontract.token.ft.JettonWallet;
 import org.ton.java.smartcontract.token.nft.NftCollection;
@@ -77,6 +78,9 @@ public class Wallet {
                 break;
             case nftCollection:
                 result = new NftCollection(options);
+                break;
+            case payments:
+                result = new PaymentChannel(options);
                 break;
         }
         return (T) result;
