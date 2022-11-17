@@ -72,10 +72,10 @@ public class TestNft {
 
         // create and deploy NFT Item
         deployNftItem(tonlib, adminWallet.getWallet(), BigInteger.ZERO, Utils.toNano(0.06), nftCollection.getAddress(), "nft-item-1.json", adminWallet.getKeyPair());
-        Utils.sleep(25, "deploying NFT item #1");
+        Utils.sleep(30, "deploying NFT item #1");
 
         deployNftItem(tonlib, adminWallet.getWallet(), BigInteger.ONE, Utils.toNano(0.07), nftCollection.getAddress(), "nft-item-2.json", adminWallet.getKeyPair());
-        Utils.sleep(25, "deploying NFT item #2");
+        Utils.sleep(30, "deploying NFT item #2");
 
         assertThat(getNftCollectionInfo(nftCollection)).isEqualTo(2);
 

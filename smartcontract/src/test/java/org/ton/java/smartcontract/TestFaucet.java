@@ -19,6 +19,7 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -44,20 +45,28 @@ public class TestFaucet {
         Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
         SimpleWalletContractR3 faucet = wallet.create();
 
-        try {
-            BigInteger faucetBalance = new BigInteger(tonlib.getAccountState(faucet.getAddress()).getBalance());
-            log.info("faucet address {}, balance {}", faucet.getAddress().toString(true, true, true), Utils.formatNanoValue(faucetBalance));
-            if (faucetBalance.compareTo(amount) < 0) {
-                throw new Error("faucet does not have that much toncoins. faucet balance" + Utils.formatNanoValue(faucetBalance) + ", requested " + Utils.formatNanoValue(amount));
+        BigInteger faucetBalance = null;
+        int i = 0;
+        do {
+            try {
+                if (i++ > 10) {
+                    throw new Error("Cannot get faucet balance. Restart.");
+                }
+
+                faucetBalance = new BigInteger(tonlib.getAccountState(faucet.getAddress()).getBalance());
+                log.info("faucet address {}, balance {}", faucet.getAddress().toString(true, true, true), Utils.formatNanoValue(faucetBalance));
+                if (faucetBalance.compareTo(amount) < 0) {
+                    throw new Error("faucet does not have that much toncoins. faucet balance" + Utils.formatNanoValue(faucetBalance) + ", requested " + Utils.formatNanoValue(amount));
+                }
+            } catch (Exception e) {
+                log.info("Cannot get faucet balance. Restarting...");
             }
-        } catch (Exception e) {
-            throw new Error("cannot get faucet balance. restart");
-        }
+        } while (isNull(faucetBalance));
 
         faucet.sendTonCoins(tonlib, keyPair.getSecretKey(), destinationAddress, amount);
 
         BigInteger newBalance = BigInteger.ZERO;
-        int i = 0;
+        i = 0;
         do {
             log.info("topping up wallet {}...", destinationAddress.toString(true, true, true));
             TimeUnit.SECONDS.sleep(5);
