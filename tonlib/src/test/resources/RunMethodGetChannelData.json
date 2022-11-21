@@ -1,0 +1,152 @@
+{
+  "@type": "smc.runResult",
+  "gas_used": 6276,
+  "stack": [
+    {
+      "@type": "tvm.stackEntryNumber",
+      "number": {
+        "@type": "tvm.numberDecimal",
+        "number": "0"
+      }
+    },
+    {
+      "@type": "tvm.stackEntryTuple",
+      "tuple": {
+        "@type": "tvm.tuple",
+        "elements": [
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "0"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@type": "tvm.stackEntryTuple",
+      "tuple": {
+        "@type": "tvm.tuple",
+        "elements": [
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "26077860258520335431351594485902992936920584218277699467738015540575317329178"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "10556050919448819254727038443510404521113186024519714929168743157054849158584"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@type": "tvm.stackEntryNumber",
+      "number": {
+        "@type": "tvm.numberDecimal",
+        "number": "124"
+      }
+    },
+    {
+      "@type": "tvm.stackEntryTuple",
+      "tuple": {
+        "@type": "tvm.tuple",
+        "elements": [
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "0"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "0"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@type": "tvm.stackEntryTuple",
+      "tuple": {
+        "@type": "tvm.tuple",
+        "elements": [
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "0"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@type": "tvm.stackEntryList",
+      "list": {
+        "@type": "tvm.list",
+        "elements": []
+      }
+    },
+    {
+      "@type": "tvm.stackEntryTuple",
+      "tuple": {
+        "@type": "tvm.tuple",
+        "elements": [
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "112562495025544032"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryCell",
+            "cell": {
+              "@type": "tvm.cell",
+              "bytes": "te6cckEBAQEAKgAAT2aF7bDRP4/1rurL2Pt4pS5f+WdqohLrJdkABf3odTOYGrtQNKv2/IMGHrm2"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryCell",
+            "cell": {
+              "@type": "tvm.cell",
+              "bytes": "te6cckEBAQEACwAAEe43EBHISJlkm64+c0o="
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "exit_code": 0
+}

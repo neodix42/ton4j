@@ -49,7 +49,7 @@ public class CustomContract implements WalletContract {
 
     @Override
     public Cell createSigningMessage(long seqno) {
-        return createSigningMessage(seqno, 4l);
+        return createSigningMessage(seqno, 4L);
     }
 
     public Cell createSigningMessage(long seqno, long extraField) {
@@ -65,11 +65,12 @@ public class CustomContract implements WalletContract {
             }
         } else {
             Date date = new Date();
-            long timestamp = (long) Math.floor(date.getTime() / (double) 1e3);
+            long timestamp = (long) Math.floor(date.getTime() / 1e3);
             message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
         }
 
         message.storeUint(BigInteger.valueOf(extraField), 64); // extraField
         return message;
     }
+
 }

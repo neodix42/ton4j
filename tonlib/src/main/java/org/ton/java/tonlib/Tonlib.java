@@ -658,7 +658,9 @@ public class Tonlib {
 
         String result = syncAndRead();
 
+//        System.out.println("result 1: " + result);
         RunResultGeneric<String> g = gson.fromJson(result, RunResultGeneric.class);
+//        System.out.println("result 2: " + g);
 
         return ParseRunResult.getTypedRunResult(g.getStack(), g.getExit_code(), g.getGas_used());
     }

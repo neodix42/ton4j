@@ -7,6 +7,8 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import static java.util.Objects.isNull;
+
 public class BitString {
 
     byte[] array;
@@ -282,7 +284,7 @@ public class BitString {
      * @param address Address
      */
     public void writeAddress(Address address) {
-        if (address == null) {
+        if (isNull(address)) {
             writeUint(BigInteger.ZERO, 2);
         } else {
             writeUint(BigInteger.TWO, 2);
@@ -359,7 +361,7 @@ public class BitString {
     /**
      * Read bits of bitLength without moving readCursor, i.e. modifying BitString
      *
-     * @param bitLength
+     * @param bitLength length in bits
      * @return BigInteger
      */
     public BigInteger preReadUint(int bitLength) {

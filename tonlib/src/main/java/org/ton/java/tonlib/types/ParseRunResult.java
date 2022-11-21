@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.google.gson.internal.LinkedTreeMap;
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.utils.Utils;
 
@@ -170,9 +171,17 @@ public class ParseRunResult {
         } else if (key2.equals("number")) {
             return gson.fromJson(String.valueOf(element), TvmStackEntryNumber.class);
         } else if (key2.equals("cell")) {
-            return gson.fromJson(String.valueOf(element), TvmStackEntryCell.class);
+            TvmStackEntryCell cell = gson.fromJson(String.valueOf(element), TvmStackEntryCell.class);
+            String key = cell.getCell().getBytes();
+            cell.getCell().setBytes(markers.get(key));
+            markers.remove(key);
+            return cell;
         } else if (key2.equals("slice")) {
-            return gson.fromJson(String.valueOf(element), TvmStackEntrySlice.class);
+            TvmStackEntrySlice slice = gson.fromJson(String.valueOf(element), TvmStackEntrySlice.class);
+            String key = slice.getSlice().getBytes();
+            slice.getSlice().setBytes(markers.get(key));
+            markers.remove(key);
+            return slice;
         }
         throw new Error("Error parsing json element");
     }
@@ -221,7 +230,7 @@ public class ParseRunResult {
         List<TvmStackEntry> resultStack = new ArrayList<>();
         for (int i = 0; i < stack.size(); i++) {
             String stackElement = String.valueOf(stack.get(i));
-            
+
             stackElement = temporaryReplaceBase64(stackElement, stackElement, "@type=tvm.cell");
             stackElement = temporaryReplaceBase64(stackElement, stackElement, "@type=tvm.slice");
 
@@ -319,12 +328,11 @@ public class ParseRunResult {
         while (processResult.contains(template)) {
             String oldCell = sbb(processResult, "{" + template);
             String oldCellBytes = oldCell.substring(oldCell.indexOf("bytes=") + 6, oldCell.length() - 1);
-
             String uuid = UUID.randomUUID().toString();
-            String newCell = oldCell.replace(oldCellBytes, uuid);
+            String newCell = StringUtils.replaceOnce(oldCell, oldCellBytes, uuid);
             markers.put(uuid, oldCellBytes);
-            originalResult = originalResult.replace(oldCell, newCell);
-            processResult = processResult.replace(oldCell, "");
+            originalResult = StringUtils.replaceOnce(originalResult, oldCell, newCell);
+            processResult = StringUtils.replaceOnce(processResult, oldCell, "");
         }
         return originalResult;
     }

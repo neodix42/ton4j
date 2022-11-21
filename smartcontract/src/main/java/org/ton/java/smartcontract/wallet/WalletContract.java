@@ -15,6 +15,8 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
+
 /**
  * Abstract standard wallet class
  */
@@ -95,7 +97,6 @@ public interface WalletContract extends Contract {
         if (dummySignature) {
             signature = new byte[64];
         } else {
-            //todo get pubkey from secretKey
             signature = Utils.signData(getOptions().publicKey, secretKey, signingMessage.hash());
         }
 
@@ -108,7 +109,7 @@ public interface WalletContract extends Contract {
         Cell data = null;
 
         if (seqno == 0) {
-            if (getOptions().publicKey == null) {
+            if (isNull(getOptions().publicKey)) {
                 TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(secretKey); //) TweetNaclFast.Box.keyPair_fromSecretKey(
                 getOptions().publicKey = keyPair.getPublicKey();
             }

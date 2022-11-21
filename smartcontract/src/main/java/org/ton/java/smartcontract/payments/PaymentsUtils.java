@@ -15,7 +15,7 @@ public class PaymentsUtils {
     public static final long tag_settle_conditionals = 0x436c436e;
     public static final long tag_state = 0x43685374;
 
-    public static final long op_top_up_balance = 1741148801; // crc32("top_up_balance add_A:Coins add_B:Coins = InternalMsgBody");
+    public static final long op_top_up_balance = 0x67c7d281;// 0x67c7d281  // crc32("top_up_balance add_A:Coins add_B:Coins = InternalMsgBody");
     public static final long op_init_channel = 235282626; // crc32("init_channel is_A:Bool signature:bits512 tag:# = tag 1768843636 channel_id:uint128 balance_A:Coins balance_B:Coins = InternalMsgBody");
     public static final long op_cooperative_close = 1433884798; // crc32("cooperative_close sig_A:^bits512 sig_B:^bits512 tag:# = tag 1131179891 channel_id:uint128 balance_A:Coins balance_B:Coins seqno_A:uint64 seqno_B:uint64 = InternalMsgBody");
     public static final long op_cooperative_commit = 2040604399; // crc32("cooperative_commit sig_A:^bits512 sig_B:^bits512 tag:# = tag 1128492404 channel_id:uint128 seqno_A:uint64 seqno_B:uint64 = InternalMsgBody");
@@ -67,7 +67,7 @@ public class PaymentsUtils {
 
     public static Cell createInitChannelBody(BigInteger channelId, BigInteger balanceA, BigInteger balanceB) {
         Cell cell = new Cell();
-        cell.bits.writeUint(tag_init, 32);
+        cell.bits.writeUint(tag_init, 32); // 0x696e6974
         cell.bits.writeUint(channelId, 128);
         cell.bits.writeCoins(balanceA);
         cell.bits.writeCoins(balanceB);
@@ -162,7 +162,7 @@ public class PaymentsUtils {
         c.bits.writeUint(op, 32); // OP
         c.bits.writeBit(isA);
         writeSignature(c, signature);
-        c.writeCell(c);
+        c.writeCell(cell);
         return c;
     }
 

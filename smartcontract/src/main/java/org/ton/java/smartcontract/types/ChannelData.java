@@ -2,6 +2,7 @@ package org.ton.java.smartcontract.types;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 
@@ -9,6 +10,7 @@ import java.math.BigInteger;
 
 @Builder
 @Getter
+@ToString
 public class ChannelData {
     long state;
     BigInteger balanceA;
@@ -22,7 +24,7 @@ public class ChannelData {
     BigInteger seqnoA;
     BigInteger seqnoB;
     Cell quarantine;
-    Cell excessFee;
+    BigInteger excessFee;
     Address addressA;
     Address addressB;
 }
