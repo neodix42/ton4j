@@ -7,12 +7,10 @@ import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
 import static java.util.Objects.nonNull;
-
 
 public class FromWallet extends PaymentChannel {
 
@@ -33,28 +31,33 @@ public class FromWallet extends PaymentChannel {
     }
 
     public FromWallet deploy(BigInteger amount) {
-        Utils.sleep(1, "deploying");
         transfer(null, true, amount);
         return this;
     }
 
     public FromWallet topUp(BigInteger balanceA, BigInteger balanceB, BigInteger amount) {
-        Utils.sleep(1, "topup");
         transfer(this.createTopUpBalance(balanceA, balanceB), amount);
         return this;
     }
 
     public FromWallet init(BigInteger balanceA, BigInteger balanceB, BigInteger amount) {
-        Utils.sleep(1, "init");
         transfer(this.createInitChannel(balanceA, balanceB).getCell(), amount);
         return this;
     }
 
 
-    public FromWallet send() { // todo estimateFee
-        Utils.sleep(1, "sending");
+    public FromWallet send() {
         if (nonNull(extMsg)) {
             tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        } else {
+            throw new Error("cannot send empty external message");
+        }
+        return this;
+    }
+
+    public FromWallet estimateFee() {
+        if (nonNull(extMsg)) {
+            tonlib.estimateFees(extMsg.address.toString(), extMsg.message.toBocBase64(false), extMsg.code.toBocBase64(false), extMsg.data.toBocBase64(false), false);
         } else {
             throw new Error("cannot send empty external message");
         }

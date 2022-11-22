@@ -39,8 +39,8 @@ public class TestPayments {
         // The payment channel is established between two participants A and B.
         // Each has own secret key, which he does not reveal to the other.
 
-        walletA = GenerateWallet.random(tonlib, 7);
-        walletB = GenerateWallet.random(tonlib, 7);
+        walletA = GenerateWallet.random(tonlib, 3);
+        walletB = GenerateWallet.random(tonlib, 3);
         walletAddressA = walletA.getWallet().getAddress();
         walletAddressB = walletB.getWallet().getAddress();
     }
@@ -100,37 +100,6 @@ public class TestPayments {
 
         assertThat(channelA.getAddress().toString(true, true, true)).isEqualTo(channelB.getAddress().toString(true, true, true));
 
-        // Interaction with the smart contract of the payment channel is carried out by sending messages from the wallet to it.
-        // So let's create helpers for such sends.
-
-//        InitExternalMessage msg = channelB.createInitExternalMessage(walletA.getKeyPair().getSecretKey());
-//        log.info("in {}", msg);
-//        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(msg.address.toString(true, true, false)), Utils.toNano(1));
-//        log.info("balance {}", Utils.formatNanoValue(balance));
-//        tonlib.sendRawMessage(msg.message.toBocBase64(false));
-//        Cannot run message on account: inbound external message rejected by transaction CDE825A804357B8E9390941832574F35A5DE8750AD6FC034A4041F7A953197F9:
-//        exitcode=65535, steps=54, gas_used=0
-//        VM Log (truncated):
-//... PUSHCONT x30F017DB31
-//        execute IFJMP
-//        execute NIP
-//        execute PUSHINT 625158801
-//        execute EQUAL
-//        execute PUSHCONT xF018DB31
-//        execute IFJMP
-//        execute implicit JMPREF
-//        execute PUSHPOW2DEC 16
-//        execute THROWANY
-//        default exception handler, terminating vm with exit code 65535
-
-
-//        channelA.transfer(walletA.getWallet(), walletA.getKeyPair().getSecretKey(), tonlib, null, true, Utils.toNano(0.05));
-//        channelA.send(tonlib);
-        // liteServer_sendMsgStatus = 1 , OK
-        // msg does not come to chanelA contract at all
-        // Bounced op=no-op from channel-smc
-
-
         FromWallet fromWalletA = channelA.fromWallet(tonlib, walletA.getWallet(), walletA.getKeyPair().getSecretKey());
         FromWallet fromWalletB = channelB.fromWallet(tonlib, walletB.getWallet(), walletB.getKeyPair().getSecretKey());
 
@@ -155,9 +124,10 @@ public class TestPayments {
         // Now each parties must send their initial balance from the wallet to the channel contract.
 
         fromWalletA.topUp(channelInitState.getBalanceA(), BigInteger.ZERO, channelInitState.getBalanceA().add(Utils.toNano(0.05))).send(); // +0.05 TON to network fees
+        Utils.sleep(25, "topping up from wallet A...");
         fromWalletB.topUp(BigInteger.ZERO, channelInitState.getBalanceB(), channelInitState.getBalanceB().add(Utils.toNano(0.05))).send(); // +0.05 TON to network fees
+        Utils.sleep(25, "topping up from wallet B...");
 
-        Utils.sleep(25, "topping up...");
         log.info("channel A state {}", channelA.getChannelState(tonlib));
 
         log.info("channel A data {}", channelA.getData(tonlib));

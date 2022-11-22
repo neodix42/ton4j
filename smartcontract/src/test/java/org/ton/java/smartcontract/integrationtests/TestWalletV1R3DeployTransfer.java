@@ -15,6 +15,7 @@ import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR3;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.AccountState;
+import org.ton.java.tonlib.types.QueryFees;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -88,5 +89,29 @@ public class TestWalletV1R3DeployTransfer {
 
         log.info("seqno {}", contract.getSeqno(tonlib));
         log.info("pubkey {}", contract.getPublicKey(tonlib));
+    }
+
+    @Test
+    public void testWalletSimpleEstimateFees() {
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .wc(0L)
+                .build();
+
+        Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
+        SimpleWalletContractR3 contract = wallet.create();
+
+        InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
+
+        Tonlib tonlib = Tonlib.builder().testnet(true).build();
+
+        QueryFees feesWithCodeData = tonlib.estimateFees(msg.address.toString(), msg.message.toBocBase64(false), msg.code.toBocBase64(false), msg.data.toBocBase64(false), false);
+        log.info("fees {}", feesWithCodeData);
+        assertThat(feesWithCodeData).isNotNull();
+        QueryFees feesBodyOnly = tonlib.estimateFees(msg.address.toString(), msg.message.toBocBase64(false), null, null, false);
+        log.info("fees {}", feesBodyOnly);
+        assertThat(feesBodyOnly).isNotNull();
     }
 }
