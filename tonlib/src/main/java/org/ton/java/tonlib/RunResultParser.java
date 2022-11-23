@@ -48,28 +48,6 @@ public class RunResultParser {
                     JsonElement element = elementsArray.get(j);
                     String elementType = element.getAsJsonObject().get("@type").getAsString();
                     elements.add(deserializeByType(elementType, element, context));
-//                    switch (elType2) {
-//                        case "tvm.stackEntryNumber" -> {
-//                            TvmStackEntryNumber n2 = context.deserialize(elInner2, TvmStackEntryNumber.class);
-//                            elements.add(n2);
-//                        }
-//                        case "tvm.stackEntryCell" -> {
-//                            TvmStackEntryCell c2 = context.deserialize(elInner2, TvmStackEntryCell.class);
-//                            elements.add(c2);
-//                        }
-//                        case "tvm.stackEntrySlice" -> {
-//                            TvmStackEntrySlice s2 = context.deserialize(elInner2, TvmStackEntrySlice.class);
-//                            elements.add(s2);
-//                        }
-//                        case "tvm.stackEntryList" -> {
-//                            TvmStackEntryList l2 = context.deserialize(elInner2, TvmStackEntryList.class);
-//                            elements.add(l2);
-//                        }
-//                        case "tvm.stackEntryTuple" -> {
-//                            TvmStackEntryTuple t2 = context.deserialize(elInner2, TvmStackEntryTuple.class);
-//                            elements.add(t2);
-//                        }
-//                    }
                 }
             }
             list.setElements(elements);
@@ -88,28 +66,6 @@ public class RunResultParser {
                     JsonElement element = elementsArray.get(j);
                     String elementType = element.getAsJsonObject().get("@type").getAsString();
                     elements.add(deserializeByType(elementType, element, context));
-//                    switch (elType2) {
-//                        case "tvm.stackEntryNumber":
-//                            TvmStackEntryNumber n2 = context.deserialize(elInner2, TvmStackEntryNumber.class);
-//                            elements.add(n2);
-//                            break;
-//                        case "tvm.stackEntryCell":
-//                            TvmStackEntryCell c2 = context.deserialize(elInner2, TvmStackEntryCell.class);
-//                            elements.add(c2);
-//                            break;
-//                        case "tvm.stackEntrySlice":
-//                            TvmStackEntrySlice s2 = context.deserialize(elInner2, TvmStackEntrySlice.class);
-//                            elements.add(s2);
-//                            break;
-//                        case "tvm.stackEntryList":
-//                            TvmStackEntryList l2 = context.deserialize(elInner2, TvmStackEntryList.class);
-//                            elements.add(l2);
-//                            break;
-//                        case "tvm.stackEntryTuple":
-//                            TvmStackEntryTuple t2 = context.deserialize(elInner2, TvmStackEntryTuple.class);
-//                            elements.add(t2);
-//                            break;
-//                    }
                 }
             }
             tuple.setElements(elements);
@@ -136,28 +92,6 @@ public class RunResultParser {
                 JsonElement element = stackList.getAsJsonArray().get(i);
                 String elementType = element.getAsJsonObject().get("@type").getAsString();
                 stack.add(deserializeByType(elementType, element, context));
-//                switch (elType) {
-//                    case "tvm.stackEntryNumber":
-//                        TvmStackEntryNumber n1 = context.deserialize(elInner, TvmStackEntryNumber.class);
-//                        stack.add(n1);
-//                        break;
-//                    case "tvm.stackEntryCell":
-//                        TvmStackEntryCell c1 = context.deserialize(elInner, TvmStackEntryCell.class);
-//                        stack.add(c1);
-//                        break;
-//                    case "tvm.stackEntrySlice":
-//                        TvmStackEntrySlice s1 = context.deserialize(elInner, TvmStackEntrySlice.class);
-//                        stack.add(s1);
-//                        break;
-//                    case "tvm.stackEntryList":
-//                        TvmStackEntryList l1 = context.deserialize(elInner, TvmStackEntryList.class);
-//                        stack.add(l1);
-//                        break;
-//                    case "tvm.stackEntryTuple":
-//                        TvmStackEntryTuple t1 = context.deserialize(elInner, TvmStackEntryTuple.class);
-//                        stack.add(t1);
-//                        break;
-//                }
             }
             return RunResult.builder()
                     .stack(stack)
