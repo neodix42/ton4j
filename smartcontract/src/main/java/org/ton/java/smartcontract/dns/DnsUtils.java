@@ -137,16 +137,16 @@ public class DnsUtils {
         stack.offer("[num, " + categoryInteger + "]");
 
         RunResult result = tonlib.runMethod(dnsAddress, "dnsresolve", stack);
-        if (result.getStackEntry().size() != 2) {
+        if (result.getStack().size() != 2) {
             throw new Error("Invalid dnsresolve response");
         }
 
         Cell cell = null;
 
-        int resultLen = ((TvmStackEntryNumber) result.getStackEntry().get(0)).getNumber().intValue();
-        Object r = result.getStackEntry().get(1);
+        int resultLen = ((TvmStackEntryNumber) result.getStack().get(0)).getNumber().intValue();
+        Object r = result.getStack().get(1);
         if (r instanceof TvmStackEntryCell) {
-            TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStackEntry().get(1);
+            TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStack().get(1);
             cell = CellBuilder.fromBoc(Utils.base64ToBytes(cellResult.getCell().getBytes()));
         }
 

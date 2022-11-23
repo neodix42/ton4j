@@ -186,7 +186,7 @@ public class WalletV4ContractR2 implements WalletContract {
 
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_subwallet_id");
-        TvmStackEntryNumber subWalletId = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber subWalletId = (TvmStackEntryNumber) result.getStack().get(0);
 
         return subWalletId.getNumber().longValue();
     }
@@ -194,7 +194,7 @@ public class WalletV4ContractR2 implements WalletContract {
     public byte[] getPublicKey(Tonlib tonlib) {
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_public_key");
-        TvmStackEntryNumber pubKey = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber pubKey = (TvmStackEntryNumber) result.getStack().get(0);
 
         return pubKey.getNumber().toByteArray();
     }
@@ -213,7 +213,7 @@ public class WalletV4ContractR2 implements WalletContract {
         stack.offer("[num, " + hashPart + "]");
 
         RunResult result = tonlib.runMethod(myAddress, "is_plugin_installed", stack);
-        TvmStackEntryNumber resultNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber resultNumber = (TvmStackEntryNumber) result.getStack().get(0);
 
         return resultNumber.getNumber().longValue() != 0;
     }
@@ -225,7 +225,7 @@ public class WalletV4ContractR2 implements WalletContract {
         List<String> r = new ArrayList<>();
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_plugin_list");
-        TvmStackEntryList list = (TvmStackEntryList) result.getStackEntry().get(0);
+        TvmStackEntryList list = (TvmStackEntryList) result.getStack().get(0);
         for (Object o : list.getList().getElements()) {
             TvmStackEntryTuple t = (TvmStackEntryTuple) o;
             TvmTuple tuple = t.getTuple();
@@ -245,7 +245,7 @@ public class WalletV4ContractR2 implements WalletContract {
 
         RunResult result = tonlib.runMethod(pluginAddress, "get_subscription_data");
         if (result.getExit_code() == 0) {
-            return parseSubscriptionData(result.getStackEntry());
+            return parseSubscriptionData(result.getStack());
         } else {
             throw new Error("Error executing get_subscription_data. Exit code " + result.getExit_code());
 
@@ -277,7 +277,7 @@ public class WalletV4ContractR2 implements WalletContract {
         return cell.endCell();
     }
 
-    private SubscriptionInfo parseSubscriptionData(List<TvmStackEntry> subscriptionData) {
+    private SubscriptionInfo parseSubscriptionData(List subscriptionData) {
         TvmStackEntryTuple walletAddr = (TvmStackEntryTuple) subscriptionData.get(0);
         TvmStackEntryNumber wc = (TvmStackEntryNumber) walletAddr.getTuple().getElements().get(0);
         TvmStackEntryNumber hash = (TvmStackEntryNumber) walletAddr.getTuple().getElements().get(1);

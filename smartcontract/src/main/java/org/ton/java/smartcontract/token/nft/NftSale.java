@@ -98,13 +98,13 @@ public class NftSale implements Contract {
             throw new Error("method get_sale_data, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell marketplaceAddressCell = (TvmStackEntryCell) result.getStackEntry().get(0);
+        TvmStackEntryCell marketplaceAddressCell = (TvmStackEntryCell) result.getStack().get(0);
         Address marketplaceAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(marketplaceAddressCell.getCell().getBytes())));
 
-        TvmStackEntryCell nftAddressCell = (TvmStackEntryCell) result.getStackEntry().get(1);
+        TvmStackEntryCell nftAddressCell = (TvmStackEntryCell) result.getStack().get(1);
         Address nftAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(nftAddressCell.getCell().getBytes())));
 
-        TvmStackEntryCell nftOwnerAddressCell = (TvmStackEntryCell) result.getStackEntry().get(2);
+        TvmStackEntryCell nftOwnerAddressCell = (TvmStackEntryCell) result.getStack().get(2);
         Address nftOwnerAddress = null;
         try {
             nftOwnerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(nftOwnerAddressCell.getCell().getBytes())));
@@ -112,16 +112,16 @@ public class NftSale implements Contract {
             //todo
         }
 
-        TvmStackEntryNumber fullPriceNumber = (TvmStackEntryNumber) result.getStackEntry().get(3);
+        TvmStackEntryNumber fullPriceNumber = (TvmStackEntryNumber) result.getStack().get(3);
         BigInteger fullPrice = fullPriceNumber.getNumber();
 
-        TvmStackEntryNumber marketplaceFeeNumber = (TvmStackEntryNumber) result.getStackEntry().get(4);
+        TvmStackEntryNumber marketplaceFeeNumber = (TvmStackEntryNumber) result.getStack().get(4);
         BigInteger marketplaceFee = marketplaceFeeNumber.getNumber();
 
-        TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStackEntry().get(5);
+        TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStack().get(5);
         Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(royaltyAddressCell.getCell().getBytes())));
 
-        TvmStackEntryNumber royaltyAmountNumber = (TvmStackEntryNumber) result.getStackEntry().get(6);
+        TvmStackEntryNumber royaltyAmountNumber = (TvmStackEntryNumber) result.getStack().get(6);
         BigInteger royaltyAmount = royaltyAmountNumber.getNumber();
 
 

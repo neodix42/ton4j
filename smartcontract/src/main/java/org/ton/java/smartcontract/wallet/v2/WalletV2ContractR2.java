@@ -33,7 +33,7 @@ public class WalletV2ContractR2 extends WalletV2ContractBase {
             throw new Error("method get_public_key, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber publicKeyNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber publicKeyNumber = (TvmStackEntryNumber) result.getStack().get(0);
         return publicKeyNumber.getNumber().toString(16);
     }
 }

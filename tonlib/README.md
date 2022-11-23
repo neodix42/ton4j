@@ -180,7 +180,7 @@ RunResult result = tonlib.runMethod(address, "seqno");
 
 log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
 
-TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
+TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
 log.info("seqno: {}", eqno.getNumber());
 
 // result 
@@ -193,7 +193,7 @@ Retrieve past_election_ids
 ```java
 Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
 RunResult result = tonlib.runMethod(address,"past_election_ids");
-TvmStackEntryList listResult = (TvmStackEntryList)result.getStackEntry().get(0);
+TvmStackEntryList listResult = (TvmStackEntryList)result.getStack().get(0);
 
 for(Object o: listResult.getList().getElements()){
     TvmStackEntryNumber electionId = (TvmStackEntryNumber);

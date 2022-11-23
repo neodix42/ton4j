@@ -251,7 +251,7 @@ public class PaymentChannel implements WalletContract {
             throw new Error("method get_channel_state, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber addr = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber addr = (TvmStackEntryNumber) result.getStack().get(0);
         return addr.getNumber();
     }
 
@@ -264,35 +264,35 @@ public class PaymentChannel implements WalletContract {
             throw new Error("method get_channel_data, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber stateNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber stateNumber = (TvmStackEntryNumber) result.getStack().get(0);
 
-        TvmStackEntryTuple balanceTuple = (TvmStackEntryTuple) result.getStackEntry().get(1);
+        TvmStackEntryTuple balanceTuple = (TvmStackEntryTuple) result.getStack().get(1);
         TvmStackEntryNumber balanceA = (TvmStackEntryNumber) balanceTuple.getTuple().getElements().get(0);
         TvmStackEntryNumber balanceB = (TvmStackEntryNumber) balanceTuple.getTuple().getElements().get(1);
 
-        TvmStackEntryTuple keyTuple = (TvmStackEntryTuple) result.getStackEntry().get(2);
+        TvmStackEntryTuple keyTuple = (TvmStackEntryTuple) result.getStack().get(2);
         TvmStackEntryNumber publicKeyA = (TvmStackEntryNumber) keyTuple.getTuple().getElements().get(0);
         TvmStackEntryNumber publicKeyB = (TvmStackEntryNumber) keyTuple.getTuple().getElements().get(1);
 
-        TvmStackEntryNumber channelIdNumber = (TvmStackEntryNumber) result.getStackEntry().get(3);
+        TvmStackEntryNumber channelIdNumber = (TvmStackEntryNumber) result.getStack().get(3);
 
-        TvmStackEntryTuple closureConfigTuple = (TvmStackEntryTuple) result.getStackEntry().get(4);
+        TvmStackEntryTuple closureConfigTuple = (TvmStackEntryTuple) result.getStack().get(4);
         TvmStackEntryNumber quarantineDuration = (TvmStackEntryNumber) closureConfigTuple.getTuple().getElements().get(0);
         TvmStackEntryNumber misbehaviourFine = (TvmStackEntryNumber) closureConfigTuple.getTuple().getElements().get(1);
         TvmStackEntryNumber conditionalCloseDuration = (TvmStackEntryNumber) closureConfigTuple.getTuple().getElements().get(2);
 
-        TvmStackEntryTuple commitedSeqnoTuple = (TvmStackEntryTuple) result.getStackEntry().get(5);
+        TvmStackEntryTuple commitedSeqnoTuple = (TvmStackEntryTuple) result.getStack().get(5);
         TvmStackEntryNumber seqnoA = (TvmStackEntryNumber) commitedSeqnoTuple.getTuple().getElements().get(0);
         TvmStackEntryNumber seqnoB = (TvmStackEntryNumber) commitedSeqnoTuple.getTuple().getElements().get(1);
 
         Cell quarantine = null;
-        TvmStackEntryList quarantineList = (TvmStackEntryList) result.getStackEntry().get(6);
+        TvmStackEntryList quarantineList = (TvmStackEntryList) result.getStack().get(6);
         for (Object o : quarantineList.getList().getElements()) {
             TvmStackEntryCell t = (TvmStackEntryCell) o;
             quarantine = CellBuilder.fromBoc(Utils.base64ToBytes(t.getCell().getBytes()));
         }
 
-        TvmStackEntryTuple trippleTuple = (TvmStackEntryTuple) result.getStackEntry().get(7);
+        TvmStackEntryTuple trippleTuple = (TvmStackEntryTuple) result.getStack().get(7);
         TvmStackEntryNumber excessFee = (TvmStackEntryNumber) trippleTuple.getTuple().getElements().get(0);
 
         TvmStackEntryCell addressACell = (TvmStackEntryCell) trippleTuple.getTuple().getElements().get(1);

@@ -159,17 +159,17 @@ public class JettonMinter implements Contract {
             throw new Error("method get_nft_data, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber totalSupplyNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber totalSupplyNumber = (TvmStackEntryNumber) result.getStack().get(0);
         BigInteger totalSupply = totalSupplyNumber.getNumber();
 
         System.out.println("minter totalSupply: " + Utils.formatNanoValue(totalSupply));
 
-        boolean isMutable = ((TvmStackEntryNumber) result.getStackEntry().get(1)).getNumber().longValue() == -1;
+        boolean isMutable = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber().longValue() == -1;
 
-        TvmStackEntryCell adminAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
+        TvmStackEntryCell adminAddr = (TvmStackEntryCell) result.getStack().get(2);
         Address adminAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(adminAddr.getCell().getBytes())));
 
-        TvmStackEntryCell jettonContent = (TvmStackEntryCell) result.getStackEntry().get(3);
+        TvmStackEntryCell jettonContent = (TvmStackEntryCell) result.getStack().get(3);
         Cell jettonContentCell = CellBuilder.fromBoc(Utils.base64ToBytes(jettonContent.getCell().getBytes()));
         String jettonContentUri = null;
         try {
@@ -178,7 +178,7 @@ public class JettonMinter implements Contract {
             //todo
         }
 
-        TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStackEntry().get(4);
+        TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStack().get(4);
         Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64ToBytes(contentC.getCell().getBytes()));
 
         return JettonMinterData.builder()
@@ -199,7 +199,7 @@ public class JettonMinter implements Contract {
             throw new Error("method get_jetton_data, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber totalSupplyNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber totalSupplyNumber = (TvmStackEntryNumber) result.getStack().get(0);
         return totalSupplyNumber.getNumber();
     }
 
@@ -223,7 +223,7 @@ public class JettonMinter implements Contract {
             throw new Error("method get_wallet_address, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell addr = (TvmStackEntryCell) result.getStackEntry().get(0);
+        TvmStackEntryCell addr = (TvmStackEntryCell) result.getStack().get(0);
         return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(addr.getCell().getBytes())));
     }
 

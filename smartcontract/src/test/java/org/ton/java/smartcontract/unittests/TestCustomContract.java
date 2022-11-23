@@ -49,17 +49,17 @@ public class TestCustomContract {
 
         RunResult result = tonlib.runMethod(address, "seqno");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
         log.info("seqno: {}", seqno.getNumber());
 
         result = tonlib.runMethod(address, "get_x_data");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
-        TvmStackEntryNumber x_data = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber x_data = (TvmStackEntryNumber) result.getStack().get(0);
         log.info("x_data: {}", x_data.getNumber());
 
         result = tonlib.runMethod(address, "get_extra_field");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
-        TvmStackEntryNumber extra_field = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber extra_field = (TvmStackEntryNumber) result.getStack().get(0);
         log.info("extra_field: {}", extra_field.getNumber());
 
         Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");

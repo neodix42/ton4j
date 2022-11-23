@@ -1,0 +1,208 @@
+{
+  "@type": "smc.runResult",
+  "gas_used": 6276,
+  "stack": [
+    {
+      "@type": "tvm.stackEntryNumber",
+      "number": {
+        "@type": "tvm.numberDecimal",
+        "number": "0"
+      }
+    },
+    {
+      "@type": "tvm.stackEntryNumber",
+      "number": {
+        "@type": "tvm.numberDecimal",
+        "number": "124"
+      }
+    },
+    {
+      "@type": "tvm.stackEntryCell",
+      "cell": {
+        "@type": "tvm.cell",
+        "bytes": "te6cckECIQEABc"
+      }
+    },
+    {
+      "@type": "tvm.stackEntryList",
+      "list": {
+        "@type": "tvm.list",
+        "elements": [
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "111"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "222"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryCell",
+            "cell": {
+              "@type": "tvm.cell",
+              "bytes": "te6cckECIQEABcAAAgE"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryList",
+            "list": {
+              "@type": "tvm.list",
+              "elements": [
+                {
+                  "@type": "tvm.stackEntryNumber",
+                  "number": {
+                    "@type": "tvm.numberDecimal",
+                    "number": "777"
+                  }
+                },
+                {
+                  "@type": "tvm.stackEntryNumber",
+                  "number": {
+                    "@type": "tvm.numberDecimal",
+                    "number": "888"
+                  }
+                },
+                {
+                  "@type": "tvm.stackEntryCell",
+                  "cell": {
+                    "@type": "tvm.cell",
+                    "bytes": "te6cc"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@type": "tvm.stackEntryTuple",
+      "tuple": {
+        "@type": "tvm.tuple",
+        "elements": [
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "1655397962"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "1655406062"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "900"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "20224315222834892040910520959613509512879128406473594936956787164646029239082"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryCell",
+            "cell": {
+              "@type": "tvm.cell",
+              "bytes": "te6cckECIQEABcAAAgEgAQICASADBAIBIBMUAgEgBQYCASALDAIBSAcIAgEgCQoAn77xFPYdHud9/XxD27SE7dRVs+VB2Dszjptk+r0hCda77sIl4gcHPfvbi4Xk+BEwFesBwPKU1moLbnV7g+SWPQTQB4eHPTioaOsteWpvuwAgAJ++6UDuDPaZ11DNvWyM4pD9eo1jO0f8NBVbMae8ZiuoKyJP9t7QDSd19GebDmn3GAuqo+zFMSZx/JXhzz9eKy2p4AeHhz04qGjrLXlqb7sAIACfvz9A1RquY4ise4uFFNrl3Yi7rgJNBOPN+lUUcW11zh+WW01uSNP6AXyYNnTh46HeMb85YRiXgKU0rbyTwiSSllQDw8OenFQ0dZa8tTfdgBAAn78h6bEtkGxCXjOy6yeiyNNjgjcqmfjl6AY7DGRKdnwV/2A6+F3xMUqpDypX6mikQP+JYQ89a5Cp5P4PctU7ZpToA8PDnpxUNHWWvLU33YAQAgEgDQ4CASAREgCfvwPw+A7wo00AfYzNhCethcribk6CoI7lSamH73vShI69Spcur8lhgeQIdp8Ixa6HYhfY6foAwRH9kD6MyJiuoGgDw8OenFQ0dZa8tTfdgBACAVgPEACfvpreMNECQEOCN9mrzBfMTORWR2PVF212T4UoF/Z+jNCM4zbpVbdOc4uBGouBhdC8v7YmCu8wUDHR8DR0voWNRKAPDxhY6vLiplrzEHpAAEAAn764ZUZkjiqvbf25Ew/WHZGG3K5pCYsg22ptZS6K/JGy/sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOADw8OenFQ0dZa8tTfdgBAAJ+/GkuGo2B6KHr9ZMbFuIximKXqiSDAf3RKl/5/ndjnQ2r3NoiFwqC68r05AsyPBm9FePRMIhDImBT4DIaVxXsoEAPDw56cVDR1lry1N92AEACfvy1cK0tYN8lpg+ktVcV/sXP0e+GS+dzU0v55537zJmGqP7TkmgbMHqI8tWvp23qrt2PTgwqc6ueV9PV5F6xLUswDw8OenFQ0dZa8tTfdgBACASAVFgIBIBkaAgFIFxgAn79oXEYExforx4u9yid7XZvr5fl36425ebUjXRcHfpD55aPEsXsMywdKstmbXuGqCaxfebamaJ4UpBOshkHDuPyQAeHhz04qGjrLXlqb7sAIAJ++yb1zERD4FoZU9ah/uQR1icCiXDc4Nptz7ej5uxtrDW6ZGIIoPkg4SlNM7S1Lmv4XLmlpYbXNreuZfuVgMC2cEAeHhz04qGjrLXlqb7sAIACfvsG51s3lxH52I90zUPWawzqjVQnrB4+bY+eM0AXK3AKOXPKKQLqWjq27vDMh7nffetKOmTIinF00yPWYTy17OigHh4c9OKho6y15am+7ACAAn79st32CBdCacq9xDxq8fYUZ/71Y2CEu9as6f3aOUSdlUjCRe9rXnpGuSWqibavlUS9oppb46aKqh9TeHeiwLFV2AeHhz04qGjrLXlqb7sAIAgEgGxwCAUgdHgCfvwIzWf0m1cLymZp9GzQahy1OWDY8kXNIY61oW9i0nQ6cYha0a0hIHdFEHdfDpK0o5ElArz5FJHUzx2qIXOOkf0QDw8OenFQ0dZa8tTfdgBAAn76iQY+Vde/Lufxyl0jGCn8g8xm2WCFJ/0rJAGZAglc29drFfgaIqxNxEBpONohiNBEaxaWZzRQkk5kUj8eaI7dwDw8OenFQ0dZa8tTfdgBAAgFYHyAAnb4GWkvIMQKze4YjE50tEaW6C8h1nZcX5f3r0jS+DOHAOLxDXaLpW997JoE4EV4LLl1TtRibpM5+OCHIMK2YBx+APDw56cVDR1lry1N92AEAnb4C9Cd1v2qe/93ujjz5jsHIokKxEdmZZQpN4OcYfLVbxog/D9rLTh9cm2sLRr+iBAfPOrOjTPzoSCxe/rWZKhJAPDw56cVDR1lry1N92AG4qNxt"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "1699984000000000"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryNumber",
+            "number": {
+              "@type": "tvm.numberDecimal",
+              "number": "2289789918651"
+            }
+          },
+          {
+            "@type": "tvm.stackEntryList",
+            "list": {
+              "@type": "tvm.list",
+              "elements": [
+                {
+                  "@type": "tvm.stackEntryTuple",
+                  "tuple": {
+                    "@type": "tvm.tuple",
+                    "elements": [
+                      {
+                        "@type": "tvm.stackEntryNumber",
+                        "number": {
+                          "@type": "tvm.numberDecimal",
+                          "number": "1655369162"
+                        }
+                      },
+                      {
+                        "@type": "tvm.stackEntryNumber",
+                        "number": {
+                          "@type": "tvm.numberDecimal",
+                          "number": "1655377262"
+                        }
+                      },
+                      {
+                        "@type": "tvm.stackEntryNumber",
+                        "number": {
+                          "@type": "tvm.numberDecimal",
+                          "number": "900"
+                        }
+                      },
+                      {
+                        "@type": "tvm.stackEntryNumber",
+                        "number": {
+                          "@type": "tvm.numberDecimal",
+                          "number": "42351514466890978821103931745645426908480833706817633891839160753551019660519"
+                        }
+                      },
+                      {
+                        "@type": "tvm.stackEntryCell",
+                        "cell": {
+                          "@type": "tvm.cell",
+                          "bytes": "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"
+                        }
+                      },
+                      {
+                        "@type": "tvm.stackEntryNumber",
+                        "number": {
+                          "@type": "tvm.numberDecimal",
+                          "number": "1899982000000000"
+                        }
+                      },
+                      {
+                        "@type": "tvm.stackEntryNumber",
+                        "number": {
+                          "@type": "tvm.numberDecimal",
+                          "number": "3920620712333"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "exit_code": 0
+}

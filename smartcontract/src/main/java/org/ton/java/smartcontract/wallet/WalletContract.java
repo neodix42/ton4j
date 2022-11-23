@@ -364,7 +364,7 @@ public interface WalletContract extends Contract {
             throw new Error("method seqno returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
 
         return seqno.getNumber().longValue();
     }

@@ -316,15 +316,15 @@ Check if contract was deployed successfully
 Tonlib tonlib = Tonlib.builder().build();
 
 RunResult result = tonlib.runMethod(address,"seqno");
-TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry();
+TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack();
 log.info("seqno: {}", seqno.getNumber());
 
 result=tonlib.runMethod(address, "get_x_data");
-TvmStackEntryNumber x_data=(TvmStackEntryNumber)result.getStackEntry();
+TvmStackEntryNumber x_data=(TvmStackEntryNumber)result.getStack();
 log.info("x_data: {}", seqno.getNumber());
 
 result=tonlib.runMethod(address,"get_extra_field");
-TvmStackEntryNumber extra_field = (TvmStackEntryNumber)result.getStackEntry();
+TvmStackEntryNumber extra_field = (TvmStackEntryNumber)result.getStack();
 log.info("extra_field: {}", seqno.getNumber());
 
 // result

@@ -96,6 +96,8 @@ public class Tonlib {
 
     private boolean synced;
 
+    RunResultParser runResultParser;
+
     public static TonlibBuilder builder() {
         return new CustomTonlibBuilder();
     }
@@ -105,29 +107,15 @@ public class Tonlib {
         public Tonlib build() {
 
             try {
-                String tonlibName = null;
-                switch (Utils.getOS()) {
-                    case LINUX:
-                        tonlibName = "tonlibjson.so";
-                        break;
-                    case LINUX_ARM:
-                        tonlibName = "tonlibjson-arm.so";
-                        break;
-                    case WINDOWS:
-                        tonlibName = "tonlibjson.dll";
-                        break;
-                    case WINDOWS_ARM:
-                        tonlibName = "tonlibjson-arm.dll";
-                        break;
-                    case MAC:
-                        tonlibName = "tonlibjson.dylib";
-                        break;
-                    case MAC_ARM64:
-                        tonlibName = "tonlibjson-arm.dylib";
-                        break;
-                    case UNKNOWN:
-                        throw new Error("Operating system is not supported!");
-                }
+                String tonlibName = switch (Utils.getOS()) {
+                    case LINUX -> "tonlibjson.so";
+                    case LINUX_ARM -> "tonlibjson-arm.so";
+                    case WINDOWS -> "tonlibjson.dll";
+                    case WINDOWS_ARM -> "tonlibjson-arm.dll";
+                    case MAC -> "tonlibjson.dylib";
+                    case MAC_ARM64 -> "tonlibjson-arm.dylib";
+                    case UNKNOWN -> throw new Error("Operating system is not supported!");
+                };
 
                 if (isNull(super.pathToTonlibSharedLib)) {
                     super.pathToTonlibSharedLib = tonlibName;
@@ -150,6 +138,7 @@ public class Tonlib {
                 }
 
                 super.synced = false;
+                super.runResultParser = new RunResultParser();
 
                 String configData;
                 if (isNull(super.pathToGlobalConfig)) {
@@ -658,11 +647,7 @@ public class Tonlib {
 
         String result = syncAndRead();
 
-//        System.out.println("result 1: " + result);
-        RunResultGeneric<String> g = gson.fromJson(result, RunResultGeneric.class);
-//        System.out.println("result 2: " + g);
-
-        return ParseRunResult.getTypedRunResult(g.getStack(), g.getExit_code(), g.getGas_used());
+        return runResultParser.parse(result);
     }
 
     /**

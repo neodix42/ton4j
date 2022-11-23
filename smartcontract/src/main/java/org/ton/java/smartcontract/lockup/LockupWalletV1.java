@@ -140,7 +140,7 @@ public class LockupWalletV1 implements WalletContract {
 
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "wallet_id");
-        TvmStackEntryNumber subWalletId = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber subWalletId = (TvmStackEntryNumber) result.getStack().get(0);
 
         return subWalletId.getNumber().longValue();
     }
@@ -149,7 +149,7 @@ public class LockupWalletV1 implements WalletContract {
 
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_public_key");
-        TvmStackEntryNumber pubkey = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber pubkey = (TvmStackEntryNumber) result.getStack().get(0);
 
         return pubkey.getNumber().toString(16);
     }
@@ -165,7 +165,7 @@ public class LockupWalletV1 implements WalletContract {
         stack.offer("[slice, " + c.endCell().toHex(true) + "]");
 
         RunResult result = tonlib.runMethod(myAddress, "check_destination", stack);
-        TvmStackEntryNumber found = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber found = (TvmStackEntryNumber) result.getStack().get(0);
 
         return (found.getNumber().intValue() == -1);
     }
@@ -201,9 +201,9 @@ public class LockupWalletV1 implements WalletContract {
     public List<BigInteger> getBalances(Tonlib tonlib) {
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_balances");
-        TvmStackEntryNumber balance = (TvmStackEntryNumber) result.getStackEntry().get(0); // ton balance
-        TvmStackEntryNumber restrictedValue = (TvmStackEntryNumber) result.getStackEntry().get(1); // total_restricted_value
-        TvmStackEntryNumber lockedValue = (TvmStackEntryNumber) result.getStackEntry().get(2); // total_locked_value
+        TvmStackEntryNumber balance = (TvmStackEntryNumber) result.getStack().get(0); // ton balance
+        TvmStackEntryNumber restrictedValue = (TvmStackEntryNumber) result.getStack().get(1); // total_restricted_value
+        TvmStackEntryNumber lockedValue = (TvmStackEntryNumber) result.getStack().get(2); // total_locked_value
 
         return List.of(
                 balance.getNumber(),
@@ -216,7 +216,7 @@ public class LockupWalletV1 implements WalletContract {
 
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "seqno");
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
 
         return seqno.getNumber().longValue();
     }

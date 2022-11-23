@@ -94,10 +94,10 @@ public class DnsCollection implements Contract {
             throw new Error("method get_collection_data, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber nextItemIndexResult = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber nextItemIndexResult = (TvmStackEntryNumber) result.getStack().get(0);
         long nextItemIndex = nextItemIndexResult.getNumber().longValue();
 
-        TvmStackEntryCell collectionContentResult = (TvmStackEntryCell) result.getStackEntry().get(1); // cell or slice
+        TvmStackEntryCell collectionContentResult = (TvmStackEntryCell) result.getStack().get(1); // cell or slice
         Cell collectionContent = Cell.fromBoc(Utils.base64ToBytes(collectionContentResult.getCell().getBytes()));
         String collectionContentUri = NftUtils.parseOffchainUriCell(collectionContent);
 
@@ -132,7 +132,7 @@ public class DnsCollection implements Contract {
             throw new Error("method get_nft_address_by_index, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell addr = (TvmStackEntryCell) result.getStackEntry().get(0);
+        TvmStackEntryCell addr = (TvmStackEntryCell) result.getStack().get(0);
         return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(addr.getCell().getBytes())));
     }
 

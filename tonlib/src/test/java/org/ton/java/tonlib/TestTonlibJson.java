@@ -327,7 +327,7 @@ public class TestTonlibJson {
         Address address = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
         RunResult result = tonlib.runMethod(address, "seqno");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
         log.info("seqno: {}", seqno.getNumber());
         assertThat(result.getExit_code()).isZero();
     }
@@ -340,7 +340,7 @@ public class TestTonlibJson {
         Address address = Address.of(TON_FOUNDATION);
         RunResult result = tonlib.runMethod(address, "seqno");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
         log.info("seqno: {}", seqno.getNumber());
         assertThat(result.getExit_code()).isZero();
     }
@@ -363,7 +363,7 @@ public class TestTonlibJson {
 
         RunResult result = tonlib.runMethod(address, "participant_list");
         log.info(result.toString());
-        TvmStackEntryList listResult = (TvmStackEntryList) result.getStackEntry().get(0);
+        TvmStackEntryList listResult = (TvmStackEntryList) result.getStack().get(0);
         for (Object o : listResult.getList().getElements()) {
             TvmStackEntryTuple t = (TvmStackEntryTuple) o;
             TvmTuple tuple = t.getTuple();
@@ -379,7 +379,7 @@ public class TestTonlibJson {
         Tonlib tonlib = Tonlib.builder().build();
         Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
         RunResult result = tonlib.runMethod(address, "active_election_id");
-        TvmStackEntryNumber electionId = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber electionId = (TvmStackEntryNumber) result.getStack().get(0);
         log.info("electionId: {}", electionId.getNumber());
         assertThat(result.getExit_code()).isZero();
     }
@@ -389,7 +389,7 @@ public class TestTonlibJson {
         Tonlib tonlib = Tonlib.builder().build();
         Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
         RunResult result = tonlib.runMethod(address, "past_election_ids");
-        TvmStackEntryList listResult = (TvmStackEntryList) result.getStackEntry().get(0);
+        TvmStackEntryList listResult = (TvmStackEntryList) result.getStack().get(0);
         for (Object o : listResult.getList().getElements()) {
             TvmStackEntryNumber electionId = (TvmStackEntryNumber) o;
             log.info(electionId.getNumber().toString());
@@ -402,7 +402,7 @@ public class TestTonlibJson {
         Tonlib tonlib = Tonlib.builder().build();
         Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
         RunResult result = tonlib.runMethod(address, "past_elections");
-        TvmStackEntryList listResult = (TvmStackEntryList) result.getStackEntry().get(0);
+        TvmStackEntryList listResult = (TvmStackEntryList) result.getStack().get(0);
         log.info("pastElections: {}", listResult);
 
         assertThat(result.getExit_code()).isZero();
@@ -433,7 +433,7 @@ public class TestTonlibJson {
         stack.offer("[num," + validatorAddress.toDecimal() + "]");
 
         result = tonlib.runMethod(elector, "compute_returned_stake", stack);
-        BigInteger returnStake = ((TvmStackEntryNumber) result.getStackEntry().get(0)).getNumber();
+        BigInteger returnStake = ((TvmStackEntryNumber) result.getStack().get(0)).getNumber();
         log.info("return stake: {} ", Utils.formatNanoValue(returnStake.longValue()));
     }
 }

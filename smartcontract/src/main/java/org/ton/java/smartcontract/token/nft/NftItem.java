@@ -83,18 +83,18 @@ public class NftItem implements Contract {
             throw new Error("method get_nft_data, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber isInitializedNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber isInitializedNumber = (TvmStackEntryNumber) result.getStack().get(0);
         boolean isInitialized = isInitializedNumber.getNumber().longValue() == -1;
 
-        BigInteger index = ((TvmStackEntryNumber) result.getStackEntry().get(1)).getNumber();
+        BigInteger index = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber();
 
-        TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
+        TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStack().get(2);
         Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(collectionAddr.getCell().getBytes())));
 
-        TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStackEntry().get(3);
+        TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStack().get(3);
         Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(ownerAddr.getCell().getBytes()))) : null;
 
-        TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStackEntry().get(4);
+        TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStack().get(4);
         Cell cell = CellBuilder.fromBoc(Utils.base64ToBytes(contentCell.getCell().getBytes()));
 
         String contentUri = null;

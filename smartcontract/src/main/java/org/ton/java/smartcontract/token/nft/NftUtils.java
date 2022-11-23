@@ -162,14 +162,14 @@ public class NftUtils {
     public static Royalty getRoyaltyParams(Tonlib tonlib, Address address) {
         RunResult result = tonlib.runMethod(address, "royalty_params");
 
-        TvmStackEntryNumber royaltyFactorNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber royaltyFactorNumber = (TvmStackEntryNumber) result.getStack().get(0);
         BigInteger royaltyFactor = royaltyFactorNumber.getNumber();
 
-        TvmStackEntryNumber royaltyBaseNumber = (TvmStackEntryNumber) result.getStackEntry().get(1);
+        TvmStackEntryNumber royaltyBaseNumber = (TvmStackEntryNumber) result.getStack().get(1);
         BigInteger royaltyBase = royaltyBaseNumber.getNumber();
 
         double royalty = royaltyFactor.divide(royaltyBase).doubleValue();
-        TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStackEntry().get(2);
+        TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStack().get(2);
         Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(royaltyAddressCell.getCell().getBytes())));
 
         return Royalty.builder()

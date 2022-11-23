@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigInteger;
 import java.util.List;
 
 @Builder
@@ -12,8 +13,8 @@ import java.util.List;
 @Getter
 @ToString
 public class RunResult {
-    List<TvmStackEntry> stackEntry;
-    long gas_used;
+    List<Object> stack;
+    BigInteger gas_used;
     long exit_code;
 }
 

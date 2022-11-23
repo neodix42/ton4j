@@ -41,7 +41,8 @@ public class TestConcurrentTonlib {
 
         RunResult result = tonlib.runMethod(elector, "compute_returned_stake", stack);
 
-        BigInteger returnStake = ((TvmStackEntryNumber) result.getStackEntry().get(0)).getNumber();
+        BigInteger returnStake = ((TvmStackEntryNumber) result.getStack().get(0)).getNumber();
+
         log.info("return stake: {} ", Utils.formatNanoValue(returnStake.longValue()));
         assertThat(result.getExit_code()).isEqualTo(0L);
     }

@@ -104,16 +104,16 @@ public class JettonWallet implements Contract {
             throw new Error("method get_wallet_data, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber balanceNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber balanceNumber = (TvmStackEntryNumber) result.getStack().get(0);
         BigInteger balance = balanceNumber.getNumber();
 
-        TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStackEntry().get(1);
+        TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStack().get(1);
         Address ownerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(ownerAddr.getCell().getBytes())));
 
-        TvmStackEntryCell jettonMinterAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
+        TvmStackEntryCell jettonMinterAddr = (TvmStackEntryCell) result.getStack().get(2);
         Address jettonMinterAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(jettonMinterAddr.getCell().getBytes())));
 
-        TvmStackEntryCell jettonWallet = (TvmStackEntryCell) result.getStackEntry().get(3);
+        TvmStackEntryCell jettonWallet = (TvmStackEntryCell) result.getStack().get(3);
         Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64ToBytes(jettonWallet.getCell().getBytes()));
         return JettonWalletData.builder()
                 .balance(balance)
@@ -131,7 +131,7 @@ public class JettonWallet implements Contract {
             throw new Error("method get_wallet_data, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber balanceNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber balanceNumber = (TvmStackEntryNumber) result.getStack().get(0);
         return balanceNumber.getNumber();
     }
 }

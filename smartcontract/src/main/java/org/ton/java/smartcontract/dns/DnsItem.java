@@ -83,18 +83,18 @@ public class DnsItem implements Contract {
             throw new Error("method get_nft_data, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber isInitializedNumber = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber isInitializedNumber = (TvmStackEntryNumber) result.getStack().get(0);
         boolean isInitialized = isInitializedNumber.getNumber().longValue() == -1;
 
-        BigInteger index = ((TvmStackEntryNumber) result.getStackEntry().get(1)).getNumber();
+        BigInteger index = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber();
 
-        TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStackEntry().get(2);
+        TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStack().get(2);
         Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(collectionAddr.getCell().getBytes())));
 
-        TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStackEntry().get(3);
+        TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStack().get(3);
         Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(ownerAddr.getCell().getBytes()))) : null;
 
-        TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStackEntry().get(4);
+        TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStack().get(4);
         Cell contentCell = CellBuilder.fromBoc(Utils.base64ToBytes(contentC.getCell().getBytes()));
 
         return ItemData.builder()
@@ -152,7 +152,7 @@ public class DnsItem implements Contract {
             throw new Error("method get_domain, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStackEntry().get(0);
+        TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStack().get(0);
         return new String(CellBuilder.fromBoc(Utils.base64ToBytes(domainCell.getCell().getBytes())).bits.toByteArray());
     }
 
@@ -164,7 +164,7 @@ public class DnsItem implements Contract {
             throw new Error("method get_editor, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell editorCell = (TvmStackEntryCell) result.getStackEntry().get(0);
+        TvmStackEntryCell editorCell = (TvmStackEntryCell) result.getStack().get(0);
         return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(editorCell.getCell().getBytes())));
     }
 
@@ -179,13 +179,13 @@ public class DnsItem implements Contract {
             throw new Error("method get_auction_info, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell maxBidAddressCell = (TvmStackEntryCell) result.getStackEntry().get(0);
+        TvmStackEntryCell maxBidAddressCell = (TvmStackEntryCell) result.getStack().get(0);
         Address maxBidAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(maxBidAddressCell.getCell().getBytes())));
 
-        TvmStackEntryNumber maxBidAmountNumber = (TvmStackEntryNumber) result.getStackEntry().get(1);
+        TvmStackEntryNumber maxBidAmountNumber = (TvmStackEntryNumber) result.getStack().get(1);
         BigInteger maxBidAmount = maxBidAmountNumber.getNumber();
 
-        TvmStackEntryNumber auctionEndTimeNumber = (TvmStackEntryNumber) result.getStackEntry().get(2);
+        TvmStackEntryNumber auctionEndTimeNumber = (TvmStackEntryNumber) result.getStack().get(2);
         long auctionEndTime = auctionEndTimeNumber.getNumber().longValue();
 
         return AuctionInfo.builder()
@@ -203,7 +203,7 @@ public class DnsItem implements Contract {
             throw new Error("method get_last_fill_up_time, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryNumber time = (TvmStackEntryNumber) result.getStackEntry().get(0);
+        TvmStackEntryNumber time = (TvmStackEntryNumber) result.getStack().get(0);
         return time.getNumber().longValue();
     }
 
