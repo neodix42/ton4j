@@ -1,20 +1,17 @@
 package org.ton.java.smartcontract.highload;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMap;
-import org.ton.java.smartcontract.token.ft.JettonWallet;
 import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.ExternalMessage;
+import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -63,7 +60,7 @@ public class HighloadWallet implements WalletContract {
         cell.storeUint(BigInteger.valueOf(getOptions().walletId), 32); // sub-wallet id
         cell.storeUint(BigInteger.ZERO, 64); // last_cleaned
         cell.storeBytes(getOptions().getPublicKey()); // 256 bits
-        cell.storeBit(false);
+        cell.storeBit(false); // initial storage has old_queries dict empty
 
         return cell.endCell();
     }
@@ -84,13 +81,13 @@ public class HighloadWallet implements WalletContract {
 
     public Cell createSigningMessageInternal() {
         CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
+        message.storeUint(BigInteger.valueOf(getOptions().walletId), 32); // todo review
 
         BigInteger i = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32))
                 .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond())));
         System.out.println("queryId --------------------------------- " + i);
         message.storeUint(i, 64);
-        message.storeBit(true); // true ------------
+        message.storeBit(true);
 
         return message.endCell();
     }
@@ -107,82 +104,37 @@ public class HighloadWallet implements WalletContract {
         TvmStackEntryNumber publicKeyNumber = (TvmStackEntryNumber) result.getStack().get(0);
         return publicKeyNumber.getNumber().toString(16);
     }
-    
+
     public void sendTonCoins(Tonlib tonlib, byte[] secretKey) {
 
-        long seqno = 1; // dummy
+        Cell signingMessageAll = createSigningMessageInternal();
+        signingMessageAll.refs.add(createDict());
 
-        CellBuilder payload = CellBuilder.beginCell();
+        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1, false);
 
-        payload.storeUint(BigInteger.valueOf(getOptions().getWalletId()), 32);
-        payload.storeUint(getOptions().getQueryId(), 64);
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+    }
 
+    private Cell createDict() {
         int dictKeySize = 16;
-        // same error with TonHashMap and TonHashMapE
-//        Failed Compute Phase 💻: (exit_code 10: ✕ Dictionary error)
         TonHashMap dictDestinations = new TonHashMap(dictKeySize);
 
         long i = 0; // key, index 16bit
         for (Destination destination : getOptions().getHighloadConfig().getDestinations()) {
 
-            ExternalMessage extMsg = createTransferMessage(
-                    secretKey,
-                    destination.getAddress(),
-                    destination.getAmount(),
-                    seqno); // redundant
+            Cell orderHeader = Contract.createInternalMessageHeader(destination.getAddress(), destination.getAmount());
+            Cell order = Contract.createCommonMsgInfo(orderHeader, null, null);
 
             CellBuilder p = CellBuilder.beginCell();
-            p.storeUint(destination.getMode(), 8); // mode
-            p.storeRef(extMsg.message);
+            p.storeUint(destination.getMode() == 0 ? 3 : destination.getMode(), 8); // mode
+            p.storeRef(order); // internal-msg
 
             dictDestinations.elements.put(i++, p.endCell());
         }
 
-        Cell cellDict = dictDestinations.serialize(
+        return dictDestinations.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
-                v -> CellBuilder.beginCell().storeSlice(CellSlice.beginParse((Cell) v)) // value dummy
-        );
-
-        payload.storeDict(cellDict);
-
-//        Cell orderHeader = Contract.createInternalMessageHeader(this.getAddress(), Utils.toNano(0.5));
-//        Cell order = Contract.createCommonMsgInfo(orderHeader, null, null);
-
-        Cell signingMessageAll = createSigningMessageInternal();
-        signingMessageAll.refs.add(payload);
-
-        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
-
-//        ExternalMessage msg = createTransferMessage(
-//                secretKey,
-//                this.getAddress(),
-//                amount,
-//                seqno,
-//                payload.endCell()
-//        );
-
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
-    }
-
-    private void transfer(Tonlib tonlib, WalletContract admin, Address jettonWalletAddress, Address toAddress, BigInteger jettonAmount, TweetNaclFast.Signature.KeyPair keyPair) {
-
-        long seqno = admin.getSeqno(tonlib);
-
-        ExternalMessage extMsg = admin.createTransferMessage(
-                keyPair.getSecretKey(),
-                Address.of(jettonWalletAddress),
-                Utils.toNano(0.05),
-                seqno,
-                JettonWallet.createTransferBody(
-                        0,
-                        jettonAmount,
-                        Address.of(toAddress), // destination
-                        admin.getAddress(), // response address
-                        Utils.toNano("0.01"), // forward amount
-                        "gift".getBytes() // forward payload
-                ));
-
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+                v -> (Cell) v);
     }
 
     public void deploy(Tonlib tonlib, byte[] secretKey) {

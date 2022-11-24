@@ -11,7 +11,7 @@ import java.math.BigInteger;
 @Getter
 @ToString
 public class Destination {
-    byte mode;
+    byte mode; // default mode 3
     Address address;
     BigInteger amount;
 }

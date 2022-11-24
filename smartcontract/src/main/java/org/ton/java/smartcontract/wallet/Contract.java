@@ -301,4 +301,14 @@ public interface Contract {
         }
         return commonMsgInfo.endCell();
     }
+
+    /**
+     * Create CommonMsgInfo without body and stateInit
+     *
+     * @param header Cell
+     * @return Cell
+     */
+    static Cell createCommonMsgInfo(Cell header) {
+        return createCommonMsgInfo(header, null, null);
+    }
 }

@@ -92,7 +92,7 @@ public interface WalletContract extends Contract {
     default ExternalMessage createExternalMessage(Cell signingMessage,
                                                   byte[] secretKey,
                                                   long seqno,
-                                                  boolean dummySignature) {
+                                                  boolean dummySignature) { // todo default false
         byte[] signature;
         if (dummySignature) {
             signature = new byte[64];

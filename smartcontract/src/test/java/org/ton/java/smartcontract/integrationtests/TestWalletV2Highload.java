@@ -18,8 +18,6 @@ import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.time.Instant;
-import java.util.Date;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -38,29 +36,46 @@ public class TestWalletV2Highload {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Date date = new Date();
-        long timestamp = (long) Math.floor(date.getTime() / 1e3);
-        long queryId0 = timestamp + 5 * 60L;
-        long queryId1 = timestamp + 6 * 60L;
-        long queryId2 = timestamp + 7 * 60L;
-
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
                 .walletId(42L)
                 .wc(0L)
                 .highloadConfig(HighloadConfig.builder()
-//                        .queryId(List.of(queryId1, queryId2))
                         .destinations(List.of(
                                 Destination.builder()
                                         .address(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
                                         .amount(Utils.toNano(1))
-                                        .mode((byte) 3)
                                         .build(),
                                 Destination.builder()
                                         .address(Address.of("EQBrpstctZ5gF-VaaPswcWHe3JQijjNbtJVn5USXlZ-bAgO3"))
                                         .amount(Utils.toNano(1))
-                                        .mode((byte) 3)
                                         .build()
+//                                Destination.builder()
+//                                        .address(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"))
+//                                        .amount(Utils.toNano(0.08))
+//                                        .build(),
+//                                Destination.builder()
+//                                        .address(Address.of("EQAUEeWmzaf2An-MmNi1DRlFAU6ol_qTLP-_LlUnfgF-lA00"))
+//                                        .amount(Utils.toNano(0.6))
+//                                        .build(),
+//                                Destination.builder()
+//                                        .address(Address.of("EQCwqNA5WhNTTQtl-QDlOlwcBDUS377Q4tRW69V82Q3LXvru"))
+//                                        .amount(Utils.toNano(0.2))
+//                                        .build(),
+//                                Destination.builder()
+//                                        .address(Address.of("EQAQ93wokze84Loos4arP5aK7AlQFqbg1HDjEogsMCCbZyNo"))
+//                                        .amount(Utils.toNano(0.1))
+//                                        .build(),
+//                                Destination.builder()
+//                                        .address(Address.of("EQALeq_z73heR4wMQRFKgA_fwkbZgxEf0ya0Kl6UjvpvG-A3"))
+//                                        .amount(Utils.toNano(0.15))
+//                                        .build(),
+//                                Destination.builder()
+//                                        .address(Address.of("EQCP-ejxzoB6KJ6auhnsPrW1pW6gAZ8uHXnUSHuHGNpY1zJf"))
+//                                        .amount(Utils.toNano(0.42))
+//                                        .build()
+
+                                //EQCkS2OnOOjeLV-LEEUmIPh-_in4pdFr1cScZG1Inft3qUea
                         ))
                         .build())
                 .build();
@@ -76,7 +91,7 @@ public class TestWalletV2Highload {
 
         // top up new wallet using test-faucet-wallet        
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-        Utils.sleep(5, "topping up...");
+        Utils.sleep(10, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         contract.deploy(tonlib, keyPair.getSecretKey());
@@ -86,24 +101,10 @@ public class TestWalletV2Highload {
         // transfer coins to multiple destination as specified in options
         contract.sendTonCoins(tonlib, keyPair.getSecretKey());
 
-        Utils.sleep(25, "sending to multiple destinations");
+        Utils.sleep(60, "sending to multiple destinations");
 
         balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(0.3).longValue());
-    }
-
-    @Test
-    public void a() {
-        long timestamp = Instant.now().getEpochSecond();
-        long queryId = (long) Math.pow(timestamp + 2 * 60L, 32); // << 32 ; 5 minutes
-        log.info("{} {}", timestamp, queryId);
-
-        timestamp = Instant.now().getEpochSecond();
-        BigInteger i = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32)).add(new BigInteger(String.valueOf(Instant.now().getEpochSecond())));
-        log.info("i {}", i);
-        queryId = (long) Math.pow(timestamp + 2 * 60L, 32) + 1; // << 32 ; 5 minutes
-        log.info("{} {}", timestamp, queryId);
-
     }
 }
