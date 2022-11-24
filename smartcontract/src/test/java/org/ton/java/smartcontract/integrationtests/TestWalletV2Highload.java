@@ -107,12 +107,12 @@ public class TestWalletV2Highload {
 
         contract.deploy(tonlib, keyPair.getSecretKey());
 
-        Utils.sleep(25, "deploying");
+        Utils.sleep(30, "deploying");
 
         // transfer coins to multiple destination as specified in options
         contract.sendTonCoins(tonlib, keyPair.getSecretKey());
 
-        Utils.sleep(30, "sending to multiple destinations");
+        Utils.sleep(60, "sending to multiple destinations");
 
         balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));

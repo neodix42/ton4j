@@ -108,12 +108,10 @@ public class HighloadWallet implements WalletContract {
 
     public void sendTonCoins(Tonlib tonlib, byte[] secretKey) {
 
-        long seqno = 1; // dummy
-
         Cell signingMessageAll = createSigningMessageInternal();
         signingMessageAll.refs.add(createDict());
 
-        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
+        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1, false);
 
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
@@ -126,7 +124,7 @@ public class HighloadWallet implements WalletContract {
         for (Destination destination : getOptions().getHighloadConfig().getDestinations()) {
 
             Cell orderHeader = Contract.createInternalMessageHeader(destination.getAddress(), destination.getAmount());
-            Cell order = Contract.createCommonMsgInfo(orderHeader, null, null);
+            Cell order = Contract.createCommonMsgInfo(orderHeader);
 
             CellBuilder p = CellBuilder.beginCell();
             p.storeUint(destination.getMode(), 8); // mode
