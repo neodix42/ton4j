@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigInteger;
 import java.util.List;
 
 @Builder
@@ -12,6 +13,6 @@ import java.util.List;
 @Setter
 @ToString
 public class HighloadConfig {
-    //    public List<Long> queryId;
+    public BigInteger queryId;
     public List<Destination> destinations;
 }

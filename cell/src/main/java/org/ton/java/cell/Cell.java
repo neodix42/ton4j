@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static java.util.Objects.nonNull;
+
 public class Cell {
     private static final byte[] reachBocMagicPrefix = Utils.hexToBytes("B5EE9C72");
     private static final byte[] leanBocMagicPrefix = Utils.hexToBytes("68ff65f3");
@@ -463,6 +465,7 @@ public class Cell {
         TopologicalOrderArray data = topologicalOrderArray.remove(targetIndex);
 
         topologicalOrderArray.add(data);
+
         for (Cell subCell : data.cell.refs) {
             moveToTheEnd(indexHashmap, topologicalOrderArray, Utils.bytesToHex(subCell.hash()));
         }
@@ -486,8 +489,8 @@ public class Cell {
         String cellHash = Utils.bytesToHex(cell.hash());
         if (indexHashmap.containsKey(cellHash)) {
             //if (cellHash in indexHashmap){ // Duplication cell
-            //it is possible that already seen cell is a children of more deep cell
-            if (parentHash != null) {
+            //it is possible that already seen cell is a child of more deep cell
+            if (nonNull(parentHash)) {
                 if (indexHashmap.get(parentHash) > indexHashmap.get(cellHash)) {
                     moveToTheEnd(indexHashmap, topologicalOrderArray, cellHash);
                 }

@@ -6,6 +6,7 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.TonHashMap;
 import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.ExternalMessage;
+import org.ton.java.smartcontract.types.HighloadConfig;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
@@ -14,7 +15,6 @@ import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 
 import java.math.BigInteger;
-import java.time.Instant;
 
 public class HighloadWallet implements WalletContract {
 
@@ -70,23 +70,17 @@ public class HighloadWallet implements WalletContract {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
 
-        BigInteger i = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32))
-                .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond())));
-        System.out.println("queryId --------------------------------- " + i);
-        message.storeUint(i, 64);
+        message.storeUint(getOptions().getHighloadQueryId(), 64);
         message.storeBit(false);
 
         return message.endCell();
     }
 
-    public Cell createSigningMessageInternal() {
+    public Cell createSigningMessageInternal(HighloadConfig highloadConfig) {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
 
-        BigInteger i = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32))
-                .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond())));
-        System.out.println("queryId --------------------------------- " + i);
-        message.storeUint(i, 64);
+        message.storeUint(highloadConfig.getQueryId(), 64);
 
         message.storeBit(true);
 
@@ -106,22 +100,29 @@ public class HighloadWallet implements WalletContract {
         return publicKeyNumber.getNumber().toString(16);
     }
 
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey) {
+    /**
+     * Sends to up to 84 destinations
+     *
+     * @param tonlib         Tonlib
+     * @param secretKey      byte[]
+     * @param highloadConfig HighloadConfig
+     */
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, HighloadConfig highloadConfig) {
 
-        Cell signingMessageAll = createSigningMessageInternal();
-        signingMessageAll.refs.add(createDict());
+        Cell signingMessageAll = createSigningMessageInternal(highloadConfig);
+        signingMessageAll.refs.add(createDict(highloadConfig));
 
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1, false);
 
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
-    private Cell createDict() {
+    private Cell createDict(HighloadConfig highloadConfig) {
         int dictKeySize = 16;
         TonHashMap dictDestinations = new TonHashMap(dictKeySize);
 
         long i = 0; // key, index 16bit
-        for (Destination destination : getOptions().getHighloadConfig().getDestinations()) {
+        for (Destination destination : highloadConfig.getDestinations()) {
 
             Cell orderHeader = Contract.createInternalMessageHeader(destination.getAddress(), destination.getAmount());
             Cell order = Contract.createCommonMsgInfo(orderHeader);

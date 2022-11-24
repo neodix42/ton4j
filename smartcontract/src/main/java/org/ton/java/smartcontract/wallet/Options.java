@@ -28,6 +28,7 @@ public class Options {
     public Cell code;
     public long seqno;
     public long queryId;
+    public BigInteger highloadQueryId;
     public Object payload;
     public int sendMode;
     public Cell stateInit;
