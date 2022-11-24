@@ -45,10 +45,12 @@ public class TestWalletV2Highload {
                                 Destination.builder()
                                         .address(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
                                         .amount(Utils.toNano(1))
+                                        .mode((byte) 3)
                                         .build(),
                                 Destination.builder()
                                         .address(Address.of("EQBrpstctZ5gF-VaaPswcWHe3JQijjNbtJVn5USXlZ-bAgO3"))
                                         .amount(Utils.toNano(1))
+                                        .mode((byte) 3)
                                         .build()
 //                                Destination.builder()
 //                                        .address(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"))
@@ -76,6 +78,15 @@ public class TestWalletV2Highload {
 //                                        .build()
 
                                 //EQCkS2OnOOjeLV-LEEUmIPh-_in4pdFr1cScZG1Inft3qUea
+                                //EQCZlgy61mcgYNXK0yiFHC9CxjoxxAFkwiUtzTONrk6_Qk6W
+                                //EQAt_kmFWgz5BJbPExcmUVdfz_go05xGSGbyfPGNjtsNacHu
+                                //EQDO8yw0Dbs1loUBMtoBtT-V-YMSlZdQ_FwZWmyeoN9KpanF
+                                //EQAsEVrV7tQtgoqzpxqYDdX-KLmPxQkfqRbj8RYtAcWdSWJh
+                                //EQBFSkhPfFmwwherHCWnrqryc9zTu0HkV23Ya5EzD-FZjEz-
+                                //EQC1ZVhIHkxQ-IKGK3htrFV90CRBbEfayJC4bzmPoeernBau
+                                //EQALy9XBBfJZ4rZzSkZM65LYglzJ5ORbGbvN16NjbcigXliy
+                                //EQAGashg_KuPjp1CbmU1ic-YTTKTMsbzpDc9PoqoeSRr-Fdz
+                                //EQDJxUadaFJoa_0K_twQHawyJkkyv9vlui_ZsUQRA1mw0HVO
                         ))
                         .build())
                 .build();
@@ -96,15 +107,15 @@ public class TestWalletV2Highload {
 
         contract.deploy(tonlib, keyPair.getSecretKey());
 
-        Utils.sleep(15, "deploying");
+        Utils.sleep(25, "deploying");
 
         // transfer coins to multiple destination as specified in options
         contract.sendTonCoins(tonlib, keyPair.getSecretKey());
 
-        Utils.sleep(60, "sending to multiple destinations");
+        Utils.sleep(30, "sending to multiple destinations");
 
         balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
-        assertThat(balance.longValue()).isLessThan(Utils.toNano(0.3).longValue());
+        assertThat(balance.longValue()).isLessThan(Utils.toNano(3).longValue());
     }
 }

@@ -81,12 +81,13 @@ public class HighloadWallet implements WalletContract {
 
     public Cell createSigningMessageInternal() {
         CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(BigInteger.valueOf(getOptions().walletId), 32); // todo review
+        message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
 
         BigInteger i = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32))
                 .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond())));
         System.out.println("queryId --------------------------------- " + i);
         message.storeUint(i, 64);
+
         message.storeBit(true);
 
         return message.endCell();
@@ -107,10 +108,12 @@ public class HighloadWallet implements WalletContract {
 
     public void sendTonCoins(Tonlib tonlib, byte[] secretKey) {
 
+        long seqno = 1; // dummy
+
         Cell signingMessageAll = createSigningMessageInternal();
         signingMessageAll.refs.add(createDict());
 
-        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1, false);
+        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
 
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
@@ -126,15 +129,18 @@ public class HighloadWallet implements WalletContract {
             Cell order = Contract.createCommonMsgInfo(orderHeader, null, null);
 
             CellBuilder p = CellBuilder.beginCell();
-            p.storeUint(destination.getMode() == 0 ? 3 : destination.getMode(), 8); // mode
-            p.storeRef(order); // internal-msg
+            p.storeUint(destination.getMode(), 8); // mode
+            p.storeRef(order);
 
             dictDestinations.elements.put(i++, p.endCell());
         }
 
-        return dictDestinations.serialize(
+        Cell cellDict = dictDestinations.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
-                v -> (Cell) v);
+                v -> (Cell) v
+        );
+
+        return cellDict;
     }
 
     public void deploy(Tonlib tonlib, byte[] secretKey) {
