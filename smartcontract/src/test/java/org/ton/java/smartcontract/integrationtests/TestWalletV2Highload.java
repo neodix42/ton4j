@@ -143,7 +143,6 @@ public class TestWalletV2Highload {
                 .highloadQueryId(BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32))
                         .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
                 .wc(0L)
-
                 .build();
 
         Wallet wallet = new Wallet(WalletVersion.highload, options);

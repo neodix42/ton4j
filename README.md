@@ -60,13 +60,12 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ Get block transactions
 * ✅ Get account transactions
 * ✅ Deploy contracts and send external messages using Tonlib
-* ✅ Wallet operations (Simple (V1), V2, V3, V4 (plugins), ~~Lockup~~, DNS, Jetton, NFT, Payment-channels)
+* ✅ Wallet operations (Simple (V1), V2, V3, V4 (plugins), ~~Lockup~~, Highload, DNS, Jetton, NFT, Payment-channels)
 * ✅ HashMap, HashMapE, PfxHashMap and PfxHashMapE serialization / deserialization
 
 ### Todo
 * Re-test lockup (restricted) wallet
 * Support tuple and list as arguments for runMethod
-* Add highload wallet support
 * Fix dictionary de/serialization with one entry
 * Improve test coverage and add more integration tests
 * Add methods to store jettons metadata onchain
