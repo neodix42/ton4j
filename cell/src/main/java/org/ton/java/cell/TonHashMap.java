@@ -40,39 +40,31 @@ public class TonHashMap {
      * @param keySize key size in bits
      */
     public TonHashMap(int keySize) {
-//        raw_elements = new LinkedHashMap<>();
         elements = new LinkedHashMap<>();
         this.keySize = keySize;
         this.maxMembers = 10000;
     }
 
     public List<Node> deserializeEdge(CellSlice edge, int keySize, final BitString key) {
-//        System.out.println("deserializeEdge " + keySize);
         List<Node> nodes = new ArrayList<>();
         BitString l = deserializeLabel(edge, keySize - key.toBitString().length());
-//        System.out.println("label size " + l.length + " = " + l.toBitString());
         key.writeBitString(l);
-//        System.out.println("k size " + key.getBitString().length() + ", " + key.getBitString());
         if (key.toBitString().length() == keySize) {
             Cell value = CellBuilder.beginCell().storeSlice(edge).endCell();
             List<Node> newList = new ArrayList<>(nodes);
             newList.add(new Node(key, value));
-//            System.out.println("newList = " + newList.size() + ", k = " + key.toBitString() + ", v = " + value.bits);
             return newList;
         }
 
-//        System.out.println("refs = " + edge.refs.size());
         AtomicInteger i = new AtomicInteger();
         return edge.refs.stream().map(c -> {
             CellSlice forkEdge = CellSlice.beginParse(c);
             BitString forkKey = key.clone();
             forkKey.writeBit(i.get() != 0);
             i.getAndIncrement();
-//            System.out.println("forkKey " + forkKey.toBitString().length() + ", forkEdge " + forkEdge.toString());
             return deserializeEdge(forkEdge, keySize, forkKey);
         }).reduce(new ArrayList<>(), (x, y) -> {
             x.addAll(y);
-//            System.out.println("t = " + x.size());
             return x;
         });
     }

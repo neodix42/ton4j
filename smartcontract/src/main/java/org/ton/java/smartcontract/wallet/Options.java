@@ -9,6 +9,7 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.smartcontract.payments.ClosingConfig;
 import org.ton.java.smartcontract.types.ChannelConfig;
+import org.ton.java.smartcontract.types.HighloadConfig;
 import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 
@@ -26,11 +27,13 @@ public class Options {
     public BigInteger amount;
     public Cell code;
     public long seqno;
+    public long queryId;
     public Object payload;
     public int sendMode;
     public Cell stateInit;
     public Long walletId;
     public LockupConfig lockupConfig;
+    public HighloadConfig highloadConfig;
     public SubscriptionInfo subscriptionConfig;
     public String index; //dns item index, sha256
     public Address collectionAddress; // todo dns config

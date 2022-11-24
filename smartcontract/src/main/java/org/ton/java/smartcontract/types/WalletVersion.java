@@ -16,4 +16,5 @@ public enum WalletVersion {
     jettonWallet,
     nftCollection,
     payments,
+    highload,
 }

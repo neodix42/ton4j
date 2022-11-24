@@ -2,6 +2,7 @@ package org.ton.java.smartcontract.wallet;
 
 import org.ton.java.smartcontract.dns.DnsCollection;
 import org.ton.java.smartcontract.dns.DnsItem;
+import org.ton.java.smartcontract.highload.HighloadWallet;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
 import org.ton.java.smartcontract.payments.PaymentChannel;
 import org.ton.java.smartcontract.token.ft.JettonMinter;
@@ -34,55 +35,25 @@ public class Wallet {
 
     public <T extends Contract> T create() {
 
-        Contract result = null;
+        Contract result = switch (walletVersion) {
+            case simpleR1 -> new SimpleWalletContractR1(options);
+            case simpleR2 -> new SimpleWalletContractR2(options);
+            case simpleR3 -> new SimpleWalletContractR3(options);
+            case v2R1 -> new WalletV2ContractR1(options);
+            case v2R2 -> new WalletV2ContractR2(options);
+            case v3R1 -> new WalletV3ContractR1(options);
+            case v3R2 -> new WalletV3ContractR2(options);
+            case v4R2 -> new WalletV4ContractR2(options);
+            case lockup -> new LockupWalletV1(options);
+            case dnsCollection -> new DnsCollection(options);
+            case dnsItem -> new DnsItem(options);
+            case jettonMinter -> new JettonMinter(options);
+            case jettonWallet -> new JettonWallet(options);
+            case nftCollection -> new NftCollection(options);
+            case payments -> new PaymentChannel(options);
+            case highload -> new HighloadWallet(options);
+        };
 
-        switch (walletVersion) {
-            case simpleR1:
-                result = new SimpleWalletContractR1(options);
-                break;
-            case simpleR2:
-                result = new SimpleWalletContractR2(options);
-                break;
-            case simpleR3:
-                result = new SimpleWalletContractR3(options);
-                break;
-            case v2R1:
-                result = new WalletV2ContractR1(options);
-                break;
-            case v2R2:
-                result = new WalletV2ContractR2(options);
-                break;
-            case v3R1:
-                result = new WalletV3ContractR1(options);
-                break;
-            case v3R2:
-                result = new WalletV3ContractR2(options);
-                break;
-            case v4R2:
-                result = new WalletV4ContractR2(options);
-                break;
-            case lockup:
-                result = new LockupWalletV1(options);
-                break;
-            case dnsCollection:
-                result = new DnsCollection(options);
-                break;
-            case dnsItem:
-                result = new DnsItem(options);
-                break;
-            case jettonMinter:
-                result = new JettonMinter(options);
-                break;
-            case jettonWallet:
-                result = new JettonWallet(options);
-                break;
-            case nftCollection:
-                result = new NftCollection(options);
-                break;
-            case payments:
-                result = new PaymentChannel(options);
-                break;
-        }
         return (T) result;
     }
 }
