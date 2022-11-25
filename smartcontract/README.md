@@ -37,7 +37,7 @@ Currently, following wallet versions and revisions are supported:
 * v3R2 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV3R2DeployTransferShort.java)
 * v4R1
 * v4R2 - subscription, plugins [(see usage example)](plugin-example.md)
-* ~~Lockup - restricted [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestLockupWalletDeployTransfer.java)~~
+* Lockup - restricted [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestLockupWalletDeployTransfer.java)
 * Highload [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV2Highload.java) 
 * Dns [(see usage example)](dns-example.md)
 * Jetton [(see usage example)](jetton-example.md)

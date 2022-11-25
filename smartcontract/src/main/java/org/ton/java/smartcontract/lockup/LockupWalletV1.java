@@ -18,6 +18,9 @@ import java.util.Date;
 import java.util.Deque;
 import java.util.List;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 /**
  * <a href="https://github.com/toncenter/tonweb/tree/master/src/contract/lockup">lockup contract</a>
  * Funding the wallet with custom time-locks is out of scope for this implementation at the time. This can be performed by specialized software.
@@ -79,7 +82,7 @@ public class LockupWalletV1 implements WalletContract {
         } else {
             Date date = new Date();
             long timestamp = (long) Math.floor(date.getTime() / 1e3);
-            message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
+            message.storeUint(BigInteger.valueOf(timestamp + 60L), 32); // 1 minute
         }
 
         message.storeUint(BigInteger.valueOf(seqno), 32);
@@ -88,7 +91,7 @@ public class LockupWalletV1 implements WalletContract {
     }
 
     /**
-     * from restricted.fc:
+     * from lockup-wallet.fc:
      * store_int(seqno, 32)
      * store_int(subwallet_id, 32)
      * store_uint(public_key, 256)
@@ -113,7 +116,7 @@ public class LockupWalletV1 implements WalletContract {
         int dictKeySize = 267;
         TonPfxHashMapE dictAllowedDestinations = new TonPfxHashMapE(dictKeySize);
 
-        if ((options.lockupConfig.allowedDestinations != null) && (!options.lockupConfig.allowedDestinations.isEmpty())) {
+        if (nonNull(options.lockupConfig.allowedDestinations) && (!options.lockupConfig.allowedDestinations.isEmpty())) {
             for (String addr : options.lockupConfig.allowedDestinations) {
                 dictAllowedDestinations.elements.put(Address.of(addr), (byte) 1);
             }
@@ -125,10 +128,10 @@ public class LockupWalletV1 implements WalletContract {
         );
         cell.storeDict(cellDict);
 
-        cell.storeCoins(BigInteger.ZERO);   // .store_grams(total_locked_value)
+        cell.storeCoins(isNull(options.lockupConfig.totalLockedalue) ? BigInteger.ZERO : options.lockupConfig.totalLockedalue);    // .store_grams(total_locked_value)
         cell.storeBit(false);               // empty locked dict
-        cell.storeCoins(BigInteger.ZERO);   // .store_grams(total_restricted_value)
-        cell.storeBit(false);               // empty locked dict
+        cell.storeCoins(isNull(options.lockupConfig.totalRestrictedValue) ? BigInteger.ZERO : options.lockupConfig.totalRestrictedValue);   // .store_grams(total_restricted_value)
+        cell.storeBit(false);               // empty restricted dict
 
         return cell.endCell();
     }
@@ -225,5 +228,9 @@ public class LockupWalletV1 implements WalletContract {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
         tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+    }
+
+    public void deploy(Tonlib tonlib, byte[] secretKey) {
+        tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBocBase64(false));
     }
 }
