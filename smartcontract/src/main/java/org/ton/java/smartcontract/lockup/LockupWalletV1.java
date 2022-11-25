@@ -23,7 +23,8 @@ import static java.util.Objects.nonNull;
 
 /**
  * <a href="https://github.com/toncenter/tonweb/tree/master/src/contract/lockup">lockup contract</a>
- * Funding the wallet with custom time-locks is out of scope for this implementation at the time. This can be performed by specialized software.
+ * Funding the wallet with custom time-locks is out of scope for this implementation at the time.
+ * This can be performed by specialized software.
  */
 public class LockupWalletV1 implements WalletContract {
 
@@ -33,6 +34,8 @@ public class LockupWalletV1 implements WalletContract {
     Address address;
 
     /**
+     * Interface to <a href="https://github.com/toncenter/tonweb/tree/master/src/contract/lockup">lockup contract</a>
+     * <p>
      * Additional options should be populated.
      * options.config.configPublicKey
      * options.config.allowedDestinations
