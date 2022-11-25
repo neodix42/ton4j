@@ -1,25 +1,19 @@
 package org.ton.java.smartcontract.multisig;
 
 import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.TonHashMap;
+import org.ton.java.cell.*;
 import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.OwnerInfo;
+import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
-import org.ton.java.tonlib.types.TvmStackEntryList;
-import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
 public class MultisigWallet implements WalletContract {
 
@@ -71,7 +65,7 @@ public class MultisigWallet implements WalletContract {
         cell.storeUint(getOptions().getMultisigConfig().getN(), 8); // n
         cell.storeUint(getOptions().getMultisigConfig().getK(), 8); // k - collect at least k signatures
         cell.storeUint(BigInteger.ZERO, 64); // last cleaned
-        cell.storeBit(false); // initial owner infos dict, public keys
+        cell.storeDict(createOwnersInfosDict(getOptions().getMultisigConfig().getOwners())); // initial owner infos dict, public keys
         cell.storeBit(false); // initial  pending queries dict
 
         return cell.endCell();
@@ -95,9 +89,9 @@ public class MultisigWallet implements WalletContract {
         return message.endCell();
     }
 
-    public List<Long> getPublicKeys(Tonlib tonlib) {
+    public List<BigInteger> getPublicKeys(Tonlib tonlib) {
 
-        List<Long> publicKeys = new ArrayList<>();
+        List<BigInteger> publicKeys = new ArrayList<>();
 
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_public_keys");
@@ -106,14 +100,20 @@ public class MultisigWallet implements WalletContract {
             throw new Error("method get_public_keys, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryList listResult = (TvmStackEntryList) result.getStack().get(0);
+        TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStack().get(0);
+        Cell cell = CellBuilder.fromBoc(Utils.base64ToBytes(cellResult.getCell().getBytes()));
 
-        for (Object o : listResult.getList().getElements()) {
-            TvmStackEntryNumber publicKey = (TvmStackEntryNumber) o;
-            publicKeys.add(publicKey.getNumber().longValue());
-
+        CellSlice cs = CellSlice.beginParse(cell);
+        TonHashMap loadedDict = cs.loadDict(8,
+                k -> k.readUint(8), // index
+                v -> v // ownerInfo cell
+        );
+        for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+            CellSlice cSlice = CellSlice.beginParse((Cell) entry.getValue());
+            BigInteger pubKey = cSlice.loadUint(256);
+            long flood = cSlice.loadUint(8).longValue();
+            publicKeys.add(pubKey);
         }
-
         return publicKeys;
     }
 
@@ -127,7 +127,7 @@ public class MultisigWallet implements WalletContract {
      * @param ownersInfo - arrays with public keys
      * @return cell with state-init
      */
-    public Cell createInitState(Tonlib tonlib, int walletId, int n, int k, Cell ownersInfo) {
+    public Cell getInitState(Tonlib tonlib, int walletId, int n, int k, Cell ownersInfo) {
 
         Address myAddress = this.getAddress();
         Deque<String> stack = new ArrayDeque<>();
@@ -165,7 +165,7 @@ public class MultisigWallet implements WalletContract {
 
     public Cell createOwnersInfosDict(List<OwnerInfo> ownerInfos) {
         int dictKeySize = 8;
-        TonHashMap dictDestinations = new TonHashMap(dictKeySize);
+        TonHashMapE dictDestinations = new TonHashMapE(dictKeySize);
 
         long i = 0; // key, index 16bit
         for (OwnerInfo ownerInfo : ownerInfos) {
@@ -174,7 +174,10 @@ public class MultisigWallet implements WalletContract {
             ownerInfoCell.storeBytes(ownerInfo.getPublicKey());
             ownerInfoCell.storeUint(ownerInfo.getFlood(), 8);
 
-            dictDestinations.elements.put(i++, ownerInfoCell.endCell());
+            dictDestinations.elements.put(
+                    i++, // key - index
+                    ownerInfoCell.endCell() // value - cell - OwnerInfo
+            );
         }
 
         Cell cellDict = dictDestinations.serialize(
@@ -187,5 +190,31 @@ public class MultisigWallet implements WalletContract {
 
     public void deploy(Tonlib tonlib, byte[] secretKey) {
         tonlib.sendRawMessage(createInitExternalMessageWithoutBody(secretKey).message.toBocBase64(false));
+    }
+
+    public Cell createOneInternalMsg(Address destination, BigInteger amount, int mode) {
+        Cell orderHeader = Contract.createInternalMessageHeader(destination, amount);
+        Cell order = Contract.createCommonMsgInfo(orderHeader);
+
+        CellBuilder p = CellBuilder.beginCell();
+        p.storeUint(mode, 8);
+        p.storeRef(order);
+
+        return p.endCell();
+    }
+
+    public Cell createOrder(long walletId, BigInteger queryId, List<Cell> internalMsgs) {
+        CellBuilder order = CellBuilder.beginCell();
+        order.storeBit(false); // no signatures
+        order.storeUint(walletId, 32);
+        order.storeUint(queryId, 64); // timeout
+        for (Cell msg : internalMsgs) {
+            order.storeRef(msg);
+        }
+        return order.endCell();
+    }
+
+    public Cell addInternalMsgToOrder() {
+        return null;
     }
 }
