@@ -4,6 +4,7 @@ import org.ton.java.smartcontract.dns.DnsCollection;
 import org.ton.java.smartcontract.dns.DnsItem;
 import org.ton.java.smartcontract.highload.HighloadWallet;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
+import org.ton.java.smartcontract.multisig.MultisigWallet;
 import org.ton.java.smartcontract.payments.PaymentChannel;
 import org.ton.java.smartcontract.token.ft.JettonMinter;
 import org.ton.java.smartcontract.token.ft.JettonWallet;
@@ -52,6 +53,7 @@ public class Wallet {
             case nftCollection -> new NftCollection(options);
             case payments -> new PaymentChannel(options);
             case highload -> new HighloadWallet(options);
+            case multisig -> new MultisigWallet(options);
         };
 
         return (T) result;

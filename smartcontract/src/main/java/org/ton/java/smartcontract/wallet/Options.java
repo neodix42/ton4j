@@ -11,6 +11,7 @@ import org.ton.java.smartcontract.payments.ClosingConfig;
 import org.ton.java.smartcontract.types.ChannelConfig;
 import org.ton.java.smartcontract.types.HighloadConfig;
 import org.ton.java.smartcontract.types.LockupConfig;
+import org.ton.java.smartcontract.types.MultisigConfig;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 
 import java.math.BigInteger;
@@ -66,4 +67,5 @@ public class Options {
     public byte[] hisPublicKey;
     public BigInteger excessFee;
     public ClosingConfig closingConfig;
+    public MultisigConfig multisigConfig;
 }

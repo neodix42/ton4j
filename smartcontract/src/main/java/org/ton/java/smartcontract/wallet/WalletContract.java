@@ -75,6 +75,32 @@ public interface WalletContract extends Contract {
         return new InitExternalMessage(
                 stateInit.address,
                 externalMessage,
+                body.endCell(),
+                signingMessage,
+                stateInit.stateInit,
+                stateInit.code,
+                stateInit.data);
+    }
+
+    default InitExternalMessage createInitExternalMessageWithoutBody(byte[] secretKey) {
+
+        if (getOptions().publicKey.length == 0) {
+            TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+            getOptions().publicKey = keyPair.getPublicKey();
+        }
+
+        StateInit stateInit = createStateInit();
+
+        Cell signingMessage = CellBuilder.beginCell().endCell();
+        Cell body = CellBuilder.beginCell().endCell();
+
+        Cell header = Contract.createExternalMessageHeader(stateInit.address);
+
+        Cell externalMessage = Contract.createCommonMsgInfo(header, stateInit.stateInit, body);
+
+        return new InitExternalMessage(
+                stateInit.address,
+                externalMessage,
                 body,
                 signingMessage,
                 stateInit.stateInit,

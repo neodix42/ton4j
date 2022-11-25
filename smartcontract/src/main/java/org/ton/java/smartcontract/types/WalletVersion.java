@@ -17,4 +17,5 @@ public enum WalletVersion {
     nftCollection,
     payments,
     highload,
+    multisig,
 }

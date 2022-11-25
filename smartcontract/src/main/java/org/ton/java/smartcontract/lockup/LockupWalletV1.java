@@ -37,8 +37,9 @@ public class LockupWalletV1 implements WalletContract {
      * Interface to <a href="https://github.com/toncenter/tonweb/tree/master/src/contract/lockup">lockup contract</a>
      * <p>
      * Additional options should be populated.
-     * options.config.configPublicKey
-     * options.config.allowedDestinations
+     * options.lockupConfig.configPublicKey
+     * options.lockupConfig.allowedDestinations
+     * options.lockupConfig.totalRestrictedValue
      *
      * @param options Options
      */
