@@ -398,7 +398,27 @@ public class Tonlib {
         String result = syncAndRead();
         return gson.fromJson(result, BlockHeader.class);
     }
+    
+    public DnsResolved dnsResolve(String name, AccountAddressOnly addr) {
+        if (addr == null) {
+          addr = AccountAddressOnly.builder()
+              .account_address("-1:E56754F83426F69B09267BD876AC97C44821345B7E266BD956A7BFBFB98DF35C")
+              .build ();
+        }
+        byte[] category = new byte[32];
+        Arrays.fill (category, (byte)0);
+        DnsResolveQuery query = DnsResolveQuery.builder()
+                .account_address (addr)
+                .name (name)
+                .category (Utils.bytesToBase64 (category))
+                .ttl (1)
+                .build();
 
+        send(gson.toJson(query));
+        String result = syncAndRead();
+        return gson.fromJson(result, DnsResolved.class);
+    }
+    
     //@formatter:off
 
     /**
