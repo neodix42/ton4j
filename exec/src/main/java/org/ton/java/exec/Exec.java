@@ -309,26 +309,62 @@ public class Exec {
     System.out.println (cell);
     return cell.bits.preReadUint (32).intValue ();
   }
+  
+  private Address dns_resolve_in (String name, AccountAddressOnly acc_only) {
+    var result = tonlib.dnsResolve (name, acc_only);
+    if (result == null) {
+      return null;
+    }
+    var entries = result.getEntries ();
+    if (entries == null) {
+      return null;
+    }
+    for (var entry : entries) {
+      var info = entry.getEntry ();
+      if (info == null) {
+        continue;
+      }
+      if (info.getType ().equals ("dns.entryDataNextResolver")) {
+        /* can return Address (info.getResolver ()), if only *.ton and *.t.me are supported */
+        return dns_resolve_in (entry.getName (), info.getResolver ());
+      } else {
+        return new Address (acc_only.getAccount_address ());
+      }
+    }
+    return new Address (acc_only.getAccount_address ());
+  }
+
+  public Address dns_resolve (String name) {
+    return dns_resolve_in (name, null);
+  }
+
+  public Address dns_get_owner (Address addr) {
+    AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+            .account_address(addr.toString(false))
+            .build();
+    var account_state = tonlib.getRawAccountState(accountAddressOnly);
+    if (account_state == null) {
+      return null;
+    }
+    var account_data = account_state.getData ();
+    if (account_data == null) {
+      return null;
+    }
+    var cell = Cell.fromBoc (Utils.base64ToBytes (account_data));
+    cell = cell.refs.get (1);
+    var b = cell.bits;
+    b.readBits (3);
+    var workchain = b.readInt (8).intValue ();
+    var data = b.readBytes (32 * 8);
+    return new Address ("" + workchain + ":" + Utils.bytesToHex (data));
+  }
 
   public static void main (String args[]) {
-    byte key[] = Utils.hexToBytes ("C0D44790AA94DB9895CDB806605CAADA4C7657FFFB5E20E61825DE2D5E9923AA");
-    Address res = get_address_by_key (key);
-    System.out.println("address: " + res.toString () + " or " + res.toString (true, true, false, false));
-
-    Address a = new Address ("UQAmezS260aY9rgTkxr8c8WVo_F37krzwvi8bSZ9dzbMw0rQ"); 
-    Cell c = create_unsigned_message (1, 0x63650A75, "aba", key, a, a, 50000000L);
-    System.out.println(c.print ());
-
-    byte sign[] = Utils.hexToBytes ("1cb184a734fd5009889bfe7038dad98998c41c72e992a7ef9f9867fd8d6ac8d468418e80c218f0ce8d3753c2eabeb6e0475eccede824d07d289dc3ec050514d1"); 
-    byte e[] = create_signed_message (sign, 1, 0x63650A75, "aba", key, a, a, 50000000L);
-    System.out.println(Utils.bytesToHex (e));
-
-    Cell g = Cell.fromBoc (e); 
-    System.out.println(g.print ());
-
     Exec exc = new Exec ();
     exc.run ();
-    var seqno = exc.get_seqno (new Address ("UQD8_APnOuqlPiHEzuf92UAtO67ljhmS3-8KQypVuovzn5my"));
-    System.out.println (seqno);
+    exc.dns_resolve ("igorasfklsdjfklsjfklsjdf.t.me.");
+    var v = exc.dns_resolve ("igor.t.me.");
+    var addr = exc.dns_get_owner (v);
+    System.out.println (addr.toString (true, true, true, false));
   }
 }
