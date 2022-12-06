@@ -10,6 +10,7 @@ import org.ton.java.tonlib.types.MasterChainInfo;
 import org.ton.java.tonlib.types.BlockTransactions;
 import org.ton.java.tonlib.types.ShortTxId;
 import org.ton.java.tonlib.types.*;
+import org.ton.java.bitstring.BitString;
 
 import java.util.concurrent.TimeUnit;
 import java.math.BigInteger;
@@ -131,16 +132,41 @@ public class Exec {
   }
 
   public static String uniform_account_name (byte workchain, ShortTxId tx) {
+    if (tx == null || tx.getAccount () == null) {
+      return "NULL";
+    }
     var addr = new Address (workchain + ":" + Utils.base64ToHexString(tx.getAccount()));
     return addr.toString (true, false, true, false);
   }
 
   public static String uniform_account_name (byte workchain, AccountAddressOnly a) {
+    if (a == null || a.getAccount_address () == null || a.getAccount_address () == "") {
+      return "NULL";
+    }
     var addr = new Address (a.getAccount_address ());
     return addr.toString (true, false, true, false);
   }
   public boolean skip_account_in_transaction_list (String account) {
     return false;
+  }
+
+  public static BigInteger readGrams (BitString bs) {
+    var x = bs.readUint (4);
+    if (x.intValue () > 0) {
+      return bs.readUint (8 * x.intValue ());
+    } else {
+      return BigInteger.ZERO;
+    }
+  }
+  
+  public static BigInteger readGramsCheck (BitString bitstring, BigInteger value) {
+    BigInteger r = readGrams (bitstring);
+    assert (r == value);
+    return r;
+  }
+  
+  public static BigInteger readGramsCheck (BitString bitstring, String value) {
+    return readGramsCheck (bitstring, new BigInteger (value));
   }
 
   public void new_transaction_callback (byte workchain, ShortTxId tx) {
@@ -154,24 +180,110 @@ public class Exec {
     var in_msg = rt.getIn_msg ();
 
     // TIC-TOC, only in system accounts
-    if (in_msg == null) {
+    if (in_msg == null || in_msg.getSource () == null) {
       return;
     }
 
     var out_msgs = rt.getOut_msgs();
+
+    var data_string = Utils.base64ToBytes (rt.getData ());
+    var data_cell = Cell.fromBoc (data_string); 
+
+    {
+      assert (data_cell.bits.readBit () == false);
+      assert (data_cell.bits.readBit () == true);
+      assert (data_cell.bits.readBit () == true);
+      assert (data_cell.bits.readBit () == true);
+    }
+
+    var descr = data_cell.refs.get (2);
+
+    boolean reg = true;
+    for (int i = 0; i < 4; i++) {
+      if (descr.bits.readBit () != false) {
+        reg = false;
+        break;
+      }
+    }
+
+    boolean failed = false;
+    boolean action_failed = false;
+    if (!reg) {
+      System.out.println ("NOT REGULAR TRANSACTION");
+    } else {
+      int ref_skipped = 0;
+      descr.bits.readBit (); // credit first (?)
+      boolean has_storage_phase = descr.bits.readBit ();
+      if (has_storage_phase) {
+        /* coins */
+        readGramsCheck (descr.bits, rt.getStorage_fee ());
+        boolean has_due = descr.bits.readBit ();
+        if (has_due) {
+          readGrams (descr.bits); // due
+        }
+        var changed_status = descr.bits.readBit ();
+        if (changed_status) {
+          descr.bits.readBit ();  
+        }
+      }
+      boolean has_credit_phase = descr.bits.readBit ();
+      if (has_credit_phase) {
+        boolean has_due_collected = descr.bits.readBit ();
+        if (has_due_collected) {
+          readGrams (descr.bits); // due collected
+        }
+          
+        readGrams (descr.bits); // value to credit
+        boolean has_hashmap = descr.bits.readBit (); // extra currencies 
+        if (has_hashmap) {
+          ref_skipped += 1;
+        }
+      }
+      boolean has_compute_phase = true;
+      if (has_compute_phase) {
+        boolean runned = descr.bits.readBit ();
+        if (!runned) {
+          failed = true;
+          descr.bits.readBits (2); // reason
+        } else {
+          boolean success = descr.bits.readBit ();
+          has_storage_phase &= success;
+          descr.bits.readBits (2); // msg_state_used + account_activated
+          readGrams (descr.bits); // gas_fees
+          ref_skipped += 1; // vm run info
+          // there is an exit code, among other stuff, maybe parse?
+        }
+      }
+      boolean has_action_phase = descr.bits.readBit ();
+      if (has_action_phase) {
+        Cell act_cell = descr.refs.get (ref_skipped);
+        ref_skipped += 1;
+        boolean success = act_cell.bits.readBit ();
+        if (!success) {
+          action_failed = true;
+        }
+        // maybe parse more here?
+      }
+      boolean aborted = descr.bits.readBit ();
+      if (aborted) {
+        failed = true;
+      }
+
+      // bounce and destroyed not parsed, at least for now
+    }
 
     /* inbound message, probably inbound transfer */
     if (out_msgs.size() == 0) {
       System.out.println ("Inbound transfer: from=" + uniform_account_name (workchain, in_msg.getSource ()) 
                           + " to=" + uniform_account_name (workchain, in_msg.getDestination ()) + " value=" 
                           + in_msg.getValue ()  +" fwd_fee=" + in_msg.getFwd_fee () + " fee=" + rt.getFee () 
-                          + " storage_fee=" + rt.getStorage_fee ());
+                          + " storage_fee=" + rt.getStorage_fee () + " failed=" + failed + " action_failed=" + action_failed);
     } else {
       for (var out_msg : out_msgs) {
         System.out.println ("Outbound transfer: from=" + uniform_account_name (workchain, out_msg.getSource ()) 
                             + " to=" + uniform_account_name (workchain, out_msg.getDestination ()) + " value=" 
                             + out_msg.getValue () + " fwd_fee=" + out_msg.getFwd_fee () + " fee(total)=" + rt.getFee () 
-                            + " storage_fee(total)=" + rt.getStorage_fee ());
+                            + " storage_fee(total)=" + rt.getStorage_fee () + " failed=" + failed + " action_failed=" + action_failed);
       }
     }
   }
@@ -190,7 +302,7 @@ public class Exec {
       }
  
       var last = transactions.get(transactions.size() - 1);
-      t = tonlib.getBlockTransactions (block_id, 100, last.getLt(), last.getHash ());
+      t = tonlib.getBlockTransactions (block_id, 1, last.getLt(), last.getHash ());
     }
   }
 
@@ -226,6 +338,9 @@ public class Exec {
 
   public void scan_new_mc_block_transactions (long seqno) {
     BlockIdExt block_id = tonlib.lookupBlock(seqno, -1, 0x8000000000000000L, 0, 0);
+    if (block_id.getSeqno () < seqno) {
+      return;
+    }
     System.out.println ("found new MC block: " + block_id.toString ());
 
     scan_new_block_transactions (block_id);
@@ -262,6 +377,7 @@ public class Exec {
       try {
         scan_new_transactions ();
       } catch (Exception e) {
+        throw e;
         // try again later?
         // check exception type?
       }
@@ -362,6 +478,7 @@ public class Exec {
   public static void main (String args[]) {
     Exec exc = new Exec ();
     exc.run ();
+    exc.loop ();
     exc.dns_resolve ("igorasfklsdjfklsjfklsjdf.t.me.");
     var v = exc.dns_resolve ("igor.t.me.");
     var addr = exc.dns_get_owner (v);
