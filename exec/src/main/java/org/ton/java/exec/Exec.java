@@ -18,11 +18,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
+import java.util.HashMap;
 
 
 public class Exec {
   private Tonlib tonlib;
   private HashSet<String> last_shards;
+  private HashMap<String, String> known_contracts;
   private long last_mc_seqno;
 
   public static Address get_address_by_key (byte key[]) {
@@ -401,6 +403,12 @@ public class Exec {
     System.out.println (mi.getLast().toString ());
     last_mc_seqno = mi.getLast ().getSeqno ();
     last_shards = new HashSet<String> ();
+    known_contracts = new HashMap<String,String> ();
+    known_contracts.put ("a7a2616a4d639a076c2f67e7cce0423fd2a1c2ee550ad651c1eda16ee13bcaca", "nft_item");
+    known_contracts.put ("9a0f98dd6fbf225eef8165e4e64417ee931f7eea000653439e7b5dcdc0644cd6", "jetton");
+    known_contracts.put ("beb0683ebeb8927fe9fc8ec0a18bc7dd17899689825a121eab46c5a3a860d0ce", "jetton_wallet");
+    known_contracts.put ("feb5ff6820e2ff0d9483e7e0d62c817d846789fb4ae580c878866d959dabd5c0", "wallet_v4_r2");
+    known_contracts.put ("84dafa449f98a6987789ba232358072bc0f76dc4524002a5d0918b9a75d2d599", "wallet_v3_r2");
     var shardsR = tonlib.getShards(mi.getLast ());
     var shards = shardsR.getShards ();
     for (BlockIdExt shard : shards) {
@@ -418,12 +426,35 @@ public class Exec {
       return 0;
     }
     var account_data = account_state.getData ();
-    if (account_data == null) {
+    if (account_data == null || account_data.equals ("")) {
       return 0;
     }
     var cell = Cell.fromBoc (Utils.base64ToBytes (account_data));
     System.out.println (cell);
     return cell.bits.preReadUint (32).intValue ();
+  }
+
+  public String get_account_type (Address addr) {
+    AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+            .account_address(addr.toString(false))
+            .build();
+    var account_state = tonlib.getRawAccountState(accountAddressOnly);
+    if (account_state == null) {
+      return "not_inited";
+    }
+    var account_code = account_state.getCode ();
+    if (account_code == null || account_code.equals ("")) {
+      return "not_inited";
+    }
+    
+    var cell = Cell.fromBoc (Utils.base64ToBytes (account_code));
+    var h = Utils.bytesToHex (cell.hash ());
+
+    if (known_contracts.containsKey (h)) {
+      return known_contracts.get (h); 
+    } else {
+      return "#" + h;
+    }
   }
   
   private Address dns_resolve_in (String name, AccountAddressOnly acc_only) {
@@ -478,10 +509,11 @@ public class Exec {
   public static void main (String args[]) {
     Exec exc = new Exec ();
     exc.run ();
-    exc.loop ();
-    exc.dns_resolve ("igorasfklsdjfklsjfklsjdf.t.me.");
-    var v = exc.dns_resolve ("igor.t.me.");
-    var addr = exc.dns_get_owner (v);
-    System.out.println (addr.toString (true, true, true, false));
+    System.out.println (exc.get_account_type (new Address ("EQAWezuW2xH5kIdg0wSG5TJUF2A6oDnB0sQMpER5dcI7qeqE")));
+    System.out.println (exc.get_account_type (new Address ("EQBjoHpR1nGLgkkLijjeT49McNwQAu4kosFOKJgo16BkCEFi")));
+    System.out.println (exc.get_account_type (new Address ("EQBwaYu2qTqWS4ww0nSmd85OVF5_djEQ-ezrP5nswRwrz4g_")));
+    System.out.println (exc.get_account_type (new Address ("EQAjcFJ5ansi1TsoPNFBQKnDUdF1g4XiEbQ1P1HyDGezwXH6")));
+    System.out.println (exc.get_account_type (new Address ("EQDhlJ19912SCbSD5gXe_8pVi03S3594h05FPw_iP5Ay3Fnv")));
+    System.out.println (exc.get_account_type (new Address ("EQDasUcTTlKqXlN8fjHXMPpPjL0MCYBVwrycWI97CTw9us0k")));
   }
 }
