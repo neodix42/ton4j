@@ -2,7 +2,11 @@ package org.ton.java.address;
 
 import org.ton.java.utils.Utils;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 public class Address {
@@ -104,6 +108,14 @@ public class Address {
 
     public String toHex() {
         return Utils.bytesToHex(hashPart);
+    }
+
+    /**
+     * Save address to file in 36-byte format
+     */
+    public void saveToFile(String filename) throws IOException {
+        byte[] wcBytes = ByteBuffer.allocate(4).putInt(wc).array();
+        Files.write(Paths.get(filename), Utils.concatBytes(hashPart, wcBytes));
     }
 
     public String toString() {

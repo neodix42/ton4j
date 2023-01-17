@@ -19,6 +19,7 @@ import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.List;
 import java.util.Random;
 
@@ -37,21 +38,20 @@ public class TestWalletMultisig {
         TweetNaclFast.Signature.KeyPair ownerKeyPair = Utils.generateSignatureKeyPair();
         TweetNaclFast.Signature.KeyPair keyPair2 = Utils.generateSignatureKeyPair();
         TweetNaclFast.Signature.KeyPair keyPair3 = Utils.generateSignatureKeyPair();
-        TweetNaclFast.Signature.KeyPair keyPair4 = Utils.generateSignatureKeyPair();
-        TweetNaclFast.Signature.KeyPair keyPair5 = Utils.generateSignatureKeyPair();
 
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
         log.info("pubKey3 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
-        log.info("pubKey4 {}", Utils.bytesToHex(keyPair4.getPublicKey()));
-        log.info("pubKey5 {}", Utils.bytesToHex(keyPair5.getPublicKey()));
+
+        BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32));
 
         Options options = Options.builder()
                 .publicKey(ownerKeyPair.getPublicKey())
                 .walletId(new Random().nextLong() & 0xffffffffL)
                 .multisigConfig(MultisigConfig.builder()
-                        .k(3)
-                        .n(5)
+                        .queryId(queryId)
+                        .k(2)
+                        .n(3)
                         .rootI(0)
                         .owners(List.of(
                                 OwnerInfo.builder()
@@ -65,14 +65,6 @@ public class TestWalletMultisig {
                                 OwnerInfo.builder()
                                         .publicKey(keyPair3.getPublicKey())
                                         .flood(3)
-                                        .build(),
-                                OwnerInfo.builder()
-                                        .publicKey(keyPair4.getPublicKey())
-                                        .flood(4)
-                                        .build(),
-                                OwnerInfo.builder()
-                                        .publicKey(keyPair5.getPublicKey())
-                                        .flood(5)
                                         .build()
                         ))
                         .build())
@@ -95,27 +87,41 @@ public class TestWalletMultisig {
 
         contract.deploy(tonlib, ownerKeyPair.getSecretKey());
 
-        Utils.sleep(40, "deploying");
+        Utils.sleep(30, "deploying");
 
         log.info("owners publicKeys {}", contract.getPublicKeys(tonlib));
 
-        // get init-state by input parameters
-        List<OwnerInfo> ownersPublicKeys = List.of(
-                OwnerInfo.builder()
-                        .publicKey(ownerKeyPair.getPublicKey())
-                        .flood(0)
-                        .build(),
-                OwnerInfo.builder()
-                        .publicKey(keyPair2.getPublicKey())
-                        .flood(1)
-                        .build()
-        );
+        log.info("n and k {}", contract.getNandK(tonlib));
 
-        Cell stateInit = contract.getInitState(tonlib, 1, 2, 3, contract.createOwnersInfosDict(ownersPublicKeys));
+//         get init-state by input parameters - WORKS
+//        List<OwnerInfo> ownersPublicKeys = List.of(
+//                OwnerInfo.builder()
+//                        .publicKey(ownerKeyPair.getPublicKey())
+//                        .flood(0)
+//                        .build(),
+//                OwnerInfo.builder()
+//                        .publicKey(keyPair2.getPublicKey())
+//                        .flood(1)
+//                        .build()
+//        );
 
-        log.info("state-init {}", stateInit.toHex(false));
+//        Cell stateInit = contract.getInitState(tonlib, 1, 3, 2, contract.createOwnersInfosDict(ownersPublicKeys));
+//        log.info("state-init {}", stateInit.toHex(false));
+//        balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
+//        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
-        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+        // You may want to create one or several internal messages to send
+        Cell msg = contract.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
+
+        // Having message(s) to send you can group it to a new order
+        Cell order = contract.createOrder(options.getWalletId(), queryId, List.of(msg));
+
+        Cell signedOrder = contract.signOrder(ownerKeyPair, 0, order);
+
+        contract.sendSignedQuery(tonlib, ownerKeyPair.getSecretKey(), signedOrder, List.of(ownerKeyPair.getPublicKey()));
+
+        // fail https://github.com/akifoq/multisig/blob/master/multisig-code.fc#L156 - unpack_query_data
+        // throw_unless(43, slice_refs(in_msg) * 8 == slice_bits(in_msg));
+
     }
 }

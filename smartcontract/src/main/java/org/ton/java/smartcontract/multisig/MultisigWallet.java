@@ -1,5 +1,6 @@
 package org.ton.java.smartcontract.multisig;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.*;
 import org.ton.java.smartcontract.types.ExternalMessage;
@@ -10,10 +11,13 @@ import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
+import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.*;
+
+import static java.util.Objects.isNull;
 
 public class MultisigWallet implements WalletContract {
 
@@ -71,23 +75,29 @@ public class MultisigWallet implements WalletContract {
         return cell.endCell();
     }
 
-    public Cell createSigningMessageInternal(List<OwnerInfo> ownerInfos) {
+    public Cell createSigningMessageInternal(List<byte[]> signatures, Cell signedOrder) {
         CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(getOptions().getMultisigConfig().getRootI(), 8); // root-id - index for owner_infos dict
-//        message.storeDict() // signatures list -- add todo
+        message.storeUint(getOptions().getMultisigConfig().getRootI(), 8); // root-id - pk-index for owner_infos dict
+
+//        message.storeBit(false); // no dict - works ok
+        message.storeBit(true); // dict - works ok
+
+//        message.storeRef(sigsDict); // default exception handler, terminating vm with exit code 43
+//        message.writeCell(sigsDict); // default exception handler, terminating vm with exit code 42
+
         message.storeUint(getOptions().getWalletId(), 32); // wallet-id
-        message.storeUint(getOptions().getQueryId(), 64); // query-id
+        message.storeUint(getOptions().getMultisigConfig().getQueryId(), 64); // query-id
 
-//        return message.endCell();
-//        CellBuilder message = CellBuilder.beginCell();
-//        message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
-//
-//        message.storeUint(highloadConfig.getQueryId(), 64);
-//
-//        message.storeBit(true);
+        Cell sigsDict = createSignaturesRecursiveCell(signatures);
+        message.storeRef(sigsDict); // works
+//        message.writeCell(sigsDict); // default exception handler, terminating vm with exit code 43
 
+        // orders add here?
+
+        // throw_unless(43, slice_refs(in_msg) * 8 == slice_bits(in_msg));
         return message.endCell();
     }
+
 
     public List<BigInteger> getPublicKeys(Tonlib tonlib) {
 
@@ -151,14 +161,13 @@ public class MultisigWallet implements WalletContract {
      *
      * @param tonlib     Tonlib
      * @param secretKey  byte[]
-     * @param ownerInfos List<OwnerInfo>
+     * @param signatures List<byte[]>
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, List<OwnerInfo> ownerInfos) {
+    public void sendSignedQuery(Tonlib tonlib, byte[] secretKey, Cell signedOrder, List<byte[]> signatures) {
 
-        Cell signingMessageAll = createSigningMessageInternal(ownerInfos);
-        signingMessageAll.refs.add(createOwnersInfosDict(ownerInfos));
+        Cell signingMessageBody = createSigningMessageInternal(signatures, signedOrder); // TODO
 
-        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1, false);
+        ExternalMessage msg = createExternalMessage(signingMessageBody, secretKey, 1, false); // todo
 
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
@@ -171,7 +180,7 @@ public class MultisigWallet implements WalletContract {
         for (OwnerInfo ownerInfo : ownerInfos) {
 
             CellBuilder ownerInfoCell = CellBuilder.beginCell();
-            ownerInfoCell.storeBytes(ownerInfo.getPublicKey());
+            ownerInfoCell.storeBytes(ownerInfo.getPublicKey()); //256 bits
             ownerInfoCell.storeUint(ownerInfo.getFlood(), 8);
 
             dictDestinations.elements.put(
@@ -188,28 +197,106 @@ public class MultisigWallet implements WalletContract {
         return cellDict;
     }
 
+//    public Cell createSignaturesDict(List<byte[]> signatures) {
+//        int dictKeySize = 8;
+//        TonHashMapE dictSignatures = new TonHashMapE(dictKeySize);
+//
+//        long i = 0; // key, index 8bit
+//
+//
+//        for (byte[] signature : signatures) {
+//            CellBuilder sigsCell = CellBuilder.beginCell();
+//            sigsCell.storeBytes(signature); //512 bits
+//            sigsCell.storeUint(i, 8);
+//            //sigsCell.storeBit(false); // empty dict
+//            dictSignatures.elements.put(
+//                    i++, // key - index
+//                    sigsCell.endCell() // value - cell - OwnerInfo
+//            );
+//        }
+//
+//        Cell cellDict = dictSignatures.serialize(
+//                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
+//                v -> (Cell) v
+//        );
+//
+//        return cellDict;
+//
+//    }
+
+    public Cell createSignaturesRecursiveCell(List<byte[]> signatures) {
+//        int dictKeySize = 8;
+//        TonHashMapE dictSignatures = new TonHashMapE(dictKeySize);
+
+        long i = 0; // key, index 8bit
+
+//        CellBuilder finalCell = CellBuilder.beginCell();
+        CellBuilder sigsCell = CellBuilder.beginCell();
+        for (byte[] signature : signatures) {
+
+//            sigsCell.storeBytes(signature); //512 bits
+            sigsCell.storeUint(i, 8);
+//            sigsCell.storeBit(false);
+//            sigsCell.storeInt(0, 1); // no enclosed refs
+//            sigsCell.storeBit(false);
+            sigsCell.storeRef(CellBuilder.beginCell().endCell());
+//            finalCell.storeRef(sigsCell.endCell());
+
+            //sigsCell.storeBit(false); // empty dict
+//            dictSignatures.elements.put(
+//                    i++, // key - index
+//                    sigsCell.endCell() // value - cell - OwnerInfo
+//            );
+        }
+
+//        Cell cellDict = dictSignatures.serialize(
+//                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
+//                v -> (Cell) v
+//        );
+
+        return sigsCell;
+    }
+
+    /**
+     * We do not override createSigningMessage() since we can send an empty message for deployment.
+     *
+     * @param tonlib    Tonlib
+     * @param secretKey secret key
+     */
     public void deploy(Tonlib tonlib, byte[] secretKey) {
         tonlib.sendRawMessage(createInitExternalMessageWithoutBody(secretKey).message.toBocBase64(false));
     }
 
+    /**
+     * @param destination address
+     * @param amount      values in nano-tons
+     * @param mode        send mode
+     * @return Cell
+     */
     public Cell createOneInternalMsg(Address destination, BigInteger amount, int mode) {
         Cell orderHeader = Contract.createInternalMessageHeader(destination, amount);
-        Cell order = Contract.createCommonMsgInfo(orderHeader);
+        Cell transferMessage = Contract.createCommonMsgInfo(orderHeader);
 
         CellBuilder p = CellBuilder.beginCell();
         p.storeUint(mode, 8);
-        p.storeRef(order);
+        p.storeRef(transferMessage);
 
         return p.endCell();
     }
 
+    /**
+     * @param walletId     sub-wallet-id
+     * @param queryId      time-out
+     * @param internalMsgs List of Cells, where Cell is internal msg, defining target destinations with amounts
+     * @return Cell
+     */
     public Cell createOrder(long walletId, BigInteger queryId, List<Cell> internalMsgs) {
         CellBuilder order = CellBuilder.beginCell();
         order.storeBit(false); // no signatures
         order.storeUint(walletId, 32);
         order.storeUint(queryId, 64); // timeout
-        for (Cell msg : internalMsgs) {
-            order.storeRef(msg);
+        for (Cell msg : internalMsgs) { // "N must be in range 1..3" todo
+            order.storeRef(msg); // not ref in fift - https://github.com/akifoq/multisig/blob/master/create-order.fif
         }
         return order.endCell();
     }
@@ -217,4 +304,75 @@ public class MultisigWallet implements WalletContract {
     public Cell addInternalMsgToOrder() {
         return null;
     }
+
+    /**
+     * Signs the order with private key corresponding to public at position pubKeyIndex in OwnersDict
+     *
+     * @param keyPair
+     * @param pubKeyIndex
+     * @param order
+     * @return Cell
+     */
+    public Cell signOrder(TweetNaclFast.Signature.KeyPair keyPair, int pubKeyIndex, Cell order) {
+        byte[] signatureOfOrder = new TweetNaclFast.Signature(keyPair.getPublicKey(), keyPair.getSecretKey()).detached(order.hash());
+
+        // todo check if our signature already exist
+
+        CellBuilder signedOrder = CellBuilder.beginCell();
+        signedOrder.storeBytes(signatureOfOrder);
+        signedOrder.storeUint(pubKeyIndex, 8);
+        signedOrder.storeBit(false); //empty list/dict
+        //If list is not empty
+//        signedOrder.storeBit(true); // todo see add-signature.fif
+//        signedOrder.storeRef()
+
+        CellBuilder signedOrderMsg = CellBuilder.beginCell();
+        signedOrderMsg.storeInt(-1, 1); //
+        signedOrderMsg.storeRef(signedOrder.endCell());
+        signedOrderMsg.storeSlice(CellSlice.beginParse(order));
+
+        return signedOrderMsg;
+    }
+
+    public Cell serializeSignatures(List<byte[]> signatures) {
+        CellBuilder cell = CellBuilder.beginCell();
+        if (isNull(signatures)) {
+            cell.storeInt(0, 1); // flag that no signatures
+//            cell.storeRef(CellBuilder.beginCell().endCell());
+        } else {
+
+            CellBuilder sigsCell = CellBuilder.beginCell();
+            sigsCell.storeBytes(signatures.get(0)); //first signature, 64 bytes
+            sigsCell.storeUint(0, 8); // second signature's pk-index, 8 bits
+            // etc 64bytes+8bits + 64bytes+8bits + 64bytes+8bits...
+//          sigsCell.storeBytes(signature.get(1)); // second signature // todo more signatures
+
+            cell.storeInt(-1, 1); // flag true, we have signatures
+            cell.storeRef(sigsCell.endCell()); // add signatures to ref
+        }
+        return cell.endCell();
+    }
+
+    public List<Long> getNandK(Tonlib tonlib) {
+
+        Address myAddress = this.getAddress();
+        RunResult result = tonlib.runMethod(myAddress, "get_n_k");
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_n_k, returned an exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryNumber nNumber = (TvmStackEntryNumber) result.getStack().get(0);
+        TvmStackEntryNumber kNumber = (TvmStackEntryNumber) result.getStack().get(1);
+
+        return List.of(nNumber.getNumber().longValue(), kNumber.getNumber().longValue());
+    }
 }
+
+
+//query
+//              .store_uint(1, 1)
+//             .store_uint(creator_i, 8)
+//             .store_uint(cnt, 8)
+//             .store_uint(cnt_bits, n)
+//             .store_slice(msg));

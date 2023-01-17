@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigInteger;
 import java.util.List;
 
 @Builder
@@ -13,6 +14,7 @@ import java.util.List;
 @ToString
 public class MultisigConfig {
 
+    BigInteger queryId;
     /**
      * Whitelist of allowed destinations
      */

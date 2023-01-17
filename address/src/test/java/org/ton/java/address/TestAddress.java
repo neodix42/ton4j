@@ -5,6 +5,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.utils.Utils;
 
+import java.io.IOException;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.assertThrows;
 
@@ -15,6 +17,8 @@ public class TestAddress {
     public static final String TEST_ADDRESS_1 = "kQAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi47nL";
     public static final String TEST_ADDRESS_3 = "0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3";
     public static final String TEST_ADDRESS_4 = "kf_8uRo6OBbQ97jCx2EIuKm8Wmt6Vb15-KsQHFLbKSMiYIny";
+
+    public static final String TEST_ADDRESS_5 = "-1:cdff07eb154c2e595930a6a9a4451608251cc1c894686c4c110894de43c96ad3";
 
 
     @Test
@@ -31,15 +35,15 @@ public class TestAddress {
         Address address03 = Address.of(TEST_ADDRESS_3);
         assertThat(address03.toString()).isEqualTo(TEST_ADDRESS_3);
 
-        Address address04 = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
+        Address address04 = Address.of(TEST_ADDRESS_0);
         assertThat(address04.toString(true, true, false)).isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
         assertThat(address04.isBounceable).isFalse();
 
-        Address address05 = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
+        Address address05 = Address.of(TEST_ADDRESS_0);
         assertThat(address05.toString(true, true, true)).isEqualTo(TEST_ADDRESS_1);
         assertThat(address05.isBounceable).isFalse();
 
-        Address address06 = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
+        Address address06 = Address.of(TEST_ADDRESS_0);
         assertThat(address06.toString(false)).isEqualTo(TEST_ADDRESS_3);
         assertThat(address06.isBounceable).isFalse();
 
@@ -100,5 +104,28 @@ public class TestAddress {
         b = Address.of(TEST_ADDRESS_1);
         assertThat(a).isNotEqualTo(b);
 
+    }
+
+    /**
+     * Save address to file in 36-byte format
+     */
+    @Test
+    public void testSaveAddress() throws IOException {
+
+        // wc 0
+        Address address01 = Address.of(TEST_ADDRESS_0);
+        System.out.println("full address " + address01.toString(false));
+        System.out.println("bounceable address " + address01.toString(true, true, true));
+        System.out.println("non-bounceable address " + address01.toString(true, true, false));
+
+        address01.saveToFile("test0.addr");
+
+        // wc -1
+        Address address02 = Address.of(TEST_ADDRESS_5);
+        System.out.println("full address " + address02.toString(false));
+        System.out.println("bounceable address " + address02.toString(true, true, true, true));
+        System.out.println("non-bounceable address " + address02.toString(true, true, false, true));
+
+        address02.saveToFile("test1.addr");
     }
 }
