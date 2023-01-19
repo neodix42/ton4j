@@ -12,7 +12,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tonlib</artifactId>
-    <name>TON Java tonlib wrapper</name>
+    <name>TON Java Tonlib wrapper</name>
 
     <description>Java wrapper for Tonlib shared library. Includes runMethod's return results parser.</description>
 

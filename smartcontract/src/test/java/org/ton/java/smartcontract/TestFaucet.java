@@ -69,7 +69,7 @@ public class TestFaucet {
         BigInteger newBalance = BigInteger.ZERO;
         i = 0;
         do {
-            log.info("topping up wallet {}...", destinationAddress.toString(true, true, true));
+            log.info("topping up wallet {}", destinationAddress.toString(true, true, true));
             TimeUnit.SECONDS.sleep(5);
             if (nonNull(tonlib.getAccountState(destinationAddress).getBalance())) {
                 newBalance = new BigInteger(tonlib.getAccountState(destinationAddress).getBalance());

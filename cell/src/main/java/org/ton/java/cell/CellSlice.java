@@ -150,8 +150,12 @@ public class CellSlice {
         refs = c.refs;
         */
         // move readRefCursor
-        refs.remove(0);
-        refs.remove(0);
+        if (refs.size() != 0) {
+            refs.remove(0);
+        }
+        if (refs.size() != 0) {
+            refs.remove(0);
+        }
 //        for (int i = 0; i < this.bits.readref; i++) {
 //            refs.remove(0);
 //        }
