@@ -75,24 +75,20 @@ public class MultisigWallet implements WalletContract {
         return cell.endCell();
     }
 
-    public Cell createSigningMessageInternal(TweetNaclFast.Signature.KeyPair keyPair, List<byte[]> signatures, Cell signedOrder) {
+    public Cell createSigningMessageInternal(int pubkeyIndex, List<byte[]> signatures, Cell order) {
 
         CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(getOptions().getMultisigConfig().getRootI(), 8); // root-id - pk-index for owner_infos dict
+        message.storeUint(pubkeyIndex, 8); // root-id - pk-index for owner_infos dict
 
-//        message.storeBit(false); // no dict - works ok
         message.storeBit(true); // sigs dict exists and not empty - works ok
 
         message.storeUint(getOptions().getWalletId(), 32); // wallet-id
         message.storeUint(getOptions().getMultisigConfig().getQueryId(), 64); // query-id
 
-        Cell sigsDict = createSignaturesRecursiveCell(keyPair, signatures, signedOrder);
-        message.storeRef(sigsDict); // works
+        message.storeRef(serializeSignatures(signatures.size(), 0, signatures)); // works
 
-        Cell msg = createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
-        message.writeCell(msg);
+        message.writeCell(order);
 
-        // orders add here?
         return message.endCell();
     }
 
@@ -144,7 +140,7 @@ public class MultisigWallet implements WalletContract {
      * @param ownersInfo - arrays with public keys
      * @return cell with state-init
      */
-    public Cell getInitState(Tonlib tonlib, int walletId, int n, int k, Cell ownersInfo) {
+    public Cell getInitState(Tonlib tonlib, long walletId, int n, int k, Cell ownersInfo) {
 
         Address myAddress = this.getAddress();
         Deque<String> stack = new ArrayDeque<>();
@@ -170,12 +166,9 @@ public class MultisigWallet implements WalletContract {
      * @param keyPair    TweetNaclFast.Signature.KeyPair
      * @param signatures List<byte[]>
      */
-    public void sendSignedQuery(Tonlib tonlib, TweetNaclFast.Signature.KeyPair keyPair, Cell signedOrder, List<byte[]> signatures) {
-
-        Cell signingMessageBody = createSigningMessageInternal(keyPair, signatures, signedOrder);
-
+    public void sendOrder(Tonlib tonlib, TweetNaclFast.Signature.KeyPair keyPair, int pubkeyIndex, Cell order, List<byte[]> signatures) {
+        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, signatures, order);
         ExternalMessage msg = createExternalMessage(signingMessageBody, keyPair.getSecretKey(), 1, false);
-
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
@@ -204,27 +197,33 @@ public class MultisigWallet implements WalletContract {
         return cellDict;
     }
 
+    public Cell serializeSignatures(int total, int i, List<byte[]> signatures) {
+
+        CellBuilder c = CellBuilder.beginCell();
+        c.storeBytes(signatures.get(i));
+        c.storeUint(i, 8);
+        if (i == total - 1) {
+            c.storeBit(false); // empty dict, last cell
+        } else {
+            c.storeBit(true);
+            c.storeRef(serializeSignatures(total, ++i, signatures));
+        }
+        return c;
+    }
+
     public Cell createQuery(TweetNaclFast.Signature.KeyPair keyPair, List<byte[]> signatures, Cell order) {
-
-        byte[] signatureOrder = signCellHash(keyPair, order);
-
-        CellBuilder sig1 = CellBuilder.beginCell();
-        sig1.storeUint(1, 8); // lets reuse same pubkey
-        sig1.storeBit(false); // empty dict sigs
-
-//        byte[] signature1 = getOrderSignature(keyPair, sig1.endCell());
-
-        CellBuilder signedOrder1 = CellBuilder.beginCell();
-        signedOrder1.storeBytes(signatures.get(1)); // all sub cell apart root will contain hash of top order
-        signedOrder1.writeCell(sig1);
 
         CellBuilder rootCell = CellBuilder.beginCell();
         rootCell.storeUint(0, 8); // root-i
-        rootCell.storeBit(true); // not empty dict
-        rootCell.storeRef(signedOrder1);
+        if (signatures.isEmpty()) {
+            rootCell.storeBit(false); // empty dict
+        } else {
+            rootCell.storeBit(true); // not empty dict
+            rootCell.storeRef(serializeSignatures(signatures.size(), 0, signatures));
+        }
         rootCell.writeCell(order);
 
-        byte[] rootSignature = signCellHash(keyPair, rootCell.endCell());
+        byte[] rootSignature = signCell(keyPair, rootCell.endCell());
 
         // todo check if our signature already exist inside order
 
@@ -233,43 +232,6 @@ public class MultisigWallet implements WalletContract {
         query.writeCell(rootCell);
 
         return query;
-    }
-
-    public Cell createSignaturesRecursiveCell(TweetNaclFast.Signature.KeyPair keyPair, List<byte[]> signatures, Cell order) {
-
-        CellBuilder dummy = CellBuilder.beginCell();
-        dummy.storeUint(0, 8);
-        dummy.storeBit(false);
-
-        byte[] signature = signCellHash(keyPair, dummy);
-
-        // todo check if our signature already exist inside order
-
-        CellBuilder signedOrder = CellBuilder.beginCell();
-        signedOrder.storeBytes(signature);
-        signedOrder.writeCell(dummy);
-
-
-        return signedOrder;
-        /*
-        long i = 0; // key, index 8bit
-
-        CellBuilder sigsCell = CellBuilder.beginCell();
-        for (byte[] signature : signatures) {
-
-            sigsCell.storeBytes(signature); //512 bits -- works
-//            sigsCell.storeUint(i, 8);
-//            sigsCell.storeBit(false);
-
-            sigsCell.writeCell(order);
-
-//            sigsCell.storeRef(CellBuilder.beginCell().endCell());
-            i++;
-        }
-
-        return sigsCell;
-
-         */
     }
 
     /**
@@ -289,78 +251,33 @@ public class MultisigWallet implements WalletContract {
      * @return Cell
      */
     public Cell createOneInternalMsg(Address destination, BigInteger amount, int mode) {
-        Cell orderHeader = Contract.createInternalMessageHeader(destination, amount);
-        Cell transferMessage = Contract.createCommonMsgInfo(orderHeader);
+        Cell intMsgHeader = Contract.createInternalMessageHeader(destination, amount);
+        Cell intMsgTransfer = Contract.createCommonMsgInfo(intMsgHeader);
 
         CellBuilder p = CellBuilder.beginCell();
-        p.storeUint(mode, 8);
-        p.storeRef(transferMessage);
+        p.storeUint(mode, 8); // if 9, terminating vm with exit code 43
+        p.storeRef(intMsgTransfer);
 
         return p.endCell();
     }
 
     /**
-     * @param walletId     sub-wallet-id
-     * @param queryId      time-out
      * @param internalMsgs List of Cells, where Cell is internal msg, defining target destinations with amounts
-     * @return Cell
+     * @return Cell Order
      */
-    public Cell createOrder(long walletId, BigInteger queryId, List<Cell> internalMsgs) {
+    public Cell createOrder(Cell... internalMsgs) {
+        if (internalMsgs.length > 3) {
+            throw new Error("Order cannot contain more than 3 internal messages");
+        }
         CellBuilder order = CellBuilder.beginCell();
-        order.storeBit(false); // no signatures
-        // in fift we need it
-//        order.storeUint(walletId, 32);
-//        order.storeUint(queryId, 64); // timeout also
 
-        for (Cell msg : internalMsgs) { // "N must be in range 1..3" todo
-            order.storeRef(msg); // not ref in fift - https://github.com/akifoq/multisig/blob/master/create-order.fif
+        for (Cell msg : internalMsgs) {
+            order.writeCell(msg);
         }
         return order.endCell();
     }
 
-    public Cell addInternalMsgToOrder() {
-        return null;
-    }
-
-    /**
-     * Signs the order with private key corresponding to public at position pubKeyIndex in OwnersDict
-     *
-     * @param keyPair
-     * @param pubKeyIndex
-     * @param order
-     * @return Cell
-     */
-    public Cell signOrder(TweetNaclFast.Signature.KeyPair keyPair, int pubKeyIndex, Cell order) {
-        byte[] signature = signCellHash(keyPair, order);
-
-        CellSlice cs = CellSlice.beginParse(order);
-
-        // todo check if our signature already exist inside order
-
-        CellBuilder signedOrder = CellBuilder.beginCell();
-        signedOrder.storeBytes(signature);
-        signedOrder.storeUint(pubKeyIndex, 8);
-
-        if (cs.loadBit()) {
-            //if null .writeBit(0) ?
-            signedOrder.storeBit(true);
-            signedOrder.storeRef(CellSlice.beginParse(order).loadRef()); // load int msg = list of sigs!
-        } else {
-            signedOrder.storeBit(false); // list of sigs is empty
-        }
-
-        //signedOrder.writeCell(order); // todo two times
-
-        CellBuilder signedOrderMsg = CellBuilder.beginCell();
-        signedOrderMsg.storeInt(-1, 1);
-//        signedOrderMsg.storeBit(true);
-        signedOrderMsg.storeRef(signedOrder.endCell());
-        signedOrderMsg.writeCell(order); // todo two times
-
-        return signedOrderMsg;
-    }
-
-    public byte[] signCellHash(TweetNaclFast.Signature.KeyPair keyPair, Cell cell) {
+    public byte[] signCell(TweetNaclFast.Signature.KeyPair keyPair, Cell cell) {
         return new TweetNaclFast.Signature(keyPair.getPublicKey(), keyPair.getSecretKey()).detached(cell.hash());
     }
 
@@ -380,6 +297,8 @@ public class MultisigWallet implements WalletContract {
     }
 
     /**
+     * Returns list of all unsigned messages
+     *
      * @param tonlib Tonlib
      * @return List<Cell> pending queries
      */
@@ -395,8 +314,6 @@ public class MultisigWallet implements WalletContract {
         if (result.getStack().get(0) instanceof TvmStackEntryList) {
             return new HashMap<>();
         }
-//        TvmStackEntryList entryList = (TvmStackEntryList) result.getStack().get(0);
-//        System.out.println(entryList);
 
         TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
         Cell cellDict = CellBuilder.fromBoc(Utils.base64ToBytes(entryCell.getCell().getBytes()));
@@ -426,10 +343,97 @@ public class MultisigWallet implements WalletContract {
         return resultMap;
     }
 
+
     /**
-     * returns -1 for processed queries, 0 for unprocessed, 1 for unknown (forgotten)
+     * Returns list of all signed messages by index
      *
-     * @return Pair<Long, Long>
+     * @param tonlib Tonlib
+     * @return List<Cell> pending queries
+     */
+    public Map<BigInteger, Cell> getMessagesSignedByIndex(Tonlib tonlib, long index) {
+
+        Address myAddress = this.getAddress();
+        Deque<String> stack = new ArrayDeque<>();
+
+        stack.offer("[num, " + index + "]");
+
+        RunResult result = tonlib.runMethod(myAddress, "get_messages_signed_by_id", stack);
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_messages_signed_by_id, returned an exit code " + result.getExit_code());
+        }
+
+        if (result.getStack().get(0) instanceof TvmStackEntryList) {
+            return new HashMap<>();
+        }
+
+        TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
+        Cell cellDict = CellBuilder.fromBoc(Utils.base64ToBytes(entryCell.getCell().getBytes()));
+
+        CellSlice cs = CellSlice.beginParse(cellDict);
+
+        TonHashMap loadedDict = cs
+                .loadDict(64,
+                        k -> k.readUint(64),
+                        v -> v
+                );
+
+        Map<BigInteger, Cell> resultMap = new HashMap<>();
+        for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+            // query-id, query
+            resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
+        }
+        return resultMap;
+    }
+
+
+    /**
+     * Returns list of all unsigned messages by index
+     *
+     * @param tonlib Tonlib
+     * @return List<Cell> pending queries
+     */
+    public Map<BigInteger, Cell> getMessagesUnsignedByIndex(Tonlib tonlib, long index) {
+
+        Address myAddress = this.getAddress();
+        Deque<String> stack = new ArrayDeque<>();
+
+        stack.offer("[num, " + index + "]");
+
+        RunResult result = tonlib.runMethod(myAddress, "get_messages_unsigned_by_id", stack);
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_messages_unsigned_by_id, returned an exit code " + result.getExit_code());
+        }
+
+        if (result.getStack().get(0) instanceof TvmStackEntryList) {
+            return new HashMap<>();
+        }
+
+        TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
+        Cell cellDict = CellBuilder.fromBoc(Utils.base64ToBytes(entryCell.getCell().getBytes()));
+
+        CellSlice cs = CellSlice.beginParse(cellDict);
+
+        TonHashMap loadedDict = cs
+                .loadDict(64,
+                        k -> k.readUint(64),
+                        v -> v
+                );
+
+        Map<BigInteger, Cell> resultMap = new HashMap<>();
+        for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+            // query-id, query
+            resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
+        }
+        return resultMap;
+    }
+
+    /**
+     * Returns -1 for processed queries, 0 for unprocessed, 1 for unknown (forgotten)
+     * and the mask of signed positions of pubkeys
+     *
+     * @return Pair<Long, Long> status, mask
      */
     public Pair<Long, Long> getQueryState(Tonlib tonlib, BigInteger queryId) {
 
@@ -450,6 +454,13 @@ public class MultisigWallet implements WalletContract {
         return Pair.of(r.getNumber().longValue(), n.getNumber().longValue());
     }
 
+    /**
+     * You can check whether signatures used to sign the order are correct
+     *
+     * @param tonlib Tonlib
+     * @param query  Cell of serialized list of signatures and order
+     * @return Pair<Long, Long> count of correct signatures and the mask
+     */
     public Pair<Long, Long> checkQuerySignatures(Tonlib tonlib, Cell query) {
 
         Address myAddress = this.getAddress();
@@ -467,11 +478,26 @@ public class MultisigWallet implements WalletContract {
 
         return Pair.of(cnt.getNumber().longValue(), mask.getNumber().longValue());
     }
-}
 
-//query
-//              .store_uint(1, 1)
-//             .store_uint(creator_i, 8)
-//             .store_uint(cnt, 8)
-//             .store_uint(cnt_bits, n)
-//             .store_slice(msg));
+    /**
+     * Returns -1 for processed queries, 0 for unprocessed, 1 for unknown (forgotten)
+     *
+     * @return Long status
+     */
+    public long processed(Tonlib tonlib, BigInteger queryId) {
+
+        Address myAddress = this.getAddress();
+
+        Deque<String> stack = new ArrayDeque<>();
+
+        stack.offer("[num, " + queryId.toString(10) + "]");
+
+        RunResult result = tonlib.runMethod(myAddress, "processed?", stack);
+
+        if (result.getExit_code() != 0) {
+            throw new Error("method processed, returned an exit code " + result.getExit_code());
+        }
+        TvmStackEntryNumber cnt = (TvmStackEntryNumber) result.getStack().get(0);
+        return cnt.getNumber().longValue();
+    }
+}

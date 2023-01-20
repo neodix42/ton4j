@@ -86,6 +86,7 @@ public class HighloadWallet implements WalletContract {
         message.storeUint(highloadConfig.getQueryId(), 64);
 
         message.storeBit(true);
+        message.storeRef(createDict(highloadConfig));
 
         return message.endCell();
     }
@@ -111,12 +112,8 @@ public class HighloadWallet implements WalletContract {
      * @param highloadConfig HighloadConfig
      */
     public void sendTonCoins(Tonlib tonlib, byte[] secretKey, HighloadConfig highloadConfig) {
-
         Cell signingMessageAll = createSigningMessageInternal(highloadConfig);
-        signingMessageAll.refs.add(createDict(highloadConfig));
-
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1, false);
-
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 

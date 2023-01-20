@@ -30,34 +30,48 @@ import java.util.Random;
 @RunWith(JUnit4.class)
 public class TestWalletMultisig {
 
+    TweetNaclFast.Signature.KeyPair ownerKeyPair = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPair2 = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPair3 = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPair4 = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPair5 = Utils.generateSignatureKeyPair();
+
     @Test
     public void testWalletMultisig() throws InterruptedException {
 
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
-                .verbosityLevel(VerbosityLevel.DEBUG)
+                //   .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
-        TweetNaclFast.Signature.KeyPair ownerKeyPair = Utils.generateSignatureKeyPair();
-        TweetNaclFast.Signature.KeyPair keyPair2 = Utils.generateSignatureKeyPair();
-        TweetNaclFast.Signature.KeyPair keyPair3 = Utils.generateSignatureKeyPair();
 
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
         log.info("pubKey3 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
+        log.info("pubKey4 {}", Utils.bytesToHex(keyPair4.getPublicKey()));
+        log.info("pubKey5 {}", Utils.bytesToHex(keyPair5.getPublicKey()));
 
         BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32)); //5 minutes // todo
 
-        int k = 2;
-        int n = 3;
+        Long walletId = new Random().nextLong() & 0xffffffffL;
+        log.info("queryId {}, walletId {}", queryId.toString(10), walletId);
+
+        int rootIndex = 0;
+        int pubkey2Index = 1;
+        int pubkey3Index = 2;
+        int pubkey4Index = 3;
+        int pubkey5Index = 4;
+        int k = 3;
+        int n = 5;
+
         Options options = Options.builder()
                 .publicKey(ownerKeyPair.getPublicKey())
-                .walletId(new Random().nextLong() & 0xffffffffL)
+                .walletId(walletId)
                 .multisigConfig(MultisigConfig.builder()
                         .queryId(queryId)
                         .k(k)
                         .n(n)
-                        .rootI(0)
+                        .rootI(rootIndex)
                         .owners(List.of(
                                 OwnerInfo.builder()
                                         .publicKey(ownerKeyPair.getPublicKey())
@@ -70,8 +84,18 @@ public class TestWalletMultisig {
                                 OwnerInfo.builder()
                                         .publicKey(keyPair3.getPublicKey())
                                         .flood(3)
+                                        .build(),
+                                OwnerInfo.builder()
+                                        .publicKey(keyPair4.getPublicKey())
+                                        .flood(4)
+                                        .build(),
+                                OwnerInfo.builder()
+                                        .publicKey(keyPair5.getPublicKey())
+                                        .flood(5)
                                         .build()
+
                         ))
+                        // todo initial pending query list
                         .build())
 
                 .build();
@@ -96,47 +120,177 @@ public class TestWalletMultisig {
 
         log.info("owners publicKeys {}", contract.getPublicKeys(tonlib));
         log.info("owners publicKeysHex {}", contract.getPublicKeysHex(tonlib));
+
         Pair<Long, Long> n_k = contract.getNandK(tonlib);
         log.info("n {}, k {}", n_k.getLeft(), n_k.getRight());
 
-//         get init-state by input parameters - WORKS
-//        List<OwnerInfo> ownersPublicKeys = List.of(
-//                OwnerInfo.builder()
-//                        .publicKey(ownerKeyPair.getPublicKey())
-//                        .flood(0)
-//                        .build(),
-//                OwnerInfo.builder()
-//                        .publicKey(keyPair2.getPublicKey())
-//                        .flood(1)
-//                        .build()
-//        );
-
-//        Cell stateInit = contract.getInitState(tonlib, 1, 3, 2, contract.createOwnersInfosDict(ownersPublicKeys));
-//        log.info("state-init {}", stateInit.toHex(false));
-//        balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
-//        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
-
-        // You may want to create one or several internal messages to send
-        Cell msg = contract.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
+        // You can include up to 3 destinations
+        Cell msg1 = contract.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
+        Cell msg2 = contract.createOneInternalMsg(Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.6), 3);
+        Cell msg3 = contract.createOneInternalMsg(Address.of("EQCAy2ue54I-uDvEgD3qXdqjtrJI4F4OeFn3V10Kgt0jXpQn"), Utils.toNano(0.7), 3);
 
         // Having message(s) to send you can group it to a new order
-        Cell order = contract.createOrder(options.getWalletId(), queryId, List.of(msg));
+        Cell order = contract.createOrder(msg1, msg2, msg3);
 
-        byte[] orderSignature = contract.signCellHash(ownerKeyPair, order);
-        byte[] orderSignature2 = contract.signCellHash(keyPair2, order);
-        log.info("orderSignature signed by ownerKeyPair {}", Utils.bytesToHex(orderSignature));
+        byte[] orderSignature1 = contract.signCell(ownerKeyPair, order);
+        byte[] orderSignature2 = contract.signCell(keyPair2, order);
+        byte[] orderSignature3 = contract.signCell(keyPair3, order);
+        byte[] orderSignature4 = contract.signCell(keyPair4, order);
+        byte[] orderSignature5 = contract.signCell(keyPair5, order);
 
-        Cell signedOrder = contract.signOrder(ownerKeyPair, 0, order);
+        // send order (request for transaction protected with k of n pubkeys) signed by first owner
+        contract.sendOrder(tonlib, ownerKeyPair, rootIndex, order, List.of(orderSignature1));
+        Utils.sleep(15, "processing 1st query");
 
-        //create first order
-        contract.sendSignedQuery(tonlib, ownerKeyPair, signedOrder, List.of(orderSignature));
+        showMessagesInfo(contract.getMessagesUnsigned(tonlib), k, "MessagesUnsigned");
+        //MessagesUnsigned query-id 9223372036854775807, creator-i 0, cnt 2, cnt-bits 0, msg 00010818181C_
 
-        //
-        Utils.sleep(15, "processing first query");
+        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), k, "MessagesSignedByIndex-" + rootIndex);
+        //MessagesSignedByIndex-0 query-id 9223372036854775807, creator-i 0, cnt 2, cnt-bits 0, msg 00010818181C_
 
-        Map<BigInteger, Cell> unsignedMessages = contract.getMessagesUnsigned(tonlib);
+        showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, rootIndex), k, "MessagesUnsignedByIndex-" + rootIndex);
+        //MessagesUnsignedByIndex-0 result is empty
 
-        for (Map.Entry<BigInteger, Cell> entry : unsignedMessages.entrySet()) {
+        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, pubkey2Index), k, "MessagesSignedByIndex-" + pubkey2Index);
+        //MessagesSignedByIndex-1 result is empty
+
+        showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, pubkey2Index), k, "MessagesUnsignedByIndex-" + pubkey2Index);
+        //MessagesUnsignedByIndex-1 query-id 9223372036854775807, creator-i 0, cnt 2, cnt-bits 0, msg 00010818181C_
+
+        Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId);
+        log.info("get_query_state (query {}): status {}, mask {}", queryId.toString(10), queryState.getLeft(), queryState.getRight());
+        // get_query_state (query 9223372036854775807): status 0 cnt_bits? 1
+
+        // 1 2 3
+        Cell query = contract.createQuery(ownerKeyPair, List.of(orderSignature1, orderSignature2, orderSignature3), order);
+        Pair<Long, Long> cnt_mask = contract.checkQuerySignatures(tonlib, query);
+        log.info("cnt {}, mask {}", cnt_mask.getLeft(), cnt_mask.getRight());
+
+        // 1 2 3 5
+        query = contract.createQuery(ownerKeyPair, List.of(orderSignature1, orderSignature2, orderSignature3, orderSignature4, orderSignature5), order);
+        cnt_mask = contract.checkQuerySignatures(tonlib, query);
+        log.info("cnt {}, mask {}", cnt_mask.getLeft(), cnt_mask.getRight());
+
+        // send order (request for transaction protected with k of n pubkeys) signed by third owner
+        contract.sendOrder(tonlib, keyPair3, pubkey3Index, order, List.of(orderSignature3));
+        Utils.sleep(15, "processing 2nd query");
+
+        showMessagesInfo(contract.getMessagesUnsigned(tonlib), k, "MessagesUnsigned");
+        //MessagesUnsigned query-id 9223372036854775807, creator-i 0, cnt 4, cnt-bits 1, msg 00021818181C_
+
+        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), k, "MessagesSignedByIndex-" + rootIndex);
+        //MessagesSignedByIndex-0 query-id 9223372036854775807, creator-i 0, cnt 4, cnt-bits 1, msg 00021818181C_
+
+        showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, rootIndex), k, "MessagesUnsignedByIndex-" + rootIndex);
+        //MessagesUnsignedByIndex-0 result is empty
+
+        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, pubkey2Index), k, "MessagesSignedByIndex-" + pubkey2Index);
+        //MessagesSignedByIndex-1 query-id 9223372036854775807, creator-i 0, cnt 4, cnt-bits 1, msg 00021818181C_
+
+        showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, pubkey2Index), k, "MessagesUnsignedByIndex-" + pubkey2Index);
+        //MessagesUnsignedByIndex-1 result is empty
+
+        queryState = contract.getQueryState(tonlib, queryId);
+        log.info("get_query_state (query {}): status {}, mask {}", queryId.toString(10), queryState.getLeft(), queryState.getRight());
+        // get_query_state (query 9223372036854775807): status 0 cnt_bits? 5
+
+        // send order (request for transaction protected with k of n pubkeys) signed by fifth owner
+        contract.sendOrder(tonlib, keyPair5, pubkey5Index, order, List.of(orderSignature5));
+        Utils.sleep(20, "processing 3nd query");
+
+        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), k, "MessagesSignedByIndex-" + rootIndex);
+        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), k, "MessagesSignedByIndex-" + pubkey2Index);
+        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), k, "MessagesSignedByIndex-" + pubkey3Index);
+        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), k, "MessagesSignedByIndex-" + pubkey4Index);
+        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), k, "MessagesSignedByIndex-" + pubkey5Index);
+
+        queryState = contract.getQueryState(tonlib, queryId);
+        log.info("get_query_state (query {}): status {}, mask {}", queryId.toString(10), queryState.getLeft(), queryState.getRight());
+        // get_query_state (query 9223372036854775807): status 0 cnt_bits? 21
+
+        log.info("processed query? ({}) - {}", queryId, contract.processed(tonlib, queryId));
+    }
+
+    @Test
+    public void testGetInitState() throws InterruptedException {
+
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
+        log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
+        log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
+
+        BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32));
+
+        Long walletId = new Random().nextLong() & 0xffffffffL;
+        log.info("queryId {}, walletId {}", queryId.toString(10), walletId);
+
+        int k = 1;
+        int n = 2;
+
+        Options options = Options.builder()
+                .publicKey(ownerKeyPair.getPublicKey())
+                .walletId(walletId)
+                .multisigConfig(MultisigConfig.builder()
+                        .queryId(queryId)
+                        .k(k)
+                        .n(n)
+                        .rootI(0)
+                        .owners(List.of(
+                                OwnerInfo.builder()
+                                        .publicKey(ownerKeyPair.getPublicKey())
+                                        .flood(1)
+                                        .build(),
+                                OwnerInfo.builder()
+                                        .publicKey(keyPair2.getPublicKey())
+                                        .flood(2)
+                                        .build()
+                        ))
+                        .build())
+                .build();
+
+
+        Wallet wallet = new Wallet(WalletVersion.multisig, options);
+        MultisigWallet contract = wallet.create();
+
+        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
+        String bounceableAddress = contract.getAddress().toString(true, true, true);
+
+        log.info("non-bounceable address {}", nonBounceableAddress);
+        log.info("    bounceable address {}", bounceableAddress);
+
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
+        Utils.sleep(10, "topping up...");
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        contract.deploy(tonlib, ownerKeyPair.getSecretKey());
+
+        Utils.sleep(30, "deploying"); // with empty ext msg
+
+        //                 get init-state by input parameters - WORKS
+        List<OwnerInfo> ownersPublicKeys = List.of(
+                OwnerInfo.builder()
+                        .publicKey(ownerKeyPair.getPublicKey())
+                        .flood(0)
+                        .build(),
+                OwnerInfo.builder()
+                        .publicKey(keyPair2.getPublicKey())
+                        .flood(1)
+                        .build()
+        );
+
+        Cell stateInit = contract.getInitState(tonlib, walletId, n, k, contract.createOwnersInfosDict(ownersPublicKeys));
+        log.info("state-init {}", stateInit.toHex(false));
+    }
+
+    private void showMessagesInfo(Map<BigInteger, Cell> messages, int k, String label) {
+        if (messages.isEmpty()) {
+            log.info("{} result is empty", label);
+        }
+        for (Map.Entry<BigInteger, Cell> entry : messages.entrySet()) {
             BigInteger query_id = entry.getKey();
             Cell query = entry.getValue();
 
@@ -144,20 +298,12 @@ public class TestWalletMultisig {
             slice.skipBit();
             BigInteger creatorI = slice.loadUint(8);
             BigInteger cnt = slice.loadUint(8);
+
+            // shows mask (of length k bits) of signed positions, e.g. 101 - first and third signed
+            // every query might have different k
             BigInteger cnt_bits = slice.loadUint(k);
-            Cell c = slice.sliceToCell(); // todo not this cell but stored in .store_slice(msg)
-            log.info("query-id {}, creator-i {}, cnt {}, cnt-bits {}, msg {}", query_id, creatorI, cnt, cnt_bits, c);
-            // query-id 9223372036854775807, creator-i 0, cnt 2, cnt-bits 1, msg 0001207_
+            Cell c = slice.sliceToCell();
+            log.info("{} query-id {}, creator-i {}, cnt {}, cnt-bits {}, msg {}", label, query_id, creatorI, cnt, cnt_bits, c);
         }
-
-        Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId);
-//        returns -1 for processed queries, 0 for unprocessed, 1 for unknown (forgotten)
-        log.info("get_query_state (query {}): status {} cnt_bits? {}", queryId.toString(10), queryState.getLeft(), queryState.getRight());
-        // get_query_state (query 9223372036854775807): status 0 cnt_bits? 1
-
-        Cell query = contract.createQuery(ownerKeyPair, List.of(orderSignature, orderSignature2), order);
-        Pair<Long, Long> cnt_mask = contract.checkQuerySignatures(tonlib, query);
-        log.info("cnt {}, mask {}", cnt_mask.getLeft(), cnt_mask.getRight());
-//        method check_query_signatures, returned an exit code 32
     }
 }
