@@ -75,7 +75,7 @@ public class MultisigWallet implements WalletContract {
         return cell.endCell();
     }
 
-    public Cell createSigningMessageInternal(int pubkeyIndex, List<byte[]> signatures, Cell order) {
+    public Cell createSigningMessageInternal(int pubkeyIndex, List<byte[]> signatures, Cell order, BigInteger queryId) {
 
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(pubkeyIndex, 8); // root-id - pk-index for owner_infos dict
@@ -83,7 +83,7 @@ public class MultisigWallet implements WalletContract {
         message.storeBit(true); // sigs dict exists and not empty - works ok
 
         message.storeUint(getOptions().getWalletId(), 32); // wallet-id
-        message.storeUint(getOptions().getMultisigConfig().getQueryId(), 64); // query-id
+        message.storeUint(queryId, 64); // query-id
 
         message.storeRef(serializeSignatures(signatures.size(), 0, signatures)); // works
 
@@ -166,8 +166,8 @@ public class MultisigWallet implements WalletContract {
      * @param keyPair    TweetNaclFast.Signature.KeyPair
      * @param signatures List<byte[]>
      */
-    public void sendOrder(Tonlib tonlib, TweetNaclFast.Signature.KeyPair keyPair, int pubkeyIndex, Cell order, List<byte[]> signatures) {
-        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, signatures, order);
+    public void sendOrder(Tonlib tonlib, TweetNaclFast.Signature.KeyPair keyPair, int pubkeyIndex, Cell order, BigInteger queryId, List<byte[]> signatures) {
+        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, signatures, order, queryId);
         ExternalMessage msg = createExternalMessage(signingMessageBody, keyPair.getSecretKey(), 1, false);
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }

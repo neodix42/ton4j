@@ -51,7 +51,7 @@ public class TestWalletMultisig {
         log.info("pubKey4 {}", Utils.bytesToHex(keyPair4.getPublicKey()));
         log.info("pubKey5 {}", Utils.bytesToHex(keyPair5.getPublicKey()));
 
-        BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32)); //5 minutes // todo
+        BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32));
 
         Long walletId = new Random().nextLong() & 0xffffffffL;
         log.info("queryId {}, walletId {}", queryId.toString(10), walletId);
@@ -139,7 +139,7 @@ public class TestWalletMultisig {
         byte[] orderSignature5 = contract.signCell(keyPair5, order);
 
         // send order (request for transaction protected with k of n pubkeys) signed by first owner
-        contract.sendOrder(tonlib, ownerKeyPair, rootIndex, order, List.of(orderSignature1));
+        contract.sendOrder(tonlib, ownerKeyPair, rootIndex, order, queryId, List.of(orderSignature1));
         Utils.sleep(15, "processing 1st query");
 
         showMessagesInfo(contract.getMessagesUnsigned(tonlib), k, "MessagesUnsigned");
@@ -172,7 +172,7 @@ public class TestWalletMultisig {
         log.info("cnt {}, mask {}", cnt_mask.getLeft(), cnt_mask.getRight());
 
         // send order (request for transaction protected with k of n pubkeys) signed by third owner
-        contract.sendOrder(tonlib, keyPair3, pubkey3Index, order, List.of(orderSignature3));
+        contract.sendOrder(tonlib, keyPair3, pubkey3Index, order, queryId, List.of(orderSignature3));
         Utils.sleep(15, "processing 2nd query");
 
         showMessagesInfo(contract.getMessagesUnsigned(tonlib), k, "MessagesUnsigned");
@@ -195,7 +195,7 @@ public class TestWalletMultisig {
         // get_query_state (query 9223372036854775807): status 0 cnt_bits? 5
 
         // send order (request for transaction protected with k of n pubkeys) signed by fifth owner
-        contract.sendOrder(tonlib, keyPair5, pubkey5Index, order, List.of(orderSignature5));
+        contract.sendOrder(tonlib, keyPair5, pubkey5Index, order, queryId, List.of(orderSignature5));
         Utils.sleep(20, "processing 3nd query");
 
         showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), k, "MessagesSignedByIndex-" + rootIndex);
@@ -220,7 +220,7 @@ public class TestWalletMultisig {
                 .build();
 
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
-        log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
+        log.info("pubKey1 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
 
         BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32));
 
@@ -270,7 +270,6 @@ public class TestWalletMultisig {
 
         Utils.sleep(30, "deploying"); // with empty ext msg
 
-        //                 get init-state by input parameters - WORKS
         List<OwnerInfo> ownersPublicKeys = List.of(
                 OwnerInfo.builder()
                         .publicKey(ownerKeyPair.getPublicKey())
@@ -284,6 +283,109 @@ public class TestWalletMultisig {
 
         Cell stateInit = contract.getInitState(tonlib, walletId, n, k, contract.createOwnersInfosDict(ownersPublicKeys));
         log.info("state-init {}", stateInit.toHex(false));
+    }
+
+    @Test
+    public void testRootIAndMultipleOrders() throws InterruptedException {
+
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
+        log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
+        log.info("pubKey1 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
+        log.info("pubKey2 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
+
+        BigInteger queryId1 = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 10 * 60L, 32));
+        BigInteger queryId2 = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 10 * 60L, 32) - 5);
+
+        Long walletId = new Random().nextLong() & 0xffffffffL;
+        log.info("queryId-1 {}, walletId {}", queryId1.toString(10), walletId);
+        log.info("queryId-2 {}, walletId {}", queryId2.toString(10), walletId);
+
+        int k = 2;
+        int n = 3;
+
+        Options options = Options.builder()
+                .publicKey(ownerKeyPair.getPublicKey())
+                .walletId(walletId)
+                .multisigConfig(MultisigConfig.builder()
+                        .queryId(queryId1)
+                        .k(k)
+                        .n(n)
+                        .rootI(2) // initial root index
+                        .owners(List.of(
+                                OwnerInfo.builder()
+                                        .publicKey(ownerKeyPair.getPublicKey())
+                                        .flood(1)
+                                        .build(),
+                                OwnerInfo.builder()
+                                        .publicKey(keyPair2.getPublicKey())
+                                        .flood(2)
+                                        .build(),
+                                OwnerInfo.builder()
+                                        .publicKey(keyPair3.getPublicKey())
+                                        .flood(3)
+                                        .build()
+                        ))
+                        .build())
+                .build();
+
+
+        Wallet wallet = new Wallet(WalletVersion.multisig, options);
+        MultisigWallet contract = wallet.create();
+
+        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
+        String bounceableAddress = contract.getAddress().toString(true, true, true);
+
+        log.info("non-bounceable address {}", nonBounceableAddress);
+        log.info("    bounceable address {}", bounceableAddress);
+
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
+        Utils.sleep(10, "topping up...");
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        contract.deploy(tonlib, keyPair3.getSecretKey());
+
+        Utils.sleep(30, "deploying"); // with empty ext msg
+
+        log.info("owners publicKeysHex {}", contract.getPublicKeysHex(tonlib));
+
+        Pair<Long, Long> n_k = contract.getNandK(tonlib);
+        log.info("n {}, k {}", n_k.getLeft(), n_k.getRight());
+
+        Cell txMsg1 = contract.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
+        Cell order1 = contract.createOrder(txMsg1);
+        byte[] order1Signature3 = contract.signCell(keyPair3, order1);
+
+        // send order-1 signed by 3rd owner (root index 2)
+        contract.sendOrder(tonlib, keyPair3, 2, order1, queryId1, List.of(order1Signature3)); // root index 2
+        Utils.sleep(15, "processing 1st query");
+
+        Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId1);
+        log.info("get_query_state (query {}): status {}, mask {}", queryId1.toString(10), queryState.getLeft(), queryState.getRight());
+
+        Cell txMsg2 = contract.createOneInternalMsg(Address.of("EQCAy2ue54I-uDvEgD3qXdqjtrJI4F4OeFn3V10Kgt0jXpQn"), Utils.toNano(0.8), 3);
+        Cell order2 = contract.createOrder(txMsg2);
+        byte[] order2Signature2 = contract.signCell(keyPair2, order2);
+
+        // send order-2 signed by 2nd owner (root index 1)
+        contract.sendOrder(tonlib, keyPair2, 1, order2, queryId2, List.of(order2Signature2)); // root index 1
+        Utils.sleep(15, "processing 2nd query");
+
+        queryState = contract.getQueryState(tonlib, queryId2);
+        log.info("get_query_state (query {}): status {}, mask {}", queryId2, queryState.getLeft(), queryState.getRight());
+
+        // send 2nd signature to the 2nd order and thus execute it
+        byte[] order2Signature3 = contract.signCell(keyPair3, order2);
+        // send order-2 signed by 3rd owner (root index 2)
+        contract.sendOrder(tonlib, keyPair3, 2, order2, queryId2, List.of(order2Signature3)); // root index 1
+        Utils.sleep(15, "processing 3rd query");
+
+        queryState = contract.getQueryState(tonlib, queryId2);
+        log.info("get_query_state (query {}): status {}, mask {}", queryId2, queryState.getLeft(), queryState.getRight());
     }
 
     private void showMessagesInfo(Map<BigInteger, Cell> messages, int k, String label) {
