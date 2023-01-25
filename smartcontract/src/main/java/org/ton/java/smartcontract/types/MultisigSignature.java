@@ -7,7 +7,7 @@ import lombok.ToString;
 @Builder
 @Getter
 @ToString
-public class OwnerInfo {
-    byte[] publicKey;
-    long flood;
+public class MultisigSignature {
+    long pubKeyPosition;
+    byte[] signature;
 }

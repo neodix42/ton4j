@@ -136,7 +136,7 @@ public interface WalletContract extends Contract {
 
         if (seqno == 0) {
             if (isNull(getOptions().publicKey)) {
-                TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(secretKey); //) TweetNaclFast.Box.keyPair_fromSecretKey(
+                TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(secretKey);
                 getOptions().publicKey = keyPair.getPublicKey();
             }
             StateInit deploy = createStateInit();

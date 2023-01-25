@@ -14,6 +14,7 @@ import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR3;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.AccountAddressOnly;
 import org.ton.java.tonlib.types.FullAccountState;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -133,5 +134,14 @@ public class TestFaucet {
                 .testnet(true)
                 .build();
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
+    }
+
+    @Test
+    public void topUpAnyContract() throws InterruptedException {
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+        TestFaucet.topUpContract(tonlib, Address.of("0QB0gEuvySej-7ZZBAdaBSydBB_oVYUUnp9Ciwm05kJsNKau"), Utils.toNano(5));
     }
 }

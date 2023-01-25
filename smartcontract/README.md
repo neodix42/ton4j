@@ -43,6 +43,7 @@ Currently, following wallet versions and revisions are supported:
 * Jetton [(see usage example)](jetton-example.md)
 * NFT [(see usage example)](nft-example.md)
 * Payment channels [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestPayments.java) 
+* Multisig [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletMultisig.java)
 * Custom contract [(see usage example)](custom-smc-example.md)
 
 

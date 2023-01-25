@@ -60,7 +60,7 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ Get block transactions
 * ✅ Get account transactions
 * ✅ Deploy contracts and send external messages using Tonlib
-* ✅ Wallets - Simple (V1), V2, V3, V4 (plugins), Lockup, Highload, DNS, Jetton, NFT, Payment-channels
+* ✅ Wallets - Simple (V1), V2, V3, V4 (plugins), Lockup, Highload, DNS, Jetton, NFT, Payment-channels, Multisig
 * ✅ HashMap, HashMapE, PfxHashMap and PfxHashMapE serialization / deserialization
 
 ### Todo

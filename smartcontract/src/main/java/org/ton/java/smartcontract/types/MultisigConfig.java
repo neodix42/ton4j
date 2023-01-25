@@ -19,6 +19,7 @@ public class MultisigConfig {
      * Whitelist of allowed destinations
      */
     public List<OwnerInfo> owners;
+    public List<PendingQuery> pendingQueries;
 
     public long rootI;
     /**
@@ -26,9 +27,9 @@ public class MultisigConfig {
      * <p>
      * E.g. n = 5, k = 3, means at least 3 out of 5 signatures must be collected
      */
-    public long k;
+    public int k;
     /**
      * total amount of private kyes
      */
-    public long n;
+    public int n;
 }
