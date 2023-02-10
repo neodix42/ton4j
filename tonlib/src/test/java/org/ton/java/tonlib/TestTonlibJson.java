@@ -94,9 +94,11 @@ public class TestTonlibJson {
     @Test
     public void testTonlibGetLast() {
         Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
                 .keystoreInMemory(true)
                 .build();
         BlockIdExt fullblock = tonlib.getLast().getLast();
+        log.info("last {}", fullblock);
         assertThat(fullblock).isNotNull();
     }
 
@@ -411,8 +413,10 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibGetConfig() {
-        Tonlib tonlib = Tonlib.builder()
+        Tonlib tonlib = Tonlib
+                .builder()
                 .verbosityLevel(VerbosityLevel.DEBUG)
+                .testnet(true)
                 .build();
         MasterChainInfo mc = tonlib.getLast();
         Cell c = tonlib.getConfigParam(mc.getLast(), 22);
