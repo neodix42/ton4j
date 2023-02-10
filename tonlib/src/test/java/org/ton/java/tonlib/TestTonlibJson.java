@@ -316,6 +316,7 @@ public class TestTonlibJson {
         log.info(accountState.toString());
         log.info("balance: {}", accountState.getBalance());
         assertThat(accountState.getLast_transaction_id().getHash()).isNotBlank();
+        log.info("last {}", tonlib.getLast());
     }
 
     @Test
