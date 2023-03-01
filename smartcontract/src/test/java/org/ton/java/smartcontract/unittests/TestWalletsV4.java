@@ -33,7 +33,7 @@ public class TestWalletsV4 {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.v4R2, options);
+        Wallet wallet = new Wallet(WalletVersion.V4R2, options);
         WalletV4ContractR2 contract = wallet.create();
 
         InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());

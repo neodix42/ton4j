@@ -12,7 +12,7 @@ import org.ton.java.smartcontract.types.InitExternalMessage;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR3;
+import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.AccountState;
 import org.ton.java.tonlib.types.QueryFees;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public class TestWalletV1R3DeployTransfer {
 
     @Test
-    public void testNewWalletSimple() throws InterruptedException {
+    public void testNewWalletV1R3() throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -35,8 +35,8 @@ public class TestWalletV1R3DeployTransfer {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
-        SimpleWalletContractR3 contract = wallet.create();
+        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
+        WalletV1ContractR3 contract = wallet.create();
 
         InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
         Address address = msg.address;
@@ -92,7 +92,7 @@ public class TestWalletV1R3DeployTransfer {
     }
 
     @Test
-    public void testWalletSimpleEstimateFees() {
+    public void testWalletV1EstimateFees() {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -100,8 +100,8 @@ public class TestWalletV1R3DeployTransfer {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
-        SimpleWalletContractR3 contract = wallet.create();
+        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
+        WalletV1ContractR3 contract = wallet.create();
 
         InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
 

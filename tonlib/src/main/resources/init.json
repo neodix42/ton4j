@@ -7,7 +7,7 @@
       'config': 'CFG_PLACEHOLDER',
       'use_callbacks_for_network': false,
       'blockchain_name': '',
-      'ignore_cache': false
+      'ignore_cache': IGNORE_CACHE
     },
     KEYSTORE_TYPE
   }

@@ -29,14 +29,13 @@ public class TestWalletV2R1DeployTransferShort {
 
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
-//                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder().publicKey(keyPair.getPublicKey()).wc(0L).build();
 
-        Wallet wallet = new Wallet(WalletVersion.v2R1, options);
+        Wallet wallet = new Wallet(WalletVersion.V2R1, options);
         WalletV2ContractR1 contract = wallet.create();
 
         String nonBounceableAddress = contract.getAddress().toString(true, true, false);
@@ -66,7 +65,7 @@ public class TestWalletV2R1DeployTransferShort {
 
         // transfer coins from new wallet (back to faucet)
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.1));
-        Utils.sleep(15, "sending to one destination");
+        Utils.sleep(20, "sending to one destination");
 
         //multi send
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(),
@@ -76,7 +75,7 @@ public class TestWalletV2R1DeployTransferShort {
                 Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"),
                 Utils.toNano(0.15));
 
-        Utils.sleep(15, "sending to four destinations");
+        Utils.sleep(20, "sending to four destinations");
 
         balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));

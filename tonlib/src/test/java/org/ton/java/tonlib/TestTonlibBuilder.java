@@ -41,7 +41,25 @@ public class TestTonlibBuilder {
         if (SystemUtils.IS_OS_WINDOWS) {
             Tonlib tonlib = Tonlib.builder()
                     .pathToTonlibSharedLib("G:\\DOCKER\\mnt\\tonlibjson.dll")
+                    .keystorePath("G:\\DOCKER\\mnt\\")
                     .verbosityLevel(VerbosityLevel.FATAL)
+                    .build();
+            assertThat(tonlib.getLast()).isNotNull();
+        }
+    }
+
+    @Test
+    public void testTonlibBuilderWindowsIgnoreCache() {
+        if (SystemUtils.IS_OS_WINDOWS) {
+            Tonlib tonlib = Tonlib.builder()
+                    .verbosityLevel(VerbosityLevel.FATAL)
+                    .ignoreCache(false)
+                    .build();
+            assertThat(tonlib.getLast()).isNotNull();
+
+            tonlib = Tonlib.builder()
+                    .verbosityLevel(VerbosityLevel.FATAL)
+                    .ignoreCache(true)
                     .build();
             assertThat(tonlib.getLast()).isNotNull();
         }

@@ -15,7 +15,6 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR2;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -35,7 +34,6 @@ public class TestWalletV2Highload {
 
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
-                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
@@ -131,7 +129,6 @@ public class TestWalletV2Highload {
     public void testWalletV2HighloadSendTo84() throws InterruptedException {
 
         Tonlib tonlib = Tonlib.builder()
-                .verbosityLevel(VerbosityLevel.DEBUG)
                 .testnet(true)
                 .build();
 
@@ -185,7 +182,7 @@ public class TestWalletV2Highload {
                     .publicKey(publicKey)
                     .build();
 
-            Wallet wallet = new Wallet(WalletVersion.v3R2, options);
+            Wallet wallet = new Wallet(WalletVersion.V3R2, options);
             WalletV3ContractR2 contract = wallet.create();
             Address dest = contract.getAddress();
             double amount = 0.05;

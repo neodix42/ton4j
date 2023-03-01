@@ -11,7 +11,7 @@ import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR2;
+import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR2;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.AccountState;
 import org.ton.java.utils.Utils;
@@ -25,7 +25,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public class TestWalletV1R2DeployTransfer {
 
     @Test
-    public void testNewWalletSimpleR2() throws InterruptedException {
+    public void testNewWalletV1R2() throws InterruptedException {
 
         Tonlib tonlib = Tonlib.builder().testnet(true).build();
 
@@ -33,8 +33,11 @@ public class TestWalletV1R2DeployTransfer {
 
         Options options = Options.builder().publicKey(keyPair.getPublicKey()).wc(0L).build();
 
-        Wallet wallet = new Wallet(WalletVersion.simpleR2, options);
-        SimpleWalletContractR2 contract = wallet.create();
+        log.info(WalletVersion.V1R2.getValue());
+        log.info("Wallet version {}", WalletVersion.getKeyByValue("V1R2"));
+
+        Wallet wallet = new Wallet(WalletVersion.V1R2, options);
+        WalletV1ContractR2 contract = wallet.create();
 
         String nonBounceableAddress = contract.getAddress().toString(true, true, false);
         String bounceableAddress = contract.getAddress().toString(true, true, true);
@@ -64,7 +67,7 @@ public class TestWalletV1R2DeployTransfer {
         // transfer coins from new wallet (back to faucet)
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
 
-        Utils.sleep(15);
+        Utils.sleep(30);
 
         balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));

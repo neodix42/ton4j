@@ -36,7 +36,7 @@ public class GenerateWallet {
                 .wc(0)
                 .build();
 
-        Wallet walletcontract = new Wallet(WalletVersion.v3R1, options);
+        Wallet walletcontract = new Wallet(WalletVersion.V3R1, options);
         adminWallet = walletcontract.create();
 
         InitExternalMessage msg = adminWallet.createInitExternalMessage(keyPair.getSecretKey());

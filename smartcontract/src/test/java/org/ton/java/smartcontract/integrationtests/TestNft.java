@@ -58,7 +58,7 @@ public class TestNft {
                 .royaltyAddress(adminWallet.getWallet().getAddress())
                 .collectionContentUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/nft-collection.json")
                 .collectionContentBaseUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/")
-                .nftItemCodeHex(NftItem.NFT_ITEM_CODE_HEX)
+                .nftItemCodeHex(WalletCodes.nftItem.getValue())
                 .build();
 
         Wallet nftCollectionWallet = new Wallet(WalletVersion.nftCollection, optionsNftCollection);

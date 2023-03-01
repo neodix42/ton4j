@@ -34,7 +34,7 @@ public class TestWalletV3R2DeployTransferShort {
                 .walletId(42L) //allows to create many wallets with the same public key (without risks of replaying messages between the wallets).
                 .wc(0L).build();
 
-        Wallet wallet = new Wallet(WalletVersion.v3R2, options1);
+        Wallet wallet = new Wallet(WalletVersion.V3R2, options1);
         WalletV3ContractR2 contract1 = wallet.create();
 
         String nonBounceableAddress1 = contract1.getAddress().toString(true, true, false);
@@ -49,7 +49,7 @@ public class TestWalletV3R2DeployTransferShort {
                 .walletId(98L)
                 .wc(0L).build();
 
-        wallet = new Wallet(WalletVersion.v3R2, options2);
+        wallet = new Wallet(WalletVersion.V3R2, options2);
         WalletV3ContractR2 contract2 = wallet.create();
 
         String nonBounceableAddress2 = contract2.getAddress().toString(true, true, false);
@@ -70,13 +70,13 @@ public class TestWalletV3R2DeployTransferShort {
         contract2.deploy(tonlib, keyPair.getSecretKey());
 
         Utils.sleep(25);
-        
+
         // transfer coins from new wallet (back to faucet)
         contract1.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
-        Utils.sleep(15);
+        Utils.sleep(20);
 
         contract2.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
-        Utils.sleep(15);
+        Utils.sleep(20);
 
         balance1 = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress1)).getBalance());
         log.info("walletId {} new wallet {} balance: {}", contract1.getWalletId(), contract1.getName(), Utils.formatNanoValue(balance1));

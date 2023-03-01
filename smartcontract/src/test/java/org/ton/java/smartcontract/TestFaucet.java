@@ -10,11 +10,10 @@ import org.ton.java.smartcontract.types.InitExternalMessage;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR3;
+import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.AccountAddressOnly;
 import org.ton.java.tonlib.types.FullAccountState;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -43,8 +42,8 @@ public class TestFaucet {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
-        SimpleWalletContractR3 faucet = wallet.create();
+        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
+        WalletV1ContractR3 faucet = wallet.create();
 
         BigInteger faucetBalance = null;
         int i = 0;
@@ -89,6 +88,7 @@ public class TestFaucet {
                 .testnet(true)
                 .build();
         FullAccountState state = tonlib.getAccountState(AccountAddressOnly.builder().account_address(FAUCET_ADDRESS_RAW).build());
+        log.info("account {}", state);
         log.info("TEST FAUCET BALANCE {}", Utils.formatNanoValue(state.getBalance(), 2));
     }
 
@@ -101,8 +101,8 @@ public class TestFaucet {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
-        SimpleWalletContractR3 contract = wallet.create();
+        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
+        WalletV1ContractR3 contract = wallet.create();
         assertThat(contract.getAddress()).isNotNull();
         log.info("Private key {}", Utils.bytesToHex(keyPair.getSecretKey()));
         log.info("Public key {}", Utils.bytesToHex(keyPair.getPublicKey()));
@@ -125,8 +125,8 @@ public class TestFaucet {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.simpleR3, options);
-        SimpleWalletContractR3 contract = wallet.create();
+        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
+        WalletV1ContractR3 contract = wallet.create();
         InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
 
         log.info("deploying faucet contract to address {}", contract.getAddress().toString(false));
@@ -140,7 +140,6 @@ public class TestFaucet {
     public void topUpAnyContract() throws InterruptedException {
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
-                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
         TestFaucet.topUpContract(tonlib, Address.of("0QB0gEuvySej-7ZZBAdaBSydBB_oVYUUnp9Ciwm05kJsNKau"), Utils.toNano(5));
     }

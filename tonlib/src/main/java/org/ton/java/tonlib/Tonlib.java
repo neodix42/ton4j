@@ -70,6 +70,8 @@ public class Tonlib {
      */
     private VerbosityLevel verbosityLevel;
 
+    private Boolean ignoreCache;
+
     /**
      * Ignored if pathToGlobalConfig is not null.
      */
@@ -129,12 +131,18 @@ public class Tonlib {
                     super.keystorePath = ".";
                 }
 
+                super.keystorePath = super.keystorePath.replace("\\", "/");
+
                 if (super.receiveRetryTimes == 0) {
                     super.receiveRetryTimes = 3;
                 }
 
                 if (super.receiveTimeout == 0) {
                     super.receiveTimeout = 10.0;
+                }
+
+                if (isNull(super.ignoreCache)) {
+                    super.ignoreCache = true;
                 }
 
                 super.synced = false;
@@ -179,12 +187,13 @@ public class Tonlib {
                                 Keystore path: %s
                                 Path to global config: %s
                                 Global config as string: %s
+                                Ignore cache: %s
                                 Testnet: %s
                                 Receive timeout: %s seconds
                                 Receive retry times: %s%n""",
                         super.pathToTonlibSharedLib, super.verbosityLevel, super.verbosityLevel.ordinal(),
                         super.keystoreInMemory, super.keystorePath, super.pathToGlobalConfig,
-                        isNull(super.globalConfigAsString) ? "" : super.globalConfigAsString.substring(0, 33),
+                        isNull(super.globalConfigAsString) ? "" : super.globalConfigAsString.substring(0, 33), super.ignoreCache,
                         super.testnet, super.receiveTimeout, super.receiveRetryTimes);
 
                 VerbosityLevelQuery verbosityLevelQuery = VerbosityLevelQuery.builder().new_verbosity_level(super.verbosityLevel.ordinal()).build();
@@ -199,6 +208,7 @@ public class Tonlib {
                 String dataQuery = JsonParser.parseString(configData).getAsJsonObject().toString();
 
                 String q = initTemplate.replace("CFG_PLACEHOLDER", dataQuery);
+                q = q.replace("IGNORE_CACHE", super.ignoreCache.toString());
                 if (super.keystoreInMemory) {
                     String keystoreMemory = " 'keystore_type': { '@type': 'keyStoreTypeInMemory' }";
                     q = q.replace("KEYSTORE_TYPE", keystoreMemory);

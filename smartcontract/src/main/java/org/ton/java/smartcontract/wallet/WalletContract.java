@@ -7,7 +7,7 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.InitExternalMessage;
 import org.ton.java.smartcontract.types.StateInit;
-import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR1;
+import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
@@ -380,8 +380,8 @@ public interface WalletContract extends Contract {
      */
     default long getSeqno(Tonlib tonlib) {
 
-        if (this instanceof SimpleWalletContractR1) {
-            throw new Error("simple wallet of revsion 1 does not have seqno method");
+        if (this instanceof WalletV1ContractR1) {
+            throw new Error("Wallet V1R1 does not have seqno method");
         }
 
         Address myAddress = getAddress();

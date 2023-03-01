@@ -11,10 +11,7 @@ import org.ton.java.smartcontract.GenerateWallet;
 import org.ton.java.smartcontract.TestWallet;
 import org.ton.java.smartcontract.token.ft.JettonMinter;
 import org.ton.java.smartcontract.token.ft.JettonWallet;
-import org.ton.java.smartcontract.types.ExternalMessage;
-import org.ton.java.smartcontract.types.JettonMinterData;
-import org.ton.java.smartcontract.types.JettonWalletData;
-import org.ton.java.smartcontract.types.WalletVersion;
+import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.WalletContract;
@@ -94,7 +91,7 @@ public class TestJetton {
         Options options = Options.builder()
                 .adminAddress(adminWallet.getWallet().getAddress())
                 .jettonContentUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/neo-jetton.json")
-                .jettonWalletCodeHex(JettonWallet.JETTON_WALLET_CODE_HEX)
+                .jettonWalletCodeHex(WalletCodes.jettonWallet.getValue())
                 .build();
 
         Wallet jettonMinter = new Wallet(WalletVersion.jettonMinter, options);

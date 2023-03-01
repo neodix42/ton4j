@@ -49,7 +49,7 @@ public class TestWalletV4R2PluginsDeployTransfer {
                         .build())
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.v4R2, options);
+        Wallet wallet = new Wallet(WalletVersion.V4R2, options);
         WalletV4ContractR2 contract = wallet.create();
 
         InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());

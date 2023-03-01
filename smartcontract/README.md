@@ -7,7 +7,7 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>0.0.8</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
@@ -18,7 +18,7 @@
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>0.0.8</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
@@ -28,9 +28,9 @@ Get familiar with various wallet types and their differences [here](README-WALLE
 
 Currently, following wallet versions and revisions are supported:
 
-* simpleR1
-* simpleR2 [(see usage example)](simple-r2-example.md)
-* simpleR3 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV1R3DeployTransfer.java)
+* V1R1
+* V1R2 [(see usage example)](v1r2-example.md)
+* V1R3 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV1R3DeployTransfer.java)
 * v2R1 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV2R1DeployTransferShort.java)
 * v2R2 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV2R2DeployTransferShort.java)
 * v3R1

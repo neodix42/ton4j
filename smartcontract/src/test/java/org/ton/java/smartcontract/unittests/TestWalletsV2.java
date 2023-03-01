@@ -34,7 +34,7 @@ public class TestWalletsV2 {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.v2R2, options);
+        Wallet wallet = new Wallet(WalletVersion.V2R2, options);
         WalletV2ContractR2 contract = wallet.create();
 
         assertThat(options.code.bits.toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
@@ -76,7 +76,7 @@ public class TestWalletsV2 {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.v2R2, options);
+        Wallet wallet = new Wallet(WalletVersion.V2R2, options);
         WalletV2ContractR2 contract = wallet.create();
 
         assertThat(options.code.bits.toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");

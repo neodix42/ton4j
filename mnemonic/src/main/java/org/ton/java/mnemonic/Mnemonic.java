@@ -74,9 +74,17 @@ public class Mnemonic {
         return isPasswordSeed(entropy) && !isBasicSeed(entropy);
     }
 
+    public static byte[] toEntropy(List<String> mnemonic) throws NoSuchAlgorithmException, InvalidKeyException {
+        return toEntropy(mnemonic, "");
+    }
+
     public static byte[] toEntropy(List<String> mnemonic, String password) throws NoSuchAlgorithmException, InvalidKeyException {
         String mnemonicPhrase = String.join(" ", mnemonic);
         return hmacSha512(mnemonicPhrase.getBytes(), password.getBytes());
+    }
+
+    public static byte[] toSeed(List<String> mnemonic) throws NoSuchAlgorithmException, InvalidKeyException {
+        return toSeed(mnemonic, "");
     }
 
     public static byte[] toSeed(List<String> mnemonic, String password) throws NoSuchAlgorithmException, InvalidKeyException {
@@ -84,14 +92,25 @@ public class Mnemonic {
         return Arrays.copyOfRange(seed, 0, 32);
     }
 
+    public static Pair toKeyPair(List<String> mnemonic) throws NoSuchAlgorithmException, InvalidKeyException {
+        return toKeyPair(mnemonic, "");
+    }
+
     public static Pair toKeyPair(List<String> mnemonic, String password) throws NoSuchAlgorithmException, InvalidKeyException {
         byte[] secretKey = toSeed(mnemonic, password);
         return new Pair(Ed25519.publicKey(secretKey), secretKey);
     }
 
+    public static String generateString(int wordCount) throws NoSuchAlgorithmException, InvalidKeyException {
+        return generateString(wordCount, "");
+    }
 
     public static String generateString(int wordCount, String password) throws NoSuchAlgorithmException, InvalidKeyException {
         return String.join(" ", generate(wordCount, password));
+    }
+
+    public static List<String> generate(int wordCount) throws NoSuchAlgorithmException, InvalidKeyException {
+        return generate(wordCount, "");
     }
 
     public static List<String> generate(int wordCount, String password) throws NoSuchAlgorithmException, InvalidKeyException {
@@ -115,14 +134,6 @@ public class Mnemonic {
 
             return mnemonic;
         }
-    }
-
-    private static String bytesToHex(byte[] raw) {
-        final StringBuilder hex = new StringBuilder(2 * raw.length);
-        for (final byte b : raw) {
-            hex.append(HEXES.charAt((b & 0xF0) >> 4)).append(HEXES.charAt((b & 0x0F)));
-        }
-        return hex.toString().toLowerCase();
     }
 
     static String[] DEFAULT_WORDLIST = {

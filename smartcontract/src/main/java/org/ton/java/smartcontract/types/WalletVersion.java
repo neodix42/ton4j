@@ -1,21 +1,53 @@
 package org.ton.java.smartcontract.types;
 
 public enum WalletVersion {
-    simpleR1,
-    simpleR2,
-    simpleR3,
-    v2R1,
-    v2R2,
-    v3R1,
-    v3R2,
-    v4R2,
-    lockup,
-    dnsCollection,
-    dnsItem,
-    jettonMinter,
-    jettonWallet,
-    nftCollection,
-    payments,
-    highload,
-    multisig,
+    V1R1("V1R1"),
+    V1R2("V1R2"),
+    V1R3("V1R3"),
+    V2R1("V2R1"),
+    V2R2("V2R2"),
+    V3R1("V3R1"),
+    V3R2("V3R2"),
+    V4R2("V4R2 plugins"),
+    lockup("Restricted"),
+    dnsCollection("DNS collection"),
+    dnsItem("DNS item"),
+    jettonMinter("Jetton minter"),
+    jettonWallet("Jetton wallet"),
+    nftCollection("NFT Collection"),
+    payments("Payments"),
+    highload("Highload"),
+    multisig("Multisig"),
+    /**
+     * reserved for internal usage
+     */
+    master("Master"),
+    /**
+     * reserved for internal usage
+     */
+    config("Config");
+
+    private final String value;
+
+    WalletVersion(final String value) {
+        this.value = value;
+    }
+
+    public static WalletVersion getKeyByValue(String value) {
+        for (WalletVersion v : WalletVersion.values()) {
+            if (v.getValue().equals(value)) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return this.getValue();
+    }
 }

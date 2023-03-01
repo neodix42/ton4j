@@ -34,7 +34,7 @@ public class TestWalletV3R1DeployTransfer {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.v3R1, options);
+        Wallet wallet = new Wallet(WalletVersion.V3R1, options);
         WalletV3ContractR1 contract = wallet.create();
 
         InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
@@ -80,7 +80,7 @@ public class TestWalletV3R1DeployTransfer {
         // try to transfer coins from new wallet (back to faucet)
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
 
-        Utils.sleep(15);
+        Utils.sleep(20);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));

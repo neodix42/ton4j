@@ -14,7 +14,6 @@ import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -358,7 +357,6 @@ public class TestWalletMultisig {
 
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
-                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
@@ -405,7 +403,7 @@ public class TestWalletMultisig {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-        Utils.sleep(10, "topping up...");
+        Utils.sleep(15, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         contract.deploy(tonlib, ownerKeyPair.getSecretKey());
@@ -435,7 +433,6 @@ public class TestWalletMultisig {
 
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
-                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));

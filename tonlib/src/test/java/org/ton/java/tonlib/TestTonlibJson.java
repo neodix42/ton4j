@@ -58,7 +58,7 @@ public class TestTonlibJson {
         String dataQuery = JsonParser.parseString(data).getAsJsonObject().toString();
 
         String q = INIT_TEMPLATE.replace("CFG_PLACEHOLDER", dataQuery).replace("KEYSTORE_TYPE", KEYSTORE_MEMORY);
-
+        q = q.replace("IGNORE_CACHE", "true");
         String setupQueryQ = JsonParser.parseString(q).getAsJsonObject().toString();
 
         tonlibJson.tonlib_client_json_send(tonlib, setupQueryQ);
@@ -274,7 +274,7 @@ public class TestTonlibJson {
                 .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
-        String base64mnemonic = Utils.stringToBase64(Mnemonic.generateString(24, ""));
+        String base64mnemonic = Utils.stringToBase64(Mnemonic.generateString(24));
 
         String dataToEncrypt = Utils.stringToBase64("ABC");
         Data encrypted = tonlib.encrypt(dataToEncrypt, base64mnemonic);

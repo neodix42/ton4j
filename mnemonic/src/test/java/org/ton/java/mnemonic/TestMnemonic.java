@@ -29,8 +29,8 @@ public class TestMnemonic {
         List<String> mnemonic = Mnemonic.generate(24, pwd);
         assertThat(Mnemonic.isValid(mnemonic, "")).isFalse();
         assertThat(Mnemonic.isValid(mnemonic, pwd)).isTrue();
-        assertThat(Mnemonic.isBasicSeed(Mnemonic.toEntropy(mnemonic, ""))).isFalse();
-        assertThat(Mnemonic.isPasswordSeed(Mnemonic.toEntropy(mnemonic, ""))).isTrue();
+        assertThat(Mnemonic.isBasicSeed(Mnemonic.toEntropy(mnemonic))).isFalse();
+        assertThat(Mnemonic.isPasswordSeed(Mnemonic.toEntropy(mnemonic))).isTrue();
         assertThat(Mnemonic.isPasswordNeeded(mnemonic)).isTrue();
     }
 
@@ -47,7 +47,7 @@ public class TestMnemonic {
 
     @Test
     public void testMnemonicSeed() throws NoSuchAlgorithmException, InvalidKeyException {
-        assertThat(bytesToHex(Mnemonic.toSeed(List.of("kangaroo", "hen", "toddler", "resist"), ""))).isEqualTo("a356fc9b35cb9b463adf65b2414bbebcec1d0d0d99fc4fc14e259395c128022d");
+        assertThat(bytesToHex(Mnemonic.toSeed(List.of("kangaroo", "hen", "toddler", "resist")))).isEqualTo("a356fc9b35cb9b463adf65b2414bbebcec1d0d0d99fc4fc14e259395c128022d");
         assertThat(bytesToHex(Mnemonic.toSeed(List.of("disease", "adult", "device", "grit"), ""))).isEqualTo("fb1df381306619a2128295e73e05c6013211f589e8bebd602469cdf1fc04a1cb");
         assertThat(bytesToHex(Mnemonic.toSeed(List.of("deal", "wrap", "runway", "possible"), "password"))).isEqualTo("3078a0d183d0f0e88c4f8a5979590612f230a3228912838b66bcc9e9053b2584");
     }

@@ -10,9 +10,9 @@ import org.ton.java.smartcontract.token.ft.JettonMinter;
 import org.ton.java.smartcontract.token.ft.JettonWallet;
 import org.ton.java.smartcontract.token.nft.NftCollection;
 import org.ton.java.smartcontract.types.WalletVersion;
-import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR1;
-import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR2;
-import org.ton.java.smartcontract.wallet.v1.SimpleWalletContractR3;
+import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
+import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR2;
+import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
 import org.ton.java.smartcontract.wallet.v2.WalletV2ContractR1;
 import org.ton.java.smartcontract.wallet.v2.WalletV2ContractR2;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
@@ -37,14 +37,14 @@ public class Wallet {
     public <T extends Contract> T create() {
 
         Contract result = switch (walletVersion) {
-            case simpleR1 -> new SimpleWalletContractR1(options);
-            case simpleR2 -> new SimpleWalletContractR2(options);
-            case simpleR3 -> new SimpleWalletContractR3(options);
-            case v2R1 -> new WalletV2ContractR1(options);
-            case v2R2 -> new WalletV2ContractR2(options);
-            case v3R1 -> new WalletV3ContractR1(options);
-            case v3R2 -> new WalletV3ContractR2(options);
-            case v4R2 -> new WalletV4ContractR2(options);
+            case V1R1 -> new WalletV1ContractR1(options);
+            case V1R2 -> new WalletV1ContractR2(options);
+            case V1R3 -> new WalletV1ContractR3(options);
+            case V2R1 -> new WalletV2ContractR1(options);
+            case V2R2 -> new WalletV2ContractR2(options);
+            case V3R1 -> new WalletV3ContractR1(options);
+            case V3R2 -> new WalletV3ContractR2(options);
+            case V4R2 -> new WalletV4ContractR2(options);
             case lockup -> new LockupWalletV1(options);
             case dnsCollection -> new DnsCollection(options);
             case dnsItem -> new DnsItem(options);
@@ -54,6 +54,8 @@ public class Wallet {
             case payments -> new PaymentChannel(options);
             case highload -> new HighloadWallet(options);
             case multisig -> new MultisigWallet(options);
+            case master -> throw new Error("not implemented");
+            case config -> throw new Error("not implemented");
         };
 
         return (T) result;

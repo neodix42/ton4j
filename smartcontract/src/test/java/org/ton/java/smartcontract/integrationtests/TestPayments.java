@@ -29,7 +29,6 @@ public class TestPayments {
     static Address walletAddressA;
     static Address walletAddressB;
     static Tonlib tonlib = Tonlib.builder()
-//            .verbosityLevel(VerbosityLevel.DEBUG)
             .testnet(true)
             .build();
 
