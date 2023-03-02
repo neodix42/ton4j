@@ -18,7 +18,7 @@ String nonBounceableAddress = contract.getAddress().toString(true, true, false);
 contract.deploy(tonlib, keyPair.getSecretKey());
 
 // send toncoins
-contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
+contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "comment");
 
 // retrieve seqno
 contract.getSeqno(tonlib);

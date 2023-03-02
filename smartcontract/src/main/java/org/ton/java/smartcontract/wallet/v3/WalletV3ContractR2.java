@@ -9,7 +9,7 @@ import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 
 public class WalletV3ContractR2 extends WalletV3ContractBase {
-    
+
     /**
      * @param options Options
      */
@@ -23,7 +23,7 @@ public class WalletV3ContractR2 extends WalletV3ContractBase {
 
     @Override
     public String getName() {
-        return "v3R2";
+        return "V3R2";
     }
 
     public String getPublicKey(Tonlib tonlib) {

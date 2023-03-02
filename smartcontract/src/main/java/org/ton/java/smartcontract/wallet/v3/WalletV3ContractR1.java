@@ -5,7 +5,7 @@ import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Options;
 
 public class WalletV3ContractR1 extends WalletV3ContractBase {
-    
+
     /**
      * @param options Options
      */
@@ -19,6 +19,6 @@ public class WalletV3ContractR1 extends WalletV3ContractBase {
 
     @Override
     public String getName() {
-        return "v3R1";
+        return "V3R1";
     }
 }

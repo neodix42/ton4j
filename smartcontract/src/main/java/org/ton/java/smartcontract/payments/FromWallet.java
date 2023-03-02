@@ -115,7 +115,6 @@ public class FromWallet extends PaymentChannel {
                 seqno,
                 payload, // body
                 (byte) 3,
-                false,
                 stateInit);
     }
 }

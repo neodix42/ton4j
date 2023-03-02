@@ -78,7 +78,6 @@ public class NftMarketplace implements Contract {
                 seqno,
                 payload,
                 (byte) 3, //send mode
-                false, //dummy signature
                 this.createStateInit().stateInit
         );
 

@@ -236,7 +236,6 @@ public class JettonMinter implements Contract {
                 seqno,
                 (Cell) null, // body
                 (byte) 3, //send mode
-                false, //dummy signature
                 this.createStateInit().stateInit);
 
         tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));

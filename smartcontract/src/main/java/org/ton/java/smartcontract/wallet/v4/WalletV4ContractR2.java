@@ -33,7 +33,7 @@ public class WalletV4ContractR2 implements WalletContract {
 
     @Override
     public String getName() {
-        return "v4R2";
+        return "V4R2";
     }
 
     @Override

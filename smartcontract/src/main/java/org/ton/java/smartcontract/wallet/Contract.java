@@ -183,10 +183,10 @@ public interface Contract {
                 createdLt, createdAt);
     }
 
-    static Cell createInternalMessageHeader(Address dest, BigInteger gramValue) {
+    static Cell createInternalMessageHeader(Address dest, BigInteger toncoinValue) {
         return createInternalMessageHeader(
                 dest,
-                gramValue,
+                toncoinValue,
                 true,
                 null,
                 false,
@@ -198,10 +198,10 @@ public interface Contract {
                 BigInteger.ZERO);
     }
 
-    static Cell createInternalMessageHeader(String dest, BigInteger gramValue) {
+    static Cell createInternalMessageHeader(String dest, BigInteger toncoinValue) {
         return createInternalMessageHeader(
                 Address.of(dest),
-                gramValue,
+                toncoinValue,
                 true,
                 null,
                 false,

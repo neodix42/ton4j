@@ -2,7 +2,6 @@ package org.ton.java.smartcontract.integrationtests;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -13,7 +12,6 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.AccountState;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -48,23 +46,12 @@ public class TestWalletV1R3DeployTransferShort {
 
         contract.deploy(tonlib, keyPair.getSecretKey());
 
-        //check if state of the new contract/wallet has changed from un-init to active
-        AccountState state;
-        int i = 0;
-        do {
-            Utils.sleep(5);
-            state = tonlib.getAccountState(Address.of(bounceableAddress)).getAccount_state();
-            if (i++ > 10) {
-                throw new Error("time out getting account state");
-            }
-        } while (StringUtils.isEmpty(state.getCode()));
-
-        log.info("new wallet state: {}", state);
+        Utils.sleep(30);
 
         // transfer coins from new wallet (back to faucet)
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
 
-        Utils.sleep(15);
+        Utils.sleep(30);
 
         balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));

@@ -20,7 +20,7 @@ public class WalletV2ContractR2 extends WalletV2ContractBase {
 
     @Override
     public String getName() {
-        return "v2R2";
+        return "V2R2";
     }
 
     public String getPublicKey(Tonlib tonlib) {

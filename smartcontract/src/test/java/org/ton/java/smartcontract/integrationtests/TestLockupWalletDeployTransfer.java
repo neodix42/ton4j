@@ -87,7 +87,7 @@ public class TestLockupWalletDeployTransfer {
 
         // try to transfer coins from new lockup wallet to allowed address (back to faucet)
         log.info("sending toncoins to allowed address...");
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(4));
+        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(4), "send-to-allowed-1");
         Utils.sleep(70);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
@@ -95,7 +95,7 @@ public class TestLockupWalletDeployTransfer {
         assertThat(balance.longValue()).isLessThan(Utils.toNano(4).longValue());
 
         log.info("sending toncoins to prohibited address 1st time ...");
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of("EQDZno6LOWYJRHPpRv-MM3qrhFPk6OHOxVOg1HvEEAtJxK3y"), Utils.toNano(1.5));
+        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of("EQDZno6LOWYJRHPpRv-MM3qrhFPk6OHOxVOg1HvEEAtJxK3y"), Utils.toNano(1.5), "send-to-prohibited-1");
         Utils.sleep(70);
 
         log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance(tonlib)));
@@ -106,7 +106,7 @@ public class TestLockupWalletDeployTransfer {
         log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
 
         log.info("sending toncoins to prohibited address 2nd time ...");
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of("0f_N_wfrFUwuWVkwpqmkRRYIJRzByJRobEwRCJTeQ8lq06n9"), Utils.toNano(1.6));
+        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of("0f_N_wfrFUwuWVkwpqmkRRYIJRzByJRobEwRCJTeQ8lq06n9"), Utils.toNano(1.6), "send-to-prohibited-2");
         Utils.sleep(70);
 
         log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance(tonlib)));

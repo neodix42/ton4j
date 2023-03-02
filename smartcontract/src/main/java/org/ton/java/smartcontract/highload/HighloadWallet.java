@@ -17,6 +17,8 @@ import org.ton.java.tonlib.types.TvmStackEntryNumber;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.nonNull;
+
 public class HighloadWallet implements WalletContract {
 
     //https://github.com/ton-blockchain/ton/blob/master/crypto/smartcont/highload-wallet-v2-code.fc
@@ -113,7 +115,7 @@ public class HighloadWallet implements WalletContract {
      */
     public void sendTonCoins(Tonlib tonlib, byte[] secretKey, HighloadConfig highloadConfig) {
         Cell signingMessageAll = createSigningMessageInternal(highloadConfig);
-        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1, false);
+        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1);
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
@@ -125,7 +127,12 @@ public class HighloadWallet implements WalletContract {
         for (Destination destination : highloadConfig.getDestinations()) {
 
             Cell orderHeader = Contract.createInternalMessageHeader(destination.getAddress(), destination.getAmount());
-            Cell order = Contract.createCommonMsgInfo(orderHeader);
+            Cell order;
+            if (nonNull(destination.getComment())) {
+                order = Contract.createCommonMsgInfo(orderHeader, null, CellBuilder.beginCell().storeUint(0, 32).storeString(destination.getComment()).endCell());
+            } else {
+                order = Contract.createCommonMsgInfo(orderHeader);
+            }
 
             CellBuilder p = CellBuilder.beginCell();
             p.storeUint(destination.getMode(), 8); // mode

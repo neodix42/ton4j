@@ -69,14 +69,14 @@ public class TestWalletV3R2DeployTransferShort {
 
         contract2.deploy(tonlib, keyPair.getSecretKey());
 
-        Utils.sleep(25);
+        Utils.sleep(30);
 
         // transfer coins from new wallet (back to faucet)
-        contract1.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
-        Utils.sleep(20);
+        contract1.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testWalletV3R2-42");
+        Utils.sleep(30);
 
-        contract2.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
-        Utils.sleep(20);
+        contract2.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testWalletV3R2-98");
+        Utils.sleep(30);
 
         balance1 = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress1)).getBalance());
         log.info("walletId {} new wallet {} balance: {}", contract1.getWalletId(), contract1.getName(), Utils.formatNanoValue(balance1));

@@ -14,4 +14,5 @@ public class Destination {
     byte mode; // default mode 3
     Address address;
     BigInteger amount;
+    String comment;
 }

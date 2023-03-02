@@ -76,7 +76,6 @@ public class DnsRoot implements Contract {
                 seqno,
                 (Cell) null, // payload body
                 (byte) 3, //send mode
-                false, //dummy signature
                 this.createStateInit().stateInit
         );
 

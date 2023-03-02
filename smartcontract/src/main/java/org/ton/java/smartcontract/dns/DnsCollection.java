@@ -169,7 +169,6 @@ public class DnsCollection implements Contract {
                 seqno,
                 payload.endCell(),
                 (byte) 3, //send mode
-                false, //dummy signature
                 this.createStateInit().stateInit
         );
 

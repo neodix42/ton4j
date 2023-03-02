@@ -118,7 +118,7 @@ public interface WalletContract extends Contract {
     default ExternalMessage createExternalMessage(Cell signingMessage,
                                                   byte[] secretKey,
                                                   long seqno,
-                                                  boolean dummySignature) { // todo default false
+                                                  boolean dummySignature) {
         byte[] signature;
         if (dummySignature) {
             signature = new byte[64];
@@ -160,6 +160,12 @@ public interface WalletContract extends Contract {
                 data);
     }
 
+    default ExternalMessage createExternalMessage(Cell signingMessage,
+                                                  byte[] secretKey,
+                                                  long seqno) {
+        return createExternalMessage(signingMessage, secretKey, seqno, false);
+    }
+
     /**
      * @param secretKey      byte[]  nacl.KeyPair.secretKey
      * @param address        Address destination
@@ -167,8 +173,8 @@ public interface WalletContract extends Contract {
      * @param seqno          long
      * @param payload        Cell, null
      * @param sendMode       byte, 3
-     * @param dummySignature boolean, false
      * @param stateInit      Cell, null
+     * @param dummySignature boolean, false
      * @return ExternalMessage
      */
     default ExternalMessage createTransferMessage(
@@ -178,8 +184,8 @@ public interface WalletContract extends Contract {
             long seqno,
             Cell payload,
             byte sendMode,
-            boolean dummySignature,
-            Cell stateInit) {
+            Cell stateInit,
+            boolean dummySignature) {
 
         Cell orderHeader = Contract.createInternalMessageHeader(address, amount);
         Cell order = Contract.createCommonMsgInfo(orderHeader, stateInit, payload);
@@ -190,7 +196,20 @@ public interface WalletContract extends Contract {
         return createExternalMessage(signingMessage, secretKey, seqno, dummySignature);
     }
 
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            Address address,
+            BigInteger amount,
+            long seqno,
+            Cell payload,
+            byte sendMode,
+            Cell stateInit) {
+        return createTransferMessage(secretKey, address, amount, seqno, payload, sendMode, stateInit, false);
+    }
+
     /**
+     * Create transfer message with send-mode 3
+     *
      * @param secretKey byte[]  nacl.KeyPair.secretKey
      * @param address   Address
      * @param amount    BigInteger in nano-coins
@@ -205,10 +224,116 @@ public interface WalletContract extends Contract {
             Cell payload) {
 
         Cell stateInit = null;
-        return createTransferMessage(secretKey, address, amount, seqno, payload, (byte) 3, false, stateInit);
+        return createTransferMessage(secretKey, address, amount, seqno, payload, (byte) 3, stateInit, false);
     }
 
     /**
+     * Create transfer message with send-mode 3
+     *
+     * @param secretKey byte[]  nacl.KeyPair.secretKey
+     * @param address   Address
+     * @param amount    BigInteger in nano-coins
+     * @param seqno     long
+     * @return ExternalMessage
+     */
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            Address address,
+            BigInteger amount,
+            long seqno,
+            byte[] payload) {
+
+        Cell stateInit = null;
+        return createTransferMessage(secretKey, address, amount, seqno, payload, (byte) 3, stateInit, false);
+    }
+
+    /**
+     * @param secretKey byte[]  nacl.KeyPair.secretKey
+     * @param address   Address
+     * @param amount    BigInteger in nano-coins
+     * @param seqno     long
+     * @param payload   Cell
+     * @param sendMode  byte
+     * @return ExternalMessage
+     */
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            Address address,
+            BigInteger amount,
+            long seqno,
+            Cell payload,
+            byte sendMode) {
+
+        Cell stateInit = null;
+        return createTransferMessage(secretKey, address, amount, seqno, payload, sendMode, stateInit, false);
+    }
+
+    /**
+     * @param secretKey byte[]  nacl.KeyPair.secretKey
+     * @param address   String
+     * @param amount    BigInteger in nano-coins
+     * @param seqno     long
+     * @param payload   Cell
+     * @param sendMode  byte
+     * @return ExternalMessage
+     */
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            String address,
+            BigInteger amount,
+            long seqno,
+            Cell payload,
+            byte sendMode) {
+
+        Cell stateInit = null;
+        return createTransferMessage(secretKey, address, amount, seqno, payload, sendMode, stateInit, false);
+    }
+
+    /**
+     * @param secretKey byte[]  nacl.KeyPair.secretKey
+     * @param address   String
+     * @param amount    BigInteger in nano-coins
+     * @param seqno     long
+     * @param payload   Cell
+     * @param sendMode  byte
+     * @return ExternalMessage
+     */
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            String address,
+            BigInteger amount,
+            long seqno,
+            byte[] payload,
+            byte sendMode) {
+
+        Cell stateInit = null;
+        return createTransferMessage(secretKey, address, amount, seqno, payload, sendMode, stateInit, false);
+    }
+
+    /**
+     * @param secretKey byte[]  nacl.KeyPair.secretKey
+     * @param address   Address
+     * @param amount    BigInteger in nano-coins
+     * @param seqno     long
+     * @param payload   Cell
+     * @param sendMode  byte
+     * @return ExternalMessage
+     */
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            Address address,
+            BigInteger amount,
+            long seqno,
+            byte[] payload,
+            byte sendMode) {
+
+        Cell stateInit = null;
+        return createTransferMessage(secretKey, address, amount, seqno, payload, sendMode, stateInit, false);
+    }
+
+    /**
+     * Create transfer message with send-mode 3
+     *
      * @param secretKey byte[]  nacl.KeyPair.secretKey
      * @param address   Address
      * @param amount    BigInteger in nano-coins
@@ -223,10 +348,12 @@ public interface WalletContract extends Contract {
 
         Cell payload = null;
         Cell stateInit = null;
-        return createTransferMessage(secretKey, address, amount, seqno, payload, (byte) 3, false, stateInit);
+        return createTransferMessage(secretKey, address, amount, seqno, payload, (byte) 3, stateInit, false);
     }
 
     /**
+     * Create transfer message with send-mode 3
+     *
      * @param secretKey byte[]  nacl.KeyPair.secretKey
      * @param address   String
      * @param amount    BigInteger in nano-coins
@@ -241,7 +368,7 @@ public interface WalletContract extends Contract {
 
         Cell payload = null;
         Cell stateInit = null;
-        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, (byte) 3, false, stateInit);
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, (byte) 3, stateInit, false);
     }
 
     /**
@@ -251,8 +378,8 @@ public interface WalletContract extends Contract {
      * @param seqno          long
      * @param payload        Cell
      * @param sendMode       byte, 3
-     * @param dummySignature boolean, false
      * @param stateInit      Cell, null
+     * @param dummySignature boolean, false
      * @return ExternalMessage
      */
     default ExternalMessage createTransferMessage(
@@ -262,9 +389,20 @@ public interface WalletContract extends Contract {
             long seqno,
             Cell payload,
             byte sendMode,
-            boolean dummySignature,
+            Cell stateInit,
+            boolean dummySignature) {
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, stateInit, dummySignature);
+    }
+
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            String address,
+            BigInteger amount,
+            long seqno,
+            Cell payload,
+            byte sendMode,
             Cell stateInit) {
-        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, dummySignature, stateInit);
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, stateInit, false);
     }
 
     /**
@@ -274,8 +412,8 @@ public interface WalletContract extends Contract {
      * @param seqno          long
      * @param payload        byte[]
      * @param sendMode       byte, 3
-     * @param dummySignature boolean, false
      * @param stateInit      Cell, null
+     * @param dummySignature boolean, false
      * @return ExternalMessage
      */
     default ExternalMessage createTransferMessage(
@@ -285,12 +423,26 @@ public interface WalletContract extends Contract {
             long seqno,
             byte[] payload,
             byte sendMode,
-            boolean dummySignature,
+            Cell stateInit,
+            boolean dummySignature) {
+
+        Cell payloadCell = CellBuilder.beginCell().storeBytes(payload).endCell();
+
+        return createTransferMessage(secretKey, address, amount, seqno, payloadCell, sendMode, stateInit, dummySignature);
+    }
+
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            Address address,
+            BigInteger amount,
+            long seqno,
+            byte[] payload,
+            byte sendMode,
             Cell stateInit) {
 
         Cell payloadCell = CellBuilder.beginCell().storeBytes(payload).endCell();
 
-        return createTransferMessage(secretKey, address, amount, seqno, payloadCell, sendMode, dummySignature, stateInit);
+        return createTransferMessage(secretKey, address, amount, seqno, payloadCell, sendMode, stateInit, false);
     }
 
     /**
@@ -300,8 +452,8 @@ public interface WalletContract extends Contract {
      * @param seqno          long
      * @param payload        byte[]
      * @param sendMode       byte, 3
-     * @param dummySignature boolean, false
      * @param stateInit      Cell, null
+     * @param dummySignature boolean, false
      * @return ExternalMessage
      */
     default ExternalMessage createTransferMessage(
@@ -311,9 +463,20 @@ public interface WalletContract extends Contract {
             long seqno,
             byte[] payload,
             byte sendMode,
-            boolean dummySignature,
+            Cell stateInit,
+            boolean dummySignature) {
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, stateInit, dummySignature);
+    }
+
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            String address,
+            BigInteger amount,
+            long seqno,
+            byte[] payload,
+            byte sendMode,
             Cell stateInit) {
-        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, dummySignature, stateInit);
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, stateInit, false);
     }
 
     /**
@@ -334,8 +497,8 @@ public interface WalletContract extends Contract {
             long seqno,
             String payload,
             byte sendMode,
-            boolean dummySignature,
-            Cell stateInit) {
+            Cell stateInit,
+            boolean dummySignature) {
 
         CellBuilder payloadCell = CellBuilder.beginCell();
 
@@ -347,7 +510,18 @@ public interface WalletContract extends Contract {
             payloadCell = null;
         }
 
-        return createTransferMessage(secretKey, address, amount, seqno, payloadCell, sendMode, dummySignature, stateInit);
+        return createTransferMessage(secretKey, address, amount, seqno, payloadCell, sendMode, stateInit, dummySignature);
+    }
+
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            Address address,
+            BigInteger amount,
+            long seqno,
+            String payload,
+            byte sendMode,
+            Cell stateInit) {
+        return createTransferMessage(secretKey, address, amount, seqno, payload, sendMode, stateInit, false);
     }
 
     /**
@@ -368,9 +542,20 @@ public interface WalletContract extends Contract {
             long seqno,
             String payload,
             byte sendMode,
-            boolean dummySignature,
+            Cell stateInit,
+            boolean dummySignature) {
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, stateInit, dummySignature);
+    }
+
+    default ExternalMessage createTransferMessage(
+            byte[] secretKey,
+            String address,
+            BigInteger amount,
+            long seqno,
+            String payload,
+            byte sendMode,
             Cell stateInit) {
-        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, dummySignature, stateInit);
+        return createTransferMessage(secretKey, Address.of(address), amount, seqno, payload, sendMode, stateInit, false);
     }
 
     /**

@@ -44,7 +44,6 @@ public class TestWalletV2Highload {
                 .highloadQueryId(BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32))
                         .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
                 .wc(0L)
-
                 .build();
 
         Wallet wallet = new Wallet(WalletVersion.highload, options);
@@ -77,6 +76,7 @@ public class TestWalletV2Highload {
                                 .address(Address.of("EQBrpstctZ5gF-VaaPswcWHe3JQijjNbtJVn5USXlZ-bAgO3"))
                                 .amount(Utils.toNano(0.1))
                                 .mode((byte) 3)
+                                .comment("destination 2")
                                 .build(),
                         Destination.builder()
                                 .address(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"))

@@ -17,6 +17,6 @@ public class WalletV2ContractR1 extends WalletV2ContractBase {
 
     @Override
     public String getName() {
-        return "v2R1";
+        return "V2R1";
     }
 }

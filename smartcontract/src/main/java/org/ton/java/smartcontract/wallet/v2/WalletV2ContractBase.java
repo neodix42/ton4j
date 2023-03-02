@@ -71,14 +71,36 @@ public class WalletV2ContractBase implements WalletContract {
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount) {
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, byte[] body) {
+        long seqno = getSeqno(tonlib);
+        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, byte[] body) {
+        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, String comment) {
+        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, String comment) {
+        long seqno = getSeqno(tonlib);
+        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
+        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount, Cell body) {
         long seqno = getSeqno(tonlib);
 
         Cell orderHeader1 = Contract.createInternalMessageHeader(destinationAddress1, amount);
-        Cell order1 = Contract.createCommonMsgInfo(orderHeader1, null, null);
+        Cell order1 = Contract.createCommonMsgInfo(orderHeader1, null, body);
 
         Cell orderHeader2 = Contract.createInternalMessageHeader(destinationAddress2, amount);
-        Cell order2 = Contract.createCommonMsgInfo(orderHeader2, null, null);
+        Cell order2 = Contract.createCommonMsgInfo(orderHeader2, null, body);
 
         Cell signingMessageAll = createSigningMessage(seqno);
         signingMessageAll.bits.writeUint8(3 & 0xff);
@@ -86,21 +108,26 @@ public class WalletV2ContractBase implements WalletContract {
         signingMessageAll.refs.add(order1);
         signingMessageAll.refs.add(order2);
 
-        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
+        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno);
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, BigInteger amount) {
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount, String comment) {
+        sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
+    }
+
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, BigInteger amount, Cell body) {
         long seqno = getSeqno(tonlib);
 
         Cell orderHeader1 = Contract.createInternalMessageHeader(destinationAddress1, amount);
-        Cell order1 = Contract.createCommonMsgInfo(orderHeader1, null, null);
+        Cell order1 = Contract.createCommonMsgInfo(orderHeader1, null, body);
 
         Cell orderHeader2 = Contract.createInternalMessageHeader(destinationAddress2, amount);
-        Cell order2 = Contract.createCommonMsgInfo(orderHeader2, null, null);
+        Cell order2 = Contract.createCommonMsgInfo(orderHeader2, null, body);
 
         Cell orderHeader3 = Contract.createInternalMessageHeader(destinationAddress3, amount);
-        Cell order3 = Contract.createCommonMsgInfo(orderHeader3, null, null);
+        Cell order3 = Contract.createCommonMsgInfo(orderHeader3, null, body);
 
         Cell signingMessageAll = createSigningMessage(seqno);
         signingMessageAll.bits.writeUint8(3 & 0xff);
@@ -111,24 +138,28 @@ public class WalletV2ContractBase implements WalletContract {
         signingMessageAll.refs.add(order2);
         signingMessageAll.refs.add(order3);
 
-        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
+        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno);
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount) {
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, BigInteger amount, String comment) {
+        sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount, Cell body) {
         long seqno = getSeqno(tonlib);
 
         Cell orderHeader1 = Contract.createInternalMessageHeader(destinationAddress1, amount);
-        Cell order1 = Contract.createCommonMsgInfo(orderHeader1, null, null);
+        Cell order1 = Contract.createCommonMsgInfo(orderHeader1, null, body);
 
         Cell orderHeader2 = Contract.createInternalMessageHeader(destinationAddress2, amount);
-        Cell order2 = Contract.createCommonMsgInfo(orderHeader2, null, null);
+        Cell order2 = Contract.createCommonMsgInfo(orderHeader2, null, body);
 
         Cell orderHeader3 = Contract.createInternalMessageHeader(destinationAddress3, amount);
-        Cell order3 = Contract.createCommonMsgInfo(orderHeader3, null, null);
+        Cell order3 = Contract.createCommonMsgInfo(orderHeader3, null, body);
 
         Cell orderHeader4 = Contract.createInternalMessageHeader(destinationAddress4, amount);
-        Cell order4 = Contract.createCommonMsgInfo(orderHeader4, null, null);
+        Cell order4 = Contract.createCommonMsgInfo(orderHeader4, null, body);
 
         Cell signingMessageAll = createSigningMessage(seqno);
         signingMessageAll.bits.writeUint8(3 & 0xff);
@@ -141,7 +172,15 @@ public class WalletV2ContractBase implements WalletContract {
         signingMessageAll.refs.add(order3);
         signingMessageAll.refs.add(order4);
 
-        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno, false);
+        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno);
         tonlib.sendRawMessage(msg.message.toBocBase64(false));
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount, String comment) {
+        sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, destinationAddress4, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
+    }
+
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount) {
+        sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, destinationAddress4, amount, CellBuilder.beginCell().endCell());
     }
 }

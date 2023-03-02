@@ -54,17 +54,17 @@ public class TestFaucet {
                 }
 
                 faucetBalance = new BigInteger(tonlib.getAccountState(faucet.getAddress()).getBalance());
-                log.info("faucet address {}, balance {}", faucet.getAddress().toString(true, true, true), Utils.formatNanoValue(faucetBalance));
+                log.info("Faucet address {}, balance {}", faucet.getAddress().toString(true, true, true), Utils.formatNanoValue(faucetBalance));
                 if (faucetBalance.compareTo(amount) < 0) {
-                    throw new Error("faucet does not have that much toncoins. faucet balance" + Utils.formatNanoValue(faucetBalance) + ", requested " + Utils.formatNanoValue(amount));
+                    throw new Error("Faucet does not have that much toncoins. faucet balance" + Utils.formatNanoValue(faucetBalance) + ", requested " + Utils.formatNanoValue(amount));
                 }
             } catch (Exception e) {
                 log.info("Cannot get faucet balance. Restarting...");
-                Utils.sleep(5, "waiting for faucet balance");
+                Utils.sleep(5, "Waiting for faucet balance");
             }
         } while (isNull(faucetBalance));
 
-        faucet.sendTonCoins(tonlib, keyPair.getSecretKey(), destinationAddress, amount);
+        faucet.sendTonCoins(tonlib, keyPair.getSecretKey(), destinationAddress, amount, "top-up from ton4j");
 
         BigInteger newBalance = BigInteger.ZERO;
         i = 0;
