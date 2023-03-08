@@ -6,6 +6,7 @@ import com.google.gson.ToNumberPolicy;
 import org.ton.java.cell.Cell;
 import org.ton.java.utils.Utils;
 
+import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Base64;
@@ -13,7 +14,8 @@ import java.util.Deque;
 
 import static java.util.Objects.isNull;
 
-public class ParseRunResult {
+
+public class ParseRunResult implements Serializable {
     private static final Gson gson = new GsonBuilder()
             .setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL)
             .setLenient()
@@ -29,7 +31,9 @@ public class ParseRunResult {
      */
     public static TvmStackEntry renderTvmElement(String elementType, String element) {
 
-        String[] values = {"num", "number", "int", "cell", "slice", "tvm.cell", "tvm.slice"};
+        String[] values = {
+                "num", "number", "int", "cell", "slice", "tvm.cell", "tvm.slice"
+        };
 
         if (Arrays.asList(values).contains(elementType)) {
 

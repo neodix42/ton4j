@@ -12,11 +12,13 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.ton.java.utils.Utils.formatNanoValue;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -25,7 +27,10 @@ public class TestWalletV1R3DeployTransferShort {
     @Test
     public void testNewWalletV1R3() throws InterruptedException {
 
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
@@ -39,10 +44,12 @@ public class TestWalletV1R3DeployTransferShort {
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
+        String status = tonlib.getAccountStatus(Address.of(bounceableAddress));
+        log.info("account status {}", status);
 
         // top up new wallet using test-faucet-wallet        
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
-        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+        log.info("new wallet {} balance: {}", contract.getName(), formatNanoValue(balance));
 
         contract.deploy(tonlib, keyPair.getSecretKey());
 
@@ -54,7 +61,9 @@ public class TestWalletV1R3DeployTransferShort {
         Utils.sleep(30);
 
         balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
-        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+        status = tonlib.getAccountStatus(Address.of(bounceableAddress));
+        log.info("new wallet {} with status {} and balance: {}", contract.getName(), status, formatNanoValue(balance));
+
         assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
 
         log.info("seqno {}", contract.getSeqno(tonlib));

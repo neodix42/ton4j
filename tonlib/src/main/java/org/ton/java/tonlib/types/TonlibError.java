@@ -6,11 +6,13 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 @Builder
 @Setter
 @Getter
 @ToString
-public class TonlibError {
+public class TonlibError implements Serializable {
     @SerializedName("@type")
     final String type = "error";
     long code;

@@ -13,7 +13,7 @@ Do not forget to place tonlibjson library to your project. Latest Tonlib librari
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
 </dependency>
 ```
 
@@ -32,7 +32,7 @@ Do not forget to place tonlibjson library to your project. Latest Tonlib librari
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>ton4j</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
 </dependency>
 ```
 

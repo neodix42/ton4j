@@ -7,6 +7,7 @@ import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
 import lombok.Builder;
 import lombok.extern.java.Log;
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -451,7 +452,7 @@ public class Tonlib {
     public RawTransactions getRawTransactions(String address, BigInteger fromTxLt, String fromTxHash) {
 
         if (isNull(fromTxLt) || isNull(fromTxHash)) {
-            FullAccountState fullAccountState = getAccountState(AccountAddressOnly.builder().account_address(address).build());
+            RawAccountState fullAccountState = getRawAccountState(AccountAddressOnly.builder().account_address(address).build());
             fromTxLt = fullAccountState.getLast_transaction_id().getLt();
             fromTxHash = fullAccountState.getLast_transaction_id().getHash();
         }
@@ -469,21 +470,68 @@ public class Tonlib {
         return gson.fromJson(result, RawTransactions.class);
     }
 
-    public RawTransactions getAllRawTransactions(String address, BigInteger fromTxLt, String fromTxHash, long historyLimit) {
+    /**
+     * Simliar to getRawTransactions but limits the number of txs
+     *
+     * @param address    String
+     * @param fromTxLt   BigInteger
+     * @param fromTxHash String
+     * @param limit      int
+     * @return RawTransactions
+     */
+    public RawTransactions getRawTransactions(String address, BigInteger fromTxLt, String fromTxHash, int limit) {
+
+        if (isNull(fromTxLt) || isNull(fromTxHash)) {
+            FullAccountState fullAccountState = getAccountState(AccountAddressOnly.builder().account_address(address).build());
+            fromTxLt = fullAccountState.getLast_transaction_id().getLt();
+            fromTxHash = fullAccountState.getLast_transaction_id().getHash();
+        }
+        GetRawTransactionsQuery getRawTransactionsQuery = GetRawTransactionsQuery.builder()
+                .account_address(AccountAddressOnly.builder().account_address(address).build())
+                .from_transaction_id(LastTransactionId.builder()
+                        .lt(fromTxLt)
+                        .hash(fromTxHash)
+                        .build())
+                .build();
+
+        send(gson.toJson(getRawTransactionsQuery));
+
+        String result = syncAndRead();
+
+        RawTransactions rawTransactions = gson.fromJson(result, RawTransactions.class);
+
+        if (limit > rawTransactions.getTransactions().size()) {
+            limit = rawTransactions.getTransactions().size();
+        }
+
+        return RawTransactions.builder()
+                .previous_transaction_id(rawTransactions.getPrevious_transaction_id())
+                .transactions(rawTransactions.getTransactions().subList(0, limit))
+                .build();
+    }
+
+    public RawTransactions getAllRawTransactions(String address, BigInteger fromTxLt, String fromTxHash, int historyLimit) {
 
         List<RawTransaction> transactions = new ArrayList<>();
         RawTransactions rawTransactions = getRawTransactions(address, fromTxLt, fromTxHash);
+
         transactions.addAll(rawTransactions.getTransactions());
 
         while (rawTransactions.getPrevious_transaction_id().getLt().compareTo(BigInteger.ZERO) != 0) {
             rawTransactions = getRawTransactions(address, rawTransactions.getPrevious_transaction_id().getLt(), rawTransactions.getPrevious_transaction_id().getHash());
             transactions.addAll(rawTransactions.getTransactions());
             if (transactions.size() > historyLimit) {
-                break;
+                rawTransactions.setTransactions(transactions.subList(0, historyLimit));
+                return rawTransactions;
             }
         }
 
-        rawTransactions.setTransactions(transactions);
+        if (historyLimit > rawTransactions.getTransactions().size()) {
+            rawTransactions.setTransactions(transactions);
+        } else {
+            rawTransactions.setTransactions(transactions.subList(0, historyLimit));
+        }
+
         return rawTransactions;
     }
 
@@ -546,6 +594,12 @@ public class Tonlib {
         return totalTxs;
     }
 
+    /**
+     * Returns RawAccountState that always contains code and data
+     *
+     * @param address AccountAddressOnly
+     * @return RawAccountState
+     */
     public RawAccountState getRawAccountState(AccountAddressOnly address) {
         GetRawAccountStateQueryOnly getAccountStateQuery = GetRawAccountStateQueryOnly.builder().account_address(address).build();
 
@@ -568,6 +622,12 @@ public class Tonlib {
         return gson.fromJson(result, RawAccountState.class);
     }
 
+    /**
+     * With comparison to getRawAccountState returns wallet_id and seqno and always returns code and data.
+     *
+     * @param address AccountAddressOnly
+     * @return FullAccountState
+     */
     public FullAccountState getAccountState(AccountAddressOnly address) {
 
         GetAccountStateQueryOnly getAccountStateQuery = GetAccountStateQueryOnly.builder().account_address(address).build();
@@ -578,6 +638,12 @@ public class Tonlib {
         return gson.fromJson(result, FullAccountState.class);
     }
 
+    /**
+     * With comparison to getRawAccountState returns wallet_id and seqno and always returns code and data.
+     *
+     * @param address Address
+     * @return FullAccountState
+     */
     public FullAccountState getAccountState(Address address) {
         AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
                 .account_address(address.toString(false))
@@ -588,6 +654,25 @@ public class Tonlib {
 
         String result = syncAndRead();
         return gson.fromJson(result, FullAccountState.class);
+    }
+
+    /**
+     * Returns account status by address.
+     *
+     * @param address Address
+     * @return String - uninitialized, frozen or active.
+     */
+    public String getAccountStatus(Address address) {
+        RawAccountState state = getRawAccountState(address);
+        if (nonNull(state) && StringUtils.isEmpty(state.getCode())) {
+            if (StringUtils.isEmpty(state.getFrozen_hash())) {
+                return "uninitialized";
+            } else {
+                return "frozen";
+            }
+        } else {
+            return "active";
+        }
     }
 
 

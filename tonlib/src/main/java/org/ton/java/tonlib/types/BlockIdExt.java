@@ -6,11 +6,13 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 @Builder
 @Setter
 @Getter
 @ToString
-public class BlockIdExt {
+public class BlockIdExt implements Serializable {
     @SerializedName("@type")
     final String type = "ton.blockIdExt";
     long workchain;

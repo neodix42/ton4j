@@ -6,11 +6,13 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 @Builder
 @Setter
 @Getter
 @ToString
-public class TvmCell extends TvmEntry {
+public class TvmCell extends TvmEntry implements Serializable {
     @SerializedName("@type")
     final String type = "tvm.cell";
     String bytes; //base64

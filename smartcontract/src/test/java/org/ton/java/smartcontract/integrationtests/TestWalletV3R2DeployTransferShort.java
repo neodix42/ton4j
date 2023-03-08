@@ -12,6 +12,7 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR2;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -25,7 +26,10 @@ public class TestWalletV3R2DeployTransferShort {
     @Test
     public void testWalletV3R2() throws InterruptedException {
 
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
@@ -42,7 +46,8 @@ public class TestWalletV3R2DeployTransferShort {
 
         log.info("non-bounceable address 1: {}", nonBounceableAddress1);
         log.info("    bounceable address 1: {}", bounceableAddress1);
-
+        String status = tonlib.getAccountStatus(Address.of(bounceableAddress1));
+        log.info("account status {}", status);
 
         Options options2 = Options.builder()
                 .publicKey(keyPair.getPublicKey())

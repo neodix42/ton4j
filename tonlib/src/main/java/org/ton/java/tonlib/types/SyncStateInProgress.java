@@ -4,9 +4,11 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 @Getter
 @ToString
-public class SyncStateInProgress {
+public class SyncStateInProgress implements Serializable {
     @SerializedName(value = "@type")
     final String type = "syncStateInProgress";
     long from_seqno;

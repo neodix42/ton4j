@@ -5,11 +5,13 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 @Builder
 @Setter
 @Getter
 @ToString
-public class NonBounceable {
+public class NonBounceable implements Serializable {
     String b64;
     String b64url;
 }

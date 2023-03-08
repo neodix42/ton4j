@@ -36,6 +36,8 @@ public class TestMnemonic {
 
     @Test
     public void testMnemonicValidation() throws NoSuchAlgorithmException, InvalidKeyException {
+
+        assertThat(Mnemonic.isValid(List.of("audit", "magic", "blossom", "digital", "dad", "buffalo", "river", "junior", "minimum", "congress", "banner", "garage", "flag", "tuna", "onion", "pair", "balance", "spice", "reason", "gossip", "cotton", "stock", "skate", "faith"), "")).isTrue();
         assertThat(Mnemonic.isValid(List.of("kangaroo", "hen", "toddler", "resist"), "")).isTrue();
         assertThat(Mnemonic.isValid(List.of("disease", "adult", "device", "grit"), "")).isTrue();
 
@@ -74,5 +76,15 @@ public class TestMnemonic {
         byte[] data = new byte[0];
         byte[] res = Mnemonic.hmacSha512(key, data);
         System.out.println(bytesToHex(res));
+    }
+
+    @Test
+    public void testMnemonicToKeyPair() throws NoSuchAlgorithmException, InvalidKeyException {
+
+        Pair key = Mnemonic.toKeyPair(List.of("audit", "magic", "blossom", "digital", "dad", "buffalo", "river",
+                "junior", "minimum", "congress", "banner", "garage", "flag", "tuna", "onion", "pair", "balance", "spice",
+                "reason", "gossip", "cotton", "stock", "skate", "faith"));
+        System.out.println(bytesToHex(key.getPublicKey()));
+        System.out.println(bytesToHex(key.getSecretKey()));
     }
 }

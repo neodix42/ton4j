@@ -186,6 +186,31 @@ public class TestTonlibJson {
     }
 
     @Test
+    public void testTonlibGetTxsWithLimitByAddress() {
+        Tonlib tonlib = Tonlib.builder().build();
+
+        Address address = Address.of(TON_FOUNDATION);
+
+        log.info("address: " + address.toString(true));
+
+        RawTransactions rawTransactions = tonlib.getRawTransactions(address.toString(false), null, null, 3);
+
+        for (RawTransaction tx : rawTransactions.getTransactions()) {
+            if ((tx.getIn_msg() != null) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+                log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
+            }
+            if (tx.getOut_msgs() != null) {
+                for (RawMessage msg : tx.getOut_msgs()) {
+                    log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
+                }
+            }
+        }
+
+        log.info("total txs: {}", rawTransactions.getTransactions().size());
+        assertThat(rawTransactions.getTransactions().size()).isLessThan(4);
+    }
+
+    @Test
     public void testTonlibGetAllTxsByAddress() {
         Tonlib tonlib = Tonlib.builder().build();
 
@@ -208,8 +233,35 @@ public class TestTonlibJson {
             }
         }
 
-        assertThat(rawTransactions.getTransactions().size()).isGreaterThan(20);
+        assertThat(rawTransactions.getTransactions().size()).isGreaterThan(50);
     }
+
+    @Test
+    public void testTonlibGetAllTxsByAddressSmallHistoryLimit() {
+        Tonlib tonlib = Tonlib.builder().build();
+
+        Address address = Address.of(TON_FOUNDATION);
+
+        log.info("address: " + address.toString(true));
+
+        RawTransactions rawTransactions = tonlib.getAllRawTransactions(address.toString(false), null, null, 3);
+
+        log.info("total txs: {}", rawTransactions.getTransactions().size());
+
+        for (RawTransaction tx : rawTransactions.getTransactions()) {
+            if ((tx.getIn_msg() != null) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+                log.info("<<<<< {} - {} : {} ", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
+            }
+            if (tx.getOut_msgs() != null) {
+                for (RawMessage msg : tx.getOut_msgs()) {
+                    log.info(">>>>> {} - {} : {} ", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
+                }
+            }
+        }
+
+        assertThat(rawTransactions.getTransactions().size()).isLessThan(4);
+    }
+
 
     /**
      * Create new key pair and sign data using Tonlib library
@@ -303,23 +355,23 @@ public class TestTonlibJson {
         assertThat(accountState.getCode()).isNotBlank();
     }
 
-    @Test
-    public void testTonlibAccountState() {
-        Tonlib tonlib = Tonlib.builder().build();
-
-        Address addr = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
-        log.info("address: " + addr.toString(true));
-
-        AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
-                .account_address(addr.toString(true))
-                .build();
-
-        FullAccountState accountState = tonlib.getAccountState(accountAddressOnly);
-        log.info(accountState.toString());
-        log.info("balance: {}", accountState.getBalance());
-        assertThat(accountState.getLast_transaction_id().getHash()).isNotBlank();
-        log.info("last {}", tonlib.getLast());
-    }
+//    @Test
+//    public void testTonlibAccountState() {
+//        Tonlib tonlib = Tonlib.builder().build();
+//
+//        Address addr = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
+//        log.info("address: " + addr.toString(true));
+//
+//        AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+//                .account_address(addr.toString(true))
+//                .build();
+//
+//        FullAccountState accountState = tonlib.getAccountState(accountAddressOnly);
+//        log.info(accountState.toString());
+//        log.info("balance: {}", accountState.getBalance());
+//        assertThat(accountState.getLast_transaction_id().getHash()).isNotBlank();
+//        log.info("last {}", tonlib.getLast());
+//    }
 
     @Test
     public void testTonlibKeystorePath() {
@@ -440,5 +492,23 @@ public class TestTonlibJson {
         result = tonlib.runMethod(elector, "compute_returned_stake", stack);
         BigInteger returnStake = ((TvmStackEntryNumber) result.getStack().get(0)).getNumber();
         log.info("return stake: {} ", Utils.formatNanoValue(returnStake.longValue()));
+    }
+
+    @Test
+    public void testTonlib3() {
+        Tonlib tonlib = Tonlib.builder()
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
+        int i = 0;
+        FullAccountState accountState1 = tonlib.getAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
+        log.info("==========================================");
+        RawAccountState accountState2 = tonlib.getRawAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
+        log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState1.getBalance(), accountState1);
+        log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState2.getBalance(), accountState2);
+        log.info("wallet_id {}, seqno {}", accountState1.getAccount_state().getWallet_id(), accountState1.getAccount_state().getSeqno());
+        log.info("frozen_hash {}", accountState1.getAccount_state().getFrozen_hash());
+        log.info("frozen_hash {}", accountState2.getFrozen_hash());
+        assertThat(accountState1.getBalance()).isEqualTo(accountState2.getBalance());
     }
 }

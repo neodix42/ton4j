@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32C;
 import java.util.zip.Checksum;
@@ -507,5 +508,14 @@ public class Utils {
         } catch (Throwable e) {
             System.out.println(e.getMessage());
         }
+    }
+
+    public static int ip2int(String address) {
+        int result = 0;
+        for (String part : address.split(Pattern.quote("."))) {
+            result = result << 8;
+            result |= Integer.parseInt(part);
+        }
+        return result;
     }
 }

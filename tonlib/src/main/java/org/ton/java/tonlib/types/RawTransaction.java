@@ -6,13 +6,14 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Builder
 @Setter
 @Getter
 @ToString
-public class RawTransaction {
+public class RawTransaction implements Serializable {
     @SerializedName("@type")
     final String type = "raw.transaction";
     long utime;

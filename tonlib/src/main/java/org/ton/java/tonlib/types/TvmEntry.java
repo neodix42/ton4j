@@ -1,6 +1,8 @@
 package org.ton.java.tonlib.types;
 
-public abstract class TvmEntry {
+import java.io.Serializable;
+
+public abstract class TvmEntry implements Serializable {
 
 }
 

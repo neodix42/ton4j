@@ -6,13 +6,14 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 @Builder
 @Setter
 @Getter
 @ToString
-public class LastTransactionId {
+public class LastTransactionId implements Serializable {
     @SerializedName("@type")
     final String type = "internal.transactionId"; // not necessary
     BigInteger lt;

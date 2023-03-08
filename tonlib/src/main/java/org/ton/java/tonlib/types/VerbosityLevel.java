@@ -1,5 +1,7 @@
 package org.ton.java.tonlib.types;
 
-public enum VerbosityLevel {
+import java.io.Serializable;
+
+public enum VerbosityLevel implements Serializable {
     FATAL, ERROR, WARNING, INFO, DEBUG
 }

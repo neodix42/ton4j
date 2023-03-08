@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -12,7 +13,7 @@ import java.util.List;
 @Setter
 @Getter
 @ToString
-public class RunResult {
+public class RunResult implements Serializable {
     List<Object> stack;
     BigInteger gas_used;
     long exit_code;
