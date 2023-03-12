@@ -25,7 +25,11 @@ public enum WalletVersion {
     /**
      * reserved for internal usage
      */
-    config("Config");
+    config("Config"),
+    /**
+     * reserved for internal usage
+     */
+    unidentified("Unidentified");
 
     private final String value;
 

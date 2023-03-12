@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.ton.java.smartcontract.TestFaucet.FAUCET_ADDRESS_RAW;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -49,8 +50,7 @@ public class TestWalletV4R2PluginsDeployTransfer {
                         .build())
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V4R2, options);
-        WalletV4ContractR2 contract = wallet.create();
+        WalletV4ContractR2 contract = new Wallet(WalletVersion.V4R2, options).create();
 
         InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
         Address walletAddress = msg.address;
@@ -233,5 +233,7 @@ public class TestWalletV4R2PluginsDeployTransfer {
         List<String> list = contract.getPluginsList(tonlib);
         log.info("pluginsList: {}", list);
         assertThat(list.isEmpty()).isTrue();
+
+        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(FAUCET_ADDRESS_RAW), Utils.toNano(0.33));
     }
 }

@@ -56,6 +56,7 @@ public class Wallet {
             case multisig -> new MultisigWallet(options);
             case master -> throw new Error("not implemented");
             case config -> throw new Error("not implemented");
+            case unidentified -> throw new Error("not implemented");
         };
 
         return (T) result;

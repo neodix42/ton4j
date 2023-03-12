@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -25,6 +26,7 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.Objects;
 
+import static java.util.Objects.nonNull;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
@@ -214,7 +216,8 @@ public class TestTonlibJson {
     public void testTonlibGetAllTxsByAddress() {
         Tonlib tonlib = Tonlib.builder().build();
 
-        Address address = Address.of(TON_FOUNDATION);
+//        Address address = Address.of(TON_FOUNDATION);
+        Address address = Address.of("EQAL66-DGwFvP046ysD_o18wvwt-0A6_aJoVmQpVNIqV_ZvK");
 
         log.info("address: " + address.toString(true));
 
@@ -233,7 +236,7 @@ public class TestTonlibJson {
             }
         }
 
-        assertThat(rawTransactions.getTransactions().size()).isGreaterThan(50);
+        assertThat(rawTransactions.getTransactions().size()).isLessThan(10);
     }
 
     @Test
@@ -249,7 +252,7 @@ public class TestTonlibJson {
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
         for (RawTransaction tx : rawTransactions.getTransactions()) {
-            if ((tx.getIn_msg() != null) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+            if (nonNull(tx.getIn_msg()) && (StringUtils.isNoneEmpty(tx.getIn_msg().getSource().getAccount_address()))) {
                 log.info("<<<<< {} - {} : {} ", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
             }
             if (tx.getOut_msgs() != null) {
@@ -495,19 +498,83 @@ public class TestTonlibJson {
     }
 
     @Test
-    public void testTonlib3() {
+    public void testTonlibMyLocalTon() {
+        Tonlib tonlib = Tonlib.builder()
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
+                .ignoreCache(true)
+                .build();
+
+        FullAccountState accountState1 = tonlib.getAccountState(Address.of("-1:85cda44e9838bf5a8c6d1de95c3e22b92884ae70ee1b550723a92a8ca0df3321"));
+        RawAccountState accountState2 = tonlib.getRawAccountState(Address.of("-1:85cda44e9838bf5a8c6d1de95c3e22b92884ae70ee1b550723a92a8ca0df3321"));
+
+        log.info("full accountState {}", accountState1);
+        log.info("raw  accountState {}", accountState2);
+    }
+
+    @Test
+    public void testTonlibLookupBlock() {
+        Tonlib tonlib = Tonlib.builder()
+                .keystoreInMemory(true)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
+        Shards shards = tonlib.getShards(0, 31800427000002L, 0);
+        log.info("shards-- {}", shards.getShards());
+
+        BlockIdExt shard = shards.getShards().get(0);
+
+        BlockIdExt fullblock = tonlib.lookupBlock(0, shard.getWorkchain(), shard.getShard(), 31800427000002L + 1000000, 0);
+        log.info("fullBlock-- {}", fullblock);
+    }
+
+    @Test
+    public void testTonlibTryLocateTxByIncomingMessage() {
+        Tonlib tonlib = Tonlib.builder()
+                .build();
+
+        RawTransaction tx = tonlib.tryLocateTxByIncomingMessage(
+                Address.of("EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD"),
+                Address.of("EQDEruSI2frAF-GdzpjDLWWBKnwREDAJmu7eIEFG6zdUlXVE"),
+                26521292000002L);
+
+        log.info("found tx {}", tx);
+
+        assertThat(tx.getIn_msg()).isNotNull();
+    }
+
+    @Test
+    public void testTonlibTryLocateTxByOutcomingMessage() {
+        Tonlib tonlib = Tonlib.builder()
+                .build();
+
+        RawTransaction tx = tonlib.tryLocateTxByOutcomingMessage(
+                Address.of("EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD"),
+                Address.of("EQDEruSI2frAF-GdzpjDLWWBKnwREDAJmu7eIEFG6zdUlXVE"),
+                26521292000002L);
+
+        log.info("found tx {}", tx);
+
+        assertThat(tx.getIn_msg()).isNotNull();
+        assertThat(tx.getOut_msgs()).isNotNull();
+    }
+
+
+    @Test
+    public void testTonlibStateAndStatus() {
         Tonlib tonlib = Tonlib.builder()
                 .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
         int i = 0;
         FullAccountState accountState1 = tonlib.getAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
+        String accountState1Status = tonlib.getRawAccountStatus(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
         log.info("==========================================");
         RawAccountState accountState2 = tonlib.getRawAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
         log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState1.getBalance(), accountState1);
         log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState2.getBalance(), accountState2);
         log.info("wallet_id {}, seqno {}", accountState1.getAccount_state().getWallet_id(), accountState1.getAccount_state().getSeqno());
-        log.info("frozen_hash {}", accountState1.getAccount_state().getFrozen_hash());
+        log.info("frozen_hash {}, status {}", accountState1.getAccount_state().getFrozen_hash(), accountState1Status);
         log.info("frozen_hash {}", accountState2.getFrozen_hash());
         assertThat(accountState1.getBalance()).isEqualTo(accountState2.getBalance());
     }

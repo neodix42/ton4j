@@ -8,6 +8,7 @@ import com.sun.jna.Native;
 import lombok.Builder;
 import lombok.extern.java.Log;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -333,6 +334,10 @@ public class Tonlib {
         return gson.fromJson(result, BlockIdExt.class);
     }
 
+    public BlockIdExt lookupBlock(long seqno, long workchain, long shard, long lt) {
+        return lookupBlock(seqno, workchain, shard, lt, 0);
+    }
+
     public MasterChainInfo getLast() {
         GetLastQuery getLastQuery = GetLastQuery.builder().build();
 
@@ -419,36 +424,13 @@ public class Tonlib {
 
     //@formatter:off
 
+
     /**
-     * TL Spec:
-     * raw.getTransactions account_address:accountAddress from_transaction_id:internal.transactionId = raw.Transactions;
-     * accountAddress account_address:string = AccountAddress;
-     * internal.transactionId lt:int64 hash:bytes = internal.TransactionId;
-     * :param account_address: str with raw or user friendly address
-     * :param from_transaction_lt: from transaction lt
-     * :param from_transaction_hash: from transaction hash in HEX representation
-     * :return: dict as
-     * {
-     * '@type': 'raw.transactions',
-     * 'transactions': list[dict as {
-     * '@type': 'raw.transaction',
-     * 'utime': int,
-     * 'data': str,
-     * 'transaction_id': internal.transactionId,
-     * 'fee': str,
-     * 'in_msg': dict as {
-     * '@type': 'raw.message',
-     * 'source': str,
-     * 'destination': str,
-     * 'value': str,
-     * 'message': str
-     * },
-     * 'out_msgs': list[dict as raw.message]
-     * }],
-     * 'previous_transaction_id': internal.transactionId
-     * }
+     * @param address    String
+     * @param fromTxLt   BigInteger
+     * @param fromTxHash String in base64 format
+     * @return RawTransactions
      */
-    //@formatter:on
     public RawTransactions getRawTransactions(String address, BigInteger fromTxLt, String fromTxHash) {
 
         if (isNull(fromTxLt) || isNull(fromTxHash)) {
@@ -471,11 +453,11 @@ public class Tonlib {
     }
 
     /**
-     * Simliar to getRawTransactions but limits the number of txs
+     * Similar to getRawTransactions but limits the number of txs
      *
      * @param address    String
      * @param fromTxLt   BigInteger
-     * @param fromTxHash String
+     * @param fromTxHash String in base64 format
      * @param limit      int
      * @return RawTransactions
      */
@@ -500,6 +482,10 @@ public class Tonlib {
 
         RawTransactions rawTransactions = gson.fromJson(result, RawTransactions.class);
 
+        if (isNull(rawTransactions.getTransactions())) {
+            throw new Error("lite-server cannot return any transactions");
+        }
+
         if (limit > rawTransactions.getTransactions().size()) {
             limit = rawTransactions.getTransactions().size();
         }
@@ -510,11 +496,21 @@ public class Tonlib {
                 .build();
     }
 
+    /**
+     * @param address      String
+     * @param fromTxLt     BigInteger
+     * @param fromTxHash   String in base64 format
+     * @param historyLimit int
+     * @return RawTransactions
+     */
     public RawTransactions getAllRawTransactions(String address, BigInteger fromTxLt, String fromTxHash, int historyLimit) {
 
         List<RawTransaction> transactions = new ArrayList<>();
         RawTransactions rawTransactions = getRawTransactions(address, fromTxLt, fromTxHash);
 
+        if (isNull(rawTransactions.getTransactions())) {
+            throw new Error("lite-server cannot return any transactions");
+        }
         transactions.addAll(rawTransactions.getTransactions());
 
         while (rawTransactions.getPrevious_transaction_id().getLt().compareTo(BigInteger.ZERO) != 0) {
@@ -620,6 +616,37 @@ public class Tonlib {
 
         String result = syncAndRead();
         return gson.fromJson(result, RawAccountState.class);
+    }
+
+    /**
+     * Returns status of an address.
+     *
+     * @param address Address
+     * @return String, uninitialized, frozen or active
+     */
+    public String getRawAccountStatus(Address address) {
+        AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+                .account_address(address.toString(false))
+                .build();
+
+        GetRawAccountStateQueryOnly getAccountStateQuery = GetRawAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+
+        send(gson.toJson(getAccountStateQuery));
+
+        String result = syncAndRead();
+
+        RawAccountState state = gson.fromJson(result, RawAccountState.class);
+
+        if (StringUtils.isEmpty(state.getCode())) {
+            if (StringUtils.isEmpty(state.getFrozen_hash())) {
+                return "uninitialized";
+            } else {
+                return "frozen";
+            }
+        } else {
+            return "active";
+        }
+
     }
 
     /**
@@ -884,4 +911,87 @@ public class Tonlib {
             }
         }
     }
+
+    public RawTransaction tryLocateTxByIncomingMessage(Address source, Address destination, long creationLt) {
+        Shards shards = getShards(0, creationLt, 0);
+        for (BlockIdExt shardData : shards.getShards()) {
+            for (int b = 0; b < 3; b++) {
+                BlockIdExt block = lookupBlock(0, shardData.getWorkchain(), shardData.getShard(), creationLt + b * 1000000L);
+                BlockTransactions txs = getBlockTransactions(block, 40);
+
+                Pair<String, Long> candidate = null;
+                int count = 0;
+
+                for (ShortTxId tx : txs.getTransactions()) {
+                    if (tx.getAccount().equals(Utils.bytesToBase64(destination.hashPart))) {
+                        count++;
+                        if (isNull(candidate) || (candidate.getRight() < tx.getLt())) {
+                            candidate = Pair.of(tx.getHash(), tx.getLt());
+                        }
+                    }
+                }
+
+                if (nonNull(candidate)) {
+                    RawTransactions transactions = getRawTransactions(
+                            destination.toString(false),
+                            BigInteger.valueOf(candidate.getRight()),
+                            candidate.getLeft(),
+                            Math.max(count, 10));
+
+                    for (RawTransaction tx : transactions.getTransactions()) {
+                        RawMessage in_msg = tx.getIn_msg();
+                        String txSource = in_msg.getSource().getAccount_address();
+                        if (StringUtils.isNoneEmpty(txSource) && (Address.of(txSource).toString(false).equals(source.toString(false)))) {
+                            if (in_msg.getCreated_lt() == creationLt) {
+                                return tx;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        throw new Error("Transaction not found");
+    }
+
+    public RawTransaction tryLocateTxByOutcomingMessage(Address source, Address destination, long creationLt) {
+        Shards shards = getShards(0, creationLt, 0);
+        for (BlockIdExt shardData : shards.getShards()) {
+            BlockIdExt block = lookupBlock(0, shardData.getWorkchain(), shardData.getShard(), creationLt);
+            BlockTransactions txs = getBlockTransactions(block, 40);
+
+            Pair<String, Long> candidate = null;
+            int count = 0;
+
+            for (ShortTxId tx : txs.getTransactions()) {
+                if (tx.getAccount().equals(Utils.bytesToBase64(source.hashPart))) {
+                    count++;
+                    if (isNull(candidate) || (candidate.getRight() < tx.getLt())) {
+                        candidate = Pair.of(tx.getHash(), tx.getLt());
+                    }
+                }
+            }
+
+            if (nonNull(candidate)) {
+                RawTransactions transactions = getRawTransactions(
+                        source.toString(false),
+                        BigInteger.valueOf(candidate.getRight()),
+                        candidate.getLeft(),
+                        Math.max(count, 10));
+
+                for (RawTransaction tx : transactions.getTransactions()) {
+                    for (RawMessage out_msg : tx.getOut_msgs()) {
+                        String txDestination = out_msg.getDestination().getAccount_address();
+                        if (StringUtils.isNoneEmpty(txDestination) && (Address.of(txDestination).toString(false).equals(destination.toString(false)))) {
+                            if (out_msg.getCreated_lt() == creationLt) {
+                                return tx;
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+        throw new Error("Transaction not found");
+    }
+
 }
