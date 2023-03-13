@@ -8,6 +8,8 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 
+import static java.util.Objects.isNull;
+
 public class WalletV3ContractR2 extends WalletV3ContractBase {
 
     /**
@@ -16,7 +18,7 @@ public class WalletV3ContractR2 extends WalletV3ContractBase {
     public WalletV3ContractR2(Options options) {
         super(options);
         options.code = Cell.fromBoc(WalletCodes.V3R2.getValue());
-        if (options.walletId == null) {
+        if (isNull(options.walletId)) {
             options.walletId = 698983191 + options.wc;
         }
     }

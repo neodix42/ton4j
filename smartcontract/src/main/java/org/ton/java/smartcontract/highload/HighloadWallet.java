@@ -17,6 +17,7 @@ import org.ton.java.tonlib.types.TvmStackEntryNumber;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class HighloadWallet implements WalletContract {
@@ -47,7 +48,7 @@ public class HighloadWallet implements WalletContract {
 
     @Override
     public Address getAddress() {
-        if (address == null) {
+        if (isNull(address)) {
             return (createStateInit()).address;
         }
         return address;

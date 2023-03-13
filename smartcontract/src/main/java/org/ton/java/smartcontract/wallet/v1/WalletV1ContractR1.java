@@ -12,6 +12,8 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
+
 public class WalletV1ContractR1 implements WalletContract {
 
     Options options;
@@ -37,14 +39,14 @@ public class WalletV1ContractR1 implements WalletContract {
 
     @Override
     public Address getAddress() {
-        if (address == null) {
+        if (isNull(address)) {
             return (createStateInit()).address;
         }
         return address;
     }
 
     /**
-     * Sends amount of toncoins to destination address with seqno 0
+     * Sends amount of nano toncoins to destination address with seqno 0
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -57,7 +59,7 @@ public class WalletV1ContractR1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using specified seqno
+     * Sends amount of nano toncoins to destination address using specified seqno
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -71,7 +73,7 @@ public class WalletV1ContractR1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using specified seqno with the comment
+     * Sends amount of nano toncoins to destination address using specified seqno with the comment
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -86,7 +88,7 @@ public class WalletV1ContractR1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using auto-fetched seqno with the comment
+     * Sends amount of nano toncoins to destination address using auto-fetched seqno with the comment
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -101,7 +103,7 @@ public class WalletV1ContractR1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using specified seqno with the body
+     * Sends amount of nano toncoins to destination address using specified seqno with the body
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -116,7 +118,7 @@ public class WalletV1ContractR1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using specified seqno with the body and send-mode
+     * Sends amount of nano toncoins to destination address using specified seqno with the body and send-mode
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]

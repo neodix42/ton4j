@@ -9,8 +9,6 @@ import org.ton.java.smartcontract.types.InitExternalMessage;
 import org.ton.java.smartcontract.types.StateInit;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -570,13 +568,6 @@ public interface WalletContract extends Contract {
         }
 
         Address myAddress = getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "seqno");
-        if (result.getExit_code() != 0) {
-            throw new Error("method seqno returned an exit code " + result.getExit_code());
-        }
-
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
-
-        return seqno.getNumber().longValue();
+        return tonlib.getSeqno(myAddress);
     }
 }

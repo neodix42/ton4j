@@ -81,7 +81,7 @@ public class RunResultParser {
             JsonObject jsonObject = json.getAsJsonObject();
             String el = jsonObject.get("@type").toString();
             if (!el.contains("smc.runResult")) {
-                throw new Error("json string does not come from runmethod result");
+                throw new Error("malformed response from run_method");
             }
             JsonElement stackList = jsonObject.get("stack");
 

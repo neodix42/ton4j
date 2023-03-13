@@ -11,9 +11,12 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.*;
+
+import static java.util.Objects.isNull;
 
 public class WalletV4ContractR2 implements WalletContract {
 
@@ -26,7 +29,7 @@ public class WalletV4ContractR2 implements WalletContract {
     public WalletV4ContractR2(Options options) {
         this.options = options;
         options.code = Cell.fromBoc(WalletCodes.V4R2.getValue());
-        if (options.walletId == null) {
+        if (isNull(options.walletId)) {
             options.walletId = 698983191 + options.wc;
         }
     }
@@ -43,7 +46,7 @@ public class WalletV4ContractR2 implements WalletContract {
 
     @Override
     public Address getAddress() {
-        if (address == null) {
+        if (isNull(address)) {
             return (createStateInit()).address;
         }
         return address;
@@ -316,7 +319,7 @@ public class WalletV4ContractR2 implements WalletContract {
 
 
     /**
-     * Sends amount of toncoins to destination address using auto-fetched seqno without the body and default send-mode 3
+     * Sends amount of nano toncoins to destination address using auto-fetched seqno without the body and default send-mode 3
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -330,7 +333,7 @@ public class WalletV4ContractR2 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using specified seqno with the body and default send-mode 3
+     * Sends amount of nano toncoins to destination address using specified seqno with the body and default send-mode 3
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -344,7 +347,7 @@ public class WalletV4ContractR2 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using specified seqno with the body and specified send-mode
+     * Sends amount of nano toncoins to destination address using specified seqno with the body and specified send-mode
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -359,7 +362,7 @@ public class WalletV4ContractR2 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using auto-fetched seqno with the body and default send-mode 3
+     * Sends amount of nano toncoins to destination address using auto-fetched seqno with the body and default send-mode 3
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -374,7 +377,7 @@ public class WalletV4ContractR2 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using specified seqno with the comment and default send-mode 3
+     * Sends amount of nano toncoins to destination address using specified seqno with the comment and default send-mode 3
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -389,7 +392,21 @@ public class WalletV4ContractR2 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using auto-fetched seqno without the body and default send-mode 3
+     * Sends amount of nano toncoins to destination address using specified seqno without the comment and default send-mode 3
+     *
+     * @param tonlib             Tonlib
+     * @param secretKey          byte[]
+     * @param destinationAddress Address
+     * @param amount             BigInteger
+     * @param seqno              long
+     */
+    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno) {
+        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
+        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+    }
+
+    /**
+     * Sends amount of nano toncoins to destination address using auto-fetched seqno without the body and default send-mode 3
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -404,7 +421,7 @@ public class WalletV4ContractR2 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using auto-fetched seqno with the body and specified send-mode
+     * Sends amount of nano toncoins to destination address using auto-fetched seqno with the body and specified send-mode
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]

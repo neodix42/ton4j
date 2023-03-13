@@ -69,7 +69,7 @@ public class NftCollection implements Contract {
 
     @Override
     public Address getAddress() {
-        if (address == null) {
+        if (isNull(address)) {
             return (createStateInit()).address;
         }
         return address;

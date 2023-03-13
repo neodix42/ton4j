@@ -46,7 +46,7 @@ public class LockupWalletV1 implements WalletContract {
     public LockupWalletV1(Options options) {
         this.options = options;
         options.code = Cell.fromBoc(LOCKUP_R1_CODE_HEX);
-        if (options.walletId == null) {
+        if (isNull(options.walletId)) {
             options.walletId = 698983191 + options.wc;
         }
     }
@@ -63,7 +63,7 @@ public class LockupWalletV1 implements WalletContract {
 
     @Override
     public Address getAddress() {
-        if (address == null) {
+        if (isNull(address)) {
             return (createStateInit()).address;
         }
         return address;
@@ -222,10 +222,7 @@ public class LockupWalletV1 implements WalletContract {
     public long getSeqno(Tonlib tonlib) {
 
         Address myAddress = getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "seqno");
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
-
-        return seqno.getNumber().longValue();
+        return tonlib.getSeqno(myAddress);
     }
 
     public void deploy(Tonlib tonlib, byte[] secretKey) {
@@ -233,7 +230,7 @@ public class LockupWalletV1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using auto-fetched seqno without the body and default send-mode 3
+     * Sends amount of nano toncoins to destination address using auto-fetched seqno without the body and default send-mode 3
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -247,7 +244,7 @@ public class LockupWalletV1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using specified seqno with the body and default send-mode 3
+     * Sends amount of nano toncoins to destination address using specified seqno with the body and default send-mode 3
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -261,7 +258,7 @@ public class LockupWalletV1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using specified seqno with the body and specified send-mode
+     * Sends amount of nano toncoins to destination address using specified seqno with the body and specified send-mode
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -276,7 +273,7 @@ public class LockupWalletV1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using auto-fetched seqno with the body and default send-mode 3
+     * Sends amount of nano toncoins to destination address using auto-fetched seqno with the body and default send-mode 3
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -291,7 +288,7 @@ public class LockupWalletV1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using specified seqno with the body and default send-mode 3
+     * Sends amount of nano toncoins to destination address using specified seqno with the body and default send-mode 3
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -305,7 +302,7 @@ public class LockupWalletV1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using auto-fetched seqno with the comment and default send-mode 3
+     * Sends amount of nano toncoins to destination address using auto-fetched seqno with the comment and default send-mode 3
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]
@@ -320,7 +317,7 @@ public class LockupWalletV1 implements WalletContract {
     }
 
     /**
-     * Sends amount of toncoins to destination address using auto-fetched seqno with the body and specified send-mode
+     * Sends amount of nano toncoins to destination address using auto-fetched seqno with the body and specified send-mode
      *
      * @param tonlib             Tonlib
      * @param secretKey          byte[]

@@ -22,6 +22,7 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 import java.util.List;
 
+import static java.util.Objects.isNull;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.ton.java.smartcontract.TestFaucet.FAUCET_ADDRESS_RAW;
 
@@ -109,7 +110,7 @@ public class TestWalletV4R2PluginsDeployTransfer {
             if (i++ > 10) {
                 throw new Error("time out getting account state");
             }
-        } while (state.getAccount_state().getCode() == null);
+        } while (isNull(state.getAccount_state().getCode()));
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(state.getBalance()));
 
@@ -156,7 +157,7 @@ public class TestWalletV4R2PluginsDeployTransfer {
             if (i++ > 10) {
                 throw new Error("time out getting account state");
             }
-        } while (state.getAccount_state().getCode() == null);
+        } while (isNull(state.getAccount_state().getCode()));
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(state.getBalance()));
 
@@ -167,7 +168,7 @@ public class TestWalletV4R2PluginsDeployTransfer {
             if (i++ > 10) {
                 throw new Error("time out getting account state");
             }
-        } while (state.getAccount_state().getCode() == null);
+        } while (isNull(state.getAccount_state().getCode()));
 
         log.info("walletV4 balance: {}", Utils.formatNanoValue(state.getBalance()));
 
@@ -192,7 +193,7 @@ public class TestWalletV4R2PluginsDeployTransfer {
             if (i++ > 10) {
                 throw new Error("time out getting account state");
             }
-        } while (state.getAccount_state().getCode() == null);
+        } while (isNull(state.getAccount_state().getCode()));
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(state.getBalance()));
 
@@ -203,7 +204,7 @@ public class TestWalletV4R2PluginsDeployTransfer {
             if (i++ > 10) {
                 throw new Error("time out getting account state");
             }
-        } while (state.getAccount_state().getCode() == null);
+        } while (isNull(state.getAccount_state().getCode()));
 
         log.info("walletV4 balance: {}", Utils.formatNanoValue(state.getBalance()));
 

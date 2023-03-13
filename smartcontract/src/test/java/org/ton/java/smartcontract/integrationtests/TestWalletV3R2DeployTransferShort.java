@@ -36,7 +36,8 @@ public class TestWalletV3R2DeployTransferShort {
         Options options1 = Options.builder()
                 .publicKey(keyPair.getPublicKey())
                 .walletId(42L) //allows to create many wallets with the same public key (without risks of replaying messages between the wallets).
-                .wc(0L).build();
+                .wc(0L)
+                .build();
 
         Wallet wallet = new Wallet(WalletVersion.V3R2, options1);
         WalletV3ContractR2 contract1 = wallet.create();
@@ -52,7 +53,8 @@ public class TestWalletV3R2DeployTransferShort {
         Options options2 = Options.builder()
                 .publicKey(keyPair.getPublicKey())
                 .walletId(98L)
-                .wc(0L).build();
+                .wc(0L)
+                .build();
 
         wallet = new Wallet(WalletVersion.V3R2, options2);
         WalletV3ContractR2 contract2 = wallet.create();

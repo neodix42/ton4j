@@ -4,6 +4,8 @@ import org.ton.java.cell.Cell;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Options;
 
+import static java.util.Objects.isNull;
+
 public class WalletV3ContractR1 extends WalletV3ContractBase {
 
     /**
@@ -12,7 +14,7 @@ public class WalletV3ContractR1 extends WalletV3ContractBase {
     public WalletV3ContractR1(Options options) {
         super(options);
         options.code = Cell.fromBoc(WalletCodes.V3R1.getValue());
-        if (options.walletId == null) {
+        if (isNull(options.walletId)) {
             options.walletId = 698983191 + options.wc;
         }
     }

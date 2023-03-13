@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
+import static java.util.Objects.isNull;
+
 public class Address {
 
     private static final byte bounceable_tag = 0x11;
@@ -28,7 +30,7 @@ public class Address {
 
     public Address(String address) {
 
-        if (address == null) {
+        if (isNull(address)) {
             throw new IllegalArgumentException("Address is null");
         }
 
@@ -81,7 +83,7 @@ public class Address {
 
     public Address(Address address) {
 
-        if (address == null) {
+        if (isNull(address)) {
             throw new IllegalArgumentException("Address is null");
         }
 

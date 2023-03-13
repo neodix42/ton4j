@@ -50,12 +50,12 @@ public class TestTonlibJson {
 
         InputStream testConfig = TestTonlibJson.class.getClassLoader().getResourceAsStream("testnet-global.config.json");
 
-        assert testConfig != null;
+        assert nonNull(testConfig);
 
         String data = Utils.streamToString(testConfig);
         testConfig.close();
 
-        assert data != null;
+        assert nonNull(data);
 
         String dataQuery = JsonParser.parseString(data).getAsJsonObject().toString();
 
@@ -117,10 +117,10 @@ public class TestTonlibJson {
         Map<String, RawTransactions> txs = tonlib.getAllBlockTransactions(fullblock, 100, null);
         for (Map.Entry<String, RawTransactions> entry : txs.entrySet()) {
             for (RawTransaction tx : entry.getValue().getTransactions()) {
-                if ((tx.getIn_msg() != null) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+                if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
                     log.info("{} <<<<< {} : {} ", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue(), 9));
                 }
-                if (tx.getOut_msgs() != null) {
+                if (nonNull(tx.getOut_msgs())) {
                     for (RawMessage msg : tx.getOut_msgs()) {
                         log.info("{} >>>>> {} : {} ", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
                     }
@@ -147,10 +147,10 @@ public class TestTonlibJson {
                 log.info("lt {}, hash {}, account {}", shortTxId.getLt(), shortTxId.getHash(), acccount.toString(false));
                 RawTransactions rawTransactions = tonlib.getRawTransactions(acccount.toString(false), BigInteger.valueOf(shortTxId.getLt()), shortTxId.getHash());
                 for (RawTransaction tx : rawTransactions.getTransactions()) {
-                    if ((tx.getIn_msg() != null) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+                    if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
                         log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
                     }
-                    if (tx.getOut_msgs() != null) {
+                    if (nonNull(tx.getOut_msgs())) {
                         for (RawMessage msg : tx.getOut_msgs()) {
                             log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
                         }
@@ -174,10 +174,10 @@ public class TestTonlibJson {
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
         for (RawTransaction tx : rawTransactions.getTransactions()) {
-            if ((tx.getIn_msg() != null) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
                 log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
             }
-            if (tx.getOut_msgs() != null) {
+            if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
                     log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
                 }
@@ -198,10 +198,10 @@ public class TestTonlibJson {
         RawTransactions rawTransactions = tonlib.getRawTransactions(address.toString(false), null, null, 3);
 
         for (RawTransaction tx : rawTransactions.getTransactions()) {
-            if ((tx.getIn_msg() != null) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
                 log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
             }
-            if (tx.getOut_msgs() != null) {
+            if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
                     log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
                 }
@@ -226,10 +226,10 @@ public class TestTonlibJson {
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
         for (RawTransaction tx : rawTransactions.getTransactions()) {
-            if ((tx.getIn_msg() != null) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
                 log.info("<<<<< {} - {} : {} ", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
             }
-            if (tx.getOut_msgs() != null) {
+            if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
                     log.info(">>>>> {} - {} : {} ", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
                 }
@@ -255,7 +255,7 @@ public class TestTonlibJson {
             if (nonNull(tx.getIn_msg()) && (StringUtils.isNoneEmpty(tx.getIn_msg().getSource().getAccount_address()))) {
                 log.info("<<<<< {} - {} : {} ", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
             }
-            if (tx.getOut_msgs() != null) {
+            if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
                     log.info(">>>>> {} - {} : {} ", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
                 }
@@ -505,6 +505,8 @@ public class TestTonlibJson {
                 .ignoreCache(true)
                 .build();
 
+        RunResult seqno = tonlib.runMethod(Address.of("-1:CF624357217E2C9D2F4F5CA65F82FCBD16949FA00F46CA51358607BEF6D2CB53"), "seqno");
+        log.info("seqno RunResult {}", seqno);
         FullAccountState accountState1 = tonlib.getAccountState(Address.of("-1:85cda44e9838bf5a8c6d1de95c3e22b92884ae70ee1b550723a92a8ca0df3321"));
         RawAccountState accountState2 = tonlib.getRawAccountState(Address.of("-1:85cda44e9838bf5a8c6d1de95c3e22b92884ae70ee1b550723a92a8ca0df3321"));
 

@@ -20,7 +20,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class JettonWallet implements Contract {
-    
+
     Options options;
     Address address;
 
@@ -51,7 +51,7 @@ public class JettonWallet implements Contract {
 
     @Override
     public Address getAddress() {
-        if (this.address == null) {
+        if (isNull(this.address)) {
             return (createStateInit()).address;
         }
         return this.address;

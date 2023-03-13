@@ -26,6 +26,7 @@ import java.util.zip.CRC32C;
 import java.util.zip.Checksum;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 public class Utils {
     private static final String HEXES = "0123456789ABCDEF";
@@ -436,7 +437,7 @@ public class Utils {
     }
 
     public static BigInteger toNano(String toncoins) {
-        if (toncoins != null) {
+        if (nonNull(toncoins)) {
             if (toncoins.matches("^\\d*\\.\\d+|\\d+\\.\\d*$")) {
                 return new BigDecimal(toncoins).multiply(BigDecimal.valueOf(BLN1)).toBigInteger();
             } else {

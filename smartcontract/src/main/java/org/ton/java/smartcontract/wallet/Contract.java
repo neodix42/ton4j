@@ -9,6 +9,7 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 /**
@@ -24,7 +25,7 @@ public interface Contract {
      * @return Cell containing contact code
      */
     default Cell createCodeCell() {
-        if (getOptions().code == null) {
+        if (isNull(getOptions().code)) {
             throw new Error("Contract: options.code is not defined");
         }
         return getOptions().code;
@@ -73,29 +74,29 @@ public interface Contract {
      */
     default Cell createStateInit(Cell code, Cell data, Cell library, Cell splitDepth, Cell ticktock) {
 
-        if (library != null) {
+        if (nonNull(library)) {
             throw new Error("Library in state init is not implemented");
         }
 
-        if (splitDepth != null) {
+        if (nonNull(splitDepth)) {
             throw new Error("Split depth in state init is not implemented");
         }
 
-        if (ticktock != null) {
+        if (nonNull(ticktock)) {
             throw new Error("Ticktock in state init is not implemented");
         }
 
         CellBuilder stateInit = CellBuilder.beginCell();
 
-        stateInit.storeBits(new boolean[]{splitDepth != null, ticktock != null, code != null, data != null, library != null});
+        stateInit.storeBits(new boolean[]{nonNull(splitDepth), nonNull(ticktock), nonNull(code), nonNull(data), nonNull(library)});
 
-        if (code != null) {
+        if (nonNull(code)) {
             stateInit.storeRef(code);
         }
-        if (data != null) {
+        if (nonNull(data)) {
             stateInit.storeRef(data);
         }
-        if (library != null) {
+        if (nonNull(library)) {
             stateInit.storeRef(library);
         }
 
@@ -146,7 +147,7 @@ public interface Contract {
         message.storeBit(false);
         message.storeBit(ihrDisabled);
 
-        if ((bounce != null)) {
+        if (nonNull(bounce)) {
             message.storeBit(bounce);
         } else {
             message.storeBit(dest.isBounceable);

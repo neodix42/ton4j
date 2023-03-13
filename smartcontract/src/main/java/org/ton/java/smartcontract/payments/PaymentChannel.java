@@ -78,7 +78,7 @@ public class PaymentChannel implements WalletContract {
 
     @Override
     public Address getAddress() {
-        if (this.address == null) {
+        if (isNull(this.address)) {
             return (createStateInit()).address;
         }
         return this.address;

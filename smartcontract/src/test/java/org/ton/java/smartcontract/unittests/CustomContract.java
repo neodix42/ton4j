@@ -10,6 +10,8 @@ import org.ton.java.smartcontract.wallet.WalletContract;
 import java.math.BigInteger;
 import java.util.Date;
 
+import static java.util.Objects.isNull;
+
 public class CustomContract implements WalletContract {
     Options options;
     Address address;
@@ -41,7 +43,7 @@ public class CustomContract implements WalletContract {
 
     @Override
     public Address getAddress() {
-        if (address == null) {
+        if (isNull(address)) {
             return (createStateInit()).address;
         }
         return address;
