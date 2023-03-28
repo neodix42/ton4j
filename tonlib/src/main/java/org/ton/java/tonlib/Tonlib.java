@@ -633,6 +633,12 @@ public class Tonlib {
         }
     }
 
+    /**
+     * Returns status of an address, code and data
+     *
+     * @param address Address
+     * @return account state RawAccountState
+     */
     public RawAccountState getRawAccountState(Address address) {
         synchronized (gson) {
             AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
@@ -651,7 +657,7 @@ public class Tonlib {
     }
 
     /**
-     * Returns status of an address.
+     * Returns status of an address
      *
      * @param address Address
      * @return String, uninitialized, frozen or active
@@ -685,7 +691,7 @@ public class Tonlib {
     }
 
     /**
-     * With comparison to getRawAccountState returns wallet_id and seqno and always returns code and data.
+     * With comparison to getRawAccountState returns wallet_id and seqno, not necessarily returns code and data
      *
      * @param address AccountAddressOnly
      * @return FullAccountState
@@ -704,7 +710,7 @@ public class Tonlib {
     }
 
     /**
-     * With comparison to getRawAccountState returns wallet_id and seqno and always returns code and data.
+     * With comparison to getRawAccountState returns wallet_id and seqno, not necessarily returns code and data
      *
      * @param address Address
      * @return FullAccountState

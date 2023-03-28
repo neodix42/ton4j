@@ -565,7 +565,6 @@ public class TestTonlibJson {
     @Test
     public void testTonlibStateAndStatus() {
         Tonlib tonlib = Tonlib.builder()
-                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
         int i = 0;
@@ -577,7 +576,7 @@ public class TestTonlibJson {
         log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState2.getBalance(), accountState2);
         log.info("wallet_id {}, seqno {}", accountState1.getAccount_state().getWallet_id(), accountState1.getAccount_state().getSeqno());
         log.info("frozen_hash {}, status {}", accountState1.getAccount_state().getFrozen_hash(), accountState1Status);
-        log.info("frozen_hash {}", accountState2.getFrozen_hash());
+        log.info("rawAccountState2 {}", accountState2);
         assertThat(accountState1.getBalance()).isEqualTo(accountState2.getBalance());
     }
 }
