@@ -531,30 +531,29 @@ public class Tonlib {
      */
     public RawTransactions getAllRawTransactions(String address, BigInteger fromTxLt, String fromTxHash, int historyLimit) {
 
-        List<RawTransaction> transactions = new ArrayList<>();
         RawTransactions rawTransactions = getRawTransactions(address, fromTxLt, fromTxHash);
 
         if (isNull(rawTransactions.getTransactions())) {
             throw new Error("lite-server cannot return any transactions");
         }
-        transactions.addAll(rawTransactions.getTransactions());
+        List<RawTransaction> transactions = new ArrayList<>(rawTransactions.getTransactions());
 
         while (rawTransactions.getPrevious_transaction_id().getLt().compareTo(BigInteger.ZERO) != 0) {
             rawTransactions = getRawTransactions(address, rawTransactions.getPrevious_transaction_id().getLt(), rawTransactions.getPrevious_transaction_id().getHash());
+            if (isNull(rawTransactions.getTransactions()) && !transactions.isEmpty()) {
+                return RawTransactions.builder().transactions(transactions).build();
+            }
             transactions.addAll(rawTransactions.getTransactions());
             if (transactions.size() > historyLimit) {
-                rawTransactions.setTransactions(transactions.subList(0, historyLimit));
-                return rawTransactions;
+                return RawTransactions.builder().transactions(transactions.subList(0, historyLimit)).build();
             }
         }
 
-        if (historyLimit > rawTransactions.getTransactions().size()) {
-            rawTransactions.setTransactions(transactions);
+        if (historyLimit > transactions.size()) {
+            return RawTransactions.builder().transactions(transactions).build();
         } else {
-            rawTransactions.setTransactions(transactions.subList(0, historyLimit));
+            return RawTransactions.builder().transactions(transactions.subList(0, historyLimit)).build();
         }
-
-        return rawTransactions;
     }
 
     public BlockTransactions getBlockTransactions(BlockIdExt fullblock, long count, long afterLt, String afterHash) {
