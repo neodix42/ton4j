@@ -8,7 +8,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.utils.Utils;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 
 import java.math.BigInteger;
 import java.util.Date;
@@ -76,10 +76,10 @@ public class WalletV2ContractBase implements WalletContract {
      * @param destinationAddress Address
      * @param amount             BigInteger
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     /**
@@ -91,10 +91,10 @@ public class WalletV2ContractBase implements WalletContract {
      * @param amount             BigInteger
      * @param body               byte[]
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, byte[] body) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, byte[] body) {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     /**
@@ -106,10 +106,10 @@ public class WalletV2ContractBase implements WalletContract {
      * @param amount             BigInteger
      * @param body               Cell
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, Cell body) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, Cell body) {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     /**
@@ -121,9 +121,9 @@ public class WalletV2ContractBase implements WalletContract {
      * @param amount             BigInteger
      * @param body               byte[]
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, byte[] body) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, byte[] body) {
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     /**
@@ -135,9 +135,9 @@ public class WalletV2ContractBase implements WalletContract {
      * @param amount             BigInteger
      * @param body               Cell
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, Cell body) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, Cell body) {
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     /**
@@ -150,9 +150,9 @@ public class WalletV2ContractBase implements WalletContract {
      * @param seqno              long
      * @param comment            String
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, String comment) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, String comment) {
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     /**
@@ -164,9 +164,9 @@ public class WalletV2ContractBase implements WalletContract {
      * @param amount             BigInteger
      * @param seqno              long
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno) {
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-        tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     /**
@@ -178,10 +178,10 @@ public class WalletV2ContractBase implements WalletContract {
      * @param amount             BigInteger
      * @param comment            String
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, String comment) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, String comment) {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     /**
@@ -194,7 +194,7 @@ public class WalletV2ContractBase implements WalletContract {
      * @param amount              BigInteger
      * @param body                byte[]
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount, Cell body) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount, Cell body) {
         long seqno = getSeqno(tonlib);
 
         Cell orderHeader1 = Contract.createInternalMessageHeader(destinationAddress1, amount);
@@ -210,7 +210,7 @@ public class WalletV2ContractBase implements WalletContract {
         signingMessageAll.refs.add(order2);
 
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     /**
@@ -222,12 +222,12 @@ public class WalletV2ContractBase implements WalletContract {
      * @param destinationAddress2 Address
      * @param amount              BigInteger
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount, String comment) {
-        sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount, String comment) {
+        return sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
     }
 
 
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, BigInteger amount, Cell body) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, BigInteger amount, Cell body) {
         long seqno = getSeqno(tonlib);
 
         Cell orderHeader1 = Contract.createInternalMessageHeader(destinationAddress1, amount);
@@ -249,14 +249,14 @@ public class WalletV2ContractBase implements WalletContract {
         signingMessageAll.refs.add(order3);
 
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, BigInteger amount, String comment) {
-        sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, BigInteger amount, String comment) {
+        return sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
     }
 
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount, Cell body) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount, Cell body) {
         long seqno = getSeqno(tonlib);
 
         Cell orderHeader1 = Contract.createInternalMessageHeader(destinationAddress1, amount);
@@ -283,14 +283,14 @@ public class WalletV2ContractBase implements WalletContract {
         signingMessageAll.refs.add(order4);
 
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount, String comment) {
-        sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, destinationAddress4, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount, String comment) {
+        return sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, destinationAddress4, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
     }
 
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount) {
-        sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, destinationAddress4, amount, CellBuilder.beginCell().endCell());
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount) {
+        return sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, destinationAddress4, amount, CellBuilder.beginCell().endCell());
     }
 }

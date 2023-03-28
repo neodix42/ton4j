@@ -12,13 +12,11 @@ import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
-
 @Slf4j
 
 public class GenerateWallet {
 
-    public static TestWallet random(Tonlib tonlib, long initialBalanceInToncoins) throws InterruptedException {
+    public static TestWallet random(Tonlib tonlib, long initialBalanceInToncoins) {
         TweetNaclFast.Signature.KeyPair keyPair;
         WalletV3ContractR1 adminWallet;
         String predefinedSecretKey = "";
@@ -45,11 +43,11 @@ public class GenerateWallet {
         String nonBounceableAddress = address.toString(true, true, false, true);
         String bounceableAddress = address.toString(true, true, true, true);
 
-        log.info("\nNon-bounceable address (for init): {}\nBounceable address (for later access): {}\nraw: {}", nonBounceableAddress, bounceableAddress, address.toString(false));
+        log.info("\nNon-bounceable address (for init): {}\nBounceable address (for later access): {}\nraw: {}\n", nonBounceableAddress, bounceableAddress, address.toString(false));
 
         if (StringUtils.isEmpty(predefinedSecretKey)) {
-            BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins));
-            log.info("new wallet balance {}", Utils.formatNanoValue(balance));
+//            BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins));
+//            log.info("new wallet balance {}", Utils.formatNanoValue(balance));
             // deploy new wallet
             tonlib.sendRawMessage(msg.message.toBocBase64(false));
             Utils.sleep(20);

@@ -12,6 +12,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 
@@ -114,10 +115,10 @@ public class HighloadWallet implements WalletContract {
      * @param secretKey      byte[]
      * @param highloadConfig HighloadConfig
      */
-    public void sendTonCoins(Tonlib tonlib, byte[] secretKey, HighloadConfig highloadConfig) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, HighloadConfig highloadConfig) {
         Cell signingMessageAll = createSigningMessageInternal(highloadConfig);
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
     }
 
     private Cell createDict(HighloadConfig highloadConfig) {

@@ -27,7 +27,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public class TestLockupWalletDeployTransfer {
 
     @Test
-    public void testNewWalletLockup() throws InterruptedException {
+    public void testNewWalletLockup() {
 //        byte[] secondPublicKey = Utils.hexToBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
 //        byte[] secondSecretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
@@ -58,20 +58,24 @@ public class TestLockupWalletDeployTransfer {
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
+        log.info("    bounceable address {}", address.toString(false));
 
         assertThat(msg.code).isNotNull();
 
         // top up new wallet using test-faucet-wallet
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
+        Tonlib tonlib = Tonlib.builder()
+//                .testnet(true)
+                .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
+                .build();
 
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-        log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+//        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
+//        log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         Utils.sleep(5);
 
         contract.deploy(tonlib, keyPair.getSecretKey());
 
-        Utils.sleep(30, "deploying");
+        Utils.sleep(60, "deploying");
 
         log.info("seqno {}", contract.getSeqno(tonlib));
         log.info("sub-wallet id {}", contract.getWalletId(tonlib));
@@ -90,7 +94,7 @@ public class TestLockupWalletDeployTransfer {
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(4), "send-to-allowed-1");
         Utils.sleep(70);
 
-        balance = new BigInteger(tonlib.getAccountState(address).getBalance());
+        BigInteger balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(4).longValue());
 

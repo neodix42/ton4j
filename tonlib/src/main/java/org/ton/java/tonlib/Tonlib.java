@@ -837,6 +837,23 @@ public class Tonlib {
     }
 
     /**
+     * Generic method to call get_subwallet_id method of a contract. There is no check if get_subwallet_id method exists.
+     *
+     * @param address Address
+     * @return long
+     */
+    public long getSubWalletId(Address address) {
+        RunResult result = runMethod(address, "get_subwallet_id");
+        if (result.getExit_code() != 0) {
+            throw new Error("method get_subwallet_id returned an exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
+
+        return seqno.getNumber().longValue();
+    }
+
+    /**
      * Sends raw message, bag of cells encoded in base64
      *
      * @param serializedBoc - base64 encoded BoC

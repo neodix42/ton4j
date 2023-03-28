@@ -17,6 +17,7 @@ import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.java.smartcontract.wallet.v4.WalletV4ContractR2;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.FullAccountState;
+import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -95,6 +96,8 @@ public class TestWalletV4R2PluginsDeployTransfer {
             }
         } while (StringUtils.isEmpty(state.getAccount_state().getCode()));
 
+        log.info("subwallet-id from fullAccountState {}", state.getAccount_state().getWallet_id());
+
         long walletCurrentSeqno = contract.getSeqno(tonlib);
         log.info("walletV4 balance: {}", Utils.formatNanoValue(state.getBalance()));
         log.info("seqno: {}", walletCurrentSeqno);
@@ -102,6 +105,8 @@ public class TestWalletV4R2PluginsDeployTransfer {
         log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey(tonlib)));
         log.info("pluginsList: {}", contract.getPluginsList(tonlib));
 
+        RunResult result = tonlib.runMethod(Address.of(bounceableAddress), "get_subwallet_id");
+        log.info("V4R2 get_subwallet_id {}", result);
         // create and deploy plugin -- start
         i = 0;
         do {

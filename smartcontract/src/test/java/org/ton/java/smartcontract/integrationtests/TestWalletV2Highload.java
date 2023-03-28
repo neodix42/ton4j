@@ -33,7 +33,7 @@ public class TestWalletV2Highload {
     public void testWalletV2HighloadSendTo10() throws InterruptedException {
 
         Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
+                .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
                 .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
@@ -54,11 +54,12 @@ public class TestWalletV2Highload {
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
+        log.info("           raw address {}", contract.getAddress().toString(false));
 
         // top up new wallet using test-faucet-wallet        
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-        Utils.sleep(10, "topping up...");
-        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+//        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
+//        Utils.sleep(10, "topping up...");
+//        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         contract.deploy(tonlib, keyPair.getSecretKey());
 
@@ -120,7 +121,7 @@ public class TestWalletV2Highload {
 
         Utils.sleep(60, "sending to multiple destinations");
 
-        balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
+        BigInteger balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(3).longValue());
     }

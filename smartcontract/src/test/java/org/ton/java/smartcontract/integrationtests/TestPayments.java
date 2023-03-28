@@ -29,7 +29,8 @@ public class TestPayments {
     static Address walletAddressA;
     static Address walletAddressB;
     static Tonlib tonlib = Tonlib.builder()
-            .testnet(true)
+//            .testnet(true)
+            .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
             .build();
 
     @BeforeClass

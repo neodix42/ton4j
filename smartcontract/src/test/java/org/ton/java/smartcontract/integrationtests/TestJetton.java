@@ -28,7 +28,10 @@ public class TestJetton {
 
     static TestWallet adminWallet;
     static TestWallet wallet2;
-    static Tonlib tonlib = Tonlib.builder().testnet(true).build();
+    static Tonlib tonlib = Tonlib.builder()
+//            .testnet(true)
+            .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
+            .build();
 
     @BeforeClass
     public static void setUpClass() throws InterruptedException {
@@ -96,7 +99,7 @@ public class TestJetton {
 
         Wallet jettonMinter = new Wallet(WalletVersion.jettonMinter, options);
         JettonMinter minter = jettonMinter.create();
-        log.info("jetton minter address {}", minter.getAddress().toString(true, true, true));
+        log.info("jetton minter address {} {}", minter.getAddress().toString(true, true, true), minter.getAddress().toString(false));
         minter.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.05), adminWallet.getKeyPair());
         Utils.sleep(25);
         return minter;
@@ -119,7 +122,7 @@ public class TestJetton {
     private void getMinterInfo(JettonMinter minter) {
         JettonMinterData data = minter.getJettonData(tonlib);
         log.info("JettonMinterData {}", data);
-        log.info("minter adminAddress {}", data.getAdminAddress().toString(true, true, true));
+        log.info("minter adminAddress {} {}", data.getAdminAddress().toString(true, true, true), data.getAdminAddress().toString(false));
         log.info("minter totalSupply {}", Utils.formatNanoValue(data.getTotalSupply()));
     }
 

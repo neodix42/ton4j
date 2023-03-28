@@ -40,9 +40,13 @@ public class TestWalletMultisig {
      * then sends the order to the wallet.
      */
     @Test
-    public void testWalletMultisigOffline() throws InterruptedException {
+    public void testWalletMultisigOffline() {
 
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
+        Tonlib tonlib = Tonlib.builder()
+//                .testnet(true)
+                .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
+                .build();
+
 
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
@@ -107,9 +111,9 @@ public class TestWalletMultisig {
         log.info("    bounceable address {}", bounceableAddress);
 
         // top up new wallet using test-faucet-wallet
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-        Utils.sleep(10, "topping up...");
-        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+//        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
+//        Utils.sleep(10, "topping up...");
+//        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         contract.deploy(tonlib, ownerKeyPair.getSecretKey());
 
