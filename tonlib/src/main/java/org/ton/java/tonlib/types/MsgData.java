@@ -15,8 +15,9 @@ import java.io.Serializable;
 public class MsgData implements Serializable {
 
     @SerializedName("@type")
-    final String type;// = "msg.dataRaw"; can be also msg.dataText
+    final String type;
     String body;
+    String text;
     String init_state;
 
 }

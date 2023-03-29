@@ -240,6 +240,50 @@ public class TestTonlibJson {
     }
 
     @Test
+    public void testTonlibGetAllTxsByAddressWithMemo() {
+        Tonlib tonlib = Tonlib.builder()
+//                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
+        Address address = Address.of("EQCQxq9F4-RSaO-ya7q4CF26yyCaQNY98zgD5ys3ZbbiZdUy");
+
+        log.info("address: " + address.toString(true));
+
+        RawTransactions rawTransactions = tonlib.getAllRawTransactions(address.toString(false), null, null, 51);
+
+        log.info("total txs: {}", rawTransactions.getTransactions().size());
+
+        for (RawTransaction tx : rawTransactions.getTransactions()) {
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+
+                String msgBodyText;
+                if (nonNull(tx.getIn_msg().getMsg_data().getBody())) {
+
+                    Cell c = Cell.fromBoc(Utils.base64ToBytes(tx.getIn_msg().getMsg_data().getBody()));
+                    msgBodyText = c.print();
+                } else {
+                    msgBodyText = Utils.base64ToString(tx.getIn_msg().getMsg_data().getText());
+                }
+                log.info("<<<<< {} - {} : {}, msgBody cell/text {}, memo {}, memoBytes {}", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()), StringUtils.normalizeSpace(msgBodyText), tx.getIn_msg().getMessage(), Utils.bytesToHex(tx.getIn_msg().getMessageBytes()));
+            }
+            if (nonNull(tx.getOut_msgs())) {
+                for (RawMessage msg : tx.getOut_msgs()) {
+                    String msgBodyText;
+                    if (nonNull(msg.getMsg_data().getBody())) {
+                        Cell c = Cell.fromBoc(Utils.base64ToBytes(msg.getMsg_data().getBody()));
+                        msgBodyText = c.print();
+                    } else {
+                        msgBodyText = Utils.base64ToString(msg.getMessage());
+                    }
+                    log.info(">>>>> {} - {} : {}, msgBody cell/text {}, memo {}, memoHex {}", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()), StringUtils.normalizeSpace(msgBodyText), msg.getMessage(), msg.getMessageHex());
+                }
+            }
+        }
+
+        assertThat(rawTransactions.getTransactions().size()).isLessThan(10);
+    }
+
+    @Test
     public void testTonlibGetAllTxsByAddressSmallHistoryLimit() {
         Tonlib tonlib = Tonlib.builder().build();
 

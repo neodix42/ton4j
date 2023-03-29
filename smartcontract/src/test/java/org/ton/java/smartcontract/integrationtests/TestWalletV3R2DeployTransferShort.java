@@ -12,7 +12,6 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR2;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -28,7 +27,6 @@ public class TestWalletV3R2DeployTransferShort {
 
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
-                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
