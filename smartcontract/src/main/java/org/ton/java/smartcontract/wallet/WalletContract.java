@@ -45,7 +45,19 @@ public interface WalletContract extends Contract {
     }
 
     /**
-     * External message for initialization
+     * External message for initialization.
+     * <p>
+     * If you use KeyPair based on mnemonic:
+     * <p>
+     * <code>Pair keyPair = Mnemonic.toKeyPair(Mnemonic.generate(24));</code>
+     * <p>
+     * Then you must build signature KeyPair out of it:
+     * <p>
+     * <code>TweetNaclFast.Signature.KeyPair keyPairSig = TweetNaclFast.Signature.keyPair_fromSeed(keyPair.getSecretKey());</code>
+     * <p>
+     * and use it in createInitExternalMessage as a secretKey:
+     * <p>
+     * <code>contract.createInitExternalMessage(keyPairSig.getSecretKey());</code>
      *
      * @param secretKey byte[] nacl.KeyPair.secretKey
      * @return InitExternalMessage
@@ -80,6 +92,24 @@ public interface WalletContract extends Contract {
                 stateInit.data);
     }
 
+    /**
+     * External message for initialization.
+     * <p>
+     * If you use KeyPair based on mnemonic:
+     * <p>
+     * <code>Pair keyPair = Mnemonic.toKeyPair(Mnemonic.generate(24));</code>
+     * <p>
+     * Then you must build signature KeyPair out of it:
+     * <p>
+     * <code>TweetNaclFast.Signature.KeyPair keyPairSig = TweetNaclFast.Signature.keyPair_fromSeed(keyPair.getSecretKey());</code>
+     * <p>
+     * and use it in createInitExternalMessage as a secretKey:
+     * <p>
+     * <code>contract.createInitExternalMessage(keyPairSig.getSecretKey());</code>
+     *
+     * @param secretKey byte[] nacl.KeyPair.secretKey
+     * @return InitExternalMessage
+     */
     default InitExternalMessage createInitExternalMessageWithoutBody(byte[] secretKey) {
 
         if (getOptions().publicKey.length == 0) {
@@ -107,6 +137,12 @@ public interface WalletContract extends Contract {
     }
 
     /**
+     * Creates external message signed by the specified secretKey.
+     * <p>
+     * If you use KeyPair based on mnemonic, you have to convert it to Signature KeyPair:
+     * <p>
+     * <code>TweetNaclFast.Signature.KeyPair keyPairSig = TweetNaclFast.Signature.keyPair_fromSeed(keyPair.getSecretKey());</code>
+     *
      * @param signingMessage Cell
      * @param secretKey      byte[]  nacl.KeyPair.secretKey
      * @param seqno          long
@@ -165,6 +201,12 @@ public interface WalletContract extends Contract {
     }
 
     /**
+     * Creates transfer message with a various parameters signed by the specified secretKey.
+     * <p>
+     * If you use KeyPair based on mnemonic, you have to convert it to Signature KeyPair:
+     * <p>
+     * <code>TweetNaclFast.Signature.KeyPair keyPairSig = TweetNaclFast.Signature.keyPair_fromSeed(keyPair.getSecretKey());</code>
+     *
      * @param secretKey      byte[]  nacl.KeyPair.secretKey
      * @param address        Address destination
      * @param amount         BigInteger in nano-coins
