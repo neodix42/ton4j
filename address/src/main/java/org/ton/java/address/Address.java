@@ -22,6 +22,11 @@ public class Address {
 
     }
 
+    public Address(byte wc, byte[] hashPart){
+        this.wc = wc;
+        this.hashPart = hashPart;
+    }
+
     public Address(String address) {
 
         if (address == null) {
