@@ -405,6 +405,11 @@ public class Exec {
     last_shards = new HashSet<String> ();
     known_contracts = new HashMap<String,String> ();
     known_contracts.put ("a7a2616a4d639a076c2f67e7cce0423fd2a1c2ee550ad651c1eda16ee13bcaca", "nft_item");
+    known_contracts.put ("4c9123828682fa6f43797ab41732bca890cae01766e0674100250516e0bf8d42", "nft_item");
+    known_contracts.put ("9892766765d3ea42809a417abbd7ff9ce681b145d05ae6b118a614b38c8ded15", "nft_item_editable");
+    known_contracts.put ("959fc9a86b4b2436a1256ee1c02a58481a58488df91ecdd6c186d580b00be40a", "nft_single");
+    known_contracts.put ("64bb2d4661b5f2dc1a83bf5cbbe09e92ac0b460a1b879a5519386fca4c348bca", "nft_collection_editable");
+    known_contracts.put ("88410c220f822181668269ce83eb9cc0d3b39c21999c8b55de03360a20e7c282", "nft_collection_no_dns");
     known_contracts.put ("9a0f98dd6fbf225eef8165e4e64417ee931f7eea000653439e7b5dcdc0644cd6", "jetton");
     known_contracts.put ("beb0683ebeb8927fe9fc8ec0a18bc7dd17899689825a121eab46c5a3a860d0ce", "jetton_wallet");
     known_contracts.put ("feb5ff6820e2ff0d9483e7e0d62c817d846789fb4ae580c878866d959dabd5c0", "wallet_v4_r2");
@@ -506,14 +511,126 @@ public class Exec {
     return new Address ("" + workchain + ":" + Utils.bytesToHex (data));
   }
 
+  static String fetch_serialized_link (Cell cell) {
+    var bits = cell.bits;
+    var firstChar = bits.preReadUint (8);
+    if (firstChar.longValue () == 1 /* offchain tag */) {
+      bits.readBits (8);
+      return bits.readString (bits.writeCursor - bits.readCursor); 
+    } 
+    /* TODO: parse onchain tag */
+    return "";
+  }
+
+  static String fetch_string (Cell cell) {
+    var bits = cell.bits;
+    return bits.readString (bits.writeCursor - bits.readCursor); 
+  }
+
+  /* nft_single */
+  public String nft_single_get_content (Address addr) {
+    AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+            .account_address(addr.toString(false))
+            .build();
+    var account_state = tonlib.getRawAccountState(accountAddressOnly);
+    if (account_state == null) {
+      return "";
+    }
+    var account_data = account_state.getData ();
+    if (account_data == null || account_data.equals ("")) {
+      return "";
+    }
+   
+    var cell = Cell.fromBoc (Utils.base64ToBytes (account_data));
+    if (cell.refs.size () < 1) {
+      return "";
+    }
+
+    return fetch_serialized_link (cell.refs.get (0));
+  }
+  
+  /* nft_collection + nft_collection_editable */
+  public String[] nft_collection_get_content (Address addr) {
+    AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+            .account_address(addr.toString(false))
+            .build();
+    var account_state = tonlib.getRawAccountState(accountAddressOnly);
+    if (account_state == null) {
+      return new String[]{};
+    }
+    var account_data = account_state.getData ();
+    if (account_data == null || account_data.equals ("")) {
+      return new String[]{};
+    }
+   
+    var cell = Cell.fromBoc (Utils.base64ToBytes (account_data));
+    if (cell.refs.size () < 1) {
+      return new String[]{};
+    }
+
+    cell = cell.refs.get (0);
+    if (cell.refs.size () < 2) {
+      return new String[]{};
+    }
+    
+    String collectionInfo = fetch_serialized_link (cell.refs.get (0));
+    String collectionItemPrefix = fetch_string (cell.refs.get (1));
+      
+    return new String[]{collectionInfo, collectionItemPrefix};
+  }
+ 
+  /* nft_item + nft_item_editable */
+  public String nft_item_get_content (Address addr) {
+    AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+            .account_address(addr.toString(false))
+            .build();
+    var account_state = tonlib.getRawAccountState(accountAddressOnly);
+    if (account_state == null) {
+      return "";
+    }
+    var account_data = account_state.getData ();
+    if (account_data == null || account_data.equals ("")) {
+      return "";
+    }
+
+    var cell = Cell.fromBoc (Utils.base64ToBytes (account_data));
+    var bits = cell.bits;
+    bits.readInt (64); // index
+    
+    bits.readBits (3);
+    var workchain = bits.readInt (8).intValue ();
+    var data = bits.readBytes (32 * 8);
+
+    var owner = new Address ("" + workchain + ":" + Utils.bytesToHex (data));
+    var t = nft_collection_get_content (owner);
+    
+    if (t.length == 0) {
+      return "";
+    }
+    assert (t.length == 2);
+    
+    if (cell.refs.size () < 1) {
+      return "";
+    }
+
+    var info = fetch_string (cell.refs.get (0));
+    if (info.equals ("")) {
+      return "";
+    }
+    return t[1] + info;
+  }
+
   public static void main (String args[]) {
     Exec exc = new Exec ();
     exc.run ();
-    System.out.println (exc.get_account_type (new Address ("EQAWezuW2xH5kIdg0wSG5TJUF2A6oDnB0sQMpER5dcI7qeqE")));
-    System.out.println (exc.get_account_type (new Address ("EQBjoHpR1nGLgkkLijjeT49McNwQAu4kosFOKJgo16BkCEFi")));
-    System.out.println (exc.get_account_type (new Address ("EQBwaYu2qTqWS4ww0nSmd85OVF5_djEQ-ezrP5nswRwrz4g_")));
-    System.out.println (exc.get_account_type (new Address ("EQAjcFJ5ansi1TsoPNFBQKnDUdF1g4XiEbQ1P1HyDGezwXH6")));
-    System.out.println (exc.get_account_type (new Address ("EQDhlJ19912SCbSD5gXe_8pVi03S3594h05FPw_iP5Ay3Fnv")));
-    System.out.println (exc.get_account_type (new Address ("EQDasUcTTlKqXlN8fjHXMPpPjL0MCYBVwrycWI97CTw9us0k")));
+    System.out.println (exc.get_account_type (new Address ("EQD4g62_gEY7s2xHf3Fs-Yl6oar1YSwBInWdChUQPkMb91hu")));
+    System.out.println (exc.get_account_type (new Address ("EQCRH0vtTG-7rgWRfsNaVJIzDLY9d0J51z-bQOfbaJt2zWOm")));
+    System.out.println (exc.get_account_type (new Address ("EQB8D8A9OoDoRmL7qVbUBrd_po9vNKcl44HCSw6b-c3nvcj9")));
+    System.out.println (exc.get_account_type (new Address ("EQDye65-jeR8kz8MlfnS0qX-5HPF_Zq4pZSKrLFSedJumy89")));
+    System.out.println (exc.get_account_type (new Address ("EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N")));
+
+    System.out.println (exc.nft_single_get_content (new Address ("EQD4g62_gEY7s2xHf3Fs-Yl6oar1YSwBInWdChUQPkMb91hu")));
+    System.out.println (exc.nft_item_get_content (new Address ("EQCRH0vtTG-7rgWRfsNaVJIzDLY9d0J51z-bQOfbaJt2zWOm")));
+    System.out.println (exc.nft_item_get_content (new Address ("EQDye65-jeR8kz8MlfnS0qX-5HPF_Zq4pZSKrLFSedJumy89")));
   }
 }
