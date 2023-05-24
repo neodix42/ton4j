@@ -17,7 +17,7 @@
         <module>smartcontract</module>
         <module>tonlib</module>
         <module>mnemonic</module>
-        <!-- <module>tlb</module> -->
+        <module>tlb</module>
     </modules>
 
     <properties>
