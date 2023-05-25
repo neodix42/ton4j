@@ -4,10 +4,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonHashMap;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import static java.util.Objects.isNull;
 
@@ -26,12 +29,36 @@ public class Account {
         if (isNull(code)) {
             return false;
         }
-        return false; // todo finish account.go
+        long hash;
+        switch (name) {
+            case "recv_internal", "main", "recv_external", "run_ticktock":
+                return false;
+            default:
+                hash = methodNameHash(name);
+        }
+
+        CellSlice cs = CellSlice.beginParse(code);
+        byte[] hdr = cs.loadBytes(56);
+
+        if (!Utils.bytesToHex(hdr).toLowerCase().contains("ff00f4a413f4bc")) {
+            return false;
+        }
+
+        CellSlice ref = CellSlice.beginParse(cs.loadRef());
+
+        TonHashMap dict = ref.loadDict(19,
+                k -> k.readUint(19),
+                v -> CellSlice.beginParse(v).loadUint(256)
+        );
+        for (Map.Entry<Object, Object> entry : dict.elements.entrySet()) {
+            if (((BigInteger) entry.getKey()).longValue() == hash) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static long methodNameHash(String name) {
-        // https://github.com/ton-blockchain/ton/blob/24dc184a2ea67f9c47042b4104bbb4d82289fac1/crypto/smc-envelope/SmartContract.h#L75
-        // todo review
         return ((Utils.getCRC16ChecksumAsInt(name.getBytes(StandardCharsets.UTF_8)) & 0xffff) | 0x10000);
     }
 }
