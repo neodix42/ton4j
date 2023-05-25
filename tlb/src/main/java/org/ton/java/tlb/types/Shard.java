@@ -3,18 +3,18 @@ package org.ton.java.tlb.types;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
 @Setter
+@ToString
 public class Shard {
-
     public Shard() {
         System.out.println("asdf");
     }
-
-
+    
     public static ShardState loadShardStateFromCell(CellSlice slice) {
         long tag = slice.loadUint(32).longValue();
         System.out.println("Tag " + tag);

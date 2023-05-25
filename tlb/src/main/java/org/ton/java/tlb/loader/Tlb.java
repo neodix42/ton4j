@@ -1,7 +1,10 @@
 package org.ton.java.tlb.loader;
 
+import org.ton.java.address.Address;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.types.*;
+
+import java.math.BigInteger;
 
 public class Tlb {
 
@@ -10,12 +13,102 @@ public class Tlb {
         switch (c.getSimpleName()) {
             case "BlockIdExt":
                 return BlockIdExt.builder().build();
+            case "TickTock":
+                return TickTock.builder()
+                        .tick(cs.loadBit())
+                        .tock(cs.loadBit())
+                        .build();
+            case "StateInit":
+                BigInteger depth = cs.loadUint(5);
+                TickTock tickTock = (TickTock) Tlb.load(TickTock.class, cs);
+                return StateInit.builder()
+                        .depth(depth)
+                        .tickTock(tickTock)
+                        .code(cs.loadRef())
+                        .data(cs.loadRef())
+                        //.lib() // todo
+                        .build();
+            case "AccountStorage":
+                AccountStorage accountStorage = AccountStorage.builder().build();
+                BigInteger lastTransaction = cs.loadUint(64);
+                BigInteger coins = cs.loadCoins();
+                boolean extraExists = cs.loadBit();
+                if (extraExists) {
+                    throw new Error("extra currency info is not supported for AccountStorage");
+                }
+                boolean isStatusActive = cs.loadBit();
+                if (isStatusActive) {
+                    accountStorage.setAccountStatus("ACTIVE");
+                    StateInit stateInit = (StateInit) Tlb.load(StateInit.class, cs);
+                    accountStorage.setStateInit(stateInit);
+                } else {
+                    boolean isStatusFrozen = cs.loadBit();
+                    if (isStatusFrozen) {
+                        accountStorage.setAccountStatus("FROZEN");
+                        byte[] stateHash = cs.loadBytes(256);
+                        accountStorage.setStateHash(stateHash);
+                    } else {
+                        accountStorage.setAccountStatus("UNINIT");
+                    }
+                }
+                accountStorage.setLastTransactionLt(lastTransaction);
+                accountStorage.setBalance(coins);
+                return accountStorage;
+            case "StorageInfo":
+                StorageUsed storageUsed = (StorageUsed) Tlb.load(StorageUsed.class, cs);
+                long lastPaid = cs.loadUint(32).longValue();
+                boolean isDuePayment = cs.loadBit();
+                return StorageInfo.builder()
+                        .storageUsed(storageUsed)
+                        .lastPaid(lastPaid)
+                        .duePayment(isDuePayment ? cs.loadUint(64) : null)
+                        .build();
+            case "StorageUsed":
+                BigInteger cells = cs.loadVarUInteger(BigInteger.valueOf(7));
+                BigInteger bits = cs.loadVarUInteger(BigInteger.valueOf(7));
+                BigInteger pubCells = cs.loadVarUInteger(BigInteger.valueOf(7));
+                return StorageUsed.builder()
+                        .bitsUsed(bits)
+                        .cellsUsed(cells)
+                        .publicCellsUsed(pubCells)
+                        .build();
+            case "AccountState": {
+                boolean isAccount = cs.loadBit();
+                if (!isAccount) {
+                    return null;
+                }
+                Address address = cs.loadAddress();
+                StorageInfo info = (StorageInfo) Tlb.load(StorageInfo.class, cs);
+                AccountStorage storage = (AccountStorage) Tlb.load(AccountStorage.class, cs);
+
+                return AccountState.builder()
+                        .isValid(true)
+                        .address(address)
+                        .storageInfo(info)
+                        .accountStorage(storage)
+                        .build();
+            }
+            case "AccountStatus":
+                byte status = cs.loadUint(2).byteValueExact();
+                switch (status) {
+                    case 0b11:
+                        return "NON_EXIST";
+                    case 0b10:
+                        return "ACTIVE";
+                    case 0b01:
+                        return "FROZEN";
+                    case 0b00:
+                        return "UNINIT";
+                }
             case "StateUpdate":
                 return StateUpdate.builder().build();
             case "ConfigParams":
-                return ConfigParams.builder().build();
+                return ConfigParams.builder()
+                        .configAddr(cs.loadAddress())
+//                        .config(cs.loadDict())
+                        .build();
             case "ShardStateUnsplit":
-                cs.skipBits(32); // magic todo review
+                cs.skipBits(32); // magic
                 return ShardStateUnsplit.builder()
                         .magic(0x9023afe2)
                         .globalId(cs.loadUint(32).longValue())
@@ -125,6 +218,6 @@ public class Tlb {
                         .build();
         }
 
-        throw new Error("Unknown TLB type");
+        throw new Error("Unknown TLB type: " + c.getSimpleName());
     }
 }

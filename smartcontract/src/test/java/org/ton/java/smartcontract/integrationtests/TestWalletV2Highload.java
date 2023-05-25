@@ -63,7 +63,7 @@ public class TestWalletV2Highload {
 
         contract.deploy(tonlib, keyPair.getSecretKey());
 
-        Utils.sleep(30, "deploying");
+        Utils.sleep(60, "deploying");
 
         HighloadConfig highloadConfig = HighloadConfig.builder()
                 .queryId(BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32)))
@@ -119,7 +119,7 @@ public class TestWalletV2Highload {
         // transfer coins to multiple destination as specified in options
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), highloadConfig);
 
-        Utils.sleep(60, "sending to multiple destinations");
+        Utils.sleep(90, "sending to multiple destinations");
 
         BigInteger balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
@@ -154,12 +154,12 @@ public class TestWalletV2Highload {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
-        Utils.sleep(10, "topping up...");
+        Utils.sleep(20, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         contract.deploy(tonlib, keyPair.getSecretKey());
 
-        Utils.sleep(30, "deploying");
+        Utils.sleep(45, "deploying");
 
         // Sends to up to 84 destinations
         List<Destination> destinations = generateTargetsWithSameAmountAndSendMode(84, keyPair.getPublicKey());

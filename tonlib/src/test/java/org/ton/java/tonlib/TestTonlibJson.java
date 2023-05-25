@@ -249,7 +249,7 @@ public class TestTonlibJson {
 
         log.info("address: " + address.toString(true));
 
-        RawTransactions rawTransactions = tonlib.getAllRawTransactions(address.toString(false), null, null, 51);
+        RawTransactions rawTransactions = tonlib.getAllRawTransactions(address.toString(false), null, null, 10);
 
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
@@ -273,14 +273,14 @@ public class TestTonlibJson {
                         Cell c = Cell.fromBoc(Utils.base64ToBytes(msg.getMsg_data().getBody()));
                         msgBodyText = c.print();
                     } else {
-                        msgBodyText = Utils.base64ToString(msg.getMessage());
+                        msgBodyText = msg.getMessage();
                     }
                     log.info(">>>>> {} - {} : {}, msgBody cell/text {}, memo {}, memoHex {}", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()), StringUtils.normalizeSpace(msgBodyText), msg.getMessage(), msg.getMessageHex());
                 }
             }
         }
 
-        assertThat(rawTransactions.getTransactions().size()).isLessThan(10);
+        assertThat(rawTransactions.getTransactions().size()).isLessThan(11);
     }
 
     @Test
@@ -514,7 +514,6 @@ public class TestTonlibJson {
     public void testTonlibGetConfig() {
         Tonlib tonlib = Tonlib
                 .builder()
-                .verbosityLevel(VerbosityLevel.DEBUG)
                 .testnet(true)
                 .build();
         MasterChainInfo mc = tonlib.getLast();

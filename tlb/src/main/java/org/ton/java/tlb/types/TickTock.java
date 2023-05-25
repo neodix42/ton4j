@@ -9,7 +9,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class StateUpdate {
-    ShardState oldOne;
-    ShardState newOne;
+public class TickTock {
+    boolean tick;
+    boolean tock;
 }

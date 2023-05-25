@@ -81,12 +81,15 @@ public class TestCell {
 
         long l1 = (long) Math.pow(2, 25);
         c1.bits.writeUint(l1, 26);
-        log.info(c1.bits.toBitString());
+        log.info("c1 bitString  {}", c1.bits.toBitString());
+        log.info("c1 hex        {}", c1.bits.toHex());
         assertThat(c1.bits.toHex()).isEqualTo("8000002_");
 
         byte[] serializedCell1 = c1.toBoc(false);
         Cell dc1 = Cell.fromBoc(serializedCell1);
-        log.info(dc1.bits.toBitString());
+        log.info("dc1 bitString {}", dc1.bits.toBitString());
+        log.info("dc1 hex       {}", dc1.bits.toHex());
+
         assertThat(dc1.bits.toHex()).isEqualTo("8000002_");
     }
 
@@ -246,5 +249,14 @@ public class TestCell {
     public void testShouldDeserialize2() {
         Cell.fromBoc(Utils.base64ToBytes("te6cckEBAQEAIgAAQI4l3QgXTJzTGSGBoCKurXZZrCqdShK4T1Fg7dLsxwbqJRoppg=="));
         CellBuilder.fromBoc(Utils.base64ToBytes("te6cckEBAQEAIgAAQI4l3QgXTJzTGSGBoCKurXZZrCqdShK4T1Fg7dLsxwbqJRoppg=="));
+    }
+
+    @Test
+    public void testShouldDeserializeAccountState() {
+        Cell c = Cell.fromBoc("b5ee9c724101030100d700026fc00c419e2b8a3b6cd81acd3967dbbaf4442e1870e99eaf32278b7814a6ccaac5f802068148c314b1854000006735d812370d00764ce8d340010200deff0020dd2082014c97ba218201339cbab19f71b0ed44d0d31fd31f31d70bffe304e0a4f2608308d71820d31fd31fd31ff82313bbf263ed44d0d31fd31fd3ffd15132baf2a15144baf2a204f901541055f910f2a3f8009320d74a96d307d402fb00e8d101a4c8cb1fcb1fcbffc9ed5400500000000229a9a317d78e2ef9e6572eeaa3f206ae5c3dd4d00ddd2ffa771196dc0ab985fa84daf451c340d7fa");
+        log.info(c.print());
+        log.info(c.bits.toString());
+        log.info("readCursor {}, writeCursor {}, length {}", c.bits.readCursor, c.bits.writeCursor, c.bits.length);
+
     }
 }

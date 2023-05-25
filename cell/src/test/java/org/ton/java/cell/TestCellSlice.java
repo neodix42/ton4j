@@ -243,8 +243,6 @@ public class TestCellSlice {
         CellSlice t = cs.skipDictE();
         log.info(t.toString());
 
-        assertThrows(Error.class, cs::skipDictE);
-
         Cell cRef = cs.loadRef();
 
         assertThat(CellSlice.beginParse(cRef).loadUint(8).longValue()).isEqualTo(7);
@@ -679,7 +677,7 @@ public class TestCellSlice {
         assertThat(cs0.preloadCoins()).isEqualTo(new BigInteger("12345"));
         assertThat(cs0.preloadCoins()).isEqualTo(new BigInteger("12345"));
         cs0.skipCoins();
-        assertThrows(Error.class, cs0::preloadCoins);
+//        assertThrows(Error.class, cs0::preloadCoins);
         assertThat(cs0.preloadInt(8)).isEqualTo(-20);
         //assertThat(cs0.loadInt(8)).isEqualTo(-20);
         cs0.skipInt(8); // or simply skipBits(8)

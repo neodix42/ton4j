@@ -11,9 +11,8 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
-public class ShardIdent {
-    long magic; // `tlb:"$00"`
-    byte prefixBits; //`tlb:"## 6"` // #<= 60
-    int workchain; //`tlb:"## 32"`
-    BigInteger shardPrefix; //uint64 `tlb:"## 64"`
+public class StorageInfo {
+    StorageUsed storageUsed;
+    long lastPaid; // uint32
+    BigInteger duePayment; // bigInt
 }

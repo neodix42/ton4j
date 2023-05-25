@@ -3,6 +3,7 @@ package org.ton.java.tlb.types;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.TonHashMap;
 
@@ -11,6 +12,7 @@ import java.math.BigInteger;
 @Builder
 @Getter
 @Setter
+@ToString
 public class ShardStateUnsplit {
     long magic;//      `tlb:"#9023afe2"`
     long globalId;          //      `tlb:"## 32"`

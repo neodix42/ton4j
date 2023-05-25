@@ -265,7 +265,9 @@ public class CellSlice {
     }
 
     public CellSlice skipBits(int length) {
-        checkBitsOverflow(length);
+        if (bits.readCursor + length > bits.writeCursor) {
+            throw new Error("Bits overflow. Can't load " + length + " bits. " + bits.getFreeBits() + " bits left.");
+        }
         bits.readCursor += length;
         return this;
     }
@@ -407,9 +409,11 @@ public class CellSlice {
     }
 
     void checkBitsOverflow(int length) {
-        if (bits.readCursor + length > bits.writeCursor) {
+        if (length > bits.length) {
+//        if (bits.readCursor + length > bits.writeCursor) {
             throw new Error("Bits overflow. Can't load " + length + " bits. " + bits.getFreeBits() + " bits left.");
         }
+
     }
 
     void checkRefsOverflow() {

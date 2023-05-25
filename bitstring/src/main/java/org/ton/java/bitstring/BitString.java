@@ -66,6 +66,7 @@ public class BitString {
      * @return boolean    bit value at position `n`
      */
     public boolean get(int n) {
+        checkRange(n);
         return (array[(n / 8)] & (1 << (7 - (n % 8)))) > 0;
     }
 
@@ -597,6 +598,8 @@ public class BitString {
         length = arr.length * 8;
         array = arr;
         writeCursor = length;
+//        int saveWriteCursor = writeCursor;
+
 
         if (!(fulfilledBytes || (length == 0))) {
             boolean foundEndBit = false;
@@ -605,9 +608,12 @@ public class BitString {
                 if (get(writeCursor)) {
                     foundEndBit = true;
                     off(writeCursor);
+//                    writeCursor += 3;
                     break;
                 }
             }
+//            writeCursor = saveWriteCursor;
+
             if (!foundEndBit) {
                 System.err.println(Arrays.toString(arr) + ", " + fulfilledBytes);
                 throw new Error("Incorrect TopUppedArray");
