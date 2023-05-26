@@ -15,7 +15,7 @@ import java.math.BigInteger;
 @ToString
 public class ShardStateUnsplit {
     long magic;//      `tlb:"#9023afe2"`
-    long globalId;          //    `tlb:"## 32"`
+    int globalId;          //    `tlb:"## 32"`
     ShardIdent shardIdent;  //    `tlb:"."`
     long seqno;             //    `tlb:"## 32"`
     long vertSeqno;         //    `tlb:"## 32"`

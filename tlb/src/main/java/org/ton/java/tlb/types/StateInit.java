@@ -5,9 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.TonHashMap;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 
 @Builder
 @Getter
@@ -18,5 +18,5 @@ public class StateInit {
     TickTock tickTock; // `tlb:"maybe ."`
     Cell code; // `tlb:"maybe ^"`
     Cell data; // `tlb:"maybe ^"`
-    HashMap lib; // `tlb:"dict 256"`
+    TonHashMap lib; // `tlb:"dict 256"`
 }

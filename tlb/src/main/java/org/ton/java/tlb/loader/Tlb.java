@@ -21,14 +21,12 @@ public class Tlb {
                         .tock(cs.loadBit())
                         .build();
             case "StateInit":
-                BigInteger depth = cs.loadUint(5);
-                TickTock tickTock = (TickTock) Tlb.load(TickTock.class, cs);
                 return StateInit.builder()
-                        .depth(depth)
-                        .tickTock(tickTock)
+                        .depth(cs.loadUint(5))
+                        .tickTock((TickTock) Tlb.load(TickTock.class, cs))
                         .code(cs.loadRef())
                         .data(cs.loadRef())
-                        //.lib() // todo
+                        .lib(cs.loadDictE(256, k -> k.readInt(256), v -> v))
                         .build();
             case "AccountStorage":
                 AccountStorage accountStorage = AccountStorage.builder().build();
@@ -116,7 +114,7 @@ public class Tlb {
                 assert cs.loadUint(32).longValue() == 0x9023afe2L : "ShardStateUnsplit: magic not equal to 0x9023afe2";
                 return ShardStateUnsplit.builder()
                         .magic(0x9023afe2L)
-                        .globalId(cs.loadUint(32).longValue())
+                        .globalId(cs.loadUint(32).intValue())
                         .shardIdent((ShardIdent) Tlb.load(ShardIdent.class, cs))
                         .seqno(cs.loadUint(32).longValue())
                         .vertSeqno(cs.loadUint(32).longValue())
@@ -127,11 +125,10 @@ public class Tlb {
                         .accounts(CellSlice.beginParse(cs.loadRef()).loadDict(256, k -> k.readInt(256), v -> v))
                         .beforeSplit(cs.loadBit())
                         .stats(cs.loadRef())
-//                        .mc(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, CellSlice.beginParse(cs.loadRef()))) // todo fix
+                        .mc(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, CellSlice.beginParse(cs.loadRef()))) // todo fix
                         .build();
             case "ShardIdent":
-                //cs.skipBits(2); //magic
-                assert cs.loadUint(0).longValue() == 0L;
+                assert cs.loadUint(2).longValue() == 0L;
                 return ShardIdent.builder()
                         .magic(0L)
                         .prefixBits(cs.loadUint(6).byteValueExact())
@@ -141,7 +138,6 @@ public class Tlb {
             case "ShardDesc": // todo
                 return ShardDesc.builder().build();
             case "ShardState":
-//                CellSlice clone = cs.clone();
                 long tag = cs.preloadUint(32).longValue();
                 if (tag == 0x5f327da5L) {
                     ShardStateUnsplit left, right;
@@ -171,7 +167,6 @@ public class Tlb {
                         .globalBalance((CurrencyCollection) Tlb.load(CurrencyCollection.class, cs))
                         .build();
             case "McBlockExtra":
-//                cs.skipBits(32);
                 assert cs.loadUint(16).longValue() == 0xcca5L : "McBlockExtra: magic not equal to 0xcca5";
                 return McBlockExtra.builder()
                         .magic(0xcca5L)
@@ -185,7 +180,6 @@ public class Tlb {
                         .extraCurrencies(cs.loadDict(32, k -> k.readInt(32), v -> v))
                         .build();
             case "GlobalVersion":
-//                cs.skipBits(8); //magic
                 assert cs.loadUint(8).longValue() == 0xc4L : "GlobalVersion: magic not equal to 0xc4";
                 return GlobalVersion.builder()
                         .magic(0xc4L)
@@ -200,7 +194,6 @@ public class Tlb {
                         .fileHash(cs.loadBytes(256))
                         .build();
             case "BlockInfoPart":
-//                cs.skipBits(32); //magic
                 assert cs.loadUint(32).longValue() == 0x9bc7a987L : "BlockInfoPart: magic not equal to 0x9bc7a987";
                 return BlockInfoPart.builder()
                         .magic(0x9bc7a987L)
@@ -240,7 +233,6 @@ public class Tlb {
                         .randSeed(cs.loadBytes(256))
                         .createdBy(cs.loadBytes(256))
                         .custom(isNull(cs.preloadMaybeRefX()) ? null : (McBlockExtra) Tlb.load(McBlockExtra.class, CellSlice.beginParse(cs.loadRef())))
-//                        .custom((McBlockExtra) Tlb.load(McBlockExtra.class, cs))
                         .build();
             case "Block":
                 assert cs.loadUint(32).longValue() == 0x11ef55aaL : "Block: magic not equal to 0x11ef55aa";
@@ -260,8 +252,6 @@ public class Tlb {
                         .transactions(cs.loadDict(64, k -> k.readInt(64), v -> v))
                         .stateUpdate(cs.loadRef())
                         .build();
-
-
             case "BlockHeader":
                 BlockInfoPart infoPart = (BlockInfoPart) Tlb.load(BlockInfoPart.class, cs);
                 GlobalVersion globalVersion = ((infoPart.getFlags() & 0x0L) == 1) ? (GlobalVersion) Tlb.load(GlobalVersion.class, cs) : null;
