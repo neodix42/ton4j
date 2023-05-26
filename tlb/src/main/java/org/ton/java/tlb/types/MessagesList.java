@@ -4,13 +4,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.ton.java.cell.Cell;
+import org.ton.java.cell.TonHashMap;
 
 @Builder
 @Getter
 @Setter
 @ToString
-public class StateUpdate {
-    ShardState oldOne;
-    Cell newOne;
+public class MessagesList {
+    TonHashMap list;
 }

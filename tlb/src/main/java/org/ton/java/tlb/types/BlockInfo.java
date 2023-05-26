@@ -17,10 +17,10 @@ import java.math.BigInteger;
  * state:flags.17?int256
  * masterchain_ref_seqno:flags.23?int = db.block.Info;
  */
-@ToString
 @Builder
 @Getter
 @Setter
+@ToString
 public class BlockInfo {
     int flag;
     BlockIdExt id;

@@ -54,7 +54,7 @@ public class CellSlice {
         return new Cell(bits, refs, refs.size());
     }
 
-    public Cell loadMaybeRefX() { // test, loadMaybeRefX(slice, parser) {
+    public Cell loadMaybeRefX() {
         boolean maybe = loadBit();
         if (!maybe) {
             return null;
@@ -129,6 +129,14 @@ public class CellSlice {
     public Cell preloadRef() {
         checkRefsOverflow();
         return refs.get(0);
+    }
+
+    public Cell preloadMaybeRefX() {
+        boolean maybe = preloadBit();
+        if (!maybe) {
+            return null;
+        }
+        return preloadRef();
     }
 
     public List<Cell> preloadRefs(int count) {

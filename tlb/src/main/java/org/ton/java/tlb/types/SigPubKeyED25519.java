@@ -4,13 +4,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.ton.java.cell.Cell;
 
 @Builder
 @Getter
 @Setter
 @ToString
-public class StateUpdate {
-    ShardState oldOne;
-    Cell newOne;
+public class SigPubKeyED25519 {
+    long magic;     // `tlb:"#8e81278a"`
+    byte[] key;     // `tlb:"bits 256"`
 }

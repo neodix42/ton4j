@@ -13,5 +13,5 @@ import org.ton.java.cell.TonHashMap;
 @ToString
 public class ConfigParams {
     Address configAddr;
-    TonHashMap config;  //  *cell.Dictionary
+    TonHashMap config;
 }

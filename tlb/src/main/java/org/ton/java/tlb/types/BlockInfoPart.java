@@ -22,7 +22,7 @@ public class BlockInfoPart {
     boolean wantMerge;//`tlb:"bool"`
     boolean keyBlock;//`tlb:"bool"`
     boolean vertSeqnoIncr;//`tlb:"bool"`
-    int flags; //`tlb:"## 8"`
+    long flags; //`tlb:"## 8"`
     long seqno; //`tlb:"## 32"`
     long vertSeqno; //`tlb:"## 32"`
     ShardIdent shard;

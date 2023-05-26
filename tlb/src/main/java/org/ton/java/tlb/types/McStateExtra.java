@@ -12,9 +12,9 @@ import org.ton.java.cell.TonHashMap;
 @Setter
 @ToString
 public class McStateExtra {
-    long magic; //   `tlb:"#cc26"`
-    TonHashMap shardHashes; //*cell.Dictionary   `tlb:"dict 32"`
-    ConfigParams configParams; //       `tlb:"."`
-    Cell info; // *cell.Cell   `tlb:"^"`
+    long magic;                 //      `tlb:"#cc26"`
+    TonHashMap shardHashes;     //      `tlb:"dict 32"`
+    ConfigParams configParams;  //      `tlb:"."`
+    Cell info;                  //      `tlb:"^"`
     CurrencyCollection globalBalance;// `tlb:"."`
 }

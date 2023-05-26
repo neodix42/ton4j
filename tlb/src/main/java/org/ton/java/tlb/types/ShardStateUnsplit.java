@@ -15,15 +15,15 @@ import java.math.BigInteger;
 @ToString
 public class ShardStateUnsplit {
     long magic;//      `tlb:"#9023afe2"`
-    long globalId;          //      `tlb:"## 32"`
-    ShardIdent shardIdent;  //     ShardIdent `tlb:"."`
-    long seqno;      //  `tlb:"## 32"`
-    long vertSeqno; //     `tlb:"## 32"`
-    long genUTime; //    `tlb:"## 32"`
-    BigInteger genLT;   // uint64     `tlb:"## 64"`
-    long minRefMCSeqno; // uint32     `tlb:"## 32"`
-    Cell outMsgQueueInfo;
-    TonHashMap accounts;   //`tlb:"dict 256"`	`tlb:"^"` TODO ShardAccounts? see shard.go
+    long globalId;          //    `tlb:"## 32"`
+    ShardIdent shardIdent;  //    `tlb:"."`
+    long seqno;             //    `tlb:"## 32"`
+    long vertSeqno;         //    `tlb:"## 32"`
+    long genUTime;          //    `tlb:"## 32"`
+    BigInteger genLT;       //    `tlb:"## 64"`
+    long minRefMCSeqno;     //    `tlb:"## 32"`
+    Cell outMsgQueueInfo;   //    `tlb:"^"`
+    TonHashMap accounts;   //     `tlb:"dict 256"`	`tlb:"^"`
     boolean beforeSplit;
     Cell stats; // `tlb:"^"`
     McStateExtra mc; //`tlb:"maybe ^"`

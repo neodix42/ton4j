@@ -10,11 +10,11 @@ import org.ton.java.utils.Utils;
 @Getter
 public class BlockIdExt {
     //    int fieldId;
-    int workchain; // 4 bytes, int32
-    long shard; // 8 bytes, int64
-    long seqno; // 4 bytes, uint32
-    byte[] root_hash; // 32 bytes, int256
-    byte[] file_hash; // 32 bytes, int256
+    long workchain; // int32  `tl:"int"`
+    long shard; // int64  `tl:"long"`
+    long seqno; // uint32 `tl:"int"`
+    byte[] root_hash; // []byte `tl:"int256"`
+    byte[] file_hash; // []byte `tl:"int256"`
 
     String getfile_hash() {
         return Utils.bytesToHex(file_hash);

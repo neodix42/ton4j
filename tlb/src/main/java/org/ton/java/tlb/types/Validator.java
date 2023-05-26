@@ -11,9 +11,8 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
-public class ShardIdent {
-    long magic; // `tlb:"$00"`
-    byte prefixBits; //`tlb:"## 6"` // #<= 60
-    long workchain; //`tlb:"## 32"`
-    BigInteger shardPrefix; //uint64 `tlb:"## 64"`
+public class Validator {
+    long magic;                     // `tlb:"#53"`
+    SigPubKeyED25519 publicKey;     // `tlb:"."`
+    BigInteger weight;              // `tlb:"## 64"`
 }
