@@ -44,12 +44,15 @@ public class TestWalletsV3 {
         String my = "Creating new advanced wallet in workchain " + options.wc + "\n" +
                 "with unique wallet id " + options.walletId + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
-                "StateInit: " + msg.stateInit.print() + "\n" +
+                "StateInit: " + msg.stateInit.print() + ", hex: " + msg.stateInit.toHex() + "\n" +
+                "StateInit.code: " + "hex: " + msg.code.toHex() + "\n" +
+                "StateInit.data: " + "hex: " + msg.data.toHex() + "\n" +
+                "message.body: " + "hex: " + msg.body.toString() + "\n" +
                 "new wallet address = " + address.toString(false) + "\n" +
                 "(Saving address to file new-wallet.addr)" + "\n" +
                 "Non-bounceable address (for init): " + address.toString(true, true, false, true) + "\n" +
                 "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
-                "signing message: " + msg.signingMessage.print() + "\n" +
+                "signing message: " + msg.signingMessage.print() + ", hex: " + msg.signingMessage.toHex() + "\n" +
                 "External message for initialization is " + msg.message.print() + "\n" +
                 Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
@@ -86,7 +89,7 @@ public class TestWalletsV3 {
     public void testCreateTransferMessageWalletV3() {
         byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
-        
+
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
                 .wc(0L)

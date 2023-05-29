@@ -1,6 +1,7 @@
 package org.ton.java.tlb.loader;
 
 import org.ton.java.address.Address;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.types.*;
 
@@ -22,20 +23,24 @@ public class Tlb {
                         .build();
             case "StateInit":
                 return StateInit.builder()
-                        .depth(cs.loadUint(5))
-                        .tickTock((TickTock) Tlb.load(TickTock.class, cs))
-                        .code(cs.loadRef())
-                        .data(cs.loadRef())
+                        .depth(cs.loadBit() ? cs.loadUint(5) : BigInteger.ZERO)
+                        .tickTock(cs.loadBit() ? (TickTock) Tlb.load(TickTock.class, cs) : null)
+                        .code(cs.loadMaybeRefX())
+                        .data(cs.loadMaybeRefX())
                         .lib(cs.loadDictE(256, k -> k.readInt(256), v -> v))
                         .build();
             case "AccountStorage":
                 AccountStorage accountStorage = AccountStorage.builder().build();
+
                 BigInteger lastTransaction = cs.loadUint(64);
                 BigInteger coins = cs.loadCoins();
+
                 boolean extraExists = cs.loadBit();
+
                 if (extraExists) {
                     throw new Error("extra currency info is not supported for AccountStorage");
                 }
+
                 boolean isStatusActive = cs.loadBit();
                 if (isStatusActive) {
                     accountStorage.setAccountStatus("ACTIVE");
@@ -245,7 +250,8 @@ public class Tlb {
                         .extra((BlockExtra) Tlb.load(BlockExtra.class, CellSlice.beginParse(cs.loadRef())))
                         .build();
             case "AccountBlock":
-                cs.skipBits(32); //magic
+                assert cs.loadUint(32).longValue() == 0x5L : "AccountBlock: magic not equal to 0x5";
+//                cs.skipBits(32); //magic
                 return AccountBlock.builder()
                         .magic(0x5)
                         .addr(cs.loadBytes(256))
@@ -254,7 +260,7 @@ public class Tlb {
                         .build();
             case "BlockHeader":
                 BlockInfoPart infoPart = (BlockInfoPart) Tlb.load(BlockInfoPart.class, cs);
-                GlobalVersion globalVersion = ((infoPart.getFlags() & 0x0L) == 1) ? (GlobalVersion) Tlb.load(GlobalVersion.class, cs) : null;
+                GlobalVersion globalVersion = ((infoPart.getFlags() & 0x1L) == 1) ? (GlobalVersion) Tlb.load(GlobalVersion.class, cs) : null;
                 ExtBlkRef masterRef = infoPart.isNotMaster() ? (ExtBlkRef) Tlb.load(ExtBlkRef.class, CellSlice.beginParse(cs.loadRef())) : null;
                 BlkPrevInfo prevRef = loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), infoPart.isAfterMerge());
                 BlkPrevInfo prevVertRef = infoPart.isVertSeqnoIncr() ? loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), false) : null;
@@ -278,15 +284,82 @@ public class Tlb {
                 return SigPubKeyED25519.builder().build();
 
             case "Message":
-                return Message.builder().build();
+                boolean isExternal = cs.preloadBit();
+                if (!isExternal) {
+                    InternalMessage internalMessage = (InternalMessage) Tlb.load(InternalMessage.class, cs);
+                    return Message.builder()
+                            .msgType("INTERNAL")
+                            .msg(AnyMessage.builder()
+                                    .payload(internalMessage.getBody())
+                                    .destAddr(internalMessage.getDstAddr())
+                                    .senderAddr(internalMessage.getSrcAddr())
+                                    .build())
+                            .build();
+                } else {
+                    boolean isOut = cs.preloadBit();
+                    if (isOut) {
+                        ExternalMessageOut externalMessageOut = (ExternalMessageOut) Tlb.load(ExternalMessageOut.class, cs);
+                        return Message.builder()
+                                .msgType("EXTERNAL_OUT")
+                                .msg(AnyMessage.builder()
+                                        .payload(externalMessageOut.getBody())
+                                        .destAddr(externalMessageOut.getDstAddr())
+                                        .senderAddr(externalMessageOut.getSrcAddr())
+                                        .build())
+                                .build();
+                    } else {
+                        ExternalMessage externalMessage = (ExternalMessage) Tlb.load(ExternalMessage.class, cs);
+                        return Message.builder()
+                                .msgType("EXTERNAL_IN")
+                                .msg(AnyMessage.builder()
+                                        .payload(externalMessage.getBody())
+                                        .destAddr(externalMessage.getDstAddr())
+                                        .senderAddr(externalMessage.getSrcAddr())
+                                        .build())
+                                .build();
+                    }
+                }
             case "MessagesList":
                 return MessagesList.builder().build();
             case "InternalMessage":
-                return InternalMessage.builder().build();
+                assert !cs.loadBit() : "InternalMessage: magic not equal to 0";
+                return InternalMessage.builder()
+                        .magic(0L)
+                        .iHRDisabled(cs.loadBit())
+                        .bounce(cs.loadBit())
+                        .bounced(cs.loadBit())
+                        .srcAddr(cs.loadAddress())
+                        .dstAddr(cs.loadAddress())
+                        .amount(cs.loadCoins())
+                        .extraCurrencies(cs.loadDictE(32, k -> k.readInt(256), v -> v))
+                        .iHRFee(cs.loadCoins())
+                        .fwdFee(cs.loadCoins())
+                        .createdLt(cs.loadUint(64))
+                        .createdAt(cs.loadUint(32).longValue())
+                        .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, CellSlice.beginParse(cs.loadRef())) : (StateInit) Tlb.load(StateInit.class, cs)) : null) //review
+                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBits(cs.loadBits(cs.getRestBits()).toBitArray()))
+                        .build();
             case "ExternalMessage":
-                return ExternalMessage.builder().build();
+                assert cs.loadUint(2).longValue() == 0x2L : "ExternalMessage: magic not equal to 0x2";
+                return ExternalMessage.builder()
+                        .magic(2L)
+                        .srcAddr(cs.loadAddress())
+                        .dstAddr(cs.loadAddress())
+                        .importFee(cs.loadCoins())
+                        .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, CellSlice.beginParse(cs.loadRef())) : (StateInit) Tlb.load(StateInit.class, cs)) : null) //review
+                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBits(cs.loadBits(cs.getRestBits()).toBitArray()))
+                        .build();
             case "ExternalMessageOut":
-                return ExternalMessageOut.builder().build();
+                assert cs.loadUint(2).longValue() == 0x3L : "ExternalMessageOut: magic not equal to 0x3";
+                return ExternalMessageOut.builder()
+                        .magic(3L)
+                        .srcAddr(cs.loadAddress())
+                        .dstAddr(cs.loadAddress())
+                        .createdLt(cs.loadUint(64))
+                        .createdAt(cs.loadUint(32).longValue())
+                        .stateInit((StateInit) Tlb.load(StateInit.class, cs))
+                        .body(cs.loadMaybeRefX())
+                        .build();
         }
 
         throw new Error("Unknown TLB type: " + c.getSimpleName());

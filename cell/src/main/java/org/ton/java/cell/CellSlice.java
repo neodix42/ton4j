@@ -272,6 +272,14 @@ public class CellSlice {
         return bits.prereadBit();
     }
 
+    public int getFreeBits() {
+        return bits.getFreeBits();
+    }
+
+    public int getRestBits() {
+        return bits.writeCursor - bits.readCursor;
+    }
+
     public CellSlice skipBits(int length) {
         if (bits.readCursor + length > bits.writeCursor) {
             throw new Error("Bits overflow. Can't load " + length + " bits. " + bits.getFreeBits() + " bits left.");
