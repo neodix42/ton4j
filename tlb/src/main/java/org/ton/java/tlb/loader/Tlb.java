@@ -330,125 +330,66 @@ public class Tlb {
             case "InternalMessage":
                 assert !cs.loadBit() : "InternalMessage: magic not equal to 0";
                 return InternalMessage.builder()
-                                .
-
-                        magic(0L)
-                                .
-
-                        iHRDisabled(cs.loadBit())
-                                .
-
-                        bounce(cs.loadBit())
-                                .
-
-                        bounced(cs.loadBit())
-                                .
-
-                        srcAddr(cs.loadAddress())
-                                .
-
-                        dstAddr(cs.loadAddress())
-                                .
-
-                        amount(cs.loadCoins())
-                                .
-
-                        extraCurrencies(cs.loadDictE(32, k -> k.readInt(32), v -> v))
-                                .
-
-                        iHRFee(cs.loadCoins())
-                                .
-
-                        fwdFee(cs.loadCoins())
-                                .
-
-                        createdLt(cs.loadUint(64))
-                                .
-
-                        createdAt(cs.loadUint(32).
-
-                                longValue())
-                                .
-
-                        stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, CellSlice.beginParse(cs.loadRef())) : (StateInit) Tlb.load(StateInit.class, cs)) : null) //review
-                                .
-
-                        body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().
-
-                                storeBits(cs.loadBits(cs.getRestBits()).
-
-                                        toBitArray()))
-                                .
-
-                        build();
+                        .magic(0L)
+                        .iHRDisabled(cs.loadBit())
+                        .bounce(cs.loadBit())
+                        .bounced(cs.loadBit())
+                        .srcAddr(cs.loadAddress())
+                        .dstAddr(cs.loadAddress())
+                        .amount(cs.loadCoins())
+                        .extraCurrencies(cs.loadDictE(32, k -> k.readInt(32), v -> v))
+                        .iHRFee(cs.loadCoins())
+                        .fwdFee(cs.loadCoins())
+                        .createdLt(cs.loadUint(64))
+                        .createdAt(cs.loadUint(32).longValue())
+                        .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, CellSlice.beginParse(cs.loadRef())) : (StateInit) Tlb.load(StateInit.class, cs)) : null) //review
+                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBits(cs.loadBits(cs.getRestBits()).toBitArray()))
+                        .build();
             case "ExternalMessage":
-                assert cs.loadUint(2).
-
-                        longValue() == 0x2L : "ExternalMessage: magic not equal to 0x2";
+                assert cs.loadUint(2).longValue() == 0x2L : "ExternalMessage: magic not equal to 0x2";
                 return ExternalMessage.builder()
-                                .
-
-                        magic(2L)
-                                .
-
-                        srcAddr(cs.loadAddress())
-                                .
-
-                        dstAddr(cs.loadAddress())
-                                .
-
-                        importFee(cs.loadCoins())
-                                .
-
-                        stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, CellSlice.beginParse(cs.loadRef())) : (StateInit) Tlb.load(StateInit.class, cs)) : null) //review
-                                .
-
-                        body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().
-
-                                storeBits(cs.loadBits(cs.getRestBits()).
-
-                                        toBitArray()))
-                                .
-
-                        build();
+                        .magic(2L)
+                        .srcAddr(cs.loadAddress())
+                        .dstAddr(cs.loadAddress())
+                        .importFee(cs.loadCoins())
+                        .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, CellSlice.beginParse(cs.loadRef())) : (StateInit) Tlb.load(StateInit.class, cs)) : null) //review
+                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBits(cs.loadBits(cs.getRestBits()).toBitArray()))
+                        .build();
             case "ExternalMessageOut":
-                assert cs.loadUint(2).
-
-                        longValue() == 0x3L : "ExternalMessageOut: magic not equal to 0x3";
+                assert cs.loadUint(2).longValue() == 0x3L : "ExternalMessageOut: magic not equal to 0x3";
                 return ExternalMessageOut.builder()
-                                .
+                        .magic(3L)
+                        .srcAddr(cs.loadAddress())
+                        .dstAddr(cs.loadAddress())
+                        .createdLt(cs.loadUint(64))
+                        .createdAt(cs.loadUint(32).longValue())
+                        .stateInit((StateInit) Tlb.load(StateInit.class, cs))
+                        .body(cs.loadMaybeRefX())
+                        .build();
+            case "Text":
+                int chunksNum = cs.loadUint(8).intValue();
+                int firstSize = 0;
+                int lengthOfChunk = 0;
+                StringBuilder result = new StringBuilder();
+                for (int i = 0; i < chunksNum; i++) {
+                    lengthOfChunk = cs.loadUint(8).intValue();
+                    if (i == 0) {
+                        firstSize = lengthOfChunk;
+                    }
+                    byte[] dataOfChunk = cs.loadBytes(lengthOfChunk * 8);
+                    result.append(new String(dataOfChunk));
 
-                        magic(3L)
-                                .
-
-                        srcAddr(cs.loadAddress())
-                                .
-
-                        dstAddr(cs.loadAddress())
-                                .
-
-                        createdLt(cs.loadUint(64))
-                                .
-
-                        createdAt(cs.loadUint(32).
-
-                                longValue())
-                                .
-
-                        stateInit((StateInit) Tlb.
-
-                                load(StateInit.class, cs))
-                                .
-
-                        body(cs.loadMaybeRefX())
-                                .
-
-                        build();
+                    if (i < chunksNum - 1) {
+                        cs = CellSlice.beginParse(cs.loadRef());
+                    }
+                }
+                return Text.builder()
+                        .maxFirstChunkSize(firstSize)
+                        .value(result.toString())
+                        .build();
         }
 
-        throw new
-
-                Error("Unknown TLB type: " + c.getSimpleName());
+        throw new Error("Unknown TLB type: " + c.getSimpleName());
     }
 
     public static BlkPrevInfo loadBlkPrevInfo(CellSlice cs, boolean afterMerge) {
