@@ -13,12 +13,10 @@ import java.io.Serializable;
 @Getter
 @ToString
 public class MsgData implements Serializable {
-
     @SerializedName("@type")
     final String type;
     String body;
     String text;
     String init_state;
-
 }
 

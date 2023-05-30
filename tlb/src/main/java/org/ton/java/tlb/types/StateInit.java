@@ -5,9 +5,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
-import org.ton.java.cell.TonHashMap;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
+
+import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -18,5 +21,20 @@ public class StateInit {
     TickTock tickTock; // `tlb:"maybe ."`
     Cell code; // `tlb:"maybe ^"`
     Cell data; // `tlb:"maybe ^"`
-    TonHashMap lib; // `tlb:"dict 256"`
+    TonHashMapE lib; // `tlb:"dict 256"`
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeBit(nonNull(depth))
+                .storeBit(nonNull(tickTock))
+                .storeBit(nonNull(code))
+                .storeBit(nonNull(data))
+                .storeBit(nonNull(lib))
+                .storeRef(code)
+                .storeRef(data)
+                .storeRef(nonNull(lib) ? lib.serialize(
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
+                        v -> CellBuilder.beginCell().storeUint((byte) v, 256)
+                ) : CellBuilder.beginCell().storeBit(false).endCell()).endCell();
+    }
 }

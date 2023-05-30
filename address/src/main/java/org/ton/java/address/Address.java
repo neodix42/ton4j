@@ -100,6 +100,41 @@ public class Address {
         return new Address(address);
     }
 
+    public static Address of(byte tag, int wc, byte[] hashCrc) { // todo testing
+//        byte[] tagArray = ByteBuffer.allocate(1).put(tag).array();
+//        byte[] wcArray = ByteBuffer.allocate(1).put(wc).array();
+//        byte[] tagWc = Utils.concatBytes(tagArray, wcArray);
+//        Utils.concatBytes(tagWc, hashCrc);
+
+        int tagI = tag & 0xff;
+        boolean isTestOnly = false;
+        boolean isBounceable;
+
+        if ((tagI & test_flag) != 0) {
+            isTestOnly = true;
+            tagI = (byte) (tagI ^ test_flag);
+        }
+        if ((tagI != bounceable_tag) && (tagI != non_bounceable_tag)) {
+            throw new Error("Unknown address tag");
+        }
+
+        byte workchain;
+        if ((wc & 0xff) == 0xff) {
+            workchain = -1;
+        } else {
+            workchain = (byte) wc;
+        }
+
+        isBounceable = tagI == bounceable_tag;
+
+        Address addr = new Address();
+        addr.wc = workchain;
+        addr.hashPart = hashCrc;
+        addr.isTestOnly = isTestOnly;
+        addr.isBounceable = isBounceable;
+        return addr;
+    }
+
     public static Address of(Address address) {
         return new Address(address);
     }

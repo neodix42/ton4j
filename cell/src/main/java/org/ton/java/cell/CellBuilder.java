@@ -7,6 +7,8 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
+import static java.util.Objects.isNull;
+
 public class CellBuilder extends Cell {
 
     private CellBuilder() {
@@ -185,7 +187,7 @@ public class CellBuilder extends Cell {
      * @return CellBuilder
      */
     public CellBuilder storeCoins(BigInteger coins) {
-        bits.writeCoins(coins);
+        bits.writeCoins(isNull(coins) ? BigInteger.ZERO : coins);
         return this;
     }
 

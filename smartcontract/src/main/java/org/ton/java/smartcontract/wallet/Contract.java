@@ -74,16 +74,16 @@ public interface Contract {
      */
     default Cell createStateInit(Cell code, Cell data, Cell library, Cell splitDepth, Cell ticktock) {
 
-        if (nonNull(library)) {
-            throw new Error("Library in state init is not implemented");
-        }
-
         if (nonNull(splitDepth)) {
             throw new Error("Split depth in state init is not implemented");
         }
 
         if (nonNull(ticktock)) {
             throw new Error("Ticktock in state init is not implemented");
+        }
+
+        if (nonNull(library)) {
+            throw new Error("Library in state init is not implemented");
         }
 
         CellBuilder stateInit = CellBuilder.beginCell();
