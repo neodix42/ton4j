@@ -1,8 +1,10 @@
 package org.ton.java.tlb.loader;
 
 import org.ton.java.address.Address;
+import org.ton.java.bitstring.BitString;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonHashMap;
 import org.ton.java.tlb.types.*;
 
 import java.math.BigInteger;
@@ -111,9 +113,12 @@ public class Tlb {
                         .newOne(cs.loadRef())
                         .build();
             case "ConfigParams":
+                BitString addrBits = cs.loadBits(256);
+                TonHashMap configDict = CellSlice.beginParse(cs.loadRef()).loadDict(32, k -> k.readUint(32), v -> v);
                 return ConfigParams.builder()
-                        .configAddr(cs.loadAddress())
-                        .config(cs.loadDict(32, k -> k.readInt(32), v -> v))
+//                        .configAddr(Address.of((byte) 0, 255, addrBits.toByteArray()))
+                        .configAddr(null) //todo
+                        .config(configDict)
                         .build();
             case "ShardStateUnsplit":
                 assert cs.loadUint(32).longValue() == 0x9023afe2L : "ShardStateUnsplit: magic not equal to 0x9023afe2";
@@ -127,8 +132,8 @@ public class Tlb {
                         .genLT(cs.loadUint(64))
                         .minRefMCSeqno(cs.loadUint(32).longValue())
                         .outMsgQueueInfo(cs.loadRef())
-                        .accounts(CellSlice.beginParse(cs.loadRef()).loadDict(256, k -> k.readInt(256), v -> v))
                         .beforeSplit(cs.loadBit())
+                        .accounts(CellSlice.beginParse(cs.loadRef()).loadDictE(256, k -> k.readInt(256), v -> v))
                         .stats(cs.loadRef())
                         .mc(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, CellSlice.beginParse(cs.loadRef()))) // todo fix
                         .build();
@@ -163,10 +168,10 @@ public class Tlb {
                 if (isNull(cs)) {
                     return null;
                 }
-                assert cs.loadUint(32).longValue() == 0xcc26L : "McStateExtra: magic not equal to 0xcc26";
+                assert cs.loadUint(16).longValue() == 0xcc26L : "McStateExtra: magic not equal to 0xcc26";
                 return McStateExtra.builder()
                         .magic(0xcc26L)
-                        .shardHashes(cs.loadDict(32, k -> k.readInt(32), v -> v))
+                        .shardHashes(cs.loadDictE(32, k -> k.readInt(32), v -> v))
                         .configParams((ConfigParams) Tlb.load(ConfigParams.class, cs))
                         .info(cs.loadRef())
                         .globalBalance((CurrencyCollection) Tlb.load(CurrencyCollection.class, cs))
@@ -182,7 +187,7 @@ public class Tlb {
             case "CurrencyCollection":
                 return CurrencyCollection.builder()
                         .coins(cs.loadCoins())
-                        .extraCurrencies(cs.loadDict(32, k -> k.readInt(32), v -> v))
+                        .extraCurrencies(cs.loadDictE(32, k -> k.readInt(32), v -> v))
                         .build();
             case "GlobalVersion":
                 assert cs.loadUint(8).longValue() == 0xc4L : "GlobalVersion: magic not equal to 0xc4";

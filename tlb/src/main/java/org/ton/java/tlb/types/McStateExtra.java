@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
-import org.ton.java.cell.TonHashMap;
+import org.ton.java.cell.TonHashMapE;
 
 @Builder
 @Getter
@@ -13,7 +13,7 @@ import org.ton.java.cell.TonHashMap;
 @ToString
 public class McStateExtra {
     long magic;                 //      `tlb:"#cc26"`
-    TonHashMap shardHashes;     //      `tlb:"dict 32"`
+    TonHashMapE shardHashes;     //      `tlb:"dict 32"`
     ConfigParams configParams;  //      `tlb:"."`
     Cell info;                  //      `tlb:"^"`
     CurrencyCollection globalBalance;// `tlb:"."`

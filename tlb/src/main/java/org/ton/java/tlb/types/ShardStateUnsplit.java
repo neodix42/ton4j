@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
-import org.ton.java.cell.TonHashMap;
+import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
 
@@ -23,8 +23,8 @@ public class ShardStateUnsplit {
     BigInteger genLT;       //    `tlb:"## 64"`
     long minRefMCSeqno;     //    `tlb:"## 32"`
     Cell outMsgQueueInfo;   //    `tlb:"^"`
-    TonHashMap accounts;   //     `tlb:"dict 256"`	`tlb:"^"`
-    boolean beforeSplit;
+    boolean beforeSplit;    //    `tlb:"## 1"`
+    TonHashMapE accounts;    //    `tlb:"dict 256"`	`tlb:"^"`
     Cell stats; // `tlb:"^"`
     McStateExtra mc; //`tlb:"maybe ^"`
 }

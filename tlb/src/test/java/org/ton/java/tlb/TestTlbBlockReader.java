@@ -4,91 +4,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.loader.Tlb;
-import org.ton.java.tlb.types.*;
-import org.ton.java.utils.Utils;
+import org.ton.java.tlb.types.Block;
+import org.ton.java.tlb.types.BlockIdExt;
 
-import java.math.BigInteger;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestTlbReader {
-
-    @Test
-    public void testLoadAccountStateFromCell() {
-        Cell c = CellBuilder.fromBoc("b5ee9c724101030100d700026fc00c419e2b8a3b6cd81acd3967dbbaf4442e1870e99eaf32278b7814a6ccaac5f802068148c314b1854000006735d812370d00764ce8d340010200deff0020dd2082014c97ba218201339cbab19f71b0ed44d0d31fd31f31d70bffe304e0a4f2608308d71820d31fd31fd31ff82313bbf263ed44d0d31fd31fd3ffd15132baf2a15144baf2a204f901541055f910f2a3f8009320d74a96d307d402fb00e8d101a4c8cb1fcb1fcbffc9ed5400500000000229a9a317d78e2ef9e6572eeaa3f206ae5c3dd4d00ddd2ffa771196dc0ab985fa84daf451c340d7fa");
-        CellSlice cs = CellSlice.beginParse(c);
-        AccountState accountState = (AccountState) Tlb.load(AccountState.class, cs);
-        log.info("accountState {}", accountState);
-        assertThat(accountState.getAccountStorage().getStateInit().getCode().toString()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED54");
-        assertThat(accountState.getAccountStorage().getStateInit().getData().toString()).isEqualTo("0000000229A9A317D78E2EF9E6572EEAA3F206AE5C3DD4D00DDD2FFA771196DC0AB985FA84DAF451");
-        assertThat(accountState.getAccountStorage().getBalance()).isEqualTo(BigInteger.valueOf(31011747));
-        assertThat(accountState.getAddress().toString(true, true, true, false)).isEqualTo("EQDEGeK4o7bNgazTln27r0RC4YcOmerzIni3gUpsyqxfgMWk");
-        assertThat(accountState.getAccountStorage().getAccountStatus()).isEqualTo("ACTIVE");
-        assertThat(accountState.getAccountStorage().getLastTransactionLt()).isEqualTo(BigInteger.valueOf(28370239000003L));
-    }
-
-    @Test
-    public void testGetMethodHash() {
-        assertThat(Account.methodNameHash("seqno")).isEqualTo(85143);
-    }
-
-    @Test
-    public void testHasGetMethod() {
-        Cell c = CellBuilder.fromBoc("b5ee9c724102140100021f000114ff00f4a413f4bcf2c80b0102016202030202cd04050201200e0f04e7d10638048adf000e8698180b8d848adf07d201800e98fe99ff6a2687d20699fea6a6a184108349e9ca829405d47141baf8280e8410854658056b84008646582a802e78b127d010a65b509e58fe59f80e78b64c0207d80701b28b9e382f970c892e000f18112e001718112e001f181181981e0024060708090201200a0b00603502d33f5313bbf2e1925313ba01fa00d43028103459f0068e1201a44343c85005cf1613cb3fccccccc9ed54925f05e200a6357003d4308e378040f4966fa5208e2906a4208100fabe93f2c18fde81019321a05325bbf2f402fa00d43022544b30f00623ba9302a402de04926c21e2b3e6303250444313c85005cf1613cb3fccccccc9ed54002c323401fa40304144c85005cf1613cb3fccccccc9ed54003c8e15d4d43010344130c85005cf1613cb3fccccccc9ed54e05f04840ff2f00201200c0d003d45af0047021f005778018c8cb0558cf165004fa0213cb6b12ccccc971fb008002d007232cffe0a33c5b25c083232c044fd003d0032c03260001b3e401d3232c084b281f2fff2742002012010110025bc82df6a2687d20699fea6a6a182de86a182c40043b8b5d31ed44d0fa40d33fd4d4d43010245f04d0d431d430d071c8cb0701cf16ccc980201201213002fb5dafda89a1f481a67fa9a9a860d883a1a61fa61ff480610002db4f47da89a1f481a67fa9a9a86028be09e008e003e00b01a500c6e");
-        Account account = Account.builder()
-                .isActive(false)
-                .state(null)
-                .data(null)
-                .code(c)
-                .lastTxLt(BigInteger.ZERO)
-                .lastTxHash(null)
-                .build();
-
-        assertThat(account.hasGetMethod("get_nft_content")).isTrue();
-        assertThat(account.hasGetMethod("get_lol_content")).isFalse();
-    }
-
-    @Test
-    public void testLoadAccountStorageFrozen() {
-
-        Cell c = CellBuilder.beginCell()
-                .storeUint(123, 64)
-                .storeCoins(BigInteger.valueOf(123))
-                .storeBit(false)
-                .storeBit(false)
-                .storeBit(true)
-                .endCell();
-
-        CellSlice cs = CellSlice.beginParse(c);
-        AccountStorage accountStorage = (AccountStorage) Tlb.load(AccountStorage.class, cs);
-
-        assertThat(accountStorage.getAccountStatus()).isEqualTo("FROZEN");
-    }
-
-    @Test
-    public void testLoadAccountStorageUnint() {
-
-        Cell c = CellBuilder.beginCell()
-                .storeUint(123, 64)
-                .storeCoins(BigInteger.valueOf(123))
-                .storeBit(false)
-                .storeBit(false)
-                .storeBit(false)
-                .endCell();
-
-        CellSlice cs = CellSlice.beginParse(c);
-        AccountStorage accountStorage = (AccountStorage) Tlb.load(AccountStorage.class, cs);
-
-        assertThat(accountStorage.getAccountStatus()).isEqualTo("UNINIT");
-    }
+public class TestTlbBlockReader {
 
     @Test
     public void testLoadBlockMaster() {
@@ -105,136 +34,5 @@ public class TestTlbReader {
         assertThat(block).isNotNull();
         List<BlockIdExt> parents = block.getParentBlocks();
         log.info("parents len {}", parents.size());
-    }
-
-    @Test
-    public void testCornerMessage() {
-        Cell c = CellBuilder.fromBoc("b5ee9c724101020100860001b36800bf4c6bdca25797e55d700c1a5448e2af5d1ac16f9a9628719a4e1eb2b44d85e33fd104a366f6fb17799871f82e00e4f2eb8ae6aaf6d3e0b3fb346cd0208e23725e14094ba15d20071f12260000446ee17a9b0cc8c028d8c001004d8002b374733831aac3455708e8f1d2c7f129540b982d3a5de8325bf781083a8a3d2a04a7f943813277f3ea");
-        InternalMessage internalMessage = (InternalMessage) Tlb.load(InternalMessage.class, CellSlice.beginParse(c));
-        log.info("internalMessage {}", internalMessage);
-        log.info("internalMessage body {}", internalMessage.getBody().toHex());
-        log.info("internalMessage body {}", internalMessage.getBody().print());
-        assertThat(internalMessage.isIHRDisabled()).isTrue();
-        assertThat(internalMessage.getAmount()).isEqualTo(BigInteger.valueOf(9980893000L));
-        assertThat(internalMessage.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
-        assertThat(internalMessage.getCreatedAt()).isEqualTo(1684018284L);
-        assertThat(internalMessage.getCreatedLt()).isEqualTo(BigInteger.valueOf(37621510000006L));
-        //run golang test and compare
-    }
-
-    @Test
-    public void testExternalMessage1() {
-        Cell c = CellBuilder.fromBoc("B5EE9C724102030100010F0002DF88009F4CFD8AB69CB20864160E3A40E4F578643B5B5B409C51A0215DA579D95E49F6119529DEF4481C60CD81087FC7B058797AFDCEBCC1BE127EE2C4707C1E1C0F3D12F955EC3DE1C63E714876A931F6C6F13E6980284238AA9F94B0EC5859B37C4DE1E5353462FFFFFFFFE000000010010200DEFF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED5400500000000029A9A31782A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB2452EEC2");
-        ExternalMessage externalMessage = (ExternalMessage) Tlb.load(ExternalMessage.class, CellSlice.beginParse(c));
-        log.info("externalMessage {}", externalMessage);
-
-        assertThat(externalMessage.getStateInit().getCode().toString()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED54");
-        assertThat(externalMessage.getStateInit().getData().toString()).isEqualTo("0000000029A9A31782A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
-        assertThat(externalMessage.getBody().toString()).isEqualTo("A94EF7A240E3066C0843FE3D82C3CBD7EE75E60DF093F7162383E0F0E079E897CAAF61EF0E31F38A43B5498FB63789F34C014211C554FCA58762C2CD9BE26F0F29A9A317FFFFFFFF00000000");
-        assertThat(externalMessage.getDstAddr().toString(false)).isEqualTo("0:4fa67ec55b4e5904320b071d20727abc321dadada04e28d010aed2bcecaf24fb");
-    }
-
-    @Test
-    public void testInternalMessageLoadFromCell() {
-        InternalMessage internalMessage = InternalMessage.builder()
-                .iHRDisabled(false)
-                .bounce(true)
-                .bounced(false)
-                .srcAddr(Address.of("EQAOp1zuKuX4zY6L9rEdSLam7J3gogIHhfRu_gH70u2MQnmd"))
-                .dstAddr(Address.of("EQA_B407fiLIlE5VYZCaI2rki0in6kLyjdhhwitvZNfpe7eY"))
-                .amount(Utils.toNano(0.5))
-                .extraCurrencies(null)
-                .createdAt(5L)
-                .createdLt(BigInteger.TWO)
-                .stateInit(StateInit.builder()
-                        .code(CellBuilder.beginCell().endCell())
-                        .data(CellBuilder.beginCell().endCell())
-                        .build())
-                .body(CellBuilder.beginCell().endCell())
-                .build();
-
-        InternalMessage loadedInternalMessage = (InternalMessage) Tlb.load(InternalMessage.class, CellSlice.beginParse(internalMessage.toCell()));
-        log.info("loadedInternalMessage {}", loadedInternalMessage);
-        assertThat(loadedInternalMessage.getAmount()).isEqualTo(BigInteger.valueOf(500000000L));
-        assertThat(loadedInternalMessage.getCreatedLt()).isEqualTo(BigInteger.valueOf(2L));
-        assertThat(loadedInternalMessage.getCreatedAt()).isEqualTo(5L);
-    }
-
-    @Test
-    public void testMessageLoadFromCell() {
-        InternalMessage internalMessage = InternalMessage.builder()
-                .iHRDisabled(false)
-                .bounce(true)
-                .bounced(false)
-                .srcAddr(null)
-                .dstAddr(null)
-                .amount(Utils.toNano(0.5))
-                .extraCurrencies(null)
-                .createdAt(5L)
-                .createdLt(BigInteger.TWO)
-                .stateInit(null)
-                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
-                .build();
-
-        Message loadedMessage = (Message) Tlb.load(Message.class, CellSlice.beginParse(internalMessage.toCell()));
-        log.info("loadedMessage {}", loadedMessage);
-        assertThat(loadedMessage.getMsgType()).isEqualTo("INTERNAL");
-    }
-
-    @Test
-    public void testExternalMessageLoadFromCell() {
-        ExternalMessage externalMessage = ExternalMessage.builder()
-                .srcAddr(null)
-                .dstAddr(null)
-                .importFee(BigInteger.TEN)
-                .stateInit(null)
-                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
-                .build();
-
-        Message loadedMessage = (Message) Tlb.load(Message.class, CellSlice.beginParse(externalMessage.toCell()));
-        log.info("loadedMessage {}", loadedMessage);
-        assertThat(loadedMessage.getMsgType()).isEqualTo("EXTERNAL_IN");
-    }
-
-    @Test
-    public void testExternalMessageOutLoadFromCell() {
-        ExternalMessageOut externalMessageOut = ExternalMessageOut.builder()
-                .srcAddr(null)
-                .dstAddr(null)
-                .createdLt(BigInteger.TEN)
-                .createdAt(5L)
-                .stateInit(null)
-                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
-                .build();
-
-        Message loadedMessage = (Message) Tlb.load(Message.class, CellSlice.beginParse(externalMessageOut.toCell()));
-        log.info("loadedMessage {}", loadedMessage);
-        assertThat(loadedMessage.getMsgType()).isEqualTo("EXTERNAL_OUT");
-    }
-
-    //https://tonsandbox.com/explorer/address/EQBKNxSb8ZItjuVB0C-f_idtdAc0S389DZxFwaFZVegBFEn8/11830865000003_161a9cc5a7de2a03aeba4d9cdbbab747a18148ee9dccabdf981f93a353619391
-    @Test
-    public void testExternalMessage2() {
-        String bocHex = Utils.base64ToHexString("te6cckEBAgEAgQABQ4AUfOW61YF/y1MIwE8E1RvkKBdIVHAgdBGTjidHc8Yc9XABALRiYWZ5YmVpY3Q1bzJua2lqbmRheG16enB5bjZjZm1jcnRiZmI3N2Y0bDNqemQzdGE0a2ViY2hsaGVsdS5pcGZzLm5mdHN0b3JhZ2UubGluay9kYXRhLmpzb27XOQ8v");
-        log.info("bocHex: {}", bocHex);
-        Cell c = CellBuilder.fromBoc(bocHex);
-        ExternalMessage externalMessage = (ExternalMessage) Tlb.load(ExternalMessage.class, CellSlice.beginParse(c));
-        log.info("externalMessage {}", externalMessage);
-//
-//        assertThat(externalMessage.getStateInit().getCode().toString()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED54");
-//        assertThat(externalMessage.getStateInit().getData().toString()).isEqualTo("0000000029A9A31782A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
-//        assertThat(externalMessage.getBody().toString()).isEqualTo("A94EF7A240E3066C0843FE3D82C3CBD7EE75E60DF093F7162383E0F0E079E897CAAF61EF0E31F38A43B5498FB63789F34C014211C554FCA58762C2CD9BE26F0F29A9A317FFFFFFFF00000000");
-//        assertThat(externalMessage.getDstAddr().toString(false)).isEqualTo("0:4fa67ec55b4e5904320b071d20727abc321dadada04e28d010aed2bcecaf24fb");
-    }
-
-    //https://tonsandbox.com/explorer/address/EQBKNxSb8ZItjuVB0C-f_idtdAc0S389DZxFwaFZVegBFEn8/11830865000003_161a9cc5a7de2a03aeba4d9cdbbab747a18148ee9dccabdf981f93a353619391
-    @Test
-    public void testInternalMessage2() {
-        String bocHex = Utils.base64ToHexString("te6cckEBAwEAnAABLwAAAAHHmiv5MdZBawAAAAAAAAAfNMS0CAEBQ4AUfOW61YF/y1MIwE8E1RvkKBdIVHAgdBGTjidHc8Yc9XACALRiYWZ5YmVpY3Q1bzJua2lqbmRheG16enB5bjZjZm1jcnRiZmI3N2Y0bDNqemQzdGE0a2ViY2hsaGVsdS5pcGZzLm5mdHN0b3JhZ2UubGluay9kYXRhLmpzb27Kwi+Q");
-        log.info("bocHex: {}", bocHex);
-        Cell c = CellBuilder.fromBoc(bocHex);
-        log.info("cell " + c.print());
-        InternalMessage internalMessage = (InternalMessage) Tlb.load(InternalMessage.class, CellSlice.beginParse(c));
-        log.info("internalMessage {}", internalMessage);
     }
 }

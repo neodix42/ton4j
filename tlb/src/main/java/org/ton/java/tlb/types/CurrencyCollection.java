@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.ton.java.cell.TonHashMap;
+import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
 
@@ -14,5 +14,5 @@ import java.math.BigInteger;
 @ToString
 public class CurrencyCollection {
     BigInteger coins;
-    TonHashMap extraCurrencies;
+    TonHashMapE extraCurrencies; // `tlb dict 32 32
 }
