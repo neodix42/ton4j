@@ -483,10 +483,13 @@ public class BitString {
     public byte[] toByteArray() {
         String bin = getBitString();
         byte[] result = new byte[(int) Math.ceil(bin.length() / (double) 8)];
-        int i = 0;
-        for (String str : bin.split("(?<=\\G.{8})")) {
-            result[i] = (byte) (Integer.parseInt(str, 2) & 0xFF);
-            i++;
+
+        for (int i = 0; i < bin.length(); i++) {
+            if (bin.charAt(i) == '1') {
+                result[(i / 8)] |= 1 << (7 - (i % 8));
+            } else {
+                result[(i / 8)] &= ~(1 << (7 - (i % 8)));
+            }
         }
 
         return result;
