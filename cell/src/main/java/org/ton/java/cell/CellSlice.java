@@ -272,6 +272,12 @@ public class CellSlice {
         return bits.prereadBit();
     }
 
+    public boolean preloadBitAt(int position) {
+        checkBitsOverflow(position);
+        BitString b = bits.preReadBits(position);
+        return b.get(position - 1);
+    }
+
     public int getFreeBits() {
         return bits.getFreeBits();
     }
@@ -444,12 +450,13 @@ public class CellSlice {
 
     public Address loadAddress() {
         BigInteger i = preloadUint(2);
+
         if (i.intValue() == 0) {
             skipBits(2);
             return null;
         }
         loadBits(2);
-        loadBits(1);
+        loadBits(1); //maybe Anycast
         int workchain = loadInt(8).intValue();
         BigInteger hashPart = loadUint(256);
 

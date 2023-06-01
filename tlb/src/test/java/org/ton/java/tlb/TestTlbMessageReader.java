@@ -28,7 +28,7 @@ public class TestTlbMessageReader {
         log.info("internalMessage body {}", internalMessage.getBody().toHex());
         log.info("internalMessage body {}", internalMessage.getBody().print());
         assertThat(internalMessage.isIHRDisabled()).isTrue();
-        assertThat(internalMessage.getAmount()).isEqualTo(BigInteger.valueOf(9980893000L));
+        assertThat(internalMessage.getValue().getCoins()).isEqualTo(BigInteger.valueOf(9980893000L));
         assertThat(internalMessage.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
         assertThat(internalMessage.getCreatedAt()).isEqualTo(1684018284L);
         assertThat(internalMessage.getCreatedLt()).isEqualTo(BigInteger.valueOf(37621510000006L));
@@ -55,8 +55,7 @@ public class TestTlbMessageReader {
                 .bounced(false)
                 .srcAddr(Address.of("EQAOp1zuKuX4zY6L9rEdSLam7J3gogIHhfRu_gH70u2MQnmd"))
                 .dstAddr(Address.of("EQA_B407fiLIlE5VYZCaI2rki0in6kLyjdhhwitvZNfpe7eY"))
-                .amount(Utils.toNano(0.5))
-                .extraCurrencies(null)
+                .value(CurrencyCollection.builder().coins(Utils.toNano(0.5)).build())
                 .createdAt(5L)
                 .createdLt(BigInteger.TWO)
                 .stateInit(StateInit.builder()
@@ -68,7 +67,7 @@ public class TestTlbMessageReader {
 
         InternalMessage loadedInternalMessage = (InternalMessage) Tlb.load(InternalMessage.class, CellSlice.beginParse(internalMessage.toCell()));
         log.info("loadedInternalMessage {}", loadedInternalMessage);
-        assertThat(loadedInternalMessage.getAmount()).isEqualTo(BigInteger.valueOf(500000000L));
+        assertThat(loadedInternalMessage.getValue().getCoins()).isEqualTo(BigInteger.valueOf(500000000L));
         assertThat(loadedInternalMessage.getCreatedLt()).isEqualTo(BigInteger.valueOf(2L));
         assertThat(loadedInternalMessage.getCreatedAt()).isEqualTo(5L);
     }
@@ -81,8 +80,7 @@ public class TestTlbMessageReader {
                 .bounced(false)
                 .srcAddr(null)
                 .dstAddr(null)
-                .amount(Utils.toNano(0.5))
-                .extraCurrencies(null)
+                .value(CurrencyCollection.builder().coins(Utils.toNano(0.5)).build())
                 .createdAt(5L)
                 .createdLt(BigInteger.TWO)
                 .stateInit(null)

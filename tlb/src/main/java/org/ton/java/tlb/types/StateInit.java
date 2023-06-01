@@ -21,7 +21,7 @@ public class StateInit {
     TickTock tickTock; // `tlb:"maybe ."`
     Cell code; // `tlb:"maybe ^"`
     Cell data; // `tlb:"maybe ^"`
-    TonHashMapE lib; // `tlb:"dict 256"`
+    TonHashMapE lib; // `tlb:"dictE 256"`
 
     public Cell toCell() {
         return CellBuilder.beginCell()

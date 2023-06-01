@@ -86,6 +86,8 @@ public class TestCellBuilder {
         assertThat(CellBuilder.beginCell().storeInt(-129, 9).endCell().bits.toHex()).isEqualTo("BFC_");
         assertThat(CellBuilder.beginCell().storeInt(17239, 16).endCell().bits.toHex()).isEqualTo("4357");
         assertThat(CellBuilder.beginCell().storeInt(-17, 11).endCell().bits.toHex()).isEqualTo("FDF_");
+        assertThat(CellBuilder.beginCell().storeInt((short) -17, 11).endCell().bits.toHex()).isEqualTo("FDF_");
+        assertThat(CellBuilder.beginCell().storeInt((byte) -17, 11).endCell().bits.toHex()).isEqualTo("FDF_");
         assertThat(CellBuilder.beginCell().storeInt(1000000239, 32).endCell().bits.toHex()).isEqualTo("3B9ACAEF");
 
         assertThat(CellBuilder.beginCell().storeInt(1000000239L * 1000000239, 91).endCell().bits.toHex()).isEqualTo("00000001BC16E45E4D41643_");
@@ -132,6 +134,7 @@ public class TestCellBuilder {
                 .storeAddress(Address.parseFriendlyAddress("0QAljlSWOKaYCuXTx2OCr9P08y40SC2vw3UeM1hYnI3gDY7I"))
                 .storeString("HELLO")
                 .storeRef(c2)
+                .storeRefs(c3, c4)
                 .endCell();
 
         log.info("c1 {}", c1.bits);
@@ -142,10 +145,13 @@ public class TestCellBuilder {
         log.info("c5 {}", c5.bits);
         log.info("c5:\n{}", c5.print());
 
+        assertThat(c5.getUsedRefs()).isEqualTo(3);
+
         byte[] serializedCell5 = c5.toBoc(false);
 
         Cell dc5 = Cell.fromBoc(serializedCell5);
         log.info("c5 deserialized:\n{}", dc5.print());
+
     }
 
     @Test

@@ -77,7 +77,7 @@ public class BitString {
      */
     private void checkRange(int n) {
         if (n > length) {
-            throw new Error("BitString overflow");
+            throw new Error("BitString overflow. n[" + n + "] > length[" + length + "]");
         }
     }
 

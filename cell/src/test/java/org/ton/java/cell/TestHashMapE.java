@@ -103,6 +103,23 @@ public class TestHashMapE {
     }
 
     @Test
+    public void testHashMapEDeserialization15() {
+        int dictXKeySize = 15;
+        TonHashMapE x = new TonHashMapE(dictXKeySize);
+
+        x.elements.put(100L, CellBuilder.beginCell().storeUint(5, 5));
+        x.elements.put(200L, CellBuilder.beginCell().storeUint(6, 5));
+        x.elements.put(300L, CellBuilder.beginCell().storeUint(7, 5));
+
+        Cell cellX = x.serialize(
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictXKeySize).bits,
+                v -> CellBuilder.beginCell().storeSlice(CellSlice.beginParse((Cell) v))
+        );
+
+        log.info("serialized cellX:\n{}", cellX.print());
+    }
+
+    @Test
     public void testHashMapEDeserializationTwoDicts() {
         int dictXKeySize = 9;
         TonHashMapE x = new TonHashMapE(dictXKeySize);

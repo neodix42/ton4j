@@ -8,7 +8,6 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
 
@@ -25,8 +24,7 @@ public class InternalMessage {
     boolean bounced;    // `tlb:"bool"`
     Address srcAddr;    // `tlb:"addr"`
     Address dstAddr;    // `tlb:"addr"`
-    BigInteger amount;  // `tlb:"."`
-    TonHashMapE extraCurrencies;// `tlb:"dict 32"`
+    CurrencyCollection value; // `tlb:"."  -  uint 16, dict:(HashmapE 32)
     BigInteger iHRFee;  // `tlb:"."`
     BigInteger fwdFee;  // `tlb:"."`
     BigInteger createdLt;//`tlb:"## 64"`
@@ -42,8 +40,8 @@ public class InternalMessage {
                 .storeBit(bounced)
                 .storeAddress(srcAddr)
                 .storeAddress(dstAddr)
-                .storeCoins(amount)
-                .storeDict(nonNull(extraCurrencies) ? extraCurrencies.serialize(
+                .storeCoins(value.getCoins())
+                .storeDict(nonNull(value.getExtraCurrencies()) ? value.getExtraCurrencies().serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
                         v -> CellBuilder.beginCell().storeUint((byte) v, 32)) :
                         CellBuilder.beginCell().storeBit(false).endCell())

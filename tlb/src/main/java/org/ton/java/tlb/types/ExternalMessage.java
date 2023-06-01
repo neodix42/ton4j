@@ -27,7 +27,7 @@ public class ExternalMessage {
 
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell()
-                .storeUint(2, 2)
+                .storeUint(0b10, 2)
                 .storeAddress(srcAddr)
                 .storeAddress(dstAddr)
                 .storeCoins(importFee)
