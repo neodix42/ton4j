@@ -299,7 +299,8 @@ public class BitString {
      * @return true or false
      */
     public boolean readBit() {
-        return array.getFirst();
+//        return array.getFirst();
+        return array.pollFirst();
     }
 
     /**
@@ -481,7 +482,14 @@ public class BitString {
 
     public byte[] toByteArray() {
         String bin = getBitString();
-        return new BigInteger(bin, 2).toByteArray();
+        byte[] result = new byte[(int) Math.ceil(bin.length() / (double) 8)];
+        int i = 0;
+        for (String str : bin.split("(?<=\\G.{8})")) {
+            result[i] = (byte) (Integer.parseInt(str, 2) & 0xFF);
+            i++;
+        }
+
+        return result;
     }
 
     public BitString clone() {
