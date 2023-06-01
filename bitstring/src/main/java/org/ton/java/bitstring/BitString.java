@@ -1,5 +1,6 @@
 package org.ton.java.bitstring;
 
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.utils.Utils;
 
@@ -27,7 +28,8 @@ public class BitString {
     public BitString(byte[] bytes) {
 
         BigInteger bi = new BigInteger(bytes);
-        String bits = bi.toString(2);
+        String bits = StringUtils.leftPad(bi.toString(2), bytes.length * 8, '0');
+
         array = new ArrayDeque<>(bits.length());
         for (int i = 0; i < bits.length(); i++) {
             array.addFirst(bits.charAt(i) == '1');
@@ -536,23 +538,35 @@ public class BitString {
     public void setTopUppedArray(byte[] arr, boolean fulfilledBytes) {
         length = arr.length * 8;
         array = new BitString(arr).array;
-//        writeCursor = length;
-
-        if (!(fulfilledBytes || (length == 0))) {
-            boolean foundEndBit = false;
-            for (byte c = 0; c < 7; c++) {
-//                writeCursor -= 1; // from the end
-                if (array.getLast()) { // get(writecursor)
-                    foundEndBit = true;
-                    array.pollLast(); // removes
-                    break;
-                }
-            }
-            if (!foundEndBit) {
-                System.err.println(Arrays.toString(arr) + ", " + fulfilledBytes);
-                throw new Error("Incorrect TopUppedArray");
+        System.out.println(array);
+        int bitsSz = arr.length * 4;
+        for (int y = 0; y < 8; y++) {
+            if (((arr[arr.length - 1] >> y) & 1) == 1) {
+                bitsSz += 3 - y;
+                break;
             }
         }
+
+        System.out.println(array);
+
+//        if (!(fulfilledBytes || (length == 0))) {
+//            boolean foundEndBit = false;
+//            for (byte c = 0; c < 7; c++) {
+////                writeCursor -= 1; // from the end
+//                if (array.pollLast()) { // get(writecursor)
+//                    foundEndBit = true;
+////                    for (int i = 0; i < c; i++) {
+////                        array.pollLast(); // removes
+////                    }
+////                    array.addLast(false);
+//                    break;
+//                }
+//            }
+//            if (!foundEndBit) {
+//                System.err.println(Arrays.toString(arr) + ", " + fulfilledBytes);
+//                throw new Error("Incorrect TopUppedArray");
+//            }
+//        }
     }
 
     public byte[] getTopUppedArray() {
