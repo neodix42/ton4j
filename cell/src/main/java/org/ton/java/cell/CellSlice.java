@@ -6,7 +6,6 @@ import org.ton.java.bitstring.BitString;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -303,16 +302,6 @@ public class CellSlice {
     public BitString loadBits(int length) {
         checkBitsOverflow(length);
         return bits.readBits(length);
-    }
-
-    public BitString preloadBits(int length) {
-        checkBitsOverflow(length);
-        boolean[] n = Arrays.copyOfRange(bits.toBitArray(), bits.readCursor, bits.readCursor + length);
-        BitString result = new BitString(length);
-        for (boolean b : n) {
-            result.writeBit(b);
-        }
-        return result;
     }
 
     public BigInteger loadInt(int length) {
