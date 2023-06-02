@@ -36,8 +36,8 @@ public class CellSlice {
     }
 
     public void endParse() {
-        if (bits.readCursor != bits.getUsedBits()) {
-            throw new Error("readCursor: " + bits.readCursor + " != bits.length: " + bits.getUsedBits());
+        if (bits.getUsedBits() != 0) { // todo
+            throw new Error("not all bits read");
         }
     }
 
@@ -93,7 +93,7 @@ public class CellSlice {
      * Check whether slice was read to the end
      */
     public boolean isSliceEmpty() {
-        return bits.readCursor == bits.writeCursor;
+        return bits.getUsedBits() == 0;
     }
 
     public List<Cell> loadRefs(int count) {
@@ -265,13 +265,13 @@ public class CellSlice {
 
     public CellSlice skipBits(int length) {
         checkBitsOverflow(length);
-        bits.readCursor += length;
+//        bits.readCursor += length; // todo
         return this;
     }
 
     public CellSlice skipBit() {
         checkBitsOverflow(1);
-        bits.readCursor += 1;
+//        bits.readCursor += 1; // todo
         return this;
     }
 
@@ -396,7 +396,7 @@ public class CellSlice {
     }
 
     void checkBitsOverflow(int length) {
-        if (bits.readCursor + length > bits.writeCursor) {
+        if (length > bits.getUsedBits()) {
             throw new Error("Bits overflow. Can't load " + length + " bits. " + bits.getFreeBits() + " bits left.");
         }
     }

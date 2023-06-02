@@ -77,7 +77,7 @@ public class Cell {
             BitString bs = new BitString(hexBitString.length() * 8);
             bs.writeBytes(b);
 
-            boolean[] ba = bs.toBitArray();
+            boolean[] ba = bs.toBooleanArray();
             int i = ba.length - 1;
             // drop last elements up to first `1`, if incomplete
             while (incomplete && !ba[i]) {
@@ -91,7 +91,7 @@ public class Cell {
             BitString bss = new BitString(ba.length);
             bss.writeBitArray(ba);
 
-            BitString f = new BitString(bss.toBitArray().length);
+            BitString f = new BitString(bss.getBitString().length());
             f.writeBitString(bss);
 
             Cell c = new Cell();
@@ -183,9 +183,9 @@ public class Cell {
         return d1;
     }
 
-    byte[] getBitsDescriptor() {
+    byte[] getBitsDescriptor() { // todo
         byte[] d2 = new byte[1];
-        d2[0] = (byte) (Math.ceil(bits.writeCursor / (double) 8) + Math.floor(bits.writeCursor / (double) 8));
+        d2[0] = (byte) (Math.ceil(bits.getUsedBits() / (double) 8) + Math.floor(bits.getUsedBits() / (double) 8));
         return d2;
     }
 

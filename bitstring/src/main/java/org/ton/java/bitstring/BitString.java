@@ -23,6 +23,7 @@ public class BitString {
         for (Boolean b : bs.array) {      //todo check order
             writeBit(b);
         }
+        length = bs.length;
     }
 
     public BitString(byte[] bytes) {
@@ -494,6 +495,17 @@ public class BitString {
             }
         }
 
+        return result;
+    }
+
+    public boolean[] toBooleanArray() {
+        String bin = getBitString();
+        boolean[] result = new boolean[bin.length()];
+        int i = 0;
+        for (Boolean b : array) {
+            result[i] = b;
+            i++;
+        }
         return result;
     }
 

@@ -77,7 +77,8 @@ public class TonPfxHashMap extends TonHashMap {
         if (se.size() == 3) { // contains leaf
             Node node = (Node) se.get(2);
 
-            BitString bs = node.key.readBits(node.key.writeCursor - node.key.readCursor);
+//            BitString bs = node.key.readBits(node.key.writeCursor - node.key.readCursor); was
+            BitString bs = node.key.readBits(node.key.length - node.key.getUsedBits()); // todo
 
             se.set(0, bs.toBitString());
 
