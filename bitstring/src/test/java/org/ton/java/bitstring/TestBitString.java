@@ -290,6 +290,26 @@ public class TestBitString {
     }
 
     @Test
+    public void testBitStringByteArray2() {
+        BitString bitString9 = new BitString(new byte[]{-128, 0, 0, 0});
+
+        System.out.println(bitString9.toBitString());
+
+        assertThat(bitString9.toBitString()).isEqualTo("10000000000000000000000000000000");
+        assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("8000002_");
+    }
+
+    @Test
+    public void testBitStringByteArray3() {
+        BitString bitString9 = new BitString(new byte[]{-128, 0, 0, 32});
+
+        System.out.println(bitString9.toBitString());
+
+        assertThat(bitString9.toBitString()).isEqualTo("10000000000000000000000000000000");
+        assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("8000002_");
+    }
+
+    @Test
     public void testBitStringAll() {
         BitString bitString = new BitString(1023);
         bitString.writeInt(BigInteger.valueOf(-200), 16);

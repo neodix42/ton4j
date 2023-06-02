@@ -33,7 +33,12 @@ public class BitString {
 
         array = new ArrayDeque<>(bits.length());
         for (int i = 0; i < bits.length(); i++) {
-            array.addLast(bits.charAt(i) == '1');
+            if (bits.charAt(i) == '1') {
+                array.addLast(true);
+            } else if (bits.charAt(i) == '0') {
+                array.addLast(false);
+            }
+            // else '-' sign - do nothing
         }
         length = bits.length();
     }
