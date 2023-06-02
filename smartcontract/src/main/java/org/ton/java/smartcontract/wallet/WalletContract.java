@@ -72,7 +72,7 @@ public interface WalletContract extends Contract {
         StateInit stateInit = createStateInit();
 
         Cell signingMessage = createSigningMessage(0);
-        byte[] signature = new TweetNaclFast.Signature(getOptions().publicKey, secretKey).detached(signingMessage.hash());
+        byte[] signature = new TweetNaclFast.Signature(getOptions().publicKey, secretKey).detached(Utils.unsignedBytesToSigned(signingMessage.hash()));
 
         CellBuilder body = CellBuilder.beginCell();
         body.storeBytes(signature);
@@ -157,7 +157,7 @@ public interface WalletContract extends Contract {
         if (dummySignature) {
             signature = new byte[64];
         } else {
-            signature = Utils.signData(getOptions().publicKey, secretKey, signingMessage.hash());
+            signature = Utils.signData(getOptions().publicKey, secretKey, Utils.unsignedBytesToSigned(signingMessage.hash()));
         }
 
         CellBuilder body = CellBuilder.beginCell();

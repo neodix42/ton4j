@@ -26,7 +26,7 @@ public class TestEncryption {
 
     @Test
     public void testBoxAndSignature() {
-        byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
 
         TweetNaclFast.Box.KeyPair keyPairBox = Utils.generateKeyPairFromSecretKey(secretKey);
         TweetNaclFast.Signature.KeyPair keyPairSignature = Utils.generateSignatureKeyPairFromSeed(secretKey);
@@ -42,7 +42,7 @@ public class TestEncryption {
 
     @Test
     public void testKeyPairSignatureSignFromSeed() {
-        byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(secretKey);
 
         byte[] pubKey = keyPair.getPublicKey();
@@ -54,7 +54,7 @@ public class TestEncryption {
         String msg = "ABC";
         String msgHashSha256 = Utils.sha256(msg);
 
-        byte[] signedMsg = Utils.signData(pubKey, secKey, Utils.hexToBytes(msgHashSha256));
+        byte[] signedMsg = Utils.signData(pubKey, secKey, Utils.hexToSignedBytes(msgHashSha256));
         log.info(Utils.bytesToHex(signedMsg));
     }
 
@@ -73,7 +73,7 @@ public class TestEncryption {
         String msgHashSha256 = Utils.sha256(msg);
         log.info("msg hash: {} ", msgHashSha256);
 
-        byte[] signedMsg = Utils.signData(pubKey, secKey, Utils.hexToBytes(msgHashSha256));
+        byte[] signedMsg = Utils.signData(pubKey, secKey, Utils.hexToSignedBytes(msgHashSha256));
         log.info(Utils.bytesToHex(signedMsg));
     }
 }

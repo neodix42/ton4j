@@ -132,6 +132,12 @@ public class CellBuilder extends Cell {
         return this;
     }
 
+    public CellBuilder storeBytes(int[] number) {
+        checkBitsOverflow(number.length * 8);
+        bits.writeBytes(number);
+        return this;
+    }
+
     public CellBuilder storeBytes(List<Byte> bytes) {
         checkBitsOverflow(bytes.size() * 8);
         for (Byte b : bytes) {

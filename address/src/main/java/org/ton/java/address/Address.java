@@ -68,7 +68,7 @@ public class Address {
 
             isUserFriendly = false;
             wc = wcInternal;
-            hashPart = Utils.hexToBytes(hex);
+            hashPart = Utils.hexToSignedBytes(hex);
             isTestOnly = false;
             isBounceable = false;
         } else {

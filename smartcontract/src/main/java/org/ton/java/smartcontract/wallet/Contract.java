@@ -49,7 +49,7 @@ public interface Contract {
         Cell dataCell = createDataCell();
         Cell stateInit = createStateInit(codeCell, dataCell);
 
-        byte[] stateInitHash = stateInit.hash();
+        int[] stateInitHash = stateInit.hash();
 
         Address address = Address.of(getOptions().wc + ":" + Utils.bytesToHex(stateInitHash));
         return new StateInit(stateInit, address, codeCell, dataCell);

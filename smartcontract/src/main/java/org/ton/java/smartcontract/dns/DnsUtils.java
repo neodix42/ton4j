@@ -83,7 +83,7 @@ public class DnsUtils {
         if ((cell.bits.toByteArray()[0] & 0xFF) != prefix0 || (cell.bits.toByteArray()[1] & 0xFF) != prefix1) {
             throw new Error("Invalid dns record value prefix");
         }
-        cell.bits = cell.bits.cloneFrom(2);
+        cell.bits = cell.bits.cloneFrom(2 * 8);
         return NftUtils.parseAddress(cell);
     }
 
@@ -147,7 +147,7 @@ public class DnsUtils {
         Object r = result.getStack().get(1);
         if (r instanceof TvmStackEntryCell) {
             TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStack().get(1);
-            cell = CellBuilder.fromBoc(Utils.base64ToBytes(cellResult.getCell().getBytes()));
+            cell = CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(cellResult.getCell().getBytes()));
         }
 
         if ((nonNull(cell)) && (isNull(cell.bits))) {

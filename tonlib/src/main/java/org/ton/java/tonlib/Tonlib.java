@@ -762,7 +762,7 @@ public class Tonlib {
             String result = syncAndRead();
             System.out.println(result);
             ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
-            return CellBuilder.fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes()));
+            return CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(ci.getConfig().getBytes()));
         }
     }
 

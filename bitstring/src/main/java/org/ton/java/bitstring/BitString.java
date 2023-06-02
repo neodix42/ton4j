@@ -1,24 +1,53 @@
 package org.ton.java.bitstring;
 
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 
 import static java.util.Objects.isNull;
 
 public class BitString {
 
-    byte[] array;
-    public int writeCursor;
-    public int readCursor;
+    Deque<Boolean> array;
+
     public int length;
 
     public BitString(BitString bs) {
-        for (int i = bs.readCursor; i < bs.writeCursor; i++) {
-            writeBit(bs.get(i));
+        array = new ArrayDeque<>(bs.array.size());
+        for (Boolean b : bs.array) {      //todo check order
+            writeBit(b);
+        }
+        length = bs.length;
+    }
+
+    public BitString(byte[] bytes) {
+        this(Utils.signedBytesToUnsigned(bytes));
+    }
+
+    public BitString(int[] bytes) {
+        if (bytes.length == 0) {
+            array = new ArrayDeque<>(0);
+            length = 0;
+        } else {
+            String bits = StringUtils.leftPad(Utils.bytesToBitString(bytes), bytes.length * 8, '0');
+
+            array = new ArrayDeque<>(bits.length());
+            for (int i = 0; i < bits.length(); i++) {
+                if (bits.charAt(i) == '1') {
+                    array.addLast(true);
+                } else if (bits.charAt(i) == '0') {
+                    array.addLast(false);
+                } else {
+                    // else '-' sign - do nothing
+                }
+            }
+            length = bits.length();
         }
     }
 
@@ -28,10 +57,13 @@ public class BitString {
      * @param length int    length of BitString in bits
      */
     public BitString(int length) {
-        array = new byte[(int) Math.ceil(length / (double) 8)];
-        writeCursor = 0;
-        readCursor = 0;
+        array = new ArrayDeque<>(length);
         this.length = length;
+    }
+
+    public BitString() {
+        array = new ArrayDeque<>(length);
+        this.length = 1023;
     }
 
     /**
@@ -40,7 +72,7 @@ public class BitString {
      * @return int
      */
     public int getFreeBits() {
-        return length - writeCursor;
+        return length - array.size();
     }
 
     /**
@@ -49,25 +81,23 @@ public class BitString {
      * @return int
      */
     public int getUsedBits() {
-        return writeCursor;
+        return array.size();
     }
 
     /**
      * @return int
      */
     public int getUsedBytes() {
-        return (int) Math.ceil(writeCursor / (double) 8);
+        return (int) Math.ceil(array.size() / (double) 8);
     }
 
     /**
-     * Return bit's value at position n
+     * Gets current bit without removing it
      *
-     * @param n int
      * @return boolean    bit value at position `n`
      */
-    public boolean get(int n) {
-        checkRange(n);
-        return (array[(n / 8)] & (1 << (7 - (n % 8)))) > 0;
+    public boolean get() {
+        return array.peekFirst();
     }
 
     /**
@@ -77,38 +107,8 @@ public class BitString {
      */
     private void checkRange(int n) {
         if (n > length) {
-            throw new Error("BitString overflow. n[" + n + "] > length[" + length + "]");
+            throw new Error("BitString overflow");
         }
-    }
-
-    /**
-     * Set bit value to 1 at position n
-     *
-     * @param n int
-     */
-    void on(int n) {
-        checkRange(n);
-        array[(n / 8)] |= 1 << (7 - (n % 8));
-    }
-
-    /**
-     * Set bit value to 0 at position n
-     *
-     * @param n int
-     */
-    void off(int n) {
-        checkRange(n);
-        array[(n / 8)] &= ~(1 << (7 - (n % 8)));
-    }
-
-    /**
-     * Toggle bit value at position n
-     *
-     * @param n int
-     */
-    void toggle(int n) {
-        this.checkRange(n);
-        array[(n / 8)] ^= 1 << (7 - (n % 8));
     }
 
     /**
@@ -117,12 +117,7 @@ public class BitString {
      * @param b boolean
      */
     public void writeBit(boolean b) {
-        if (b) {
-            on(writeCursor);
-        } else {
-            off(writeCursor);
-        }
-        writeCursor++;
+        array.addLast(b);
     }
 
     /**
@@ -132,11 +127,10 @@ public class BitString {
      */
     void writeBit(byte b) {
         if ((b) > 0) {
-            on(writeCursor);
+            array.addLast(true);
         } else {
-            off(writeCursor);
+            array.addLast(false);
         }
-        writeCursor++;
     }
 
     /**
@@ -246,6 +240,17 @@ public class BitString {
     }
 
     /**
+     * Write array of signed 8-bit ints
+     *
+     * @param ui8 byte[]
+     */
+    public void writeBytes(int[] ui8) {
+        for (int b : ui8) {
+            writeUint8(b);
+        }
+    }
+
+    /**
      * Write UTF-8 string
      *
      * @param value String
@@ -301,48 +306,28 @@ public class BitString {
      * @param anotherBitString BitString
      */
     public void writeBitString(BitString anotherBitString) {
-        for (int i = anotherBitString.readCursor; i < anotherBitString.writeCursor; i++) {
-            writeBit(anotherBitString.get(i));
+        for (Boolean b : anotherBitString.array) {
+            writeBit(anotherBitString.readBit());
         }
     }
 
     /**
-     * Read one bit without moving readCursor
+     * Read one bit without removing it
      *
      * @return true or false
      */
     public boolean prereadBit() {
-        return get(readCursor);
+        return get();
     }
 
     /**
-     * Read one bit and moves readCursor forward by one position
+     * Read and removes one bit from start
      *
      * @return true or false
      */
     public boolean readBit() {
-        boolean result = get(readCursor);
-        readCursor++;
-//        if (readCursor > writeCursor) {
-//            throw new Error("Parse error: not enough bits. readCursor > writeCursor");
-//        }
-        return result;
-    }
-
-    /**
-     * Read n bits from the BitString
-     *
-     * @param n integer
-     * @return BitString with length n read from original Bitstring
-     */
-    public BitString preReadBits(int n) {
-        int oldReadCursor = readCursor;
-        BitString result = new BitString(n);
-        for (int i = 0; i < n; i++) {
-            result.writeBit(readBit());
-        }
-        readCursor = oldReadCursor;
-        return result;
+//        return array.getFirst();
+        return array.pollFirst();
     }
 
     /**
@@ -366,21 +351,20 @@ public class BitString {
      * @return BigInteger
      */
     public BigInteger preReadUint(int bitLength) {
-        int oldReadCursor = readCursor;
+        BitString cloned = new BitString(this);
 
         if (bitLength < 1) {
             throw new Error("Incorrect bitLength");
         }
         StringBuilder s = new StringBuilder();
         for (int i = 0; i < bitLength; i++) {
-            boolean b = readBit();
+            boolean b = cloned.readBit();
             if (b) {
                 s.append("1");
             } else {
                 s.append("0");
             }
         }
-        readCursor = oldReadCursor;
         return new BigInteger(s.toString(), 2);
     }
 
@@ -503,10 +487,10 @@ public class BitString {
      * @return BitString from 0 to writeCursor
      */
     public String toBitString() {
+        BitString cloned = new BitString(this);
         StringBuilder s = new StringBuilder();
-        for (int i = 0; i < writeCursor; i++) {
-            char bit = get(i) ? '1' : '0';
-            s.append(bit);
+        for (Boolean b : cloned.array) {
+            s.append(b ? '1' : '0');
         }
         return s.toString();
     }
@@ -515,59 +499,66 @@ public class BitString {
      * @return BitString from current position to writeCursor
      */
     public String getBitString() {
+        BitString cloned = clone();
         StringBuilder s = new StringBuilder();
-        for (int i = readCursor; i < writeCursor; i++) {
-            char bit = get(i) ? '1' : '0';
-            s.append(bit);
+        for (Boolean b : cloned.array) {
+            s.append(b ? '1' : '0');
         }
         return s.toString();
     }
 
-    public byte[] toByteArray() {
-        return array.clone();
-    }
-
-    public boolean[] toBitArray() {
-        boolean[] result = new boolean[writeCursor];
-        for (int i = readCursor; i < writeCursor; i++) {
-            result[i] = get(i);
+    public int[] toUnsignedByteArray() {
+        if (array.size() == 0) {
+            return new int[0];
+        }
+        String bin = getBitString();
+        int[] result = new int[(int) Math.ceil(bin.length() / (double) 8)];
+        int j = 0;
+        for (String str : bin.split("(?<=\\G.{8})")) {
+            result[j++] = Integer.parseInt(str, 2);
         }
         return result;
     }
 
-    public int[] toZeroOneArray() {
-        int[] result = new int[writeCursor];
-        for (int i = readCursor; i < writeCursor; i++) {
-            result[i] = get(i) ? 1 : 0;
+    public byte[] toByteArray() {
+        if (array.size() == 0) {
+            return new byte[0];
+        }
+        String bin = getBitString();
+        byte[] result = new byte[(int) Math.ceil(bin.length() / (double) 8)];
+
+        for (int i = 0; i < bin.length(); i++) {
+            if (bin.charAt(i) == '1') {
+                result[(i / 8)] |= 1 << (7 - (i % 8));
+            } else {
+                result[(i / 8)] &= ~(1 << (7 - (i % 8)));
+            }
+        }
+
+        return result;
+    }
+
+    public boolean[] toBooleanArray() {
+        String bin = getBitString();
+        boolean[] result = new boolean[bin.length()];
+        int i = 0;
+        for (Boolean b : array) {
+            result[i] = b;
+            i++;
         }
         return result;
     }
 
     public BitString clone() {
-        BitString result = new BitString(0);
-        result.array = Arrays.copyOfRange(array, 0, array.length);
-        result.length = length;
-        result.writeCursor = writeCursor;
-        result.readCursor = readCursor;
-        return result;
+        return new BitString(this);
     }
 
     public BitString cloneFrom(int from) {
-        BitString result = new BitString(0);
-        result.array = Arrays.copyOfRange(array, from, array.length);
-        result.length = length;
-        result.writeCursor = writeCursor - (from * 8);
-        result.readCursor = readCursor;
-        return result;
-    }
-
-    public BitString cloneClear() {
-        BitString result = new BitString(0);
-        result.array = Arrays.copyOfRange(array, 0, array.length);
-        result.length = length;
-        result.writeCursor = 0;
-        result.readCursor = 0;
-        return result;
+        BitString cloned = clone();
+        for (int i = 0; i < from; i++) {
+            cloned.readBit();
+        }
+        return cloned;
     }
 
     /**
@@ -576,10 +567,11 @@ public class BitString {
      * @return String
      */
     public String toHex() {
-        if (writeCursor % 4 == 0) {
-            byte[] arr = Arrays.copyOfRange(array, 0, (int) Math.ceil(writeCursor / (double) 8));
+
+        if (array.size() % 4 == 0) {
+            byte[] arr = toByteArray();
             String s = Utils.bytesToHex(arr).toUpperCase();
-            if (writeCursor % 8 == 0) {
+            if (array.size() % 8 == 0) {
                 return s;
             } else {
                 return s.substring(0, s.length() - 1);
@@ -587,33 +579,31 @@ public class BitString {
         } else {
             BitString temp = clone();
             temp.writeBit(true);
-            while (temp.writeCursor % 4 != 0) {
+            while (temp.array.size() % 4 != 0) {
                 temp.writeBit(false);
             }
             return temp.toHex().toUpperCase() + '_';
         }
     }
 
-    public void setTopUppedArray(byte[] arr, boolean fulfilledBytes) {
+    public void setTopUppedArray(int[] arr, boolean fulfilledBytes) {
         length = arr.length * 8;
-        array = arr;
-        writeCursor = length;
-//        int saveWriteCursor = writeCursor;
-
+        array = new BitString(arr).array;
 
         if (!(fulfilledBytes || (length == 0))) {
             boolean foundEndBit = false;
             for (byte c = 0; c < 7; c++) {
-                writeCursor -= 1;
-                if (get(writeCursor)) {
+//                writeCursor -= 1; // from the end
+                if (array.pollLast()) { // get(writecursor)
                     foundEndBit = true;
-                    off(writeCursor);
-//                    writeCursor += 3;
+//                    for (int i = 0; i < c; i++) {
+//                        array.pollLast(); // removes
+//                    }
+//                    array.pollLast();
+//                    array.addLast(false);
                     break;
                 }
             }
-//            writeCursor = saveWriteCursor;
-
             if (!foundEndBit) {
                 System.err.println(Arrays.toString(arr) + ", " + fulfilledBytes);
                 throw new Error("Incorrect TopUppedArray");
@@ -621,9 +611,10 @@ public class BitString {
         }
     }
 
-    public byte[] getTopUppedArray() {
+    public int[] getTopUppedArray() {
         BitString ret = clone();
-        int tu = (int) Math.ceil(ret.writeCursor / (double) 8) * 8 - ret.writeCursor;
+//        int tu = (int) Math.ceil(ret.writeCursor / (double) 8) * 8 - ret.writeCursor;
+        int tu = (int) Math.ceil(ret.array.size() / (double) 8) * 8 - ret.array.size();
         if (tu > 0) {
             tu = tu - 1;
             ret.writeBit(true);
@@ -632,7 +623,8 @@ public class BitString {
                 ret.writeBit(false);
             }
         }
-        ret.array = Arrays.copyOfRange(ret.array, 0, (int) Math.ceil(ret.writeCursor / (double) 8));
-        return ret.array;
+        int[] b = Arrays.copyOfRange(ret.toUnsignedByteArray(), 0, (int) Math.ceil(ret.array.size() / (double) 8));
+        return b;
+//        return ret.array;
     }
 }

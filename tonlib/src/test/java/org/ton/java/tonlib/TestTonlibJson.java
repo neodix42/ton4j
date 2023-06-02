@@ -259,7 +259,7 @@ public class TestTonlibJson {
                 String msgBodyText;
                 if (nonNull(tx.getIn_msg().getMsg_data().getBody())) {
 
-                    Cell c = Cell.fromBoc(Utils.base64ToBytes(tx.getIn_msg().getMsg_data().getBody()));
+                    Cell c = Cell.fromBoc(Utils.base64ToUnsignedBytes(tx.getIn_msg().getMsg_data().getBody()));
                     msgBodyText = c.print();
                 } else {
                     msgBodyText = Utils.base64ToString(tx.getIn_msg().getMsg_data().getText());
@@ -273,6 +273,7 @@ public class TestTonlibJson {
                         Cell c = Cell.fromBoc(Utils.base64ToBytes(msg.getMsg_data().getBody()));
                         msgBodyText = c.print();
                     } else {
+//                        msgBodyText = Utils.base64ToString(msg.getMessage());
                         msgBodyText = msg.getMessage();
                     }
                     log.info(">>>>> {} - {} : {}, msgBody cell/text {}, memo {}, memoHex {}", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()), StringUtils.normalizeSpace(msgBodyText), msg.getMessage(), msg.getMessageHex());
@@ -280,7 +281,7 @@ public class TestTonlibJson {
             }
         }
 
-        assertThat(rawTransactions.getTransactions().size()).isLessThan(11);
+        assertThat(rawTransactions.getTransactions().size()).isLessThan(10);
     }
 
     @Test

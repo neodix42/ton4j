@@ -122,10 +122,12 @@ public class NftUtils {
      * @return BigInt
      */
     public static BigInteger readIntFromBitString(BitString bs, int cursor, int bits) {
+        BitString cloned = bs.clone();
+        cloned.readBits(cursor);
         BigInteger n = BigInteger.ZERO;
         for (int i = 0; i < bits; i++) {
             n = n.multiply(BigInteger.TWO);
-            n = n.add(bs.get(cursor + i) ? BigInteger.ONE : BigInteger.ZERO);
+            n = n.add(cloned.readBit() ? BigInteger.ONE : BigInteger.ZERO);
         }
         return n;
     }
@@ -170,7 +172,7 @@ public class NftUtils {
 
         double royalty = royaltyFactor.divide(royaltyBase).doubleValue();
         TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStack().get(2);
-        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(royaltyAddressCell.getCell().getBytes())));
+        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(royaltyAddressCell.getCell().getBytes())));
 
         return Royalty.builder()
                 .royaltyFactor(royaltyFactor)

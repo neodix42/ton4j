@@ -33,7 +33,7 @@ public class AdnlAddress {
             throw new Error("Invalid adnl hex length");
         }
 
-        bytes = Utils.hexToBytes(anyForm);
+        bytes = Utils.hexToSignedBytes(anyForm);
     }
 
     public AdnlAddress(byte[] anyForm) {

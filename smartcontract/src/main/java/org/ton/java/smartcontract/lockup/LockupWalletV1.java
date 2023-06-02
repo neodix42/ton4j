@@ -116,7 +116,7 @@ public class LockupWalletV1 implements WalletContract {
         cell.storeUint(BigInteger.ZERO, 32); // seqno
         cell.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
         cell.storeBytes(getOptions().publicKey); //256
-        cell.storeBytes(Utils.hexToBytes(options.lockupConfig.configPublicKey)); // 256
+        cell.storeBytes(Utils.hexToSignedBytes(options.lockupConfig.configPublicKey)); // 256
 
         int dictKeySize = 267;
         TonPfxHashMapE dictAllowedDestinations = new TonPfxHashMapE(dictKeySize);

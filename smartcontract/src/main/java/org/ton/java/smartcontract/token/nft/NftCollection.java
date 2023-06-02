@@ -201,7 +201,7 @@ public class NftCollection implements Contract {
 
 
         TvmStackEntryCell collectionContent = (TvmStackEntryCell) result.getStack().get(1);
-        Cell collectionContentCell = CellBuilder.fromBoc(Utils.base64ToBytes(collectionContent.getCell().getBytes()));
+        Cell collectionContentCell = CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(collectionContent.getCell().getBytes()));
 
         String collectionContentUri = null;
         try {
@@ -211,7 +211,7 @@ public class NftCollection implements Contract {
         }
 
         TvmStackEntryCell ownerAddressCell = (TvmStackEntryCell) result.getStack().get(2);
-        Address ownerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(ownerAddressCell.getCell().getBytes())));
+        Address ownerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(ownerAddressCell.getCell().getBytes())));
 
         return CollectionData.builder()
                 .nextItemIndex(nextItemIndex)
@@ -240,7 +240,7 @@ public class NftCollection implements Contract {
             }
 
             TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStack().get(2);
-            Cell content = CellBuilder.fromBoc(Utils.base64ToBytes(contentCell.getCell().getBytes()));
+            Cell content = CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(contentCell.getCell().getBytes()));
 
             try {
                 nftData.setContentUri(NftUtils.parseOffchainUriCell(content));
@@ -267,7 +267,7 @@ public class NftCollection implements Contract {
         }
 
         TvmStackEntryCell addrCell = (TvmStackEntryCell) result.getStack().get(0);
-        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(addrCell.getCell().getBytes())));
+        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(addrCell.getCell().getBytes())));
     }
 
     public Royalty getRoyaltyParams(Tonlib tonlib) {

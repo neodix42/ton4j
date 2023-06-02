@@ -6,7 +6,6 @@ import org.ton.java.bitstring.BitString;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -37,8 +36,8 @@ public class CellSlice {
     }
 
     public void endParse() {
-        if (bits.readCursor != bits.getUsedBits()) {
-            throw new Error("readCursor: " + bits.readCursor + " != bits.length: " + bits.getUsedBits());
+        if (bits.getUsedBits() != 0) {
+            throw new Error("not all bits read");
         }
     }
 
@@ -94,7 +93,7 @@ public class CellSlice {
      * Check whether slice was read to the end
      */
     public boolean isSliceEmpty() {
-        return bits.readCursor == bits.writeCursor;
+        return bits.getUsedBits() == 0;
     }
 
     public List<Cell> loadRefs(int count) {
@@ -287,16 +286,17 @@ public class CellSlice {
     }
 
     public CellSlice skipBits(int length) {
-        if (bits.readCursor + length > bits.writeCursor) {
-            throw new Error("Bits overflow. Can't load " + length + " bits. " + bits.getFreeBits() + " bits left.");
+        checkBitsOverflow(length);
+        for (int i = 0; i < length; i++) {
+            bits.readBit();
         }
-        bits.readCursor += length;
+
         return this;
     }
 
     public CellSlice skipBit() {
         checkBitsOverflow(1);
-        bits.readCursor += 1;
+        bits.readBit();
         return this;
     }
 
@@ -312,10 +312,10 @@ public class CellSlice {
      * @param length in bits
      * @return byte array
      */
-    public byte[] loadBytes(int length) {
+    public int[] loadBytes(int length) {
         checkBitsOverflow(length);
         BitString bitString = bits.readBits(length);
-        return bitString.toByteArray();
+        return bitString.toUnsignedByteArray();
     }
 
     public String loadString(int length) {
@@ -327,16 +327,6 @@ public class CellSlice {
     public BitString loadBits(int length) {
         checkBitsOverflow(length);
         return bits.readBits(length);
-    }
-
-    public BitString preloadBits(int length) {
-        checkBitsOverflow(length);
-        boolean[] n = Arrays.copyOfRange(bits.toBitArray(), bits.readCursor, bits.readCursor + length);
-        BitString result = new BitString(length);
-        for (boolean b : n) {
-            result.writeBit(b);
-        }
-        return result;
     }
 
     public BigInteger loadInt(int length) {
@@ -431,11 +421,9 @@ public class CellSlice {
     }
 
     void checkBitsOverflow(int length) {
-        if (length > bits.length) {
-//        if (bits.readCursor + length > bits.writeCursor) {
+        if (length > bits.getUsedBits()) {
             throw new Error("Bits overflow. Can't load " + length + " bits. " + bits.getFreeBits() + " bits left.");
         }
-
     }
 
     void checkRefsOverflow() {
@@ -450,13 +438,12 @@ public class CellSlice {
 
     public Address loadAddress() {
         BigInteger i = preloadUint(2);
-
         if (i.intValue() == 0) {
             skipBits(2);
             return null;
         }
         loadBits(2);
-        loadBits(1); //maybe Anycast
+        loadBits(1);
         int workchain = loadInt(8).intValue();
         BigInteger hashPart = loadUint(256);
 

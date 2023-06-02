@@ -57,6 +57,10 @@
             <artifactId>commons-codec</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.purejava</groupId>
             <artifactId>tweetnacl-java</artifactId>
         </dependency>

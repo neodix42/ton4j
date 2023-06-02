@@ -40,12 +40,12 @@ public class ParseRunResult implements Serializable {
             if (elementType.contains("num") || elementType.contains("number") || elementType.contains("int")) {
                 return TvmStackEntryNumber.builder().number(TvmNumber.builder().number(element).build()).build();
             } else if (elementType.contains("cell")) {
-                byte[] e = Utils.hexToBytes(element);
+                int[] e = Utils.hexToUnsignedBytes(element);
                 Cell cell = Cell.fromBoc(e);
                 String cellBase64 = bytesToBase64(cell.toBoc(false));
                 return TvmStackEntryCell.builder().cell(TvmCell.builder().bytes(cellBase64).build()).build();
             } else if (elementType.contains("slice")) {
-                byte[] e = Utils.hexToBytes(element);
+                int[] e = Utils.hexToUnsignedBytes(element);
                 Cell cell = Cell.fromBoc(e);
                 String cellBase64 = bytesToBase64(cell.toBoc(false));
                 return TvmStackEntrySlice.builder().slice(TvmSlice.builder().bytes(cellBase64).build()).build();
@@ -112,6 +112,10 @@ public class ParseRunResult implements Serializable {
 
     private static String bytesToBase64(byte[] bytes) {
         return Base64.getEncoder().encodeToString(bytes);
+    }
+
+    private static String bytesToBase64(int[] unsignedBytes) {
+        return Base64.getEncoder().encodeToString(Utils.unsignedBytesToSigned(unsignedBytes));
     }
 
     private static String bytesToBase64UrlSafe(byte[] bytes) {

@@ -34,7 +34,7 @@ public class TestFaucet {
     public static String BOUNCEABLE = "kQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgUQ1";
 
     public static BigInteger topUpContract(Tonlib tonlib, Address destinationAddress, BigInteger amount) throws InterruptedException {
-        byte[] secretKey = Utils.hexToBytes(SECRET_KEY);
+        byte[] secretKey = Utils.hexToSignedBytes(SECRET_KEY);
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
         Options options = Options.builder()
@@ -117,7 +117,7 @@ public class TestFaucet {
      */
     @Test
     public void deployFaucetWallet() {
-        byte[] secretKey = Utils.hexToBytes(SECRET_KEY);
+        byte[] secretKey = Utils.hexToSignedBytes(SECRET_KEY);
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
         Options options = Options.builder()
