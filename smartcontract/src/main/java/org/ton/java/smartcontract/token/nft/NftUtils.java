@@ -123,7 +123,7 @@ public class NftUtils {
      */
     public static BigInteger readIntFromBitString(BitString bs, int cursor, int bits) {
         BitString cloned = bs.clone();
-        cloned.readBits(cursor); // todo review
+        cloned.readBits(cursor);
         BigInteger n = BigInteger.ZERO;
         for (int i = 0; i < bits; i++) {
             n = n.multiply(BigInteger.TWO);

@@ -182,7 +182,7 @@ public class Cell {
         return d1;
     }
 
-    int[] getBitsDescriptor() { // todo
+    int[] getBitsDescriptor() {
         int[] d2 = new int[1];
         d2[0] = (int) (Math.ceil(bits.getUsedBits() / (double) 8) + Math.floor(bits.getUsedBits() / (double) 8));
         return d2;

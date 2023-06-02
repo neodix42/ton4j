@@ -507,7 +507,7 @@ public class BitString {
         return s.toString();
     }
 
-    public int[] toUnsignedByteArray() { // todo
+    public int[] toUnsignedByteArray() {
         if (array.size() == 0) {
             return new int[0];
         }

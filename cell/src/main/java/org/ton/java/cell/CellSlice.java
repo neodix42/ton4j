@@ -36,7 +36,7 @@ public class CellSlice {
     }
 
     public void endParse() {
-        if (bits.getUsedBits() != 0) { // todo
+        if (bits.getUsedBits() != 0) {
             throw new Error("not all bits read");
         }
     }
@@ -265,7 +265,6 @@ public class CellSlice {
 
     public CellSlice skipBits(int length) {
         checkBitsOverflow(length);
-//        bits.readCursor += length; // todo
         for (int i = 0; i < length; i++) {
             bits.readBit();
         }
@@ -275,7 +274,6 @@ public class CellSlice {
 
     public CellSlice skipBit() {
         checkBitsOverflow(1);
-//        bits.readCursor += 1; // todo
         bits.readBit();
         return this;
     }
