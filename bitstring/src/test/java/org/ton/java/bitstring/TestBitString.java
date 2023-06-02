@@ -187,27 +187,27 @@ public class TestBitString {
     public void testBitStringGetTopUppedArray() {
         BitString bitString0 = new BitString(8);
         bitString0.writeUint(BigInteger.valueOf(200), 8);
-        byte[] b0 = bitString0.getTopUppedArray();
-        byte[] result0 = {-56}; // (-56 & 0xff) = 200
+        int[] b0 = bitString0.getTopUppedArray();
+        int[] result0 = {200}; // (-56 & 0xff) = 200
         assertThat(b0).isEqualTo(result0);
 
         BitString bitString1 = new BitString(32);
         bitString1.writeUint(BigInteger.valueOf(200), 32);
-        byte[] b1 = bitString1.getTopUppedArray();
-        byte[] result1 = {0, 0, 0, -56};
+        int[] b1 = bitString1.getTopUppedArray();
+        int[] result1 = {0, 0, 0, 200};
         assertThat(b1).isEqualTo(result1);
 
         BitString bitString2 = new BitString(32);
         bitString2.writeCoins(BigInteger.TEN);
-        byte[] b2 = bitString2.getTopUppedArray();
-        byte[] result2 = {16, -88};
+        int[] b2 = bitString2.getTopUppedArray();
+        int[] result2 = {16, 168};
         assertThat(b2).isEqualTo(result2);
 
         BitString bitString3 = new BitString(1023);
         bitString3.writeCoins(BigInteger.TEN);
         bitString3.writeUint(333L, 64);
-        byte[] b3 = bitString3.getTopUppedArray();
-        byte[] result3 = {16, -96, 0, 0, 0, 0, 0, 0, 20, -40};
+        int[] b3 = bitString3.getTopUppedArray();
+        int[] result3 = {16, 160, 0, 0, 0, 0, 0, 0, 20, 216};
         assertThat(b3).isEqualTo(result3);
     }
 
@@ -216,21 +216,21 @@ public class TestBitString {
         BitString bitString0 = new BitString(8);
         bitString0.writeUint(BigInteger.valueOf(200), 8);
         System.out.println(bitString0);
-        bitString0.setTopUppedArray(new byte[]{16, -96, 0, 0, 0, 0, 0, 0, 20, -40}, false);
+        bitString0.setTopUppedArray(Utils.signedBytesToUnsigned(new byte[]{16, -96, 0, 0, 0, 0, 0, 0, 20, -40}), false);
         System.out.println(bitString0);
         assertThat(bitString0.toString()).isEqualTo("0001000010100000000000000000000000000000000000000000000000000000000101001101");
 
         BitString bitString1 = new BitString(8);
         bitString1.writeUint(BigInteger.valueOf(200), 8);
         System.out.println(bitString1);
-        bitString1.setTopUppedArray(new byte[]{16}, false);
+        bitString1.setTopUppedArray(new int[]{16}, false);
         System.out.println(bitString1);
         assertThat(bitString1.toString()).isEqualTo("000");
 
         BitString bitString2 = new BitString(8);
         bitString2.writeUint(BigInteger.valueOf(200), 8);
         System.out.println(bitString2);
-        bitString2.setTopUppedArray(new byte[]{16}, true);
+        bitString2.setTopUppedArray(new int[]{16}, true);
         System.out.println(bitString2);
         assertThat(bitString2.toString()).isEqualTo("00010000");
 
@@ -238,7 +238,7 @@ public class TestBitString {
         bitString3.writeUint(BigInteger.valueOf(200), 8);
         bitString3.writeCoins(Utils.toNano(200));
         System.out.println(bitString3);
-        bitString3.setTopUppedArray(new byte[]{16}, true);
+        bitString3.setTopUppedArray(new int[]{16}, true);
         System.out.println(bitString3);
         assertThat(bitString3.toString()).isEqualTo("00010000");
 
@@ -246,7 +246,7 @@ public class TestBitString {
         bitString4.writeUint(BigInteger.valueOf(200), 8);
         bitString4.writeCoins(Utils.toNano(200));
         System.out.println(bitString4);
-        bitString4.setTopUppedArray(new byte[]{16}, false);
+        bitString4.setTopUppedArray(new int[]{16}, false);
         System.out.println(bitString4);
         assertThat(bitString4.toString()).isEqualTo("000");
 
@@ -254,39 +254,47 @@ public class TestBitString {
         bitString5.writeUint(BigInteger.valueOf(200), 8);
         bitString5.writeCoins(Utils.toNano(200));
         System.out.println(bitString5);
-        bitString5.setTopUppedArray(new byte[]{16, 1, 0, 0, 13, -8, 15}, false);
+        bitString5.setTopUppedArray(Utils.signedBytesToUnsigned(new byte[]{16, 1, 0, 0, 13, -8, 15}), false);
         System.out.println(bitString5);
         assertThat(bitString5.toString()).isEqualTo("0001000000000001000000000000000000001101111110000000111");
 
         BitString bitString6 = new BitString(1023);
-        bitString6.setTopUppedArray(Arrays.copyOfRange(new byte[]{0, 1, 2, 0, 1, 85, 0, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -109}, 0, 1), true);
+        bitString6.setTopUppedArray(Arrays.copyOfRange(Utils.signedBytesToUnsigned(new byte[]{0, 1, 2, 0, 1, 85, 0, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -109}), 0, 1), true);
         System.out.println(bitString6);
         assertThat(bitString6.toString()).isEqualTo("00000000");
 
         BitString bitString7 = new BitString(1023);
         bitString7.writeUint(BigInteger.valueOf(200), 8);
-        bitString7.setTopUppedArray(Arrays.copyOfRange(new byte[]{0, 1, 2, 0, 1, 85, 0, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -109}, 0, 1), true);
+        bitString7.setTopUppedArray(Arrays.copyOfRange(Utils.signedBytesToUnsigned(new byte[]{0, 1, 2, 0, 1, 85, 0, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -109}), 0, 1), true);
         System.out.println(bitString7);
         assertThat(bitString7.toString()).isEqualTo("00000000");
 
         BitString bitString8 = new BitString(1023);
-        bitString8.setTopUppedArray(Arrays.copyOfRange(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -109}, 0, 32), false);
+        bitString8.setTopUppedArray(Arrays.copyOfRange(Utils.signedBytesToUnsigned(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -109}), 0, 32), false);
         System.out.println(bitString8);
         assertThat(bitString8.toString()).isEqualTo("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001001001");
     }
 
     @Test
-    public void testBitStringByteArray() {
-        BitString bitString9 = new BitString(new byte[]{-128, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+    public void testBitStringByteArrayPositive() {
+        BitString bitString9 = new BitString(new byte[]{7, 7, 7, 7});
 
         System.out.println(bitString9.toBitString());
 
-//        assertThat(bitString9.toBitString()).isEqualTo("-111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
-        assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("8000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+        assertThat(bitString9.toBitString()).isEqualTo("00000111000001110000011100000111");
+        assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("07070707");
+        assertThat(bitString9.toHex()).isEqualTo("07070707");
+    }
 
-//        assertThat(Utils.bytesToBitString(bitString9.array)).isEqualTo("-111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
-//        assertThat(Utils.bytesToHex(bitString9.array)).isEqualTo("8000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+    @Test
+    public void testBitStringByteArrayPositiveUnsigned() {
+        BitString bitString9 = new BitString(new byte[]{-126, 7, 7, 7}); // -126 = 130 unsigned
 
+        System.out.println(bitString9.toBitString());
+
+        assertThat(bitString9.toBitString()).isEqualTo("10000010000001110000011100000111");
+        assertThat(Utils.bytesToHex(bitString9.toUnsignedByteArray())).isEqualTo("82070707");
+        assertThat(bitString9.toHex()).isEqualTo("82070707");
     }
 
     @Test
@@ -295,8 +303,10 @@ public class TestBitString {
 
         System.out.println(bitString9.toBitString());
 
+//        assertThat(bitString9.toBitString()).isEqualTo("-10000000000000000000000000000000");
         assertThat(bitString9.toBitString()).isEqualTo("10000000000000000000000000000000");
-        assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("8000002_");
+        assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("80000000");
+        assertThat(bitString9.toHex()).isEqualTo("80000000");
     }
 
     @Test
@@ -305,8 +315,9 @@ public class TestBitString {
 
         System.out.println(bitString9.toBitString());
 
-        assertThat(bitString9.toBitString()).isEqualTo("10000000000000000000000000000000");
-        assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("8000002_");
+        assertThat(bitString9.toBitString()).isEqualTo("10000000000000000000000000100000");
+        assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("80000020");
+        assertThat(bitString9.toHex()).isEqualTo("80000020");
     }
 
     @Test

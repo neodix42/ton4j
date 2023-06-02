@@ -142,7 +142,7 @@ public class TestCellBuilder {
         log.info("c5 {}", c5.bits);
         log.info("c5:\n{}", c5.print());
 
-        byte[] serializedCell5 = c5.toBoc(false);
+        int[] serializedCell5 = c5.toBoc(false);
 
         Cell dc5 = Cell.fromBoc(serializedCell5);
         log.info("c5 deserialized:\n{}", dc5.print());

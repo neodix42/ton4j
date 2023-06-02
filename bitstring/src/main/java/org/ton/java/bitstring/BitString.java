@@ -27,20 +27,28 @@ public class BitString {
     }
 
     public BitString(byte[] bytes) {
+        this(Utils.signedBytesToUnsigned(bytes));
+    }
 
-        BigInteger bi = new BigInteger(bytes);
-        String bits = StringUtils.leftPad(bi.toString(2), bytes.length * 8, '0');
+    public BitString(int[] bytes) {
+        if (bytes.length == 0) {
+            array = new ArrayDeque<>(0);
+            length = 0;
+        } else {
+            String bits = StringUtils.leftPad(Utils.bytesToBitString(bytes), bytes.length * 8, '0');
 
-        array = new ArrayDeque<>(bits.length());
-        for (int i = 0; i < bits.length(); i++) {
-            if (bits.charAt(i) == '1') {
-                array.addLast(true);
-            } else if (bits.charAt(i) == '0') {
-                array.addLast(false);
+            array = new ArrayDeque<>(bits.length());
+            for (int i = 0; i < bits.length(); i++) {
+                if (bits.charAt(i) == '1') {
+                    array.addLast(true);
+                } else if (bits.charAt(i) == '0') {
+                    array.addLast(false);
+                } else {
+                    // else '-' sign - do nothing
+                }
             }
-            // else '-' sign - do nothing
+            length = bits.length();
         }
-        length = bits.length();
     }
 
     /**
@@ -232,6 +240,17 @@ public class BitString {
     }
 
     /**
+     * Write array of signed 8-bit ints
+     *
+     * @param ui8 byte[]
+     */
+    public void writeBytes(int[] ui8) {
+        for (int b : ui8) {
+            writeUint8(b);
+        }
+    }
+
+    /**
      * Write UTF-8 string
      *
      * @param value String
@@ -288,7 +307,7 @@ public class BitString {
      */
     public void writeBitString(BitString anotherBitString) {
         for (Boolean b : anotherBitString.array) {
-            writeBit(anotherBitString.get());
+            writeBit(anotherBitString.readBit());
         }
     }
 
@@ -488,7 +507,23 @@ public class BitString {
         return s.toString();
     }
 
+    public int[] toUnsignedByteArray() { // todo
+        if (array.size() == 0) {
+            return new int[0];
+        }
+        String bin = getBitString();
+        int[] result = new int[(int) Math.ceil(bin.length() / (double) 8)];
+        int j = 0;
+        for (String str : bin.split("(?<=\\G.{8})")) {
+            result[j++] = Integer.parseInt(str, 2);
+        }
+        return result;
+    }
+
     public byte[] toByteArray() {
+        if (array.size() == 0) {
+            return new byte[0];
+        }
         String bin = getBitString();
         byte[] result = new byte[(int) Math.ceil(bin.length() / (double) 8)];
 
@@ -517,15 +552,14 @@ public class BitString {
     public BitString clone() {
         return new BitString(this);
     }
-//
-//    public BitString cloneFrom(int from) {
-//        BitString result = new BitString(0);
-//        result.array = Arrays.copyOfRange(array, from, array.length);
-//        result.length = length;
-//        result.writeCursor = writeCursor - (from * 8);
-//        result.readCursor = readCursor;
-//        return result;
-//    }
+
+    public BitString cloneFrom(int from) {
+        BitString cloned = clone();
+        for (int i = 0; i < from; i++) {
+            cloned.readBit();
+        }
+        return cloned;
+    }
 
     /**
      * like Fift
@@ -552,7 +586,7 @@ public class BitString {
         }
     }
 
-    public void setTopUppedArray(byte[] arr, boolean fulfilledBytes) {
+    public void setTopUppedArray(int[] arr, boolean fulfilledBytes) {
         length = arr.length * 8;
         array = new BitString(arr).array;
 
@@ -577,7 +611,7 @@ public class BitString {
         }
     }
 
-    public byte[] getTopUppedArray() {
+    public int[] getTopUppedArray() {
         BitString ret = clone();
 //        int tu = (int) Math.ceil(ret.writeCursor / (double) 8) * 8 - ret.writeCursor;
         int tu = (int) Math.ceil(ret.array.size() / (double) 8) * 8 - ret.array.size();
@@ -589,7 +623,7 @@ public class BitString {
                 ret.writeBit(false);
             }
         }
-        byte[] b = Arrays.copyOfRange(ret.toByteArray(), 0, (int) Math.ceil(ret.array.size() / (double) 8));
+        int[] b = Arrays.copyOfRange(ret.toUnsignedByteArray(), 0, (int) Math.ceil(ret.array.size() / (double) 8));
         return b;
 //        return ret.array;
     }

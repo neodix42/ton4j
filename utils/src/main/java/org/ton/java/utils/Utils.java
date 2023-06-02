@@ -39,24 +39,24 @@ public class Utils {
     /**
      * uses POLY 0x1EDC6F41
      */
-    public static Long getCRC32ChecksumAsLong(byte[] bytes) {
+    public static Long getCRC32ChecksumAsLong(int[] bytes) {
         Checksum crc32c = new CRC32C();
-        crc32c.update(bytes, 0, bytes.length);
+        crc32c.update(Utils.unsignedBytesToSigned(bytes), 0, bytes.length);
         return crc32c.getValue();
     }
 
-    public static String getCRC32ChecksumAsHex(byte[] bytes) {
+    public static String getCRC32ChecksumAsHex(int[] bytes) {
         return Long.toHexString(getCRC32ChecksumAsLong(bytes));
     }
 
-    public static byte[] getCRC32ChecksumAsBytes(byte[] bytes) {
+    public static int[] getCRC32ChecksumAsBytes(int[] bytes) {
         return longToBytes(getCRC32ChecksumAsLong(bytes));
     }
 
-    public static byte[] getCRC32ChecksumAsBytesReversed(byte[] bytes) {
-        byte[] b = longToBytes(getCRC32ChecksumAsLong(bytes));
+    public static int[] getCRC32ChecksumAsBytesReversed(int[] bytes) {
+        int[] b = longToBytes(getCRC32ChecksumAsLong(bytes));
 
-        byte[] reversed = new byte[4];
+        int[] reversed = new int[4];
         reversed[0] = b[3];
         reversed[1] = b[2];
         reversed[2] = b[1];
@@ -65,10 +65,16 @@ public class Utils {
         return reversed;
     }
 
-    static byte[] longToBytes(long l) {
-        byte[] result = new byte[4];
+    /**
+     * Long to signed bytes
+     *
+     * @param l
+     * @return
+     */
+    static int[] longToBytes(long l) {
+        int[] result = new int[4];
         for (int i = 3; i >= 0; i--) {
-            result[i] = (byte) (l & 0xFF);
+            result[i] = (int) l & 0xFF;
             l >>= 8;
         }
         return result;
@@ -123,6 +129,32 @@ public class Utils {
         }
     }
 
+    public static String sha256(int[] bytes) {
+        byte[] converted = new byte[bytes.length];
+        Byte[] a;
+
+        for (int i = 0; i < bytes.length; i++) {
+            converted[i] = (byte) (bytes[i] & 0xff);
+        }
+        return sha256(converted);
+    }
+
+    public static byte[] unsignedBytesToSigned(int[] bytes) {
+        byte[] converted = new byte[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            converted[i] = (byte) bytes[i];
+        }
+        return converted;
+    }
+
+    public static int[] signedBytesToUnsigned(byte[] bytes) {
+        int[] converted = new int[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            converted[i] = Byte.toUnsignedInt(bytes[i]);
+        }
+        return converted;
+    }
+
     public static String sha256(byte[] bytes) {
         try {
             final MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -157,13 +189,29 @@ public class Utils {
     }
 
     public static String bytesToBitString(byte[] raw) {
-        BigInteger bi = new BigInteger(raw);
+        String hex = Utils.bytesToHex(signedBytesToUnsigned(raw));
+        BigInteger bi = new BigInteger(hex, 16);
         return bi.toString(2);
     }
+
+    public static String bytesToBitString(int[] raw) {
+        String hex = Utils.bytesToHex(raw);
+        BigInteger bi = new BigInteger(hex, 16);
+        return bi.toString(2);
+    }
+
 
     public static String bytesToHex(byte[] raw) {
         final StringBuilder hex = new StringBuilder(2 * raw.length);
         for (final byte b : raw) {
+            hex.append(HEXES.charAt((b & 0xF0) >> 4)).append(HEXES.charAt((b & 0x0F)));
+        }
+        return hex.toString().toLowerCase();
+    }
+
+    public static String bytesToHex(int[] raw) {
+        final StringBuilder hex = new StringBuilder(2 * raw.length);
+        for (final int b : raw) {
             hex.append(HEXES.charAt((b & 0xF0) >> 4)).append(HEXES.charAt((b & 0x0F)));
         }
         return hex.toString().toLowerCase();
@@ -198,12 +246,20 @@ public class Utils {
         return Base64.getEncoder().encodeToString(bytes);
     }
 
+    public static String bytesToBase64(int[] bytes) {
+        return Base64.getEncoder().encodeToString(Utils.unsignedBytesToSigned(bytes));
+    }
+
     public static String bytesToBase64SafeUrl(byte[] bytes) {
         return Base64.getUrlEncoder().encodeToString(bytes);
     }
 
     public static byte[] base64ToBytes(String base64) {
         return Base64.getDecoder().decode(base64.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static int[] base64ToUnsignedBytes(String base64) {
+        return Utils.signedBytesToUnsigned(Base64.getDecoder().decode(base64.getBytes(StandardCharsets.UTF_8)));
     }
 
     public static byte[] base64SafeUrlToBytes(String base64) {
@@ -248,8 +304,23 @@ public class Utils {
         return c;
     }
 
-    public static byte[] hexToBytes(String hex) {
+    public static int[] concatBytes(int[] a, int[] b) {
+        int[] c = new int[a.length + b.length];
+        System.arraycopy(a, 0, c, 0, a.length);
+        System.arraycopy(b, 0, c, a.length, b.length);
+        return c;
+    }
+
+    public static byte[] hexToSignedBytes(String hex) {
         return hexStringToByteArray(hex);
+    }
+
+    public static int[] hexToUnsignedBytes(String hex) {
+        return hexStringToIntArray(hex);
+    }
+
+    public static int[] hexToInts(String hex) {
+        return hexStringToIntArray(hex);
     }
 
     private static byte[] hexStringToByteArray(String s) {
@@ -261,7 +332,21 @@ public class Utils {
         return data;
     }
 
+    private static int[] hexStringToIntArray(String s) {
+        String hex = s;
+        int[] result = new int[hex.length() / 2];
+        int j = 0;
+        for (String str : hex.split("(?<=\\G.{2})")) {
+            result[j++] = Integer.parseInt(str, 16);
+        }
+        return result;
+    }
+
     public static boolean compareBytes(byte[] a, byte[] b) {
+        return Arrays.equals(a, b);
+    }
+
+    public static boolean compareBytes(int[] a, int[] b) {
         return Arrays.equals(a, b);
     }
 
@@ -275,6 +360,15 @@ public class Utils {
         for (int c = 0; c < n; c++) {
             res *= 256;
             res += ui8array[c] & 0xFF;
+        }
+        return res;
+    }
+
+    public static int readNBytesFromArray(int n, int[] ui8array) {
+        int res = 0;
+        for (int c = 0; c < n; c++) {
+            res *= 256;
+            res += ui8array[c];
         }
         return res;
     }

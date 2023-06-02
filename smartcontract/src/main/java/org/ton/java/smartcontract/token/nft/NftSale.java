@@ -99,15 +99,15 @@ public class NftSale implements Contract {
         }
 
         TvmStackEntryCell marketplaceAddressCell = (TvmStackEntryCell) result.getStack().get(0);
-        Address marketplaceAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(marketplaceAddressCell.getCell().getBytes())));
+        Address marketplaceAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(marketplaceAddressCell.getCell().getBytes())));
 
         TvmStackEntryCell nftAddressCell = (TvmStackEntryCell) result.getStack().get(1);
-        Address nftAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(nftAddressCell.getCell().getBytes())));
+        Address nftAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(nftAddressCell.getCell().getBytes())));
 
         TvmStackEntryCell nftOwnerAddressCell = (TvmStackEntryCell) result.getStack().get(2);
         Address nftOwnerAddress = null;
         try {
-            nftOwnerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(nftOwnerAddressCell.getCell().getBytes())));
+            nftOwnerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(nftOwnerAddressCell.getCell().getBytes())));
         } catch (Exception e) {
             //todo
         }
@@ -119,7 +119,7 @@ public class NftSale implements Contract {
         BigInteger marketplaceFee = marketplaceFeeNumber.getNumber();
 
         TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStack().get(5);
-        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(royaltyAddressCell.getCell().getBytes())));
+        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(royaltyAddressCell.getCell().getBytes())));
 
         TvmStackEntryNumber royaltyAmountNumber = (TvmStackEntryNumber) result.getStack().get(6);
         BigInteger royaltyAmount = royaltyAmountNumber.getNumber();
@@ -148,7 +148,7 @@ public class NftSale implements Contract {
                 .storeRef(stateInit)
                 .storeRef(msgBody)
                 .endCell();
-        return Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), c.hash());
+        return Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), Utils.unsignedBytesToSigned(c.hash()));
     }
 
     /**

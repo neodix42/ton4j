@@ -16,5 +16,5 @@ public class BocHeader {
     int tot_cells_size;
     List<Integer> root_list;
     int[] index;
-    byte[] cells_data;
+    int[] cells_data; //unsigned bytes array
 }

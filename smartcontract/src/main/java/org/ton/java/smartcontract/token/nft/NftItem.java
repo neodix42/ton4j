@@ -88,13 +88,13 @@ public class NftItem implements Contract {
         BigInteger index = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber();
 
         TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStack().get(2);
-        Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(collectionAddr.getCell().getBytes())));
+        Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(collectionAddr.getCell().getBytes())));
 
         TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStack().get(3);
-        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToBytes(ownerAddr.getCell().getBytes()))) : null;
+        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(ownerAddr.getCell().getBytes()))) : null;
 
         TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStack().get(4);
-        Cell cell = CellBuilder.fromBoc(Utils.base64ToBytes(contentCell.getCell().getBytes()));
+        Cell cell = CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(contentCell.getCell().getBytes()));
 
         String contentUri = null;
         try {

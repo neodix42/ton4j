@@ -266,12 +266,17 @@ public class CellSlice {
     public CellSlice skipBits(int length) {
         checkBitsOverflow(length);
 //        bits.readCursor += length; // todo
+        for (int i = 0; i < length; i++) {
+            bits.readBit();
+        }
+
         return this;
     }
 
     public CellSlice skipBit() {
         checkBitsOverflow(1);
 //        bits.readCursor += 1; // todo
+        bits.readBit();
         return this;
     }
 
@@ -287,10 +292,10 @@ public class CellSlice {
      * @param length in bits
      * @return byte array
      */
-    public byte[] loadBytes(int length) {
+    public int[] loadBytes(int length) {
         checkBitsOverflow(length);
         BitString bitString = bits.readBits(length);
-        return bitString.toByteArray();
+        return bitString.toUnsignedByteArray();
     }
 
     public String loadString(int length) {

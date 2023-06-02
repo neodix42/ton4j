@@ -1,6 +1,5 @@
 package org.ton.java.cell;
 
-import org.apache.commons.codec.binary.Hex;
 import org.ton.java.bitstring.BitString;
 import org.ton.java.utils.Utils;
 
@@ -12,9 +11,9 @@ import java.util.*;
 import static java.util.Objects.nonNull;
 
 public class Cell {
-    private static final byte[] reachBocMagicPrefix = Utils.hexToBytes("B5EE9C72");
-    private static final byte[] leanBocMagicPrefix = Utils.hexToBytes("68ff65f3");
-    private static final byte[] leanBocMagicPrefixCRC = Utils.hexToBytes("acc3a728");
+    private static final int[] reachBocMagicPrefix = Utils.hexToUnsignedBytes("B5EE9C72");
+    private static final int[] leanBocMagicPrefix = Utils.hexToUnsignedBytes("68ff65f3");
+    private static final int[] leanBocMagicPrefixCRC = Utils.hexToUnsignedBytes("acc3a728");
 
     public BitString bits;
     public List<Cell> refs;
@@ -72,7 +71,7 @@ public class Cell {
             boolean incomplete = hexBitString.endsWith("_");
 
             hexBitString = hexBitString.replaceAll("_", "");
-            byte[] b = Hex.decodeHex(hexBitString);
+            int[] b = Utils.hexToInts(hexBitString);
 
             BitString bs = new BitString(hexBitString.length() * 8);
             bs.writeBytes(b);
@@ -114,7 +113,7 @@ public class Cell {
      * @param serializedBoc byte[]
      * @return List<Cell> root cells
      */
-    public static Cell fromBoc(byte[] serializedBoc) {
+    public static Cell fromBoc(int[] serializedBoc) {
         return deserializeBoc(serializedBoc);
     }
 
@@ -124,9 +123,9 @@ public class Cell {
      * @param anotherCell Cell
      */
     public void writeCell(Cell anotherCell) {
-        // XXX we do not check that there are enough place in cell
-        bits.writeBitString(anotherCell.bits);
-        refs.addAll(anotherCell.refs);
+        Cell cloned = anotherCell.clone();
+        bits.writeBitString(cloned.bits);
+        refs.addAll(cloned.refs);
     }
 
     public int getMaxRefs() {
@@ -165,11 +164,11 @@ public class Cell {
         return maxDepth;
     }
 
-    byte[] getMaxDepthAsArray() {
+    int[] getMaxDepthAsArray() {
         int maxDepth = getMaxDepth();
-        byte[] d = new byte[2];
-        d[1] = (byte) (maxDepth % 256);
-        d[0] = (byte) Math.floor(maxDepth / (double) 256);
+        int[] d = new int[2];
+        d[1] = (int) (maxDepth % 256);
+        d[0] = (int) Math.floor(maxDepth / (double) 256);
         return d;
     }
 
@@ -177,27 +176,27 @@ public class Cell {
         return 0;
     }
 
-    byte[] getRefsDescriptor() {
-        byte[] d1 = new byte[1];
-        d1[0] = (byte) (refs.size() + ((isExotic ? 1 : 0) * 8) + getMaxLevel() * 32);
+    int[] getRefsDescriptor() {
+        int[] d1 = new int[1];
+        d1[0] = (refs.size() + ((isExotic ? 1 : 0) * 8) + getMaxLevel() * 32);
         return d1;
     }
 
-    byte[] getBitsDescriptor() { // todo
-        byte[] d2 = new byte[1];
-        d2[0] = (byte) (Math.ceil(bits.getUsedBits() / (double) 8) + Math.floor(bits.getUsedBits() / (double) 8));
+    int[] getBitsDescriptor() { // todo
+        int[] d2 = new int[1];
+        d2[0] = (int) (Math.ceil(bits.getUsedBits() / (double) 8) + Math.floor(bits.getUsedBits() / (double) 8));
         return d2;
     }
 
-    byte[] getDataWithDescriptors() {
-        byte[] d1 = getRefsDescriptor();
-        byte[] d2 = getBitsDescriptor();
-        byte[] tuBits = bits.getTopUppedArray();
+    int[] getDataWithDescriptors() {
+        int[] d1 = getRefsDescriptor();
+        int[] d2 = getBitsDescriptor();
+        int[] tuBits = bits.getTopUppedArray();
         return Utils.concatBytes(Utils.concatBytes(d1, d2), tuBits);
     }
 
-    byte[] getRepr() {
-        byte[] reprArray = new byte[0];
+    int[] getRepr() {
+        int[] reprArray = new int[0];
 
         reprArray = Utils.concatBytes(reprArray, getDataWithDescriptors());
 
@@ -209,14 +208,14 @@ public class Cell {
             reprArray = Utils.concatBytes(reprArray, cell.hash());
         }
 
-        byte[] x = new byte[0];
+        int[] x = new int[0];
         x = Utils.concatBytes(x, reprArray);
         return x;
     }
 
-    public byte[] hash() {
-        byte[] repr = getRepr();
-        return Utils.hexToBytes(Utils.sha256(repr));
+    public int[] hash() {
+        int[] repr = getRepr();
+        return Utils.hexToInts(Utils.sha256(repr));
     }
 
     /**
@@ -249,9 +248,9 @@ public class Cell {
                        boolean hasCacheBits,
                        int flags) {
 
-        byte[] boc = toBoc(hasIdx, hashCrc32, hasCacheBits, flags);
+        int[] boc = toBoc(hasIdx, hashCrc32, hasCacheBits, flags);
         try {
-            Files.write(Paths.get(filename), boc);
+            Files.write(Paths.get(filename), Utils.unsignedBytesToSigned(boc));
         } catch (Exception e) {
             System.err.println("Cannot write to file. " + e.getMessage());
         }
@@ -300,7 +299,7 @@ public class Cell {
      * @param flags        int, default 0
      * @return byte[]
      */
-    public byte[] toBoc(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits, int flags) {
+    public int[] toBoc(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits, int flags) {
 
         Cell rootCell = this;
 
@@ -345,14 +344,14 @@ public class Cell {
         }
 
         for (TopologicalOrderArray cell_info : topologicalOrder) {
-            byte[] refcell_ser = cell_info.cell.serializeForBoc(cellsIndex);
+            int[] refcell_ser = cell_info.cell.serializeForBoc(cellsIndex);
             serialization.writeBytes(refcell_ser);
         }
 
-        byte[] ser_arr = serialization.getTopUppedArray();
+        int[] ser_arr = serialization.getTopUppedArray();
 
         if (hashCrc32) {
-            byte[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(ser_arr);
+            int[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(ser_arr);
             ser_arr = Utils.concatBytes(ser_arr, crc32);
         }
 
@@ -360,19 +359,19 @@ public class Cell {
     }
 
 
-    public byte[] toBoc(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits) {
+    public int[] toBoc(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits) {
         return toBoc(hasIdx, hashCrc32, hasCacheBits, 0);
     }
 
-    public byte[] toBoc(boolean hasIdx, boolean hashCrc32) {
+    public int[] toBoc(boolean hasIdx, boolean hashCrc32) {
         return toBoc(hasIdx, hashCrc32, false, 0);
     }
 
-    public byte[] toBoc(boolean hasIdx) {
+    public int[] toBoc(boolean hasIdx) {
         return toBoc(hasIdx, true, false, 0);
     }
 
-    public byte[] toBoc() {
+    public int[] toBoc() {
         return toBoc(true, true, false, 0);
     }
 
@@ -426,8 +425,8 @@ public class Cell {
         return Utils.bytesToBase64(toBoc(true, true, false, 0));
     }
 
-    byte[] serializeForBoc(HashMap<String, Integer> cellsIndex) {
-        byte[] reprArray = new byte[0];
+    int[] serializeForBoc(HashMap<String, Integer> cellsIndex) {
+        int[] reprArray = new int[0];
 
         reprArray = Utils.concatBytes(reprArray, getDataWithDescriptors());
 
@@ -441,10 +440,10 @@ public class Cell {
             if (refIndexHex.length() % 2 != 0) {
                 refIndexHex = "0" + refIndexHex;
             }
-            byte[] reference = Utils.hexToBytes(refIndexHex);
+            int[] reference = Utils.hexToUnsignedBytes(refIndexHex);
             reprArray = Utils.concatBytes(reprArray, reference);
         }
-        byte[] x = new byte[0];
+        int[] x = new int[0];
         x = Utils.concatBytes(x, reprArray);
         return x;
     }
@@ -509,15 +508,15 @@ public class Cell {
         return new TreeWalkResult(topologicalOrderArray, indexHashmap);
     }
 
-    public static BocHeader parseBocHeader(byte[] serializedBoc) {
+    public static BocHeader parseBocHeader(int[] serializedBoc) {
 
         if (serializedBoc.length < 4 + 1) {
             throw new Error("Not enough bytes for magic prefix");
         }
 
-        byte[] inputData = serializedBoc; // Save copy for crc32
+        int[] inputData = serializedBoc; // Save copy for crc32
 
-        byte[] prefix = Arrays.copyOfRange(serializedBoc, 0, 4);
+        int[] prefix = Arrays.copyOfRange(serializedBoc, 0, 4);
         serializedBoc = Arrays.copyOfRange(serializedBoc, 4, serializedBoc.length);
 
         int has_idx = 0; // boolean
@@ -597,7 +596,7 @@ public class Cell {
         if (serializedBoc.length < totCellsSize) {
             throw new Error("Not enough bytes for cells data");
         }
-        byte[] cellsData = Arrays.copyOfRange(serializedBoc, 0, totCellsSize);
+        int[] cellsData = Arrays.copyOfRange(serializedBoc, 0, totCellsSize);
         serializedBoc = Arrays.copyOfRange(serializedBoc, totCellsSize, serializedBoc.length);
 
         if (hash_crc32 != 0) {
@@ -605,10 +604,10 @@ public class Cell {
                 throw new Error("Not enough bytes for crc32c hashsum");
             }
             int length = inputData.length;
-            byte[] bocWithoutCrc = Arrays.copyOfRange(inputData, 0, length - 4);
-            byte[] crcInBoc = Arrays.copyOfRange(serializedBoc, 0, 4);
+            int[] bocWithoutCrc = Arrays.copyOfRange(inputData, 0, length - 4);
+            int[] crcInBoc = Arrays.copyOfRange(serializedBoc, 0, 4);
 
-            byte[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(bocWithoutCrc);
+            int[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(bocWithoutCrc);
 
             if (!Utils.compareBytes(crc32, crcInBoc)) {
                 throw new Error("Crc32c hashsum mismatch");
@@ -639,17 +638,17 @@ public class Cell {
         return bocHeader;
     }
 
-    static DeserializeCellDataResult deserializeCellData(byte[] cellData, int referenceIndexSize) {
+    static DeserializeCellDataResult deserializeCellData(int[] cellData, int referenceIndexSize) {
         if (cellData.length < 2) {
             throw new Error("Not enough bytes to encode cell descriptors");
         }
-        int d1 = (cellData[0] & 0xff);
-        int d2 = (cellData[1] & 0xff);
+        int d1 = cellData[0];
+        int d2 = cellData[1];
         cellData = Arrays.copyOfRange(cellData, 2, cellData.length);
-        boolean isExotic = (byte) (d1 & 8) != 0; //review
+        boolean isExotic = (d1 & 8) != 0; //review
         int refNum = d1 % 8;
         int dataBytesize = (int) Math.ceil(d2 / (double) 2);
-        boolean fullfilledBytes = ((d2 % 2) == 0);
+        boolean fullfilledBytes = (d2 % 2) == 0;
 
         Cell cell = new Cell();
         cell.isExotic = isExotic;
@@ -674,18 +673,18 @@ public class Cell {
      * @return List<Cell> root cells
      */
     private static Cell deserializeBoc(String serializedBoc) {
-        return deserializeBoc(Utils.hexToBytes(serializedBoc));
+        return deserializeBoc(Utils.hexToUnsignedBytes(serializedBoc));
     }
 
     /**
      * @param serializedBoc byte[] bytearray
      * @return List<Cell> root cells
      */
-    public static Cell deserializeBoc(byte[] serializedBoc) {
+    public static Cell deserializeBoc(int[] serializedBoc) {
 
         BocHeader header = parseBocHeader(serializedBoc);
 
-        byte[] cellsData = header.cells_data;
+        int[] cellsData = header.cells_data;
         List<Cell> cellsArray = new ArrayList<>();
 
         for (int ci = 0; ci < header.cells_num; ci++) {
