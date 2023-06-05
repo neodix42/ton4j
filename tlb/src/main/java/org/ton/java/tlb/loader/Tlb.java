@@ -1,11 +1,9 @@
 package org.ton.java.tlb.loader;
 
 import org.ton.java.address.Address;
-import org.ton.java.bitstring.BitString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonHashMap;
 import org.ton.java.tlb.types.*;
 import org.ton.java.utils.Utils;
 
@@ -123,14 +121,18 @@ public class Tlb {
             case "AccountStatus":
                 byte status = cs.loadUint(2).byteValueExact();
                 switch (status) {
-                    case 0b11:
+                    case 0b11 -> {
                         return "NON_EXIST";
-                    case 0b10:
+                    }
+                    case 0b10 -> {
                         return "ACTIVE";
-                    case 0b01:
+                    }
+                    case 0b01 -> {
                         return "FROZEN";
-                    case 0b00:
+                    }
+                    case 0b00 -> {
                         return "UNINIT";
+                    }
                 }
             case "StateUpdate":
                 return StateUpdate.builder()
@@ -138,19 +140,15 @@ public class Tlb {
                         .newOne(cs.loadRef())
                         .build();
             case "ConfigParams":
-                BitString addrBits = cs.loadBits(256);
-                TonHashMap configDict = CellSlice.beginParse(cs.loadRef()).loadDict(32, k -> k.readUint(32), v -> v);
                 return ConfigParams.builder()
-//                        .configAddr(Address.of((byte) 0, 255, addrBits.toByteArray()))
-                        .configAddr(null) //todo
-                        .config(configDict)
+                        .configAddr(Address.of((byte) 0x11, 255, cs.loadBits(256).toByteArray()))
+                        .config(CellSlice.beginParse(cs.loadRef()).loadDict(32, k -> k.readUint(32), v -> v))
                         .build();
             case "ShardStateUnsplit":
-                assert cs.loadUint(32).longValue() == 0x9023afe2L : "ShardStateUnsplit: magic not equal to 0x9023afe2";
                 return ShardStateUnsplit.builder()
-                        .magic(0x9023afe2L)
+                        .magic(cs.loadUint(32).longValue())
                         .globalId(cs.loadUint(32).intValue())
-                        .shardIdent((ShardIdent) Tlb.load(ShardIdent.class, cs))
+                        .shardIdent((ShardIdent) Tlb.load(ShardIdent.class, cs, true))
                         .seqno(cs.loadUint(32).longValue())
                         .vertSeqno(cs.loadUint(32).longValue())
                         .genUTime(cs.loadUint(32).longValue())
@@ -163,7 +161,7 @@ public class Tlb {
                         .mc(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, CellSlice.beginParse(cs.loadRef()))) // todo fix
                         .build();
             case "ShardIdent":
-                assert cs.loadUint(2).longValue() == 0L;
+                assert skipMagic || (cs.loadUint(2).longValue() == 0L) : "ShardIdent: magic not equal to 0x0";
                 return ShardIdent.builder()
                         .magic(0L)
                         .prefixBits(cs.loadUint(6).byteValueExact())
@@ -193,7 +191,7 @@ public class Tlb {
                 if (isNull(cs)) {
                     return null;
                 }
-                assert cs.loadUint(16).longValue() == 0xcc26L : "McStateExtra: magic not equal to 0xcc26";
+                assert skipMagic || (cs.loadUint(16).longValue() == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26";
                 return McStateExtra.builder()
                         .magic(0xcc26L)
                         .shardHashes(cs.loadDictE(32, k -> k.readInt(32), v -> v))
@@ -202,7 +200,7 @@ public class Tlb {
                         .globalBalance((CurrencyCollection) Tlb.load(CurrencyCollection.class, cs))
                         .build();
             case "McBlockExtra":
-                assert cs.loadUint(16).longValue() == 0xcca5L : "McBlockExtra: magic not equal to 0xcca5";
+                assert skipMagic || (cs.loadUint(16).longValue() == 0xcca5L) : "McBlockExtra: magic not equal to 0xcca5";
                 return McBlockExtra.builder()
                         .magic(0xcca5L)
                         .keyBlock(cs.loadBit())
@@ -215,7 +213,7 @@ public class Tlb {
                         .extraCurrencies(cs.loadDictE(32, k -> k.readInt(32), v -> v))
                         .build();
             case "GlobalVersion":
-                assert cs.loadUint(8).longValue() == 0xc4L : "GlobalVersion: magic not equal to 0xc4";
+                assert skipMagic || (cs.loadUint(8).longValue() == 0xc4L) : "GlobalVersion: magic not equal to 0xc4";
                 return GlobalVersion.builder()
                         .magic(0xc4L)
                         .version(cs.loadUint(32).longValue())
@@ -229,7 +227,7 @@ public class Tlb {
                         .fileHash(cs.loadBytes(256))
                         .build();
             case "BlockInfoPart":
-                assert cs.loadUint(32).longValue() == 0x9bc7a987L : "BlockInfoPart: magic not equal to 0x9bc7a987";
+                assert skipMagic || (cs.loadUint(32).longValue() == 0x9bc7a987L) : "BlockInfoPart: magic not equal to 0x9bc7a987";
                 return BlockInfoPart.builder()
                         .magic(0x9bc7a987L)
                         .version(cs.loadUint(32).longValue())
@@ -259,7 +257,7 @@ public class Tlb {
                         .size(cs.loadUint(64))
                         .build();
             case "BlockExtra":
-                assert cs.loadUint(32).longValue() == 0x4a33f6fdL : "BlockExtra: magic not equal to 0x4a33f6fd";
+                assert skipMagic || (cs.loadUint(32).longValue() == 0x4a33f6fdL) : "BlockExtra: magic not equal to 0x4a33f6fd";
                 return BlockExtra.builder()
                         .magic(0x4a33f6fdL)
                         .inMsgDesc(cs.loadRef())
@@ -270,7 +268,7 @@ public class Tlb {
                         .custom(isNull(cs.preloadMaybeRefX()) ? null : (McBlockExtra) Tlb.load(McBlockExtra.class, CellSlice.beginParse(cs.loadRef())))
                         .build();
             case "Block":
-                assert cs.loadUint(32).longValue() == 0x11ef55aaL : "Block: magic not equal to 0x11ef55aa";
+                assert skipMagic || (cs.loadUint(32).longValue() == 0x11ef55aaL) : "Block: magic not equal to 0x11ef55aa";
                 return Block.builder()
                         .magic(0x11ef55aaL)
                         .globalId(cs.loadInt(32).intValue())
@@ -280,8 +278,7 @@ public class Tlb {
                         .extra((BlockExtra) Tlb.load(BlockExtra.class, CellSlice.beginParse(cs.loadRef())))
                         .build();
             case "AccountBlock":
-                assert cs.loadUint(32).longValue() == 0x5L : "AccountBlock: magic not equal to 0x5";
-//                cs.skipBits(32); //magic
+                assert skipMagic || (cs.loadUint(32).longValue() == 0x5L) : "AccountBlock: magic not equal to 0x5";
                 return AccountBlock.builder()
                         .magic(0x5)
                         .addr(cs.loadBytes(256))
@@ -320,8 +317,6 @@ public class Tlb {
                 boolean isExternal = cs.preloadBit();
                 if (!isExternal) {
                     InternalMessage internalMessage = (InternalMessage) Tlb.load(InternalMessage.class, cs);
-                    System.out.println(internalMessage.getBody().print());
-                    System.out.println("internal: " + internalMessage);
 
                     return Message.builder()
                             .msgType("INTERNAL")
@@ -506,7 +501,7 @@ public class Tlb {
                         .build();
             }
             case "Transaction": {
-                assert cs.loadUint(4).intValue() == 0b0111 : "Transaction: magic not equal to 0b0111";
+                assert skipMagic || (cs.loadUint(4).intValue() == 0b0111) : "Transaction: magic not equal to 0b0111";
 
                 Transaction tx = Transaction.builder()
                         .magic(0b0111)
@@ -678,7 +673,7 @@ public class Tlb {
                 }
                 return AccStatusChange.builder().type("UNCHANGED").build();
             case "InternalMessage":
-                assert !cs.loadBit() : "InternalMessage: magic not equal to 0";
+                assert skipMagic || (!cs.loadBit()) : "InternalMessage: magic not equal to 0";
                 return InternalMessage.builder()
                         .magic(0L)
                         .iHRDisabled(cs.loadBit())
@@ -695,7 +690,7 @@ public class Tlb {
                         .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
                         .build();
             case "ExternalMessage":
-                assert cs.loadUint(2).longValue() == 0x2L : "ExternalMessage: magic not equal to 0x2";
+                assert skipMagic || (cs.loadUint(2).longValue() == 0x2L) : "ExternalMessage: magic not equal to 0x2";
                 return ExternalMessage.builder()
                         .magic(2L)
                         .srcAddr(cs.loadAddress())
@@ -705,7 +700,7 @@ public class Tlb {
                         .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits())))
                         .build();
             case "ExternalMessageOut":
-                assert cs.loadUint(2).longValue() == 0x3L : "ExternalMessageOut: magic not equal to 0x3";
+                assert skipMagic || (cs.loadUint(2).longValue() == 0x3L) : "ExternalMessageOut: magic not equal to 0x3";
                 return ExternalMessageOut.builder()
                         .magic(3L)
                         .srcAddr(cs.loadAddress())

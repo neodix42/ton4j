@@ -20,5 +20,7 @@ public class TestTlbShardReader {
         CellSlice cs = CellSlice.beginParse(c);
         ShardState shardState = (ShardState) Tlb.load(ShardState.class, cs);
         log.info("shardState {}", shardState);
+        log.info("shardState {}", c.print());
+        log.info("shardState.getRight {}", shardState.getRight());
     }
 }
