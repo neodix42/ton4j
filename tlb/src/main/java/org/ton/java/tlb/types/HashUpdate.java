@@ -11,6 +11,6 @@ import lombok.ToString;
 @ToString
 public class HashUpdate {
     int magic; //  `tlb:"#72"`
-    byte[] oldHash; // `tlb:"bits 256"`
-    byte[] newHash; // `tlb:"bits 256"`
+    int[] oldHash; // `tlb:"bits 256"`
+    int[] newHash; // `tlb:"bits 256"`
 }

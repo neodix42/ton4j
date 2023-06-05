@@ -147,7 +147,7 @@ public class TestCellBuilder {
 
         assertThat(c5.getUsedRefs()).isEqualTo(3);
 
-        byte[] serializedCell5 = c5.toBoc(false);
+        int[] serializedCell5 = c5.toBoc(false);
 
         Cell dc5 = Cell.fromBoc(serializedCell5);
         log.info("c5 deserialized:\n{}", dc5.print());

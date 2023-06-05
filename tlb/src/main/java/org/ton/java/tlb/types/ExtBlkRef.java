@@ -14,6 +14,6 @@ import java.math.BigInteger;
 public class ExtBlkRef {
     BigInteger endLt; // `tlb:"## 64"`
     int seqno; // `tlb:"## 32"`
-    byte[] rootHash; // `tlb:"bits 256"`
-    byte[] fileHash;
+    int[] rootHash; // `tlb:"bits 256"`
+    int[] fileHash;
 }

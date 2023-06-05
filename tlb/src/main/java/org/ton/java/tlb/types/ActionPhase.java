@@ -23,6 +23,6 @@ public class ActionPhase {
     long specActions; //     uint16           `tlb:"## 16"`
     long skippedActions; //  uint16           `tlb:"## 16"`
     long messagesCreated; // uint16           `tlb:"## 16"`
-    byte[] actionListHash; //  []byte           `tlb:"bits 256"`
+    int[] actionListHash; //  []byte           `tlb:"bits 256"`
     StorageUsedShort totalMsgSize; //  `tlb:"."`
 }

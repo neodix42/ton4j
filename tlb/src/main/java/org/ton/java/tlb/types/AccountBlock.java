@@ -13,7 +13,7 @@ import org.ton.java.cell.TonHashMapE;
 @ToString
 public class AccountBlock {
     long magic;             // `tlb:"#5"`
-    byte[] addr;            // `tlb:"bits 256"`
+    int[] addr;            // `tlb:"bits 256"`
     TonHashMapE transactions;// `tlb:"dict 64"`
     Cell stateUpdate;       // `tlb:"^"`
 }

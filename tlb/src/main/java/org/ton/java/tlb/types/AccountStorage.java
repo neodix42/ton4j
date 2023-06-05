@@ -16,5 +16,5 @@ public class AccountStorage {
     BigInteger lastTransactionLt;
     BigInteger balance;
     StateInit stateInit;
-    byte[] stateHash;
+    int[] stateHash;
 }

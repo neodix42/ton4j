@@ -13,8 +13,8 @@ public class BlockIdExt {
     long workchain; // int32  `tl:"int"`
     long shard; // int64  `tl:"long"`
     long seqno; // uint32 `tl:"int"`
-    byte[] root_hash; // []byte `tl:"int256"`
-    byte[] file_hash; // []byte `tl:"int256"`
+    int[] root_hash; // []byte `tl:"int256"`
+    int[] file_hash; // []byte `tl:"int256"`
 
     String getfile_hash() {
         return Utils.bytesToHex(file_hash);

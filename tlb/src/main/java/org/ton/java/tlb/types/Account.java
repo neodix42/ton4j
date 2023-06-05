@@ -33,14 +33,14 @@ public class Account {
         }
         long hash;
         switch (name) {
-            case "recv_internal", "main", "recv_external", "run_ticktock":
+            case "recv_internal", "main", "recv_external", "run_ticktock" -> {
                 return false;
-            default:
-                hash = methodNameHash(name);
+            }
+            default -> hash = methodNameHash(name);
         }
 
         CellSlice cs = CellSlice.beginParse(code);
-        byte[] hdr = cs.loadBytes(56);
+        int[] hdr = cs.loadBytes(56);
 
         if (!Utils.bytesToHex(hdr).toLowerCase().contains("ff00f4a413f4bc")) {
             return false;
@@ -50,7 +50,7 @@ public class Account {
 
         TonHashMap dict = ref.loadDict(19,
                 k -> k.readUint(19),
-                v -> CellSlice.beginParse(v).loadUint(256)
+                v -> v
         );
         for (Map.Entry<Object, Object> entry : dict.elements.entrySet()) {
             if (((BigInteger) entry.getKey()).longValue() == hash) {

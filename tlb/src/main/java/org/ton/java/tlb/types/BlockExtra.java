@@ -15,7 +15,7 @@ public class BlockExtra {
     Cell inMsgDesc; // `tlb:"^"`
     Cell outMsgDesc; // `tlb:"^"`
     Cell shardAccountBlocks; //`tlb:"^"`
-    byte[] randSeed; // tlb:"bits 256"`
-    byte[] createdBy;// tlb:"bits 256"`
+    int[] randSeed; // tlb:"bits 256"`
+    int[] createdBy;// tlb:"bits 256"`
     McBlockExtra custom; // `tlb:"maybe ^"`
 }

@@ -19,6 +19,6 @@ public class ComputePhaseVMDetails {
     long exitCode; //         int32    `tlb:"## 32"`
     long exitArg; //          *int32   `tlb:"maybe ## 32"`
     long vMSteps; //          uint32   `tlb:"## 32"`
-    byte[] vMInitStateHash; //  []byte   `tlb:"bits 256"`
-    byte[] vMFinalStateHash; // []byte   `tlb:"bits 256"`
+    int[] vMInitStateHash; //  []byte   `tlb:"bits 256"`
+    int[] vMFinalStateHash; // []byte   `tlb:"bits 256"`
 }

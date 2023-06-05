@@ -13,9 +13,9 @@ import java.math.BigInteger;
 @ToString
 public class Transaction {
     int magic; //         `tlb:"$0111"`
-    byte[] accountAddr; //        `tlb:"bits 256"`
+    int[] accountAddr; //        `tlb:"bits 256"`
     BigInteger lt; //        `tlb:"## 64"`
-    byte[] prevTxHash; //       `tlb:"bits 256"`
+    int[] prevTxHash; //       `tlb:"bits 256"`
     BigInteger prevTxLT; //        `tlb:"## 64"`
     long now; //        `tlb:"## 32"`
     long outMsgCount; //        `tlb:"## 15"`

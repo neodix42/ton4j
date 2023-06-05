@@ -7,6 +7,7 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMap;
 import org.ton.java.tlb.types.*;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -19,11 +20,23 @@ public class Tlb {
         if (isNull(c)) {
             return null;
         } else {
-            return load(clazz, CellSlice.beginParse(c));
+            return load(clazz, CellSlice.beginParse(c), false);
+        }
+    }
+
+    public static Object load(Class clazz, Cell c, boolean skipMagic) {
+        if (isNull(c)) {
+            return null;
+        } else {
+            return load(clazz, CellSlice.beginParse(c), skipMagic);
         }
     }
 
     public static Object load(Class c, CellSlice cs) {
+        return load(c, cs, false);
+    }
+
+    public static Object load(Class c, CellSlice cs, boolean skipMagic) {
 
         switch (c.getSimpleName()) {
             case "BlockIdExt": // todo
@@ -62,8 +75,10 @@ public class Tlb {
                     boolean isStatusFrozen = cs.loadBit();
                     if (isStatusFrozen) {
                         accountStorage.setAccountStatus("FROZEN");
-                        byte[] stateHash = cs.loadBytes(256);
-                        accountStorage.setStateHash(stateHash);
+                        if (cs.getRestBits() != 0) {
+                            int[] stateHash = cs.loadBytes(256);
+                            accountStorage.setStateHash(stateHash);
+                        }
                     } else {
                         accountStorage.setAccountStatus("UNINIT");
                     }
@@ -374,24 +389,44 @@ public class Tlb {
             case "ComputePhase": {
                 boolean isNotSkipped = cs.loadBit();
                 if (isNotSkipped) {
-                    ComputePhaseVM phase = (ComputePhaseVM) Tlb.load(ComputePhaseVM.class, cs);
+                    ComputePhaseVM phase = (ComputePhaseVM) Tlb.load(ComputePhaseVM.class, cs, true);
                     return ComputePhase.builder().phase(phase).build();
                 }
-                ComputePhaseSkipped phase = (ComputePhaseSkipped) Tlb.load(ComputePhaseSkipped.class, cs);
+                ComputePhaseSkipped phase = (ComputePhaseSkipped) Tlb.load(ComputePhaseSkipped.class, cs, true);
                 return ComputePhase.builder().phase(phase).build();
+            }
+            case "BouncePhaseNegFounds": {
+                assert skipMagic || (cs.loadUint(1).intValue() == 0b0) : "BouncePhaseNegFounds: magic not equal to 0b00";
+                return BouncePhaseNegFounds.builder().build();
+            }
+            case "BouncePhaseNoFounds": {
+                assert skipMagic || (cs.loadUint(2).intValue() == 0b01) : "BouncePhaseNoFounds: magic not equal to 0b01";
+                return BouncePhaseNoFounds.builder()
+                        .msgSize((StorageUsedShort) Tlb.load(StorageUsedShort.class, cs))
+                        .reqFwdFees(cs.loadCoins())
+                        .build();
+            }
+            case "BouncePhaseok": {
+                assert skipMagic || (cs.loadUint(1).intValue() == 0b1) : "BouncePhaseok: magic not equal to 0b1";
+                return BouncePhaseok.builder()
+                        .magic(0b1)
+                        .msgSize((StorageUsedShort) Tlb.load(StorageUsedShort.class, cs))
+                        .msgFees(cs.loadCoins())
+                        .fwdFees(cs.loadCoins())
+                        .build();
             }
             case "BouncePhase": {
                 boolean isOk = cs.loadBit();
                 if (isOk) {
-                    BouncePhaseok phase = (BouncePhaseok) Tlb.load(BouncePhaseok.class, cs);
+                    BouncePhaseok phase = (BouncePhaseok) Tlb.load(BouncePhaseok.class, cs, true);
                     return BouncePhase.builder().phase(phase).build();
                 }
                 boolean isNoFunds = cs.loadBit();
                 if (isNoFunds) {
-                    BouncePhaseNoFounds phase = (BouncePhaseNoFounds) Tlb.load(BouncePhaseNoFounds.class, cs);
+                    BouncePhaseNoFounds phase = (BouncePhaseNoFounds) Tlb.load(BouncePhaseNoFounds.class, cs, true);
                     return BouncePhase.builder().phase(phase).build();
                 }
-                BouncePhaseNegFounds phase = (BouncePhaseNegFounds) Tlb.load(BouncePhaseNegFounds.class, cs);
+                BouncePhaseNegFounds phase = (BouncePhaseNegFounds) Tlb.load(BouncePhaseNegFounds.class, cs, true);
                 return BouncePhase.builder().phase(phase).build();
             }
             case "StoragePhase": {
@@ -419,15 +454,21 @@ public class Tlb {
                         .build();
             }
 
+            case "StorageUsedShort": {
+                return StorageUsedShort.builder()
+                        .cells(cs.loadUint(7))
+                        .bits(cs.loadUint(7))
+                        .build();
+            }
             case "ComputePhaseSkipped": {
-                assert cs.loadUint(1).intValue() == 0b0 : "ComputePhaseSkipped: magic not equal to 0b0";
+                assert skipMagic || (cs.loadUint(1).intValue() == 0b0) : "ComputePhaseSkipped: magic not equal to 0b0";
                 return ComputePhaseSkipped.builder()
                         .magic(0)
                         .reason((ComputeSkipReason) Tlb.load(ComputeSkipReason.class, cs))
                         .build();
             }
             case "ComputePhaseVM": {
-                assert cs.loadUint(1).intValue() == 0b1 : "ComputePhaseVM: magic not equal to 0b1";
+                assert skipMagic || (cs.loadUint(1).intValue() == 0b1) : "ComputePhaseVM: magic not equal to 0b1";
                 return ComputePhaseVM.builder()
                         .magic(1)
                         .success(cs.loadBit())
@@ -515,32 +556,32 @@ public class Tlb {
                     case 0b000 -> {
                         boolean isStorage = cs.loadBit();
                         if (isStorage) {
-                            TransactionDescriptionStorage desc = (TransactionDescriptionStorage) Tlb.load(TransactionDescriptionStorage.class, cs);
+                            TransactionDescriptionStorage desc = (TransactionDescriptionStorage) Tlb.load(TransactionDescriptionStorage.class, cs, true);
                             return TransactionDescription.builder().description(desc).build();
                         }
-                        TransactionDescriptionOrdinary descOrdinary = (TransactionDescriptionOrdinary) Tlb.load(TransactionDescriptionOrdinary.class, cs);
+                        TransactionDescriptionOrdinary descOrdinary = (TransactionDescriptionOrdinary) Tlb.load(TransactionDescriptionOrdinary.class, cs, true);
                         return TransactionDescription.builder().description(descOrdinary).build();
                     }
                     case 0b001 -> {
-                        TransactionDescriptionTickTock descTickTock = (TransactionDescriptionTickTock) Tlb.load(TransactionDescriptionTickTock.class, cs);
+                        TransactionDescriptionTickTock descTickTock = (TransactionDescriptionTickTock) Tlb.load(TransactionDescriptionTickTock.class, cs, true);
                         return TransactionDescription.builder().description(descTickTock).build();
                     }
                     case 0b010 -> {
                         boolean isInstall = cs.loadBit();
                         if (isInstall) {
-                            TransactionDescriptionSplitInstall descSplit = (TransactionDescriptionSplitInstall) Tlb.load(TransactionDescriptionSplitInstall.class, cs);
+                            TransactionDescriptionSplitInstall descSplit = (TransactionDescriptionSplitInstall) Tlb.load(TransactionDescriptionSplitInstall.class, cs, true);
                             return TransactionDescription.builder().description(descSplit).build();
                         }
-                        TransactionDescriptionSplitPrepare descSplitPrepare = (TransactionDescriptionSplitPrepare) Tlb.load(TransactionDescriptionSplitPrepare.class, cs);
+                        TransactionDescriptionSplitPrepare descSplitPrepare = (TransactionDescriptionSplitPrepare) Tlb.load(TransactionDescriptionSplitPrepare.class, cs, true);
                         return TransactionDescription.builder().description(descSplitPrepare).build();
                     }
                     case 0b011 -> {
                         boolean isInstall = cs.loadBit();
                         if (isInstall) {
-                            TransactionDescriptionMergeInstall descMerge = (TransactionDescriptionMergeInstall) Tlb.load(TransactionDescriptionSplitInstall.class, cs);
+                            TransactionDescriptionMergeInstall descMerge = (TransactionDescriptionMergeInstall) Tlb.load(TransactionDescriptionSplitInstall.class, cs, true);
                             return TransactionDescription.builder().description(descMerge).build();
                         }
-                        TransactionDescriptionMergePrepare descMergePrepare = (TransactionDescriptionMergePrepare) Tlb.load(TransactionDescriptionMergePrepare.class, cs);
+                        TransactionDescriptionMergePrepare descMergePrepare = (TransactionDescriptionMergePrepare) Tlb.load(TransactionDescriptionMergePrepare.class, cs, true);
                         return TransactionDescription.builder().description(descMergePrepare).build();
                     }
                 }
@@ -554,7 +595,7 @@ public class Tlb {
                         .build();
             }
             case "TransactionDescriptionOrdinary": {
-                assert cs.loadUint(4).intValue() == 0b0000 : "TransactionDescriptionOrdinary: magic not equal to 0b0000";
+                assert skipMagic || (cs.loadUint(4).intValue() == 0b0000) : "TransactionDescriptionOrdinary: magic not equal to 0b0000";
                 return TransactionDescriptionOrdinary.builder()
                         .magic(0b0000)
                         .creditFirst(cs.loadBit())
@@ -566,9 +607,11 @@ public class Tlb {
                         .bouncePhase(cs.loadBit() ? (BouncePhase) Tlb.load(BouncePhase.class, cs) : null)
                         .destroyed(cs.loadBit())
                         .build();
+
+
             }
             case "TransactionDescriptionTickTock": {
-                assert cs.loadUint(3).intValue() == 0b001 : "TransactionDescriptionTickTock: magic not equal to 0b001";
+                assert skipMagic || (cs.loadUint(3).intValue() == 0b001) : "TransactionDescriptionTickTock: magic not equal to 0b001";
                 return TransactionDescriptionTickTock.builder()
                         .magic(0b001)
                         .isTock(cs.loadBit())
@@ -580,7 +623,7 @@ public class Tlb {
                         .build();
             }
             case "TransactionDescriptionSplitInstall": {
-                assert cs.loadUint(4).intValue() == 0b0101 : "TransactionDescriptionSplitInstall: magic not equal to 0b0101";
+                assert skipMagic || (cs.loadUint(4).intValue() == 0b0101) : "TransactionDescriptionSplitInstall: magic not equal to 0b0101";
                 return TransactionDescriptionSplitInstall.builder()
                         .magic(0b0101)
                         .splitInfo((SplitMergeInfo) Tlb.load(SplitMergeInfo.class, cs))
@@ -589,7 +632,7 @@ public class Tlb {
                         .build();
             }
             case "TransactionDescriptionSplitPrepare": {
-                assert cs.loadUint(4).intValue() == 0b0100 : "TransactionDescriptionSplitPrepare: magic not equal to 0b0100";
+                assert skipMagic || (cs.loadUint(4).intValue() == 0b0100) : "TransactionDescriptionSplitPrepare: magic not equal to 0b0100";
                 return TransactionDescriptionMergeInstall.builder()
                         .magic(0b0100)
                         .splitInfo((SplitMergeInfo) Tlb.load(SplitMergeInfo.class, cs))
@@ -601,7 +644,7 @@ public class Tlb {
                         .build();
             }
             case "TransactionDescriptionMergeInstall": {
-                assert cs.loadUint(4).intValue() == 0b0111 : "TransactionDescriptionMergeInstall: magic not equal to 0b0111";
+                assert skipMagic || (cs.loadUint(4).intValue() == 0b0111) : "TransactionDescriptionMergeInstall: magic not equal to 0b0111";
                 return TransactionDescriptionMergeInstall.builder()
                         .magic(0b0111)
                         .splitInfo((SplitMergeInfo) Tlb.load(SplitMergeInfo.class, cs))
@@ -615,7 +658,7 @@ public class Tlb {
                         .build();
             }
             case "TransactionDescriptionMergePrepare": {
-                assert cs.loadUint(4).intValue() == 0b0110 : "TransactionDescriptionMergePrepare: magic not equal to 0b0110";
+                assert skipMagic || (cs.loadUint(4).intValue() == 0b0110) : "TransactionDescriptionMergePrepare: magic not equal to 0b0110";
                 return TransactionDescriptionMergePrepare.builder()
                         .magic(0b0110)
                         .splitInfo((SplitMergeInfo) Tlb.load(SplitMergeInfo.class, cs)) // todo
@@ -629,11 +672,11 @@ public class Tlb {
                 if (isChanged) {
                     boolean isDeleted = cs.loadBit();
                     if (isDeleted) {
-                        return AccStatusChange.builder().type("DELETED");
+                        return AccStatusChange.builder().type("DELETED").build();
                     }
-                    return AccStatusChange.builder().type("FROZEN");
+                    return AccStatusChange.builder().type("FROZEN").build();
                 }
-                return AccStatusChange.builder().type("UNCHANGED");
+                return AccStatusChange.builder().type("UNCHANGED").build();
             case "InternalMessage":
                 assert !cs.loadBit() : "InternalMessage: magic not equal to 0";
                 return InternalMessage.builder()
@@ -649,7 +692,7 @@ public class Tlb {
                         .createdLt(cs.loadUint(64)) // OK
                         .createdAt(cs.loadUint(32).longValue())
                         .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, CellSlice.beginParse(cs.loadRef())) : (StateInit) Tlb.load(StateInit.class, cs)) : null) //review
-                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBits(cs.loadBits(cs.getRestBits()).toBitArray()))
+                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
                         .build();
             case "ExternalMessage":
                 assert cs.loadUint(2).longValue() == 0x2L : "ExternalMessage: magic not equal to 0x2";
@@ -659,7 +702,7 @@ public class Tlb {
                         .dstAddr(cs.loadAddress())
                         .importFee(cs.loadCoins())
                         .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, CellSlice.beginParse(cs.loadRef())) : (StateInit) Tlb.load(StateInit.class, cs)) : null) //review
-                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBits(cs.loadBits(cs.getRestBits()).toBitArray()))
+                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits())))
                         .build();
             case "ExternalMessageOut":
                 assert cs.loadUint(2).longValue() == 0x3L : "ExternalMessageOut: magic not equal to 0x3";
@@ -682,8 +725,8 @@ public class Tlb {
                     if (i == 0) {
                         firstSize = lengthOfChunk;
                     }
-                    byte[] dataOfChunk = cs.loadBytes(lengthOfChunk * 8);
-                    result.append(new String(dataOfChunk));
+                    int[] dataOfChunk = cs.loadBytes(lengthOfChunk * 8);
+                    result.append(new String(Utils.unsignedBytesToSigned(dataOfChunk)));
 
                     if (i < chunksNum - 1) {
                         cs = CellSlice.beginParse(cs.loadRef());

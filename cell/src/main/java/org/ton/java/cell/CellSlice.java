@@ -268,13 +268,14 @@ public class CellSlice {
 
     public boolean preloadBit() {
         checkBitsOverflow(1);
-        return bits.prereadBit();
+        return bits.get();
     }
 
     public boolean preloadBitAt(int position) {
         checkBitsOverflow(position);
-        BitString b = bits.preReadBits(position);
-        return b.get(position - 1);
+        BitString cloned = clone().bits;
+        cloned.readBits(position - 1);
+        return cloned.readBit();
     }
 
     public int getFreeBits() {
@@ -282,7 +283,8 @@ public class CellSlice {
     }
 
     public int getRestBits() {
-        return bits.writeCursor - bits.readCursor;
+//        return bits.writeCursor - bits.readCursor;
+        return bits.getUsedBits();
     }
 
     public CellSlice skipBits(int length) {
@@ -422,7 +424,7 @@ public class CellSlice {
 
     void checkBitsOverflow(int length) {
         if (length > bits.getUsedBits()) {
-            throw new Error("Bits overflow. Can't load " + length + " bits. " + bits.getFreeBits() + " bits left.");
+            throw new Error("Bits overflow. Can't load " + length + " bits. " + bits.getUsedBits() + " bits left.");
         }
     }
 
