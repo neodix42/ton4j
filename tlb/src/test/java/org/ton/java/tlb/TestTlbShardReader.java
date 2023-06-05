@@ -22,5 +22,7 @@ public class TestTlbShardReader {
         log.info("shardState {}", shardState);
         log.info("shardState {}", c.print());
         log.info("shardState.getRight {}", shardState.getRight());
+
+        // todo add tests for shardIdent.workchain correctness
     }
 }

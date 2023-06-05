@@ -148,7 +148,7 @@ public class Tlb {
                 return ShardStateUnsplit.builder()
                         .magic(cs.loadUint(32).longValue())
                         .globalId(cs.loadUint(32).intValue())
-                        .shardIdent((ShardIdent) Tlb.load(ShardIdent.class, cs, true))
+                        .shardIdent((ShardIdent) Tlb.load(ShardIdent.class, cs))
                         .seqno(cs.loadUint(32).longValue())
                         .vertSeqno(cs.loadUint(32).longValue())
                         .genUTime(cs.loadUint(32).longValue())
@@ -158,7 +158,7 @@ public class Tlb {
                         .beforeSplit(cs.loadBit())
                         .accounts(CellSlice.beginParse(cs.loadRef()).loadDictE(256, k -> k.readInt(256), v -> v))
                         .stats(cs.loadRef())
-                        .mc(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, CellSlice.beginParse(cs.loadRef()))) // todo fix
+                        .mc(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, CellSlice.beginParse(cs.loadRef())))
                         .build();
             case "ShardIdent":
                 assert skipMagic || (cs.loadUint(2).longValue() == 0L) : "ShardIdent: magic not equal to 0x0";
@@ -511,15 +511,15 @@ public class Tlb {
                         .prevTxLT(cs.loadUint(64))
                         .now(cs.loadUint(32).longValue())
                         .outMsgCount(cs.loadUint(15).intValue())
-                        .origStatus(cs.loadString(2)) //0b10
-                        .endStatus(cs.loadString(2)) //0b10 - OK! ACTIVE
+                        .origStatus(cs.loadString(2))
+                        .endStatus(cs.loadString(2))
                         .build();
 
                 System.out.println("tx " + tx);
 
                 CellSlice io = CellSlice.beginParse(cs.loadRef());
                 tx.setInOut(TransactionIO.builder()
-                        .in((Message) Tlb.load(Message.class, io.loadMaybeRefX())) // OK!
+                        .in((Message) Tlb.load(Message.class, io.loadMaybeRefX()))
                         .out((MessagesList) Tlb.load(MessagesList.class, io.loadRef()))
                         .build());
 
@@ -684,7 +684,7 @@ public class Tlb {
                         .value((CurrencyCollection) Tlb.load(CurrencyCollection.class, cs))
                         .iHRFee(cs.loadCoins())
                         .fwdFee(cs.loadCoins())
-                        .createdLt(cs.loadUint(64)) // OK
+                        .createdLt(cs.loadUint(64))
                         .createdAt(cs.loadUint(32).longValue())
                         .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, CellSlice.beginParse(cs.loadRef())) : (StateInit) Tlb.load(StateInit.class, cs)) : null) //review
                         .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
