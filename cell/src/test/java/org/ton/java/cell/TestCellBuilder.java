@@ -56,7 +56,7 @@ public class TestCellBuilder {
 
     @Test(expected = java.lang.Error.class)
     public void testCellTooManyBitsAdded() {
-        CellBuilder cellBuilder = CellBuilder.beginCell(10).storeUint(0, 10);
+        CellBuilder cellBuilder = CellBuilder.beginCell().storeUint(0, 2000);
         assertThat(10).isEqualTo(cellBuilder.getUsedBits());
 
         cellBuilder.storeBit(true);
@@ -65,7 +65,7 @@ public class TestCellBuilder {
     @Test
     public void testCellBuilderNumber() {
         //uint
-        assertThat(CellBuilder.beginCell(7).storeUint(42, 7).endCell().bits.toHex()).isEqualTo("55_");
+        assertThat(CellBuilder.beginCell().storeUint(42, 7).endCell().bits.toHex()).isEqualTo("55_");
         assertThat(CellBuilder.beginCell().storeUint(0, 8).endCell().bits.toHex()).isEqualTo("00");
         assertThat(CellBuilder.beginCell().storeUint(1, 8).endCell().bits.toHex()).isEqualTo("01");
         assertThat(CellBuilder.beginCell().storeUint(5, 8).endCell().bits.toHex()).isEqualTo("05");

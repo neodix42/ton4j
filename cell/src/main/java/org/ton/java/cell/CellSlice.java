@@ -32,7 +32,7 @@ public class CellSlice {
     }
 
     public Cell sliceToCell() {
-        return new Cell(bits, refs, refs.size());
+        return new Cell(bits, refs);
     }
 
     public void endParse() {
@@ -45,13 +45,6 @@ public class CellSlice {
         return loadRef();
     }
 
-    public Cell loadMaybeX() {
-        boolean maybe = loadBit();
-        if (!maybe) {
-            return null;
-        }
-        return new Cell(bits, refs, refs.size());
-    }
 
     public Cell loadMaybeRefX() {
         boolean maybe = loadBit();
@@ -61,21 +54,6 @@ public class CellSlice {
         return loadRefX();
     }
 
-    public Cell loadEither() { // test, loadEither(slice, parser_x, parser_y) {
-        if (loadBit()) {
-            return new Cell(bits, refs, refs.size()); // parser_x
-        } else {
-            return new Cell(bits, refs, refs.size()); //parser_y
-        }
-    }
-
-    public Cell loadEitherXorRefX() {
-        if (loadBit()) {
-            return new Cell(bits, refs, refs.size());
-        } else {
-            return loadRefX();
-        }
-    }
 
     public int loadUnary() {
         boolean pfx = loadBit();

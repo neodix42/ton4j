@@ -59,11 +59,4 @@ public class TestByteReader {
         assertThat(0x72).isEqualTo(r.readSignedByte());
         assertThrows(IllegalArgumentException.class, r::readSignedByte);
     }
-
-    @Test
-    public void testDynInt() {
-        byte[] reachBocMagicPrefix = Utils.hexToSignedBytes("B5EE9C72");
-        log.info("res {}", CellNew.dynInt(reachBocMagicPrefix));
-
-    }
 }

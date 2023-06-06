@@ -12,19 +12,13 @@ import static java.util.Objects.isNull;
 public class CellBuilder extends Cell {
 
     private CellBuilder() {
-
+        super();
     }
 
-    private CellBuilder(int cellSizeInBits) {
-        super(cellSizeInBits);
-    }
 
     public static CellBuilder beginCell() {
-        return new CellBuilder();
-    }
 
-    public static CellBuilder beginCell(int cellSize) {
-        return new CellBuilder(cellSize);
+        return new CellBuilder();
     }
 
     /**
