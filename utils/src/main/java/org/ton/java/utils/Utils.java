@@ -68,10 +68,10 @@ public class Utils {
     /**
      * Long to signed bytes
      *
-     * @param l
-     * @return
+     * @param l value
+     * @return array of unsigned bytes
      */
-    static int[] longToBytes(long l) {
+    public static int[] longToBytes(long l) {
         int[] result = new int[4];
         for (int i = 3; i >= 0; i--) {
             result[i] = (int) l & 0xFF;
@@ -308,6 +308,38 @@ public class Utils {
         int[] c = new int[a.length + b.length];
         System.arraycopy(a, 0, c, 0, a.length);
         System.arraycopy(b, 0, c, a.length, b.length);
+        return c;
+    }
+
+//    public static int[] concatBytes(int[] a, long b) {
+//        int[] bb = longToBytes(b);
+//        int[] c = new int[a.length + bb.length];
+//        System.arraycopy(a, 0, c, 0, a.length);
+//        System.arraycopy(bb, 0, c, a.length, bb.length);
+//        return c;
+//    }
+
+    public static int[] concatBytes(int[] a, long b) {
+        int[] bb = longToBytes(b);
+        int[] c = new int[a.length + bb.length];
+        System.arraycopy(a, 0, c, 0, a.length);
+        System.arraycopy(bb, 0, c, a.length, bb.length);
+        return c;
+    }
+
+    public static int[] concatBytes(int[] a, int b) {
+        int[] bb = new int[]{b};
+        int[] c = new int[a.length + 1];
+        System.arraycopy(a, 0, c, 0, a.length);
+        System.arraycopy(bb, 0, c, a.length, bb.length);
+        return c;
+    }
+
+    public static int[] concatBytes(int a, int[] b) {
+        int[] aa = new int[]{a};
+        int[] c = new int[b.length + 1];
+        System.arraycopy(aa, 0, c, 0, aa.length);
+        System.arraycopy(b, 0, c, aa.length, b.length);
         return c;
     }
 

@@ -2,9 +2,9 @@ package org.ton.java.cell;
 
 public class TopologicalOrderArray {
     int[] cellHash;
-    Cell cell;
+    CellNew cell;
 
-    TopologicalOrderArray(int[] cellHash, Cell cell) {
+    TopologicalOrderArray(int[] cellHash, CellNew cell) {
         this.cellHash = cellHash;
         this.cell = cell;
     }

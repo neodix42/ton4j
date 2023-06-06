@@ -38,7 +38,28 @@ public class BitString {
             String bits = StringUtils.leftPad(Utils.bytesToBitString(bytes), bytes.length * 8, '0');
 
             array = new ArrayDeque<>(bits.length());
-            for (int i = 0; i < bits.length(); i++) {
+            for (int i = 0; i < bits.length(); i++) { // whole length
+                if (bits.charAt(i) == '1') {
+                    array.addLast(true);
+                } else if (bits.charAt(i) == '0') {
+                    array.addLast(false);
+                } else {
+                    // else '-' sign - do nothing
+                }
+            }
+            length = bits.length();
+        }
+    }
+
+    public BitString(int[] bytes, int size) {
+        if (bytes.length == 0) {
+            array = new ArrayDeque<>(0);
+            length = 0;
+        } else {
+            String bits = StringUtils.leftPad(Utils.bytesToBitString(bytes), bytes.length * 8, '0');
+
+            array = new ArrayDeque<>(bits.length());
+            for (int i = 0; i < size; i++) { // specified length
                 if (bits.charAt(i) == '1') {
                     array.addLast(true);
                 } else if (bits.charAt(i) == '0') {
