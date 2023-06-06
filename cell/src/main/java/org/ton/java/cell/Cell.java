@@ -56,7 +56,9 @@ public class Cell {
     public Cell clone() {
         Cell c = new Cell();
         c.bits = this.bits.clone();
-        c.refs = new ArrayList<>(this.refs);
+        for (Cell refCell : this.refs) {
+            c.refs.add(refCell.clone());
+        }
         c.special = this.special;
         return c;
     }
@@ -461,7 +463,7 @@ public class Cell {
      */
     public int[] toBoc(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits, int flags) {
 
-        Cell rootCell = this;
+        Cell rootCell = this.clone();
 
         TreeWalkResult treeWalkResult = rootCell.treeWalk();
 
@@ -472,8 +474,8 @@ public class Cell {
         BigInteger cellsNum = BigInteger.valueOf(topologicalOrder.size());
 
         // Minimal number of bits to represent reference (unused?)
-        int s = cellsNum.toString(2).length();
-        int sBytes = (int) Math.min(Math.ceil(s / (double) 8), 1);
+        int sizeBits = cellsNum.toString(2).length();
+        int sBytes = (int) Math.max(Math.ceil(sizeBits / (double) 8), 1);
 
         BigInteger fullSize = BigInteger.ZERO;
         ArrayList<BigInteger> sizeIndex = new ArrayList<>();
@@ -584,6 +586,14 @@ public class Cell {
 
     public String toBase64() {
         return Utils.bytesToBase64(toBoc(true, true, false, 0));
+    }
+
+    public String toBase64(boolean hasIdx) {
+        return Utils.bytesToBase64(toBoc(hasIdx, true, false, 0));
+    }
+
+    public String toBase64(boolean hasIdx, boolean hasCrc32, boolean hasCacheBits, int flags) {
+        return Utils.bytesToBase64(toBoc(hasIdx, hasCrc32, hasCacheBits, flags));
     }
 
 

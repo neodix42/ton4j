@@ -20,7 +20,7 @@ public class BitString {
 
     public BitString(BitString bs) {
         array = new ArrayDeque<>(bs.array.size());
-        for (Boolean b : bs.array) {      //todo check order
+        for (Boolean b : bs.array) {
             writeBit(b);
         }
         length = bs.length;
