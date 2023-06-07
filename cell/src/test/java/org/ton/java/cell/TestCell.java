@@ -230,7 +230,7 @@ public class TestCell {
 
 
         log.info("dump {}", c1.print());
-        String hex1 = c1.toHex();
+        String hex1 = c1.toHex(true);
         String hex2 = c2.toHex(true, true, false, 2);
         String hex3 = c3.toHex();
 
@@ -257,7 +257,7 @@ public class TestCell {
         assertThat(Utils.bytesToHex(c1.hash())).isEqualTo(BOC_FIFT_LARGE_HASH);
         assertThat(Utils.bytesToHex(c2.hash())).isEqualTo(BOC_FIFT_WITH_DUPS_HASH);
 
-        String base64c1 = c1.toBase64(false, true, false, 2);
+        String base64c1 = c1.toBase64();
         String base64c2 = c2.toBase64();
 
         assertThat(BOC_FIFT_BASE64_LARGE).isEqualTo(base64c1);

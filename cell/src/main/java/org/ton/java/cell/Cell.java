@@ -53,6 +53,10 @@ public class Cell {
         return fromBocMultiRoot(data).get(0);
     }
 
+    public String toString() {
+        return bits.toHex();
+    }
+
     public Cell clone() {
         Cell c = new Cell();
         c.bits = this.bits.clone();
