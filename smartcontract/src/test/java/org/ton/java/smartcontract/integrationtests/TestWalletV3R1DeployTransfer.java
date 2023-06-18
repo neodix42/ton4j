@@ -12,7 +12,6 @@ import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -21,8 +20,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV3R1DeployTransfer {
-
+public class TestWalletV3R1DeployTransfer extends CommonTest {
     @Test
     public void testWalletV3R1() throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
@@ -55,12 +53,11 @@ public class TestWalletV3R1DeployTransfer {
         log.info(my);
 
         // top up new wallet using test-faucet-wallet
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        tonlib.sendRawMessage(msg.message.toBase64());
 
         Utils.sleep(25);
 

@@ -13,7 +13,6 @@ import org.ton.java.smartcontract.multisig.MultisigWallet;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -26,7 +25,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletMultisig {
+public class TestWalletMultisig extends CommonTest {
 
     TweetNaclFast.Signature.KeyPair ownerKeyPair = Utils.generateSignatureKeyPair();
     TweetNaclFast.Signature.KeyPair keyPair2 = Utils.generateSignatureKeyPair();
@@ -40,14 +39,7 @@ public class TestWalletMultisig {
      * then sends the order to the wallet.
      */
     @Test
-    public void testWalletMultisigOffline() {
-
-        Tonlib tonlib = Tonlib.builder()
-//                .testnet(true)
-                .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
-                .build();
-
-
+    public void testWalletMultisigOffline() throws InterruptedException {
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
         log.info("pubKey3 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
@@ -111,9 +103,9 @@ public class TestWalletMultisig {
         log.info("    bounceable address {}", bounceableAddress);
 
         // top up new wallet using test-faucet-wallet
-//        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-//        Utils.sleep(10, "topping up...");
-//        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
+        Utils.sleep(10, "topping up...");
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         contract.deploy(tonlib, ownerKeyPair.getSecretKey());
 
@@ -132,7 +124,7 @@ public class TestWalletMultisig {
 
         // Having message(s) to send you can group it to a new order
         Cell order = MultisigWallet.createOrder(walletId, queryId, msg1, msg2, msg3);
-        order.toFile("order.boc", false);
+        order.toFile("order.boc");
 
         byte[] orderSignatureUser1 = MultisigWallet.signOrder(ownerKeyPair, order);
         byte[] orderSignatureUser2 = MultisigWallet.signOrder(keyPair2, order);
@@ -177,8 +169,6 @@ public class TestWalletMultisig {
      */
     @Test
     public void testWalletMultisigHybrid() throws InterruptedException {
-
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
 
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
@@ -358,11 +348,6 @@ public class TestWalletMultisig {
 
     @Test
     public void testGetInitState() throws InterruptedException {
-
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .build();
-
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey1 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
 
@@ -434,11 +419,6 @@ public class TestWalletMultisig {
      */
     @Test
     public void testRootIAndMultipleOrdersOnChain() throws InterruptedException {
-
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .build();
-
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey1 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
@@ -536,11 +516,6 @@ public class TestWalletMultisig {
      */
     @Test
     public void testEmptySignaturesListOnChain() throws InterruptedException {
-
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .build();
-
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey1 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
@@ -622,9 +597,6 @@ public class TestWalletMultisig {
 
     @Test
     public void testMultisigPendingQueries() throws InterruptedException {
-
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
-
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
         log.info("pubKey3 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
@@ -744,11 +716,6 @@ public class TestWalletMultisig {
 
     @Test
     public void testMergePendingQueries() throws InterruptedException {
-
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .build();
-
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey1 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair3.getPublicKey()));

@@ -168,7 +168,7 @@ public class MultisigWallet implements WalletContract {
     public void sendOrder(Tonlib tonlib, TweetNaclFast.Signature.KeyPair keyPair, int pubkeyIndex, Cell order) {
         Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
         ExternalMessage msg = createExternalMessage(signingMessageBody, keyPair.getSecretKey(), 1, false);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -180,7 +180,7 @@ public class MultisigWallet implements WalletContract {
     public void sendOrder(Tonlib tonlib, byte[] secretKey, int pubkeyIndex, Cell order) {
         Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
         ExternalMessage msg = createExternalMessage(signingMessageBody, secretKey, 1, false);
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -322,7 +322,7 @@ public class MultisigWallet implements WalletContract {
      * @param secretKey secret key
      */
     public void deploy(Tonlib tonlib, byte[] secretKey) {
-        tonlib.sendRawMessage(createInitExternalMessageWithoutBody(secretKey).message.toBocBase64(false));
+        tonlib.sendRawMessage(createInitExternalMessageWithoutBody(secretKey).message.toBase64());
     }
 
     /**

@@ -14,7 +14,6 @@ import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR2;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -27,15 +26,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV2Highload {
+public class TestWalletV2Highload extends CommonTest {
 
     @Test
     public void testWalletV2HighloadSendTo10() throws InterruptedException {
-
-        Tonlib tonlib = Tonlib.builder()
-                .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
-                .build();
-
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -57,9 +51,9 @@ public class TestWalletV2Highload {
         log.info("           raw address {}", contract.getAddress().toString(false));
 
         // top up new wallet using test-faucet-wallet        
-//        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-//        Utils.sleep(10, "topping up...");
-//        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
+        Utils.sleep(10, "topping up...");
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         contract.deploy(tonlib, keyPair.getSecretKey());
 
@@ -121,17 +115,13 @@ public class TestWalletV2Highload {
 
         Utils.sleep(90, "sending to multiple destinations");
 
-        BigInteger balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
+        balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(3).longValue());
     }
 
     @Test
     public void testWalletV2HighloadSendTo84() throws InterruptedException {
-
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 

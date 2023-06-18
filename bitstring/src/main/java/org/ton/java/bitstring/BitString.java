@@ -16,14 +16,16 @@ public class BitString {
 
     Deque<Boolean> array;
 
-    public int length;
+    private static int MAX_LENGTH = 1023;
+
+    private int initialLength;
 
     public BitString(BitString bs) {
         array = new ArrayDeque<>(bs.array.size());
         for (Boolean b : bs.array) {
             writeBit(b);
         }
-        length = bs.length;
+        initialLength = bs.array.size() == 0 ? MAX_LENGTH : bs.array.size();
     }
 
     public BitString(byte[] bytes) {
@@ -33,7 +35,7 @@ public class BitString {
     public BitString(int[] bytes) {
         if (bytes.length == 0) {
             array = new ArrayDeque<>(0);
-            length = 0;
+            initialLength = 0;
         } else {
             String bits = StringUtils.leftPad(Utils.bytesToBitString(bytes), bytes.length * 8, '0');
 
@@ -47,14 +49,14 @@ public class BitString {
                     // else '-' sign - do nothing
                 }
             }
-            length = bits.length();
+            initialLength = bits.length();
         }
     }
 
     public BitString(int[] bytes, int size) {
         if (bytes.length == 0) {
             array = new ArrayDeque<>(0);
-            length = 0;
+            initialLength = 0;
         } else {
             String bits = StringUtils.leftPad(Utils.bytesToBitString(bytes), bytes.length * 8, '0');
 
@@ -68,7 +70,7 @@ public class BitString {
                     // else '-' sign - do nothing
                 }
             }
-            length = bits.length();
+            initialLength = bits.length();
         }
     }
 
@@ -79,12 +81,12 @@ public class BitString {
      */
     public BitString(int length) {
         array = new ArrayDeque<>(length);
-        this.length = length;
+        initialLength = length;
     }
 
     public BitString() {
-        array = new ArrayDeque<>(length);
-        this.length = 1023;
+        array = new ArrayDeque<>(MAX_LENGTH);
+        initialLength = MAX_LENGTH;
     }
 
     /**
@@ -93,7 +95,7 @@ public class BitString {
      * @return int
      */
     public int getFreeBits() {
-        return length - array.size();
+        return initialLength - array.size();
     }
 
     /**
@@ -127,7 +129,7 @@ public class BitString {
      * @param n int
      */
     private void checkRange(int n) {
-        if (n > length) {
+        if (n > getLength()) {
             throw new Error("BitString overflow");
         }
     }
@@ -516,6 +518,10 @@ public class BitString {
         return s.toString();
     }
 
+    public int getLength() {
+        return toBitString().length();
+    }
+
     /**
      * @return BitString from current position to writeCursor
      */
@@ -608,20 +614,14 @@ public class BitString {
     }
 
     public void setTopUppedArray(int[] arr, boolean fulfilledBytes) {
-        length = arr.length * 8;
+        int length = arr.length * 8;
         array = new BitString(arr).array;
 
         if (!(fulfilledBytes || (length == 0))) {
             boolean foundEndBit = false;
             for (byte c = 0; c < 7; c++) {
-//                writeCursor -= 1; // from the end
-                if (array.pollLast()) { // get(writecursor)
+                if (array.pollLast()) {
                     foundEndBit = true;
-//                    for (int i = 0; i < c; i++) {
-//                        array.pollLast(); // removes
-//                    }
-//                    array.pollLast();
-//                    array.addLast(false);
                     break;
                 }
             }
@@ -634,7 +634,6 @@ public class BitString {
 
     public int[] getTopUppedArray() {
         BitString ret = clone();
-//        int tu = (int) Math.ceil(ret.writeCursor / (double) 8) * 8 - ret.writeCursor;
         int tu = (int) Math.ceil(ret.array.size() / (double) 8) * 8 - ret.array.size();
         if (tu > 0) {
             tu = tu - 1;
@@ -646,6 +645,5 @@ public class BitString {
         }
         int[] b = Arrays.copyOfRange(ret.toUnsignedByteArray(), 0, (int) Math.ceil(ret.array.size() / (double) 8));
         return b;
-//        return ret.array;
     }
 }

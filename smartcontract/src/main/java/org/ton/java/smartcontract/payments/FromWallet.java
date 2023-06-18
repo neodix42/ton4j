@@ -48,7 +48,7 @@ public class FromWallet extends PaymentChannel {
 
     public FromWallet send() {
         if (nonNull(extMsg)) {
-            tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+            tonlib.sendRawMessage(extMsg.message.toBase64());
         } else {
             throw new Error("cannot send empty external message");
         }
@@ -57,7 +57,7 @@ public class FromWallet extends PaymentChannel {
 
     public FromWallet estimateFee() {
         if (nonNull(extMsg)) {
-            tonlib.estimateFees(extMsg.address.toString(), extMsg.message.toBocBase64(false), extMsg.code.toBocBase64(false), extMsg.data.toBocBase64(false), false);
+            tonlib.estimateFees(extMsg.address.toString(), extMsg.message.toBase64(), extMsg.code.toBase64(), extMsg.data.toBase64(), false);
         } else {
             throw new Error("cannot send empty external message");
         }

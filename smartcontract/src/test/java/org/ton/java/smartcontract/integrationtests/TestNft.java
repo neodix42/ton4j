@@ -26,7 +26,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestNft {
+public class TestNft extends CommonTest {
 
     private static final String WALLET2_ADDRESS = "EQB6-6po0yspb68p7RRetC-hONAz-JwxG9514IEOKw_llXd5";
 
@@ -36,9 +36,6 @@ public class TestNft {
     static TestWallet adminWallet;
 
     static TestWallet nftItemBuyer;
-    static Tonlib tonlib = Tonlib.builder()
-            .testnet(true)
-            .build();
 
     @BeforeClass
     public static void setUpClass() throws InterruptedException {
@@ -185,7 +182,7 @@ public class TestNft {
                         wallet.getAddress(),
                         nftItemContentUri));
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     public void changeNftCollectionOwner(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address nftCollectionAddress, Address newOwner, TweetNaclFast.Signature.KeyPair keyPair) {
@@ -200,7 +197,7 @@ public class TestNft {
                 NftCollection.createChangeOwnerBody(0, newOwner)
         );
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     public void editNftCollectionContent(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address nftCollectionAddress, String collectionContentUri, String nftItemContentBaseUri, double royalty, Address royaltyAddress, TweetNaclFast.Signature.KeyPair keyPair) {
@@ -220,7 +217,7 @@ public class TestNft {
                         royaltyAddress)
         );
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     public void getRoyaltyParams(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address nftCollectionAddress, TweetNaclFast.Signature.KeyPair keyPair) {
@@ -235,7 +232,7 @@ public class TestNft {
                 NftCollection.createGetRoyaltyParamsBody(0)
         );
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     private void getNftItemInfo(NftCollection nftCollection, NftItem nftItem) {
@@ -265,7 +262,7 @@ public class TestNft {
                         responseAddress)
         );
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     private void getStaticData(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address nftItemAddress, long queryId, TweetNaclFast.Signature.KeyPair keyPair) {
@@ -279,6 +276,6 @@ public class TestNft {
                 NftItem.createGetStaticDataBody(queryId)
         );
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 }

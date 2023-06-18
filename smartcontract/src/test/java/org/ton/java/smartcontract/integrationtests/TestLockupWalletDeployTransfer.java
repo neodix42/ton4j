@@ -13,7 +13,6 @@ import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
 import java.io.IOException;
@@ -24,10 +23,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestLockupWalletDeployTransfer {
+public class TestLockupWalletDeployTransfer extends CommonTest {
 
     @Test
-    public void testNewWalletLockup() {
+    public void testNewWalletLockup() throws InterruptedException {
 //        byte[] secondPublicKey = Utils.hexToBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
 //        byte[] secondSecretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
@@ -62,14 +61,14 @@ public class TestLockupWalletDeployTransfer {
 
         assertThat(msg.code).isNotNull();
 
-        // top up new wallet using test-faucet-wallet
-        Tonlib tonlib = Tonlib.builder()
-//                .testnet(true)
-                .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
-                .build();
 
-//        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-//        log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+//        Tonlib tonlib = Tonlib.builder()
+//                .testnet(true)
+////                .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
+//                .build();
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
+        log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         Utils.sleep(5);
 
@@ -94,7 +93,7 @@ public class TestLockupWalletDeployTransfer {
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(4), "send-to-allowed-1");
         Utils.sleep(70);
 
-        BigInteger balance = new BigInteger(tonlib.getAccountState(address).getBalance());
+        balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(4).longValue());
 
@@ -174,9 +173,9 @@ public class TestLockupWalletDeployTransfer {
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
 
-        // top up new wallet using test-faucet-wallet
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
 
+//        Tonlib tonlib = Tonlib.builder().testnet(true).build();
+        // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
         log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 

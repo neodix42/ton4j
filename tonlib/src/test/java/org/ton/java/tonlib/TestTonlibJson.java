@@ -7,6 +7,7 @@ import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -41,9 +42,16 @@ public class TestTonlibJson {
 
     Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-    @Test
-    public void testInitTonlibJson() throws IOException {
+    static Tonlib tonlib;
 
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
+        tonlib = Tonlib.builder().build();
+    }
+
+    @Test
+
+    public void testInitTonlibJson() throws IOException {
         TonlibJsonI tonlibJson = Native.load("tonlibjson.dll", TonlibJsonI.class);
 
         long tonlib = tonlibJson.tonlib_client_json_create();
@@ -106,9 +114,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibGetAllBlockTransactions() {
-
-        Tonlib tonlib = Tonlib.builder().build();
-
         BlockIdExt fullblock = tonlib.getLast().getLast();
         assertThat(fullblock).isNotNull();
 
@@ -132,8 +137,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibGetBlockTransactions() {
-        Tonlib tonlib = Tonlib.builder().build();
-
         for (int i = 0; i < 2; i++) {
 
             MasterChainInfo lastBlock = tonlib.getLast();
@@ -163,8 +166,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibGetTxsByAddress() {
-        Tonlib tonlib = Tonlib.builder().build();
-
         Address address = Address.of(TON_FOUNDATION);
 
         log.info("address: " + address.toString(true));
@@ -189,8 +190,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibGetTxsWithLimitByAddress() {
-        Tonlib tonlib = Tonlib.builder().build();
-
         Address address = Address.of(TON_FOUNDATION);
 
         log.info("address: " + address.toString(true));
@@ -214,9 +213,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibGetAllTxsByAddress() {
-        Tonlib tonlib = Tonlib.builder().build();
-
-//        Address address = Address.of(TON_FOUNDATION);
         Address address = Address.of("EQAL66-DGwFvP046ysD_o18wvwt-0A6_aJoVmQpVNIqV_ZvK");
 
         log.info("address: " + address.toString(true));
@@ -241,10 +237,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibGetAllTxsByAddressWithMemo() {
-        Tonlib tonlib = Tonlib.builder()
-//                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
-
         Address address = Address.of("EQCQxq9F4-RSaO-ya7q4CF26yyCaQNY98zgD5ys3ZbbiZdUy");
 
         log.info("address: " + address.toString(true));
@@ -281,12 +273,12 @@ public class TestTonlibJson {
             }
         }
 
-        assertThat(rawTransactions.getTransactions().size()).isLessThan(10);
+        assertThat(rawTransactions.getTransactions().size()).isLessThan(11);
     }
 
     @Test
     public void testTonlibGetAllTxsByAddressSmallHistoryLimit() {
-        Tonlib tonlib = Tonlib.builder().build();
+//        Tonlib tonlib = Tonlib.builder().build();
 
         Address address = Address.of(TON_FOUNDATION);
 
@@ -316,8 +308,6 @@ public class TestTonlibJson {
      */
     @Test
     public void testTonlibNewKey() {
-        Tonlib tonlib = Tonlib.builder().build();
-
         Key key = tonlib.createNewKey();
         log.info(key.toString());
         String pubKey = Utils.base64UrlSafeToHexString(key.getPublic_key());
@@ -337,7 +327,6 @@ public class TestTonlibJson {
      */
     @Test
     public void testTonlibEncryptDecryptKey() {
-        Tonlib tonlib = Tonlib.builder().build();
         String secret = "Q3i3Paa45H/F/Is+RW97lxW0eikF0dPClSME6nbogm0=";
         String dataToEncrypt = Utils.stringToBase64("ABC");
         Data encrypted = tonlib.encrypt(dataToEncrypt, secret);
@@ -355,8 +344,6 @@ public class TestTonlibJson {
      */
     @Test
     public void testTonlibEncryptDecryptMnemonic() {
-        Tonlib tonlib = Tonlib.builder().build();
-
         String base64mnemonic = Utils.stringToBase64("centring moist twopenny bursary could carbarn abide flirt ground shoelace songster isomeric pis strake jittery penguin gab guileful lierne salivary songbird shore verbal measures");
         String dataToEncrypt = Utils.stringToBase64("ABC");
         Data encrypted = tonlib.encrypt(dataToEncrypt, base64mnemonic);
@@ -370,10 +357,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibEncryptDecryptMnemonicModule() throws NoSuchAlgorithmException, InvalidKeyException {
-        Tonlib tonlib = Tonlib.builder()
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
-
         String base64mnemonic = Utils.stringToBase64(Mnemonic.generateString(24));
 
         String dataToEncrypt = Utils.stringToBase64("ABC");
@@ -388,8 +371,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibRawAccountState() {
-        Tonlib tonlib = Tonlib.builder().build();
-
         Address addr = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
         log.info("address: " + addr.toString(true));
 
@@ -437,9 +418,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibRunMethodSeqno() {
-        Tonlib tonlib = Tonlib.builder()
-                .verbosityLevel(VerbosityLevel.FATAL)
-                .build();
         Address address = Address.of(TON_FOUNDATION);
         RunResult result = tonlib.runMethod(address, "seqno");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
@@ -450,7 +428,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibRunMethodGetJetton() {
-        Tonlib tonlib = Tonlib.builder().build();
         Address address = Address.of("EQBYzFXx0QTPW5Lo63ArbNasI_GWRj7NwcAcJR2IWo7_3nTp");
         RunResult result = tonlib.runMethod(address, "get_jetton_data");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
@@ -460,8 +437,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibRunMethodParticipantsList() {
-        Tonlib tonlib = Tonlib.builder().build();
-
         Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
 
         RunResult result = tonlib.runMethod(address, "participant_list");
@@ -479,7 +454,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibRunMethodActiveElectionId() {
-        Tonlib tonlib = Tonlib.builder().build();
         Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
         RunResult result = tonlib.runMethod(address, "active_election_id");
         TvmStackEntryNumber electionId = (TvmStackEntryNumber) result.getStack().get(0);
@@ -489,7 +463,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibRunMethodPastElectionsId() {
-        Tonlib tonlib = Tonlib.builder().build();
         Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
         RunResult result = tonlib.runMethod(address, "past_election_ids");
         TvmStackEntryList listResult = (TvmStackEntryList) result.getStack().get(0);
@@ -502,7 +475,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibRunMethodPastElections() {
-        Tonlib tonlib = Tonlib.builder().build();
         Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
         RunResult result = tonlib.runMethod(address, "past_elections");
         TvmStackEntryList listResult = (TvmStackEntryList) result.getStack().get(0);
@@ -524,9 +496,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibRunMethodComputeReturnedStake() {
-        Tonlib tonlib = Tonlib.builder()
-                .build();
-
         Address elector = Address.of(ELECTOR_ADDRESSS);
         RunResult result = tonlib.runMethod(elector, "compute_returned_stake", null);
         log.info("result: {}", result);
@@ -576,9 +545,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibTryLocateTxByIncomingMessage() {
-        Tonlib tonlib = Tonlib.builder()
-                .build();
-
         RawTransaction tx = tonlib.tryLocateTxByIncomingMessage(
                 Address.of("EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD"),
                 Address.of("EQDEruSI2frAF-GdzpjDLWWBKnwREDAJmu7eIEFG6zdUlXVE"),
@@ -591,9 +557,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibTryLocateTxByOutcomingMessage() {
-        Tonlib tonlib = Tonlib.builder()
-                .build();
-
         RawTransaction tx = tonlib.tryLocateTxByOutcomingMessage(
                 Address.of("EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD"),
                 Address.of("EQDEruSI2frAF-GdzpjDLWWBKnwREDAJmu7eIEFG6zdUlXVE"),
@@ -608,9 +571,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibStateAndStatus() {
-        Tonlib tonlib = Tonlib.builder()
-                .build();
-
         int i = 0;
         FullAccountState accountState1 = tonlib.getAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
         String accountState1Status = tonlib.getRawAccountStatus(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));

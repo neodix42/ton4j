@@ -28,13 +28,12 @@ public class TestJetton {
 
     static TestWallet adminWallet;
     static TestWallet wallet2;
-    static Tonlib tonlib = Tonlib.builder()
-//            .testnet(true)
-            .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
-            .build();
+
+    static Tonlib tonlib;
 
     @BeforeClass
-    public static void setUpClass() throws InterruptedException {
+    public static void setUpBeforeClass() throws InterruptedException {
+        tonlib = Tonlib.builder().testnet(true).build();
         adminWallet = GenerateWallet.random(tonlib, 7);
         wallet2 = GenerateWallet.random(tonlib, 1);
 
@@ -138,7 +137,7 @@ public class TestJetton {
                 seqno,
                 minter.createEditContentBody(newUriContent, 0));
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     private void changeMinterAdmin(WalletContract adminWallet, JettonMinter minter, Address newAdmin, TweetNaclFast.Signature.KeyPair keyPair) {
@@ -152,7 +151,7 @@ public class TestJetton {
                 seqno,
                 minter.createChangeAdminBody(0, newAdmin));
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     /**
@@ -179,7 +178,7 @@ public class TestJetton {
                         "gift".getBytes() // forward payload
                 ));
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     private void burn(WalletContract admin, Address jettonWalletAddress, BigInteger jettonAmount, Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
@@ -197,6 +196,6 @@ public class TestJetton {
                         responseAddress
                 ));
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 }

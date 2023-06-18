@@ -153,7 +153,7 @@ public class NftUtils {
         } catch (Exception e) {
             return null;
         }
-        return new Address(result);
+        return Address.of(result);
     }
 
     /**

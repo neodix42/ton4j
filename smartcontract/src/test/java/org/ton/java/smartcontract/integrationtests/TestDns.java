@@ -34,7 +34,7 @@ import static org.ton.java.smartcontract.dns.Dns.DNS_CATEGORY_WALLET;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestDns {
+public class TestDns extends CommonTest {
     static TestWallet adminWallet;
     static TestWallet buyerWallet;
 
@@ -45,7 +45,6 @@ public class TestDns {
 
     @Test
     public void testDnsResolveTestnet() {
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
         Dns dns = new Dns(tonlib);
         Address dnsRootAddress = dns.getRootDnsAddress();
         log.info("root DNS address = {}", dnsRootAddress.toString(true, true, true));
@@ -94,7 +93,7 @@ public class TestDns {
         RawAccountState state;
         int i = 0;
         do {
-            Utils.sleep(5);
+            Utils.sleep(6);
             state = tonlib.getRawAccountState(dnsRoot.getAddress());
             if (i++ > 10) {
                 throw new Error("time out getting account state");
@@ -310,7 +309,7 @@ public class TestDns {
                         DnsUtils.createSmartContractAddressRecord(newSmartContract),
                         0));
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     private void transferDnsItem(TestWallet ownerWallet, DnsItem dnsItem, String newOwner) {
@@ -328,7 +327,7 @@ public class TestDns {
                         "gift".getBytes(),
                         ownerWallet.getWallet().getAddress()));
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     private void releaseDnsItem(TestWallet ownerWallet, DnsItem dnsItem, BigInteger amount) {
@@ -345,7 +344,7 @@ public class TestDns {
                 seqno,
                 payload.endCell());
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     private void governDnsItem(TestWallet ownerWallet, DnsItem dnsItem) {
@@ -362,7 +361,7 @@ public class TestDns {
                 seqno,
                 payload.endCell());
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     private void getStaticData(TestWallet ownerWallet, DnsItem dnsItem) {
@@ -375,7 +374,7 @@ public class TestDns {
                 seqno,
                 dnsItem.createStaticDataBody(661));
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     private void deployDnsItem(Tonlib tonlib, WalletContract adminWallet, BigInteger msgValue, Address dnsCollectionAddress, String domainName, TweetNaclFast.Signature.KeyPair keyPair) {

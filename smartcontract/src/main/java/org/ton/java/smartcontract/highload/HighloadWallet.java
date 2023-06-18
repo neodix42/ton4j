@@ -118,7 +118,7 @@ public class HighloadWallet implements WalletContract {
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, HighloadConfig highloadConfig) {
         Cell signingMessageAll = createSigningMessageInternal(highloadConfig);
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1);
-        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     private Cell createDict(HighloadConfig highloadConfig) {
@@ -152,6 +152,6 @@ public class HighloadWallet implements WalletContract {
     }
 
     public void deploy(Tonlib tonlib, byte[] secretKey) {
-        tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBocBase64(false));
+        tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
     }
 }

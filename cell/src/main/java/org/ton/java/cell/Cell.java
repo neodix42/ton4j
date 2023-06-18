@@ -1,5 +1,7 @@
 package org.ton.java.cell;
 
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.bitstring.BitString;
 import org.ton.java.utils.Utils;
 
@@ -19,6 +21,8 @@ public class Cell {
     public BitString bits;
     public List<Cell> refs;
 
+    public int index;
+
     public boolean special;
     public byte levelMask;
 
@@ -30,7 +34,7 @@ public class Cell {
     }
 
     public Cell(BitString bits, List<Cell> refs) {
-        this.bits = new BitString(bits.length);
+        this.bits = new BitString(bits.getLength());
         this.bits.writeBitString(bits);
         this.refs = new ArrayList<>(refs);
         this.special = false;
@@ -141,12 +145,12 @@ public class Cell {
         System.out.println("BocFlags.hasIndex " + bocFlags.hasIndex);
         int dataSizeBytes = r.readByte(); // off_bytes:(## 8) { off_bytes <= 8 }
 
-        long cellsNum = dynInt(r.readSignedBytes(bocFlags.cellNumSizeBytes)); // cells:(##(size * 8))
-        long rootsNum = dynInt(r.readSignedBytes(bocFlags.cellNumSizeBytes)); // roots:(##(size * 8)) { roots >= 1 }
+        long cellsNum = Utils.dynInt(r.readSignedBytes(bocFlags.cellNumSizeBytes)); // cells:(##(size * 8))
+        long rootsNum = Utils.dynInt(r.readSignedBytes(bocFlags.cellNumSizeBytes)); // roots:(##(size * 8)) { roots >= 1 }
 
         System.out.println("cellsNum " + cellsNum + ", rootsNum " + rootsNum + ", dataSizeBytes " + dataSizeBytes);
         r.readBytes(bocFlags.cellNumSizeBytes);
-        long dataLen = dynInt(r.readSignedBytes(dataSizeBytes));
+        long dataLen = Utils.dynInt(r.readSignedBytes(dataSizeBytes));
 
         System.out.println("dataLen " + dataLen);
 
@@ -162,7 +166,7 @@ public class Cell {
 
         // root_list:(roots * ##(size * 8))
         byte[] rootList = r.readSignedBytes(rootsNum * bocFlags.cellNumSizeBytes); // todo
-        long rootIndex = dynInt(Arrays.copyOfRange(rootList, 0, bocFlags.cellNumSizeBytes));
+        long rootIndex = Utils.dynInt(Arrays.copyOfRange(rootList, 0, bocFlags.cellNumSizeBytes));
 
         System.out.println("rootList " + Arrays.toString(rootList) + ", rootIndex " + rootIndex);
 
@@ -180,7 +184,7 @@ public class Cell {
             for (int i = 0; i < cellsNum; i++) {
                 int off = i * dataSizeBytes;
 //                Utils.readNBytesFromArray(offsetBytes, idxData); //review
-                int val = dynInt(Arrays.copyOfRange(idxData, off, off + dataSizeBytes));
+                int val = Utils.dynInt(Arrays.copyOfRange(idxData, off, off + dataSizeBytes));
                 //System.out.println("val " + val);
                 if (bocFlags.hasCacheBits) {
                     if (val % 2 == 1) {
@@ -250,7 +254,7 @@ public class Cell {
 
             if (withHashes) {
                 System.out.println("withHashes");
-                int maskBits = (int) Math.ceil(Math.log(levelMask + 1) / Math.log(2)); // todo review
+                int maskBits = (int) Math.ceil(Math.log(levelMask + 1) / Math.log(2));
                 int hashesNum = maskBits + 1;
                 offset += hashesNum * HASH_SIZE + hashesNum * DEPTH_SIZE;
             }
@@ -270,7 +274,7 @@ public class Cell {
             for (int j = 0; j < refsNum; j++) {
                 int[] t = Arrays.copyOfRange(data, offset, offset + refSzBytes);
 //                refsIndex[x++] = Utils.concatBytes(dynInt(refsIndex), refsIndex);
-                refsIndex[x++] = dynInt(t);
+                refsIndex[x++] = Utils.dynInt(t);
 
                 offset += refSzBytes;
             }
@@ -362,19 +366,6 @@ public class Cell {
         return bocFlags;
     }
 
-    public static int dynInt(byte[] data) {
-        byte[] tmp = new byte[8];
-        System.arraycopy(data, 0, tmp, 8 - data.length, data.length);
-        return new BigInteger(tmp).intValue();
-    }
-
-    public static int dynInt(int[] data) {
-        int[] tmp = new int[8];
-        System.arraycopy(data, 0, tmp, 8 - data.length, data.length);
-
-        return Integer.valueOf(Utils.bytesToHex(tmp), 16);
-    }
-
 
     /**
      * Recursively prints cell's content like Fift
@@ -409,12 +400,9 @@ public class Cell {
     /**
      * Saves BoC to file
      */
-    public void toFile(String filename, boolean hasIdx,
-                       boolean hashCrc32,
-                       boolean hasCacheBits,
-                       int flags) {
+    public void toFile(String filename, boolean withCrc) {
 
-        int[] boc = toBoc(hasIdx, hashCrc32, hasCacheBits, flags);
+        int[] boc = toBocNew(withCrc);
         try {
             Files.write(Paths.get(filename), Utils.unsignedBytesToSigned(boc));
         } catch (Exception e) {
@@ -422,25 +410,24 @@ public class Cell {
         }
     }
 
-    public void toFile(String filename, boolean hasIdx) {
-        toFile(filename, hasIdx, true, false, 0);
+    /**
+     * default parameters: hashCrc true
+     */
+    public void toFile(boolean withCrc) {
+        String filename = System.currentTimeMillis() + ".boc";
+        toFile(filename, withCrc);
     }
 
     /**
-     * default parameters: hashCrc32 true, hasCacheBits false, flags 0
+     * default parameters:
+     * - withCrc= true
+     * - filename = System.currentTimeMillis() + ".boc";
      */
-    public void toFile(boolean hasIdx) {
-        String filename = System.currentTimeMillis() + ".boc";
-        toFile(filename, hasIdx, true, false, 0);
+
+    public void toFile(String filename) {
+        toFile(filename, true);
     }
 
-    /**
-     * default parameters: hasIdx true, hashCrc32 true, hasCacheBits false, flags 0
-     */
-    public void toFile() {
-        String filename = System.currentTimeMillis() + ".boc";
-        toFile(filename, true, true, false, 0);
-    }
 
     //serialized_boc#b5ee9c72 has_idx:(## 1) has_crc32c:(## 1)
     //  has_cache_bits:(## 1) flags:(## 2) { flags = 0 }
@@ -542,62 +529,20 @@ public class Cell {
         return toBoc(true, true, false, 0);
     }
 
-    public String toBocBase64() {
-        return Utils.bytesToBase64(toBoc(true, true, false, 0));
-    }
-
-    public String toBocBase64(boolean hasIdx) {
-        return Utils.bytesToBase64(toBoc(hasIdx, true, false, 0));
-    }
-
-    public String toBocBase64(boolean hasIdx, boolean hashCrc32) {
-        return Utils.bytesToBase64(toBoc(hasIdx, hashCrc32, false, 0));
-    }
-
-    public String toBocBase64(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits) {
-        return Utils.bytesToBase64(toBoc(hasIdx, hashCrc32, hasCacheBits, 0));
-    }
-
-    /**
-     * Convert Cell to BoC
-     *
-     * @param hasIdx       boolean, default true
-     * @param hashCrc32    boolean, default true
-     * @param hasCacheBits boolean, default false
-     * @param flags        int, default 0
-     * @return String in base64
-     */
-    public String toBocBase64(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits, int flags) {
-        return Utils.bytesToBase64(toBoc(hasIdx, hashCrc32, hasCacheBits, flags));
-    }
-
-    public String toHex(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits, int flags) {
-        return Utils.bytesToHex(toBoc(hasIdx, hashCrc32, hasCacheBits, flags));
-    }
-
-
-    public String toHex(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits) {
-        return Utils.bytesToHex(toBoc(hasIdx, hashCrc32, hasCacheBits, 0));
-    }
-
-    public String toHex(boolean hasIdx) {
-        return Utils.bytesToHex(toBoc(hasIdx, true, false, 0));
+    public String toHex(boolean withCrc) {
+        return Utils.bytesToHex(toBocNew(withCrc));
     }
 
     public String toHex() {
-        return Utils.bytesToHex(toBoc(true, true, false, 0));
+        return Utils.bytesToHex(toBocNew(true));
     }
 
     public String toBase64() {
-        return Utils.bytesToBase64(toBoc(true, true, false, 0));
+        return Utils.bytesToBase64(toBocNew(true));
     }
 
-    public String toBase64(boolean hasIdx) {
-        return Utils.bytesToBase64(toBoc(hasIdx, true, false, 0));
-    }
-
-    public String toBase64(boolean hasIdx, boolean hasCrc32, boolean hasCacheBits, int flags) {
-        return Utils.bytesToBase64(toBoc(hasIdx, hasCrc32, hasCacheBits, flags));
+    public String toBase64(boolean withCrc) {
+        return Utils.bytesToBase64(toBocNew(withCrc));
     }
 
 
@@ -760,6 +705,233 @@ public class Cell {
 
     int bocSerializationSize(HashMap<String, Integer> cellsIndex) {
         return (serializeForBoc(cellsIndex)).length;
+    }
+
+
+    public int[] toBocNew(boolean withCRC) {
+        // recursively go through cells, build hash index and store unique in slice
+        List<Cell> orderCells = flattenIndex(List.of(this));
+        System.out.println("orderCells len " + orderCells.size() + ", " + orderCells.get(0).toString());
+
+        int cellSizeBits = Utils.log2(orderCells.size() + 1);
+        int cellSizeBytes = (int) Math.ceil((double) cellSizeBits / 8);
+        System.out.println("cellSizeBits " + cellSizeBits + ", cellSizeBytes " + cellSizeBytes);
+
+        List<Integer> payload = new ArrayList<>();
+        for (Cell orderCell : orderCells) {
+            payload.addAll(orderCell.serialize(cellSizeBytes));
+        }
+        System.out.println("payload len " + payload.size() + ", " + payload);
+        // bytes needed to store len of payload
+        int sizeBits = Utils.log2(payload.size() + 1);
+        int sizeBytes = (int) Math.ceil((double) sizeBits / 8);
+        System.out.println("sizeBits " + sizeBits + ", sizeBytes " + sizeBytes);
+
+        // has_idx 1bit, hash_crc32 1bit,  has_cache_bits 1bit, flags 2bit, size_bytes 3 bit
+
+        int flags = 0b0_0_0_00_000;
+
+        if (withCRC) {
+            flags |= 0b0_1_0_00_000;
+        }
+
+        flags |= cellSizeBytes;
+
+        System.out.println("flags " + flags);
+
+        List<Integer> data = new ArrayList<>();
+        int[] bocMagic = new int[]{0xB5, 0xEE, 0x9C, 0x72};
+        data.addAll(Arrays.stream(bocMagic).boxed().toList());
+        data.addAll(Arrays.stream(Utils.uintToBytes(flags)).boxed().toList());
+        System.out.println("data-flags " + data);
+
+        // bytes needed to store size
+        data.addAll(Arrays.stream(Utils.uintToBytes(sizeBytes)).boxed().toList());
+        System.out.println("data-sizeBytes " + data);
+
+        // cells num
+        data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.valueOf(orderCells.size()), cellSizeBytes)).boxed().toList());
+        System.out.println("data-cells " + data);
+
+        // roots num (only 1 supported for now)
+        data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.ONE, cellSizeBytes)).boxed().toList());
+        System.out.println("data-roots " + data);
+
+        // complete BOCs = 0
+        data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.ZERO, cellSizeBytes)).boxed().toList());
+        System.out.println("data-complete " + data);
+
+        // len of data
+        data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.valueOf(payload.size()), sizeBytes)).boxed().toList());
+        System.out.println("data-len-data " + data);
+
+        // root should have index 0
+        data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.ZERO, cellSizeBytes)).boxed().toList());
+        System.out.println("data-root " + data);
+        data.addAll(payload);
+        System.out.println("data-payload " + data);
+
+        if (withCRC) {
+            int[] checksum = new int[4];
+            checksum = Utils.getCRC32ChecksumAsBytesReversed(data.stream().mapToInt(Integer::intValue).toArray());
+            data.addAll(Arrays.stream(checksum).boxed().toList());
+        }
+        System.out.println("data-checksum " + data);
+        return data.stream().mapToInt(Integer::intValue).toArray();
+    }
+
+    private List<Cell> flattenIndex(List<Cell> src) {
+        try {
+            List<Cell> pending = src;
+            System.out.println("flattenIndex-pending len " + pending.size() + ", refs" + pending.get(0).refs.size());
+            Map<String, Cell> allCells = new HashMap<>();
+            Map<String, Cell> notPermCells = new HashMap<>();
+
+            Deque<String> sorted = new ArrayDeque<>();
+
+            while (pending.size() > 0) {
+                System.out.println("while-pending " + pending.size());
+                List<Cell> cells = new ArrayList<>(pending);
+                System.out.println("flattenIndex-cells len " + cells.size() + ", refs " + cells.get(0).refs.size());
+
+                pending = new ArrayList<>();
+
+                for (Cell cell : cells) {
+                    String hash = Utils.bytesToHex(cell.hash());
+                    if (allCells.containsKey((String) hash)) {
+                        System.out.println("flattenIndex-continue");
+                        continue;
+                    }
+                    notPermCells.put(hash, null);
+                    allCells.put(hash, cell);
+
+                    pending.addAll(cell.refs);
+                }
+            }
+
+            System.out.println("flattenIndex-notPermCells " + notPermCells.size());
+            System.out.println("flattenIndex-allCells " + allCells.size());
+
+            Map<String, Boolean> tempMark = new HashMap<>();
+            while (notPermCells.size() > 0) {
+                System.out.println("flattenIndex-while");
+                for (String key : notPermCells.keySet()) {
+                    System.out.println("flattenIndex-while-for");
+                    visit(key, allCells, notPermCells, tempMark, sorted);
+                    break;
+                }
+            }
+
+            Map<String, Integer> indexes = new HashMap<>();
+
+            Deque<String> tmpSorted = new ArrayDeque<>(sorted);
+            int len = tmpSorted.size();
+            for (int i = 0; i < len; i++) {
+                indexes.put(tmpSorted.pop(), i);
+            }
+            int x = 0;
+            System.out.println("+++++++++++");
+            for (String key : indexes.keySet()) {
+                System.out.println(Arrays.toString(Utils.signedBytesToUnsigned(Hex.decodeHex(key))));
+                x++;
+                if (x > 3) {
+                    break;
+                }
+            }
+            System.out.println("+++++++++++");
+
+            List<Cell> result = new ArrayList<>();
+            for (String ent : sorted) {
+                System.out.println("flattenIndex-sorting");
+                Cell rrr = allCells.get(ent);
+                System.out.println("flattenIndex-rrr " + Arrays.toString(rrr.hash()) + ", refs " + rrr.refs.size());
+                rrr.index = indexes.get(Utils.bytesToHex(rrr.hash()));
+                System.out.println("flattenIndex-rrr-index " + rrr.index);
+                for (Cell ref : rrr.refs) {
+                    ref.index = indexes.get(Utils.bytesToHex(ref.hash()));
+                }
+                result.add(rrr);
+            }
+
+            return result;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void visit(String hash, Map<String, Cell> allCells, Map<String, Cell> notPermCells, Map<String, Boolean> tempMark, Deque<String> sorted) {
+        System.out.println("visit-hash " + hash);
+
+        if (!notPermCells.containsKey(hash)) {
+            System.out.println("flattenIndex-visit-return-1");
+            return;
+        }
+
+        if (tempMark.containsKey(hash)) {
+            System.out.println("Unknown branch, hash exists");
+            System.out.println("flattenIndex-visit-return-2");
+            return;
+        }
+
+        if (allCells.containsKey(hash)) {
+            System.out.println("EXISTS");
+        }
+
+        tempMark.put(hash, true);
+
+        for (Cell ref : allCells.get(hash).refs) {
+            System.out.println("flattenIndex-visit " + Arrays.toString(ref.hash()));
+            visit(Utils.bytesToHex(ref.hash()), allCells, notPermCells, tempMark, sorted);
+        }
+
+        sorted.addFirst(hash);
+        System.out.println("flattenIndex-sorted len=" + sorted.size());
+        tempMark.remove(hash);
+        notPermCells.remove(hash);
+    }
+
+    private List<Integer> serialize(int refIndexSzBytes) {
+        System.out.println("serialize-bitsSz " + this.bits.getLength());
+        int[] body = CellSlice.beginParse(this).loadSlice(this.bits.getLength());
+//        int[] body = CellSlice.beginParse(this).loadBytes(this.bits.getLength());
+        System.out.println("serialize-body " + Arrays.toString(body));
+        List<Integer> data = new ArrayList<>();
+        Pair<Integer, Integer> descriptors = getDescriptors(this.levelMask);
+        data.add(descriptors.getLeft());
+        data.add(descriptors.getRight());
+        System.out.println("data-0 " + data.get(0) + ", data-1 " + data.get(1));
+
+        data.addAll(Arrays.stream(body).boxed().toList());
+        System.out.println("serialize-data " + data);
+
+        int unusedBits = 8 - (bits.getLength() % 8);
+
+        System.out.println("serialize-unusedBits " + unusedBits);
+        if (unusedBits != 8) {
+            data.set(2 + body.length - 1, data.get(2 + body.length - 1) + (1 << (unusedBits - 1)));
+        }
+
+        for (Cell ref : refs) {
+            data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.valueOf(ref.index), refIndexSzBytes)).boxed().toList());
+        }
+
+        System.out.println("serialize-data-final " + data);
+
+        return data;
+    }
+
+    private Pair<Integer, Integer> getDescriptors(byte levelMask) {
+        int ln = (bits.getLength() / 8) * 2;
+        if (bits.getLength() % 8 != 0) {
+            ln++;
+        }
+
+        byte specialBit = 0;
+        if (this.special) {
+            specialBit = 8;
+        }
+
+        return Pair.of(this.refs.size() + specialBit + levelMask * 32, ln);
     }
 }
 

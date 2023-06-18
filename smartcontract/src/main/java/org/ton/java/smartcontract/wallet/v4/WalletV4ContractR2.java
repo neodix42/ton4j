@@ -113,7 +113,7 @@ public class WalletV4ContractR2 implements WalletContract {
         signingMessage.refs.add(params.body);
         ExternalMessage extMsg = createExternalMessage(signingMessage, params.secretKey, params.seqno, false);
 
-        tonlib.sendRawMessage(extMsg.message.toBocBase64(false));
+        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     public Cell createPluginStateInit() {
@@ -328,7 +328,7 @@ public class WalletV4ContractR2 implements WalletContract {
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -342,7 +342,7 @@ public class WalletV4ContractR2 implements WalletContract {
      */
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, byte[] body) {
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -357,7 +357,7 @@ public class WalletV4ContractR2 implements WalletContract {
      */
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, byte[] body, byte sendMode) {
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body, sendMode);
-        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -372,7 +372,7 @@ public class WalletV4ContractR2 implements WalletContract {
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, byte[] body) {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -387,7 +387,7 @@ public class WalletV4ContractR2 implements WalletContract {
      */
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, String comment) {
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -401,7 +401,7 @@ public class WalletV4ContractR2 implements WalletContract {
      */
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno) {
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -416,7 +416,7 @@ public class WalletV4ContractR2 implements WalletContract {
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, String comment) {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -432,6 +432,6 @@ public class WalletV4ContractR2 implements WalletContract {
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, byte[] body, byte sendMode) {
         long seqno = getSeqno(tonlib);
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body, sendMode);
-        return tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        return tonlib.sendRawMessage(msg.message.toBase64());
     }
 }

@@ -51,7 +51,7 @@ public class GenerateWallet {
             BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins));
             log.info("new wallet balance {}", Utils.formatNanoValue(balance));
             // deploy new wallet
-            tonlib.sendRawMessage(msg.message.toBocBase64(false));
+            tonlib.sendRawMessage(msg.message.toBase64());
             Utils.sleep(20);
         }
         return TestWallet.builder()

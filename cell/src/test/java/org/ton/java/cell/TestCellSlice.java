@@ -125,7 +125,7 @@ public class TestCellSlice {
         Cell c1 = CellBuilder.beginCell().endCell();
         CellSlice cs = CellSlice.beginParse(c1);
         assertThat(cs.refs.size()).isZero();
-        assertThat(cs.bits.length).isEqualTo(1023);
+        assertThat(cs.bits.getLength()).isEqualTo(0);
         assertThat(cs.bits.getUsedBits()).isZero();
         assertThat(cs.bits.getFreeBits()).isEqualTo(1023);
         assertThat(cs.bits.getUsedBytes()).isZero();

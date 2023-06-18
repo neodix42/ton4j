@@ -11,8 +11,6 @@ import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
-import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -22,15 +20,10 @@ import static org.ton.java.utils.Utils.formatNanoValue;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV1R3DeployTransferShort {
+public class TestWalletV1R3DeployTransferShort extends CommonTest {
 
     @Test
     public void testNewWalletV1R3() throws InterruptedException {
-
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 

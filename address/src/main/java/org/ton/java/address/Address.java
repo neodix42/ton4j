@@ -24,6 +24,8 @@ public class Address {
     public boolean isBounceable;
     public boolean isUrlSafe;
 
+    public AddressType addressType; // todo
+
     private Address() {
 
     }
@@ -100,21 +102,17 @@ public class Address {
         return new Address(address);
     }
 
-    public static Address of(byte tag, int wc, byte[] hashCrc) { // todo testing
-//        byte[] tagArray = ByteBuffer.allocate(1).put(tag).array();
-//        byte[] wcArray = ByteBuffer.allocate(1).put(wc).array();
-//        byte[] tagWc = Utils.concatBytes(tagArray, wcArray);
-//        Utils.concatBytes(tagWc, hashCrc);
+    public static Address of(byte flags, int wc, byte[] hashCrc) {
 
-        int tagI = tag & 0xff;
+        int flagsByte = flags & 0xff;
         boolean isTestOnly = false;
         boolean isBounceable;
 
-        if ((tagI & test_flag) != 0) {
+        if ((flagsByte & test_flag) != 0) {
             isTestOnly = true;
-            tagI = (byte) (tagI ^ test_flag);
+            flagsByte = (byte) (flagsByte ^ test_flag);
         }
-        if ((tagI != bounceable_tag) && (tagI != non_bounceable_tag)) {
+        if ((flagsByte != bounceable_tag) && (flagsByte != non_bounceable_tag)) {
             throw new Error("Unknown address tag");
         }
 
@@ -125,7 +123,7 @@ public class Address {
             workchain = (byte) wc;
         }
 
-        isBounceable = tagI == bounceable_tag;
+        isBounceable = flagsByte == bounceable_tag;
 
         Address addr = new Address();
         addr.wc = workchain;
@@ -261,6 +259,7 @@ public class Address {
         parsedAddress.hashPart = hashPart;
         parsedAddress.isTestOnly = isTestOnly;
         parsedAddress.isBounceable = isBounceable;
+        parsedAddress.addressType = AddressType.STD_ADDRESS;
 
         return parsedAddress;
     }

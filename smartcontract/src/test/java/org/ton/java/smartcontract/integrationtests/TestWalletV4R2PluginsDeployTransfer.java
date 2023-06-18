@@ -15,7 +15,6 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.java.smartcontract.wallet.v4.WalletV4ContractR2;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.utils.Utils;
@@ -29,7 +28,7 @@ import static org.ton.java.smartcontract.TestFaucet.FAUCET_ADDRESS_RAW;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV4R2PluginsDeployTransfer {
+public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
     @Test
     public void testPlugins() throws InterruptedException {
@@ -74,16 +73,11 @@ public class TestWalletV4R2PluginsDeployTransfer {
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
-        // top up new wallet using test-faucet-wallet
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .build();
-
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy wallet-v4
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        tonlib.sendRawMessage(msg.message.toBase64());
 
         //check if state of the new contract/wallet has changed from un-init to active
         FullAccountState state;

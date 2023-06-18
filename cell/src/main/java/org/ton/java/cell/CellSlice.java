@@ -298,6 +298,92 @@ public class CellSlice {
         return bitString.toUnsignedByteArray();
     }
 
+    public int[] loadSlice(int length) {
+        checkBitsOverflow(length);
+
+        int leftLength = length;
+        int unusedBits = 0;
+        System.out.println("slice-loaded " + bits.getFreeBits());
+        int l = bits.getFreeBits() % 8;
+        System.out.println("slice-l " + l);
+
+        if (l > 0 && bits.getLength() > 0) {
+            unusedBits = 8 - (l % 8);
+        }
+
+        System.out.println("slice-unusedBits " + unusedBits);
+
+        List<Integer> loadedData = new ArrayList<>();
+
+        int oneMoreLeft = 0, oneMoreRight = 0;
+
+        if (unusedBits > 0 && length > unusedBits) {
+            oneMoreLeft = 1;
+        }
+
+        if ((length - unusedBits) % 8 != 0 || (length - unusedBits) == 0) {
+            oneMoreRight = 1;
+        }
+
+        int ln = (length - unusedBits) / 8 + oneMoreLeft + oneMoreRight;
+        System.out.println("slice-ln " + ln);
+
+        int i = oneMoreLeft;
+
+        System.out.println("slice-leftSz " + leftLength);
+
+        while (leftLength > 0) {
+            int b = 0;
+            System.out.println("slice-b " + b);
+            if (oneMoreLeft > 0) {
+                System.out.println("slice-oneMoreLeft");
+                b = bits.toByteArray()[i - 1] << (8 - unusedBits); // (byte)
+                if (i < ln) {
+                    b += bits.toByteArray()[i] >> unusedBits;
+                }
+            } else {
+                b = bits.toByteArray()[i] & 0xFF;
+                System.out.println("slice-oneMoreRight, b = " + b);
+                if (unusedBits > 0) {
+                    b <<= (8 - unusedBits);
+                }
+            }
+
+            if (leftLength < 8) {
+//                b &= 0xFF << (8 - leftLength);
+                loadedData.add(b & 0xFF);
+                break;
+            }
+
+            if (i < ln) {
+                b &= 0xFF;
+                loadedData.add(b);
+            }
+
+            leftLength -= 8;
+            i++;
+        }
+
+        if (length > unusedBits) {
+            int usedBytes = (length - unusedBits) / 8;
+            if (unusedBits > 0) {
+                usedBytes++;
+            }
+//            System.out.println("slice-usedBytes " + usedBytes);
+//            for (int j = 0; j < usedBytes; j++) {
+//                loadedData.remove(0);
+//            }
+            //c.data = c.data[usedBytes:]
+        }
+
+        System.out.println("slice-data " + loadedData);
+
+        bits.readBits(length); // todo review
+
+        return loadedData.stream().mapToInt(Integer::intValue).toArray();
+
+    }
+
     public String loadString(int length) {
         checkBitsOverflow(length);
         BitString bitString = bits.readBits(length);

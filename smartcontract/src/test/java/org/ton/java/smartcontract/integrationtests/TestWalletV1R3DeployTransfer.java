@@ -27,7 +27,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV1R3DeployTransfer {
+public class TestWalletV1R3DeployTransfer extends CommonTest {
 
     @Test
     public void testNewWalletV1R3() throws InterruptedException {
@@ -61,12 +61,11 @@ public class TestWalletV1R3DeployTransfer {
         log.info(my);
 
         // top up new wallet using test-faucet-wallet
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        tonlib.sendRawMessage(msg.message.toBase64());
 
         Utils.sleep(25);
 
@@ -128,7 +127,7 @@ public class TestWalletV1R3DeployTransfer {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
-        tonlib.sendRawMessage(msg.message.toBocBase64(false));
+        tonlib.sendRawMessage(msg.message.toBase64());
 
         Utils.sleep(25);
 
@@ -170,10 +169,10 @@ public class TestWalletV1R3DeployTransfer {
 
         Tonlib tonlib = Tonlib.builder().testnet(true).build();
 
-        QueryFees feesWithCodeData = tonlib.estimateFees(msg.address.toString(), msg.message.toBocBase64(false), msg.code.toBocBase64(false), msg.data.toBocBase64(false), false);
+        QueryFees feesWithCodeData = tonlib.estimateFees(msg.address.toString(), msg.message.toBase64(), msg.code.toBase64(), msg.data.toBase64(), false);
         log.info("fees {}", feesWithCodeData);
         assertThat(feesWithCodeData).isNotNull();
-        QueryFees feesBodyOnly = tonlib.estimateFees(msg.address.toString(), msg.message.toBocBase64(false), null, null, false);
+        QueryFees feesBodyOnly = tonlib.estimateFees(msg.address.toString(), msg.message.toBase64(), null, null, false);
         log.info("fees {}", feesBodyOnly);
         assertThat(feesBodyOnly).isNotNull();
     }

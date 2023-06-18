@@ -13,7 +13,6 @@ import org.ton.java.smartcontract.payments.PaymentChannel;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -22,16 +21,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestPayments {
+public class TestPayments extends CommonTest {
     static TestWallet walletA;
     static TestWallet walletB;
 
     static Address walletAddressA;
     static Address walletAddressB;
-    static Tonlib tonlib = Tonlib.builder()
-//            .testnet(true)
-            .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
-            .build();
 
     @BeforeClass
     public static void setUpClass() throws InterruptedException {

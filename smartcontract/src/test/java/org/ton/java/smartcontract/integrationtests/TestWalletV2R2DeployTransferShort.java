@@ -11,7 +11,6 @@ import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v2.WalletV2ContractR2;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -20,15 +19,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV2R2DeployTransferShort {
+public class TestWalletV2R2DeployTransferShort extends CommonTest {
 
     @Test
     public void testWalletV2R2() throws InterruptedException {
-
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .build();
-
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder().publicKey(keyPair.getPublicKey()).wc(0L).build();

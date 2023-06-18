@@ -80,6 +80,11 @@ public class Utils {
         return result;
     }
 
+
+    public static int[] uintToBytes(int l) {
+        return new int[]{l};
+    }
+
     // CRC-16/XMODEM
     public static int getCRC16ChecksumAsInt(byte[] bytes) {
         int crc = 0x0000;
@@ -309,6 +314,54 @@ public class Utils {
         System.arraycopy(a, 0, c, 0, a.length);
         System.arraycopy(b, 0, c, a.length, b.length);
         return c;
+    }
+
+    public static int[] append(int[] dst, int[] with) {
+        System.arraycopy(with, 0, dst, dst.length, with.length);
+        return dst;
+    }
+
+
+    public static int[] copy(int[] dst, int destPos, int[] src, int srcPos) {
+        System.arraycopy(src, srcPos, dst, destPos, src.length);
+        return dst;
+    }
+
+    public static byte[] copy(byte[] dst, int destPos, byte[] src, int srcPos) {
+        System.arraycopy(src, srcPos, dst, destPos, src.length);
+        return dst;
+    }
+
+    public static int dynInt(byte[] data) {
+        byte[] tmp = new byte[8];
+        Utils.copy(tmp, 8 - data.length, data, 0);
+        //System.arraycopy(data, 0, tmp, 8 - data.length, data.length);
+        return new BigInteger(tmp).intValue();
+    }
+
+    public static int dynInt(int[] data) {
+        int[] tmp = new int[8];
+        Utils.copy(tmp, 8 - data.length, data, 0);
+        //System.arraycopy(data, 0, tmp, 8 - data.length, data.length);
+
+        return Integer.valueOf(Utils.bytesToHex(tmp), 16);
+    }
+
+    public static int[] dynamicIntBytes(BigInteger val, int sz) {
+        byte[] tmp = new byte[8];
+        byte[] valArray = val.toByteArray(); // test just return val.toByteArray()
+        Arrays.fill(tmp, 0, 8 - val.toByteArray().length, (byte) 0);
+        for (int i = 8 - valArray.length, j = 0; i < 8; i++, j++) {
+            tmp[i] = valArray[j];
+        }
+//        tmp = val.toByteArray();
+        byte[] result = new byte[sz];
+        System.arraycopy(tmp, 8 - sz, result, 0, sz);
+        return Utils.signedBytesToUnsigned(result);
+    }
+
+    public static int log2(int val) {
+        return (int) Math.ceil(Math.log(val) / Math.log(2));
     }
 
 //    public static int[] concatBytes(int[] a, long b) {
