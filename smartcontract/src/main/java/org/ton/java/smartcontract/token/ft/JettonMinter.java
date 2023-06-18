@@ -238,7 +238,7 @@ public class JettonMinter implements Contract {
                 (byte) 3, //send mode
                 this.createStateInit().stateInit);
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
     }
 
     public void mint(Tonlib tonlib, WalletContract adminWallet, Address destination, BigInteger walletMsgValue, BigInteger mintMsgValue, BigInteger jettonToMintAmount, TweetNaclFast.Signature.KeyPair keyPair) {
@@ -252,6 +252,6 @@ public class JettonMinter implements Contract {
                 seqno,
                 this.createMintBody(0, destination, mintMsgValue, jettonToMintAmount));
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
     }
 }

@@ -67,7 +67,7 @@ private void deployNftItem(Tonlib tonlib, WalletContract wallet, BigInteger inde
         nftItemContentUri)
     );
     
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 
@@ -125,7 +125,7 @@ private void transferNftItem(Tonlib tonlib, WalletContract wallet, BigInteger ms
         )
     );
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 
@@ -169,7 +169,7 @@ public void editNftCollectionContent(Tonlib tonlib, WalletContract wallet, BigIn
         )
     );
         
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 
@@ -189,7 +189,7 @@ public void changeNftCollectionOwner(Tonlib tonlib, WalletContract wallet, BigIn
             NftCollection.createChangeOwnerBody(0, newOwner)
     );
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 

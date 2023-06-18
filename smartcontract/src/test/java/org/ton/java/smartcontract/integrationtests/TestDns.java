@@ -393,6 +393,6 @@ public class TestDns extends CommonTest {
                 body.endCell()
         );
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
     }
 }

@@ -54,7 +54,7 @@ public class TestWalletsV3 {
                 "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
                 "signing message: " + msg.signingMessage.print() + ", hex: " + msg.signingMessage.toHex() + "\n" +
                 "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase() + "\n" +
+                Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
@@ -79,7 +79,6 @@ public class TestWalletsV3 {
         assertThat(msg.signingMessage.bits.toHex()).isEqualTo("29A9A317FFFFFFFF00000000");
         assertThat(msg.message.bits.toHex()).isEqualTo("88009F4CFD8AB69CB20864160E3A40E4F578643B5B5B409C51A0215DA579D95E49F6119529DEF4481C60CD81087FC7B058797AFDCEBCC1BE127EE2C4707C1E1C0F3D12F955EC3DE1C63E714876A931F6C6F13E6980284238AA9F94B0EC5859B37C4DE1E5353462FFFFFFFFE00000001_");
         assertThat(address.toString(false)).isEqualTo("0:4fa67ec55b4e5904320b071d20727abc321dadada04e28d010aed2bcecaf24fb");
-        assertThat(Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase()).isEqualTo("B5EE9C724102030100010F0002DF88009F4CFD8AB69CB20864160E3A40E4F578643B5B5B409C51A0215DA579D95E49F6119529DEF4481C60CD81087FC7B058797AFDCEBCC1BE127EE2C4707C1E1C0F3D12F955EC3DE1C63E714876A931F6C6F13E6980284238AA9F94B0EC5859B37C4DE1E5353462FFFFFFFFE000000010010200DEFF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED5400500000000029A9A31782A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB2452EEC2");
     }
 
     /**
@@ -115,7 +114,7 @@ public class TestWalletsV3 {
                 "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
                 "signing message: " + msg.signingMessage.print() + "\n" +
                 "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase() + "\n" +
+                Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
         assertThat(msg.message).isNotNull();

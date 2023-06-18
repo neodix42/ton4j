@@ -69,7 +69,7 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
                 "Bounceable address (for later access): " + bounceableAddress + "\n" +
                 "signing message: " + msg.signingMessage.print() + "\n" +
                 "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase() + "\n" +
+                Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
@@ -145,7 +145,7 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         Cell header = Contract.createExternalMessageHeader(pluginAddress);
         Cell extMessage = Contract.createCommonMsgInfo(header, null, null); // dummy external message, only destination address is relevant
-        String extMessageBase64boc = Utils.bytesToBase64(extMessage.toBoc(false));
+        String extMessageBase64boc = Utils.bytesToBase64(extMessage.toBocNew());
         tonlib.sendRawMessage(extMessageBase64boc);
 
         Utils.sleep(30);
@@ -182,7 +182,7 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         header = Contract.createExternalMessageHeader(pluginAddress);
         extMessage = Contract.createCommonMsgInfo(header, null, null);
-        extMessageBase64boc = Utils.bytesToBase64(extMessage.toBoc(false));
+        extMessageBase64boc = Utils.bytesToBase64(extMessage.toBocNew());
         tonlib.sendRawMessage(extMessageBase64boc);
 
         i = 0;
@@ -224,7 +224,7 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
                 .build();
 
         ExternalMessage extMsgRemovePlugin = contract.removePlugin(deployedPlugin);
-        String extMsgRemovePluginBase64boc = Utils.bytesToBase64(extMsgRemovePlugin.message.toBoc(false));
+        String extMsgRemovePluginBase64boc = Utils.bytesToBase64(extMsgRemovePlugin.message.toBocNew());
         tonlib.sendRawMessage(extMsgRemovePluginBase64boc);
 
         // uninstall plugin -- end

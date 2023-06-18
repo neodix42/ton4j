@@ -51,6 +51,6 @@ public class TestPfxHashMapE {
             log.info("key {}, value {}", entry.getKey(), entry.getValue());
         }
 
-        assertThat(Utils.bytesToHex(cell.toBoc(false))).isEqualTo(Utils.bytesToHex(cell.toBoc(false)));
+        assertThat(Utils.bytesToHex(cell.toBocNew())).isEqualTo(Utils.bytesToHex(cell.toBocNew()));
     }
 }

@@ -46,7 +46,7 @@ log.info("c4 {}", c4.bits);
 log.info("c5 {}", c5.bits);
 log.info("c5:\n{}", c5.print());
 
-byte[] serializedCell5 = c5.toBoc(false);
+byte[] serializedCell5 = c5.toBocNew();
 
 // output
 c1 8000002_
@@ -67,7 +67,7 @@ x{8004B1CA92C714D3015CBA78EC7055FA7E9E65C68905B5F86EA3C66B0B1391BC01A908A98989F_
 ## Deserialization
 
 ```java
-byte[] serializedCell5 = c5.toBoc(false);
+byte[] serializedCell5 = c5.toBocNew();
 Cell dc5 = Cell.fromBoc(serializedCell5);
 log.info("c5 deserialized:\n{}", dc5.print());
 

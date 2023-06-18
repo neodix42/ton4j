@@ -443,91 +443,6 @@ public class Cell {
     //  crc32c:has_crc32c?uint32
     // = BagOfCells;
 
-    /**
-     * Convert Cell to BoC
-     *
-     * @param hasIdx       boolean, default true
-     * @param hashCrc32    boolean, default true
-     * @param hasCacheBits boolean, default false
-     * @param flags        int, default 0
-     * @return byte[]
-     */
-    public int[] toBoc(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits, int flags) {
-
-        Cell rootCell = this.clone();
-
-        TreeWalkResult treeWalkResult = rootCell.treeWalk();
-
-        List<TopologicalOrderArray> topologicalOrder = treeWalkResult.topologicalOrderArray;
-
-        HashMap<String, Integer> cellsIndex = treeWalkResult.indexHashmap;
-
-        BigInteger cellsNum = BigInteger.valueOf(topologicalOrder.size());
-
-        // Minimal number of bits to represent reference (unused?)
-        int sizeBits = cellsNum.toString(2).length();
-        int sBytes = (int) Math.max(Math.ceil(sizeBits / (double) 8), 1);
-
-        BigInteger fullSize = BigInteger.ZERO;
-        ArrayList<BigInteger> sizeIndex = new ArrayList<>();
-
-        for (TopologicalOrderArray cell_info : topologicalOrder) {
-            sizeIndex.add(fullSize);
-            fullSize = fullSize.add(BigInteger.valueOf(cell_info.cell.bocSerializationSize(cellsIndex)));
-        }
-
-        int offsetBits = fullSize.toString(2).length();
-        byte offsetBytes = (byte) Math.max(Math.ceil(offsetBits / (double) 8), 1);
-
-        BitString serialization = new BitString((1023 + 32 * 4 + 32 * 3) * topologicalOrder.size());
-        serialization.writeBytes(reachBocMagicPrefix);
-        serialization.writeBitArray(new boolean[]{hasIdx, hashCrc32, hasCacheBits});
-        serialization.writeUint(BigInteger.valueOf(flags), 2);
-        serialization.writeUint(BigInteger.valueOf(sBytes), 3);
-        serialization.writeUint8(offsetBytes & 0xff);
-        serialization.writeUint(cellsNum, sBytes * 8);
-        serialization.writeUint(BigInteger.ONE, sBytes * 8); // One root for now
-        serialization.writeUint(BigInteger.ZERO, sBytes * 8); // Complete BOCs only
-        serialization.writeUint(fullSize, offsetBytes * 8);
-        serialization.writeUint(BigInteger.ZERO, sBytes * 8); // Root should have index 0
-
-        if (hasIdx) {
-            for (int i = 0; i < topologicalOrder.size(); i++) {
-                serialization.writeUint(sizeIndex.get(i), offsetBytes * 8);
-            }
-        }
-
-        for (TopologicalOrderArray cell_info : topologicalOrder) {
-            int[] refcell_ser = cell_info.cell.serializeForBoc(cellsIndex);
-            serialization.writeBytes(refcell_ser);
-        }
-
-        int[] ser_arr = serialization.getTopUppedArray();
-
-        if (hashCrc32) {
-            int[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(ser_arr);
-            ser_arr = Utils.concatBytes(ser_arr, crc32);
-        }
-
-        return ser_arr;
-    }
-
-
-    public int[] toBoc(boolean hasIdx, boolean hashCrc32, boolean hasCacheBits) {
-        return toBoc(hasIdx, hashCrc32, hasCacheBits, 0);
-    }
-
-    public int[] toBoc(boolean hasIdx, boolean hashCrc32) {
-        return toBoc(hasIdx, hashCrc32, false, 0);
-    }
-
-    public int[] toBoc(boolean hasIdx) {
-        return toBoc(hasIdx, true, false, 0);
-    }
-
-    public int[] toBoc() {
-        return toBoc(true, true, false, 0);
-    }
 
     public String toHex(boolean withCrc) {
         return Utils.bytesToHex(toBocNew(withCrc));
@@ -543,63 +458,6 @@ public class Cell {
 
     public String toBase64(boolean withCrc) {
         return Utils.bytesToBase64(toBocNew(withCrc));
-    }
-
-
-    /**
-     * @return TreeWalkResult - topologicalOrderArray and indexHashmap
-     */
-    TreeWalkResult treeWalk() {
-        return treeWalk(this, new ArrayList<>(), new HashMap<>(), null);
-    }
-
-    /**
-     * @param cell                  Cell
-     * @param topologicalOrderArray array of pairs: <byte[] cellHash, Cell Cell>
-     * @param indexHashmap          cellHash: <String cellHash, Integer cellIndex>
-     * @param parentHash            Uint8Array, default null, added neodiX
-     * @return TreeWalkResult, topologicalOrderArray and indexHashmap
-     */
-    TreeWalkResult treeWalk(Cell cell, List<TopologicalOrderArray> topologicalOrderArray, HashMap<String, Integer> indexHashmap, String parentHash) {
-        String cellHash = Utils.bytesToHex(cell.hash());
-        if (indexHashmap.containsKey(cellHash)) {
-            //if (cellHash in indexHashmap){ // Duplication cell
-            //it is possible that already seen cell is a child of more deep cell
-            if (nonNull(parentHash)) {
-                if (indexHashmap.get(parentHash) > indexHashmap.get(cellHash)) {
-                    moveToTheEnd(indexHashmap, topologicalOrderArray, cellHash);
-                }
-            }
-            return new TreeWalkResult(topologicalOrderArray, indexHashmap);
-        }
-        indexHashmap.put(cellHash, topologicalOrderArray.size());
-        topologicalOrderArray.add(new TopologicalOrderArray(cell.hash(), cell));
-
-        for (Cell subCell : cell.refs) {
-            TreeWalkResult res = treeWalk(subCell, topologicalOrderArray, indexHashmap, cellHash);
-            topologicalOrderArray = res.topologicalOrderArray;
-            indexHashmap = res.indexHashmap;
-        }
-
-        return new TreeWalkResult(topologicalOrderArray, indexHashmap);
-    }
-
-    void moveToTheEnd(HashMap<String, Integer> indexHashmap, List<TopologicalOrderArray> topologicalOrderArray, String target) {
-        int targetIndex = indexHashmap.get(target);
-        for (Map.Entry<String, Integer> h : indexHashmap.entrySet()) {
-            if (indexHashmap.get(h.getKey()) > targetIndex) {
-                indexHashmap.put(h.getKey(), indexHashmap.get(h.getKey()) - 1);
-            }
-        }
-        indexHashmap.put(target, topologicalOrderArray.size() - 1);
-
-        TopologicalOrderArray data = topologicalOrderArray.remove(targetIndex);
-
-        topologicalOrderArray.add(data);
-
-        for (Cell subCell : data.cell.refs) {
-            moveToTheEnd(indexHashmap, topologicalOrderArray, Utils.bytesToHex(subCell.hash()));
-        }
     }
 
     public int[] hash() {
@@ -623,11 +481,6 @@ public class Cell {
         int[] x = new int[0];
         x = Utils.concatBytes(x, reprArray);
         return x;
-    }
-
-
-    int isExplicitlyStoredHashes() {
-        return 0;
     }
 
     int[] getRefsDescriptor() {
@@ -681,32 +534,9 @@ public class Cell {
         return maxDepth;
     }
 
-    int[] serializeForBoc(HashMap<String, Integer> cellsIndex) {
-        int[] reprArray = new int[0];
-
-        reprArray = Utils.concatBytes(reprArray, getDataWithDescriptors());
-
-        if (isExplicitlyStoredHashes() != 0) {
-            throw new Error("Cell hashes explicit storing is not implemented");
-        }
-        for (Cell cell : refs) {
-            BigInteger refIndexInt = BigInteger.valueOf(cellsIndex.get(Utils.bytesToHex(cell.hash())));
-            String refIndexHex = refIndexInt.toString(16);
-            if (refIndexHex.length() % 2 != 0) {
-                refIndexHex = "0" + refIndexHex;
-            }
-            int[] reference = Utils.hexToUnsignedBytes(refIndexHex);
-            reprArray = Utils.concatBytes(reprArray, reference);
-        }
-        int[] x = new int[0];
-        x = Utils.concatBytes(x, reprArray);
-        return x;
+    public int[] toBocNew() {
+        return toBocNew(true);
     }
-
-    int bocSerializationSize(HashMap<String, Integer> cellsIndex) {
-        return (serializeForBoc(cellsIndex)).length;
-    }
-
 
     public int[] toBocNew(boolean withCRC) {
         // recursively go through cells, build hash index and store unique in slice

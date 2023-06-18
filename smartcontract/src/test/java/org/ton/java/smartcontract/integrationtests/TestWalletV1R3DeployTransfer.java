@@ -56,7 +56,7 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         my = my + "Bounceable address (for later access): " + bounceableAddress + "\n";
         my = my + "signing message: " + msg.signingMessage.print() + "\n";
         my = my + "External message for initialization is " + msg.message.print() + "\n";
-        my = my + Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase() + "\n";
+        my = my + Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n";
         my = my + "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
@@ -117,7 +117,7 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         my = my + "Bounceable address (for later access): " + bounceableAddress + "\n";
         my = my + "signing message: " + msg.signingMessage.print() + "\n";
         my = my + "External message for initialization is " + msg.message.print() + "\n";
-        my = my + Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase() + "\n";
+        my = my + Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n";
         my = my + "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 

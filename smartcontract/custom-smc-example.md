@@ -297,7 +297,7 @@ address.toString(true,true,false,true),
 address.toString(true,true,true,true),
 msg.signingMessage.print(),
 msg.message.print(),
-Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase());
+Utils.bytesToHex(msg.message.toBocNew()).toUpperCase());
 
 ```
 
@@ -305,7 +305,7 @@ Send some toincoins to non-bouncelable address above and then upload smart contr
 
 ```java
 Tonlib tonlib = Tonlib.builder().build();
-String base64boc = Utils.bytesToBase64(msg.message.toBoc(false));
+String base64boc = Utils.bytesToBase64(msg.message.toBocNew());
 log.info(base64boc);
 tonlib.sendRawMessage(base64boc);
 ```
@@ -340,7 +340,7 @@ Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507
 BigInteger amount = Utils.toNano(2); //2 Toncoins or 2bln nano-toncoins
 long seqNumber = 1;
 ExternalMessage extMsg = customContract.createTransferMessage(keyPair.getSecretKey(),destinationAddress,amount,seqNumber);
-String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBoc(false));
+String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBocNew());
 tonlib.sendRawMessage(base64bocExtMsg);  
 ```
 

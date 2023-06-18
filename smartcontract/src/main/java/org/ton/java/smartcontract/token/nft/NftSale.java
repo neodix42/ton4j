@@ -177,7 +177,7 @@ public class NftSale implements Contract {
                 body.endCell()
         );
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
     }
 
     public void cancel(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address saleAddress, long queryId, TweetNaclFast.Signature.KeyPair keyPair) {
@@ -192,6 +192,6 @@ public class NftSale implements Contract {
                 NftSale.createCancelBody(queryId)
         );
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
     }
 }

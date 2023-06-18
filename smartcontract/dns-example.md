@@ -64,7 +64,7 @@ private void deployDnsItem(Tonlib tonlib, WalletContract adminWallet, BigInteger
         body.endCell()
     );
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 
@@ -120,7 +120,7 @@ private void changeDnsRecord(TestWallet ownerWallet, DnsItem dnsItem, Address ne
         0)
     );
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 ```java
@@ -136,7 +136,7 @@ private void getStaticData(TestWallet ownerWallet, DnsItem dnsItem) {
         dnsItem.createStaticDataBody(661)
     );
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 
@@ -158,7 +158,7 @@ private void transferDnsItem(TestWallet ownerWallet, DnsItem dnsItem, String new
                     "gift".getBytes(),
                     ownerWallet.getWallet().getAddress()));
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 
@@ -181,7 +181,7 @@ private void releaseDnsItem(TestWallet ownerWallet, DnsItem dnsItem, BigInteger 
         payload.endCell()
     );
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/java/smartcontract) can be

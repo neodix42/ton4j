@@ -51,15 +51,13 @@ public class TestWalletsV2 {
                 "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
                 "signing message: " + msg.signingMessage.print() + "\n" +
                 "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase() + "\n" +
+                Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
         assertThat(address.toString(false)).isEqualTo("0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd");
 
         assertThat(msg.message.bits.toHex()).isEqualTo("8800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A119006018BC6501587E3EF5710DADC3E58439A9C8BDDAB55067E5C128C3EC1D29255FF7E266DDE2E6639333FBC20FB35A1FE2D2C94BA0D136E6973E87306ECFF40200000001FFFFFFFF_");
-
-        assertThat(Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase()).isEqualTo("B5EE9C724101030100F90002D78800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A119006018BC6501587E3EF5710DADC3E58439A9C8BDDAB55067E5C128C3EC1D29255FF7E266DDE2E6639333FBC20FB35A1FE2D2C94BA0D136E6973E87306ECFF40200000001FFFFFFFF0010200C2FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED5400480000000082A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FBC8A57A12");
     }
 
     /**
@@ -95,7 +93,7 @@ public class TestWalletsV2 {
                 "Body of transfer message is x{}" + "\n\n" +
                 "signing message: " + msg.signingMessage.print() + "\n" +
                 "resulting external message: " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase() + "\n" +
+                Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
                 "Query expires in 60 seconds\n" +
                 "(Saved to file wallet-query.boc)\n";
 

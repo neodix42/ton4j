@@ -42,7 +42,7 @@ String my = "\nCreating new advanced wallet V4 with plugins in workchain " + opt
         "Bounceable address (for later access): " + bounceableAddress + "\n" +
         "signing message: " + msg.signingMessage.print() + "\n" +
         "External message for initialization is " + msg.message.print() + "\n" +
-        Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase() + "\n" +
+        Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
         "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
 log.info(my);
 
@@ -55,7 +55,7 @@ BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAd
 log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
 // deploy wallet-v4
-tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc(false)));
+tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBocNew()));
 
 // list plugins
 log.info("pluginsList: {}", contract.getPluginsList(tonlib));
@@ -113,7 +113,7 @@ public class SubscriptionInfo {
 // dummy external message, only destination address is relevant
 Cell header = Contract.createExternalMessageHeader(pluginAddress);
 Cell extMessage = Contract.createCommonMsgInfo(header, null, null); 
-tonlib.sendRawMessage(Utils.bytesToBase64(extMessage.toBoc(false)));
+tonlib.sendRawMessage(Utils.bytesToBase64(extMessage.toBocNew()));
 ```
 
 
@@ -129,7 +129,7 @@ DeployedPlugin deployedPlugin = DeployedPlugin.builder()
         .build();
 
 ExternalMessage extMsgRemovePlugin = contract.removePlugin(deployedPlugin);
-String extMsgRemovePluginBase64boc = Utils.bytesToBase64(extMsgRemovePlugin.message.toBoc(false));
+String extMsgRemovePluginBase64boc = Utils.bytesToBase64(extMsgRemovePlugin.message.toBocNew());
 tonlib.sendRawMessage(extMsgRemovePluginBase64boc);
 ```
 Full integration test can be found [here](../smartcontract/src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV4R2PluginsDeployTransfer.java). 

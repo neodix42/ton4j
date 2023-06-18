@@ -51,7 +51,7 @@ public void mint(
         this.createMintBody(0, destination, mintMsgValue, jettonToMintAmount)
     );
     
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 
 // owner of adminWallet holds his jettons on jettonWallet
@@ -73,7 +73,7 @@ private void editMinterContent(WalletContract adminWallet, JettonMinter minter,
             seqno,
             minter.createEditContentBody(newUriContent, 0));
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 
@@ -91,7 +91,7 @@ private void changeMinterAdmin(WalletContract adminWallet, JettonMinter minter,
             seqno,
             minter.createChangeAdminBody(0, newAdmin));
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 
@@ -116,7 +116,7 @@ private void transfer(WalletContract admin, Address jettonWalletAddress, Address
                     "gift".getBytes() // forward payload
             ));
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 
@@ -139,7 +139,7 @@ private void burn(WalletContract admin, Address jettonWalletAddress, BigInteger 
                     responseAddress
             ));
 
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
 }
 ```
 

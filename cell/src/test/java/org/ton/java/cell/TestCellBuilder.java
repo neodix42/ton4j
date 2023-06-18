@@ -20,7 +20,7 @@ public class TestCellBuilder {
     public void testCellBuilderEmpty() {
         Cell c = CellBuilder.beginCell().endCell();
         assertThat(0).isEqualTo(c.bits.getUsedBits());
-        log.info(Utils.bytesToHex(c.toBoc(false)));
+        log.info(Utils.bytesToHex(c.toBocNew(false)));
     }
 
     @Test
@@ -147,7 +147,7 @@ public class TestCellBuilder {
 
         assertThat(c5.getUsedRefs()).isEqualTo(3);
 
-        int[] serializedCell5 = c5.toBoc(false);
+        int[] serializedCell5 = c5.toBocNew(false);
 
         Cell dc5 = Cell.fromBoc(serializedCell5);
         log.info("c5 deserialized:\n{}", dc5.print());

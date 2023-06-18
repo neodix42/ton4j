@@ -31,7 +31,7 @@ public class TestBocDeserealization {
 
         log.info(c1.print());
 
-        int[] rawBoc2 = c1.toBoc(false);
+        int[] rawBoc2 = c1.toBocNew(false);
         log.info("rawBoc2 {}, length {}", rawBoc2, rawBoc2.length);
         log.info("hex2: {}", Hex.encodeHexString(Utils.unsignedBytesToSigned(rawBoc2)));
         log.info(Utils.bytesToBase64(rawBoc2));

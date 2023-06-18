@@ -121,7 +121,7 @@ public class TestWalletV2Highload extends CommonTest {
     }
 
     @Test
-    public void testWalletV2HighloadSendTo84() throws InterruptedException {
+    public void testWalletV2HighloadSendTo200() throws InterruptedException {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
@@ -143,7 +143,7 @@ public class TestWalletV2Highload extends CommonTest {
         log.info("    bounceable address {}", bounceableAddress);
 
         // top up new wallet using test-faucet-wallet
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(15));
         Utils.sleep(20, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
@@ -152,7 +152,7 @@ public class TestWalletV2Highload extends CommonTest {
         Utils.sleep(45, "deploying");
 
         // Sends to up to 84 destinations
-        List<Destination> destinations = generateTargetsWithSameAmountAndSendMode(84, keyPair.getPublicKey());
+        List<Destination> destinations = generateTargetsWithSameAmountAndSendMode(200, keyPair.getPublicKey());
 
         HighloadConfig highloadConfig = HighloadConfig.builder()
                 .queryId(BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32)))

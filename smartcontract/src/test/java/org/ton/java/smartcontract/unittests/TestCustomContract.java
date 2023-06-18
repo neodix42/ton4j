@@ -34,13 +34,13 @@ public class TestCustomContract {
         Address address = msg.address;
 
         log.info("Creating new wallet in workchain {}\nStateInit: {}\nnew wallet address = {}\n(Saving address to file new-wallet.addr)\nNon-bounceable address (for init): {}\nBounceable address (for later access): {}\nsigning message: {}\nExternal message for initialization is {}\n{}\n(Saved wallet creating query to file new-wallet-query.boc)\n"
-                , options.wc, msg.stateInit.print(), address.toString(false), address.toString(true, true, false, true), address.toString(true, true, true, true), msg.signingMessage.print(), msg.message.print(), Utils.bytesToHex(msg.message.toBoc(false)).toUpperCase());
+                , options.wc, msg.stateInit.print(), address.toString(false), address.toString(true, true, false, true), address.toString(true, true, true, true), msg.signingMessage.print(), msg.message.print(), Utils.bytesToHex(msg.message.toBocNew()).toUpperCase());
 
         // put a breakpoint and send toincoins to non-bouncelable wallet address, only then deploy smart contract using Tonlib
 
 /* proceed manually
         Tonlib tonlib = Tonlib.builder().build();
-        String base64boc = Utils.bytesToBase64(msg.message.toBoc(false));
+        String base64boc = Utils.bytesToBase64(msg.message.toBocNew());
         log.info(base64boc);
         ExtMessageInfo resultRawMsg = tonlib.sendRawMessage(base64boc); // deploy
         log.info("body_hash {}, error {}", resultRawMsg.getBody_hash(), resultRawMsg.getError().getCode());
@@ -66,7 +66,7 @@ public class TestCustomContract {
         BigInteger amount = Utils.toNano(2); //2 Toncoins or 2bln nano-toncoins
         long seqNumber = 1;
         ExternalMessage extMsg = customContract.createTransferMessage(keyPair.getSecretKey(), destinationAddress, amount, seqNumber);
-        String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBoc(false));
+        String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBocNew());
         tonlib.sendRawMessage(base64bocExtMsg);
  */
     }

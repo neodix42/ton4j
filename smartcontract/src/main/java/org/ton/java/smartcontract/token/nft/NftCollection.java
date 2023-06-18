@@ -292,6 +292,6 @@ public class NftCollection implements Contract {
                 this.createStateInit().stateInit
         );
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc(false)));
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
     }
 }
