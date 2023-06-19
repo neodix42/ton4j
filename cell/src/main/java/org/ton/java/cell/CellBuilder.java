@@ -166,6 +166,12 @@ public class CellBuilder extends Cell {
         return this;
     }
 
+    public CellBuilder storeBytes(byte[] number, int bitLength) {
+        checkBitsOverflow(bitLength);
+        bits.writeBytes(number);
+        return this;
+    }
+
     public CellBuilder storeRef(Cell c) {
         checkRefsOverflow(1);
         refs.add(c);
