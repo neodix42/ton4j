@@ -1,5 +1,6 @@
 package org.ton.java.address;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.assertThrows;
 
+@Slf4j
 @RunWith(JUnit4.class)
 public class TestAddress {
 
@@ -103,7 +105,6 @@ public class TestAddress {
 
         b = Address.of(TEST_ADDRESS_1);
         assertThat(a).isNotEqualTo(b);
-
     }
 
     /**
@@ -111,20 +112,19 @@ public class TestAddress {
      */
     @Test
     public void testSaveAddress() throws IOException {
-
         // wc 0
         Address address01 = Address.of(TEST_ADDRESS_0);
-        System.out.println("full address " + address01.toString(false));
-        System.out.println("bounceable address " + address01.toString(true, true, true));
-        System.out.println("non-bounceable address " + address01.toString(true, true, false));
+        log.info("full address " + address01.toString(false));
+        log.info("bounceable address {}", address01.toString(true, true, true));
+        log.info("non-bounceable address {}", address01.toString(true, true, false));
 
         address01.saveToFile("test0.addr");
 
         // wc -1
         Address address02 = Address.of(TEST_ADDRESS_5);
-        System.out.println("full address " + address02.toString(false));
-        System.out.println("bounceable address " + address02.toString(true, true, true, true));
-        System.out.println("non-bounceable address " + address02.toString(true, true, false, true));
+        log.info("full address {} ", address02.toString(false));
+        log.info("bounceable address {}", address02.toString(true, true, true, true));
+        log.info("non-bounceable address {}", address02.toString(true, true, false, true));
 
         address02.saveToFile("test1.addr");
     }

@@ -127,13 +127,6 @@ public class CellSlice {
     public TonHashMap loadDict(int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
         TonHashMap x = new TonHashMap(n);
         x.deserialize(this, keyParser, valueParser);
-        /*
-        Cell c = this.sliceToCell();
-        x.loadHashMapX2Y(c, keyParser, valueParser);
-
-        bits = c.bits;
-        refs = c.refs;
-        */
         // move readRefCursor
         if (refs.size() != 0) {
             refs.remove(0);
@@ -141,9 +134,6 @@ public class CellSlice {
         if (refs.size() != 0) {
             refs.remove(0);
         }
-//        for (int i = 0; i < this.bits.readref; i++) {
-//            refs.remove(0);
-//        }
 
         return x;
     }
@@ -207,10 +197,6 @@ public class CellSlice {
             TonHashMap x = new TonHashMap(n);
             CellSlice cs = this.clone();
             cs.skipBit();
-//            Cell c = this.sliceToCell();
-//            c.loadBit();
-//            Cell dict = c.readRef();
-//            skipBit();
             x.deserialize(CellSlice.beginParse(cs.loadRef()), keyParser, valueParser);
             return x;
         }
@@ -230,7 +216,7 @@ public class CellSlice {
     }
 
     /**
-     * TODO - skip without traversing the actual hashmap
+     * TODO - implement skip without traversing the actual hashmap
      */
     public CellSlice skipDict(int dictKeySize) {
         loadDict(dictKeySize,
@@ -261,7 +247,6 @@ public class CellSlice {
     }
 
     public int getRestBits() {
-//        return bits.writeCursor - bits.readCursor;
         return bits.getUsedBits();
     }
 
@@ -303,15 +288,11 @@ public class CellSlice {
 
         int leftLength = length;
         int unusedBits = 0;
-        System.out.println("slice-loaded " + bits.getFreeBits());
         int l = bits.getFreeBits() % 8;
-        System.out.println("slice-l " + l);
 
         if (l > 0 && bits.getLength() > 0) {
             unusedBits = 8 - (l % 8);
         }
-
-        System.out.println("slice-unusedBits " + unusedBits);
 
         List<Integer> loadedData = new ArrayList<>();
 
@@ -326,31 +307,24 @@ public class CellSlice {
         }
 
         int ln = (length - unusedBits) / 8 + oneMoreLeft + oneMoreRight;
-        System.out.println("slice-ln " + ln);
 
         int i = oneMoreLeft;
 
-        System.out.println("slice-leftSz " + leftLength);
-
         while (leftLength > 0) {
             int b = 0;
-            System.out.println("slice-b " + b);
             if (oneMoreLeft > 0) {
-                System.out.println("slice-oneMoreLeft");
                 b = bits.toByteArray()[i - 1] << (8 - unusedBits); // (byte)
                 if (i < ln) {
                     b += bits.toByteArray()[i] >> unusedBits;
                 }
             } else {
                 b = bits.toByteArray()[i] & 0xFF;
-                System.out.println("slice-oneMoreRight, b = " + b);
                 if (unusedBits > 0) {
                     b <<= (8 - unusedBits);
                 }
             }
 
             if (leftLength < 8) {
-//                b &= 0xFF << (8 - leftLength);
                 loadedData.add(b & 0xFF);
                 break;
             }
@@ -369,19 +343,11 @@ public class CellSlice {
             if (unusedBits > 0) {
                 usedBytes++;
             }
-//            System.out.println("slice-usedBytes " + usedBytes);
-//            for (int j = 0; j < usedBytes; j++) {
-//                loadedData.remove(0);
-//            }
-            //c.data = c.data[usedBytes:]
         }
 
-        System.out.println("slice-data " + loadedData);
-
-        bits.readBits(length); // todo review
+        bits.readBits(length);
 
         return loadedData.stream().mapToInt(Integer::intValue).toArray();
-
     }
 
     public String loadString(int length) {
