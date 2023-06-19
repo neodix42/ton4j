@@ -565,6 +565,24 @@ public class BitString {
         return result;
     }
 
+    public int[] toUintArray() {
+        if (array.size() == 0) {
+            return new int[0];
+        }
+        String bin = getBitString();
+        int[] result = new int[(int) Math.ceil(bin.length() / (double) 8)];
+
+        for (int i = 0; i < bin.length(); i++) {
+            if (bin.charAt(i) == '1') {
+                result[(i / 8)] |= 1 << (7 - (i % 8));
+            } else {
+                result[(i / 8)] &= ~(1 << (7 - (i % 8)));
+            }
+        }
+
+        return result;
+    }
+
     public boolean[] toBooleanArray() {
         String bin = getBitString();
         boolean[] result = new boolean[bin.length()];

@@ -6,8 +6,12 @@ import org.ton.java.bitstring.BitString;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static java.util.Objects.nonNull;
 
 public class CellSlice {
 
@@ -354,6 +358,38 @@ public class CellSlice {
         checkBitsOverflow(length);
         BitString bitString = bits.readBits(length);
         return new String(bitString.toByteArray());
+    }
+
+    /**
+     * Loads the very long string data,  from the rest of the cell and nested refs
+     *
+     * @return String
+     */
+    public String loadSnakeString() {
+        List<Integer> result = new ArrayList<>();
+        checkBitsOverflow(bits.getLength()); // bitsLeft
+        CellSlice ref = this.clone();
+
+        while (nonNull(ref)) {
+            try {
+                BitString bitString = ref.loadBits(ref.bits.getLength());
+                result.addAll(Arrays.stream(bitString.toUintArray()).boxed().toList());
+
+                if (ref.refs.size() > 1) {
+                    throw new Error("more than one ref, it is not snake string");
+                }
+
+                if (ref.refs.size() == 1) {
+                    ref = CellSlice.beginParse(ref.loadRef());
+                    continue;
+                }
+            } catch (Throwable e) {
+                return null;
+            }
+            ref = null;
+        }
+
+        return result.stream().map(m -> new String(new byte[]{m.byteValue()})).collect(Collectors.joining());
     }
 
     public BitString loadBits(int length) {

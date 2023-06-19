@@ -2,6 +2,7 @@ package org.ton.java.cell;
 
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -114,6 +115,31 @@ public class CellBuilder extends Cell {
         return this;
     }
 
+    public CellBuilder storeSnakeString(String str) {
+        byte[] strBytes = str.getBytes();
+        Cell c = f(127 - 4, strBytes);
+        return this.storeSlice(CellSlice.beginParse(c));
+    }
+
+    private Cell f(int space, byte[] data) {
+        if (data.length < space) {
+            space = data.length;
+        }
+        BitString bs = new BitString(Utils.signedBytesToUnsigned(data), space * 8);
+        CellBuilder c = CellBuilder.beginCell().storeBitString(bs);
+
+        byte[] tmp = new byte[data.length - space];
+        System.arraycopy(data, space, tmp, 0, data.length - space);
+
+
+        if (tmp.length > 0) {
+            Cell ref = f(127, tmp);
+            c.storeRef(ref);
+        }
+
+        return c.endCell();
+    }
+
     public CellBuilder storeAddress(Address address) {
         checkBitsOverflow(267);
         bits.writeAddress(address);
@@ -139,13 +165,6 @@ public class CellBuilder extends Cell {
         }
         return this;
     }
-
-    public CellBuilder storeBytes(byte[] number, int bitLength) {
-        checkBitsOverflow(bitLength);
-        bits.writeBytes(number);
-        return this;
-    }
-
 
     public CellBuilder storeRef(Cell c) {
         checkRefsOverflow(1);

@@ -144,6 +144,34 @@ public class TestCellSlice {
     }
 
     @Test
+    public void testCellSliceSnakeString() {
+        String result = "123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789";
+        Cell c1 = CellBuilder.beginCell()
+                .storeUint(10, 32)
+                .storeSnakeString(result).endCell();
+        CellSlice cs = CellSlice.beginParse(c1);
+        BigInteger i = cs.loadUint(32);
+        String s = cs.loadSnakeString();
+
+        log.info("i {}, s {}", i, s);
+
+        assertThat(s).isEqualTo(result);
+    }
+
+    @Test
+    public void testCellSliceSnakeString2() {
+        String result = "123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789";
+        Cell c1 = CellBuilder.beginCell()
+                .storeSnakeString(result).endCell();
+        CellSlice cs = CellSlice.beginParse(c1);
+        String s = cs.loadSnakeString();
+
+        log.info("s {}", s);
+
+        assertThat(s).isEqualTo(result);
+    }
+
+    @Test
     public void testCellSliceSkipBitsOverflow() {
         Cell c1 = CellBuilder.beginCell().storeBits(List.of(false, false, true, true)).endCell();
 

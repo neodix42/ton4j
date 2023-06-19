@@ -736,7 +736,7 @@ public class Tlb {
         throw new Error("Unknown TLB type: " + c.getSimpleName());
     }
 
-    public static BlkPrevInfo loadBlkPrevInfo(CellSlice cs, boolean afterMerge) {
+    private static BlkPrevInfo loadBlkPrevInfo(CellSlice cs, boolean afterMerge) {
         BlkPrevInfo blkPrevInfo = BlkPrevInfo.builder().build();
         if (!afterMerge) {
             ExtBlkRef blkRef = (ExtBlkRef) Tlb.load(ExtBlkRef.class, cs);
