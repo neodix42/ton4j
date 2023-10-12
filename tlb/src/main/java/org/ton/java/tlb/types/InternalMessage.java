@@ -11,26 +11,44 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
 @Setter
 @ToString
+/**
+ * int_msg_info$0
+ *   ihr_disabled:Bool
+ *   bounce:Bool
+ *   bounced:Bool
+ *   src:MsgAddressInt
+ *   dest:MsgAddressInt
+ *   value:CurrencyCollection
+ *   ihr_fee:Grams
+ *   fwd_fee:Grams
+ *   created_lt:uint64
+ *   created_at:uint32
+ */
 public class InternalMessage {
-    long magic;         // `tlb:"$0"` int_msg_info$0
-    boolean iHRDisabled;// `tlb:"bool"`
-    boolean bounce;     // `tlb:"bool"`
-    boolean bounced;    // `tlb:"bool"`
-    Address srcAddr;    // `tlb:"addr"`
-    Address dstAddr;    // `tlb:"addr"`
-    CurrencyCollection value; // `tlb:"."  -  uint 16, dict:(HashmapE 32)
-    BigInteger iHRFee;  // `tlb:"."`
-    BigInteger fwdFee;  // `tlb:"."`
-    BigInteger createdLt;//`tlb:"## 64"`
-    Long createdAt;     // `tlb:"## 32"`
-    StateInit stateInit;// `tlb:"maybe either . ^"`
-    Cell body;          // `tlb:"either . ^"`
+    long magic;
+    boolean iHRDisabled;
+    boolean bounce;
+    boolean bounced;
+    MsgAddress srcAddr;
+    MsgAddress dstAddr;
+    CurrencyCollection value;
+    BigInteger iHRFee;
+    BigInteger fwdFee;
+    BigInteger createdLt;
+    Long createdAt;
+    StateInit stateInit;
+    Cell body;
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell()
@@ -38,8 +56,8 @@ public class InternalMessage {
                 .storeBit(iHRDisabled)
                 .storeBit(bounce)
                 .storeBit(bounced)
-                .storeAddress(srcAddr)
-                .storeAddress(dstAddr)
+                .storeAddress(isNull(dstAddr) ? null : Address.of((byte) 0x11, srcAddr.getMsgAddressInt().getWorkchainId(), srcAddr.getMsgAddressInt().address.toByteArray()))
+                .storeAddress(isNull(dstAddr) ? null : Address.of((byte) 0x11, dstAddr.getMsgAddressInt().getWorkchainId(), dstAddr.getMsgAddressInt().address.toByteArray()))
                 .storeCoins(value.getCoins())
                 .storeDict(nonNull(value.getExtraCurrencies()) ? value.getExtraCurrencies().serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,

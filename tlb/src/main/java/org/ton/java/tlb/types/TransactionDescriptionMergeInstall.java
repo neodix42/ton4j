@@ -19,4 +19,8 @@ public class TransactionDescriptionMergeInstall {
     ActionPhase actionPhase;    //          `tlb:"maybe ^"`
     boolean aborted;            //          `tlb:"bool"`
     boolean destroyed;          //          `tlb:"bool"`
+
+    private String getMagic() {
+        return Long.toBinaryString(magic);
+    }
 }

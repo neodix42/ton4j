@@ -17,4 +17,8 @@ public class ValidatorSet {
     int total;      // uint16           `tlb:"## 16"`
     int main;       // uint6            `tlb:"## 16"`
     TonHashMap list;//                  `tlb:"dict 16"`
+
+    private String getMagic() {
+        return Long.toBinaryString(magic);
+    }
 }

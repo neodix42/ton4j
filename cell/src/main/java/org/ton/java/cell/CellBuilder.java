@@ -105,7 +105,11 @@ public class CellBuilder extends Cell {
     public CellBuilder storeBitString(BitString bitString) {
         checkBitsOverflow(bitString.getUsedBits());
         bits.writeBitString(bitString);
-//        bits.writeBitStringFromRead(bitString);
+        return this;
+    }
+
+    public CellBuilder storeBitStringUnsafe(BitString bitString) {
+        bits.writeBitString(bitString);
         return this;
     }
 

@@ -20,4 +20,8 @@ public class ComputePhaseVM {
 
     ComputePhaseVMDetails details; // `tlb:"^"`
 
+    private String getMagic() {
+        return Integer.toHexString(magic);
+    }
+
 }

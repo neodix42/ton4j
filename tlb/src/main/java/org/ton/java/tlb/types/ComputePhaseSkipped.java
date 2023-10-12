@@ -12,4 +12,8 @@ import lombok.ToString;
 public class ComputePhaseSkipped {
     int magic;     // `tlb:"$0"`
     ComputeSkipReason reason; // `tlb:"."`
+
+    private String getMagic() {
+        return Integer.toHexString(magic);
+    }
 }

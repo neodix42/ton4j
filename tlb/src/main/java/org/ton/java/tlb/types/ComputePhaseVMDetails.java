@@ -19,6 +19,14 @@ public class ComputePhaseVMDetails {
     long exitCode; //         int32    `tlb:"## 32"`
     long exitArg; //          *int32   `tlb:"maybe ## 32"`
     long vMSteps; //          uint32   `tlb:"## 32"`
-    int[] vMInitStateHash; //  []byte   `tlb:"bits 256"`
-    int[] vMFinalStateHash; // []byte   `tlb:"bits 256"`
+    BigInteger vMInitStateHash; //  []byte   `tlb:"bits 256"`
+    BigInteger vMFinalStateHash; // []byte   `tlb:"bits 256"`
+
+    private String getVMInitStateHash() {
+        return vMInitStateHash.toString(16);
+    }
+
+    private String getVMFinalStateHash() {
+        return vMFinalStateHash.toString(16);
+    }
 }

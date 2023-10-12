@@ -12,4 +12,8 @@ import lombok.ToString;
 public class TransactionDescriptionStorage {
     int magic; //        `tlb:"$0001"`
     StoragePhase storagePhase; // `tlb:"."`
+
+    private String getMagic() {
+        return Long.toBinaryString(magic);
+    }
 }

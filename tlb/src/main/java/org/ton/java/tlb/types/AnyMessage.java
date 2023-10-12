@@ -15,4 +15,6 @@ public class AnyMessage {
     Cell payload;       // *cell.Cell
     Address senderAddr; // address.Address
     Address destAddr;   // address.Address
+
+    // todo implement get src/dst address by msgType
 }

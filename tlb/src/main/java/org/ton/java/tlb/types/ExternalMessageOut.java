@@ -11,26 +11,38 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
 @Setter
 @ToString
+/**
+ * ext_out_msg_info$11
+ *   src:MsgAddressInt
+ *   dest:MsgAddressExt
+ *   created_lt:uint64
+ *   created_at:uint32
+ */
 public class ExternalMessageOut {
-    long magic;             // `tlb:"$11"` ext_out_msg_info$11
-    Address srcAddr;        // `tlb:"addr"`
-    Address dstAddr;        // `tlb:"addr"`
-    BigInteger createdLt;   // `tlb:"## 64"`
-    Long createdAt;         // `tlb:"## 32"`
+    long magic;
+    MsgAddress srcAddr;
+    MsgAddress dstAddr;
+    BigInteger createdLt;
+    Long createdAt;
     StateInit stateInit;    // `tlb:"maybe either . ^"`
     Cell body;              // `tlb:"either . ^"`
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell()
                 .storeUint(3, 2)
-                .storeAddress(srcAddr)
-                .storeAddress(dstAddr)
+                .storeAddress(isNull(srcAddr) ? null : Address.of((byte) 0x11, srcAddr.getMsgAddressInt().getWorkchainId(), srcAddr.getMsgAddressInt().address.toByteArray()))
+                .storeAddress(isNull(dstAddr) ? null : Address.of((byte) 0x51, 0, dstAddr.getMsgAddressExt().externalAddress.toByteArray())) // todo review flag
                 .storeUint(createdLt, 64)
                 .storeUint(createdAt, 32)
                 .storeBit(nonNull(stateInit)); //maybe

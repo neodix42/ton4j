@@ -13,6 +13,6 @@ import java.math.BigInteger;
 @ToString
 public class TransactionShortInfo {
     BigInteger lt;
-    byte[] hash;
-    byte[] accountId;
+    BigInteger hash;
+    BigInteger accountId;
 }

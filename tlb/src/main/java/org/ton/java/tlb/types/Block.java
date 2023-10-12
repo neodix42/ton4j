@@ -4,26 +4,28 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.cell.Cell;
-
-import java.math.BigInteger;
-import java.util.List;
-
-import static java.util.Objects.isNull;
 
 @Builder
 @Getter
 @Setter
 @ToString
+/**
+ * block#11ef55aa
+ *   global_id:int32
+ *   info:^BlockInfo
+ *   value_flow:^ValueFlow
+ *   state_update:^(MERKLE_UPDATE ShardState)
+ *   extra:^BlockExtra = Block;
+ */
 public class Block {
-    long magic;               // `tlb:"#11ef55aa"`
-    int globalId;            // `tlb:"## 32"`
-    BlockHeader blockInfo;   // `tlb:"^"`
-    Cell valueFlow;          // `tlb:"^"`
-    StateUpdate stateUpdate; // `tlb:"^"`
-    BlockExtra extra;      // `tlb:"^"`
-
+    long magic;
+    int globalId;
+    BlockInfo blockInfo;
+    Cell valueFlow; // todo parse ValueFlow
+    StateUpdate stateUpdate;
+    BlockExtra extra;
+/*
     public List<BlockIdExt> getParentBlocks() {
         Pair<Long, Long> wcShard = convertShardIdentToShard(blockInfo.getBlockInfoPart().getShard());
         if (!blockInfo.getBlockInfoPart().isAfterMerge() && !blockInfo.getBlockInfoPart().isAfterSplit()) {
@@ -92,4 +94,5 @@ public class Block {
     private Long bitsNegate64(Long x) {
         return ~x + 1;
     }
+    */
 }

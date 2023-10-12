@@ -14,4 +14,8 @@ public class TransactionDescriptionSplitInstall {
     SplitMergeInfo splitInfo; // `tlb:"."`
     Transaction prepareTransaction; //   `tlb:"^"`
     boolean installed; //           `tlb:"bool"`
+
+    private String getMagic() {
+        return Long.toBinaryString(magic);
+    }
 }

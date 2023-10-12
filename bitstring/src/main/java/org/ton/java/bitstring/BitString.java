@@ -368,6 +368,19 @@ public class BitString {
     }
 
     /**
+     * Read rest of bits from the BitString
+     *
+     * @return BitString with length of read bits from original Bitstring
+     */
+    public BitString readBits() {
+        BitString result = new BitString(array.size());
+        for (int i = 0; i < array.size(); i++) {
+            result.writeBit(readBit());
+        }
+        return result;
+    }
+
+    /**
      * Read bits of bitLength without moving readCursor, i.e. modifying BitString
      *
      * @param bitLength length in bits

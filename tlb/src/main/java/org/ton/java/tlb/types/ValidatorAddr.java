@@ -15,5 +15,13 @@ public class ValidatorAddr {
     long magic;             //Magic            `tlb:"#73"`
     SigPubKeyED25519 publicKey;//SigPubKeyED25519 `tlb:"."`
     BigInteger weight;      //uint64           `tlb:"## 64"`
-    byte[] adnlAddr;        //[]byte           `tlb:"bits 256"`
+    BigInteger adnlAddr;        //[]byte           `tlb:"bits 256"`
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
+
+    private String getAdnlAddr() {
+        return adnlAddr.toString(16);
+    }
 }

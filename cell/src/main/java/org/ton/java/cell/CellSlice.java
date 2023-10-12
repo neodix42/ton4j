@@ -279,11 +279,21 @@ public class CellSlice {
 
     /**
      * @param length in bits
-     * @return byte array
+     * @return unsigned byte array
      */
     public int[] loadBytes(int length) {
         checkBitsOverflow(length);
         BitString bitString = bits.readBits(length);
+        return bitString.toUnsignedByteArray();
+    }
+
+    /**
+     * load rest of bytes
+     *
+     * @return unsigned byte array
+     */
+    public int[] loadBytes() {
+        BitString bitString = bits.readBits();
         return bitString.toUnsignedByteArray();
     }
 
@@ -496,7 +506,7 @@ public class CellSlice {
 
     void checkRefsOverflow() {
         if (refs.isEmpty()) {
-            throw new Error("Refs overflow.");
+            throw new Error("Refs overflow. No more refs.");
         }
     }
 

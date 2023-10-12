@@ -11,6 +11,7 @@ import org.ton.java.cell.Cell;
 @Setter
 @ToString
 public class StateUpdate {
-    ShardState oldOne;
-    Cell newOne;
+    //    ShardState oldOne;
+    Cell oldOne;
+    Cell newOne; // todo ShardState?
 }

@@ -17,8 +17,8 @@ public class ShardDesc {
     long RegMcSeqno;//         uint32 `tlb:"## 32"`
     BigInteger startLT;         //   uint64 `tlb:"## 64"`
     BigInteger endLT;          //   uint64 `tlb:"## 64"`
-    byte[] rootHash;       //   []byte `tlb:"bits 256"`
-    byte[] fileHash;        //   []byte `tlb:"bits 256"`
+    BigInteger rootHash;       //   []byte `tlb:"bits 256"`
+    BigInteger fileHash;        //   []byte `tlb:"bits 256"`
     boolean beforeSplit;    //   bool   `tlb:"bool"`
     boolean beforeMerge;   //   bool   `tlb:"bool"`
     boolean wantSplit;     //   bool   `tlb:"bool"`
@@ -29,4 +29,16 @@ public class ShardDesc {
     BigInteger nextValidatorShard;// int64  `tlb:"## 64"`
     long minRefMcSeqNo;    // uint32 `tlb:"## 32"`
     long genUTime;          // uint32 `tlb:"## 32"`
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
+
+    private String getRootHash() {
+        return rootHash.toString(16);
+    }
+
+    private String getFileHash() {
+        return fileHash.toString(16);
+    }
 }

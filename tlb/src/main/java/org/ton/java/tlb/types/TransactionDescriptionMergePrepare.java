@@ -14,4 +14,8 @@ public class TransactionDescriptionMergePrepare {
     SplitMergeInfo splitInfo; // `tlb:"."`
     StoragePhase storagePhase; //   `tlb:"."`
     boolean aborted; //           `tlb:"bool"`
+
+    private String getMagic() {
+        return Long.toBinaryString(magic);
+    }
 }

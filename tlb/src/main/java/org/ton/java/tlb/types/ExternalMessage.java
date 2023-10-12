@@ -11,25 +11,36 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
 @Setter
 @ToString
+/**
+ * ext_in_msg_info$10
+ *   src:MsgAddressExt
+ *   dest:MsgAddressInt
+ *   import_fee:Grams
+ */
 public class ExternalMessage {
-    long magic;             // `tlb:"$10"` ext_in_msg_info$10
-    Address srcAddr;        // `tlb:"addr"`
-    Address dstAddr;        // `tlb:"addr"`
-    BigInteger importFee;   // `tlb:"."`
+    long magic;
+    MsgAddress srcAddr;
+    MsgAddress dstAddr;
+    BigInteger importFee;
     StateInit stateInit;    // `tlb:"maybe either . ^"`
     Cell body;              // `tlb:"either . ^"`
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell()
                 .storeUint(0b10, 2)
-                .storeAddress(srcAddr)
-                .storeAddress(dstAddr)
+                .storeAddress(isNull(srcAddr) ? null : Address.of((byte) 0x51, 0, srcAddr.getMsgAddressExt().externalAddress.toByteArray())) // todo review flag
+                .storeAddress(isNull(dstAddr) ? null : Address.of((byte) 0x11, dstAddr.getMsgAddressInt().getWorkchainId(), dstAddr.getMsgAddressInt().address.toByteArray()))
                 .storeCoins(importFee)
                 .storeBit(nonNull(stateInit)); //maybe
 

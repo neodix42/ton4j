@@ -15,4 +15,8 @@ public class GlobalVersion {
     long magic; // `tlb:"#c4"`
     long version; // `tlb:"## 32"`
     BigInteger capabilities; // `tlb:"## 64"`
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 }

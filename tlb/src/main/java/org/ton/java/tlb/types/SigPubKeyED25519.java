@@ -12,4 +12,8 @@ import lombok.ToString;
 public class SigPubKeyED25519 {
     long magic;     // `tlb:"#8e81278a"`
     byte[] key;     // `tlb:"bits 256"`
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 }

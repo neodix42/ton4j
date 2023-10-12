@@ -28,6 +28,15 @@ public class TestUtils {
 
         byte[] c = {10, 11};
         assertThat(Utils.bytesToHex(c)).isEqualTo("0a0b");
+
+        byte[] d = {10, 11};
+        assertThat(Utils.bytesToHex(Utils.reverseByteArray(d))).isEqualTo("0b0a");
+
+        int[] e = {233, 244};
+        assertThat(Utils.bytesToHex(Utils.reverseIntArray(e))).isEqualTo("f4e9");
+
+        int[] f = {233, 244};
+        assertThat(Utils.bytesToHex(f)).isEqualTo("e9f4");
     }
 
     @Test
@@ -284,4 +293,11 @@ public class TestUtils {
             assertThat(i6).isEqualTo(BigInteger.valueOf(2684354268451321L));
         });
     }
+
+    @Test
+    public void testReverseLong() {
+        long l = 0x27e7c64a;
+        log.info("reversed " + Long.toHexString(Long.reverseBytes(l)));
+    }
+
 }

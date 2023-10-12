@@ -7,29 +7,66 @@ import lombok.ToString;
 
 import java.math.BigInteger;
 
-/**
- * db.block.info#4ac6e727 id:tonNode.blockIdExt flags:# prev_left:flags.1?tonNode.blockIdExt
- * prev_right:flags.2?tonNode.blockIdExt
- * next_left:flags.3?tonNode.blockIdExt
- * next_right:flags.4?tonNode.blockIdExt
- * lt:flags.13?long
- * ts:flags.14?int
- * state:flags.17?int256
- * masterchain_ref_seqno:flags.23?int = db.block.Info;
- */
 @Builder
 @Getter
 @Setter
 @ToString
+/**
+ * block_info#9bc7a987
+ *   version:uint32
+ *   not_master:(## 1)
+ *   after_merge:(## 1)
+ *   before_split:(## 1)
+ *   after_split:(## 1)
+ *   want_split:Bool
+ *   want_merge:Bool
+ *   key_block:Bool
+ *   vert_seqno_incr:(## 1)
+ *   flags:(## 8) { flags <= 1 }
+ *   seq_no:# vert_seq_no:# { vert_seq_no >= vert_seqno_incr }
+ *   { prev_seq_no:# } { ~prev_seq_no + 1 = seq_no }
+ *   shard:ShardIdent
+ *   gen_utime:uint32
+ *   start_lt:uint64
+ *   end_lt:uint64
+ *   gen_validator_list_hash_short:uint32
+ *   gen_catchain_seqno:uint32
+ *   min_ref_mc_seqno:uint32
+ *   prev_key_block_seqno:uint32
+ *   gen_software:flags . 0?GlobalVersion
+ *   master_ref:not_master?^BlkMasterInfo
+ *   prev_ref:^(BlkPrevInfo after_merge)
+ *   prev_vert_ref:vert_seqno_incr?^(BlkPrevInfo 0)
+ *   = BlockInfo;
+ */
 public class BlockInfo {
-    int flag;
-    BlockIdExt id;
-    BlockIdExt prev_left;
-    BlockIdExt prev_right;
-    BlockIdExt next_left;
-    BlockIdExt next_right;
-    long lt;
-    long ts;
-    BigInteger state;
-    int masterchain_ref_seqno;
+    long magic;
+    long version;
+    boolean notMaster;
+    boolean afterMerge;
+    boolean beforeSplit;
+    boolean afterSplit;
+    boolean wantSplit;
+    boolean wantMerge;
+    boolean keyBlock;
+    boolean vertSeqnoIncr;
+    long flags;
+    long seqno;
+    long vertSeqno;
+    ShardIdent shard;
+    long genuTime;
+    BigInteger startLt;
+    BigInteger endLt;
+    long genValidatorListHashShort;
+    long genCatchainSeqno;
+    long minRefMcSeqno;
+    long prevKeyBlockSeqno;
+    GlobalVersion globalVersion;
+    ExtBlkRef masterRef;
+    BlkPrevInfo prefRef;
+    BlkPrevInfo prefVertRef;
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 }

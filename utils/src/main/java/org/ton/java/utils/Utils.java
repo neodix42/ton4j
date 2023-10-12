@@ -71,7 +71,7 @@ public class Utils {
      * @param l value
      * @return array of unsigned bytes
      */
-    public static int[] longToBytes(long l) {
+    public static int[] longToBytes(long l) { //todo should be length 8
         int[] result = new int[4];
         for (int i = 3; i >= 0; i--) {
             result[i] = (int) l & 0xFF;
@@ -80,6 +80,59 @@ public class Utils {
         return result;
     }
 
+    public static long bytesToLong(final byte[] b) {
+        long result = 0;
+        for (int i = 0; i < 8; i++) {
+            result <<= 8;
+            result |= (b[i] & 0xFF);
+        }
+        return result;
+    }
+
+    public static int bytesToInt(final byte[] b) {
+        int result = 0;
+        for (int i = 0; i < 4; i++) {
+            result <<= 8;
+            result |= (b[i] & 0xFF);
+        }
+        return result;
+    }
+
+    public static short bytesToShort(final byte[] b) {
+        short result = 0;
+        for (int i = 0; i < 2; i++) {
+            result <<= 8;
+            result |= (b[i] & 0xFF);
+        }
+        return result;
+    }
+
+    public static long intsToLong(final int[] b) {
+        long result = 0;
+        for (int i = 0; i < 8; i++) {
+            result <<= 8;
+            result |= b[i];
+        }
+        return result;
+    }
+
+    public static int intsToInt(final int[] b) {
+        int result = 0;
+        for (int i = 0; i < 4; i++) {
+            result <<= 8;
+            result |= b[i];
+        }
+        return result;
+    }
+
+    public static short intsToShort(final int[] b) {
+        short result = 0;
+        for (int i = 0; i < 2; i++) {
+            result <<= 8;
+            result |= b[i];
+        }
+        return result;
+    }
 
     public static int[] uintToBytes(int l) {
         return new int[]{l};
@@ -697,5 +750,39 @@ public class Utils {
             result |= Integer.parseInt(part);
         }
         return result;
+    }
+
+    public static int[] reverseIntArray(int[] in) {
+        int[] temp = in.clone();
+        for (int i = 0; i < temp.length / 2; i++) {
+            int t = temp[i];
+            temp[i] = temp[temp.length - i - 1];
+            temp[temp.length - i - 1] = t;
+        }
+        return temp;
+    }
+
+    public static byte[] reverseByteArray(byte[] in) {
+        byte[] temp = in.clone();
+        for (int i = 0; i < temp.length / 2; i++) {
+            byte t = temp[i];
+            temp[i] = temp[temp.length - i - 1];
+            temp[temp.length - i - 1] = t;
+        }
+        return temp;
+    }
+
+    public static long unsignedIntToLong(int x) {
+        //Integer.toUnsignedLong()
+        return x & 0x00000000ffffffffL;
+    }
+
+    public static int unsignedShortToInt(short x) {
+        //Short.toUnsignedInt()
+        return x & 0x0000ffff;
+    }
+
+    public static int unsignedByteToInt(byte x) {
+        return x & 0x00ff;
     }
 }

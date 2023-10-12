@@ -19,4 +19,8 @@ public class TransactionDescriptionOrdinary {
     boolean aborted;            // `tlb:"bool"`
     BouncePhase bouncePhase; //    `tlb:"maybe ."`
     boolean destroyed; //          `tlb:"bool"`
+
+    private String getMagic() {
+        return Long.toBinaryString(magic);
+    }
 }

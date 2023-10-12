@@ -13,15 +13,15 @@ public class BlockIdExt {
     long workchain; // int32  `tl:"int"`
     long shard; // int64  `tl:"long"`
     long seqno; // uint32 `tl:"int"`
-    int[] root_hash; // []byte `tl:"int256"`
-    int[] file_hash; // []byte `tl:"int256"`
+    int[] rootHash; // []byte `tl:"int256"`
+    int[] fileHash; // []byte `tl:"int256"`
 
-    String getfile_hash() {
-        return Utils.bytesToHex(file_hash);
+    String getFileHash() {
+        return Utils.bytesToHex(fileHash);
     }
 
-    String getroot_hash() {
-        return Utils.bytesToHex(root_hash);
+    String getRootHash() {
+        return Utils.bytesToHex(rootHash);
     }
 
     public String getShard() {

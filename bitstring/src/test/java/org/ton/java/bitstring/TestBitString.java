@@ -261,6 +261,18 @@ public class TestBitString {
     }
 
     @Test
+    public void testReverseArrayInt() {
+        int l = 0x01020304;
+        log.info("reversed {}", Integer.toHexString(Integer.reverseBytes(l))); // todo
+    }
+
+    @Test
+    public void testReverseArrayLong() {
+        long l = 0x0102030405060708L;
+        log.info("reversed {}", Long.toHexString(Long.reverseBytes(l))); // todo
+    }
+
+    @Test
     public void testBitStringByteArrayPositive() {
         BitString bitString9 = new BitString(new byte[]{7, 7, 7, 7});
         assertThat(bitString9.toBitString()).isEqualTo("00000111000001110000011100000111");

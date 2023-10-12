@@ -11,9 +11,24 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
+/**
+ * ext_blk_ref$_
+ * end_lt:uint64
+ * seq_no:uint32
+ * root_hash:bits256
+ * file_hash:bits256 = ExtBlkRef;
+ */
 public class ExtBlkRef {
-    BigInteger endLt; // `tlb:"## 64"`
-    int seqno; // `tlb:"## 32"`
-    int[] rootHash; // `tlb:"bits 256"`
-    int[] fileHash;
+    BigInteger endLt;
+    int seqno;
+    BigInteger rootHash;
+    BigInteger fileHash;
+
+    private String getRootHash() {
+        return rootHash.toString(16);
+    }
+
+    private String getFileHash() {
+        return fileHash.toString(16);
+    }
 }

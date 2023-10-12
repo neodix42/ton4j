@@ -16,4 +16,8 @@ public class BouncePhaseok {
     StorageUsedShort msgSize; // `tlb:"."`
     BigInteger msgFees; //`tlb:"."`
     BigInteger fwdFees; //`tlb:"."`
+
+    private String getMagic() {
+        return Integer.toHexString(magic);
+    }
 }

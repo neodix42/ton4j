@@ -13,18 +13,43 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
+/**
+ * shard_state#9023afe2
+ *   global_id:int32
+ *   shard_id:ShardIdent
+ *   seq_no:uint32
+ *   vert_seq_no:#
+ *   gen_utime:uint32
+ *   gen_lt:uint64
+ *   min_ref_mc_seqno:uint32
+ *   out_msg_queue_info:^OutMsgQueueInfo
+ *   before_split:(## 1)
+ *   accounts:^ShardAccounts
+ *   ^[ overload_history:uint64
+ *     underload_history:uint64
+ *     total_balance:CurrencyCollection
+ *     total_validator_fees:CurrencyCollection
+ *     libraries:(HashmapE 256 LibDescr)
+ *     master_ref:(Maybe BlkMasterInfo) ]
+ *   custom:(Maybe ^McStateExtra)
+ *   = ShardStateUnsplit;
+ */
 public class ShardStateUnsplit {
-    long magic;//      `tlb:"#9023afe2"`
-    int globalId;          //    `tlb:"## 32"`
-    ShardIdent shardIdent;  //    `tlb:"."`
-    long seqno;             //    `tlb:"## 32"`
-    long vertSeqno;         //    `tlb:"## 32"`
-    long genUTime;          //    `tlb:"## 32"`
-    BigInteger genLT;       //    `tlb:"## 64"`
-    long minRefMCSeqno;     //    `tlb:"## 32"`
-    Cell outMsgQueueInfo;   //    `tlb:"^"`
-    boolean beforeSplit;    //    `tlb:"## 1"`
-    TonHashMapE accounts;    //    `tlb:"dict 256"`	`tlb:"^"`
-    Cell stats; // `tlb:"^"`
-    McStateExtra mc; //`tlb:"maybe ^"`
+    long magic;
+    int globalId;
+    ShardIdent shardIdent;
+    long seqno;
+    long vertSeqno;
+    long genUTime;
+    BigInteger genLT;
+    long minRefMCSeqno;
+    Cell outMsgQueueInfo;
+    boolean beforeSplit;
+    TonHashMapE accounts;
+    Cell stats;
+    McStateExtra custom;
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 }

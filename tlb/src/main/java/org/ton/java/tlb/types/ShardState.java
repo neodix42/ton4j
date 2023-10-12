@@ -10,6 +10,13 @@ import lombok.ToString;
 @Setter
 @ToString
 public class ShardState {
+    //    _ ShardStateUnsplit = ShardState;
+    //    split_state#5f327da5 left:^ShardStateUnsplit right:^ShardStateUnsplit = ShardState;
+    long magic;
     ShardStateUnsplit left;
     ShardStateUnsplit right;
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 }

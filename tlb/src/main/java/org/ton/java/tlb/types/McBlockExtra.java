@@ -10,9 +10,25 @@ import org.ton.java.cell.TonHashMap;
 @Getter
 @Setter
 @ToString
+/**
+ * masterchain_block_extra#cca5
+ *   key_block:(## 1)
+ *   shard_hashes:ShardHashes
+ *   shard_fees:ShardFees
+ *   ^[ prev_blk_signatures:(HashmapE 16 CryptoSignaturePair)
+ *      recover_create_msg:(Maybe ^InMsg)
+ *      mint_msg:(Maybe ^InMsg) ]
+ *   config:key_block?ConfigParams
+ * = McBlockExtra;
+ */
 public class McBlockExtra {
-    long magic; // `tlb:"#cca5"`
-    boolean keyBlock; // `tlb:"## 1"`
-    TonHashMap shardHashes; // `tlb:"dict 32"`
-    TonHashMap shardFees; // `tlb:"dict 96"`
+    long magic;
+    boolean keyBlock;
+    TonHashMap shardHashes;
+    TonHashMap shardFees;
+    ConfigParams config;
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 }

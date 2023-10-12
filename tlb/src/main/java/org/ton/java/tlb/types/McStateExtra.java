@@ -17,4 +17,8 @@ public class McStateExtra {
     ConfigParams configParams;  //      `tlb:"."`
     Cell info;                  //      `tlb:"^"`
     CurrencyCollection globalBalance;// `tlb:"."`
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 }
