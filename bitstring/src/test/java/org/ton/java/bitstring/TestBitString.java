@@ -263,13 +263,15 @@ public class TestBitString {
     @Test
     public void testReverseArrayInt() {
         int l = 0x01020304;
-        log.info("reversed {}", Integer.toHexString(Integer.reverseBytes(l))); // todo
+        log.info("reversed {}", Integer.toHexString(Integer.reverseBytes(l)));
+        assertThat(Integer.toHexString(Integer.reverseBytes(l))).isEqualTo("4030201");
     }
 
     @Test
     public void testReverseArrayLong() {
         long l = 0x0102030405060708L;
-        log.info("reversed {}", Long.toHexString(Long.reverseBytes(l))); // todo
+        log.info("reversed {}", Long.toHexString(Long.reverseBytes(l)));
+        assertThat(Long.toHexString(Long.reverseBytes(l))).isEqualTo("807060504030201");
     }
 
     @Test

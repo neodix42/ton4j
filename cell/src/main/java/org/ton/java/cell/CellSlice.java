@@ -1,8 +1,10 @@
 package org.ton.java.cell;
 
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
+import org.ton.java.tlb.loader.Tlb;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -142,12 +144,37 @@ public class CellSlice {
         return x;
     }
 
+    public TonHashMapAug loadDictAug(int n, Function<BitString, Object> keyParser, Function<Pair, Pair> valueParser) {
+        TonHashMapAug x = new TonHashMapAug(n);
+        x.deserialize(this, keyParser, valueParser);
+        // move readRefCursor
+        if (refs.size() != 0) {
+            refs.remove(0);
+        }
+        if (refs.size() != 0) {
+            refs.remove(0);
+        }
+
+        return x;
+    }
+
     public TonHashMapE loadDictE(int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
         boolean isEmpty = !this.loadBit();
         if (isEmpty) {
             return new TonHashMapE(n);
         } else {
             TonHashMapE hashMap = new TonHashMapE(n);
+            hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
+            return hashMap;
+        }
+    }
+
+    public TonHashMapAugE loadDictAugE(int n, Function<BitString, Object> keyParser, Function<Pair, Pair> valueParser) {
+        boolean isEmpty = !this.loadBit();
+        if (isEmpty) {
+            return new TonHashMapAugE(n);
+        } else {
+            TonHashMapAugE hashMap = new TonHashMapAugE(n);
             hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
             return hashMap;
         }
@@ -527,5 +554,13 @@ public class CellSlice {
 
         String address = workchain + ":" + String.format("%64s", hashPart.toString(16)).replace(' ', '0');
         return Address.of(address);
+    }
+
+    public Object loadTlb(Class clazz) {
+        return Tlb.load(clazz, this);
+    }
+
+    public Object loadTlb(Class clazz, boolean skipMagic) {
+        return Tlb.load(clazz, this, skipMagic);
     }
 }

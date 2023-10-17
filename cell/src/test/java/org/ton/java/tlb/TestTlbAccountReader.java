@@ -84,7 +84,7 @@ public class TestTlbAccountReader {
                 .endCell();
 
         CellSlice cs = CellSlice.beginParse(c);
-        AccountStorage accountStorage = (AccountStorage) Tlb.load(AccountStorage.class, cs);
+        AccountStorage accountStorage = (AccountStorage) cs.loadTlb(AccountStorage.class);
 
         assertThat(accountStorage.getAccountStatus()).isEqualTo("UNINIT");
     }

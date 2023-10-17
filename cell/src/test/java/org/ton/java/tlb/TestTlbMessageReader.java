@@ -13,7 +13,7 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -145,6 +145,16 @@ public class TestTlbMessageReader {
         Cell c = CellBuilder.fromBoc(bocHex);
         log.info("cell " + c.print());
         InternalMessage internalMessage = (InternalMessage) Tlb.load(InternalMessage.class, CellSlice.beginParse(c));
+        log.info("internalMessage {}", internalMessage);
+    }
+
+    @Test
+    public void testInternalMessageCellTlb() {
+        String bocHex = Utils.base64ToHexString("te6cckEBAwEAnAABLwAAAAHHmiv5MdZBawAAAAAAAAAfNMS0CAEBQ4AUfOW61YF/y1MIwE8E1RvkKBdIVHAgdBGTjidHc8Yc9XACALRiYWZ5YmVpY3Q1bzJua2lqbmRheG16enB5bjZjZm1jcnRiZmI3N2Y0bDNqemQzdGE0a2ViY2hsaGVsdS5pcGZzLm5mdHN0b3JhZ2UubGluay9kYXRhLmpzb27Kwi+Q");
+        log.info("bocHex: {}", bocHex);
+        Cell c = CellBuilder.fromBoc(bocHex);
+        log.info("cell " + c.print());
+        InternalMessage internalMessage = (InternalMessage) CellSlice.beginParse(c).loadTlb(InternalMessage.class);
         log.info("internalMessage {}", internalMessage);
     }
 

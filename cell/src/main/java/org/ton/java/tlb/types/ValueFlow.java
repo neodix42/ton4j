@@ -4,7 +4,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.ton.java.cell.Cell;
 
 @Builder
 @Getter
@@ -27,12 +26,17 @@ import org.ton.java.cell.Cell;
  *   minted:CurrencyCollection
  *   ] = ValueFlow;
  */
-//todo impl in tlb load
 public class ValueFlow {
     long magic;
-    Cell c1;
+    CurrencyCollection fromPrevBlk;
+    CurrencyCollection toNextBlk;
+    CurrencyCollection imported;
+    CurrencyCollection exported;
     CurrencyCollection feesCollected;
-    Cell c2;
+    CurrencyCollection feesImported;
+    CurrencyCollection recovered;
+    CurrencyCollection created;
+    CurrencyCollection minted;
 
     private String getMagic() {
         return Long.toHexString(magic);

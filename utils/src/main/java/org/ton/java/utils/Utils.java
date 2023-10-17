@@ -50,11 +50,11 @@ public class Utils {
     }
 
     public static int[] getCRC32ChecksumAsBytes(int[] bytes) {
-        return longToBytes(getCRC32ChecksumAsLong(bytes));
+        return long4BytesToBytes(getCRC32ChecksumAsLong(bytes));
     }
 
     public static int[] getCRC32ChecksumAsBytesReversed(int[] bytes) {
-        int[] b = longToBytes(getCRC32ChecksumAsLong(bytes));
+        int[] b = long4BytesToBytes(getCRC32ChecksumAsLong(bytes));
 
         int[] reversed = new int[4];
         reversed[0] = b[3];
@@ -71,9 +71,18 @@ public class Utils {
      * @param l value
      * @return array of unsigned bytes
      */
-    public static int[] longToBytes(long l) { //todo should be length 8
+    public static int[] long4BytesToBytes(long l) {
         int[] result = new int[4];
         for (int i = 3; i >= 0; i--) {
+            result[i] = (int) l & 0xFF;
+            l >>= 8;
+        }
+        return result;
+    }
+
+    public static int[] longToBytes(long l) {
+        int[] result = new int[8];
+        for (int i = 7; i >= 0; i--) {
             result[i] = (int) l & 0xFF;
             l >>= 8;
         }
@@ -426,7 +435,7 @@ public class Utils {
 //    }
 
     public static int[] concatBytes(int[] a, long b) {
-        int[] bb = longToBytes(b);
+        int[] bb = long4BytesToBytes(b);
         int[] c = new int[a.length + bb.length];
         System.arraycopy(a, 0, c, 0, a.length);
         System.arraycopy(bb, 0, c, a.length, bb.length);

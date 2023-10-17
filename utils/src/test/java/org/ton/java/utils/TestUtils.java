@@ -97,6 +97,21 @@ public class TestUtils {
     }
 
     @Test
+    public void testLongToBytes() {
+        long a = 0x1111111111111111L;
+        int[] longBytes = Utils.longToBytes(a);
+        int[] result = {17, 17, 17, 17, 17, 17, 17, 17};
+        assertThat(longBytes[0]).isEqualTo(result[0]);
+        assertThat(longBytes[1]).isEqualTo(result[1]);
+        assertThat(longBytes[2]).isEqualTo(result[2]);
+        assertThat(longBytes[3]).isEqualTo(result[3]);
+        assertThat(longBytes[4]).isEqualTo(result[4]);
+        assertThat(longBytes[5]).isEqualTo(result[5]);
+        assertThat(longBytes[6]).isEqualTo(result[6]);
+        assertThat(longBytes[7]).isEqualTo(result[7]);
+    }
+
+    @Test
     public void testCrc16AsHex() {
         byte[] a = "ABC".getBytes();
         String crc16 = Utils.getCRC16ChecksumAsHex(a);

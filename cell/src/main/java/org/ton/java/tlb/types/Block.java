@@ -4,7 +4,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.ton.java.cell.Cell;
 
 @Builder
 @Getter
@@ -22,7 +21,7 @@ public class Block {
     long magic;
     int globalId;
     BlockInfo blockInfo;
-    Cell valueFlow; // todo parse ValueFlow
+    ValueFlow valueFlow;
     StateUpdate stateUpdate;
     BlockExtra extra;
 /*

@@ -9,7 +9,7 @@ import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.loader.Tlb;
 import org.ton.java.tlb.types.Text;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
