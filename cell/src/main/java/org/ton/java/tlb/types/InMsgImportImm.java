@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.tlb.loader.Tlb;
 
 import java.math.BigInteger;
 
@@ -19,5 +21,13 @@ public class InMsgImportImm implements InMsg {
     MsgEnvelope inMsg;
     Transaction transaction;
     BigInteger fwdFee;
-    Cell proofCreated;
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeUint(0b011, 3) //magic
+                .storeRef(Tlb.save(MsgEnvelope.class, inMsg))
+                .storeRef(Tlb.save(Transaction.class, transaction))
+                .storeUint(fwdFee, 32)
+                .endCell();
+    }
 }

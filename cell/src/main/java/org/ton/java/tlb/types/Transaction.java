@@ -29,25 +29,33 @@ import java.math.BigInteger;
  *   description:^TransactionDescr = Transaction;
  */
 public class Transaction {
-    int magic; //         `tlb:"$0111"`
-    int[] accountAddr; //        `tlb:"bits 256"`
-    BigInteger lt; //        `tlb:"## 64"`
-    int[] prevTxHash; //       `tlb:"bits 256"`
-    BigInteger prevTxLT; //        `tlb:"## 64"`
-    long now; //        `tlb:"## 32"`
-    long outMsgCount; //        `tlb:"## 15"`
-    String origStatus; // `tlb:"."`
-    String endStatus; // `tlb:"."`
-    TransactionIO inOut; // `tlb:"^"`
-    CurrencyCollection totalFees; //     `tlb:"."`
-    HashUpdate stateUpdate; //             `tlb:"^"` // of Account
-    TransactionDescription description;// `tlb:"^"`
+    int magic;
+    BigInteger accountAddr;
+    BigInteger lt;
+    BigInteger prevTxHash;
+    BigInteger prevTxLt;
+    long now;
+    long outMsgCount;
+    String origStatus;
+    String endStatus;
+    TransactionIO inOut;
+    CurrencyCollection totalFees;
+    HashUpdate stateUpdate;
+    TransactionDescription description;
 
-    // not in scheme, but will be filled based on request data for flexibility
-    byte[] hash; //  `tlb:"-"`
+    // not in scheme, but might be filled based on request data for flexibility
+    byte[] hash;
 
     private String getMagic() {
         return Long.toBinaryString(magic);
+    }
+
+    private String getAccountAddr() {
+        return accountAddr.toString(16);
+    }
+
+    private String getPrevTxHash() {
+        return prevTxHash.toString(16);
     }
 
     public void dump() {

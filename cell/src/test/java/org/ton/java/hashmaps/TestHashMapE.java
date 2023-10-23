@@ -1,4 +1,4 @@
-package org.ton.java.cell;
+package org.ton.java.hashmaps;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Ignore;
@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
+import org.ton.java.cell.*;
 
 import java.math.BigInteger;
 import java.util.Map;

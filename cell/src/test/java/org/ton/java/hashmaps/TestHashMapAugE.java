@@ -1,4 +1,4 @@
-package org.ton.java.cell;
+package org.ton.java.hashmaps;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -8,9 +8,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
+import org.ton.java.cell.*;
 import org.ton.java.tlb.loader.Tlb;
+import org.ton.java.tlb.types.CurrencyCollection;
 import org.ton.java.tlb.types.ImportFees;
-import org.ton.java.tlb.types.InMsgDescr;
+import org.ton.java.tlb.types.InMsg;
+import org.ton.java.tlb.types.OutMsg;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -90,23 +93,22 @@ public class TestHashMapAugE {
 
         TonHashMapAugE loadedDict = cs.loadDictAugE(256,
                 k -> k.readUint(256),
-                v -> Pair.of(
-                        Tlb.load(InMsgDescr.class, CellSlice.beginParse((Cell) v.getLeft()), false),
-                        Tlb.load(ImportFees.class, CellSlice.beginParse((Cell) v.getLeft()), false))
+                v -> v.loadTlb(InMsg.class),
+                e -> e.loadTlb(ImportFees.class)
+
         );
 
         // traverse deserialized hashmap
         log.info("Deserialized hashmap from cell");
-        for (Map.Entry<Object, Pair<Cell, Cell>> entry : loadedDict.elements.entrySet()) {
+        for (Map.Entry<Object, Pair<Object, Object>> entry : loadedDict.elements.entrySet()) {
             log.info("key {}, value {}", entry.getKey(), entry.getValue());
         }
 
         // serialize
         loadedDict.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).bits,
-                v -> Pair.of(
-                        Tlb.load(InMsgDescr.class, CellSlice.beginParse((Cell) v.getLeft()), false),
-                        Tlb.load(ImportFees.class, CellSlice.beginParse((Cell) v.getLeft()), false))
+                v -> Tlb.save(InMsg.class, v),
+                e -> Tlb.save(ImportFees.class, e)
         );
     }
 
@@ -122,19 +124,21 @@ public class TestHashMapAugE {
 
         TonHashMapAugE loadedDict = cs.loadDictAugE(256,
                 k -> k.readUint(256),
-                v -> Pair.of(v.getLeft(), v.getRight())
+                v -> CellSlice.of(v).loadTlb(OutMsg.class),
+                e -> CellSlice.of(e).loadTlb(CurrencyCollection.class)
         );
 
         // traverse deserialized hashmap
         log.info("Deserialized hashmap from cell");
-        for (Map.Entry<Object, Pair<Cell, Cell>> entry : loadedDict.elements.entrySet()) {
+        for (Map.Entry<Object, Pair<Object, Object>> entry : loadedDict.elements.entrySet()) {
             log.info("key {}, value {}", entry.getKey(), entry.getValue());
         }
 
         // serialize
         loadedDict.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).bits,
-                v -> Pair.of(v.getLeft(), v.getRight())
+                v -> (CellSlice) CellSlice.of(v).loadTlb(OutMsg.class),
+                e -> (CellSlice) CellSlice.of(e).loadTlb(CurrencyCollection.class)
         );
     }
 

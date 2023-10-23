@@ -11,18 +11,38 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
+/**
+ * tr_phase_action$_ success:Bool valid:Bool no_funds:Bool
+ *   status_change:AccStatusChange
+ *   total_fwd_fees:(Maybe Grams)
+ *   total_action_fees:(Maybe Grams)
+ *   result_code:int32
+ *   result_arg:(Maybe int32)
+ *   tot_actions:uint16
+ *   spec_actions:uint16
+ *   skipped_actions:uint16
+ *   msgs_created:uint16
+ *   action_list_hash:bits256
+ *   tot_msg_size:StorageUsedShort
+ *   = TrActionPhase;
+ */
 public class ActionPhase {
-    boolean success; // `tlb:"bool"`
-    boolean valid; // `tlb:"bool"`
-    boolean noFunds; // `tlb:"bool"`
-    BigInteger totalFwdFees;//           `tlb:"maybe ."`
-    BigInteger totalActionFees;//        `tlb:"maybe ."`
-    long resultCode; //      int32            `tlb:"## 32"`
-    long resultArg; //       *int32           `tlb:"maybe ## 32"`
-    long totalActions; //    uint16           `tlb:"## 16"`
-    long specActions; //     uint16           `tlb:"## 16"`
-    long skippedActions; //  uint16           `tlb:"## 16"`
-    long messagesCreated; // uint16           `tlb:"## 16"`
-    int[] actionListHash; //  []byte           `tlb:"bits 256"`
-    StorageUsedShort totalMsgSize; //  `tlb:"."`
+    boolean success;
+    boolean valid;
+    boolean noFunds;
+    AccStatusChange statusChange;
+    BigInteger totalFwdFees;
+    BigInteger totalActionFees;
+    long resultCode;
+    long resultArg;
+    long totalActions;
+    long specActions;
+    long skippedActions;
+    long messagesCreated;
+    BigInteger actionListHash;
+    StorageUsedShort totalMsgSize;
+
+    private String getActionListHash() {
+        return actionListHash.toString(16);
+    }
 }

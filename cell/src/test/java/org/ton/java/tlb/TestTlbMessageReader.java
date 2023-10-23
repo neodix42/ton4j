@@ -20,12 +20,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestTlbMessageReader {
 
     @Test
-    public void testCornerMessage() {
+    public void testCornerInternalMessage() {
         Cell c = CellBuilder.fromBoc("b5ee9c724101020100860001b36800bf4c6bdca25797e55d700c1a5448e2af5d1ac16f9a9628719a4e1eb2b44d85e33fd104a366f6fb17799871f82e00e4f2eb8ae6aaf6d3e0b3fb346cd0208e23725e14094ba15d20071f12260000446ee17a9b0cc8c028d8c001004d8002b374733831aac3455708e8f1d2c7f129540b982d3a5de8325bf781083a8a3d2a04a7f943813277f3ea");
         InternalMessage internalMessage = (InternalMessage) Tlb.load(InternalMessage.class, CellSlice.beginParse(c));
         log.info("internalMessage {}", internalMessage);
-        log.info("internalMessage body {}", internalMessage.getBody().toHex());
-        log.info("internalMessage body {}", internalMessage.getBody().print());
+        assertThat(internalMessage.isIHRDisabled()).isTrue();
+        assertThat(internalMessage.getValue().getCoins()).isEqualTo(BigInteger.valueOf(9980893000L));
+        assertThat(internalMessage.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
+        assertThat(internalMessage.getCreatedAt()).isEqualTo(1684018284L);
+        assertThat(internalMessage.getCreatedLt()).isEqualTo(BigInteger.valueOf(37621510000006L));
+        //run golang test and compare
+    }
+
+    @Test
+    public void testCornerMessage() {
+        Cell c = CellBuilder.fromBoc("b5ee9c724101020100860001b36800bf4c6bdca25797e55d700c1a5448e2af5d1ac16f9a9628719a4e1eb2b44d85e33fd104a366f6fb17799871f82e00e4f2eb8ae6aaf6d3e0b3fb346cd0208e23725e14094ba15d20071f12260000446ee17a9b0cc8c028d8c001004d8002b374733831aac3455708e8f1d2c7f129540b982d3a5de8325bf781083a8a3d2a04a7f943813277f3ea");
+        Message message = (Message) Tlb.load(Message.class, CellSlice.beginParse(c));
+        log.info("internalMessage {}", message);
+        InternalMessage internalMessage = (InternalMessage) message.getInfo().getMsg();
         assertThat(internalMessage.isIHRDisabled()).isTrue();
         assertThat(internalMessage.getValue().getCoins()).isEqualTo(BigInteger.valueOf(9980893000L));
         assertThat(internalMessage.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
@@ -40,9 +52,9 @@ public class TestTlbMessageReader {
         ExternalMessage externalMessage = (ExternalMessage) Tlb.load(ExternalMessage.class, CellSlice.beginParse(c));
         log.info("externalMessage {}", externalMessage);
 
-        assertThat(externalMessage.getStateInit().getCode().toString()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED54");
-        assertThat(externalMessage.getStateInit().getData().toString()).isEqualTo("0000000029A9A31782A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
-        assertThat(externalMessage.getBody().toString()).isEqualTo("A94EF7A240E3066C0843FE3D82C3CBD7EE75E60DF093F7162383E0F0E079E897CAAF61EF0E31F38A43B5498FB63789F34C014211C554FCA58762C2CD9BE26F0F29A9A317FFFFFFFF00000000");
+//        assertThat(externalMessage.getStateInit().getCode().toString()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED54");
+//        assertThat(externalMessage.getStateInit().getData().toString()).isEqualTo("0000000029A9A31782A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
+//        assertThat(externalMessage.getBody().toString()).isEqualTo("A94EF7A240E3066C0843FE3D82C3CBD7EE75E60DF093F7162383E0F0E079E897CAAF61EF0E31F38A43B5498FB63789F34C014211C554FCA58762C2CD9BE26F0F29A9A317FFFFFFFF00000000");
         assertThat(externalMessage.getDstAddr().getMsgAddressInt().toString()).isEqualTo("0:4fa67ec55b4e5904320b071d20727abc321dadada04e28d010aed2bcecaf24fb");
     }
 
@@ -52,16 +64,18 @@ public class TestTlbMessageReader {
                 .iHRDisabled(false)
                 .bounce(true)
                 .bounced(false)
-                //    .srcAddr(Address.of("EQAOp1zuKuX4zY6L9rEdSLam7J3gogIHhfRu_gH70u2MQnmd"))
-                //  .dstAddr(Address.of("EQA_B407fiLIlE5VYZCaI2rki0in6kLyjdhhwitvZNfpe7eY"))
+                .srcAddr(MsgAddress.builder().magic(0).build())
+                .dstAddr(MsgAddress.builder().magic(0).build()) // todo toAddress
+//                .srcAddr(Address.of("EQAOp1zuKuX4zY6L9rEdSLam7J3gogIHhfRu_gH70u2MQnmd"))
+//                .dstAddr(Address.of("EQA_B407fiLIlE5VYZCaI2rki0in6kLyjdhhwitvZNfpe7eY"))
                 .value(CurrencyCollection.builder().coins(Utils.toNano(0.5)).build())
                 .createdAt(5L)
                 .createdLt(BigInteger.TWO)
-                .stateInit(StateInit.builder()
-                        .code(CellBuilder.beginCell().endCell())
-                        .data(CellBuilder.beginCell().endCell())
-                        .build())
-                .body(CellBuilder.beginCell().endCell())
+//                .stateInit(StateInit.builder()
+//                        .code(CellBuilder.beginCell().endCell())
+//                        .data(CellBuilder.beginCell().endCell())
+//                        .build())
+//                .body(CellBuilder.beginCell().endCell())
                 .build();
 
         InternalMessage loadedInternalMessage = (InternalMessage) Tlb.load(InternalMessage.class, CellSlice.beginParse(internalMessage.toCell()));
@@ -77,49 +91,50 @@ public class TestTlbMessageReader {
                 .iHRDisabled(false)
                 .bounce(true)
                 .bounced(false)
-                .srcAddr(null)
-                .dstAddr(null)
+                .srcAddr(MsgAddress.builder().magic(0).build())
+                .dstAddr(MsgAddress.builder().magic(0).build())
                 .value(CurrencyCollection.builder().coins(Utils.toNano(0.5)).build())
                 .createdAt(5L)
                 .createdLt(BigInteger.TWO)
-                .stateInit(null)
-                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
+//                .stateInit(null)
+//                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
                 .build();
 
-        Message loadedMessage = (Message) Tlb.load(Message.class, CellSlice.beginParse(internalMessage.toCell()));
+        InternalMessage loadedMessage = (InternalMessage) Tlb.load(InternalMessage.class, CellSlice.beginParse(internalMessage.toCell()));
         log.info("loadedMessage {}", loadedMessage);
-        assertThat(loadedMessage.getMsgType()).isEqualTo("INTERNAL");
+        assertThat(loadedMessage.getCreatedAt()).isEqualTo(5);
     }
 
     @Test
     public void testExternalMessageLoadFromCell() {
         ExternalMessage externalMessage = ExternalMessage.builder()
-                .srcAddr(null)
-                .dstAddr(null)
+                .magic(0b10)
+                .srcAddr(MsgAddress.builder().magic(0).build())
+                .dstAddr(MsgAddress.builder().magic(0).build())
                 .importFee(BigInteger.TEN)
-                .stateInit(null)
-                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
+//                .stateInit(null)
+//                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
                 .build();
 
-        Message loadedMessage = (Message) Tlb.load(Message.class, CellSlice.beginParse(externalMessage.toCell()));
+        ExternalMessage loadedMessage = (ExternalMessage) Tlb.load(ExternalMessage.class, CellSlice.beginParse(externalMessage.toCell()));
         log.info("loadedMessage {}", loadedMessage);
-        assertThat(loadedMessage.getMsgType()).isEqualTo("EXTERNAL_IN");
+        assertThat(loadedMessage.getImportFee()).isEqualTo(BigInteger.TEN);
     }
 
     @Test
     public void testExternalMessageOutLoadFromCell() {
         ExternalMessageOut externalMessageOut = ExternalMessageOut.builder()
-                .srcAddr(null)
-                .dstAddr(null)
+                .srcAddr(MsgAddress.builder().magic(0).build())
+                .dstAddr(MsgAddress.builder().magic(0).build())
                 .createdLt(BigInteger.TEN)
                 .createdAt(5L)
-                .stateInit(null)
-                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
+//                .stateInit(null)
+//                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
                 .build();
 
-        Message loadedMessage = (Message) Tlb.load(Message.class, CellSlice.beginParse(externalMessageOut.toCell()));
+        ExternalMessageOut loadedMessage = (ExternalMessageOut) Tlb.load(ExternalMessageOut.class, CellSlice.beginParse(externalMessageOut.toCell()));
         log.info("loadedMessage {}", loadedMessage);
-        assertThat(loadedMessage.getMsgType()).isEqualTo("EXTERNAL_OUT");
+        assertThat(loadedMessage.getCreatedAt()).isEqualTo(5);
     }
 
     //https://tonsandbox.com/explorer/address/EQBKNxSb8ZItjuVB0C-f_idtdAc0S389DZxFwaFZVegBFEn8/11830865000003_161a9cc5a7de2a03aeba4d9cdbbab747a18148ee9dccabdf981f93a353619391

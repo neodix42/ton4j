@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.ton.java.cell.TonHashMapE;
+import org.ton.java.cell.TonHashMapAugE;
 
 @Builder
 @Getter
@@ -15,6 +15,5 @@ import org.ton.java.cell.TonHashMapE;
  */
 
 public class OutMsgDescr {
-    TonHashMapE outMsg;
-    CurrencyCollection currencyCollection;
+    TonHashMapAugE outMsg;
 }

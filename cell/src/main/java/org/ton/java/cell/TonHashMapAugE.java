@@ -24,12 +24,19 @@ public class TonHashMapAugE extends TonHashMapAug {
     }
 
 
-    public Cell serialize(Function<Object, BitString> keyParser, Function<Pair, Pair> valueParser) {
+    public Cell serialize(Function<Object, BitString> keyParser,
+                          Function<Object, Object> valueParser,
+                          Function<Object, Object> extraParser) {
         List<Object> se = new ArrayList<>();
-        for (Map.Entry<Object, Pair<Cell, Cell>> entry : elements.entrySet()) {
+        for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
             BitString key = keyParser.apply(entry.getKey());
-            Pair<Cell, Cell> value = valueParser.apply(entry.getValue());
-            se.add(new NodeAug(key, value.getLeft(), value.getRight()));
+            Cell value = (Cell) valueParser.apply(entry.getValue().getLeft());
+            Cell extra = (Cell) extraParser.apply(entry.getValue().getRight());
+            Cell both = CellBuilder.beginCell()
+                    .storeSlice(CellSlice.beginParse(value))
+                    .storeSlice(CellSlice.beginParse(extra))
+                    .endCell();
+            se.add(new Node(key, both));
         }
 
         if (se.isEmpty()) {

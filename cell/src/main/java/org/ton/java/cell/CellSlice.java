@@ -1,7 +1,6 @@
 package org.ton.java.cell;
 
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
 import org.ton.java.tlb.loader.Tlb;
@@ -30,6 +29,26 @@ public class CellSlice {
 
     public static CellSlice beginParse(Cell cell) {
         return new CellSlice(cell.bits, cell.refs);
+    }
+
+    public static CellSlice beginParse(Object cell) {
+        if (!((cell instanceof Cell) || (cell instanceof CellSlice))) {
+            throw new Error("CellSlice works only with Cell types");
+        }
+        if ((cell instanceof Cell)) {
+            return beginParse((Cell) cell);
+        }
+        return (CellSlice) cell;
+    }
+
+    public static CellSlice of(Object cell) {
+        if (!((cell instanceof Cell) || (cell instanceof CellSlice))) {
+            throw new Error("CellSlice works only with Cell types");
+        }
+        if ((cell instanceof Cell)) {
+            return beginParse((Cell) cell);
+        }
+        return (CellSlice) cell;
     }
 
 
@@ -144,9 +163,9 @@ public class CellSlice {
         return x;
     }
 
-    public TonHashMapAug loadDictAug(int n, Function<BitString, Object> keyParser, Function<Pair, Pair> valueParser) {
+    public TonHashMapAug loadDictAug(int n, Function<BitString, Object> keyParser, Function<CellSlice, Object> valueParser, Function<CellSlice, Object> extraParser) {
         TonHashMapAug x = new TonHashMapAug(n);
-        x.deserialize(this, keyParser, valueParser);
+        x.deserialize(this, keyParser, valueParser, extraParser);
         // move readRefCursor
         if (refs.size() != 0) {
             refs.remove(0);
@@ -169,13 +188,13 @@ public class CellSlice {
         }
     }
 
-    public TonHashMapAugE loadDictAugE(int n, Function<BitString, Object> keyParser, Function<Pair, Pair> valueParser) {
+    public TonHashMapAugE loadDictAugE(int n, Function<BitString, Object> keyParser, Function<CellSlice, Object> valueParser, Function<CellSlice, Object> extraParser) {
         boolean isEmpty = !this.loadBit();
         if (isEmpty) {
             return new TonHashMapAugE(n);
         } else {
             TonHashMapAugE hashMap = new TonHashMapAugE(n);
-            hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
+            hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser, extraParser);
             return hashMap;
         }
     }

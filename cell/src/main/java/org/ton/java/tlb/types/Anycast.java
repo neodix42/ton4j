@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 @Builder
 @Getter
@@ -15,4 +17,11 @@ import lombok.ToString;
 public class Anycast {
     int depth; // 5 bits
     byte rewritePfx;
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeUint(depth, 5)
+                .storeUint(rewritePfx, depth)
+                .endCell();
+    }
 }

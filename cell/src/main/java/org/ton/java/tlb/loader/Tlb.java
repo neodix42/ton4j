@@ -1,10 +1,8 @@
 package org.ton.java.tlb.loader;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonHashMapE;
+import org.ton.java.cell.*;
 import org.ton.java.tlb.types.*;
 import org.ton.java.utils.Utils;
 
@@ -12,6 +10,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 public class Tlb {
 
@@ -33,6 +32,14 @@ public class Tlb {
 
     public static Object load(Class c, CellSlice cs) {
         return load(c, cs, false);
+    }
+
+    public static Object loadReference(Class c, CellSlice cs) {
+        return load(c, cs, false);
+    }
+
+    public static Object loadReference(Class c, CellSlice cs, boolean skipMagic) {
+        return load(c, cs, skipMagic);
     }
 
     public static Object load(Class c, CellSlice cs, boolean skipMagic) {
@@ -228,7 +235,9 @@ public class Tlb {
             case "CurrencyCollection":
                 return CurrencyCollection.builder()
                         .coins(cs.loadCoins())
-                        .extraCurrencies(cs.loadDictE(32, k -> k.readInt(32), v -> v))
+                        .extraCurrencies(cs.loadDictE(32,
+                                k -> k.readInt(32),// todo read varuint32
+                                v -> v))
                         .build();
             case "GlobalVersion":
                 if (!skipMagic) {
@@ -253,51 +262,45 @@ public class Tlb {
                         .valueImported((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
                         .build();
             case "IntermediateAddress":
-                int intermFlag = cs.loadUint(2).intValue();
-                switch (intermFlag) {
-                    case 0b00 -> {
-                        return IntermediateAddressRegular.builder()
-                                .use_dest_bits(cs.loadUint(7).intValue()) // todo test if 7 bits
-                                .build();
-                    }
-                    case 0b10 -> {
-                        return IntermediateAddressSimple.builder()
-                                .workchainId(cs.loadUint(8).intValue())
-                                .addrPfx(cs.loadUint(64))
-                                .build();
-                    }
-                    case 0b11 -> {
-                        return IntermediateAddressSimple.builder()
-                                .workchainId(cs.loadUint(32).intValue())
-                                .addrPfx(cs.loadUint(64))
-                                .build();
-                    }
+                if (!cs.loadBit()) {
+                    return IntermediateAddressRegular.builder()
+                            .use_dest_bits(cs.loadUint(7).intValue()) // todo test if 7 bits
+                            .build();
                 }
-                throw new Error("unknown interm_addr flag, found " + Integer.toBinaryString(intermFlag));
+                if (!cs.loadBit()) {
+                    return IntermediateAddressSimple.builder()
+                            .workchainId(cs.loadUint(8).intValue())
+                            .addrPfx(cs.loadUint(64))
+                            .build();
+                }
+                return IntermediateAddressExt.builder()
+                        .workchainId(cs.loadUint(32).intValue())
+                        .addrPfx(cs.loadUint(64))
+                        .build();
             case "MsgEnvelope":
                 if (!skipMagic) {
-                    long magic = cs.loadUint(32).longValue();
+                    long magic = cs.loadUint(4).longValue();
                     assert (magic == 4) : "MsgEnvelope: magic not equal to 4, found " + Long.toHexString(magic);
                 }
                 return MsgEnvelope.builder()
                         .currAddr((IntermediateAddress) cs.loadTlb(IntermediateAddress.class))
                         .nextAddr((IntermediateAddress) cs.loadTlb(IntermediateAddress.class))
                         .fwdFeeRemaining(cs.loadCoins())
-                        .msg((Message) cs.loadTlb(Message.class))
+                        .msg((Message) Tlb.load(Message.class, cs.loadRef(), skipMagic))
                         .build();
             case "InMsg":
                 int inMsgFlag = cs.loadUint(3).intValue();
                 switch (inMsgFlag) {
                     case 0b000 -> {
                         return InMsgImportExt.builder()
-                                .msg((Message) cs.loadTlb(Message.class, skipMagic))
-                                .transaction((Transaction) cs.loadTlb(Transaction.class, skipMagic))
+                                .msg((Message) Tlb.load(Message.class, cs.loadRef(), skipMagic))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
                                 .build();
                     }
                     case 0b010 -> {
                         return InMsgImportIhr.builder()
-                                .msg((Message) cs.loadTlb(Message.class, skipMagic))
-                                .transaction((Transaction) cs.loadTlb(Transaction.class, skipMagic))
+                                .msg((Message) Tlb.load(Message.class, cs.loadRef(), skipMagic))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
                                 .ihrFee(cs.loadCoins())
                                 .proofCreated(cs.loadRef())
                                 .build();
@@ -305,14 +308,14 @@ public class Tlb {
                     case 0b011 -> {
                         return InMsgImportImm.builder()
                                 .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef(), skipMagic))
-                                .transaction((Transaction) cs.loadTlb(Transaction.class, skipMagic))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
                                 .fwdFee(cs.loadCoins())
                                 .build();
                     }
                     case 0b100 -> {
                         return InMsgImportFin.builder()
                                 .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef(), skipMagic))
-                                .transaction((Transaction) cs.loadTlb(Transaction.class, skipMagic))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
                                 .fwdFee(cs.loadCoins())
                                 .build();
                     }
@@ -342,23 +345,28 @@ public class Tlb {
                 throw new Error("unknown in_msg flag, found " + Long.toBinaryString(inMsgFlag));
 
             case "InMsgDescr":
-                TonHashMapE dictInMsg = cs.loadDictE(256, k -> k.readInt(256), v -> Tlb.load(InMsg.class, v, skipMagic));
-                for (Map.Entry<Object, Object> entry : dictInMsg.elements.entrySet()) {
+                TonHashMapAugE dictInMsg = cs.loadDictAugE(256,
+                        k -> k.readInt(256),
+                        v -> CellSlice.beginParse(v).loadTlb(InMsg.class),
+                        e -> CellSlice.beginParse(e).loadTlb(ImportFees.class)
+                );
+                for (Map.Entry<Object, Pair<Object, Object>> entry : dictInMsg.elements.entrySet()) {
                     System.out.println("key " + entry.getKey() + " value " + entry.getValue());
                 }
                 return InMsgDescr.builder()
                         .inMsg(dictInMsg)
-                        .feesCollected(cs.loadCoins())
-                        .valueImported((CurrencyCollection) cs.loadTlb(CurrencyCollection.class, skipMagic))
                         .build();
             case "OutMsgDescr":
-                TonHashMapE dictOutMsg = cs.loadDictE(256, k -> k.readInt(256), v -> Tlb.load(OutMsg.class, v, skipMagic));
-                for (Map.Entry<Object, Object> entry : dictOutMsg.elements.entrySet()) {
+                TonHashMapAugE dictOutMsg = cs.loadDictAugE(256,
+                        k -> k.readInt(256),
+                        v -> CellSlice.beginParse(v).loadTlb(InMsg.class), // todo
+                        e -> CellSlice.beginParse(e).loadTlb(ImportFees.class)
+                );
+                for (Map.Entry<Object, Pair<Object, Object>> entry : dictOutMsg.elements.entrySet()) {
                     System.out.println("key " + entry.getKey() + " value " + entry.getValue());
                 }
                 return OutMsgDescr.builder()
                         .outMsg(dictOutMsg)
-                        .currencyCollection((CurrencyCollection) cs.loadTlb(CurrencyCollection.class, skipMagic))
                         .build();
             case "BlockInfo":
                 if (!skipMagic) {
@@ -475,6 +483,12 @@ public class Tlb {
                 return ValidatorAddr.builder().build();
             case "SigPubKeyED25519":
                 return SigPubKeyED25519.builder().build();
+            case "Anycast":
+                int depth = cs.loadUint(5).intValue();
+                return Anycast.builder()
+                        .depth(depth)
+                        .rewritePfx(cs.loadUint(depth).byteValueExact())
+                        .build();
             case "MsgAddress":
                 MsgAddressExt extMsgAddr = null;
                 MsgAddressInt intMsgAddr = null;
@@ -497,6 +511,7 @@ public class Tlb {
                             anycast = (Anycast) cs.loadTlb(Anycast.class, skipMagic);
                         }
                         intMsgAddr = MsgAddressInt.builder()
+                                .magic(0b10)
                                 .anycast(anycast)
                                 .workchainId(cs.loadUint(8).intValue())
                                 .address(cs.loadUint(256))
@@ -509,6 +524,7 @@ public class Tlb {
                         }
                         int addrLen = cs.loadUint(9).intValue();
                         intMsgAddr = MsgAddressInt.builder()
+                                .magic(0b11)
                                 .anycast(anycast)
                                 .addrLen(addrLen)
                                 .workchainId(cs.loadUint(32).intValue())
@@ -522,6 +538,14 @@ public class Tlb {
                         .msgAddressInt(intMsgAddr)
                         .build();
             case "Message": {
+                CommonMsgInfo commonMsgInfo = (CommonMsgInfo) cs.loadTlb(CommonMsgInfo.class, skipMagic);
+                return Message.builder()
+                        .info(commonMsgInfo)
+                        .init(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, cs.loadRef()) : (StateInit) cs.loadTlb(StateInit.class)) : null) //review
+                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
+                        .build();
+            }
+            case "CommonMsgInfo": {
                 if (isNull(cs)) {
                     return Message.builder().build();
                 }
@@ -529,36 +553,49 @@ public class Tlb {
                 if (!isExternal) {
                     InternalMessage internalMessage = (InternalMessage) cs.loadTlb(InternalMessage.class, skipMagic);
 
-                    return Message.builder()
+                    return CommonMsgInfo.builder()
                             .msgType("INTERNAL")
-                            .msg(AnyMessage.builder()
-                                    .payload(internalMessage.getBody())
-//                                    .destAddr(internalMessage.getDstAddr()) //todo
-//                                    .senderAddr(internalMessage.getSrcAddr())
-                                    .build())
+                            .msg(internalMessage)
                             .build();
+
+//                    return Message.builder()
+//                            .msgType("INTERNAL")
+//                            .msg(AnyMessage.builder()
+//                                    .payload(internalMessage.getBody())
+////                                    .destAddr(internalMessage.getDstAddr()) //todo
+////                                    .senderAddr(internalMessage.getSrcAddr())
+//                                    .build())
+//                            .build();
                 } else {
                     boolean isOut = cs.preloadBitAt(2);
                     if (isOut) {
                         ExternalMessageOut externalMessageOut = (ExternalMessageOut) cs.loadTlb(ExternalMessageOut.class, skipMagic);
-                        return Message.builder()
+                        return CommonMsgInfo.builder()
                                 .msgType("EXTERNAL_OUT")
-                                .msg(AnyMessage.builder()
-                                        .payload(externalMessageOut.getBody())
-//                                        .destAddr(externalMessageOut.getDstAddr())
-//                                        .senderAddr(externalMessageOut.getSrcAddr())
-                                        .build())
+                                .msg(externalMessageOut)
                                 .build();
+//                        return Message.builder()
+//                                .msgType("EXTERNAL_OUT")
+//                                .msg(AnyMessage.builder()
+//                                        .payload(externalMessageOut.getBody())
+////                                        .destAddr(externalMessageOut.getDstAddr())
+////                                        .senderAddr(externalMessageOut.getSrcAddr())
+//                                        .build())
+//                                .build();
                     } else {
                         ExternalMessage externalMessage = (ExternalMessage) cs.loadTlb(ExternalMessage.class, skipMagic);
-                        return Message.builder()
+                        return CommonMsgInfo.builder()
                                 .msgType("EXTERNAL_IN")
-                                .msg(AnyMessage.builder()
-                                        .payload(externalMessage.getBody())
-//                                        .destAddr(externalMessage.getDstAddr())
-//                                        .senderAddr(externalMessage.getSrcAddr())
-                                        .build())
+                                .msg(externalMessage)
                                 .build();
+//                        return Message.builder()
+//                                .msgType("EXTERNAL_IN")
+//                                .msg(AnyMessage.builder()
+//                                        .payload(externalMessage.getBody())
+////                                        .destAddr(externalMessage.getDstAddr())
+////                                        .senderAddr(externalMessage.getSrcAddr())
+//                                        .build())
+//                                .build();
                     }
                 }
                 //throw new Error("Unknown msg type ");
@@ -568,7 +605,11 @@ public class Tlb {
                     return MessagesList.builder().build();
                 }
                 return MessagesList.builder()
-                        .list(cs.loadDictE(15, k -> k.readInt(15), v -> v))
+                        .list(cs.loadDictE(15,
+                                k -> k.readInt(15),
+                                //v -> v))
+                                v -> CellSlice.beginParse(v).loadTlb(Message.class)))
+//                                v -> Tlb.load(Message.class, CellSlice.beginParse(v).loadRef())))
                         .build();
             case "ComputeSkipReason": {
                 int skipReasonFlag = cs.loadUint(2).intValue();
@@ -656,23 +697,24 @@ public class Tlb {
                         .success(cs.loadBit())
                         .valid(cs.loadBit())
                         .noFunds(cs.loadBit())
+                        .statusChange((AccStatusChange) cs.loadTlb(AccStatusChange.class))
                         .totalFwdFees(cs.loadBit() ? cs.loadCoins() : null)
                         .totalActionFees(cs.loadBit() ? cs.loadCoins() : null)
                         .resultCode(cs.loadUint(32).longValue())
-                        .resultCode(cs.loadBit() ? cs.loadUint(32).longValue() : 0)
+                        .resultArg(cs.loadBit() ? cs.loadUint(32).longValue() : 0)
                         .totalActions(cs.loadUint(16).longValue())
                         .specActions(cs.loadUint(16).longValue())
                         .skippedActions(cs.loadUint(16).longValue())
                         .messagesCreated(cs.loadUint(16).longValue())
-                        .actionListHash(cs.loadBytes(256))
+                        .actionListHash(cs.loadUint(256))
                         .totalMsgSize((StorageUsedShort) cs.loadTlb(StorageUsedShort.class))
                         .build();
             }
 
             case "StorageUsedShort": {
                 return StorageUsedShort.builder()
-                        .cells(cs.loadUint(7))
-                        .bits(cs.loadUint(7))
+                        .cells(cs.loadVarUInteger(BigInteger.valueOf(7)))
+                        .bits(cs.loadVarUInteger(BigInteger.valueOf(7)))
                         .build();
             }
             case "ComputePhaseSkipped": {
@@ -701,9 +743,9 @@ public class Tlb {
             }
             case "ComputePhaseVMDetails": {
                 return ComputePhaseVMDetails.builder()
-                        .gasUsed(cs.loadUint(7))
-                        .gasLimit(cs.loadUint(7))
-                        .gasCredit(cs.loadBit() ? cs.loadUint(3) : BigInteger.ZERO)
+                        .gasUsed(cs.loadVarUInteger(BigInteger.valueOf(7)))
+                        .gasLimit(cs.loadVarUInteger(BigInteger.valueOf(7)))
+                        .gasCredit(cs.loadBit() ? cs.loadVarUInteger(BigInteger.valueOf(3)) : BigInteger.ZERO)
                         .mode(cs.loadUint(8).intValue())
                         .exitCode(cs.loadUint(32).longValue())
                         .exitArg(cs.loadBit() ? cs.loadUint(32).longValue() : 0L)
@@ -729,36 +771,45 @@ public class Tlb {
             case "Transaction": {
                 if (!skipMagic) {
                     int magic = cs.loadUint(4).intValue();
-                    assert (magic == 0b0111) : "Transaction: magic not equal to 0b0111, found " + Long.toHexString(magic);
+                    assert (magic == 0b0111) : "Transaction: magic not equal to 0b0111, found " + Long.toBinaryString(magic);
                 }
 
                 Transaction tx = Transaction.builder()
                         .magic(0b0111)
-                        .accountAddr(cs.loadBytes(256))
+                        .accountAddr(cs.loadUint(256))
                         .lt(cs.loadUint(64))
-                        .prevTxHash(cs.loadBytes(256))
-                        .prevTxLT(cs.loadUint(64))
+                        .prevTxHash(cs.loadUint(256))
+                        .prevTxLt(cs.loadUint(64))
                         .now(cs.loadUint(32).longValue())
                         .outMsgCount(cs.loadUint(15).intValue())
                         .origStatus(cs.loadString(2))
                         .endStatus(cs.loadString(2))
+                        .totalFees((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
                         .build();
 
                 System.out.println("tx " + tx); //todo cleanup
 
                 CellSlice io = CellSlice.beginParse(cs.loadRef());
+                Message msg = (Message) Tlb.load(Message.class, io.loadMaybeRefX());
+                Cell outMsgDict = io.loadMaybeRefX();
+                TonHashMapE out = nonNull(outMsgDict) ? CellSlice.beginParse(outMsgDict).loadDictE(15,
+                        k -> k.readInt(15),
+                        v -> CellSlice.beginParse(v).loadTlb(Message.class)) : null;
+
                 tx.setInOut(TransactionIO.builder()
-                        .in((Message) Tlb.load(Message.class, io.loadMaybeRefX()))
-                        .out((MessagesList) Tlb.load(MessagesList.class, io.loadRef()))
+                        .in(msg)
+                        .out(out)
                         .build());
 
-                for (Map.Entry<Object, Object> entry : tx.getInOut().getOut().getList().elements.entrySet()) {
-                    System.out.println("key " + entry.getKey() + ", value " + ((Cell) entry.getValue()).print());
-                    Message i = (Message) Tlb.load(Message.class, (Cell) entry.getValue());
-                    System.out.println("i = " + i.toString());
+                if (nonNull(tx.getInOut().getOut())) {
+                    for (Map.Entry<Object, Object> entry : tx.getInOut().getOut().elements.entrySet()) {
+                        System.out.println("key " + entry.getKey() + ", value " + ((Cell) entry.getValue()).print());
+                        Message i = (Message) Tlb.load(Message.class, (Cell) entry.getValue());
+                        System.out.println("i = " + i.toString());
+                    }
                 }
 
-                tx.setTotalFees((CurrencyCollection) cs.loadTlb(CurrencyCollection.class));
+//                tx.setTotalFees((CurrencyCollection) cs.loadTlb(CurrencyCollection.class));
                 tx.setStateUpdate((HashUpdate) Tlb.load(HashUpdate.class, cs.loadRef()));
                 tx.setDescription((TransactionDescription) Tlb.load(TransactionDescription.class, cs.loadRef()));
 
@@ -940,8 +991,8 @@ public class Tlb {
                         .fwdFee(cs.loadCoins())
                         .createdLt(cs.loadUint(64))
                         .createdAt(cs.loadUint(32).longValue())
-                        .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, cs.loadRef()) : (StateInit) cs.loadTlb(StateInit.class)) : null) //review
-                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
+//                .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, cs.loadRef()) : (StateInit) cs.loadTlb(StateInit.class)) : null) //review
+//                .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
                         .build();
             case "ExternalMessage":
                 if (!skipMagic) {
@@ -953,8 +1004,8 @@ public class Tlb {
                         .srcAddr((MsgAddress) cs.loadTlb(MsgAddress.class))
                         .dstAddr((MsgAddress) cs.loadTlb(MsgAddress.class))
                         .importFee(cs.loadCoins())
-                        .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, cs.loadRef()) : (StateInit) cs.loadTlb(StateInit.class)) : null) //review
-                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits())))
+//                .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, cs.loadRef()) : (StateInit) cs.loadTlb(StateInit.class)) : null) //review
+//                .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits())))
                         .build();
             case "ExternalMessageOut":
                 if (!skipMagic) {
@@ -967,8 +1018,8 @@ public class Tlb {
                         .dstAddr((MsgAddress) cs.loadTlb(MsgAddress.class))
                         .createdLt(cs.loadUint(64))
                         .createdAt(cs.loadUint(32).longValue())
-                        .stateInit((StateInit) cs.loadTlb(StateInit.class))
-                        .body(cs.loadMaybeRefX())
+//                .stateInit((StateInit) cs.loadTlb(StateInit.class))
+//                .body(cs.loadMaybeRefX())
                         .build();
             case "Text":
                 int chunksNum = cs.loadUint(8).intValue();
@@ -1009,5 +1060,24 @@ public class Tlb {
         blkPrevInfo.setPrev1(blkRef1);
         blkPrevInfo.setPrev2(blkRef2);
         return blkPrevInfo;
+    }
+
+    public static Cell save(Class c, Object o) {
+        if (o instanceof InMsgImportImm msgImportImm) {
+            return msgImportImm.toCell();
+        } else if (o instanceof MsgEnvelope msgEnvelope) {
+            return msgEnvelope.toCell();
+        } else if (o instanceof IntermediateAddressRegular intermediateAddressRegular) {
+            return intermediateAddressRegular.toCell();
+        } else if (o instanceof IntermediateAddressSimple intermediateAddressRegular) {
+            return intermediateAddressRegular.toCell();
+        } else if (o instanceof IntermediateAddressExt intermediateAddressExt) {
+            return intermediateAddressExt.toCell();
+        } else if (o instanceof Message message) {
+            return message.toCell();
+        } else if (o instanceof Transaction transaction) {
+
+        }
+        return null;
     }
 }

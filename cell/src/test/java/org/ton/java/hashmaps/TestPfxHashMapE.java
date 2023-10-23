@@ -1,52 +1,35 @@
-package org.ton.java.cell;
+package org.ton.java.hashmaps;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonPfxHashMapE;
 import org.ton.java.utils.Utils;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestPfxHashMap {
+public class TestPfxHashMapE {
 
     @Test
-    public void testPfxHashMapDeserializationFromBoc() {
-        String t = "B5EE9C7241010501007A00020374C001020045A0E034CD6A3000596F07C3F0AB332935D3E3FC98F1E78F6AE1FC710EA4D98732772F1002057FBFB003040043BFB333333333333333333333333333333333333333333333333333333333333333400043BF955555555555555555555555555555555555555555555555555555555555555540DE161D24";
-
-        Cell cell = Cell.fromBoc(t);
-
-        CellSlice cs = CellSlice.beginParse(cell);
-        TonPfxHashMap dict = cs.loadDictPfx(267,
-                k -> k.readAddress(),
-                v -> true
-        );
-
-        for (Map.Entry<Object, Object> entry : dict.elements.entrySet()) {
-            log.info("key {}, value {}", entry.getKey(), entry.getValue());
-        }
-
-        assertThat(dict.elements.size()).isEqualTo(3);
-    }
-
-    @Test
-    public void testEmptyPfxHashMapSerialization() {
-        TonPfxHashMap x = new TonPfxHashMap(9);
-        assertThrows(Error.class, () -> x.serialize(
+    public void testEmptyPfxHashMapESerialization() {
+        TonPfxHashMapE x = new TonPfxHashMapE(9);
+        x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, 9).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3)
-        ));
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3));
     }
 
     @Test
-    public void testPfxHashMapSerialization() {
+    public void testPfxHashMapESerialization() {
         int dictKeySize = 9;
-        TonPfxHashMap x = new TonPfxHashMap(dictKeySize);
+        TonPfxHashMapE x = new TonPfxHashMapE(dictKeySize);
 
         x.elements.put(100L, (byte) 1);
         x.elements.put(200L, (byte) 2);
@@ -61,7 +44,7 @@ public class TestPfxHashMap {
         log.info("serialized cell {}", cell.print());
 
         CellSlice cs = CellSlice.beginParse(cell);
-        TonPfxHashMap dex = cs.loadDictPfx(dictKeySize,
+        TonPfxHashMapE dex = cs.loadDictPfxE(dictKeySize,
                 k -> k.readUint(dictKeySize),
                 v -> CellSlice.beginParse(v).loadUint(3)
         );

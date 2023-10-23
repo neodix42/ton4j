@@ -10,7 +10,7 @@ import java.util.function.Function;
 
 public class TonHashMapAug {
 
-    public HashMap<Object, Pair<Cell, Cell>> elements;
+    public HashMap<Object, Pair<Object, Object>> elements; // Pair<Value,Extra>
     int keySize;
     int maxMembers;
 
@@ -46,16 +46,15 @@ public class TonHashMapAug {
         this.maxMembers = 10000;
     }
 
-    public List<NodeAug> deserializeEdge(CellSlice edge, int keySize, final BitString key) {
-        List<NodeAug> nodes = new ArrayList<>();
+    public List<Node> deserializeEdge(CellSlice edge, int keySize, final BitString key) {
+        List<Node> nodes = new ArrayList<>();
         BitString l = deserializeLabel(edge, keySize - key.toBitString().length());
         key.writeBitString(l);
         if (key.toBitString().length() == keySize) {
             Cell value = CellBuilder.beginCell().storeSlice(edge).endCell();
             //Cell extra = CellBuilder.beginCell().storeSlice(edge).endCell(); // todo how?
-            Cell extra = CellBuilder.beginCell().storeUint(1, 16).endCell(); // todo how?
-            List<NodeAug> newList = new ArrayList<>(nodes);
-            newList.add(new NodeAug(key, value, extra));
+            List<Node> newList = new ArrayList<>(nodes);
+            newList.add(new Node(key, value)); // todo
             return newList;
         }
 
@@ -73,20 +72,25 @@ public class TonHashMapAug {
     }
 
     /**
-     * Loads HashMap and parses keys and values
-     * HashMap X Y;
+     * Loads HashMapAug and parses keys, values and extras
      */
-    void deserialize(CellSlice c, Function<BitString, Object> keyParser, Function<Pair, Pair> valueParser) {
-        List<NodeAug> nodes = deserializeEdge(c, keySize, new BitString(keySize));
-        for (NodeAug node : nodes) {
-            elements.put(keyParser.apply(node.key), valueParser.apply(Pair.of(node.value, node.extra)));
+    void deserialize(CellSlice c,
+                     Function<BitString, Object> keyParser,
+                     Function<CellSlice, Object> valueParser,
+                     Function<CellSlice, Object> extraParser) {
+        List<Node> nodes = deserializeEdge(c, keySize, new BitString(keySize));
+        for (Node node : nodes) {
+            CellSlice both = CellSlice.beginParse(node.value);
+            Object extra = extraParser.apply(both);
+            Object value = valueParser.apply(both);
+            elements.put(keyParser.apply(node.key), Pair.of(value, extra));
         }
     }
 
     /**
      * Read the keys in array and return binary tree in the form of nested array
      *
-     * @param arr array which contains {key:Cell, value:Cell}
+     * @param arr array which contains {key:Cell, value:Cell, extra:Cell}
      * @return array either leaf or empty leaf or [left,right] fork
      */
     List<Object> splitTree(List<Object> arr) {
@@ -96,13 +100,13 @@ public class TonHashMapAug {
         for (Object a : arr) {
             BitString key = ((NodeAug) a).key;
             Cell value = ((NodeAug) a).value;
-            Cell extra = ((NodeAug) a).extra;
+//            Cell extra = ((NodeAug) a).extra;
             boolean lr = key.readBit();
 
             if (lr) {
-                right.add(new NodeAug(key, value, extra));
+                right.add(new Node(key, value));
             } else {
-                left.add(new NodeAug(key, value, extra));
+                left.add(new Node(key, value));
             }
         }
 
@@ -206,8 +210,8 @@ public class TonHashMapAug {
             se.set(0, bs.toBitString());
 
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            builder.writeCell(node.value);
             builder.writeCell(node.extra); // todo review
+            builder.writeCell(node.value);
         } else { // contains fork
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
             Cell leftCell = new Cell();
@@ -220,12 +224,20 @@ public class TonHashMapAug {
         }
     }
 
-    public Cell serialize(Function<Object, BitString> keyParser, Function<Pair, Pair> valueParser) {
+    public Cell serialize(Function<Object, BitString> keyParser,
+                          Function<Object, Object> valueParser,
+                          Function<Object, Object> extraParser) {
         List<Object> se = new ArrayList<>();
-        for (Map.Entry<Object, Pair<Cell, Cell>> entry : elements.entrySet()) {
+        for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
             BitString key = keyParser.apply(entry.getKey());
-            Pair<Cell, Cell> value = valueParser.apply(entry.getValue());
-            se.add(new NodeAug(key, value.getLeft(), value.getRight()));
+            Cell value = (Cell) valueParser.apply(entry.getValue().getLeft());
+            Cell extra = (Cell) extraParser.apply(entry.getValue().getRight());
+            Cell both = CellBuilder.beginCell()
+                    .storeSlice(CellSlice.beginParse(value))
+                    .storeSlice(CellSlice.beginParse(extra))
+                    .endCell();
+
+            se.add(new Node(key, both));
         }
 
         if (se.isEmpty()) {

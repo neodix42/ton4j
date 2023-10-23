@@ -15,4 +15,5 @@ import java.math.BigInteger;
 public class CurrencyCollection {
     BigInteger coins;
     TonHashMapE extraCurrencies; // `tlb dict 32 32
+    //todo dump hashmap
 }

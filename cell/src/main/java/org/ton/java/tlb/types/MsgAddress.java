@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 @Builder
 @Getter
@@ -33,5 +35,23 @@ public class MsgAddress {
 
     private String getMagic() {
         return Long.toBinaryString(magic);
+    }
+
+    public Cell toCell() {
+        switch (magic) {
+            case 0b00 -> {
+                return CellBuilder.beginCell().storeUint(0, 2).endCell();
+            }
+            case 0b01 -> {
+                return msgAddressExt.toCell();
+            }
+            case 0b10 -> {
+                return msgAddressInt.toCellStd();
+            }
+            case 0b11 -> {
+                return msgAddressInt.toCellVar();
+            }
+        }
+        return null; // todo error
     }
 }

@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 import java.math.BigInteger;
 
@@ -17,4 +19,13 @@ import java.math.BigInteger;
 public class IntermediateAddressExt implements IntermediateAddress {
     long workchainId;
     BigInteger addrPfx;
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeBit(true)
+                .storeBit(true)
+                .storeUint(workchainId, 32)
+                .storeUint(addrPfx, 64)
+                .endCell();
+    }
 }
