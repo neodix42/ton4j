@@ -19,7 +19,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.isNull;
 
 public class Exec {
   private Tonlib tonlib;
@@ -392,14 +394,35 @@ public class Exec {
     System.out.println ("result mc seqno " + last_mc_seqno);
   }
 
-  public void run () {
+  public void run () throws Exception {
     tonlib = Tonlib.builder()
       .pathToGlobalConfig ("config.json")
       .pathToTonlibSharedLib("./libtonlibjson.so")
       .keystoreInMemory(true)
       .verbosityLevel(VerbosityLevel.FATAL)
       .build ();
-    MasterChainInfo mi = tonlib.getLast (); 
+    MasterChainInfo mi;
+    int attempt_seqno = 0;
+    while (true) {
+       boolean success = false;
+       try {
+         mi = tonlib.getLast ();
+         if (!isNull(mi) && !isNull(mi.getLast())) {
+             success = true;
+         }
+       } catch (Exception e) {
+         mi = null;
+       };
+       if (!success) {
+         attempt_seqno++;
+         if (attempt_seqno >= 3) {
+             throw new Error ("FAILED TO GET LAST");
+         }
+         TimeUnit.SECONDS.sleep(1);
+       } else {
+         break;
+       }
+    }
     System.out.println (mi.getLast().toString ());
     last_mc_seqno = mi.getLast ().getSeqno ();
     last_shards = new HashSet<String> ();
@@ -620,7 +643,7 @@ public class Exec {
     return t[1] + info;
   }
 
-  public static void main (String args[]) {
+  public static void main (String args[]) throws Exception {
     Exec exc = new Exec ();
     exc.run ();
     System.out.println (exc.get_account_type (new Address ("EQD4g62_gEY7s2xHf3Fs-Yl6oar1YSwBInWdChUQPkMb91hu")));
