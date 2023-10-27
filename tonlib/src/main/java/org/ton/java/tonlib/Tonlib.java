@@ -303,12 +303,14 @@ public class Tonlib {
 
             if (!el.has("@extra")) {
                 /* also strange */
+                retry++;
                 continue;
             }
                 
             JsonElement extra = el.get("@extra");
             if (!extra.isJsonPrimitive()) {
                 /* also strange */
+                retry++;
                 continue;
             }
             if (!extra.getAsString().equals(tag)) {
@@ -319,6 +321,15 @@ public class Tonlib {
             return gson.toJson(el);
         }
         return null;
+    }
+
+    private static boolean resultIsError(String result) {
+            JsonObject el = gson.fromJson(result, JsonObject.class);
+            if (!el.has("@type")) {
+                return false;
+            }
+            String el_type = el.get("@type").getAsString();
+            return el_type.equals("error");
     }
 
     private String syncAndRead(String tag) {
@@ -356,7 +367,11 @@ public class Tonlib {
         String tag = send(blockQuery);
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, BlockIdExt.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, BlockIdExt.class);
+        }
     }
 
     public MasterChainInfo getLast() {
@@ -364,7 +379,11 @@ public class Tonlib {
 
         String tag = send(gson.toJson(getLastQuery));
         String result = syncAndRead(tag);
-        return gson.fromJson(result, MasterChainInfo.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, MasterChainInfo.class);
+        }
     }
 
     public Shards getShards(BlockIdExt id) {
@@ -375,7 +394,11 @@ public class Tonlib {
         String tag = send(gson.toJson(getShardsQuery));
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, Shards.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, Shards.class);
+        }
     }
 
     public Shards getShards(long seqno, long lt, long unixtime) {
@@ -395,7 +418,11 @@ public class Tonlib {
         String tag = send(gson.toJson(getShardsQuery));
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, Shards.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, Shards.class);
+        }
     }
 
     public Key createNewKey() {
@@ -404,7 +431,11 @@ public class Tonlib {
         String tag = send(gson.toJson(newKeyQuery));
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, Key.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, Key.class);
+        }
     }
 
     public Data encrypt(String data, String secret) {
@@ -415,7 +446,11 @@ public class Tonlib {
         String tag = send(gson.toJson(encryptQuery));
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, Data.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, Data.class);
+        }
     }
 
     public Data decrypt(String data, String secret) {
@@ -426,7 +461,11 @@ public class Tonlib {
         String tag = send(gson.toJson(decryptQuery));
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, Data.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, Data.class);
+        }
     }
 
     public BlockHeader getBlockHeader(BlockIdExt fullblock) {
@@ -436,7 +475,11 @@ public class Tonlib {
         String tag = send(gson.toJson(blockHeaderQuery));
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, BlockHeader.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, BlockHeader.class);
+        }
     }
     
     public DnsResolved dnsResolve(String name, AccountAddressOnly addr) {
@@ -456,7 +499,11 @@ public class Tonlib {
 
         String tag = send(gson.toJson(query));
         String result = syncAndRead(tag);
-        return gson.fromJson(result, DnsResolved.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, DnsResolved.class);
+        }
     }
     
     //@formatter:off
@@ -509,7 +556,11 @@ public class Tonlib {
         String tag = send(gson.toJson(getRawTransactionsQuery));
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, RawTransactions.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, RawTransactions.class);
+        }
     }
 
     public RawTransaction getRawTransaction(byte workchain, ShortTxId tx) {
@@ -528,6 +579,9 @@ public class Tonlib {
         String tag = send(gson.toJson(getRawTransactionsQuery));
 
         String result = syncAndRead(tag);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        }
         RawTransactions res = gson.fromJson(result, RawTransactions.class);
         List<RawTransaction> t = res.getTransactions ();
         if (t.size() >= 1) {
@@ -592,8 +646,12 @@ public class Tonlib {
         String tag = send(gson.toJson(getBlockTransactionsQuery));
 
         String result = syncAndRead(tag);
-
-        return gson.fromJson(result, BlockTransactions.class);
+        
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, BlockTransactions.class);
+        }
     }
 
     /**
@@ -620,7 +678,11 @@ public class Tonlib {
         String tag = send(gson.toJson(getAccountStateQuery));
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, RawAccountState.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, RawAccountState.class);
+        }
     }
 
     public FullAccountState getAccountState(AccountAddressOnly address) {
@@ -629,7 +691,11 @@ public class Tonlib {
         String tag = send(gson.toJson(getAccountStateQuery));
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, FullAccountState.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, FullAccountState.class);
+        }
     }
 
     public FullAccountState getAccountState(Address address) {
@@ -641,7 +707,11 @@ public class Tonlib {
         String tag = send(gson.toJson(getAccountStateQuery));
 
         String result = syncAndRead(tag);
-        return gson.fromJson(result, FullAccountState.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, FullAccountState.class);
+        }
     }
 
 
@@ -680,8 +750,11 @@ public class Tonlib {
 
         String result = syncAndRead(tag);
 
-        return gson.fromJson(result, LoadContract.class).getId();
-
+        if (isNull(result) || resultIsError(result)) {
+            return 0;
+        } else {
+            return gson.fromJson(result, LoadContract.class).getId();
+        }
     }
 
     public RunResult runMethod(Address contractAddress, String methodName) {
@@ -721,6 +794,9 @@ public class Tonlib {
         String tag = send(gson.toJson(runMethodQuery));
 
         String result = syncAndRead(tag);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        }
 
         RunResultGeneric<String> g = gson.fromJson(result, RunResultGeneric.class);
 
@@ -741,7 +817,7 @@ public class Tonlib {
 
         String result = syncAndRead(tag);
 
-        if ((result == null) || (result.contains("@type") && result.contains("error"))) {
+        if (isNull(result) || resultIsError(result)) {
             TonlibError error = gson.fromJson(result, TonlibError.class);
             return ExtMessageInfo.builder()
                     .error(error)
@@ -764,7 +840,11 @@ public class Tonlib {
 
         String result = syncAndRead(tag);
 
-        return gson.fromJson(result, QueryFees.class);
+        if (isNull(result) || resultIsError(result)) {
+            return null;
+        } else {
+            return gson.fromJson(result, QueryFees.class);
+        }
     }
 
     /**
@@ -788,7 +868,7 @@ public class Tonlib {
 
         String result = syncAndRead(tag);
 
-        if (result.contains("@type") && result.contains("error")) {
+        if (isNull(result) || resultIsError(result)) {
             return QueryInfo.builder().id(-1).build();
         } else {
             return gson.fromJson(result, QueryInfo.class);
@@ -810,11 +890,7 @@ public class Tonlib {
 
         String result = syncAndRead(tag);
 
-        if (isNull(result)) {
-            return false;
-        }
-
-        if (result.contains("@type") && result.contains("error")) {
+        if (isNull(result) || resultIsError(result)) {
             return false;
         } else {
             try {
@@ -851,10 +927,7 @@ public class Tonlib {
 
         String result = syncAndRead(tag);
 
-        if (result == null) {
-            return false;
-        }
-        if (result.contains("@type") && result.contains("error")) {
+        if (isNull(result) || resultIsError(result)) {
             return false;
         } else {
             try {
