@@ -21,6 +21,9 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.CompletableFuture; 
+import java.util.concurrent.locks.ReentrantLock; 
+import java.lang.Thread;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -81,19 +84,25 @@ public class Tonlib {
      */
     private double receiveTimeout;
 
-    private final TonlibJsonI tonlibJson;
+    private TonlibJsonI tonlibJson;
 
     private static final Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
 
-    private final long tonlib;
+    private long tonlib;
 
     private boolean synced;
+    private boolean crashedDuringInit;
+    private boolean isStopping;
 
-    private final AtomicLong counter = new AtomicLong(0);
 
     public static TonlibBuilder builder() {
         return new CustomTonlibBuilder();
     }
+
+    private HashMap<String, CompletableFuture<String>> pending_futures;
+    private ReentrantLock mutex;
+    private AtomicLong counter;
+    
 
     private static class CustomTonlibBuilder extends TonlibBuilder {
         @Override
@@ -145,6 +154,12 @@ public class Tonlib {
                 }
 
                 super.synced = false;
+                super.crashedDuringInit = false;
+                super.isStopping = false;
+
+                super.pending_futures = new HashMap<String, CompletableFuture<String>>();
+                super.mutex = new ReentrantLock();
+                super.counter = new AtomicLong(0);
 
                 String configData = null;
                 if (isNull(super.pathToGlobalConfig) && isNull(super.configData)) {
@@ -172,9 +187,7 @@ public class Tonlib {
                 else if(isNull(super.pathToGlobalConfig)){
                     configData = super.configData;
                 }
-
-                super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
-                super.tonlib = super.tonlibJson.tonlib_client_json_create();
+                super.configData = configData;
 
                 System.out.printf("Java Tonlib configuration:\n" +
                                 "Location: %s\n" +
@@ -188,42 +201,12 @@ public class Tonlib {
                         super.pathToTonlibSharedLib, super.verbosityLevel, super.verbosityLevel.ordinal(),
                         super.keystoreInMemory, super.keystorePath, super.pathToGlobalConfig,
                         super.testnet, super.receiveTimeout, super.receiveRetryTimes,super.configData);
-
-                VerbosityLevelQuery verbosityLevelQuery = VerbosityLevelQuery.builder().new_verbosity_level(super.verbosityLevel.ordinal()).build();
-
-                super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(verbosityLevelQuery));
-
-                String result = super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
-                System.out.println("set verbosityLevel result: " + result);
-
-                String initTemplate = Utils.streamToString(Tonlib.class.getClassLoader().getResourceAsStream("init.json"));
-
-                String dataQuery = JsonParser.parseString(configData).getAsJsonObject().toString();
-
-                String q = initTemplate.replace("CFG_PLACEHOLDER", dataQuery);
-                if (super.keystoreInMemory) {
-                    String keystoreMemory = " 'keystore_type': { '@type': 'keyStoreTypeInMemory' }";
-                    q = q.replace("KEYSTORE_TYPE", keystoreMemory);
-                } else {
-                    String keystoreDirectory = "'keystore_type': {'@type': 'keyStoreTypeDirectory', 'directory': '.' } ";
-                    if (super.keystorePath.equals(".")) {
-                        q = q.replace("KEYSTORE_TYPE", keystoreDirectory);
-                    } else {
-                        q = q.replace("KEYSTORE_TYPE", keystoreDirectory.replace(".", super.keystorePath));
-                    }
-                }
-
-                String setupQueryQ = JsonParser.parseString(q).getAsJsonObject().toString();
-
-                super.tonlibJson.tonlib_client_json_send(super.tonlib, setupQueryQ);
-
-                result = super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
-                System.out.println("set tonlib configuration result " + result);
-
             } catch (Exception e) {
                 throw new RuntimeException("Error creating tonlib instance: " + e.getMessage());
             }
-            return super.build();
+            Tonlib tonlib = super.build();
+            tonlib.spawnMainThread();
+            return tonlib;
         }
     }
 
@@ -231,19 +214,53 @@ public class Tonlib {
         tonlibJson.tonlib_client_json_destroy(tonlib);
     }
 
-    private String send(String query) {
+    private void removePendingFuture(String tag) {
+      mutex.lock();
+      try {
+          if (pending_futures.containsKey(tag)) {
+              pending_futures.remove(tag);
+          }
+      } finally {
+          mutex.unlock();
+      }
+    }
+
+    private String sendAndReceive(String query, double timeout) {
+        if (timeout == 0) {
+            timeout = receiveTimeout;
+        }
         String tag = getNextQueryTag();
+  
+        CompletableFuture<String> future = new CompletableFuture<String>();
+       
+        mutex.lock();
+        pending_futures.put(tag, future);
+        mutex.unlock();
+
         query = addTagToQuery(query, tag);
         System.out.println("Sending: " + query);
         try {
             tonlibJson.tonlib_client_json_send(tonlib, query);
-            return tag;
         } catch (Throwable e) {
+            removePendingFuture(tag);
             System.err.println("Error in tonlib.send(), sending query: " + query);
-            return "";
+            return null;
+        }
+      
+        try {
+          String result = future.get((long)(timeout * 1000), TimeUnit.MILLISECONDS);
+          removePendingFuture(tag);
+          return result;
+        } catch (Exception e) {
+          removePendingFuture(tag);
+          return null;
         }
     }
-   
+    
+    private String sendAndReceive(String query) {
+      return sendAndReceive(query, 0);
+    }
+
     private String getNextQueryTag() {
         long extra = counter.incrementAndGet(); 
         return Long.toString(extra);
@@ -255,18 +272,62 @@ public class Tonlib {
         return gson.toJson(el);
     }
 
-    private String receive(String tag) {
-        int retry = 0;
-        while (retry <= receiveRetryTimes) {
+    private void initTonlib() {
+        try {
+            tonlibJson = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
+            tonlib = tonlibJson.tonlib_client_json_create();
+
+            VerbosityLevelQuery verbosityLevelQuery = VerbosityLevelQuery.builder().new_verbosity_level(verbosityLevel.ordinal()).build();
+
+            tonlibJson.tonlib_client_json_send(tonlib, gson.toJson(verbosityLevelQuery));
+
             String result = tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
+            System.out.println("set verbosityLevel result: " + result);
+
+            String initTemplate = Utils.streamToString(Tonlib.class.getClassLoader().getResourceAsStream("init.json"));
+            
+            System.out.println("Found initTemplate " + initTemplate);
+
+            String dataQuery = JsonParser.parseString(configData).getAsJsonObject().toString();
+            
+            System.out.println("Sending data query " + dataQuery);
+
+            String q = initTemplate.replace("CFG_PLACEHOLDER", dataQuery);
+            if (keystoreInMemory) {
+                String keystoreMemory = " 'keystore_type': { '@type': 'keyStoreTypeInMemory' }";
+                q = q.replace("KEYSTORE_TYPE", keystoreMemory);
+            } else {
+                String keystoreDirectory = "'keystore_type': {'@type': 'keyStoreTypeDirectory', 'directory': '.' } ";
+                if (keystorePath.equals(".")) {
+                    q = q.replace("KEYSTORE_TYPE", keystoreDirectory);
+                } else {
+                    q = q.replace("KEYSTORE_TYPE", keystoreDirectory.replace(".", keystorePath));
+                }
+            }
+
+            String setupQueryQ = JsonParser.parseString(q).getAsJsonObject().toString();
+
+            System.out.println("Sending setup query " + setupQueryQ);
+
+            tonlibJson.tonlib_client_json_send(tonlib, setupQueryQ);
+
+            result = tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
+            System.out.println("set tonlib configuration result " + result);
+        } catch (Exception e) {
+            System.out.println("caught exception " + e.toString());
+            crashedDuringInit = true;
+        }
+    }
+
+    private void runMainThread() {
+        while (!isStopping) {
+            String result = tonlibJson.tonlib_client_json_receive(tonlib, 1.0);
             if (isNull(result)) {
-                retry++;
                 continue;
             }
             
             JsonObject el = gson.fromJson(result, JsonObject.class);
             if (!el.has("@type")) {
-                retry++;
                 continue; // WTF?
             }
             String el_type = el.get("@type").getAsString();
@@ -303,24 +364,52 @@ public class Tonlib {
 
             if (!el.has("@extra")) {
                 /* also strange */
-                retry++;
                 continue;
             }
                 
             JsonElement extra = el.get("@extra");
             if (!extra.isJsonPrimitive()) {
                 /* also strange */
-                retry++;
-                continue;
-            }
-            if (!extra.getAsString().equals(tag)) {
                 continue;
             }
 
+            String tag = extra.getAsString();
             el.remove("@extra");
-            return gson.toJson(el);
+           
+            CompletableFuture<String> future = null;
+
+            mutex.lock();
+            try {
+              if (pending_futures.containsKey(tag)) {
+                future = pending_futures.get(tag);
+                pending_futures.remove(tag);
+              }
+            } finally {
+              mutex.unlock();
+            }
+               
+            if (!isNull(future)) {
+                future.complete(gson.toJson(el));
+            }
         }
-        return null;
+    }
+
+    private static class TonlibMainThread extends Thread {
+        private Tonlib tonlib;
+
+        TonlibMainThread(Tonlib _tonlib) {
+          tonlib = _tonlib;
+        }
+
+        @Override public void run() {
+            tonlib.initTonlib();
+            tonlib.runMainThread();
+        }
+    };
+
+    void spawnMainThread() {
+        TonlibMainThread thread = new TonlibMainThread(this);
+        thread.start();
     }
 
     private static boolean resultIsError(String result) {
@@ -332,12 +421,21 @@ public class Tonlib {
             return el_type.equals("error");
     }
 
-    private String syncAndRead(String tag) {
-        try {
-            return receive(tag);
-        } catch (Exception e) {
-            log.info("Cannot sync with blockchain. Error: " + e.getMessage());
-            return null;
+    public BlockIdExt waitSync() throws Exception {
+        while (true) {
+            String result = sendAndReceive("{\"@type\":\"sync\"}", 3600);
+            if (isNull(result) || resultIsError(result) || !synced) {
+                if (crashedDuringInit) {
+                    throw new Error("tonlib crashed during initialization");
+                }
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (Exception e) {
+                }
+                continue;
+            } else {
+                return gson.fromJson(result, BlockIdExt.class);
+            }
         }
     }
 
@@ -362,11 +460,7 @@ public class Tonlib {
                 .utime(utime)
                 .build();
 
-        String blockQuery = gson.toJson(lookupBlockQuery);
-
-        String tag = send(blockQuery);
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(lookupBlockQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -377,8 +471,7 @@ public class Tonlib {
     public MasterChainInfo getLast() {
         GetLastQuery getLastQuery = GetLastQuery.builder().build();
 
-        String tag = send(gson.toJson(getLastQuery));
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(getLastQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -391,9 +484,7 @@ public class Tonlib {
                 .id(id)
                 .build();
 
-        String tag = send(gson.toJson(getShardsQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(getShardsQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -415,9 +506,7 @@ public class Tonlib {
                 .id(fullblock)
                 .build();
 
-        String tag = send(gson.toJson(getShardsQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(getShardsQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -428,9 +517,7 @@ public class Tonlib {
     public Key createNewKey() {
         NewKeyQuery newKeyQuery = NewKeyQuery.builder().build();
 
-        String tag = send(gson.toJson(newKeyQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(newKeyQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -443,9 +530,7 @@ public class Tonlib {
                 .decrypted_data(data)
                 .secret(secret).build();
 
-        String tag = send(gson.toJson(encryptQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(encryptQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -458,9 +543,7 @@ public class Tonlib {
                 .encrypted_data(data)
                 .secret(secret).build();
 
-        String tag = send(gson.toJson(decryptQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(decryptQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -472,9 +555,7 @@ public class Tonlib {
         BlockHeaderQuery blockHeaderQuery = BlockHeaderQuery.builder()
                 .id(fullblock).build();
 
-        String tag = send(gson.toJson(blockHeaderQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(blockHeaderQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -497,8 +578,7 @@ public class Tonlib {
                 .ttl (1)
                 .build();
 
-        String tag = send(gson.toJson(query));
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(query));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -553,9 +633,7 @@ public class Tonlib {
                         .build())
                 .build();
 
-        String tag = send(gson.toJson(getRawTransactionsQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(getRawTransactionsQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -576,9 +654,7 @@ public class Tonlib {
                 .try_decode_message(false)
                 .build();
 
-        String tag = send(gson.toJson(getRawTransactionsQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(getRawTransactionsQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         }
@@ -643,10 +719,7 @@ public class Tonlib {
                 .after(afterTx)
                 .build();
 
-        String tag = send(gson.toJson(getBlockTransactionsQuery));
-
-        String result = syncAndRead(tag);
-        
+        String result = sendAndReceive(gson.toJson(getBlockTransactionsQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -675,9 +748,7 @@ public class Tonlib {
     public RawAccountState getRawAccountState(AccountAddressOnly address) {
         GetRawAccountStateQueryOnly getAccountStateQuery = GetRawAccountStateQueryOnly.builder().account_address(address).build();
 
-        String tag = send(gson.toJson(getAccountStateQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(getAccountStateQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -688,9 +759,7 @@ public class Tonlib {
     public FullAccountState getAccountState(AccountAddressOnly address) {
         GetAccountStateQueryOnly getAccountStateQuery = GetAccountStateQueryOnly.builder().account_address(address).build();
 
-        String tag = send(gson.toJson(getAccountStateQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(getAccountStateQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -704,9 +773,7 @@ public class Tonlib {
                 .build();
         GetAccountStateQueryOnly getAccountStateQuery = GetAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
 
-        String tag = send(gson.toJson(getAccountStateQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(getAccountStateQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -746,10 +813,7 @@ public class Tonlib {
                 .extra(UUID.randomUUID().toString())
                 .build();
 
-        String tag = send(gson.toJson(loadContractQuery));
-
-        String result = syncAndRead(tag);
-
+        String result = sendAndReceive(gson.toJson(loadContractQuery));
         if (isNull(result) || resultIsError(result)) {
             return 0;
         } else {
@@ -791,9 +855,7 @@ public class Tonlib {
                 .extra(UUID.randomUUID().toString())
                 .build();
 
-        String tag = send(gson.toJson(runMethodQuery));
-
-        String result = syncAndRead(tag);
+        String result = sendAndReceive(gson.toJson(runMethodQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         }
@@ -813,10 +875,7 @@ public class Tonlib {
         SendRawMessageQuery sendMessageQuery = SendRawMessageQuery.builder()
                 .body(serializedBoc).build();
 
-        String tag = send(gson.toJson(sendMessageQuery));
-
-        String result = syncAndRead(tag);
-
+        String result = sendAndReceive(gson.toJson(sendMessageQuery));
         if (isNull(result) || resultIsError(result)) {
             TonlibError error = gson.fromJson(result, TonlibError.class);
             return ExtMessageInfo.builder()
@@ -836,10 +895,7 @@ public class Tonlib {
                 .queryId(queryInfo.getId())
                 .ignore_chksig(ignoreChksig).build();
 
-        String tag = send(gson.toJson(estimateFeesQuery));
-
-        String result = syncAndRead(tag);
-
+        String result = sendAndReceive(gson.toJson(estimateFeesQuery));
         if (isNull(result) || resultIsError(result)) {
             return null;
         } else {
@@ -864,10 +920,7 @@ public class Tonlib {
                 .destination(Destination.builder().account_address(destinationAddress).build())
                 .build();
 
-        String tag = send(gson.toJson(createQuery));
-
-        String result = syncAndRead(tag);
-
+        String result = sendAndReceive(gson.toJson(createQuery));
         if (isNull(result) || resultIsError(result)) {
             return QueryInfo.builder().id(-1).build();
         } else {
@@ -882,14 +935,11 @@ public class Tonlib {
      * @return true if query was sent without errors
      */
     public boolean sendQuery(QueryInfo queryInfo) {
-        SendQuery createQuery = SendQuery.builder()
+        SendQuery sendQuery = SendQuery.builder()
                 .id(queryInfo.getId())
                 .build();
 
-        String tag = send(gson.toJson(createQuery));
-
-        String result = syncAndRead(tag);
-
+        String result = sendAndReceive(gson.toJson(sendQuery));
         if (isNull(result) || resultIsError(result)) {
             return false;
         } else {
@@ -923,10 +973,7 @@ public class Tonlib {
                 .data(body)
                 .build();
 
-        String tag = send(gson.toJson(createAndSendRawMessageQuery));
-
-        String result = syncAndRead(tag);
-
+        String result = sendAndReceive(gson.toJson(createAndSendRawMessageQuery));
         if (isNull(result) || resultIsError(result)) {
             return false;
         } else {
@@ -938,5 +985,9 @@ public class Tonlib {
                 return false;
             }
         }
+    }
+
+    public void setStopping() {
+      isStopping = true;
     }
 }

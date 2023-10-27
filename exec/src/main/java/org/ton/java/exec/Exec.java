@@ -401,30 +401,9 @@ public class Exec {
       .keystoreInMemory(true)
       .verbosityLevel(VerbosityLevel.FATAL)
       .build ();
-    MasterChainInfo mi;
-    int attempt_seqno = 0;
-    while (true) {
-       boolean success = false;
-       try {
-         mi = tonlib.getLast ();
-         if (!isNull(mi) && !isNull(mi.getLast())) {
-             success = true;
-         }
-       } catch (Exception e) {
-         mi = null;
-       };
-       if (!success) {
-         attempt_seqno++;
-         if (attempt_seqno >= 3) {
-             throw new Error ("FAILED TO GET LAST");
-         }
-         TimeUnit.SECONDS.sleep(1);
-       } else {
-         break;
-       }
-    }
-    System.out.println (mi.getLast().toString ());
-    last_mc_seqno = mi.getLast ().getSeqno ();
+    BlockIdExt last_mc_block = tonlib.waitSync();
+    System.out.println (last_mc_block.toString ());
+    last_mc_seqno = last_mc_block.getSeqno ();
     last_shards = new HashSet<String> ();
     known_contracts = new HashMap<String,String> ();
     known_contracts.put ("a7a2616a4d639a076c2f67e7cce0423fd2a1c2ee550ad651c1eda16ee13bcaca", "nft_item");
@@ -437,12 +416,12 @@ public class Exec {
     known_contracts.put ("beb0683ebeb8927fe9fc8ec0a18bc7dd17899689825a121eab46c5a3a860d0ce", "jetton_wallet");
     known_contracts.put ("feb5ff6820e2ff0d9483e7e0d62c817d846789fb4ae580c878866d959dabd5c0", "wallet_v4_r2");
     known_contracts.put ("84dafa449f98a6987789ba232358072bc0f76dc4524002a5d0918b9a75d2d599", "wallet_v3_r2");
-    var shardsR = tonlib.getShards(mi.getLast ());
+    var shardsR = tonlib.getShards(last_mc_block);
     var shards = shardsR.getShards ();
     for (BlockIdExt shard : shards) {
       last_shards.add (shard.toString ());  
     }
-    System.out.println (mi);
+    System.out.println (last_mc_block);
   }
 
   public long get_seqno (Address addr) {
@@ -643,6 +622,10 @@ public class Exec {
     return t[1] + info;
   }
 
+  public void stop() {
+    tonlib.setStopping();
+  }
+
   public static void main (String args[]) throws Exception {
     Exec exc = new Exec ();
     exc.run ();
@@ -655,5 +638,8 @@ public class Exec {
     System.out.println (exc.nft_single_get_content (new Address ("EQD4g62_gEY7s2xHf3Fs-Yl6oar1YSwBInWdChUQPkMb91hu")));
     System.out.println (exc.nft_item_get_content (new Address ("EQCRH0vtTG-7rgWRfsNaVJIzDLY9d0J51z-bQOfbaJt2zWOm")));
     System.out.println (exc.nft_item_get_content (new Address ("EQDye65-jeR8kz8MlfnS0qX-5HPF_Zq4pZSKrLFSedJumy89")));
+
+    System.out.println("completed");
+    exc.stop();
   }
 }
