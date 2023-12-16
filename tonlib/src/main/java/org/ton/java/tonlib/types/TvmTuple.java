@@ -16,7 +16,7 @@ import java.util.List;
 public class TvmTuple extends TypedAsyncObject {
     private List<Any> elements;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "tvm.tuple";
     }
 }

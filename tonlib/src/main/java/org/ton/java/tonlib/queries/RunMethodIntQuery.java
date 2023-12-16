@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.ton.java.tonlib.base.TypedAsyncObject;
-
 @SuperBuilder
 @Data
 @NoArgsConstructor
@@ -16,7 +15,7 @@ public class RunMethodIntQuery extends TypedAsyncObject {
     private String stack;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "smc.runGetMethod";
     }
 }

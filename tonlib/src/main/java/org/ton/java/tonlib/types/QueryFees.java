@@ -17,7 +17,7 @@ public class QueryFees extends TypedAsyncObject {
     private List<Fees> destination_fees;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "query.fees";
     }
 }

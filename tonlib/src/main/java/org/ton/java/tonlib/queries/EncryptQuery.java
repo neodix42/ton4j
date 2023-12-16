@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.ton.java.tonlib.base.TypedAsyncObject;
-
 @SuperBuilder
 @Data
 @NoArgsConstructor
@@ -15,7 +14,7 @@ public class EncryptQuery extends TypedAsyncObject {
     String secret;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "encrypt";
     }
 }

@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.ton.java.tonlib.base.TypedAsyncObject;
-
 @SuperBuilder
 @Data
 @AllArgsConstructor
@@ -18,7 +17,7 @@ public class RawAccountState extends TypedAsyncObject {
     private long sync_utime;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "raw.accountState";
     }
 }

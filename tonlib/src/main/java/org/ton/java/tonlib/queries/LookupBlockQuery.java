@@ -18,7 +18,7 @@ public class LookupBlockQuery extends TypedAsyncObject {
     private long utime;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "blocks.lookupBlock";
     }
 }

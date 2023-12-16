@@ -14,7 +14,7 @@ import org.ton.java.tonlib.types.BlockIdExt;
 public class GetShardsQuery extends TypedAsyncObject {
     private BlockIdExt id;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "blocks.getShards";
     }
 }

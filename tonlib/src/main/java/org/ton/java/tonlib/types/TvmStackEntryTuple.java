@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 public class TvmStackEntryTuple extends TvmStackEntry {
     private TvmTuple tuple;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "tvm.stackEntryTuple";
     }
 }

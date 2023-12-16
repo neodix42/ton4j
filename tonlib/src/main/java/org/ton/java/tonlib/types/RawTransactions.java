@@ -17,7 +17,7 @@ public class RawTransactions extends TypedAsyncObject {
     private LastTransactionId previous_transaction_id;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "raw.transactions";
     }
 }

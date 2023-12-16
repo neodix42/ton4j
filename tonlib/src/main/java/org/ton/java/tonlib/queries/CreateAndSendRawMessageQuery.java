@@ -17,7 +17,7 @@ public class CreateAndSendRawMessageQuery extends TypedAsyncObject {
     private String data;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "raw.createAndSendMessage";
     }
 }

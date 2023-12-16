@@ -18,7 +18,7 @@ public class RunResultGeneric<T> extends TypedAsyncObject {
     private long exit_code;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "smc.runResult";
     }
 }

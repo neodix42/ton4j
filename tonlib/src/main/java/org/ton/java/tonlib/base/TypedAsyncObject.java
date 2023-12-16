@@ -6,11 +6,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
+@SuperBuilder
 @Data
 public abstract class TypedAsyncObject {
     @JsonProperty(to = "@type", from = "@type")
@@ -19,5 +21,5 @@ public abstract class TypedAsyncObject {
     @JsonProperty(to = "@extra", from = "@extra", defaultValueToOmit = "null")
     private UUID tag = UUID.randomUUID();
     @JsonIgnore
-    public abstract String getTypeName();
+    public abstract String getTypeObjectName();
 }

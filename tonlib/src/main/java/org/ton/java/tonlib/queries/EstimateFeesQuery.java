@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.ton.java.tonlib.base.TypedAsyncObject;
-
 @SuperBuilder
 @Data
 @NoArgsConstructor
@@ -18,7 +17,7 @@ public class EstimateFeesQuery extends TypedAsyncObject {
     boolean ignore_chksig;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "query.estimateFees";
     }
 }

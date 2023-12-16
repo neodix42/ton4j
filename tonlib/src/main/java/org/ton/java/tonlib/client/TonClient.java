@@ -9,9 +9,6 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.Objects.isNull;
 
 public class TonClient {
 
@@ -43,13 +40,15 @@ public class TonClient {
         if (utime != 0) mode += 4;
         LookupBlockQuery query = LookupBlockQuery.builder()
                 .mode(mode).id(BlockId.builder().seqno(seqno).workchain(workchain)
-                        .shard(shard).build()).lt(lt).utime(utime).build();
+                        .shard(BigInteger.valueOf(shard)).build()).lt(lt).utime(utime).build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (BlockIdExt) readResult(query.getTag());
     }
 
     public MasterChainInfo getLast() {
         GetLastQuery query = GetLastQuery.builder().build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (MasterChainInfo) readResult(query.getTag());
     }
@@ -58,6 +57,7 @@ public class TonClient {
         GetShardsQuery query = GetShardsQuery.builder()
                 .id(id)
                 .build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (Shards) readResult(query.getTag());
 
@@ -73,12 +73,14 @@ public class TonClient {
         GetShardsQuery getShardsQuery = GetShardsQuery.builder()
                 .id(query)
                 .build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(getShardsQuery));
         return (Shards) readResult(getShardsQuery.getTag());
     }
 
     public Key createNewKey() {
         NewKeyQuery query = NewKeyQuery.builder().build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (Key) readResult(query.getTag());
     }
@@ -87,21 +89,24 @@ public class TonClient {
         EncryptQuery query = EncryptQuery.builder()
                 .decrypted_data(data)
                 .secret(secret).build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (Data) readResult(query.getTag());
     }
 
     public Data decrypt(String data, String secret) {
-        DecryptQuery decryptQuery = DecryptQuery.builder()
+        DecryptQuery query = DecryptQuery.builder()
                 .encrypted_data(data)
                 .secret(secret).build();
-        tonIO.submitRequest(JsonStream.serialize(decryptQuery));
-        return (Data) readResult(decryptQuery.getTag());
+        query.setType(query.getTypeObjectName());
+        tonIO.submitRequest(JsonStream.serialize(query));
+        return (Data) readResult(query.getTag());
     }
 
     public BlockHeader getBlockHeader(BlockIdExt fullblock) {
         BlockHeaderQuery query = BlockHeaderQuery.builder()
                 .id(fullblock).build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (BlockHeader) readResult(query.getTag());
     }
@@ -119,7 +124,7 @@ public class TonClient {
                 .category(Utils.bytesToBase64(category))
                 .ttl(1)
                 .build();
-
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (DnsResolved) readResult(query.getTag());
     }
@@ -137,6 +142,7 @@ public class TonClient {
                         .hash(fromTxHash)
                         .build())
                 .build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (RawTransactions) readResult(query.getTag());
     }
@@ -144,18 +150,18 @@ public class TonClient {
     public RawTransaction getRawTransaction(byte workchain, ShortTxId tx) {
         String addressHex = Utils.base64ToHexString(tx.getAccount());
         String address = Address.of(workchain + ":" + addressHex).toString(false);
-        GetRawTransactionsV2Query getRawTransactionsQuery = GetRawTransactionsV2Query.builder()
+        GetRawTransactionsV2Query query = GetRawTransactionsV2Query.builder()
                 .account_address(AccountAddressOnly.builder().account_address(address).build())
                 .from_transaction_id(LastTransactionId.builder()
-                        .lt(BigInteger.valueOf(tx.getLt()))
+                        .lt(tx.getLt())
                         .hash(tx.getHash())
                         .build())
                 .count(1)
                 .try_decode_message(false)
                 .build();
-
-        tonIO.submitRequest(JsonStream.serialize(getRawTransactionsQuery));
-        return ((RawTransactions) readResult(getRawTransactionsQuery.getTag())).getTransactions().stream().findFirst().orElse(null);
+        query.setType(query.getTypeObjectName());
+        tonIO.submitRequest(JsonStream.serialize(query));
+        return ((RawTransactions) readResult(query.getTag())).getTransactions().stream().findFirst().orElse(null);
     }
 
     public RawTransactions getAllRawTransactions(String address, BigInteger fromTxLt, String fromTxHash, long historyLimit) {
@@ -176,7 +182,7 @@ public class TonClient {
     public BlockTransactions getBlockTransactions(BlockIdExt fullblock, long count, long afterLt, String afterHash) {
         AccountTransactionId afterTx = AccountTransactionId.builder()
                 .account(afterHash)
-                .lt(afterLt)
+                .lt(BigInteger.valueOf(afterLt))
                 .build();
         return getBlockTransactions(fullblock, count, afterTx);
     }
@@ -189,7 +195,7 @@ public class TonClient {
         int mode = 7;
         if (afterTx != null) mode = 7 + 128;
         if (afterTx == null) afterTx = AccountTransactionId.builder()
-                    .account("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=").lt(0).build();
+                    .account("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=").lt(BigInteger.valueOf(0)).build();
 
         GetBlockTransactionsQuery query = GetBlockTransactionsQuery.builder()
                 .id(fullblock)
@@ -198,6 +204,7 @@ public class TonClient {
                 .after(afterTx)
                 .build();
 
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (BlockTransactions) readResult(query.getTag());
     }
@@ -214,7 +221,7 @@ public class TonClient {
         for (ShortTxId tx : blockTransactions.getTransactions()) {
             String addressHex = Utils.base64ToHexString(tx.getAccount());
             String address = Address.of(fullblock.getWorkchain() + ":" + addressHex).toString(false);
-            RawTransactions rawTransactions = getRawTransactions(address, BigInteger.valueOf(tx.getLt()), tx.getHash());
+            RawTransactions rawTransactions = getRawTransactions(address, tx.getLt(), tx.getHash());
             totalTxs.put(address + "|" + tx.getLt(), rawTransactions);
         }
         return totalTxs;
@@ -222,12 +229,14 @@ public class TonClient {
 
     public RawAccountState getRawAccountState(AccountAddressOnly address) {
         GetRawAccountStateQueryOnly query = GetRawAccountStateQueryOnly.builder().account_address(address).build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (RawAccountState) readResult(query.getTag());
     }
 
     public FullAccountState getAccountState(AccountAddressOnly address) {
         GetAccountStateQueryOnly query = GetAccountStateQueryOnly.builder().account_address(address).build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (FullAccountState) readResult(query.getTag());
     }
@@ -237,6 +246,7 @@ public class TonClient {
                 .account_address(address.toString(false))
                 .build();
         GetAccountStateQueryOnly query = GetAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (FullAccountState) readResult(query.getTag());
     }
@@ -244,6 +254,7 @@ public class TonClient {
     public long loadContract(AccountAddressOnly address) {
         LoadContractQuery query = LoadContractQuery.builder()
                 .account_address(address).build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return ((LoadContract) readResult(query.getTag())).getId();
     }
@@ -278,7 +289,7 @@ public class TonClient {
                 .method(MethodString.builder().name(methodName).build())
                 .stack(stack)
                 .build();
-
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         RunResultGeneric<String> g = ((RunResultGeneric<String>) readResult(query.getTag()));
         return ParseRunResult.getTypedRunResult(g.getStack(), g.getExit_code(), g.getGas_used(), g.getTag().toString());
@@ -293,6 +304,7 @@ public class TonClient {
     public ExtMessageInfo sendRawMessage(String serializedBoc) {
         SendRawMessageQuery query = SendRawMessageQuery.builder()
                 .body(serializedBoc).build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (ExtMessageInfo) readResult(query.getTag());
     }
@@ -302,6 +314,7 @@ public class TonClient {
         EstimateFeesQuery query = EstimateFeesQuery.builder()
                 .queryId(queryInfo.getId())
                 .ignore_chksig(ignoreChksig).build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (QueryFees) readResult(query.getTag());
     }
@@ -322,6 +335,7 @@ public class TonClient {
                 .body(body)
                 .destination(Destination.builder().account_address(destinationAddress).build())
                 .build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return (QueryInfo) readResult(query.getTag());
     }
@@ -336,6 +350,7 @@ public class TonClient {
         SendQuery query = SendQuery.builder()
                 .id(queryInfo.getId())
                 .build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return ((Ok) readResult(query.getTag())).getType().equals("ok");
     }
@@ -359,6 +374,7 @@ public class TonClient {
                 .initial_account_state(initialAccountState)
                 .data(body)
                 .build();
+        query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
         return ((Ok) readResult(query.getTag())).getType().equals("ok");
     }

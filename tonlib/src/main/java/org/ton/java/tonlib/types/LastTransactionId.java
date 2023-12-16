@@ -16,8 +16,12 @@ public class LastTransactionId extends TypedAsyncObject {
     private BigInteger lt;
     private String hash;
 
+    public void setLt(String value){
+        this.lt = new BigInteger(value);
+    }
+
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "internal.transactionId";
     }
 }

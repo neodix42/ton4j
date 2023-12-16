@@ -12,7 +12,7 @@ import org.ton.java.tonlib.base.TypedAsyncObject;
 public class Data extends TypedAsyncObject {
     private String bytes;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "data";
     }
 }

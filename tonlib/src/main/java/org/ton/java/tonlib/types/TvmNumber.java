@@ -1,18 +1,18 @@
 package org.ton.java.tonlib.types;
 
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
-@Builder
+@SuperBuilder
 @Setter
 @Getter
 @ToString
 public class TvmNumber extends TvmEntry {
     private String number;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "tvm.numberDecimal";
     }
 }

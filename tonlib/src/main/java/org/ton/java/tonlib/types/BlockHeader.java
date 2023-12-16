@@ -33,7 +33,7 @@ public class BlockHeader extends TypedAsyncObject {
     private List<BlockIdExt> prev_blocks;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "blocks.header";
     }
 }

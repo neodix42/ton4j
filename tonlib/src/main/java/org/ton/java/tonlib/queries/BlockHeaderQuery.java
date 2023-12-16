@@ -15,7 +15,7 @@ public class BlockHeaderQuery extends TypedAsyncObject {
     private BlockIdExt id;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "blocks.getBlockHeader";
     }
 }

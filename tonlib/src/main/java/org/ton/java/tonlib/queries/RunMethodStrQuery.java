@@ -19,7 +19,7 @@ public class RunMethodStrQuery extends TypedAsyncObject {
     private Deque<TvmStackEntry> stack;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "smc.runGetMethod";
     }
 }

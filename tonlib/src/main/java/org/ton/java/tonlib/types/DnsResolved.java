@@ -15,7 +15,7 @@ import java.util.List;
 public class DnsResolved extends TypedAsyncObject {
     private List<DnsEntry> entries;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "dns.resolved";
     }
 }

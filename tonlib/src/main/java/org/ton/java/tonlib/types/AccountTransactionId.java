@@ -6,16 +6,22 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.ton.java.tonlib.base.TypedAsyncObject;
 
+import java.math.BigInteger;
+
 @SuperBuilder
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class AccountTransactionId extends TypedAsyncObject {
     private String account; //after_hash
-    private long lt; //after_lt
+    private BigInteger lt; //after_lt
+
+    public void setLt(String value){
+        this.lt = new BigInteger(value);
+    }
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "blocks.accountTransactionId";
     }
 }

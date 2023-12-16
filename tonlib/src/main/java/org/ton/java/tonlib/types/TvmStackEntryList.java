@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 public class TvmStackEntryList extends TvmStackEntry {
     private TvmList list;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "tvm.stackEntryList";
     }
 }

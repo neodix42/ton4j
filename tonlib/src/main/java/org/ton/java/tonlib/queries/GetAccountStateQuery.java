@@ -14,7 +14,7 @@ import org.ton.java.tonlib.types.AccountAddress;
 public class GetAccountStateQuery extends TypedAsyncObject {
     private AccountAddress account_address;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "getAccountState";
     }
 }

@@ -15,7 +15,7 @@ public class LoadContractQuery extends TypedAsyncObject {
     private AccountAddressOnly account_address;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "smc.load";
     }
 }

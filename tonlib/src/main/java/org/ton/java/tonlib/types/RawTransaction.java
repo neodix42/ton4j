@@ -23,7 +23,7 @@ public class RawTransaction extends TypedAsyncObject {
     private List<RawMessage> out_msgs;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "raw.transaction";
     }
 }

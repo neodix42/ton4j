@@ -19,7 +19,7 @@ public class TvmStackEntryNumber extends TvmStackEntry {
     }
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "tvm.stackEntryNumber";
     }
 }

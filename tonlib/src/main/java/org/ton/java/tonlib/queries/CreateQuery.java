@@ -18,7 +18,7 @@ public class CreateQuery extends TypedAsyncObject {
     private Destination destination;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "raw.createQuery";
     }
 }

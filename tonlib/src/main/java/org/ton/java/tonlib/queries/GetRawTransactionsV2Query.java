@@ -19,7 +19,7 @@ public class GetRawTransactionsV2Query extends TypedAsyncObject {
     private boolean try_decode_message;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "raw.getTransactionsV2";
     }
 }

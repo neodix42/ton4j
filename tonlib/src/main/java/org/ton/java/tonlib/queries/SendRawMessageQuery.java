@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.ton.java.tonlib.base.TypedAsyncObject;
-
 @SuperBuilder
 @Data
 @NoArgsConstructor
@@ -13,7 +12,7 @@ import org.ton.java.tonlib.base.TypedAsyncObject;
 public class SendRawMessageQuery extends TypedAsyncObject {
     private String body;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "raw.sendMessage";
     }
 }

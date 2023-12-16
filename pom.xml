@@ -7,17 +7,15 @@
     <groupId>io.github.neodix42</groupId>
     <artifactId>top</artifactId>
     <packaging>pom</packaging>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
 
     <modules>
         <module>bitstring</module>
         <module>utils</module>
         <module>address</module>
         <module>cell</module>
-        <module>smartcontract</module>
         <module>tonlib</module>
         <module>mnemonic</module>
-        <module>exec</module>
     </modules>
 
     <properties>

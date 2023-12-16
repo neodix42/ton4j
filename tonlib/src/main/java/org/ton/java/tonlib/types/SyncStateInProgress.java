@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.ton.java.tonlib.base.TypedAsyncObject;
-
 @SuperBuilder
 @Data
 @AllArgsConstructor
@@ -16,7 +15,7 @@ public class SyncStateInProgress extends TypedAsyncObject {
     private long current_seqno;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "syncStateInProgress";
     }
 }

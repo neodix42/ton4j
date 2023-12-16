@@ -16,7 +16,7 @@ public class Shards extends TypedAsyncObject {
     private List<BlockIdExt> shards;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "blocks.shards";
     }
 }

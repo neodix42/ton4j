@@ -1,27 +1,23 @@
 package org.ton.java.tonlib;
 
-import com.jsoniter.output.JsonStream;
-import com.sun.jna.Native;
-import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.java.Log;
 import org.ton.java.tonlib.client.TonIO;
 import org.ton.java.tonlib.jna.TonlibJsonI;
-import org.ton.java.tonlib.queries.VerbosityLevelQuery;
-import org.ton.java.tonlib.types.BlockIdExt;
 import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @Log
-@Builder
+@Getter
+@Setter
 public class Tonlib {
 
     /**
@@ -69,93 +65,75 @@ public class Tonlib {
     private double receiveTimeout;
     private TonlibJsonI tonlibJson;
     private long tonlib;
-    private boolean synced;
-    private boolean crashedDuringInit;
+    private TonIO tonIO;
 
-    public static TonlibBuilder builder() {
-        return new CustomTonlibBuilder();
-    }
 
-    private static class CustomTonlibBuilder extends TonlibBuilder {
-        @Override
-        public Tonlib build() {
-            try {
-                String tonlibName = Utils.getTonLibName();
+    public void initTonlib() {
+        try {
+            String tonlibName = Utils.getTonLibName();
 
-                if (isNull(super.pathToTonlibSharedLib)) {
-                    super.pathToTonlibSharedLib = tonlibName;
-                }
-
-                if (isNull(super.verbosityLevel)) {
-                    super.verbosityLevel = VerbosityLevel.FATAL;
-                }
-
-                if (isNull(super.keystorePath)) {
-                    super.keystorePath = ".";
-                }
-
-                if (super.receiveRetryTimes == 0) {
-                    super.receiveRetryTimes = 3;
-                }
-
-                if (super.receiveTimeout == 0) {
-                    super.receiveTimeout = 10.0;
-                }
-
-                super.synced = false;
-                super.crashedDuringInit = false;
-
-                String configData = null;
-                if (isNull(super.pathToGlobalConfig) && isNull(super.configData)) {
-                    InputStream config;
-                    if (super.testnet) {
-                        super.pathToGlobalConfig = "testnet-global.config.json (integrated resource)";
-                        config = Tonlib.class.getClassLoader().getResourceAsStream("testnet-global.config.json");
-                    } else {
-                        super.pathToGlobalConfig = "global-config.json (integrated resource)";
-                        config = Tonlib.class.getClassLoader().getResourceAsStream("global-config.json");
-                    }
-                    configData = Utils.streamToString(config);
-
-                    if (nonNull(config)) {
-                        config.close();
-                    }
-                } else if (nonNull(super.pathToGlobalConfig) && isNull(super.configData)) {
-                    if (Files.exists(Paths.get(super.pathToGlobalConfig))) {
-                        configData = new String(Files.readAllBytes(Paths.get(super.pathToGlobalConfig)));
-                    } else {
-                        throw new RuntimeException("Global config is not found in path: " + super.pathToGlobalConfig);
-                    }
-                } else if (isNull(super.pathToGlobalConfig)) {
-                    configData = super.configData;
-                }
-                super.configData = configData;
-
-                System.out.printf("Java Tonlib configuration:\n" +
-                                "Location: %s\n" +
-                                "Verbosity level: %s (%s)\n" +
-                                "Keystore in memory: %s\n" +
-                                "Keystore path: %s\nPath to global config: %s\n" +
-                                "Testnet: %s\n" +
-                                "Receive timeout: %s seconds\n" +
-                                "Receive retry times: %s%n\n",
-                        "Raw configuration: %s%n",
-                        super.pathToTonlibSharedLib, super.verbosityLevel, super.verbosityLevel.ordinal(),
-                        super.keystoreInMemory, super.keystorePath, super.pathToGlobalConfig,
-                        super.testnet, super.receiveTimeout, super.receiveRetryTimes, super.configData);
-            } catch (Exception e) {
-                throw new RuntimeException("Error creating tonlib instance: " + e.getMessage());
+            if (isNull(this.pathToTonlibSharedLib)) {
+                this.pathToTonlibSharedLib = tonlibName;
             }
-            return super.build();
+
+            if (isNull(this.verbosityLevel)) {
+                this.verbosityLevel = VerbosityLevel.FATAL;
+            }
+
+            if (isNull(this.keystorePath)) {
+                this.keystorePath = ".";
+            }
+
+            if (this.receiveRetryTimes == 0) {
+                this.receiveRetryTimes = 3;
+            }
+
+            if (this.receiveTimeout == 0) {
+                this.receiveTimeout = 10.0;
+            }
+
+            String configData = null;
+            if (isNull(this.pathToGlobalConfig) && isNull(this.configData)) {
+                InputStream config;
+                if (this.testnet) {
+                    this.pathToGlobalConfig = "testnet-global.config.json (integrated resource)";
+                    config = Tonlib.class.getClassLoader().getResourceAsStream("testnet-global.config.json");
+                } else {
+                    this.pathToGlobalConfig = "global-config.json (integrated resource)";
+                    config = Tonlib.class.getClassLoader().getResourceAsStream("global-config.json");
+                }
+                configData = Utils.streamToString(config);
+
+                if (nonNull(config)) {
+                    config.close();
+                }
+            } else if (nonNull(this.pathToGlobalConfig) && isNull(this.configData)) {
+                if (Files.exists(Paths.get(this.pathToGlobalConfig))) {
+                    configData = new String(Files.readAllBytes(Paths.get(this.pathToGlobalConfig)));
+                } else {
+                    throw new RuntimeException("Global config is not found in path: " + this.pathToGlobalConfig);
+                }
+            } else if (isNull(this.pathToGlobalConfig)) {
+                configData = this.configData;
+            }
+            this.configData = configData;
+
+            System.out.printf("Java Tonlib configuration:\n" +
+                            "Location: %s\n" +
+                            "Verbosity level: %s (%s)\n" +
+                            "Keystore in memory: %s\n" +
+                            "Keystore path: %s\nPath to global config: %s\n" +
+                            "Testnet: %s\n" +
+                            "Receive timeout: %s seconds\n" +
+                            "Receive retry times: %s%n\n",
+                    "Raw configuration: %s%n",
+                    this.pathToTonlibSharedLib, this.verbosityLevel, this.verbosityLevel.ordinal(),
+                    this.keystoreInMemory, this.keystorePath, this.pathToGlobalConfig,
+                    this.testnet, this.receiveTimeout, this.receiveRetryTimes, this.configData);
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating tonlib instance: " + e.getMessage());
         }
-    }
-
-    public void destroy() {
-        tonlibJson.tonlib_client_json_destroy(tonlib);
-    }
-
-    private void initTonlib() {
-        TonIO tonIO = new TonIO(pathToTonlibSharedLib, configData);
+        tonIO = new TonIO(pathToTonlibSharedLib, configData);
     }
 
 }

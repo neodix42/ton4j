@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 public class TvmCell extends TvmEntry {
     private String bytes; //base64
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "tvm.cell";
     }
 }

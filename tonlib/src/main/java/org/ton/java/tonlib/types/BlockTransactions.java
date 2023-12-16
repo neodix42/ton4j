@@ -19,7 +19,7 @@ public class BlockTransactions extends TypedAsyncObject {
     private List<ShortTxId> transactions;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "blocks.transactions";
     }
 }

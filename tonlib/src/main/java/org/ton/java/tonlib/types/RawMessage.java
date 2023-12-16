@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.ton.java.tonlib.base.TypedAsyncObject;
 
+import java.math.BigInteger;
+
 @SuperBuilder
 @Data
 @AllArgsConstructor
@@ -17,12 +19,16 @@ public class RawMessage extends TypedAsyncObject {
     private String message;
     private String fwd_fee;
     private String ihr_fee;
-    private long created_lt;
+    private BigInteger created_lt;
     private String body_hash;
     private MsgData msg_data;
 
+    public void setCreated_lt(String value){
+        this.created_lt = new BigInteger(value);
+    }
+
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "raw.message";
     }
 }

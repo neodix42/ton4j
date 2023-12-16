@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 public class TvmStackEntrySlice extends TvmStackEntry {
     private TvmSlice slice;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "tvm.stackEntrySlice";
     }
 }

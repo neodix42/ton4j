@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.math.BigInteger;
+
 @SuperBuilder
 @Data
 @AllArgsConstructor
@@ -12,7 +14,11 @@ import lombok.experimental.SuperBuilder;
 public class ShortTxId {
     private long mode;
     private String account; //base64
-    private long lt;
+    private BigInteger lt;
     private String hash;
+
+    public void setLt(String value){
+        this.lt = new BigInteger(value);
+    }
 }
 

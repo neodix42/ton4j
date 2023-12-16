@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 public class TvmStackEntryCell extends TvmStackEntry {
     private TvmCell cell;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "tvm.stackEntryCell";
     }
 }

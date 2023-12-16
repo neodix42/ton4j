@@ -19,7 +19,7 @@ public class GetBlockTransactionsQuery extends TypedAsyncObject {
     private AccountTransactionId after;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "blocks.getTransactions";
     }
 }

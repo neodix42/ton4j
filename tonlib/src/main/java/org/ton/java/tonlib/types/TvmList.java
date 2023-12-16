@@ -15,7 +15,7 @@ import java.util.List;
 public class TvmList extends TvmEntry {
     private List<Any> elements;
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "tvm.list";
     }
 }

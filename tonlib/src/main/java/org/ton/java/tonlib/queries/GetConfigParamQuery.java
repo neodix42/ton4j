@@ -17,7 +17,7 @@ public class GetConfigParamQuery extends TypedAsyncObject {
     private long mode;
 
     @Override
-    public String getTypeName() {
+    public String getTypeObjectName() {
         return "getConfigParam";
     }
 }
