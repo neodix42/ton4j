@@ -1,6 +1,5 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,8 +10,10 @@ import lombok.ToString;
 @Getter
 @ToString
 public class TvmNumber extends TvmEntry {
-    @SerializedName("@type")
-    final String type = "tvm.numberDecimal";
-    String number;
+    private String number;
+    @Override
+    public String getTypeName() {
+        return "tvm.numberDecimal";
+    }
 }
 

@@ -1,18 +1,21 @@
 package org.ton.java.tonlib.queries;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class DecryptQuery {
-    @SerializedName(value = "@type")
-    final String type = "decrypt";
-    String encrypted_data;
-    String secret;
+@SuperBuilder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class DecryptQuery extends TypedAsyncObject {
+    private String encrypted_data;
+    private String secret;
+
+    @Override
+    public String getTypeName() {
+        return "decrypt";
+    }
 }

@@ -34,7 +34,26 @@ public class Utils {
         WINDOWS, WINDOWS_ARM, LINUX, LINUX_ARM, MAC, MAC_ARM64, UNKNOWN
     }
 
-    ;
+
+    public static String getTonLibName(){
+        switch (Utils.getOS()) {
+            case LINUX:
+                return  "tonlibjson.so";
+            case LINUX_ARM:
+                return  "tonlibjson-arm.so";
+            case WINDOWS:
+                return  "tonlibjson.dll";
+            case WINDOWS_ARM:
+                 return "tonlibjson-arm.dll";
+            case MAC:
+                return  "tonlibjson.dylib";
+            case MAC_ARM64:
+                return  "tonlibjson-arm.dylib";
+            case UNKNOWN:
+                throw new Error("Operating system is not supported!");
+        }
+        return null;
+    }
 
     /**
      * uses POLY 0x1EDC6F41

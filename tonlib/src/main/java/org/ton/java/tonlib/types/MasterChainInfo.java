@@ -1,21 +1,23 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class MasterChainInfo {
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class MasterChainInfo extends TypedAsyncObject {
+    private BlockIdExt last;
+    private String state_root_hash;
+    private BlockIdExt init;
 
-    @SerializedName("@type")
-    final String type = "blocks.masterchainInfo";
-    BlockIdExt last;
-    String state_root_hash;
-    BlockIdExt init;
+    @Override
+    public String getTypeName() {
+        return "blocks.masterchainInfo";
+    }
 }
 

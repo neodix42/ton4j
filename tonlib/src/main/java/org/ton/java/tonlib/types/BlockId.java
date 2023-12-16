@@ -1,19 +1,21 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class BlockId {
-    @SerializedName(value = "@type")
-    final String type = "ton.blockId";
-    long workchain;
-    long shard;
-    long seqno;
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class BlockId extends TypedAsyncObject {
+    private long workchain;
+    private long shard;
+    private long seqno;
+    @Override
+    public String getTypeName() {
+        return "ton.blockId";
+    }
 }

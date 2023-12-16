@@ -1,20 +1,23 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
 import java.util.List;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class RawTransactions {
-    @SerializedName("@type")
-    final String type = "raw.transactions";
-    List<RawTransaction> transactions;
-    LastTransactionId previous_transaction_id;
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class RawTransactions extends TypedAsyncObject {
+    private List<RawTransaction> transactions;
+    private LastTransactionId previous_transaction_id;
+
+    @Override
+    public String getTypeName() {
+        return "raw.transactions";
+    }
 }

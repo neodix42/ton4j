@@ -1,22 +1,25 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
 import java.util.List;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class BlockTransactions {
-    @SerializedName("@type")
-    final String type = "blocks.transactions";
-    BlockIdExt id;
-    long req_count;
-    boolean incomplete;
-    List<ShortTxId> transactions;
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class BlockTransactions extends TypedAsyncObject {
+    private BlockIdExt id;
+    private long req_count;
+    private boolean incomplete;
+    private List<ShortTxId> transactions;
+
+    @Override
+    public String getTypeName() {
+        return "blocks.transactions";
+    }
 }

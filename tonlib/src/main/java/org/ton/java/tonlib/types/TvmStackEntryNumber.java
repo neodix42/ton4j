@@ -1,24 +1,26 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigInteger;
 
-@Builder
-@Setter
-@Getter
-@ToString
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class TvmStackEntryNumber extends TvmStackEntry {
-    @SerializedName("@type")
-    final String type = "tvm.stackEntryNumber";
-    TvmNumber number;
+    private TvmNumber number;
 
     public BigInteger getNumber() {
         return new BigInteger(number.getNumber());
+    }
+
+    @Override
+    public String getTypeName() {
+        return "tvm.stackEntryNumber";
     }
 }
 

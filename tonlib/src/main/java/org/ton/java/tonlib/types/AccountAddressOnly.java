@@ -10,5 +10,5 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @ToString
 public class AccountAddressOnly {
-    String account_address;
+    private String account_address;
 }

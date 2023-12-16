@@ -1,23 +1,19 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
-@Builder
-@Setter
-@Getter
-@ToString
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class DnsEntryData {
-    @SerializedName("@type")
-    String type;
-    String bytes;
-    String text;
-    AccountAddressOnly resolver;
-    AccountAddressOnly smc_address;
-    AccountAddressOnly adnl_address;
+    private String type;
+    private String bytes;
+    private String text;
+    private AccountAddressOnly resolver;
+    private AccountAddressOnly smc_address;
+    private AccountAddressOnly adnl_address;
 }

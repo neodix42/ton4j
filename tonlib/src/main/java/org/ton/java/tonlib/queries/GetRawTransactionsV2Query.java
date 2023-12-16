@@ -1,22 +1,25 @@
 package org.ton.java.tonlib.queries;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 import org.ton.java.tonlib.types.AccountAddressOnly;
 import org.ton.java.tonlib.types.LastTransactionId;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class GetRawTransactionsV2Query {
-    @SerializedName(value = "@type")
-    final String type = "raw.getTransactionsV2";
-    AccountAddressOnly account_address;
-    LastTransactionId from_transaction_id;
-    int count;
-    boolean try_decode_message;
+@SuperBuilder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class GetRawTransactionsV2Query extends TypedAsyncObject {
+    private AccountAddressOnly account_address;
+    private LastTransactionId from_transaction_id;
+    private int count;
+    private boolean try_decode_message;
+
+    @Override
+    public String getTypeName() {
+        return "raw.getTransactionsV2";
+    }
 }

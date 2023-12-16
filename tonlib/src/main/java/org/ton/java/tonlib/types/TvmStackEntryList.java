@@ -1,18 +1,19 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-@Builder
-@Setter
-@Getter
-@ToString
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class TvmStackEntryList extends TvmStackEntry {
-    @SerializedName("@type")
-    final String type = "tvm.stackEntryList";
-    TvmList list;
+    private TvmList list;
+    @Override
+    public String getTypeName() {
+        return "tvm.stackEntryList";
+    }
 }
 

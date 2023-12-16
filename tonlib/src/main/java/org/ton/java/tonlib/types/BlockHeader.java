@@ -1,36 +1,39 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
 import java.util.List;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class BlockHeader {
-    @SerializedName(value = "@type")
-    final String type = "blocks.header";
-    BlockId id;
-    long global_id;
-    long version;
-    long flags;
-    boolean after_merge;
-    boolean after_split;
-    boolean before_split;
-    boolean want_merge;
-    boolean want_split;
-    long validator_list_hash_short;
-    long catchain_seqno;
-    long min_ref_mc_seqno;
-    boolean is_key_block;
-    long prev_key_block_seqno;
-    String start_lt;
-    String end_lt;
-    long gen_utime;
-    List<BlockIdExt> prev_blocks;
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class BlockHeader extends TypedAsyncObject {
+    private BlockId id;
+    private long global_id;
+    private long version;
+    private long flags;
+    private boolean after_merge;
+    private boolean after_split;
+    private boolean before_split;
+    private boolean want_merge;
+    private boolean want_split;
+    private long validator_list_hash_short;
+    private long catchain_seqno;
+    private long min_ref_mc_seqno;
+    private boolean is_key_block;
+    private long prev_key_block_seqno;
+    private String start_lt;
+    private String end_lt;
+    private long gen_utime;
+    private List<BlockIdExt> prev_blocks;
+
+    @Override
+    public String getTypeName() {
+        return "blocks.header";
+    }
 }

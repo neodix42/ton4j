@@ -1,18 +1,20 @@
 package org.ton.java.tonlib.queries;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 import org.ton.java.tonlib.types.AccountAddressOnly;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class GetRawAccountStateQueryOnly {
-    @SerializedName(value = "@type")
-    final String type = "raw.getAccountState";
-    AccountAddressOnly account_address;
+@SuperBuilder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class GetRawAccountStateQueryOnly extends TypedAsyncObject {
+    private AccountAddressOnly account_address;
+    @Override
+    public String getTypeName() {
+        return "raw.getAccountState";
+    }
 }

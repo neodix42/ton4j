@@ -1,19 +1,19 @@
 package org.ton.java.tonlib.types;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-@Builder
-@Setter
-@Getter
-@ToString
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class FullAccountState {
-    AccountAddressOnly address;
-    String balance;
-    LastTransactionId last_transaction_id;
-    BlockIdExt block_id;
-    long sync_utime;
-    AccountState account_state;
+    private AccountAddressOnly address;
+    private String balance;
+    private LastTransactionId last_transaction_id;
+    private BlockIdExt block_id;
+    private long sync_utime;
+    private AccountState account_state;
 }

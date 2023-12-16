@@ -1,16 +1,16 @@
 package org.ton.java.tonlib.types;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-@Builder
-@Setter
-@Getter
-@ToString
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class QueryInfo {
-    long id;
-    long valid_until;
-    String body_hash; // byte[]
+    private long id;
+    private long valid_until;
+    private String body_hash; // byte[]
 }

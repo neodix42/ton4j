@@ -1,11 +1,16 @@
 package org.ton.java.tonlib.types;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
-@Setter
-@Getter
-public abstract class TvmStackEntry {
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public abstract class TvmStackEntry extends TypedAsyncObject {
 
 }
 

@@ -1,25 +1,25 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
 import java.util.List;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class RunResultGeneric<T> {
-    @SerializedName("@type")
-    final String type = "smc.runResult";
-    long gas_used;
-    List<T> stack;
-    long exit_code;
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class RunResultGeneric<T> extends TypedAsyncObject {
+    private long gas_used;
+    private List<T> stack;
+    private long exit_code;
 
-    @SerializedName("@extra")
-    String extra;
+    @Override
+    public String getTypeName() {
+        return "smc.runResult";
+    }
 }
 

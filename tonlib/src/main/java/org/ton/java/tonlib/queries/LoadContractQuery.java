@@ -1,18 +1,21 @@
 package org.ton.java.tonlib.queries;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 import org.ton.java.tonlib.types.AccountAddressOnly;
 
 @SuperBuilder
-@Setter
-@Getter
-@ToString
-public class LoadContractQuery extends ExtraQuery {
-    @SerializedName(value = "@type")
-    final String type = "smc.load";
-    AccountAddressOnly account_address;
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class LoadContractQuery extends TypedAsyncObject {
+    private AccountAddressOnly account_address;
+
+    @Override
+    public String getTypeName() {
+        return "smc.load";
+    }
 }

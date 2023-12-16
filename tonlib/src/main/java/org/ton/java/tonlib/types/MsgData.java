@@ -1,21 +1,18 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-@Builder
-@Setter
-@Getter
-@ToString
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class MsgData {
-
-    @SerializedName("@type")
-    final String type;// = "msg.dataRaw"; can be also msg.dataText
-    String body;
-    String init_state;
+    private String type;// = "msg.dataRaw"; can be also msg.dataText
+    private String body;
+    private String init_state;
 
 }
 

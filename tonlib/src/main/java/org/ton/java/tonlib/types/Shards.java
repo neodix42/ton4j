@@ -1,20 +1,23 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
 import java.util.List;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class Shards {
-    @SerializedName("@type")
-    final String type = "blocks.shards";
-    List<BlockIdExt> shards;
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class Shards extends TypedAsyncObject {
+    private List<BlockIdExt> shards;
+
+    @Override
+    public String getTypeName() {
+        return "blocks.shards";
+    }
 }
 

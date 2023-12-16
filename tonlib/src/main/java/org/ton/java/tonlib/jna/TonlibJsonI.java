@@ -1,4 +1,4 @@
-package org.ton.java.tonlib;
+package org.ton.java.tonlib.jna;
 
 import com.sun.jna.Library;
 

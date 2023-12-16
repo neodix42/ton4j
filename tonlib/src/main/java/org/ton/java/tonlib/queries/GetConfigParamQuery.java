@@ -1,20 +1,23 @@
 package org.ton.java.tonlib.queries;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 import org.ton.java.tonlib.types.BlockIdExt;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class GetConfigParamQuery {
-    @SerializedName("@type")
-    final String type = "getConfigParam";
-    BlockIdExt id;
-    long param;
-    long mode;
+@SuperBuilder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class GetConfigParamQuery extends TypedAsyncObject {
+    private BlockIdExt id;
+    private long param;
+    private long mode;
+
+    @Override
+    public String getTypeName() {
+        return "getConfigParam";
+    }
 }

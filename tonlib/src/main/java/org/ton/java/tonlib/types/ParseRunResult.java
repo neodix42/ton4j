@@ -1,9 +1,8 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.ToNumberPolicy;
-import com.google.gson.internal.LinkedTreeMap;
+import com.jsoniter.JsonIterator;
+import com.jsoniter.any.Any;
+import org.apache.commons.codec.binary.Hex;
 import org.ton.java.cell.Cell;
 import org.ton.java.utils.Utils;
 
@@ -12,43 +11,40 @@ import java.util.*;
 import static java.util.Objects.isNull;
 
 public class ParseRunResult {
-    private static final Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
-
     /**
      * @param elementType - "num", "number", "int", "cell", "slice"
      * @param element     - define type, base64?
      * @return TvmStackEntry
      */
+    private static final List<String> values = List.of("num", "number", "int", "cell",
+            "slice", "tvm.cell", "tvm.slice", "list", "tuple");
+
     public static TvmStackEntry renderTvmElement(String elementType, String element) {
-
-        String[] values = {"num", "number", "int", "cell", "slice", "tvm.cell", "tvm.slice"};
-
-        if (Arrays.asList(values).contains(elementType)) {
-
-            if (elementType.contains("num") || elementType.contains("number") || elementType.contains("int")) {
-                return TvmStackEntryNumber.builder().number(TvmNumber.builder().number(element).build()).build();
-            } else if (elementType.contains("cell")) {
-                byte[] e = Utils.hexToBytes(element);
-                Cell cell = Cell.fromBoc(e);
-                String cellBase64 = bytesToBase64(cell.toBoc(false));
-                return TvmStackEntryCell.builder().cell(TvmCell.builder().bytes(cellBase64).build()).build();
-            } else if (elementType.contains("slice")) {
-                byte[] e = Utils.hexToBytes(element);
-                Cell cell = Cell.fromBoc(e);
-                String cellBase64 = bytesToBase64(cell.toBoc(false));
-                return TvmStackEntrySlice.builder().slice(TvmSlice.builder().bytes(cellBase64).build()).build();
-            } else if (elementType.contains("dict")) {
-                // TODO support list, dict and tuple
-            } else if (elementType.contains("list")) {
-
-            } else if (elementType.contains("tuple")) {
-
+        try {
+            String data;
+            switch (elementType) {
+                case "num":
+                case "number":
+                case "int":
+                    return TvmStackEntryNumber.builder().number(TvmNumber.builder().number(element).build()).build();
+                case "tvm.cell":
+                case "cell":
+                    data = Base64.getEncoder().encodeToString(Cell.fromBoc(Hex.decodeHex("cell")).toBoc(false));
+                    return TvmStackEntryCell.builder().cell(TvmCell.builder().bytes(data).build()).build();
+                case "tvm.slice":
+                case "slice":
+                    data = Base64.getEncoder().encodeToString(Cell.fromBoc(Hex.decodeHex("cell")).toBoc(false));
+                    return TvmStackEntrySlice.builder().slice(TvmSlice.builder().bytes(data).build()).build();
+                case "list":
+                case "tuple":
+                    return TvmStackEntrySlice.builder().build();
+                default:
+                    throw new Error("Rendering of type " + elementType + " is not implemented");
             }
-
-        } else {
-            throw new Error("Rendering of type " + elementType + " is not implemented");
         }
-        return TvmStackEntryCell.builder().build();
+        catch (Exception e){
+            throw new Error("Strange error has occured!");
+        }
     }
 
     /**
@@ -61,7 +57,6 @@ public class ParseRunResult {
      */
     public static Deque<TvmStackEntry> renderTvmStack(Deque<String> stackData) {
         Deque<TvmStackEntry> stack = new ArrayDeque<>();
-
         for (String e : stackData) {
             String[] a = e.replace("[", "").replace("]", "").split(",");
             String type = a[0].trim();
@@ -88,86 +83,83 @@ public class ParseRunResult {
         }
     }
 
-    public static TvmStackEntry parseJsonElement(Object element) {
-        LinkedTreeMap<String, Object> t = (LinkedTreeMap) element;
+    public static TvmStackEntry parseJsonElement(Any inputElement) {
+        Map<String, Any> t = inputElement.asMap();
 
-        String key1 = (String) t.keySet().toArray()[0];
-        Object val1 = t.get(key1);
-        String key2 = (String) t.keySet().toArray()[1];
-        Object val2 = t.get(key2);
+        String key1 = t.keySet().toArray(String[]::new)[0];
+        Any val1 = t.get(key1);
+        String key2 = t.keySet().toArray(String[]::new)[1];
+        Any val2 = t.get(key2);
 
-        if (key2.equals("tuple")) {
-            return (TvmStackEntryTuple) parseJsonElement(val2);
-        } else if (key2.equals("list")) {
-            return (TvmStackEntryList) parseJsonElement(val2);
-        } else if (key2.equals("elements")) {
-            List<String> elements = gson.fromJson(String.valueOf(val2), List.class);
-            List<Object> resultElements = new ArrayList<>(); //TvmStackEntry
+        switch (key2) {
+            case "number":
+                return inputElement.as(TvmStackEntryNumber.class);
+            case "cell":
+                return inputElement.as(TvmStackEntryCell.class);
+            case "slice":
+                return inputElement.as(TvmStackEntrySlice.class);
+            case "tuple":
+                return (TvmStackEntryTuple) parseJsonElement(val2);
+            case "list":
+                return (TvmStackEntryList) parseJsonElement(val2);
+            case "elements":
+                List<Any> elements = val2.asList();
+                List<Any> resultElements = new ArrayList<>();
+                for (Any element : elements) {
+                    Map<String, Any> tt = element.asMap();
+                    Any v1 = tt.get(tt.keySet().toArray(String[]::new)[0]);
+                    Any v2 = tt.get(tt.keySet().toArray(String[]::new)[1]);
+                    switch (v1.toString()) {
+                        case "tvm.stackEntryNumber":
+                            TvmNumber number = v2.as(TvmNumber.class);
+                            resultElements.add(Any.wrap(TvmStackEntryNumber.builder()
+                                    .number(number)
+                                    .build()));
+                        case "tvm.stackEntryCell":
+                            TvmCell cell = v2.as(TvmCell.class);
+                            resultElements.add(Any.wrap(TvmStackEntryCell.builder()
+                                    .cell(cell)
+                                    .build()));
+                        case "tvm.stackEntrySlice":
+                            TvmSlice slice = v2.as(TvmSlice.class);
+                            resultElements.add(Any.wrap(TvmStackEntrySlice.builder()
+                                    .slice(slice)
+                                    .build()));
+                        case "tuple":
+                            resultElements.add(Any.wrap(parseJsonElement(val2)));
+                        case "tvm.stackEntryTuple":
+                            resultElements.add(Any.wrap(parseJsonElement(v2)));
+                        case "list":
+                            resultElements.add(Any.wrap(parseJsonElement(val2)));
+                        case "tvm.stackEntryList":
+                            resultElements.add(Any.wrap(parseJsonElement(v2)));
+                        default:
+                    }
 
-            for (Object o : elements) {
-                LinkedTreeMap<String, Object> tt = (LinkedTreeMap) o;
-                String k1 = (String) tt.keySet().toArray()[0];
-                Object v1 = tt.get(k1);
-                String k2 = (String) tt.keySet().toArray()[1];
-                Object v2 = tt.get(k2);
-
-                if (v1.equals("tvm.stackEntryNumber")) {
-                    TvmNumber number = gson.fromJson(String.valueOf(v2), TvmNumber.class);
-                    TvmStackEntryNumber stackNumber = TvmStackEntryNumber.builder()
-                            .number(number)
-                            .build();
-                    resultElements.add(stackNumber);
-                } else if (v1.equals("tvm.stackEntryCell")) {
-                    TvmCell cell = gson.fromJson(String.valueOf(v2), TvmCell.class);
-                    TvmStackEntryCell stackCell = TvmStackEntryCell.builder()
-                            .cell(cell)
-                            .build();
-                    resultElements.add(stackCell);
-                } else if (v1.equals("tvm.stackEntrySlice")) {
-                    TvmSlice slice = gson.fromJson(String.valueOf(v2), TvmSlice.class);
-                    TvmStackEntrySlice stackSlice = TvmStackEntrySlice.builder()
-                            .slice(slice)
-                            .build();
-                    resultElements.add(stackSlice);
-                } else if (v1.equals("tuple")) {
-                    resultElements.add(parseJsonElement(val2));
-                } else if (v1.equals("tvm.stackEntryTuple")) {
-                    resultElements.add(parseJsonElement(v2));
-                } else if (v1.equals("list")) {
-                    resultElements.add(parseJsonElement(val2));
-                } else if (v1.equals("tvm.stackEntryList")) {
-                    resultElements.add(parseJsonElement(v2));
+                    switch (val1.toString()) {
+                        case "tvm.tuple":
+                            TvmTuple tvmTuple = TvmTuple.builder()
+                                    .elements(resultElements)
+                                    .build();
+                            return TvmStackEntryTuple.builder()
+                                    .tuple(tvmTuple)
+                                    .build();
+                        case "tvm.list":
+                            TvmList tvmList = TvmList.builder()
+                                    .elements(resultElements)
+                                    .build();
+                            return TvmStackEntryList.builder()
+                                    .list(tvmList)
+                                    .build();
+                        default:
+                    }
                 }
-            }
-
-            if (val1.equals("tvm.tuple")) {
-                TvmTuple tvmTuple = TvmTuple.builder()
-                        .elements(resultElements)
-                        .build();
-
-                return TvmStackEntryTuple.builder()
-                        .tuple(tvmTuple)
-                        .build();
-            } else if (val1.equals("tvm.list")) {
-                TvmList tvmList = TvmList.builder()
-                        .elements(resultElements)
-                        .build();
-                return TvmStackEntryList.builder()
-                        .list(tvmList)
-                        .build();
-            }
-        } else if (key2.equals("number")) {
-            return gson.fromJson(String.valueOf(element), TvmStackEntryNumber.class);
-        } else if (key2.equals("cell")) {
-            return gson.fromJson(String.valueOf(element), TvmStackEntryCell.class);
-        } else if (key2.equals("slice")) {
-            return gson.fromJson(String.valueOf(element), TvmStackEntrySlice.class);
+            default:
         }
         throw new Error("Error parsing json element");
     }
 
     public static Deque<String> serializeTvmStack(Deque<TvmStackEntry> tvmStack) {
-
         Deque<String> stack = new ArrayDeque<>();
         for (TvmStackEntry e : tvmStack) {
             stack.offer(serializeTvmElement(e));
@@ -175,29 +167,23 @@ public class ParseRunResult {
         return stack;
     }
 
-    public static TvmStackEntryList parseTvmEntryListStack(TvmStackEntryList list) {
-        List<Object> els = new ArrayList<>();
-
-        for (Object o : list.getList().getElements()) {
-            LinkedTreeMap<String, Object> t = (LinkedTreeMap) o;
-            els.add(parseJsonElement(t));
+    public static Any parseTvmEntryListStack(TvmStackEntryList list) {
+        List<Any> els = new ArrayList<>();
+        for (Any any : list.getList().getElements()) {
+            els.add(Any.wrap(parseJsonElement(any)));
         }
-
         TvmStackEntryList listResult = TvmStackEntryList.builder().build();
         TvmList tvmList = TvmList.builder().build();
         tvmList.setElements(els);
         listResult.setList(tvmList);
-        return listResult;
+        return Any.wrap(listResult);
     }
 
     public static TvmStackEntryTuple parseTvmEntryTupleStack(TvmStackEntryTuple list) {
-        List<Object> els = new ArrayList<>();
-
-        for (Object o : list.getTuple().getElements()) {
-            LinkedTreeMap<String, Object> t = (LinkedTreeMap) o;
-            els.add(parseJsonElement(t));
+        List<Any> els = new ArrayList<>();
+        for (Any o : list.getTuple().getElements()) {
+            els.add(Any.wrap(parseJsonElement(o)));
         }
-
         TvmStackEntryTuple listResult = TvmStackEntryTuple.builder().build();
         TvmTuple tvmTuple = TvmTuple.builder().build();
         tvmTuple.setElements(els);
@@ -222,21 +208,21 @@ public class ParseRunResult {
 
             String resultEscaped = stackElement;
             if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntryList")) {
-                TvmStackEntryList list = gson.fromJson(resultEscaped, TvmStackEntryList.class);
-                list = parseTvmEntryListStack(list);
+                TvmStackEntryList list = JsonIterator.deserialize(resultEscaped, TvmStackEntryList.class);
+                list = parseTvmEntryListStack(list).as(TvmStackEntryList.class);
                 resultStack.add(list);
             } else if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntryTuple")) {
-                TvmStackEntryTuple tuple = gson.fromJson(resultEscaped, TvmStackEntryTuple.class);
+                TvmStackEntryTuple tuple = JsonIterator.deserialize(resultEscaped, TvmStackEntryTuple.class);
                 tuple = parseTvmEntryTupleStack(tuple);
                 resultStack.add(tuple);
             } else if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntryNumber")) {
-                TvmStackEntryNumber number = gson.fromJson(resultEscaped, TvmStackEntryNumber.class);
+                TvmStackEntryNumber number = JsonIterator.deserialize(resultEscaped, TvmStackEntryNumber.class);
                 resultStack.add(number);
             } else if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntryCell")) {
-                TvmStackEntryCell cell = gson.fromJson(resultEscaped, TvmStackEntryCell.class);
+                TvmStackEntryCell cell = JsonIterator.deserialize(resultEscaped, TvmStackEntryCell.class);
                 resultStack.add(cell);
             } else if (resultEscaped.substring(0, resultEscaped.indexOf(",")).contains("stackEntrySlice")) {
-                TvmStackEntrySlice slice = gson.fromJson(resultEscaped, TvmStackEntrySlice.class);
+                TvmStackEntrySlice slice = JsonIterator.deserialize(resultEscaped, TvmStackEntrySlice.class);
                 resultStack.add(slice);
             } else {
                 throw new Error("Unknown type in TVM stack");

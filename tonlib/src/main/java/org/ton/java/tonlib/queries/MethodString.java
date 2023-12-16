@@ -1,17 +1,19 @@
 package org.ton.java.tonlib.queries;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
 @SuperBuilder
-@Setter
-@Getter
-@ToString
-public class MethodString {
-    @SerializedName(value = "@type")
-    final String type = "smc.methodIdName";
-    String name;
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class MethodString extends TypedAsyncObject {
+    private String name;
+    @Override
+    public String getTypeName() {
+        return "smc.methodIdName";
+    }
 }

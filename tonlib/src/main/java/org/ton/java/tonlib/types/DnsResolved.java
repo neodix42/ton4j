@@ -1,19 +1,21 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
 import java.util.List;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class DnsResolved {
-    @SerializedName("@type")
-    final String type = "dns.resolved";
-    List<DnsEntry> entries;
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class DnsResolved extends TypedAsyncObject {
+    private List<DnsEntry> entries;
+    @Override
+    public String getTypeName() {
+        return "dns.resolved";
+    }
 }

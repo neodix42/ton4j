@@ -1,21 +1,24 @@
 package org.ton.java.tonlib.queries;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 import org.ton.java.tonlib.types.BlockId;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class LookupBlockQuery {
-    @SerializedName(value = "@type")
-    final String type = "blocks.lookupBlock";
-    long mode;
-    BlockId id;
-    long lt;
-    long utime;
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
+public class LookupBlockQuery extends TypedAsyncObject {
+    private long mode;
+    private BlockId id;
+    private long lt;
+    private long utime;
+
+    @Override
+    public String getTypeName() {
+        return "blocks.lookupBlock";
+    }
 }

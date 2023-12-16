@@ -1,6 +1,5 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,8 +10,10 @@ import lombok.ToString;
 @Getter
 @ToString
 public class TvmSlice extends TvmEntry {
-    @SerializedName("@type")
-    final String type = "tvm.slice";
-    String bytes;
+    private String bytes;
+    @Override
+    public String getTypeName() {
+        return "tvm.slice";
+    }
 }
 

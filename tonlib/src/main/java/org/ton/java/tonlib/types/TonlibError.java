@@ -1,19 +1,21 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class TonlibError {
-    @SerializedName("@type")
-    final String type = "error";
-    long code;
-    String message;
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class TonlibError extends TypedAsyncObject {
+    private long code;
+    private String message;
+    @Override
+    public String getTypeName() {
+        return "error";
+    }
 }
 

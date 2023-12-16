@@ -1,26 +1,28 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class RawMessage {
-    @SerializedName("@type")
-    final String type = "raw.message";
-    AccountAddressOnly source;
-    AccountAddressOnly destination;
-    String value;
-    String message;
-    String fwd_fee;
-    String ihr_fee;
-    long created_lt;
-    String body_hash;
-    MsgData msg_data;
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class RawMessage extends TypedAsyncObject {
+    private AccountAddressOnly source;
+    private AccountAddressOnly destination;
+    private String value;
+    private String message;
+    private String fwd_fee;
+    private String ihr_fee;
+    private long created_lt;
+    private String body_hash;
+    private MsgData msg_data;
 
+    @Override
+    public String getTypeName() {
+        return "raw.message";
+    }
 }

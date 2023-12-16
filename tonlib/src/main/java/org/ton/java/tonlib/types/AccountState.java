@@ -1,16 +1,16 @@
 package org.ton.java.tonlib.types;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-@Builder
-@Setter
-@Getter
-@ToString
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class AccountState {
-    String code;
-    String data;
-    String frozen_hash;
+    private String code;
+    private String data;
+    private String frozen_hash;
 }

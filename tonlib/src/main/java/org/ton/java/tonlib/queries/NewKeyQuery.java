@@ -1,19 +1,22 @@
 package org.ton.java.tonlib.queries;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class NewKeyQuery {
-    @SerializedName("@type")
-    final String type = "createNewKey";
-    String mnemonic_password;
-    String random_extra_seed;
-    String local_password;
+@SuperBuilder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class NewKeyQuery extends TypedAsyncObject {
+    private String mnemonic_password;
+    private String random_extra_seed;
+    private String local_password;
+
+    @Override
+    public String getTypeName() {
+        return "createNewKey";
+    }
 }

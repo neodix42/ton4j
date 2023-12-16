@@ -1,19 +1,19 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class Data {
-
-    @SerializedName("@type")
-    final String type = "data";
-    String bytes;
+@SuperBuilder
+@lombok.Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class Data extends TypedAsyncObject {
+    private String bytes;
+    @Override
+    public String getTypeName() {
+        return "data";
+    }
 }
 

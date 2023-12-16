@@ -1,6 +1,8 @@
 package org.ton.java.tonlib.types;
 
-public abstract class TvmEntry {
+import org.ton.java.tonlib.base.TypedAsyncObject;
+
+public abstract class TvmEntry extends TypedAsyncObject {
 
 }
 

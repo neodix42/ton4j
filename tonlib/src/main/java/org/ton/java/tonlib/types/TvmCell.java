@@ -1,18 +1,19 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-@Builder
-@Setter
-@Getter
-@ToString
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class TvmCell extends TvmEntry {
-    @SerializedName("@type")
-    final String type = "tvm.cell";
-    String bytes; //base64
+    private String bytes; //base64
+    @Override
+    public String getTypeName() {
+        return "tvm.cell";
+    }
 }
 

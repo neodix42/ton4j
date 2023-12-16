@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.mnemonic.Mnemonic;
+import org.ton.java.tonlib.jna.TonlibJsonI;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 

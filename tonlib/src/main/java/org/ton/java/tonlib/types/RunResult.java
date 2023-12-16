@@ -1,23 +1,22 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import com.jsoniter.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class RunResult {
-    List<TvmStackEntry> stackEntry;
-    long gas_used;
-    long exit_code;
-
-    @SerializedName("@extra")
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class RunResult{
+    private List<TvmStackEntry> stackEntry;
+    private long gas_used;
+    private long exit_code;
+    @JsonProperty(to = "@extra", from = "@extra")
     String extra;
 }
 

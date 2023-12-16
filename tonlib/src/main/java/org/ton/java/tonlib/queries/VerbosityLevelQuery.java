@@ -1,17 +1,19 @@
 package org.ton.java.tonlib.queries;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class VerbosityLevelQuery {
-    @SerializedName("@type")
-    final String type = "setLogVerbosityLevel";
-    int new_verbosity_level;
+@SuperBuilder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class VerbosityLevelQuery extends TypedAsyncObject {
+    private int new_verbosity_level;
+    @Override
+    public String getTypeName() {
+        return "setLogVerbosityLevel";
+    }
 }

@@ -1,7 +1,7 @@
 package org.ton.java.smartcontract.types;
 
-import org.ton.java.cell.Cell;
 import org.ton.java.address.Address;
+import org.ton.java.cell.Cell;
 
 public class ExternalMessage {
     public Address address;

@@ -1,20 +1,23 @@
 package org.ton.java.tonlib.types;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import com.jsoniter.any.Any;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.ton.java.tonlib.base.TypedAsyncObject;
 
 import java.util.List;
 
-@Builder
-@Setter
-@Getter
-@ToString
-public class TvmTuple {
-    @SerializedName("@type")
-    final String type = "tvm.tuple";
-    List<Object> elements;
+@SuperBuilder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class TvmTuple extends TypedAsyncObject {
+    private List<Any> elements;
+    @Override
+    public String getTypeName() {
+        return "tvm.tuple";
+    }
 }
 
