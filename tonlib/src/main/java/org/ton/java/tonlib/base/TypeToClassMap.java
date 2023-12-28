@@ -25,7 +25,7 @@ public class TypeToClassMap {
         put("blocks.masterchainInfo", MasterChainInfo.class);
         put("ok", Ok.class);
         put("query.fees", QueryFees.class);
-        put("raw.accountState",RawAccountState.class);
+        put("raw.fullAccountState",RawAccountState.class);
         put("raw.message",RawMessage.class);
         put("raw.transaction",RawTransaction.class);
         put("raw.transactions",RawTransactions.class);

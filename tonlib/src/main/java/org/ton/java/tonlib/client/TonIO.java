@@ -38,8 +38,6 @@ public class TonIO {
 
     @SneakyThrows
     public TonIO(String pathToTonlibSharedLib,String configData) {
-        JsonIterator.setMode(DecodingMode.REFLECTION_MODE);
-        JsonStream.setMode(EncodingMode.REFLECTION_MODE);
         JsoniterSpi.registerTypeDecoder(UUID.class,new UUIDTonCodec());
         JsoniterSpi.registerTypeDecoder(UUID.class,new UUIDTonCodec());
         this.tonlibJson = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
@@ -92,17 +90,25 @@ public class TonIO {
         @Override
         public void run() {
             while (!Thread.interrupted()) {
-                String result = tonlibJson.tonlib_client_json_receive(tonlib, 1.0);
-                if (isNull(result)) {
-                    continue;
-                }
-                Any t = JsonIterator.deserialize(result);
-                var x = t.as(TypeToClassMap.classes.get(t.toString("@type")));
-                if(t.get("@extra").as(UUID.class) != null) {
-                    out.putIfAbsent(t.get("@extra").as(UUID.class), x);
-                    synchronized (out) {
-                        out.notifyAll();
+                try {
+                    String result = tonlibJson.tonlib_client_json_receive(tonlib, 1.0);
+                    if (isNull(result)) {
+                        continue;
                     }
+                    Any t = JsonIterator.deserialize(result);
+                    if(t.toString("@type").equals("raw.accountState")){
+                        System.out.println(t);
+                    }
+                    var x = t.as(TypeToClassMap.classes.get(t.toString("@type")));
+                    if (t.get("@extra").as(UUID.class) != null) {
+                        out.putIfAbsent(t.get("@extra").as(UUID.class), x);
+                        synchronized (out) {
+                            out.notifyAll();
+                        }
+                    }
+                }
+                catch (Exception e){
+                    System.out.println("An unexpected message arrived - continuing anyway");
                 }
             }
         }

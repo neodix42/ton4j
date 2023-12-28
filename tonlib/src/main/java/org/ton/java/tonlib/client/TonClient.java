@@ -23,7 +23,7 @@ public class TonClient {
     private Object readResult(UUID uuid) {
         long startTs = System.currentTimeMillis();
         Object result = null;
-        while (System.currentTimeMillis() - startTs < 5_000) {
+        while (System.currentTimeMillis() - startTs < 60_000) {
             result = tonIO.getOut().remove(uuid);
             if (result != null) return result;
             synchronized (tonIO.getOut()) {

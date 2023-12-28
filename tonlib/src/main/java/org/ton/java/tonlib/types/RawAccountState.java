@@ -18,6 +18,6 @@ public class RawAccountState extends TypedAsyncObject {
 
     @Override
     public String getTypeObjectName() {
-        return "raw.accountState";
+        return "raw.fullAccountState";
     }
 }

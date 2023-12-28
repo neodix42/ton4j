@@ -13,4 +13,5 @@ public class AccountState {
     private String code;
     private String data;
     private String frozen_hash;
+    int seqno;
 }
