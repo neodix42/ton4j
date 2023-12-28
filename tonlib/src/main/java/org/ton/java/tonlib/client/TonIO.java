@@ -96,9 +96,6 @@ public class TonIO {
                         continue;
                     }
                     Any t = JsonIterator.deserialize(result);
-                    if(t.toString("@type").equals("raw.accountState")){
-                        System.out.println(t);
-                    }
                     var x = t.as(TypeToClassMap.classes.get(t.toString("@type")));
                     if (t.get("@extra").as(UUID.class) != null) {
                         out.putIfAbsent(t.get("@extra").as(UUID.class), x);

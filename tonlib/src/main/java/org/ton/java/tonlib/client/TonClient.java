@@ -295,18 +295,16 @@ public class TonClient {
         return ParseRunResult.getTypedRunResult(g.getStack(), g.getExit_code(), g.getGas_used(), g.getTag().toString());
     }
 
-    /**
-     * Sends raw message, bag of cells encoded in base64
-     *
-     * @param serializedBoc - base64 encoded BoC
-     * @return ExtMessageInfo In case of error might contain error code and message inside
-     */
-    public ExtMessageInfo sendRawMessage(String serializedBoc) {
+    //Melman you fucking retard.
+    public boolean sendRawMessage(String serializedBoc) {
         SendRawMessageQuery query = SendRawMessageQuery.builder()
                 .body(serializedBoc).build();
         query.setType(query.getTypeObjectName());
         tonIO.submitRequest(JsonStream.serialize(query));
-        return (ExtMessageInfo) readResult(query.getTag());
+        Object o = readResult(query.getTag());
+        if(o instanceof Ok) return true;
+        if(o instanceof TonlibError) return false;
+        return false;
     }
 
     public QueryFees estimateFees(String destinationAddress, String body, String initCode, String initData, boolean ignoreChksig) {
