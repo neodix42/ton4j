@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"org.ton.java.address","l":"Address"},{"l":"All Classes","url":"allclasses-index.html"}]

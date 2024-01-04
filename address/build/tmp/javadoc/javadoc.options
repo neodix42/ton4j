@@ -1,0 +1,7 @@
+-classpath '/Users/felixsidokhine/Projects/ton4j/address/build/classes/java/main:/Users/felixsidokhine/Projects/ton4j/address/build/resources/main:/Users/felixsidokhine/Projects/ton4j/utils/build/classes/java/main:/Users/felixsidokhine/.m2/repository/commons-codec/commons-codec/1.15/commons-codec-1.15.jar:/Users/felixsidokhine/.m2/repository/org/purejava/tweetnacl-java/1.1.2/tweetnacl-java-1.1.2.jar'
+-d '/Users/felixsidokhine/Projects/ton4j/address/build/docs/javadoc'
+-doctitle 'address 0.0.3 API'
+-notimestamp 
+-quiet 
+-windowtitle 'address 0.0.3 API'
+'/Users/felixsidokhine/Projects/ton4j/address/src/main/java/org/ton/java/address/Address.java'

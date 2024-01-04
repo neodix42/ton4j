@@ -1,0 +1,110 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.neodix42",
+    "module": "bitstring",
+    "version": "0.0.3",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.4"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "bitstring-0.0.3.jar",
+          "url": "bitstring-0.0.3.jar",
+          "size": 6219,
+          "sha512": "0a050c2a6fd7fa9f7b7c9b8dc0e4bf96e8f239d42b07bcbd8a645496bf21823bf09fb40042465c3c2778efcf0383b4e51639a61276983037d72bcebddde13aae",
+          "sha256": "b3063f0fb06fab825da7399aea360563b7bea575d973f3d6ae22544c246717cc",
+          "sha1": "e5c78ac32b597af762a93751b6d953e0a94af52d",
+          "md5": "c59b32d2a182e121fcdd87166ae42983"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "io.github.neodix42",
+          "module": "utils",
+          "version": {
+            "requires": "0.0.3"
+          }
+        },
+        {
+          "group": "io.github.neodix42",
+          "module": "address",
+          "version": {
+            "requires": "0.0.3"
+          }
+        },
+        {
+          "group": "commons-codec",
+          "module": "commons-codec",
+          "version": {
+            "requires": "1.15"
+          }
+        },
+        {
+          "group": "org.purejava",
+          "module": "tweetnacl-java",
+          "version": {
+            "requires": "1.1.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "bitstring-0.0.3.jar",
+          "url": "bitstring-0.0.3.jar",
+          "size": 6219,
+          "sha512": "0a050c2a6fd7fa9f7b7c9b8dc0e4bf96e8f239d42b07bcbd8a645496bf21823bf09fb40042465c3c2778efcf0383b4e51639a61276983037d72bcebddde13aae",
+          "sha256": "b3063f0fb06fab825da7399aea360563b7bea575d973f3d6ae22544c246717cc",
+          "sha1": "e5c78ac32b597af762a93751b6d953e0a94af52d",
+          "md5": "c59b32d2a182e121fcdd87166ae42983"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "bitstring-0.0.3-sources.jar",
+          "url": "bitstring-0.0.3-sources.jar",
+          "size": 3960,
+          "sha512": "c2af42eb32884c9c5a36dffc1ef99b6c35e6fa9ade7daea6cdaf38c9d99159e4079117b6970ad4e1f71c6ad3b51aa315c8f769bc48952d86b88fb7254b954159",
+          "sha256": "b61d30bbf3b004f1362eaf3d2de0b00a240523cec239582698402d7063fd7eec",
+          "sha1": "5659c68e524e6e613ba7992a8135d28e64d3f90e",
+          "md5": "f0be2df6f1ad3a75003ed9e594ec4ca3"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.neodix42",
+    "module": "tonlib",
+    "version": "0.0.3",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.4"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "tonlib-0.0.3.jar",
+          "url": "tonlib-0.0.3.jar",
+          "size": 306400,
+          "sha512": "fc51c4fa0c4d96d4bf322b3b062b77cdc3b8dce683e1defb9ac486187fff9c5f54f8938f9e968d64b106f46cd59d67d3d587f112bc0a32ce1383c56c2950d940",
+          "sha256": "147966637b1a7229c16c0a367311256b1bd68234118c3264af621bcb554fcc3e",
+          "sha1": "0f1cd177742bc21a535b5869b0ad6032face997b",
+          "md5": "ac8c2458ce67bd25239187827de64ea1"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "io.github.neodix42",
+          "module": "utils",
+          "version": {
+            "requires": "0.0.3"
+          }
+        },
+        {
+          "group": "io.github.neodix42",
+          "module": "address",
+          "version": {
+            "requires": "0.0.3"
+          }
+        },
+        {
+          "group": "io.github.neodix42",
+          "module": "cell",
+          "version": {
+            "requires": "0.0.3"
+          }
+        },
+        {
+          "group": "commons-codec",
+          "module": "commons-codec",
+          "version": {
+            "requires": "1.15"
+          }
+        },
+        {
+          "group": "org.purejava",
+          "module": "tweetnacl-java",
+          "version": {
+            "requires": "1.1.2"
+          }
+        },
+        {
+          "group": "net.java.dev.jna",
+          "module": "jna",
+          "version": {
+            "requires": "5.11.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "tonlib-0.0.3.jar",
+          "url": "tonlib-0.0.3.jar",
+          "size": 306400,
+          "sha512": "fc51c4fa0c4d96d4bf322b3b062b77cdc3b8dce683e1defb9ac486187fff9c5f54f8938f9e968d64b106f46cd59d67d3d587f112bc0a32ce1383c56c2950d940",
+          "sha256": "147966637b1a7229c16c0a367311256b1bd68234118c3264af621bcb554fcc3e",
+          "sha1": "0f1cd177742bc21a535b5869b0ad6032face997b",
+          "md5": "ac8c2458ce67bd25239187827de64ea1"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "tonlib-0.0.3-sources.jar",
+          "url": "tonlib-0.0.3-sources.jar",
+          "size": 53204,
+          "sha512": "df2f29e331a96716422b990ae7dcbc888c40cec0c33304694735fc5d504e30a32c8bfdfbca64f5501387c4bd6ba96d0dac7fd853edc2a4d96670cc379bd4d79d",
+          "sha256": "109e0ceb27fa0968d72160eec1523dac65bf0733ef890333af59ab3b3d9150c8",
+          "sha1": "a848b28d535615eeb22e6cdbf22b91ad19a998db",
+          "md5": "2d2e224ad69eb0d20676e870747fc037"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.neodix42",
+    "module": "cell",
+    "version": "0.0.3",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.4"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "cell-0.0.3.jar",
+          "url": "cell-0.0.3.jar",
+          "size": 32471,
+          "sha512": "4b8d24693c9cdfde45c0e1d4a54466bd3bba81d00ab7c802ccd4decc8b89478339db1bc0440daab1b6e030dba7a3d1cce8804f076fdb42f696d6980437822772",
+          "sha256": "043859c2238dbb610b6d5997d71b46aa9f2a0058d25c0b9ddba52ab092c4bf4f",
+          "sha1": "23694843ce508f52b08c249ee1e856efbd5bdd44",
+          "md5": "11a3df7bfab34270ddd82c1d2c92b9bd"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "io.github.neodix42",
+          "module": "utils",
+          "version": {
+            "requires": "0.0.3"
+          }
+        },
+        {
+          "group": "io.github.neodix42",
+          "module": "bitstring",
+          "version": {
+            "requires": "0.0.3"
+          }
+        },
+        {
+          "group": "io.github.neodix42",
+          "module": "address",
+          "version": {
+            "requires": "0.0.3"
+          }
+        },
+        {
+          "group": "commons-codec",
+          "module": "commons-codec",
+          "version": {
+            "requires": "1.15"
+          }
+        },
+        {
+          "group": "org.purejava",
+          "module": "tweetnacl-java",
+          "version": {
+            "requires": "1.1.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "cell-0.0.3.jar",
+          "url": "cell-0.0.3.jar",
+          "size": 32471,
+          "sha512": "4b8d24693c9cdfde45c0e1d4a54466bd3bba81d00ab7c802ccd4decc8b89478339db1bc0440daab1b6e030dba7a3d1cce8804f076fdb42f696d6980437822772",
+          "sha256": "043859c2238dbb610b6d5997d71b46aa9f2a0058d25c0b9ddba52ab092c4bf4f",
+          "sha1": "23694843ce508f52b08c249ee1e856efbd5bdd44",
+          "md5": "11a3df7bfab34270ddd82c1d2c92b9bd"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "cell-0.0.3-sources.jar",
+          "url": "cell-0.0.3-sources.jar",
+          "size": 17696,
+          "sha512": "386f82e8b1ed90e5bd5c75fdf043ea65e58950242ef604a071c4ce40d5890f2d9e7667d111c59cfa6d67dcd0ec39c00a2a6c9024290d3d4dcfb139b4b2add223",
+          "sha256": "ced878e7b66fa9df5b121ddc3cc8ed85ece1ccc285001063df2c9396f354ff61",
+          "sha1": "a07bf34d810cbade42993da171a4e30f8bfd1bd2",
+          "md5": "8bc9a6a9271eff9e06500135129c3d62"
+        }
+      ]
+    }
+  ]
+}

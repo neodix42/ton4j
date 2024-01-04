@@ -1,0 +1,80 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.neodix42",
+    "module": "mnemonic",
+    "version": "0.0.3",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.4"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "mnemonic-0.0.3.jar",
+          "url": "mnemonic-0.0.3.jar",
+          "size": 27797,
+          "sha512": "29e7b9183cb05593aade37ac5b75b806567146c03cd99b125d84fca6f8ab64e34501cdd9b7be46c5a8322be4732d694b89c0e805fc42956d0ee580c539975e41",
+          "sha256": "218ec78d892358a6a7072303fc133e54ae9e7ae16c0ccad559db3ac83818f3e5",
+          "sha1": "601d6c78c4b8f7959b814366f58b5456a037af16",
+          "md5": "ff10c5fead0a3ec8cad16798c49580da"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "mnemonic-0.0.3.jar",
+          "url": "mnemonic-0.0.3.jar",
+          "size": 27797,
+          "sha512": "29e7b9183cb05593aade37ac5b75b806567146c03cd99b125d84fca6f8ab64e34501cdd9b7be46c5a8322be4732d694b89c0e805fc42956d0ee580c539975e41",
+          "sha256": "218ec78d892358a6a7072303fc133e54ae9e7ae16c0ccad559db3ac83818f3e5",
+          "sha1": "601d6c78c4b8f7959b814366f58b5456a037af16",
+          "md5": "ff10c5fead0a3ec8cad16798c49580da"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "mnemonic-0.0.3-sources.jar",
+          "url": "mnemonic-0.0.3-sources.jar",
+          "size": 10723,
+          "sha512": "33da0f3e218fda460643385214e540e0b379d0ec440b21a8d8d8a6e6cc9344ac8988b27cef560fd737b7a025bc979aa656daac087cb755c1b57e6f0a382bdc69",
+          "sha256": "37203da68a007e2505e2f654ad2382f4cd257ffa7646d05618e580d6a596853e",
+          "sha1": "b2167166ca642a7b0bf348b8ea9152b3a8c74ed8",
+          "md5": "e97b3d303098229aa28174f052ec7506"
+        }
+      ]
+    }
+  ]
+}
