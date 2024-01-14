@@ -3,28 +3,47 @@ package org.ton.java.tlb.types;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
-import org.ton.java.utils.Utils;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+
+import java.math.BigInteger;
 
 @ToString
 @Builder
 @Getter
+/**
+ * block_id_ext$_
+ *   shard_id:ShardIdent
+ *   seq_no:uint32
+ *   root_hash:bits256
+ *   file_hash:bits256 = BlockIdExt;
+ */
 public class BlockIdExt {
-    //    int fieldId;
-    long workchain; // int32  `tl:"int"`
-    long shard; // int64  `tl:"long"`
-    long seqno; // uint32 `tl:"int"`
-    int[] rootHash; // []byte `tl:"int256"`
-    int[] fileHash; // []byte `tl:"int256"`
+    long workchain;
+    long shard;
+    long seqno;
+    BigInteger rootHash;
+    BigInteger fileHash;
 
-    String getFileHash() {
-        return Utils.bytesToHex(fileHash);
+    private String getRootHash() {
+        return rootHash.toString(16);
     }
 
-    String getRootHash() {
-        return Utils.bytesToHex(rootHash);
+    private String getFileHash() {
+        return fileHash.toString(16);
     }
 
     public String getShard() {
         return Long.toHexString(shard);
+    }
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeUint(workchain, 32)
+                .storeUint(shard, 64)
+                .storeUint(seqno, 32)
+                .storeUint(rootHash, 256)
+                .storeUint(fileHash, 256)
+                .endCell();
     }
 }

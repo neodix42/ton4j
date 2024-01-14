@@ -4,6 +4,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -11,7 +14,19 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
+/**
+ * tr_phase_credit$_
+ *  due_fees_collected:(Maybe Grams)
+ *  credit:CurrencyCollection = TrCreditPhase;
+ */
 public class CreditPhase {
-    BigInteger dueFeesCollected;       // `tlb:"maybe ."`
-    CurrencyCollection credit;             // `tlb:"."`
+    BigInteger dueFeesCollected;
+    CurrencyCollection credit;
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeCoinsMaybe(dueFeesCollected)
+                .storeSlice(CellSlice.beginParse(((CurrencyCollection) credit).toCell()))
+                .endCell();
+    }
 }

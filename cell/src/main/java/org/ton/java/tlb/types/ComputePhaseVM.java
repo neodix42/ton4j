@@ -4,6 +4,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -11,17 +14,36 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
-public class ComputePhaseVM {
-    int magic; //  `tlb:"$1"`
-    boolean success; // `tlb:"bool"`
-    boolean msgStateUsed; // `tlb:"bool"`
-    boolean accountActivated; // `tlb:"bool"`
-    BigInteger gasFees; // `tlb:"."`
-
-    ComputePhaseVMDetails details; // `tlb:"^"`
+/**
+ * tr_phase_compute_vm$1 success:Bool msg_state_used:Bool
+ *   account_activated:Bool gas_fees:Grams
+ *   ^[ gas_used:(VarUInteger 7)
+ *   gas_limit:(VarUInteger 7) gas_credit:(Maybe (VarUInteger 3))
+ *   mode:int8 exit_code:int32 exit_arg:(Maybe int32)
+ *   vm_steps:uint32
+ *   vm_init_state_hash:bits256 vm_final_state_hash:bits256 ]
+ *   = TrComputePhase;
+ */
+public class ComputePhaseVM implements ComputePhase {
+    int magic;
+    boolean success;
+    boolean msgStateUsed;
+    boolean accountActivated;
+    BigInteger gasFees;
+    ComputePhaseVMDetails details;
 
     private String getMagic() {
         return Integer.toHexString(magic);
     }
 
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeBit(true)
+                .storeBit(success)
+                .storeBit(msgStateUsed)
+                .storeBit(accountActivated)
+                .storeCoins(gasFees)
+                .storeSlice(CellSlice.beginParse(((ComputePhaseVMDetails) details).toCell()))
+                .endCell();
+    }
 }

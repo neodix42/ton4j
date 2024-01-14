@@ -4,21 +4,44 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 @Builder
 @Getter
 @Setter
 @ToString
+/**
+ * trans_tick_tock$001
+ *   is_tock:Bool
+ *   storage_ph:TrStoragePhase
+ *   compute_ph:TrComputePhase
+ *   action:(Maybe ^TrActionPhase)
+ *   aborted:Bool
+ *   destroyed:Bool = TransactionDescr;
+ */
 public class TransactionDescriptionTickTock {
-    int magic; //       `tlb:"$001"`
-    boolean isTock; //         `tlb:"bool"`
-    StoragePhase storagePhase; // `tlb:"."`
-    ComputePhase computePhase; // `tlb:"."`
-    ActionPhase actionPhase; // `tlb:"maybe ^"`
-    boolean aborted; //         `tlb:"bool"`
-    boolean destroyed; //         `tlb:"bool"`
+    int magic;
+    boolean isTock;
+    StoragePhase storagePhase;
+    ComputePhase computePhase;
+    ActionPhase actionPhase;
+    boolean aborted;
+    boolean destroyed;
 
     private String getMagic() {
         return Long.toBinaryString(magic);
+    }
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeUint(0b001, 3)
+                .storeBit(isTock)
+                .storeCell(storagePhase.toCell())
+                .storeCell(computePhase.toCell())
+                .storeRefMaybe(actionPhase.toCell())
+                .storeBit(aborted)
+                .storeBit(destroyed)
+                .endCell();
     }
 }

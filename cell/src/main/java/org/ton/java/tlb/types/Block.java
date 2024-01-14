@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 @Builder
 @Getter
@@ -24,6 +26,18 @@ public class Block {
     ValueFlow valueFlow;
     StateUpdate stateUpdate;
     BlockExtra extra;
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeUint(0x11ef55aa, 32)
+                .storeInt(globalId, 32)
+                .storeRef(blockInfo.toCell())
+                .storeRef(valueFlow.toCell())
+                .storeRef(stateUpdate.toCell())
+                .storeRef(extra.toCell())
+                .endCell();
+    }
+
 /*
     public List<BlockIdExt> getParentBlocks() {
         Pair<Long, Long> wcShard = convertShardIdentToShard(blockInfo.getBlockInfoPart().getShard());

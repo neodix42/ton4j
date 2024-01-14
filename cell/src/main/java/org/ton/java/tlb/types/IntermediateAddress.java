@@ -1,5 +1,7 @@
 package org.ton.java.tlb.types;
 
+import org.ton.java.cell.Cell;
+
 /**
  * interm_addr_regular$0 use_dest_bits:(#<= 96)
  * = IntermediateAddress;
@@ -10,5 +12,7 @@ package org.ton.java.tlb.types;
  */
 
 public interface IntermediateAddress {
+
+    public Cell toCell();
 
 }

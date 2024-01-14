@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 import java.math.BigInteger;
 
@@ -11,8 +13,22 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
+/**
+ * storage_info$_
+ *   used:StorageUsed
+ *   last_paid:uint32
+ *   due_payment:(Maybe Grams) = StorageInfo;
+ */
 public class StorageInfo {
     StorageUsed storageUsed;
-    long lastPaid; // uint32
-    BigInteger duePayment; // bigInt
+    long lastPaid;
+    BigInteger duePayment;
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeCell(storageUsed.toCell())
+                .storeUint(lastPaid, 32)
+                .storeCoinsMaybe(duePayment)
+                .endCell();
+    }
 }

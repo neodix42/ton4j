@@ -1,5 +1,7 @@
 package org.ton.java.tlb.types;
 
+import org.ton.java.cell.Cell;
+
 /**
  * msg_import_ext$000 msg:^(Message Any) transaction:^Transaction
  * = InMsg;
@@ -20,4 +22,6 @@ package org.ton.java.tlb.types;
 // msg_export_new extends InMsg
 
 public interface InMsg {
+
+    public Cell toCell();
 }

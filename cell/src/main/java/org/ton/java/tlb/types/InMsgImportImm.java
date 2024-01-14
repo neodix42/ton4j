@@ -22,12 +22,13 @@ public class InMsgImportImm implements InMsg {
     Transaction transaction;
     BigInteger fwdFee;
 
+    @Override
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeUint(0b011, 3) //magic
-                .storeRef(Tlb.save(MsgEnvelope.class, inMsg))
-                .storeRef(Tlb.save(Transaction.class, transaction))
-                .storeUint(fwdFee, 32)
+                .storeUint(0b011, 3)
+                .storeRef(inMsg.toCell())
+                .storeRef(Tlb.save(transaction))
+                .storeCoins(fwdFee)
                 .endCell();
     }
 }

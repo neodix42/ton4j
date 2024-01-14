@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 import java.math.BigInteger;
 
@@ -26,5 +28,12 @@ public class HashUpdate {
 
     private String getNewHash() {
         return newHash.toString(16);
+    }
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeUint(0x72, 32)
+                .storeUint(oldHash, 256)
+                .storeUint(newHash, 256).endCell();
     }
 }

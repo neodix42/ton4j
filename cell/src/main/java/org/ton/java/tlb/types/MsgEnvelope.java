@@ -6,8 +6,6 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
-import org.ton.java.tlb.loader.Tlb;
 
 import java.math.BigInteger;
 
@@ -36,10 +34,10 @@ public class MsgEnvelope {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeUint(4, 4) //magic
-                .storeSlice(CellSlice.beginParse(Tlb.save(IntermediateAddress.class, currAddr)))
-                .storeSlice(CellSlice.beginParse(Tlb.save(IntermediateAddress.class, nextAddr)))
+                .storeCell(currAddr.toCell())
+                .storeCell(nextAddr.toCell())
                 .storeCoins(fwdFeeRemaining)
-                .storeRef(Tlb.save(Message.class, msg))
+                .storeRef(msg.toCell())
                 .endCell();
     }
 }

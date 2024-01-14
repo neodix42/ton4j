@@ -4,6 +4,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -20,4 +23,11 @@ import java.math.BigInteger;
 public class ImportFees {
     BigInteger feesCollected;
     CurrencyCollection valueImported;
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeCoins(feesCollected)
+                .storeSlice(CellSlice.beginParse(valueImported.toCell()))
+                .endCell();
+    }
 }

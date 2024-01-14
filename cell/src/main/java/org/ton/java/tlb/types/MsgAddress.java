@@ -46,12 +46,12 @@ public class MsgAddress {
                 return msgAddressExt.toCell();
             }
             case 0b10 -> {
-                return msgAddressInt.toCellStd();
+                return ((MsgAddressIntStd) msgAddressInt).toCell();
             }
             case 0b11 -> {
-                return msgAddressInt.toCellVar();
+                return ((MsgAddressIntVar) msgAddressInt).toCell();
             }
         }
-        return null; // todo error
+        throw new Error("wrong magic number");
     }
 }

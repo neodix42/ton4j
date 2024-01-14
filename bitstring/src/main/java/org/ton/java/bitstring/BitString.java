@@ -302,6 +302,20 @@ public class BitString {
         }
     }
 
+    public void writeVarUint(BigInteger i, int bitLength) {
+
+        if (i.compareTo(BigInteger.ZERO) == 0) {
+            writeUint(BigInteger.ZERO, 4);
+        } else {
+            int bytesSize = (int) Math.ceil((i.bitLength() / (double) 8));
+            if (bytesSize >= bitLength) {
+                throw new Error("Amount is too big. Should fit in " + bitLength + " bits");
+            }
+            writeUint(BigInteger.valueOf(bytesSize), 4);
+            writeUint(i, bytesSize * 8);
+        }
+    }
+
     /**
      * Appends BitString with Address
      * addr_none$00 = MsgAddressExt;

@@ -56,7 +56,7 @@ public class ExternalMessageOut extends CommonMsg {
 //                result.storeSlice(CellSlice.beginParse(stateInitCell));
 //            }
 //        }
-//
+
 //        if (nonNull(body)) { //either
 //            if ((result.bits.getFreeBits() - 1 < body.bits.getUsedBytes()) || (result.getFreeRefs() < body.getMaxRefs())) {
 //                result.storeBit(true);

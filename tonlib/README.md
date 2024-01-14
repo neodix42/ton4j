@@ -133,7 +133,7 @@ total txs:10
 2022-07-02 12:12:11, Ef_TIxBFB8kHCUppnaWpc1_C5c0tLDa5tb1zL9ysBgWzglKB >>>>> Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF:100000000000000 
 ```
 
-## Get account state, balance
+## Get accountHelper state, balance
 
 ```java
 Tonlib tonlib = Tonlib.builder().build();
@@ -143,9 +143,9 @@ log.info("address: " + addr.toString(true));
 AccountAddressOnly accountAddressOnly=AccountAddressOnly.builder()
                     .account_address(addr.toString(true))
                     .build();
-FullAccountState accountState = tonlib.getAccountState(accountAddressOnly);
-log.info(accountState.toString());
-log.info("balance: {}", accountState.getBalance());
+FullAccountState account = tonlib.getAccountState(accountAddressOnly);
+log.info(account.toString());
+log.info("balance: {}", account.getBalance());
 
 // result
 address:kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E

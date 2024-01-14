@@ -53,20 +53,40 @@ public class CellBuilder extends Cell {
         return storeUint(BigInteger.valueOf(number), bitLength);
     }
 
+    public CellBuilder storeUintMaybe(long number, int bitLength) {
+        return storeUintMaybe(BigInteger.valueOf(number), bitLength);
+    }
+
     public CellBuilder storeUint(int number, int bitLength) {
         return storeUint(BigInteger.valueOf(number), bitLength);
+    }
+
+    public CellBuilder storeUintMaybe(int number, int bitLength) {
+        return storeUintMaybe(BigInteger.valueOf(number), bitLength);
     }
 
     public CellBuilder storeUint(short number, int bitLength) {
         return storeUint(BigInteger.valueOf(number), bitLength);
     }
 
+    public CellBuilder storeUintMaybe(short number, int bitLength) {
+        return storeUintMaybe(BigInteger.valueOf(number), bitLength);
+    }
+
     public CellBuilder storeUint(Byte number, int bitLength) {
         return storeUint(BigInteger.valueOf(number), bitLength);
     }
 
+    public CellBuilder storeUintMaybe(Byte number, int bitLength) {
+        return storeUintMaybe(BigInteger.valueOf(number), bitLength);
+    }
+
     public CellBuilder storeUint(String number, int bitLength) {
         return storeUint(new BigInteger(number), bitLength);
+    }
+
+    public CellBuilder storeUintMaybe(String number, int bitLength) {
+        return storeUintMaybe(new BigInteger(number), bitLength);
     }
 
     public CellBuilder storeUint(BigInteger number, int bitLength) {
@@ -76,20 +96,71 @@ public class CellBuilder extends Cell {
         return this;
     }
 
+    public CellBuilder storeUintMaybe(BigInteger number, int bitLength) {
+        if (isNull(number)) {
+            bits.writeBit(false);
+        } else {
+            bits.writeBit(true);
+            checkBitsOverflow(bitLength);
+            checkSign(number);
+            bits.writeUint(number, bitLength);
+        }
+        return this;
+    }
+
+    public CellBuilder storeVarUint(BigInteger number, int bitLength) {
+        checkSign(number);
+        bits.writeVarUint(number, bitLength);
+        return this;
+    }
+
+    public CellBuilder storeVarUint(Byte number, int bitLength) {
+        checkSign(BigInteger.valueOf(number));
+        bits.writeVarUint(BigInteger.valueOf(number), bitLength);
+        return this;
+    }
+
+    public CellBuilder storeVarUintMaybe(BigInteger number, int bitLength) {
+        if (isNull(number)) {
+            bits.writeBit(false);
+        } else {
+            bits.writeBit(true);
+            checkSign(number);
+            bits.writeVarUint(number, bitLength);
+        }
+        return this;
+    }
+
     public CellBuilder storeInt(long number, int bitLength) {
         return storeInt(BigInteger.valueOf(number), bitLength);
+    }
+
+    public CellBuilder storeIntMaybe(long number, int bitLength) {
+        return storeIntMaybe(BigInteger.valueOf(number), bitLength);
     }
 
     public CellBuilder storeInt(int number, int bitLength) {
         return storeInt(BigInteger.valueOf(number), bitLength);
     }
 
+    public CellBuilder storeIntMaybe(int number, int bitLength) {
+        return storeIntMaybe(BigInteger.valueOf(number), bitLength);
+    }
+
     public CellBuilder storeInt(short number, int bitLength) {
         return storeInt(BigInteger.valueOf(number), bitLength);
     }
 
+    public CellBuilder storeIntMaybe(short number, int bitLength) {
+        return storeIntMaybe(BigInteger.valueOf(number), bitLength);
+    }
+
     public CellBuilder storeInt(byte number, int bitLength) {
         return storeInt(BigInteger.valueOf(number), bitLength);
+    }
+
+    public CellBuilder storeIntMaybe(byte number, int bitLength) {
+        return storeIntMaybe(BigInteger.valueOf(number), bitLength);
     }
 
     public CellBuilder storeInt(BigInteger number, int bitLength) {
@@ -100,6 +171,16 @@ public class CellBuilder extends Cell {
         } else {
             throw new Error("Can't store an Int, because its value allocates more space than provided.");
         }
+    }
+
+    public CellBuilder storeIntMaybe(BigInteger number, int bitLength) {
+        if (isNull(number)) {
+            bits.writeBit(false);
+        } else {
+            bits.writeBit(true);
+            bits.writeInt(number, bitLength);
+        }
+        return this;
     }
 
     public CellBuilder storeBitString(BitString bitString) {
@@ -182,6 +263,17 @@ public class CellBuilder extends Cell {
         return this;
     }
 
+    public CellBuilder storeRefMaybe(Cell c) {
+        if (isNull(c)) {
+            bits.writeBit(false);
+        } else {
+            bits.writeBit(true);
+            checkRefsOverflow(1);
+            refs.add(c);
+        }
+        return this;
+    }
+
     public CellBuilder storeRefs(List<Cell> cells) {
         checkRefsOverflow(cells.size());
         refs.addAll(cells);
@@ -204,6 +296,42 @@ public class CellBuilder extends Cell {
         return this;
     }
 
+    public CellBuilder storeSliceMaybe(CellSlice cellSlice) {
+
+        if (isNull(cellSlice)) {
+            storeBit(false);
+        } else {
+            checkBitsOverflow(cellSlice.bits.getUsedBits());
+            checkRefsOverflow(cellSlice.refs.size());
+            storeBit(true);
+            storeBitString(cellSlice.bits);
+
+            refs.addAll(cellSlice.refs);
+        }
+        return this;
+    }
+
+    public CellBuilder storeCell(Cell cell) {
+        checkBitsOverflow(cell.bits.getUsedBits());
+        checkRefsOverflow(cell.refs.size());
+
+        storeBitString(cell.bits);
+
+        refs.addAll(cell.refs);
+        return this;
+    }
+
+    public CellBuilder storeCellMaybe(Cell cell) {
+        if (isNull(cell)) {
+            cell.bits.writeBit(false);
+        } else {
+            cell.bits.writeBit(true);
+            storeCell(cell);
+        }
+        return this;
+    }
+
+
     public CellBuilder storeDict(Cell dict) {
         storeSlice(CellSlice.beginParse(dict));
         return this;
@@ -217,6 +345,22 @@ public class CellBuilder extends Cell {
      */
     public CellBuilder storeCoins(BigInteger coins) {
         bits.writeCoins(isNull(coins) ? BigInteger.ZERO : coins);
+        return this;
+    }
+
+    /**
+     * Stores up to 2^120-1 nano-coins in Cell
+     *
+     * @param coins amount in nano-coins
+     * @return CellBuilder
+     */
+    public CellBuilder storeCoinsMaybe(BigInteger coins) {
+        if (isNull(coins)) {
+            bits.writeBit(false);
+        } else {
+            bits.writeBit(true);
+            bits.writeCoins(coins);
+        }
         return this;
     }
 

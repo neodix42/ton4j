@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 @Builder
 @Getter
@@ -16,5 +17,12 @@ public class AnyMessage {
     Address senderAddr; // address.Address
     Address destAddr;   // address.Address
 
-    // todo implement get src/dst address by msgType
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeCell(payload)
+                .storeAddress(senderAddr)
+                .storeAddress(destAddr)
+                .endCell();
+    }
+
 }

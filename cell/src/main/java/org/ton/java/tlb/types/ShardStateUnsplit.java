@@ -5,7 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
-import org.ton.java.cell.TonHashMapE;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.TonHashMapAugE;
 
 import java.math.BigInteger;
 
@@ -45,11 +46,32 @@ public class ShardStateUnsplit {
     long minRefMCSeqno;
     Cell outMsgQueueInfo;
     boolean beforeSplit;
-    TonHashMapE accounts;
+    TonHashMapAugE accounts;
     Cell stats;
     McStateExtra custom;
 
     private String getMagic() {
         return Long.toHexString(magic);
+    }
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeUint(0x9023afe2, 32)
+                .storeUint(globalId, 32)
+                .storeCell(shardIdent.toCell())
+                .storeUint(seqno, 32)
+                .storeUint(vertSeqno, 32)
+                .storeUint(genUTime, 32)
+                .storeUint(genLT, 64)
+                .storeUint(minRefMCSeqno, 32)
+                .storeRef(outMsgQueueInfo)
+                .storeBit(beforeSplit)
+                .storeDict(accounts.serialize(
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
+                        v -> v,
+                        e -> e)) //todo
+                .storeRef(stats)
+                .storeRefMaybe(custom.toCell())
+                .endCell();
     }
 }

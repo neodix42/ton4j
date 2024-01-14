@@ -71,19 +71,19 @@ rwallet.initialAccountState init_public_key:string public_key:string wallet_id:i
 dns.initialAccountState public_key:string wallet_id:int64 = InitialAccountState;
 pchan.initialAccountState config:pchan.config = InitialAccountState;
 
-raw.accountState code:bytes data:bytes frozen_hash:bytes = AccountState;
-wallet.v3.accountState wallet_id:int64 seqno:int32 = AccountState;
-wallet.highload.v1.accountState wallet_id:int64 seqno:int32 = AccountState;
-wallet.highload.v2.accountState wallet_id:int64 = AccountState;
-dns.accountState wallet_id:int64 = AccountState;
-rwallet.accountState wallet_id:int64 seqno:int32 unlocked_balance:int64 config:rwallet.config = AccountState;
+raw.account code:bytes data:bytes frozen_hash:bytes = AccountState;
+wallet.v3.account wallet_id:int64 seqno:int32 = AccountState;
+wallet.highload.v1.account wallet_id:int64 seqno:int32 = AccountState;
+wallet.highload.v2.account wallet_id:int64 = AccountState;
+dns.account wallet_id:int64 = AccountState;
+rwallet.account wallet_id:int64 seqno:int32 unlocked_balance:int64 config:rwallet.config = AccountState;
 
 pchan.stateInit signed_A:Bool signed_B:Bool min_A:int64 min_B:int64 expire_at:int53 A:int64 B:int64 = pchan.State;
 pchan.stateClose signed_A:Bool signed_B:Bool min_A:int64 min_B:int64 expire_at:int53 A:int64 B:int64 = pchan.State;
 pchan.statePayout A:int64 B:int64 = pchan.State;
 
-pchan.accountState config:pchan.config state:pchan.State description:string = AccountState;
-uninited.accountState frozen_hash:bytes = AccountState;
+pchan.account config:pchan.config state:pchan.State description:string = AccountState;
+uninited.account frozen_hash:bytes = AccountState;
 
 fullAccountState address:accountAddress balance:int64 last_transaction_id:internal.transactionId block_id:ton.blockIdExt sync_utime:int53 account_state:AccountState revision:int32 = FullAccountState;
 
@@ -212,8 +212,8 @@ liteServer.info now:int53 version:int32 capabilities:int64 = liteServer.Info;
 
 blocks.masterchainInfo last:ton.BlockIdExt state_root_hash:bytes init:ton.BlockIdExt = blocks.MasterchainInfo;
 blocks.shards shards:vector<ton.BlockIdExt> = blocks.Shards;
-blocks.accountTransactionId account:bytes lt:int64 = blocks.AccountTransactionId;
-blocks.shortTxId mode:# account:mode.0?bytes lt:mode.1?int64 hash:mode.2?bytes = liteServer.TransactionId;
+blocks.accountTransactionId accountHelper:bytes lt:int64 = blocks.AccountTransactionId;
+blocks.shortTxId mode:# accountHelper:mode.0?bytes lt:mode.1?int64 hash:mode.2?bytes = liteServer.TransactionId;
 blocks.transactions id:ton.blockIdExt req_count:int32 incomplete:Bool transactions:vector<blocks.shortTxId> = blocks.Transactions;
 blocks.transactionsExt id:ton.blockIdExt req_count:int32 incomplete:Bool transactions:vector<raw.transaction> = blocks.TransactionsExt;
 blocks.header id:ton.blockIdExt global_id:int32 version:int32 flags:# after_merge:Bool after_split:Bool before_split:Bool want_merge:Bool want_split:Bool validator_list_hash_short:int32 catchain_seqno:int32 min_ref_mc_seqno:int32 is_key_block:Bool prev_key_block_seqno:int32 start_lt:int64 end_lt:int64 gen_utime:int53 vert_seqno:# prev_blocks:vector<ton.blockIdExt> = blocks.Header;

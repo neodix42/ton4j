@@ -12,7 +12,10 @@ import org.ton.java.cell.CellBuilder;
 @Setter
 @ToString
 /**
- * anycast_info$_ depth:(#<= 30) { depth >= 1 } rewrite_pfx:(bits depth) = Anycast;
+ * anycast_info$_
+ *  depth:(#<= 30) { depth >= 1 }
+ *  rewrite_pfx:(bits depth)
+ *  = Anycast;
  */
 public class Anycast {
     int depth; // 5 bits

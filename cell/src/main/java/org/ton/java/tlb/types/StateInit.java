@@ -16,6 +16,13 @@ import static java.util.Objects.nonNull;
 @Getter
 @Setter
 @ToString
+/**
+ * _ split_depth:(Maybe (## 5))
+ *   special:(Maybe TickTock)
+ *   code:(Maybe ^Cell)
+ *   data:(Maybe ^Cell)
+ *   library:(Maybe ^Cell) = StateInit;
+ */
 public class StateInit {
     BigInteger depth;  // `tlb:"maybe ## 5"`
     TickTock tickTock; // `tlb:"maybe ."`
@@ -24,7 +31,7 @@ public class StateInit {
     TonHashMapE lib; // `tlb:"dictE 256"`
 
     public Cell toCell() {
-        return CellBuilder.beginCell()
+        return CellBuilder.beginCell() // todo review
                 .storeBit(nonNull(depth))
                 .storeBit(nonNull(tickTock))
                 .storeBit(nonNull(code))

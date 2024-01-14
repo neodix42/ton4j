@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 @Builder
 @Getter
@@ -26,7 +28,16 @@ import lombok.ToString;
  */
 public class BlockProof {
     int magic;
-    //ValidatorBaseInfo validatorInfo;
-    //BlockSignatures blockSignatures;
-    // todo required for proof-block parsing
+    BlockIdExt proofFor;
+    Cell root;
+    BlockSignatures signatures;
+
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeUint(0xc3, 8)
+                .storeCell(proofFor.toCell())
+                .storeRef(root)
+                .storeRefMaybe(signatures.toCell())
+                .endCell();
+    }
 }

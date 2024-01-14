@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 import java.math.BigInteger;
 
@@ -23,7 +25,8 @@ import java.math.BigInteger;
  *   key_block:Bool
  *   vert_seqno_incr:(## 1)
  *   flags:(## 8) { flags <= 1 }
- *   seq_no:# vert_seq_no:# { vert_seq_no >= vert_seqno_incr }
+ *   seq_no:#
+ *   vert_seq_no:# { vert_seq_no >= vert_seqno_incr }
  *   { prev_seq_no:# } { ~prev_seq_no + 1 = seq_no }
  *   shard:ShardIdent
  *   gen_utime:uint32
@@ -68,5 +71,45 @@ public class BlockInfo {
 
     private String getMagic() {
         return Long.toHexString(magic);
+    }
+
+    public Cell toCell() {
+        CellBuilder result = CellBuilder.beginCell()
+                .storeUint(0x9bc7a987, 32)
+                .storeUint(version, 32)
+                .storeBit(notMaster)
+                .storeBit(afterMerge)
+                .storeBit(beforeSplit)
+                .storeBit(afterSplit)
+                .storeBit(wantSplit)
+                .storeBit(wantMerge)
+                .storeBit(keyBlock)
+                .storeBit(vertSeqnoIncr)
+                .storeUint(flags, 8)
+                .storeUint(seqno, 32)
+                .storeUint(vertSeqno, 32)
+                .storeCell(shard.toCell())
+                .storeUint(genuTime, 32)
+                .storeUint(startLt, 64)
+                .storeUint(endLt, 64)
+                .storeUint(genValidatorListHashShort, 32)
+                .storeUint(getGenCatchainSeqno(), 32)
+                .storeUint(minRefMcSeqno, 32)
+                .storeUint(prevKeyBlockSeqno, 32);
+
+
+        if ((flags & 0x1L) == 0x1L) {
+            result.storeCell(globalVersion.toCell());
+        }
+        if (notMaster) {
+            result.storeRef(masterRef.toCell());
+        }
+        result.storeRef(prefRef.toCell(afterMerge));
+        if (vertSeqnoIncr) {
+            result.storeRef(prefVertRef.toCell(afterMerge));
+        }
+
+        return result;
+
     }
 }
