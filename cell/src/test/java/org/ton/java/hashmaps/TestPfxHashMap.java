@@ -10,8 +10,6 @@ import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonPfxHashMap;
 import org.ton.java.utils.Utils;
 
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 
@@ -31,9 +29,7 @@ public class TestPfxHashMap {
                 v -> true
         );
 
-        for (Map.Entry<Object, Object> entry : dict.elements.entrySet()) {
-            log.info("key {}, value {}", entry.getKey(), entry.getValue());
-        }
+        log.info("pfx-hashmap dict {}", dict);
 
         assertThat(dict.elements.size()).isEqualTo(3);
     }
@@ -45,6 +41,8 @@ public class TestPfxHashMap {
                 k -> CellBuilder.beginCell().storeUint((Long) k, 9).bits,
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3)
         ));
+
+        log.info("pfx-hashmap dict {}", x);
     }
 
     @Test
@@ -56,6 +54,8 @@ public class TestPfxHashMap {
         x.elements.put(200L, (byte) 2);
         x.elements.put(300L, (byte) 3);
         x.elements.put(400L, (byte) 4);
+
+        log.info("pfx-hashmap dict {}", x);
 
         Cell cell = x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
@@ -70,11 +70,7 @@ public class TestPfxHashMap {
                 v -> CellSlice.beginParse(v).loadUint(3)
         );
 
-        // traverse deserialized hashmap
-        log.info("Deserialized hashmap from cell");
-        for (Map.Entry<Object, Object> entry : dex.elements.entrySet()) {
-            log.info("key {}, value {}", entry.getKey(), entry.getValue());
-        }
+        log.info("pfx-hashmap dict {}", dex);
 
         assertThat(Utils.bytesToHex(cell.toBocNew())).isEqualTo(Utils.bytesToHex(cell.toBocNew()));
     }

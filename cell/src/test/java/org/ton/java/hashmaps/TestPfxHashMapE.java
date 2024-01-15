@@ -10,8 +10,6 @@ import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonPfxHashMapE;
 import org.ton.java.utils.Utils;
 
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
@@ -24,6 +22,8 @@ public class TestPfxHashMapE {
         x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, 9).bits,
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3));
+
+        log.info("pfx-hashmapE x {}", x);
     }
 
     @Test
@@ -35,6 +35,8 @@ public class TestPfxHashMapE {
         x.elements.put(200L, (byte) 2);
         x.elements.put(300L, (byte) 3);
         x.elements.put(400L, (byte) 4);
+
+        log.info("pfx-hashmapE x {}", x);
 
         Cell cell = x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
@@ -49,11 +51,7 @@ public class TestPfxHashMapE {
                 v -> CellSlice.beginParse(v).loadUint(3)
         );
 
-        // traverse deserialized hashmap
-        log.info("Deserialized hashmap from cell");
-        for (Map.Entry<Object, Object> entry : dex.elements.entrySet()) {
-            log.info("key {}, value {}", entry.getKey(), entry.getValue());
-        }
+        log.info("pfx-hashmapE x {}", dex);
 
         assertThat(Utils.bytesToHex(cell.toBocNew())).isEqualTo(Utils.bytesToHex(cell.toBocNew()));
     }

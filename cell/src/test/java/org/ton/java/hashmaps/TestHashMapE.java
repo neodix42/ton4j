@@ -28,6 +28,7 @@ public class TestHashMapE {
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3)
         );
         log.info("cell {}", cell.print());
+        log.info("Deserialized hashmap from cell {}", x);
     }
 
     @Test
@@ -54,9 +55,7 @@ public class TestHashMapE {
                         v -> CellSlice.beginParse(v).loadUint(3)
                 );
 
-        for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
-            log.info("key {}, value {}", entry.getKey(), entry.getValue());
-        }
+        log.info("Deserialized hashmap from cell {}", x);
     }
 
     @Test
@@ -90,11 +89,7 @@ public class TestHashMapE {
                 v -> CellSlice.beginParse(v).loadUint(16)
         );
 
-        // traverse deserialized hashmap
-        log.info("Deserialized hashmap from cell");
-        for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
-            log.info("key {}, value {}", entry.getKey(), entry.getValue());
-        }
+        log.info("Deserialized hashmap from cell {}", loadedDict);
 
         // serialize
         loadedDict.serialize(
@@ -118,6 +113,7 @@ public class TestHashMapE {
         );
 
         log.info("serialized cellX:\n{}", cellX.print());
+        log.info("Deserialized hashmap from cell {}", x);
     }
 
     @Test
@@ -144,6 +140,8 @@ public class TestHashMapE {
         y.elements.put(200L, (byte) 20);
         y.elements.put(100L, (byte) 10);
 
+        log.info("hashmap y {}", y);
+
         Cell cellY = y.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, dictYKeySize).bits,
                 v -> CellBuilder.beginCell().storeUint((byte) v, 8)
@@ -164,6 +162,8 @@ public class TestHashMapE {
                         v -> CellSlice.beginParse(v).loadUint(3)
                 );
 
+        log.info("hashmap loadedDictX {}", loadedDictX);
+
         int j = 1;
         log.info("Deserialized hashmap from loadedDictX");
         for (Map.Entry<Object, Object> entry : loadedDictX.elements.entrySet()) {
@@ -179,6 +179,7 @@ public class TestHashMapE {
                         v -> CellSlice.beginParse(v).loadUint(8)
                 );
 
+        log.info("hashmap loadedDictX {}", loadedDictY);
         log.info("Deserialized hashmap from loadedDictY");
 
         for (Map.Entry<Object, Object> entry : loadedDictY.elements.entrySet()) {
@@ -186,7 +187,6 @@ public class TestHashMapE {
             assertThat((BigInteger) entry.getKey()).isEqualTo(100);
             assertThat((BigInteger) entry.getValue()).isEqualTo(10);
             break;
-
         }
 
         assertThat(loadedDictY.elements.size()).isEqualTo(4);
@@ -208,6 +208,8 @@ public class TestHashMapE {
         x.elements.put(el3, (byte) 3);
         x.elements.put(el4, (byte) 3);
 
+        log.info("hashmap e {}", x);
+
         Cell cellX = x.serialize(
                 k -> CellBuilder.beginCell().storeString((String) k).bits,
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3)
@@ -227,6 +229,8 @@ public class TestHashMapE {
                         k -> k.readString(40),
                         v -> CellSlice.beginParse(v).loadUint(3)
                 );
+
+        log.info("hashmap loadedDictX {}", loadedDictX);
 
         log.info("Deserialized hashmap from loadedDictX");
         for (Map.Entry<Object, Object> entry : loadedDictX.elements.entrySet()) {
@@ -253,6 +257,8 @@ public class TestHashMapE {
         x.elements.put(el3, (byte) 3);
         x.elements.put(el4, (byte) 3);
 
+        log.info("hashmap x {}", x);
+
         Cell cellX = x.serialize(
                 k -> CellBuilder.beginCell().storeBytes((byte[]) k).bits,
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3)
@@ -272,6 +278,8 @@ public class TestHashMapE {
                         k -> k.readBytes(dictKeySize),
                         v -> CellSlice.beginParse(v).loadUint(3)
                 );
+
+        log.info("hashmap loadedDictX {}", loadedDictX);
 
         log.info("Deserialized hashmap from loadedDictX");
         for (Map.Entry<Object, Object> entry : loadedDictX.elements.entrySet()) {
@@ -301,6 +309,8 @@ public class TestHashMapE {
         x.elements.put(bs2, (byte) 2);
         x.elements.put(bs3, (byte) 3);
 
+        log.info("hashmap x {}", x);
+
         Cell cellX = x.serialize(
                 k -> CellBuilder.beginCell().storeBitString((BitString) k).bits,
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3)
@@ -321,6 +331,7 @@ public class TestHashMapE {
                         v -> CellSlice.beginParse(v).loadUint(3)
                 );
 
+        log.info("hashmap loadedDictX {}", loadedDictX);
         log.info("Deserialized hashmap from loadedDictX");
         for (Map.Entry<Object, Object> entry : loadedDictX.elements.entrySet()) {
             log.info("key {}, value {}", entry.getKey(), entry.getValue());
@@ -347,6 +358,8 @@ public class TestHashMapE {
         x.elements.put(addr3, (byte) 3);
         x.elements.put(addr4, (byte) 4);
         x.elements.put(addr5, (byte) 5);
+
+        log.info("hashmap x {}", x);
 
         Cell cellX = x.serialize(
                 k -> CellBuilder.beginCell().storeAddress((Address) k).bits,

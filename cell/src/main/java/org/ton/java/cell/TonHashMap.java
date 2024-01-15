@@ -295,4 +295,23 @@ public class TonHashMap {
     private static double log2(int n) {
         return (Math.log(n) / Math.log(2));
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+        for (Map.Entry<Object, Object> entry : elements.entrySet()) {
+            sb.append("[");
+            sb.append(entry.getKey());
+
+            sb.append(",");
+            sb.append(entry.getValue());
+            sb.append("],");
+        }
+        if (!elements.isEmpty()) {
+            sb.setLength(sb.length() - 1);
+        }
+        sb.append(")");
+        return sb.toString();
+    }
 }
