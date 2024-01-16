@@ -14,32 +14,12 @@ public class TonHashMapAug {
     int keySize;
     int maxMembers;
 
-    /**
-     * TonHashMap with the fixed length keys. TonHashMap cannot be empty.
-     * If you plan to store empty Hashmap consider using TonHashMapE.
-     * <p>
-     * TonHashMap consists of two subsequent refs
-     * Notice, all keys should be of the same size. If you have keys of different size - align them first.
-     * Duplicates are not allowed.
-     *
-     * @param keySize    key size in bits
-     * @param maxMembers max number of hashmap entries
-     */
     public TonHashMapAug(int keySize, int maxMembers) {
         elements = new LinkedHashMap<>();
         this.keySize = keySize;
         this.maxMembers = maxMembers;
     }
 
-    /**
-     * HashMap with the fixed length keys.
-     * TonHashMap cannot be empty. If you plan to store empty Hashmap consider using TonHashMapE.
-     * <p>
-     * Notice, all keys should be of the same size. If you have keys of different size - align them.
-     * Duplicates are not allowed.
-     *
-     * @param keySize key size in bits
-     */
     public TonHashMapAug(int keySize) {
         elements = new LinkedHashMap<>();
         this.keySize = keySize;
@@ -51,10 +31,9 @@ public class TonHashMapAug {
         BitString l = deserializeLabel(edge, keySize - key.toBitString().length());
         key.writeBitString(l);
         if (key.toBitString().length() == keySize) {
-            Cell value = CellBuilder.beginCell().storeSlice(edge).endCell();
-            //Cell extra = CellBuilder.beginCell().storeSlice(edge).endCell(); // todo how?
+            Cell valueAndExtra = CellBuilder.beginCell().storeSlice(edge).endCell();
             List<Node> newList = new ArrayList<>(nodes);
-            newList.add(new Node(key, value)); // todo
+            newList.add(new Node(key, valueAndExtra));
             return newList;
         }
 
@@ -80,9 +59,9 @@ public class TonHashMapAug {
                      Function<CellSlice, Object> extraParser) {
         List<Node> nodes = deserializeEdge(c, keySize, new BitString(keySize));
         for (Node node : nodes) {
-            CellSlice both = CellSlice.beginParse(node.value);
-            Object extra = extraParser.apply(both);
-            Object value = valueParser.apply(both);
+            CellSlice valueAndExtra = CellSlice.beginParse(node.value);
+            Object extra = extraParser.apply(valueAndExtra);
+            Object value = valueParser.apply(valueAndExtra);
             elements.put(keyParser.apply(node.key), Pair.of(value, extra));
         }
     }
@@ -98,15 +77,15 @@ public class TonHashMapAug {
         List<Object> right = new ArrayList<>();
 
         for (Object a : arr) {
-            BitString key = ((NodeAug) a).key;
-            Cell value = ((NodeAug) a).value;
+            BitString key = ((Node) a).key;
+            Cell valueAndExtra = ((Node) a).value;
 //            Cell extra = ((NodeAug) a).extra;
             boolean lr = key.readBit();
 
             if (lr) {
-                right.add(new Node(key, value));
+                right.add(new Node(key, valueAndExtra));
             } else {
-                left.add(new Node(key, value));
+                left.add(new Node(key, valueAndExtra));
             }
         }
 
@@ -202,15 +181,14 @@ public class TonHashMapAug {
             return;
         }
         if (se.size() == 3) { // contains leaf
-            NodeAug node = (NodeAug) se.get(2);
+            Node node = (Node) se.get(2);
 
-//            BitString bs = node.key.readBits(node.key.writeCursor - node.key.readCursor); was
             BitString bs = node.key.readBits(node.key.getUsedBits());
 
             se.set(0, bs.toBitString());
 
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            builder.writeCell(node.extra); // todo review
+            //builder.writeCell(node.extra); // todo review
             builder.writeCell(node.value);
         } else { // contains fork
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
@@ -241,7 +219,7 @@ public class TonHashMapAug {
         }
 
         if (se.isEmpty()) {
-            throw new Error("TonHashMap does not support empty dict. Consider using TonHashMapE");
+            throw new Error("TonHashMapAug does not support empty dict. Consider using TonHashMapE");
         }
 
         List<Object> s = flatten(splitTree(se), keySize);

@@ -170,32 +170,44 @@ public class Tlb {
                         .configAddr(Address.of((byte) 0x11, 255, cs.loadBits(256).toByteArray())) // TODO prio 1
                         .config(CellSlice.beginParse(cs.loadRef()).loadDict(32, k -> k.readUint(32), v -> v))
                         .build();
+            case "EnqueuedMsg": {
+                return EnqueuedMsg.builder()
+                        .enqueuedLt(cs.loadUint(64))
+                        .outMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
+                        .build();
+            }
+            case "ProcessedUpto": {
+                return ProcessedUpto.builder()
+                        .lastMsgLt(cs.loadUint(64))
+                        .lastMsgHash(cs.loadUint(64))
+                        .build();
+            }
             case "OutMsgQueueInfo": {
                 return OutMsgQueueInfo.builder()
                         .outMsgQueue(
                                 cs.loadDictAugE(352,
                                         k -> k.readInt(352),
-                                        v -> v, // EnqueuedMsg todo
+                                        v -> Tlb.load(EnqueuedMsg.class, CellSlice.beginParse(v)),
                                         e -> e  // 64
                                 ))
                         .processedInfo(
                                 cs.loadDictE(96,
                                         k -> k.readInt(96),
-                                        v -> v // ProcessedUpto
+                                        v -> Tlb.load(ProcessedUpto.class, CellSlice.beginParse(v))
                                 ))
                         .ihrPendingInfo(
                                 cs.loadDictE(320,
                                         k -> k.readInt(320),
-                                        v -> v // 64
+                                        v -> CellSlice.beginParse(v).loadUint(64)
                                 ))
                         .build();
             }
             case "ShardStateUnsplit":
-                TonHashMapAugE accounts = CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
-                        k -> k.readInt(256),
-                        v -> v,
-                        e -> e);
-                System.out.println(accounts);
+//                TonHashMapAugE accounts = CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
+//                        k -> k.readInt(256),
+//                        v -> v,
+//                        e -> e);
+
                 ShardStateUnsplit split = ShardStateUnsplit.builder()
                         .magic(cs.loadUint(32).longValue())
                         .globalId(cs.loadUint(32).intValue())
@@ -207,7 +219,10 @@ public class Tlb {
                         .minRefMCSeqno(cs.loadUint(32).longValue())
                         .outMsgQueueInfo((OutMsgQueueInfo) Tlb.load(OutMsgQueueInfo.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
                         .beforeSplit(cs.loadBit())
-                        .accounts(accounts)
+                        .accounts(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
+                                k -> k.readInt(256),
+                                v -> v,
+                                e -> e))
                         .stats(cs.loadRef())
                         .custom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef(), skipMagic))
                         .build();
@@ -744,7 +759,6 @@ public class Tlb {
                 return MessagesList.builder()
                         .list(cs.loadDictE(15,
                                 k -> k.readInt(15),
-                                //v -> v))
                                 v -> CellSlice.beginParse(v).loadTlb(Message.class)))
 //                                v -> Tlb.load(Message.class, CellSlice.beginParse(v).loadRef())))
                         .build();
