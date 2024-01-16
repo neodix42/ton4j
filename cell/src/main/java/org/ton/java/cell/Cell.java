@@ -34,7 +34,7 @@ public class Cell {
 
     public Cell(BitString bits, List<Cell> refs) {
         this.bits = new BitString(bits.getLength());
-        this.bits.writeBitString(bits);
+        this.bits.writeBitString(bits.clone());
         this.refs = new ArrayList<>(refs);
         this.special = false;
         this.levelMask = 0;

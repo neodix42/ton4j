@@ -34,4 +34,8 @@ public class DbBlockInfo {
     BigInteger ts;
     BigInteger state;
     BigInteger masterChainRefSeqNo;
+
+    private String getMagic() {
+        return Long.toHexString(magic);
+    }
 }

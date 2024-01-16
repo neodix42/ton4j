@@ -12,7 +12,6 @@ import org.ton.java.cell.CellBuilder;
 @Setter
 @ToString
 /**
- * _ ShardStateUnsplit = ShardState;
  *   split_state#5f327da5
  *   left:^ShardStateUnsplit
  *   right:^ShardStateUnsplit = ShardState;

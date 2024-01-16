@@ -16,6 +16,8 @@ import static java.util.Objects.isNull;
  */
 public class Tl {
 
+    public static final long DB_BLOCK_INFO_MAGIC = 0x4ac6e727;
+
     public static Object load(Class clazz, Cell c) {
         if (isNull(c)) {
             return null;
@@ -42,15 +44,14 @@ public class Tl {
             case "DbBlockInfo":
                 if (!skipMagic) {
                     int magic = Integer.reverseBytes(cs.loadUint(32).intValue());
-                    assert (magic == 0x4ac6e727) : "DbBlockInfo: magic not equal to 0x4ac6e727, found " + Long.toHexString(magic);
+                    assert (magic == DB_BLOCK_INFO_MAGIC) : "DbBlockInfo: magic not equal to 0x4ac6e727, found " + Long.toHexString(magic);
                 }
                 DbBlockInfo dbBlockInfo = DbBlockInfo.builder()
-                        .magic(0x4ac6e727)
+                        .magic(DB_BLOCK_INFO_MAGIC)
                         .id((BlockIdExt) Tl.load(BlockIdExt.class, cs, skipMagic))
                         .build();
                 BigInteger flags = cs.loadUint(32);
 
-                System.out.println("flags " + flags.toString(2));
                 dbBlockInfo.setFlags(flags);
                 dbBlockInfo.setPrevLeft(flags.testBit(32 - 1) ? (BlockIdExt) Tl.load(BlockIdExt.class, cs) : null);
                 dbBlockInfo.setPrevRight(flags.testBit(32 - 2) ? (BlockIdExt) Tl.load(BlockIdExt.class, cs) : null);
@@ -64,10 +65,10 @@ public class Tl {
             case "BlockIdExt":
                 return BlockIdExt.builder()
                         .workchain(Utils.intsToInt(Utils.reverseIntArray(cs.loadBytes(32))))
-                        .shard(cs.loadUint(64))
+                        .shard(cs.loadUint(64).longValue())
                         .seqno(Utils.intsToInt(Utils.reverseIntArray(cs.loadBytes(32))))
-                        .root_hash(Utils.reverseIntArray(cs.loadBytes(256)))
-                        .file_hash(Utils.reverseIntArray(cs.loadBytes(256)))
+                        .rootHash(Utils.reverseIntArray(cs.loadBytes(256)))
+                        .fileHash(Utils.reverseIntArray(cs.loadBytes(256)))
                         .build();
             case "Text":
                 int chunksNum = cs.loadUint(8).intValue();

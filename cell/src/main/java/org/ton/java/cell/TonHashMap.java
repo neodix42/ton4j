@@ -301,12 +301,8 @@ public class TonHashMap {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         for (Map.Entry<Object, Object> entry : elements.entrySet()) {
-            sb.append("[");
-            sb.append(entry.getKey());
-
-            sb.append(",");
-            sb.append(entry.getValue());
-            sb.append("],");
+            String s = String.format("[%s,%s],", entry.getKey(), entry.getValue());
+            sb.append(s);
         }
         if (!elements.isEmpty()) {
             sb.setLength(sb.length() - 1);

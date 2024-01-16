@@ -289,4 +289,20 @@ public class TonHashMapAug {
     private static double log2(int n) {
         return (Math.log(n) / Math.log(2));
     }
+
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+        for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
+            String s = String.format("[%s,(%s,%s)],", entry.getKey(), entry.getValue().getLeft(), entry.getValue().getRight());
+            sb.append(s);
+        }
+        if (!elements.isEmpty()) {
+            sb.setLength(sb.length() - 1);
+        }
+        sb.append(")");
+        return sb.toString();
+    }
 }

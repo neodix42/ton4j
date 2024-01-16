@@ -22,13 +22,23 @@ public class StateUpdate {
     //    ShardState oldOne;
     BigInteger oldHash;
     BigInteger newHash;
-    ShardState oldOne;
-    ShardState newOne;
+    ShardState oldShardState;
+    ShardState newShardState;
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeRef(oldOne.toCell())
-                .storeRef(newOne.toCell())
+                .storeUint(oldHash, 256)
+                .storeUint(newHash, 256)
+                .storeRef(oldShardState.toCell())
+                .storeRef(newShardState.toCell())
                 .endCell();
+    }
+
+    private String getOldHash() {
+        return oldHash.toString(16);
+    }
+
+    private String getNewHash() {
+        return newHash.toString(16);
     }
 }

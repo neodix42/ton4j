@@ -158,20 +158,45 @@ public class Tlb {
                     }
                 }
             case "StateUpdate":
-//                long magic = cs.loadUint(2).longValue();
+                System.out.println("stateUpdate " + cs.sliceToCell().toHex());
                 return StateUpdate.builder()
-                        .oldOne((ShardState) Tlb.load(ShardState.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
-                        .newOne((ShardState) Tlb.load(ShardState.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
-//                        .oldOne(cs.loadRef())
-//                        .newOne(cs.loadRef())
+                        .oldHash(cs.loadUint(256))
+                        .newHash(cs.loadUint(256))
+                        .oldShardState((ShardState) Tlb.load(ShardState.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
+                        .newShardState((ShardState) Tlb.load(ShardState.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
                         .build();
             case "ConfigParams":
                 return ConfigParams.builder()
                         .configAddr(Address.of((byte) 0x11, 255, cs.loadBits(256).toByteArray())) // TODO prio 1
                         .config(CellSlice.beginParse(cs.loadRef()).loadDict(32, k -> k.readUint(32), v -> v))
                         .build();
+            case "OutMsgQueueInfo": {
+                return OutMsgQueueInfo.builder()
+                        .outMsgQueue(
+                                cs.loadDictAugE(352,
+                                        k -> k.readInt(352),
+                                        v -> v, // EnqueuedMsg todo
+                                        e -> e  // 64
+                                ))
+                        .processedInfo(
+                                cs.loadDictE(96,
+                                        k -> k.readInt(96),
+                                        v -> v // ProcessedUpto
+                                ))
+                        .ihrPendingInfo(
+                                cs.loadDictE(320,
+                                        k -> k.readInt(320),
+                                        v -> v // 64
+                                ))
+                        .build();
+            }
             case "ShardStateUnsplit":
-                return ShardStateUnsplit.builder()
+                TonHashMapAugE accounts = CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
+                        k -> k.readInt(256),
+                        v -> v,
+                        e -> e);
+                System.out.println(accounts);
+                ShardStateUnsplit split = ShardStateUnsplit.builder()
                         .magic(cs.loadUint(32).longValue())
                         .globalId(cs.loadUint(32).intValue())
                         .shardIdent((ShardIdent) cs.loadTlb(ShardIdent.class, skipMagic))
@@ -180,24 +205,22 @@ public class Tlb {
                         .genUTime(cs.loadUint(32).longValue())
                         .genLT(cs.loadUint(64))
                         .minRefMCSeqno(cs.loadUint(32).longValue())
-                        .outMsgQueueInfo(cs.loadRef())
+                        .outMsgQueueInfo((OutMsgQueueInfo) Tlb.load(OutMsgQueueInfo.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
                         .beforeSplit(cs.loadBit())
-                        .accounts(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
-                                k -> k.readInt(256),
-                                v -> v,
-                                e -> e))
+                        .accounts(accounts)
                         .stats(cs.loadRef())
                         .custom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef(), skipMagic))
                         .build();
+                return split;
             case "ShardIdent":
                 if (!skipMagic) {
                     long magic = cs.loadUint(2).longValue();
-                    assert (magic == 0L) : "ShardIdent: magic not equal to 0x0, found " + Long.toHexString(magic);
+                    assert (magic == 0L) : "ShardIdent: magic not equal to 0b00, found " + Long.toHexString(magic);
                 }
                 return ShardIdent.builder()
                         .magic(0L)
                         .prefixBits(cs.loadUint(6).longValue())
-                        .workchain(cs.loadUint(32).longValue())
+                        .workchain(cs.loadInt(32).longValue())
                         .shardPrefix(cs.loadUint(64))
                         .build();
             case "ShardDesc": // todo
@@ -209,11 +232,13 @@ public class Tlb {
                     left = (ShardStateUnsplit) Tlb.load(ShardStateUnsplit.class, cs.loadRef(), skipMagic);
                     right = (ShardStateUnsplit) Tlb.load(ShardStateUnsplit.class, cs.loadRef(), skipMagic);
                     return ShardState.builder()
+                            .magic(tag)
                             .left(left)
                             .right(right)
                             .build();
                 } else if (tag == 0x9023afe2L) {
                     return ShardState.builder()
+                            .magic(tag)
                             .left((ShardStateUnsplit) cs.loadTlb(ShardStateUnsplit.class, skipMagic))
                             .build();
                 } else {
@@ -225,11 +250,15 @@ public class Tlb {
                 }
                 if (!skipMagic) {
                     long magic = cs.loadUint(16).longValue();
-                    assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found " + Long.toHexString(magic);
+//                    assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found " + Long.toHexString(magic);
+                    if (magic != 0xcc26L) {
+                        System.out.println("McStateExtra: magic not equal to 0xcc26, found " + Long.toHexString(magic));
+                    }
+                    return null;
                 }
                 return McStateExtra.builder()
                         .magic(0xcc26L)
-                        .shardHashes(cs.loadDictE(32, k -> k.readInt(32), v -> v))
+                        .shardHashes(cs.loadDictE(32, k -> k.readInt(32), v -> v)) // todo BinTree
                         .configParams((ConfigParams) cs.loadTlb(ConfigParams.class))
                         .info(cs.loadRef())
                         .globalBalance((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
@@ -503,10 +532,13 @@ public class Tlb {
                         .build();
                 return blockExtra;
             case "Block":
+                System.out.println("block " + cs.sliceToCell().toHex());
+
                 if (!skipMagic) {
                     long magic = cs.loadUint(32).longValue();
                     assert (magic == 0x11ef55aaL) : "Block: magic not equal to 0x11ef55aa, found " + Long.toHexString(magic);
                 }
+
                 return Block.builder()
                         .magic(0x11ef55aaL)
                         .globalId(cs.loadInt(32).intValue())

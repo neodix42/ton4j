@@ -44,7 +44,7 @@ public class ShardStateUnsplit {
     long genUTime;
     BigInteger genLT;
     long minRefMCSeqno;
-    Cell outMsgQueueInfo;
+    OutMsgQueueInfo outMsgQueueInfo;
     boolean beforeSplit;
     TonHashMapAugE accounts;
     Cell stats;
@@ -64,7 +64,7 @@ public class ShardStateUnsplit {
                 .storeUint(genUTime, 32)
                 .storeUint(genLT, 64)
                 .storeUint(minRefMCSeqno, 32)
-                .storeRef(outMsgQueueInfo)
+                .storeRef(outMsgQueueInfo.toCell())
                 .storeBit(beforeSplit)
                 .storeDict(accounts.serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
