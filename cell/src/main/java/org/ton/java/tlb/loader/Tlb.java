@@ -188,7 +188,7 @@ public class Tlb {
                                 cs.loadDictAugE(352,
                                         k -> k.readInt(352),
                                         v -> Tlb.load(EnqueuedMsg.class, CellSlice.beginParse(v)),
-                                        e -> e  // 64
+                                        e -> CellSlice.beginParse(e).loadUint(64)
                                 ))
                         .processedInfo(
                                 cs.loadDictE(96,
@@ -202,13 +202,21 @@ public class Tlb {
                                 ))
                         .build();
             }
-            case "ShardStateUnsplit":
-//                TonHashMapAugE accounts = CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
-//                        k -> k.readInt(256),
-//                        v -> v,
-//                        e -> e);
-
-                ShardStateUnsplit split = ShardStateUnsplit.builder()
+            case "ShardAccount": {
+                return ShardAccount.builder()
+                        .account((Account) Tlb.load(Account.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
+                        .lastTransHash(cs.loadUint(64))
+                        .lastTransLt(cs.loadUint(64))
+                        .build();
+            }
+            case "DepthBalanceInfo": {
+                return DepthBalanceInfo.builder()
+                        .depth(cs.loadUint(5).intValue()) // tlb #<= 60
+                        .currencies((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
+                        .build();
+            }
+            case "ShardStateUnsplit": {
+                return ShardStateUnsplit.builder()
                         .magic(cs.loadUint(32).longValue())
                         .globalId(cs.loadUint(32).intValue())
                         .shardIdent((ShardIdent) cs.loadTlb(ShardIdent.class, skipMagic))
@@ -221,12 +229,12 @@ public class Tlb {
                         .beforeSplit(cs.loadBit())
                         .accounts(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
                                 k -> k.readInt(256),
-                                v -> v,
-                                e -> e))
+                                v -> v.loadTlb(ShardAccount.class, skipMagic),
+                                e -> e.loadTlb(DepthBalanceInfo.class, skipMagic)))
                         .stats(cs.loadRef())
                         .custom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef(), skipMagic))
                         .build();
-                return split;
+            }
             case "ShardIdent":
                 if (!skipMagic) {
                     long magic = cs.loadUint(2).longValue();
@@ -268,8 +276,8 @@ public class Tlb {
 //                    assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found " + Long.toHexString(magic);
                     if (magic != 0xcc26L) {
                         System.out.println("McStateExtra: magic not equal to 0xcc26, found " + Long.toHexString(magic));
+                        return null;
                     }
-                    return null;
                 }
                 return McStateExtra.builder()
                         .magic(0xcc26L)
@@ -564,7 +572,7 @@ public class Tlb {
                         .build();
             case "AccountBlock":
                 if (!skipMagic) {
-                    long magic = cs.loadUint(32).longValue();
+                    long magic = cs.loadUint(4).longValue();
                     assert (magic == 0x5L) : "AccountBlock: magic not equal to 0x5, found " + Long.toHexString(magic);
                 }
                 return AccountBlock.builder()
@@ -572,8 +580,8 @@ public class Tlb {
                         .addr(cs.loadUint(256))
                         .transactions(cs.loadDictAugE(64,
                                 k -> k.readInt(64),
-                                v -> v,
-                                e -> e))
+                                v -> Tlb.load(Transaction.class, v.loadRef(), skipMagic),
+                                e -> e.loadTlb(CurrencyCollection.class, skipMagic)))
                         .stateUpdate(cs.loadRef())
                         .build();
             case "ValueFlow":

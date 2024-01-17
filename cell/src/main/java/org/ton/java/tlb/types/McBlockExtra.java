@@ -47,7 +47,8 @@ public class McBlockExtra {
                 .storeDict(shardFees.serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 96).bits,
                         v -> CellBuilder.beginCell().storeRef((Cell) v), // todo ShardFeeCreated
-                        e -> CellBuilder.beginCell().storeRef((Cell) e) // todo ShardFeeCreated
+                        e -> CellBuilder.beginCell().storeRef((Cell) e), // todo ShardFeeCreated
+                        (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
                 ))
                 .storeCell(more)
                 .storeCell(keyBlock ? config.toCell() : CellBuilder.beginCell().endCell()).endCell();

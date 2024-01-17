@@ -69,7 +69,8 @@ public class ShardStateUnsplit {
                 .storeDict(accounts.serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
                         v -> v,
-                        e -> e)) //todo
+                        e -> e,
+                        (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1))) // todo
                 .storeRef(stats)
                 .storeRefMaybe(custom.toCell())
                 .endCell();

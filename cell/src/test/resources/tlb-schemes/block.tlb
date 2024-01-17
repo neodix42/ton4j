@@ -62,7 +62,8 @@ vhm_edge#_ {n:#} {X:Type} {l:#} {m:#} label:(HmLabel ~l n)
 vhmn_leaf$00 {n:#} {X:Type} value:X = VarHashmapNode n X;
 vhmn_fork$01 {n:#} {X:Type}
              left:^(VarHashmap n X)
-             right:^(VarHashmap n X) value:(Maybe X) 
+             right:^(VarHashmap n X)
+             value:(Maybe X)
              = VarHashmapNode (n + 1) X;
 vhmn_cont$1 {n:#} {X:Type} branch:Bit child:^(VarHashmap n X) 
             value:X = VarHashmapNode (n + 1) X;

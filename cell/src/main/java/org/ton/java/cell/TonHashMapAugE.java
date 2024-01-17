@@ -6,6 +6,7 @@ import org.ton.java.bitstring.BitString;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class TonHashMapAugE extends TonHashMapAug {
@@ -24,9 +25,19 @@ public class TonHashMapAugE extends TonHashMapAug {
     }
 
 
+    /**
+     * Serializes edges and puts values into fork-nodes according to forkExtra function logic
+     *
+     * @param keyParser   - used on key
+     * @param valueParser - used on every leaf
+     * @param extraParser - used on every leaf
+     * @param forkExtra   - used only in fork-node.
+     * @return Cell
+     */
     public Cell serialize(Function<Object, BitString> keyParser,
                           Function<Object, Object> valueParser,
-                          Function<Object, Object> extraParser) {
+                          Function<Object, Object> extraParser,
+                          BiFunction<Object, Object, Object> forkExtra) {
         List<Object> se = new ArrayList<>();
         for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
             BitString key = keyParser.apply(entry.getKey());
@@ -44,7 +55,7 @@ public class TonHashMapAugE extends TonHashMapAug {
         } else {
             List<Object> s = flatten(splitTree(se), keySize);
             Cell b = new Cell();
-            serialize_edge(s, b);
+            serialize_edge(s, b, forkExtra);
 
             return CellBuilder.beginCell()
                     .storeBit(true)

@@ -56,6 +56,7 @@ public class TestHashMap {
 
     @Test
     public void testHashMapSerialization() {
+
         TonHashMap x = new TonHashMap(9);
 
         x.elements.put(100L, (byte) 1);
@@ -78,7 +79,7 @@ public class TestHashMap {
 
         log.info("Deserialized hashmap from cell {}", dex);
 
-        assertThat(Utils.bytesToHex(cell.toBocNew())).isEqualTo(Utils.bytesToHex(cell.toBocNew()));
+        assertThat(dex.elements.size()).isEqualTo(4);
     }
 
     @Test
@@ -130,6 +131,8 @@ public class TestHashMap {
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 16).bits,
                 v -> CellBuilder.beginCell().storeUint((BigInteger) v, 16)
         );
+
+        assertThat(dex.elements.size()).isEqualTo(3);
     }
 
     @Test // works with bits.writeBitString(bitString); does not - bits.writeBitStringFromRead(bitString);

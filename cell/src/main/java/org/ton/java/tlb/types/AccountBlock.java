@@ -25,13 +25,14 @@ public class AccountBlock {
     long magic;
     BigInteger addr;
     TonHashMapAugE transactions;
-    Cell stateUpdate;
+    Cell stateUpdate; // todo
 
     public Cell toCell() {
         Cell dictCell = transactions.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, 64).bits,
                 v -> CellBuilder.beginCell().storeRef(((Transaction) v).toCell()),
-                e -> CellBuilder.beginCell().storeCell(((CurrencyCollection) e).toCell())
+                e -> CellBuilder.beginCell().storeCell(((CurrencyCollection) e).toCell()),
+                (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
         );
         return CellBuilder.beginCell()
                 .storeUint(0x5, 32)

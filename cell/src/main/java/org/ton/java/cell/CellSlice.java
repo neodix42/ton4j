@@ -163,6 +163,9 @@ public class CellSlice {
         return x;
     }
 
+    /**
+     * Returns only value and extra of all edges, without extras of fork-nodes.
+     */
     public TonHashMapAug loadDictAug(int n, Function<BitString, Object> keyParser, Function<CellSlice, Object> valueParser, Function<CellSlice, Object> extraParser) {
         TonHashMapAug x = new TonHashMapAug(n);
         x.deserialize(this, keyParser, valueParser, extraParser);
@@ -188,6 +191,9 @@ public class CellSlice {
         }
     }
 
+    /**
+     * Returns only value and extra of all edges, without extras of fork-nodes.
+     */
     public TonHashMapAugE loadDictAugE(int n, Function<BitString, Object> keyParser, Function<CellSlice, Object> valueParser, Function<CellSlice, Object> extraParser) {
         boolean isEmpty = !this.loadBit();
         if (isEmpty) {

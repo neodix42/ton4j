@@ -73,5 +73,6 @@ public class TestPfxHashMap {
         log.info("pfx-hashmap dict {}", dex);
 
         assertThat(Utils.bytesToHex(cell.toBocNew())).isEqualTo(Utils.bytesToHex(cell.toBocNew()));
+        assertThat(dex.elements.size()).isEqualTo(4);
     }
 }

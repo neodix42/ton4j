@@ -4,14 +4,12 @@ import org.ton.java.bitstring.BitString;
 
 public class NodeAug {
     BitString key;
-    Cell value;
-    Cell extra;
+    Cell valueAndExtra;
+    Cell forkExtra;
 
-//    Cell extra;
-
-    public NodeAug(BitString key, Cell value, Cell extra) {
+    public NodeAug(BitString key, Cell valueAndExtra, Cell forkExtra) {
         this.key = key;
-        this.value = value;
-        this.extra = extra;
+        this.valueAndExtra = valueAndExtra;
+        this.forkExtra = forkExtra;
     }
 }

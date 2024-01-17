@@ -6,6 +6,7 @@ import org.ton.java.bitstring.BitString;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class TonHashMapAug {
@@ -33,7 +34,7 @@ public class TonHashMapAug {
         if (key.toBitString().length() == keySize) {
             Cell valueAndExtra = CellBuilder.beginCell().storeSlice(edge).endCell();
             List<Node> newList = new ArrayList<>(nodes);
-            newList.add(new Node(key, valueAndExtra));
+            newList.add(new Node(key, valueAndExtra)); // fork-extra does not exist in edge
             return newList;
         }
 
@@ -176,7 +177,7 @@ public class TonHashMapAug {
         }
     }
 
-    void serialize_edge(List<Object> se, Cell builder) {
+    void serialize_edge(List<Object> se, Cell builder, BiFunction<Object, Object, Object> forkExtra) {
         if (se.size() == 0) {
             return;
         }
@@ -188,43 +189,52 @@ public class TonHashMapAug {
             se.set(0, bs.toBitString());
 
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            //builder.writeCell(node.extra); // todo review
             builder.writeCell(node.value);
         } else { // contains fork
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
             Cell leftCell = new Cell();
-            serialize_edge((List<Object>) se.get(2), leftCell);
+            serialize_edge((List<Object>) se.get(2), leftCell, forkExtra);
             Cell rightCell = new Cell();
-            serialize_edge((List<Object>) se.get(3), rightCell);
+            serialize_edge((List<Object>) se.get(3), rightCell, forkExtra);
+            builder.writeCell((Cell) forkExtra.apply(leftCell, rightCell));
             builder.refs.add(leftCell);
             builder.refs.add(rightCell);
-            //builder.writeCell(extra);
         }
     }
 
+    /**
+     * Serializes edges and puts values into fork-nodes according to forkExtra function logic
+     *
+     * @param keyParser   - used on key
+     * @param valueParser - used on every leaf
+     * @param extraParser - used on every leaf
+     * @param forkExtra   - used only in fork-node.
+     * @return Cell
+     */
     public Cell serialize(Function<Object, BitString> keyParser,
                           Function<Object, Object> valueParser,
-                          Function<Object, Object> extraParser) {
+                          Function<Object, Object> extraParser,
+                          BiFunction<Object, Object, Object> forkExtra) {
         List<Object> se = new ArrayList<>();
         for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
             BitString key = keyParser.apply(entry.getKey());
             Cell value = (Cell) valueParser.apply(entry.getValue().getLeft());
             Cell extra = (Cell) extraParser.apply(entry.getValue().getRight());
             Cell both = CellBuilder.beginCell()
-                    .storeSlice(CellSlice.beginParse(value))
                     .storeSlice(CellSlice.beginParse(extra))
+                    .storeSlice(CellSlice.beginParse(value))
                     .endCell();
 
             se.add(new Node(key, both));
         }
 
         if (se.isEmpty()) {
-            throw new Error("TonHashMapAug does not support empty dict. Consider using TonHashMapE");
+            throw new Error("TonHashMapAug does not support empty dict. Consider using TonHashMapAugE");
         }
 
         List<Object> s = flatten(splitTree(se), keySize);
         Cell b = new Cell();
-        serialize_edge(s, b);
+        serialize_edge(s, b, forkExtra);
 
         return b;
     }
