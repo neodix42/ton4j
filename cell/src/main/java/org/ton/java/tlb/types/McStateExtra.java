@@ -30,6 +30,7 @@ import static java.util.Objects.isNull;
  */
 public class McStateExtra {
     long magic;
+    //    ShardHashes shardHashes;
     TonHashMapE shardHashes;
     ConfigParams configParams;
     McStateExtraInfo info;
@@ -42,10 +43,11 @@ public class McStateExtra {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeUint(0xcc26, 32)
+//                .storeDict(shardHashes.toCell())
                 .storeDict(shardHashes.serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                        v -> CellBuilder.beginCell().storeCell((Cell) v))// ConfigParams
-                )
+                        v -> CellBuilder.beginCell().storeRef((Cell) v) // todo ShardDescr
+                ))
                 .storeCell(configParams.toCell())
                 .storeRef(info.toCell())
                 .storeCell(globalBalance.toCell())
@@ -70,6 +72,7 @@ public class McStateExtra {
 
         return McStateExtra.builder()
                 .magic(0xcc26L)
+//                .shardHashes(ShardHashes.deserialize(cs))
                 .shardHashes(cs.loadDictE(32,
                         k -> k.readInt(32),
                         v -> v)) // todo BinTree

@@ -57,5 +57,4 @@ public class ShardStateInfo {
                 .masterRef(cs.loadBit() ? ExtBlkRef.deserialize(CellSlice.beginParse(cs.loadRef())) : null)
                 .build();
     }
-
 }

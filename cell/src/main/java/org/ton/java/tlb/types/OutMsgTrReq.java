@@ -6,7 +6,6 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -27,9 +26,5 @@ public class OutMsgTrReq implements OutMsg {
                 .storeRef(msg.toCell())
                 .storeRef(imported.toCell())
                 .endCell();
-    }
-
-    public static OutMsgTrReq deserialize(CellSlice cs) {
-        return null;
     }
 }

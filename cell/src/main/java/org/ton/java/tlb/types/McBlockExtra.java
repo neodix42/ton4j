@@ -24,8 +24,10 @@ import org.ton.java.cell.*;
 public class McBlockExtra {
     long magic;
     boolean keyBlock;
-    TonHashMapE shardHashes; // _ (HashmapE 32 ^(BinTree ShardDescr)) = ShardHashes;
-    TonHashMapAugE shardFees; // _ (HashmapAugE 96 ShardFeeCreated ShardFeeCreated) = ShardFees;
+    //    ShardHashes shardHashes;
+    TonHashMapE shardHashes;
+    //    ShardFees shardFees;
+    TonHashMapAugE shardFees;
     Cell more;
     ConfigParams config;
 
@@ -37,6 +39,8 @@ public class McBlockExtra {
         return CellBuilder.beginCell()
                 .storeUint(0xcca5, 32)
                 .storeBit(keyBlock)
+//                .storeCell(shardHashes.toCell())
+//                .storeCell(shardFees.toCell())
                 .storeDict(shardHashes.serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
                         v -> CellBuilder.beginCell().storeRef((Cell) v) // todo ShardDescr
@@ -60,6 +64,8 @@ public class McBlockExtra {
         return McBlockExtra.builder()
                 .magic(0xcca5L)
                 .keyBlock(keyBlock)
+//                .shardHashes(ShardHashes.deserialize(cs))
+//                .shardFees(ShardFees.deserialize(cs))
                 .shardHashes(cs.loadDictE(32, k -> k.readInt(32), v -> v))
                 .shardFees(cs.loadDictAugE(92,
                         k -> k.readInt(92),
