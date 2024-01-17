@@ -25,7 +25,7 @@ public class MsgAddressIntStd implements MsgAddressInt {
     int magic;
     Anycast anycast;
     int addrLen;
-    int workchainId;
+    byte workchainId;
     BigInteger address;
 
     @Override

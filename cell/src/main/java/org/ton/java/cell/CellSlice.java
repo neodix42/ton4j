@@ -584,8 +584,4 @@ public class CellSlice {
     public Object loadTlb(Class clazz) {
         return Tlb.load(clazz, this);
     }
-
-    public Object loadTlb(Class clazz, boolean skipMagic) {
-        return Tlb.load(clazz, this, skipMagic);
-    }
 }

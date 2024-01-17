@@ -9,8 +9,6 @@ import org.ton.java.cell.CellBuilder;
 
 import java.math.BigInteger;
 
-import static java.util.Objects.nonNull;
-
 @Builder
 @Getter
 @Setter
@@ -41,8 +39,8 @@ public class Transaction {
     BigInteger prevTxLt;
     long now;
     long outMsgCount;
-    String origStatus;
-    String endStatus;
+    AccountStates origStatus;
+    AccountStates endStatus;
     TransactionIO inOut;
     CurrencyCollection totalFees;
     HashUpdate stateUpdate;
@@ -76,16 +74,8 @@ public class Transaction {
         c.storeUint(prevTxLt, 64);
         c.storeUint(now, 32);
         c.storeUint(outMsgCount, 15);
-        if (nonNull(origStatus) && origStatus.length() <= 2) {
-            c.storeString(origStatus);
-        } else {
-            throw new Error("origStatus length too big, maximum allowed length is 2, current " + origStatus);
-        }
-        if (nonNull(endStatus) && endStatus.length() <= 2) {
-            c.storeString(endStatus);
-        } else {
-            throw new Error("endStatus length too big, maximum allowed length is 2, current " + endStatus);
-        }
+        c.storeCell(serializeAccountState(origStatus));
+        c.storeCell(serializeAccountState(endStatus));
         c.storeCell(totalFees.toCell());
 
         c.storeRef(inOut.toCell());
@@ -94,5 +84,41 @@ public class Transaction {
 
 
         return c.endCell();
+    }
+
+    public static Cell serializeAccountState(AccountStates state) {
+        switch (state) {
+            case UNINIT -> {
+                return CellBuilder.beginCell().storeUint(0, 2).endCell();
+            }
+            case FROZEN -> {
+                return CellBuilder.beginCell().storeUint(1, 2).endCell();
+            }
+            case ACTIVE -> {
+                return CellBuilder.beginCell().storeUint(2, 2).endCell();
+            }
+            case NON_EXIST -> {
+                return CellBuilder.beginCell().storeUint(3, 2).endCell();
+            }
+        }
+        return null;
+    }
+
+    public static AccountStates deserializeAccountState(byte state) {
+        switch (state) {
+            case 0 -> {
+                return AccountStates.UNINIT;
+            }
+            case 1 -> {
+                return AccountStates.FROZEN;
+            }
+            case 2 -> {
+                return AccountStates.ACTIVE;
+            }
+            case 3 -> {
+                return AccountStates.NON_EXIST;
+            }
+        }
+        return null;
     }
 }

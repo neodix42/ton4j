@@ -1,8 +1,10 @@
 package org.ton.java.tlb.loader;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
-import org.ton.java.cell.*;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonHashMapE;
 import org.ton.java.tlb.types.*;
 import org.ton.java.utils.Utils;
 
@@ -11,6 +13,7 @@ import java.util.Map;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.ton.java.tlb.types.Transaction.deserializeAccountState;
 
 public class Tlb {
 
@@ -18,32 +21,16 @@ public class Tlb {
         if (isNull(c)) {
             return null;
         } else {
-            return load(clazz, CellSlice.beginParse(c), false);
+            return load(clazz, CellSlice.beginParse(c));
         }
     }
 
-    public static Object load(Class clazz, Cell c, boolean skipMagic) {
-        if (isNull(c)) {
-            return null;
-        } else {
-            return load(clazz, CellSlice.beginParse(c), skipMagic);
-        }
-    }
+//    public static Object load(Class c, CellSlice cs) {
+//        return load(c, cs);
+//    }
 
     public static Object load(Class c, CellSlice cs) {
-        return load(c, cs, false);
-    }
-
-    public static Object loadReference(Class c, CellSlice cs) {
-        return load(c, cs, false);
-    }
-
-    public static Object loadReference(Class c, CellSlice cs, boolean skipMagic) {
-        return load(c, cs, skipMagic);
-    }
-
-    public static Object load(Class c, CellSlice cs, boolean skipMagic) {
-
+        long magic;
         switch (c.getSimpleName()) {
             case "BlockIdExt":
                 return BlockIdExt.builder()
@@ -70,7 +57,7 @@ public class Tlb {
                 AccountStorage accountStorage = AccountStorage.builder().build();
 
                 BigInteger lastTransaction = cs.loadUint(64);
-                CurrencyCollection coins = (CurrencyCollection) cs.loadTlb(CurrencyCollection.class, skipMagic);
+                CurrencyCollection coins = (CurrencyCollection) cs.loadTlb(CurrencyCollection.class);
 
 //                boolean extraExists = cs.loadBit();
 //
@@ -81,7 +68,7 @@ public class Tlb {
                 boolean isStatusActive = cs.loadBit();
                 if (isStatusActive) {
                     accountStorage.setAccountStatus("ACTIVE");
-                    StateInit stateInit = (StateInit) cs.loadTlb(StateInit.class, skipMagic);
+                    StateInit stateInit = (StateInit) cs.loadTlb(StateInit.class);
                     accountStorage.setAccountState(
                             AccountStateActive.builder()
                                     .stateInit(stateInit)
@@ -107,7 +94,7 @@ public class Tlb {
                 accountStorage.setBalance(coins);
                 return accountStorage;
             case "StorageInfo":
-                StorageUsed storageUsed = (StorageUsed) cs.loadTlb(StorageUsed.class, skipMagic);
+                StorageUsed storageUsed = (StorageUsed) cs.loadTlb(StorageUsed.class);
                 long lastPaid = cs.loadUint(32).longValue();
                 boolean isDuePayment = cs.loadBit();
                 return StorageInfo.builder()
@@ -162,8 +149,8 @@ public class Tlb {
                 return StateUpdate.builder()
                         .oldHash(cs.loadUint(256))
                         .newHash(cs.loadUint(256))
-                        .oldShardState((ShardState) Tlb.load(ShardState.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
-                        .newShardState((ShardState) Tlb.load(ShardState.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
+                        .oldShardState((ShardState) Tlb.load(ShardState.class, CellSlice.beginParse(cs.loadRef())))
+                        .newShardState((ShardState) Tlb.load(ShardState.class, CellSlice.beginParse(cs.loadRef())))
                         .build();
             case "ConfigParams":
                 return ConfigParams.builder()
@@ -173,7 +160,7 @@ public class Tlb {
             case "EnqueuedMsg": {
                 return EnqueuedMsg.builder()
                         .enqueuedLt(cs.loadUint(64))
-                        .outMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
+                        .outMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, CellSlice.beginParse(cs.loadRef())))
                         .build();
             }
             case "ProcessedUpto": {
@@ -204,7 +191,7 @@ public class Tlb {
             }
             case "ShardAccount": {
                 return ShardAccount.builder()
-                        .account((Account) Tlb.load(Account.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
+                        .account((Account) Tlb.load(Account.class, CellSlice.beginParse(cs.loadRef())))
                         .lastTransHash(cs.loadUint(64))
                         .lastTransLt(cs.loadUint(64))
                         .build();
@@ -219,27 +206,25 @@ public class Tlb {
                 return ShardStateUnsplit.builder()
                         .magic(cs.loadUint(32).longValue())
                         .globalId(cs.loadUint(32).intValue())
-                        .shardIdent((ShardIdent) cs.loadTlb(ShardIdent.class, skipMagic))
+                        .shardIdent((ShardIdent) cs.loadTlb(ShardIdent.class))
                         .seqno(cs.loadUint(32).longValue())
                         .vertSeqno(cs.loadUint(32).longValue())
                         .genUTime(cs.loadUint(32).longValue())
                         .genLT(cs.loadUint(64))
                         .minRefMCSeqno(cs.loadUint(32).longValue())
-                        .outMsgQueueInfo((OutMsgQueueInfo) Tlb.load(OutMsgQueueInfo.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
+                        .outMsgQueueInfo((OutMsgQueueInfo) Tlb.load(OutMsgQueueInfo.class, CellSlice.beginParse(cs.loadRef())))
                         .beforeSplit(cs.loadBit())
                         .accounts(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
                                 k -> k.readInt(256),
-                                v -> v.loadTlb(ShardAccount.class, skipMagic),
-                                e -> e.loadTlb(DepthBalanceInfo.class, skipMagic)))
+                                v -> v.loadTlb(ShardAccount.class),
+                                e -> e.loadTlb(DepthBalanceInfo.class)))
                         .stats(cs.loadRef())
-                        .custom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef(), skipMagic))
+                        .custom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()))
                         .build();
             }
             case "ShardIdent":
-                if (!skipMagic) {
-                    long magic = cs.loadUint(2).longValue();
-                    assert (magic == 0L) : "ShardIdent: magic not equal to 0b00, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(2).longValue();
+                assert (magic == 0L) : "ShardIdent: magic not equal to 0b00, found " + Long.toHexString(magic);
                 return ShardIdent.builder()
                         .magic(0L)
                         .prefixBits(cs.loadUint(6).longValue())
@@ -252,8 +237,8 @@ public class Tlb {
                 long tag = cs.preloadUint(32).longValue();
                 if (tag == 0x5f327da5L) {
                     ShardStateUnsplit left, right;
-                    left = (ShardStateUnsplit) Tlb.load(ShardStateUnsplit.class, cs.loadRef(), skipMagic);
-                    right = (ShardStateUnsplit) Tlb.load(ShardStateUnsplit.class, cs.loadRef(), skipMagic);
+                    left = (ShardStateUnsplit) Tlb.load(ShardStateUnsplit.class, cs.loadRef());
+                    right = (ShardStateUnsplit) Tlb.load(ShardStateUnsplit.class, cs.loadRef());
                     return ShardState.builder()
                             .magic(tag)
                             .left(left)
@@ -262,7 +247,7 @@ public class Tlb {
                 } else if (tag == 0x9023afe2L) {
                     return ShardState.builder()
                             .magic(tag)
-                            .left((ShardStateUnsplit) cs.loadTlb(ShardStateUnsplit.class, skipMagic))
+                            .left((ShardStateUnsplit) cs.loadTlb(ShardStateUnsplit.class))
                             .build();
                 } else {
                     throw new Error("unknown shardstate magic, found " + Long.toHexString(tag));
@@ -271,14 +256,9 @@ public class Tlb {
                 if (isNull(cs)) {
                     return null;
                 }
-                if (!skipMagic) {
-                    long magic = cs.loadUint(16).longValue();
-//                    assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found " + Long.toHexString(magic);
-                    if (magic != 0xcc26L) {
-                        System.out.println("McStateExtra: magic not equal to 0xcc26, found " + Long.toHexString(magic));
-                        return null;
-                    }
-                }
+                magic = cs.loadUint(16).longValue();
+                assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found " + Long.toHexString(magic);
+
                 return McStateExtra.builder()
                         .magic(0xcc26L)
                         .shardHashes(cs.loadDictE(32, k -> k.readInt(32), v -> v)) // todo BinTree
@@ -287,10 +267,9 @@ public class Tlb {
                         .globalBalance((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
                         .build();
             case "McBlockExtra":
-                if (!skipMagic) {
-                    long magic = cs.loadUint(16).longValue();
-                    assert (magic == 0xcca5L) : "McBlockExtra: magic not equal to 0xcca5, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(16).longValue();
+                assert (magic == 0xcca5L) : "McBlockExtra: magic not equal to 0xcca5, found " + Long.toHexString(magic);
+
                 boolean keyBlock = cs.loadBit();
                 return McBlockExtra.builder()
                         .magic(0xcca5L)
@@ -311,10 +290,9 @@ public class Tlb {
                                 v -> v))
                         .build();
             case "GlobalVersion":
-                if (!skipMagic) {
-                    long magic = cs.loadUint(8).longValue();
-                    assert (magic == 0xc4L) : "GlobalVersion: magic not equal to 0xc4, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(8).longValue();
+                assert (magic == 0xc4L) : "GlobalVersion: magic not equal to 0xc4, found " + Long.toHexString(magic);
+
                 return GlobalVersion.builder()
                         .magic(0xc4L)
                         .version(cs.loadUint(32).longValue())
@@ -349,54 +327,53 @@ public class Tlb {
                         .addrPfx(cs.loadUint(64))
                         .build();
             case "MsgEnvelope":
-                if (!skipMagic) {
-                    long magic = cs.loadUint(4).longValue();
-                    assert (magic == 4) : "MsgEnvelope: magic not equal to 4, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(4).longValue();
+                assert (magic == 4) : "MsgEnvelope: magic not equal to 4, found " + Long.toHexString(magic);
+
                 return MsgEnvelope.builder()
                         .currAddr((IntermediateAddress) cs.loadTlb(IntermediateAddress.class))
                         .nextAddr((IntermediateAddress) cs.loadTlb(IntermediateAddress.class))
                         .fwdFeeRemaining(cs.loadCoins())
-                        .msg((Message) Tlb.load(Message.class, cs.loadRef(), skipMagic))
+                        .msg((Message) Tlb.load(Message.class, cs.loadRef()))
                         .build();
             case "OutMsg": {
                 int outMsgFlag = cs.loadUint(3).intValue();
                 switch (outMsgFlag) {
                     case 0b000 -> {
                         return OutMsgExt.builder()
-                                .msg((Message) Tlb.load(Message.class, cs.loadRef(), skipMagic))
-                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
+                                .msg((Message) Tlb.load(Message.class, cs.loadRef()))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b010 -> {
                         return OutMsgImm.builder()
-                                .msg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef(), skipMagic))
-                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
-                                .reimport((InMsg) Tlb.load(InMsg.class, cs.loadRef(), skipMagic))
+                                .msg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef()))
+                                .reimport((InMsg) Tlb.load(InMsg.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b001 -> {
                         return OutMsgNew.builder()
-                                .outMsg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef(), skipMagic))
-                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
+                                .outMsg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b011 -> {
                         return OutMsgTr.builder()
-                                .outMsg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef(), skipMagic))
-                                .imported((InMsg) Tlb.load(InMsg.class, cs.loadRef(), skipMagic))
+                                .outMsg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
+                                .imported((InMsg) Tlb.load(InMsg.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b111 -> {
                         return OutMsgTrReq.builder()
-                                .msg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef(), skipMagic))
-                                .imported((InMsg) Tlb.load(InMsg.class, cs.loadRef(), skipMagic))
+                                .msg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
+                                .imported((InMsg) Tlb.load(InMsg.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b100 -> {
                         return OutMsgDeqImm.builder()
-                                .msg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef(), skipMagic))
-                                .reimport((InMsg) Tlb.load(InMsg.class, cs.loadRef(), skipMagic))
+                                .msg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
+                                .reimport((InMsg) Tlb.load(InMsg.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b110 -> {
@@ -410,7 +387,7 @@ public class Tlb {
                                     .build();
                         } else {
                             return OutMsgDeq.builder()
-                                    .outMsg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef(), skipMagic))
+                                    .outMsg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
                                     .importBlockLt(cs.loadUint(64))
                                     .build();
                         }
@@ -423,49 +400,49 @@ public class Tlb {
                 switch (inMsgFlag) {
                     case 0b000 -> {
                         return InMsgImportExt.builder()
-                                .msg((Message) Tlb.load(Message.class, cs.loadRef(), skipMagic))
-                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
+                                .msg((Message) Tlb.load(Message.class, cs.loadRef()))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b010 -> {
                         return InMsgImportIhr.builder()
-                                .msg((Message) Tlb.load(Message.class, cs.loadRef(), skipMagic))
-                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
+                                .msg((Message) Tlb.load(Message.class, cs.loadRef()))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef()))
                                 .ihrFee(cs.loadCoins())
                                 .proofCreated(cs.loadRef())
                                 .build();
                     }
                     case 0b011 -> {
                         return InMsgImportImm.builder()
-                                .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef(), skipMagic))
-                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
+                                .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef()))
                                 .fwdFee(cs.loadCoins())
                                 .build();
                     }
                     case 0b100 -> {
                         return InMsgImportFin.builder()
-                                .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef(), skipMagic))
-                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
+                                .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
+                                .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef()))
                                 .fwdFee(cs.loadCoins())
                                 .build();
                     }
                     case 0b101 -> {
                         return InMsgImportTr.builder()
-                                .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef(), skipMagic))
-                                .outMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef(), skipMagic))
+                                .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
+                                .outMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
                                 .transitFee(cs.loadCoins())
                                 .build();
                     }
                     case 0b110 -> {
                         return InMsgDiscardFin.builder()
-                                .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef(), skipMagic))
+                                .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
                                 .transactionId(cs.loadUint(64))
                                 .fwdFee(cs.loadCoins())
                                 .build();
                     }
                     case 0b111 -> {
                         return InMsgDiscardTr.builder()
-                                .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef(), skipMagic))
+                                .inMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
                                 .transactionId(cs.loadUint(64))
                                 .fwdFee(cs.loadCoins())
                                 .proofDelivered(cs.loadRef())
@@ -475,34 +452,23 @@ public class Tlb {
                 throw new Error("unknown in_msg flag, found " + Long.toBinaryString(inMsgFlag));
             }
             case "InMsgDescr":
-                TonHashMapAugE dictInMsg = cs.loadDictAugE(256,
-                        k -> k.readInt(256),
-                        v -> CellSlice.beginParse(v).loadTlb(InMsg.class),
-                        e -> CellSlice.beginParse(e).loadTlb(ImportFees.class)
-                );
-                for (Map.Entry<Object, Pair<Object, Object>> entry : dictInMsg.elements.entrySet()) {
-                    System.out.println("key " + entry.getKey() + " value " + entry.getValue());
-                }
                 return InMsgDescr.builder()
-                        .inMsg(dictInMsg)
+                        .inMsg(cs.loadDictAugE(256,
+                                k -> k.readInt(256),
+                                v -> CellSlice.beginParse(v).loadTlb(InMsg.class),
+                                e -> CellSlice.beginParse(e).loadTlb(ImportFees.class)))
                         .build();
             case "OutMsgDescr":
-                TonHashMapAugE dictOutMsg = cs.loadDictAugE(256,
-                        k -> k.readInt(256),
-                        v -> CellSlice.beginParse(v).loadTlb(OutMsg.class), // todo review
-                        e -> CellSlice.beginParse(e).loadTlb(CurrencyCollection.class)
-                );
-                for (Map.Entry<Object, Pair<Object, Object>> entry : dictOutMsg.elements.entrySet()) {
-                    System.out.println("key " + entry.getKey() + " value " + entry.getValue());
-                }
                 return OutMsgDescr.builder()
-                        .outMsg(dictOutMsg)
+                        .outMsg(cs.loadDictAugE(256,
+                                k -> k.readInt(256),
+                                v -> CellSlice.beginParse(v).loadTlb(OutMsg.class),
+                                e -> CellSlice.beginParse(e).loadTlb(CurrencyCollection.class)))
                         .build();
             case "BlockInfo":
-                if (!skipMagic) {
-                    long magic = cs.loadUint(32).longValue();
-                    assert (magic == 0x9bc7a987L) : "BlockInfo: magic not equal to 0x9bc7a987, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(32).longValue();
+                assert (magic == 0x9bc7a987L) : "BlockInfo: magic not equal to 0x9bc7a987, found " + Long.toHexString(magic);
+
                 BlockInfo blockInfo = BlockInfo.builder()
                         .magic(0x9bc7a987L)
                         .version(cs.loadUint(32).longValue())
@@ -517,7 +483,7 @@ public class Tlb {
                         .flags(cs.loadUint(8).longValue())
                         .seqno(cs.loadUint(32).longValue())
                         .vertSeqno(cs.loadUint(32).longValue())
-                        .shard((ShardIdent) cs.loadTlb(ShardIdent.class, skipMagic))
+                        .shard((ShardIdent) cs.loadTlb(ShardIdent.class))
                         .genuTime(cs.loadUint(32).longValue())
                         .startLt(cs.loadUint(64))
                         .endLt(cs.loadUint(64))
@@ -526,8 +492,8 @@ public class Tlb {
                         .minRefMcSeqno(cs.loadUint(32).longValue())
                         .prevKeyBlockSeqno(cs.loadUint(32).longValue())
                         .build();
-                blockInfo.setGlobalVersion(((blockInfo.getFlags() & 0x1L) == 0x1L) ? (GlobalVersion) cs.loadTlb(GlobalVersion.class, skipMagic) : null);
-                blockInfo.setMasterRef(blockInfo.isNotMaster() ? (ExtBlkRef) Tlb.load(ExtBlkRef.class, cs.loadRef(), skipMagic) : null);
+                blockInfo.setGlobalVersion(((blockInfo.getFlags() & 0x1L) == 0x1L) ? (GlobalVersion) cs.loadTlb(GlobalVersion.class) : null);
+                blockInfo.setMasterRef(blockInfo.isNotMaster() ? (ExtBlkRef) Tlb.load(ExtBlkRef.class, cs.loadRef()) : null);
                 blockInfo.setPrefRef(loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), blockInfo.isAfterMerge()));
                 blockInfo.setPrefVertRef(blockInfo.isVertSeqnoIncr() ? loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), blockInfo.isAfterMerge()) : null);
                 return blockInfo;
@@ -537,13 +503,12 @@ public class Tlb {
                         .size(cs.loadUint(64))
                         .build();
             case "BlockExtra":
-                if (!skipMagic) {
-                    long magic = cs.loadUint(32).longValue();
-                    assert (magic == 0x4a33f6fdL) : "Block: magic not equal to 0x4a33f6fdL, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(32).longValue();
+                assert (magic == 0x4a33f6fdL) : "Block: magic not equal to 0x4a33f6fdL, found " + Long.toHexString(magic);
+
                 BlockExtra blockExtra = BlockExtra.builder()
-                        .inMsgDesc((InMsgDescr) Tlb.load(InMsgDescr.class, cs.loadRef(), skipMagic))
-                        .outMsgDesc((OutMsgDescr) Tlb.load(OutMsgDescr.class, cs.loadRef(), skipMagic))
+                        .inMsgDesc((InMsgDescr) Tlb.load(InMsgDescr.class, cs.loadRef()))
+                        .outMsgDesc((OutMsgDescr) Tlb.load(OutMsgDescr.class, cs.loadRef()))
                         .shardAccountBlocks(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256, // todo review from ref
                                 k -> k.readUint(256),
                                 v -> v.loadTlb(AccountBlock.class),
@@ -551,55 +516,51 @@ public class Tlb {
                         .randSeed(cs.loadUint(256))
                         .createdBy(cs.loadUint(256))
                         // was commented out
-                        .custom(isNull(cs.preloadMaybeRefX()) ? null : (McBlockExtra) Tlb.load(McBlockExtra.class, CellSlice.beginParse(cs.loadRef()), skipMagic))
+                        .custom(isNull(cs.preloadMaybeRefX()) ? null : (McBlockExtra) Tlb.load(McBlockExtra.class, CellSlice.beginParse(cs.loadRef())))
                         .build();
                 return blockExtra;
             case "Block":
                 System.out.println("block " + cs.sliceToCell().toHex());
 
-                if (!skipMagic) {
-                    long magic = cs.loadUint(32).longValue();
-                    assert (magic == 0x11ef55aaL) : "Block: magic not equal to 0x11ef55aa, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(32).longValue();
+                assert (magic == 0x11ef55aaL) : "Block: magic not equal to 0x11ef55aa, found " + Long.toHexString(magic);
 
                 return Block.builder()
                         .magic(0x11ef55aaL)
                         .globalId(cs.loadInt(32).intValue())
-                        .blockInfo((BlockInfo) Tlb.load(BlockInfo.class, cs.loadRef(), skipMagic))
-                        .valueFlow((ValueFlow) Tlb.load(ValueFlow.class, cs.loadRef(), skipMagic))
-                        .stateUpdate((StateUpdate) Tlb.load(StateUpdate.class, cs.loadRef(), skipMagic))
-                        .extra((BlockExtra) Tlb.load(BlockExtra.class, cs.loadRef(), skipMagic))//  todo test testLoadBlockNotMaster
+                        .blockInfo((BlockInfo) Tlb.load(BlockInfo.class, cs.loadRef()))
+                        .valueFlow((ValueFlow) Tlb.load(ValueFlow.class, cs.loadRef()))
+                        .stateUpdate((StateUpdate) Tlb.load(StateUpdate.class, cs.loadRef()))
+                        .extra((BlockExtra) Tlb.load(BlockExtra.class, cs.loadRef()))//  todo test testLoadBlockNotMaster
                         .build();
             case "AccountBlock":
-                if (!skipMagic) {
-                    long magic = cs.loadUint(4).longValue();
-                    assert (magic == 0x5L) : "AccountBlock: magic not equal to 0x5, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(4).longValue();
+                assert (magic == 0x5L) : "AccountBlock: magic not equal to 0x5, found " + Long.toHexString(magic);
+
                 return AccountBlock.builder()
                         .magic(0x5)
                         .addr(cs.loadUint(256))
                         .transactions(cs.loadDictAugE(64,
                                 k -> k.readInt(64),
-                                v -> Tlb.load(Transaction.class, v.loadRef(), skipMagic),
-                                e -> e.loadTlb(CurrencyCollection.class, skipMagic)))
+                                v -> Tlb.load(Transaction.class, v.loadRef()),
+                                e -> e.loadTlb(CurrencyCollection.class)))
                         .stateUpdate(cs.loadRef())
                         .build();
             case "ValueFlow":
-                if (!skipMagic) {
-                    long magic = cs.loadUint(32).longValue();
-                    assert (magic == 0xb8e48dfbL) : "ValueFlow: magic not equal to 0xb8e48dfb, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(32).longValue();
+                assert (magic == 0xb8e48dfbL) : "ValueFlow: magic not equal to 0xb8e48dfb, found " + Long.toHexString(magic);
+
                 Cell c1 = cs.loadRef();
                 Cell c2 = cs.loadRef();
-                CurrencyCollection fromPrevBlk = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1, skipMagic);
-                CurrencyCollection toNextBlk = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1, skipMagic);
-                CurrencyCollection imported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1, skipMagic);
-                CurrencyCollection exported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1, skipMagic);
-                CurrencyCollection feesCollected = (CurrencyCollection) Tlb.load(CurrencyCollection.class, cs, skipMagic);
-                CurrencyCollection feesImported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2, skipMagic);
-                CurrencyCollection recovered = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2, skipMagic);
-                CurrencyCollection created = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2, skipMagic);
-                CurrencyCollection minted = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2, skipMagic);
+                CurrencyCollection fromPrevBlk = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+                CurrencyCollection toNextBlk = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+                CurrencyCollection imported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+                CurrencyCollection exported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+                CurrencyCollection feesCollected = (CurrencyCollection) Tlb.load(CurrencyCollection.class, cs);
+                CurrencyCollection feesImported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+                CurrencyCollection recovered = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+                CurrencyCollection created = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+                CurrencyCollection minted = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
 
                 return ValueFlow.builder()
                         .magic(0xb8e48dfbL)
@@ -634,10 +595,10 @@ public class Tlb {
                 int flagMsg = cs.loadUint(2).intValue();
                 switch (flagMsg) {
                     case 0b10 -> {
-                        intMsgAddr = (MsgAddressInt) cs.loadTlb(MsgAddressIntStd.class, skipMagic);
+                        intMsgAddr = (MsgAddressInt) cs.loadTlb(MsgAddressIntStd.class);
                     }
                     case 0b11 -> {
-                        intMsgAddr = (MsgAddressInt) cs.loadTlb(MsgAddressIntVar.class, skipMagic);
+                        intMsgAddr = (MsgAddressInt) cs.loadTlb(MsgAddressIntVar.class);
                     }
                 }
                 return intMsgAddr;
@@ -645,19 +606,19 @@ public class Tlb {
             case "MsgAddressIntStd": {
                 Anycast anycast = null;
                 if (cs.loadBit()) {
-                    anycast = (Anycast) cs.loadTlb(Anycast.class, skipMagic);
+                    anycast = (Anycast) cs.loadTlb(Anycast.class);
                 }
                 return MsgAddressIntStd.builder()
                         .magic(0b10)
                         .anycast(anycast)
-                        .workchainId(cs.loadUint(8).intValue())
+                        .workchainId(cs.loadUint(8).byteValue())
                         .address(cs.loadUint(256))
                         .build();
             }
             case "MsgAddressIntVar": {
                 Anycast anycast = null;
                 if (cs.loadBit()) {
-                    anycast = (Anycast) cs.loadTlb(Anycast.class, skipMagic);
+                    anycast = (Anycast) cs.loadTlb(Anycast.class);
                 }
                 int addrLen = cs.loadUint(9).intValue();
                 return MsgAddressIntVar.builder()
@@ -685,10 +646,10 @@ public class Tlb {
                                 .build();
                     }
                     case 0b10 -> {
-                        intMsgAddr = (MsgAddressInt) cs.loadTlb(MsgAddressIntStd.class, skipMagic);
+                        intMsgAddr = (MsgAddressInt) cs.loadTlb(MsgAddressIntStd.class);
                     }
                     case 0b11 -> {
-                        intMsgAddr = (MsgAddressInt) cs.loadTlb(MsgAddressIntVar.class, skipMagic);
+                        intMsgAddr = (MsgAddressInt) cs.loadTlb(MsgAddressIntVar.class);
                     }
                 }
                 return MsgAddress.builder()
@@ -698,7 +659,7 @@ public class Tlb {
                         .build();
             }
             case "Message": {
-                CommonMsgInfo commonMsgInfo = (CommonMsgInfo) cs.loadTlb(CommonMsgInfo.class, skipMagic);
+                CommonMsgInfo commonMsgInfo = (CommonMsgInfo) cs.loadTlb(CommonMsgInfo.class);
                 return Message.builder()
                         .info(commonMsgInfo)
                         .init(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, cs.loadRef()) : (StateInit) cs.loadTlb(StateInit.class)) : null) //review
@@ -711,7 +672,7 @@ public class Tlb {
                 }
                 boolean isExternal = cs.preloadBit();
                 if (!isExternal) {
-                    InternalMessage internalMessage = (InternalMessage) cs.loadTlb(InternalMessage.class, skipMagic);
+                    InternalMessage internalMessage = (InternalMessage) cs.loadTlb(InternalMessage.class);
 
                     return CommonMsgInfo.builder()
                             .msgType("INTERNAL")
@@ -729,7 +690,7 @@ public class Tlb {
                 } else {
                     boolean isOut = cs.preloadBitAt(2);
                     if (isOut) {
-                        ExternalMessageOut externalMessageOut = (ExternalMessageOut) cs.loadTlb(ExternalMessageOut.class, skipMagic);
+                        ExternalMessageOut externalMessageOut = (ExternalMessageOut) cs.loadTlb(ExternalMessageOut.class);
                         return CommonMsgInfo.builder()
                                 .msgType("EXTERNAL_OUT")
                                 .msg(externalMessageOut)
@@ -743,7 +704,7 @@ public class Tlb {
 //                                        .build())
 //                                .build();
                     } else {
-                        ExternalMessage externalMessage = (ExternalMessage) cs.loadTlb(ExternalMessage.class, skipMagic);
+                        ExternalMessage externalMessage = (ExternalMessage) cs.loadTlb(ExternalMessage.class);
                         return CommonMsgInfo.builder()
                                 .msgType("EXTERNAL_IN")
                                 .msg(externalMessage)
@@ -795,34 +756,29 @@ public class Tlb {
             case "ComputePhase": {
                 boolean isNotSkipped = cs.loadBit();
                 if (isNotSkipped) {
-                    return (ComputePhaseVM) cs.loadTlb(ComputePhaseVM.class, true); // todo
-                    //return ComputePhase.builder().phase(phase).build();
+                    return cs.loadTlb(ComputePhaseVM.class);
                 }
-                return (ComputePhaseSkipped) cs.loadTlb(ComputePhaseSkipped.class, true); // todo
-                //return ComputePhase.builder().phase(phase).build();
+                return cs.loadTlb(ComputeSkipReason.class);
             }
             case "BouncePhaseNegFounds": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(1).intValue();
-                    assert (magic == 0b0) : "BouncePhaseNegFounds: magic not equal to 0b0, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(1).intValue(); // review, should be 2
+                assert (magic == 0b0) : "BouncePhaseNegFounds: magic not equal to 0b0, found " + Long.toHexString(magic);
+
                 return BouncePhaseNegFounds.builder().build();
             }
             case "BouncePhaseNoFounds": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(2).intValue();
-                    assert (magic == 0b01) : "BouncePhaseNoFounds: magic not equal to 0b01, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(2).intValue();
+                assert (magic == 0b01) : "BouncePhaseNoFounds: magic not equal to 0b01, found " + Long.toHexString(magic);
+
                 return BouncePhaseNoFounds.builder()
                         .msgSize((StorageUsedShort) cs.loadTlb(StorageUsedShort.class))
                         .reqFwdFees(cs.loadCoins())
                         .build();
             }
             case "BouncePhaseok": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(1).intValue();
-                    assert (magic == 0b1) : "BouncePhaseok: magic not equal to 0b1, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(1).intValue();
+                assert (magic == 0b1) : "BouncePhaseok: magic not equal to 0b1, found " + Long.toHexString(magic);
+
                 return BouncePhaseok.builder()
                         .magic(0b1)
                         .msgSize((StorageUsedShort) cs.loadTlb(StorageUsedShort.class))
@@ -831,18 +787,16 @@ public class Tlb {
                         .build();
             }
             case "BouncePhase": {
-                boolean isOk = cs.loadBit();
+                boolean isOk = cs.preloadBit();
                 if (isOk) {
-                    return (BouncePhaseok) cs.loadTlb(BouncePhaseok.class, true);
-//                    return BouncePhase.builder().phase(phase).build();
+                    return cs.loadTlb(BouncePhaseok.class); // skipped was true
                 }
-                boolean isNoFunds = cs.loadBit();
+                //cs.loadBit();
+                boolean isNoFunds = cs.preloadBit();
                 if (isNoFunds) {
-                    return (BouncePhaseNoFounds) cs.loadTlb(BouncePhaseNoFounds.class, true);
-//                    return BouncePhase.builder().phase(phase).build();
+                    return cs.loadTlb(BouncePhaseNoFounds.class); // skipped was true
                 }
-                return (BouncePhaseNegFounds) cs.loadTlb(BouncePhaseNegFounds.class, true);
-//                return BouncePhase.builder().phase(phase).build();
+                return cs.loadTlb(BouncePhaseNegFounds.class); // skipped was true
             }
             case "StoragePhase": {
                 return StoragePhase.builder()
@@ -876,21 +830,7 @@ public class Tlb {
                         .bits(cs.loadVarUInteger(BigInteger.valueOf(7)))
                         .build();
             }
-            case "ComputePhaseSkipped": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(1).intValue();
-                    assert (magic == 0b0) : "ComputePhaseSkipped: magic not equal to 0b, found " + Long.toHexString(magic);
-                }
-                return ComputePhaseSkipped.builder()
-                        .magic(0)
-                        .reason((ComputeSkipReason) cs.loadTlb(ComputeSkipReason.class))
-                        .build();
-            }
             case "ComputePhaseVM": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(1).intValue();
-                    assert (magic == 0b1) : "ComputePhaseVM: magic not equal to 0b1, found " + Long.toHexString(magic);
-                }
                 return ComputePhaseVM.builder()
                         .magic(1)
                         .success(cs.loadBit())
@@ -928,10 +868,8 @@ public class Tlb {
                         .build();
             }
             case "Transaction": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(4).intValue();
-                    assert (magic == 0b0111) : "Transaction: magic not equal to 0b0111, found " + Long.toBinaryString(magic);
-                }
+                magic = cs.loadUint(4).intValue();
+                assert (magic == 0b0111) : "Transaction: magic not equal to 0b0111, found " + Long.toBinaryString(magic);
 
                 Transaction tx = Transaction.builder()
                         .magic(0b0111)
@@ -941,12 +879,10 @@ public class Tlb {
                         .prevTxLt(cs.loadUint(64))
                         .now(cs.loadUint(32).longValue())
                         .outMsgCount(cs.loadUint(15).intValue())
-                        .origStatus(cs.loadString(2))
-                        .endStatus(cs.loadString(2))
+                        .origStatus(deserializeAccountState(cs.loadUint(2).byteValue()))
+                        .endStatus(deserializeAccountState(cs.loadUint(2).byteValueExact()))
                         .totalFees((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
                         .build();
-
-                System.out.println("tx " + tx); //todo cleanup
 
                 CellSlice io = CellSlice.beginParse(cs.loadRef());
                 Message msg = (Message) Tlb.load(Message.class, io.loadMaybeRefX());
@@ -975,10 +911,9 @@ public class Tlb {
                 return tx;
             }
             case "HashUpdate": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(8).intValue();
-                    assert (magic == 0x72) : "HashUpdate: magic not equal to 0x72, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(8).intValue();
+                assert (magic == 0x72) : "HashUpdate: magic not equal to 0x72, found " + Long.toHexString(magic);
+
                 return HashUpdate.builder()
                         .magic(0x72)
                         .oldHash(cs.loadUint(256))
@@ -986,57 +921,55 @@ public class Tlb {
                         .build();
             }
             case "TransactionDescription": {
-                int pfx = cs.loadUint(3).intValue();
+                int pfx = cs.preloadUint(3).intValue();
                 switch (pfx) {
                     case 0b000 -> {
-                        boolean isStorage = cs.loadBit();
+                        boolean isStorage = cs.preloadBit();
                         if (isStorage) {
-                            TransactionDescriptionStorage desc = (TransactionDescriptionStorage) cs.loadTlb(TransactionDescriptionStorage.class, true);
+                            TransactionDescriptionStorage desc = (TransactionDescriptionStorage) cs.loadTlb(TransactionDescriptionStorage.class); // skipped was true
                             return TransactionDescription.builder().description(desc).build();
                         }
-                        TransactionDescriptionOrdinary descOrdinary = (TransactionDescriptionOrdinary) cs.loadTlb(TransactionDescriptionOrdinary.class, true);
+                        TransactionDescriptionOrdinary descOrdinary = (TransactionDescriptionOrdinary) cs.loadTlb(TransactionDescriptionOrdinary.class); // skipped was true
                         return TransactionDescription.builder().description(descOrdinary).build();
                     }
                     case 0b001 -> {
-                        TransactionDescriptionTickTock descTickTock = (TransactionDescriptionTickTock) cs.loadTlb(TransactionDescriptionTickTock.class, true);
+                        TransactionDescriptionTickTock descTickTock = (TransactionDescriptionTickTock) cs.loadTlb(TransactionDescriptionTickTock.class); // skipped was true
                         return TransactionDescription.builder().description(descTickTock).build();
                     }
                     case 0b010 -> {
-                        boolean isInstall = cs.loadBit();
+                        boolean isInstall = cs.preloadBit();
                         if (isInstall) {
-                            TransactionDescriptionSplitInstall descSplit = (TransactionDescriptionSplitInstall) cs.loadTlb(TransactionDescriptionSplitInstall.class, true);
+                            TransactionDescriptionSplitInstall descSplit = (TransactionDescriptionSplitInstall) cs.loadTlb(TransactionDescriptionSplitInstall.class); // skipped was true
                             return TransactionDescription.builder().description(descSplit).build();
                         }
-                        TransactionDescriptionSplitPrepare descSplitPrepare = (TransactionDescriptionSplitPrepare) cs.loadTlb(TransactionDescriptionSplitPrepare.class, true);
+                        TransactionDescriptionSplitPrepare descSplitPrepare = (TransactionDescriptionSplitPrepare) cs.loadTlb(TransactionDescriptionSplitPrepare.class); // skipped was true
                         return TransactionDescription.builder().description(descSplitPrepare).build();
                     }
                     case 0b011 -> {
-                        boolean isInstall = cs.loadBit();
+                        boolean isInstall = cs.preloadBit();
                         if (isInstall) {
-                            TransactionDescriptionMergeInstall descMerge = (TransactionDescriptionMergeInstall) cs.loadTlb(TransactionDescriptionMergeInstall.class, true);
+                            TransactionDescriptionMergeInstall descMerge = (TransactionDescriptionMergeInstall) cs.loadTlb(TransactionDescriptionMergeInstall.class); // skipped was true
                             return TransactionDescription.builder().description(descMerge).build();
                         }
-                        TransactionDescriptionMergePrepare descMergePrepare = (TransactionDescriptionMergePrepare) cs.loadTlb(TransactionDescriptionMergePrepare.class, true);
+                        TransactionDescriptionMergePrepare descMergePrepare = (TransactionDescriptionMergePrepare) cs.loadTlb(TransactionDescriptionMergePrepare.class); // skipped was true
                         return TransactionDescription.builder().description(descMergePrepare).build();
                     }
                 }
                 throw new Error("unknown transaction description type (must be in range [0..3], found " + Integer.toBinaryString(pfx));
             }
             case "TransactionDescriptionStorage": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(4).intValue();
-                    assert (magic == 0b0001) : "TransactionDescriptionStorage: magic not equal to 0b0001, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(4).intValue();
+                assert (magic == 0b0001) : "TransactionDescriptionStorage: magic not equal to 0b0001, found " + Long.toHexString(magic);
+
                 return TransactionDescriptionStorage.builder()
                         .magic(0b0001)
                         .storagePhase((StoragePhase) Tlb.load(StoragePhase.class, cs))
                         .build();
             }
             case "TransactionDescriptionOrdinary": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(4).intValue();
-                    assert (magic == 0b0000) : "TransactionDescriptionOrdinary: magic not equal to 0b0000, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(4).intValue();
+                assert (magic == 0b0000) : "TransactionDescriptionOrdinary: magic not equal to 0b0000, found " + Long.toHexString(magic);
+
                 return TransactionDescriptionOrdinary.builder()
                         .magic(0b0000)
                         .creditFirst(cs.loadBit())
@@ -1052,10 +985,9 @@ public class Tlb {
 
             }
             case "TransactionDescriptionTickTock": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(3).intValue();
-                    assert (magic == 0b001) : "TransactionDescriptionTickTock: magic not equal to 0b001, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(3).intValue();
+                assert (magic == 0b001) : "TransactionDescriptionTickTock: magic not equal to 0b001, found " + Long.toHexString(magic);
+
                 return TransactionDescriptionTickTock.builder()
                         .magic(0b001)
                         .isTock(cs.loadBit())
@@ -1067,10 +999,9 @@ public class Tlb {
                         .build();
             }
             case "TransactionDescriptionSplitInstall": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(4).intValue();
-                    assert (magic == 0b0101) : "TransactionDescriptionSplitInstall: magic not equal to 0b0101, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(4).intValue();
+                assert (magic == 0b0101) : "TransactionDescriptionSplitInstall: magic not equal to 0b0101, found " + Long.toHexString(magic);
+
                 return TransactionDescriptionSplitInstall.builder()
                         .magic(0b0101)
                         .splitInfo((SplitMergeInfo) cs.loadTlb(SplitMergeInfo.class))
@@ -1079,10 +1010,9 @@ public class Tlb {
                         .build();
             }
             case "TransactionDescriptionSplitPrepare": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(4).intValue();
-                    assert (magic == 0b0100) : "TransactionDescriptionSplitPrepare: magic not equal to 0b0100, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(4).intValue();
+                assert (magic == 0b0100) : "TransactionDescriptionSplitPrepare: magic not equal to 0b0100, found " + Long.toHexString(magic);
+
                 return TransactionDescriptionMergeInstall.builder()
                         .magic(0b0100)
                         .splitInfo((SplitMergeInfo) cs.loadTlb(SplitMergeInfo.class))
@@ -1094,14 +1024,13 @@ public class Tlb {
                         .build();
             }
             case "TransactionDescriptionMergeInstall": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(4).intValue();
-                    assert (magic == 0b0111) : "TransactionDescriptionMergeInstall: magic not equal to 0b0111, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(4).intValue();
+                assert (magic == 0b0111) : "TransactionDescriptionMergeInstall: magic not equal to 0b0111, found " + Long.toHexString(magic);
+
                 return TransactionDescriptionMergeInstall.builder()
                         .magic(0b0111)
                         .splitInfo((SplitMergeInfo) cs.loadTlb(SplitMergeInfo.class))
-                        .prepareTransaction((Transaction) Tlb.load(Transaction.class, cs.loadRef(), skipMagic))
+                        .prepareTransaction((Transaction) Tlb.load(Transaction.class, cs.loadRef()))
                         .storagePhase(cs.loadBit() ? (StoragePhase) cs.loadTlb(StoragePhase.class) : null)
                         .creditPhase(cs.loadBit() ? (CreditPhase) cs.loadTlb(CreditPhase.class) : null)
                         .computePhase((ComputePhase) cs.loadTlb(ComputePhase.class))
@@ -1111,10 +1040,9 @@ public class Tlb {
                         .build();
             }
             case "TransactionDescriptionMergePrepare": {
-                if (!skipMagic) {
-                    int magic = cs.loadUint(4).intValue();
-                    assert (magic == 0b0110) : "TransactionDescriptionMergePrepare: magic not equal to 0b0110, found " + Long.toHexString(magic);
-                }
+                magic = cs.loadUint(4).intValue();
+                assert (magic == 0b0110) : "TransactionDescriptionMergePrepare: magic not equal to 0b0110, found " + Long.toHexString(magic);
+
                 return TransactionDescriptionMergePrepare.builder()
                         .magic(0b0110)
                         .splitInfo((SplitMergeInfo) cs.loadTlb(SplitMergeInfo.class)) // todo
@@ -1134,10 +1062,9 @@ public class Tlb {
                 }
                 return AccStatusChange.builder().type("UNCHANGED").build();
             case "InternalMessage":
-                if (!skipMagic) {
-                    boolean magic = cs.loadBit();
-                    assert (!magic) : "InternalMessage: magic not equal to 0, found " + magic;
-                }
+                boolean magicBool = cs.loadBit();
+                assert (!magicBool) : "InternalMessage: magic not equal to 0, found " + magicBool;
+
                 return InternalMessage.builder()
                         .magic(0L)
                         .iHRDisabled(cs.loadBit())
@@ -1154,10 +1081,8 @@ public class Tlb {
 //                .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
                         .build();
             case "ExternalMessage":
-                if (!skipMagic) {
-                    int magic = cs.loadUint(2).intValue();
-                    assert (magic == 0b10) : "ExternalMessage: magic not equal to 0b10, found " + Long.toBinaryString(magic);
-                }
+                magic = cs.loadUint(2).intValue();
+                assert (magic == 0b10) : "ExternalMessage: magic not equal to 0b10, found " + Long.toBinaryString(magic);
                 return ExternalMessage.builder()
                         .magic(2L)
                         .srcAddr((MsgAddress) cs.loadTlb(MsgAddress.class))
@@ -1167,10 +1092,8 @@ public class Tlb {
 //                .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits())))
                         .build();
             case "ExternalMessageOut":
-                if (!skipMagic) {
-                    int magic = cs.loadUint(2).intValue();
-                    assert (magic == 0b11) : "ExternalMessageOut: magic not equal to 0b11, found " + Long.toBinaryString(magic);
-                }
+                magic = cs.loadUint(2).intValue();
+                assert (magic == 0b11) : "ExternalMessageOut: magic not equal to 0b11, found " + Long.toBinaryString(magic);
                 return ExternalMessageOut.builder()
                         .magic(3L)
                         .srcAddr((MsgAddress) cs.loadTlb(MsgAddress.class))

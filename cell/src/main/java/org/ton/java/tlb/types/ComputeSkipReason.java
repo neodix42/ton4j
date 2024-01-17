@@ -11,7 +11,7 @@ import org.ton.java.cell.CellBuilder;
 @Getter
 @Setter
 @ToString
-public class ComputeSkipReason {
+public class ComputeSkipReason implements ComputePhase {
     String type;
 
     public Cell toCell() {
