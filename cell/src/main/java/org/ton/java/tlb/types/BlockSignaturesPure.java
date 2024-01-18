@@ -19,14 +19,14 @@ import java.math.BigInteger;
  signatures:(HashmapE 16 CryptoSignaturePair) = BlockSignaturesPure;
  */
 public class BlockSignaturesPure {
-    BigInteger sigCount;
-    long sigWeight;
+    long sigCount;
+    BigInteger sigWeight;
     TonHashMapE signatures;
 
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeUint(sigCount, 32)
-                .storeUint(sigWeight, 32)
+                .storeUint(sigWeight, 64)
                 .storeDict(signatures.serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 16).bits,
                         v -> CellBuilder.beginCell().storeCell(((CryptoSignaturePair) v).toCell())

@@ -491,6 +491,42 @@ public class Tlb {
                                 v -> CellSlice.beginParse(v).loadBit()))
                         .build();
             }
+            case "ValidatorBaseInfo": {
+                return ValidatorBaseInfo.builder()
+                        .validatorListHashShort(cs.loadUint(32).longValue())
+                        .catchainSeqno(cs.loadUint(32).longValue())
+                        .build();
+            }
+            case "BlockSignaturesPure": {
+                return BlockSignaturesPure.builder()
+                        .sigCount(cs.loadUint(32).longValue())
+                        .sigWeight(cs.loadUint(64))
+                        .signatures(cs.loadDictE(16,
+                                k -> k.readUint(16),
+                                v -> CellSlice.beginParse(v).loadTlb(CryptoSignaturePair.class)))
+                        .build();
+            }
+            case "BlockSignatures": {
+                magic = cs.loadUint(2).longValue();
+                assert (magic == 0b11) : "BlockSignatures: magic not equal to 0b11, found 0b" + Long.toBinaryString(magic);
+
+                return BlockSignatures.builder()
+                        .magic(0b11)
+                        .validatorBaseInfo((ValidatorBaseInfo) cs.loadTlb(ValidatorBaseInfo.class))
+                        .pureSignatures((BlockSignaturesPure) cs.loadTlb(BlockSignaturesPure.class))
+                        .build();
+            }
+            case "BlockProof": {
+                magic = cs.loadUint(8).longValue();
+                assert (magic == 0xc3) : "BlockProof: magic not equal to 0xc3, found 0x" + Long.toHexString(magic);
+
+                return BlockProof.builder()
+                        .magic(0xc3)
+                        .proofFor((BlockIdExt) cs.loadTlb(BlockIdExt.class))
+                        .root(cs.loadRef())
+                        .signatures(cs.loadBit() ? (BlockSignatures) Tlb.load(BlockSignatures.class, cs.loadRef()) : null)
+                        .build();
+            }
             case "BlockInfo": {
                 magic = cs.loadUint(32).longValue();
                 assert (magic == 0x9bc7a987L) : "BlockInfo: magic not equal to 0x9bc7a987, found 0x" + Long.toHexString(magic);
@@ -922,7 +958,7 @@ public class Tlb {
                         .out(out)
                         .build());
 
-                if (nonNull(tx.getInOut().getOut())) {
+                if (nonNull(tx.getInOut().getOut())) { // todo cleanup
                     for (Map.Entry<Object, Object> entry : tx.getInOut().getOut().elements.entrySet()) {
                         System.out.println("key " + entry.getKey() + ", value " + ((Cell) entry.getValue()).print());
                         Message i = (Message) Tlb.load(Message.class, (Cell) entry.getValue());

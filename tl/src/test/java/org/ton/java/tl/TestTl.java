@@ -1,6 +1,7 @@
 package org.ton.java.tl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -11,8 +12,13 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tl.loader.Tl;
 import org.ton.java.tl.types.DbBlockInfo;
+import org.ton.java.tlb.loader.Tlb;
+import org.ton.java.tlb.types.Block;
+import org.ton.java.tlb.types.BlockProof;
 import org.ton.java.utils.Utils;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 
 @Slf4j
@@ -64,7 +70,7 @@ public class TestTl {
         }
     }
 
-    @Test //todo
+    @Test
     public void testRocksDbBlockInfoParsing3() {
         byte[] rawValue = Utils.hexToSignedBytes("27e7c64affffffff000000000000008008010000155ae03cef502e0c8bcf8b7178b81a9445c00be3cf687361ded48db4d502f5451ae4c49a57ba39fac697bba2cc10ee14aa80e1eb062b99b60bd7188d15d118eda3ea5608ffffffff0000000000000080070100007964a2aab72253115ae1167acdf4b1e11fe8c5a7e647984fb0c09f0051c00ac34291e10bbda1d99e5dcfe117fcc1e4b0f41339c5d2e4251393f2d64eabc046a304ac1e1200000000a37da565db3eff18afd14ef1a7e570fa0e269f788815225875ee5d2936933988947fab15");
         ByteReader valueReader = new ByteReader(rawValue);
@@ -81,6 +87,69 @@ public class TestTl {
         }
     }
 
+    @Test
+    public void testRocksDbFiles1() throws IOException {
+        InputStream pack = getClass().getClassLoader().getResourceAsStream("rocksdb/archive.00000.pack");
+        byte[] b = IOUtils.toByteArray(pack);
+
+        ByteReader r = new ByteReader(b);
+        int packageHeaderMagic = r.readIntLittleEndian(); // 32 - 0xae8fdd01
+
+        if (packageHeaderMagic != 0xae8fdd01) {
+            log.error("wrong packageHeaderMagic, should 0xae8fdd01");
+            return;
+        }
+
+        do {
+            short entryHeaderMagic = r.readShortLittleEndian(); // 16 - 0x1e8b
+
+            if (entryHeaderMagic != 0x1e8b) {
+                log.error("wrong entryHeaderMagic, should 0x1e8b");
+                return;
+            }
+            int filenameLength = r.readShortLittleEndian(); //16
+            int bocSize = r.readIntLittleEndian(); //32
+            String filename = new String(Utils.unsignedBytesToSigned(r.readBytes(filenameLength)));
+            log.info("bocSize {}, filename {}", bocSize, filename);
+
+            Cell c = CellBuilder.fromBoc(r.readBytes(bocSize));
+            if (c.bits.preReadUint(8).longValue() == 0xc3) {
+                //c.bits.readUint(8);
+                BlockProof blockProof = (BlockProof) Tlb.load(BlockProof.class, c); // block tlb magic 11ef55aa
+                log.info("skip proof block: {}", blockProof);
+                continue;
+            }
+
+            Cell blockCell = getFirstCellWithBlock(c);
+
+            //log.info(c.print());
+            //System.out.println("--------------------------------");
+//            Cell c0 = CellSlice.beginParse(c).loadRef();
+//            log.info(c0.print());
+//            System.out.println("--------------------------------");
+//            Cell c00 = CellSlice.beginParse(c0).loadRef();
+//            log.info(c00.print());
+            Block block = (Block) Tlb.load(Block.class, blockCell); // block tlb magic 11ef55aa
+            log.info("block {}", block);
+//            log.info("data size {}", r.getDataSize()); // 179723-178587 = 1136
+            //log.info("data {}", Utils.bytesToHex(f));
+        } while (r.getDataSize() != 0);
+    }
+
+    private Cell getFirstCellWithBlock(Cell c) {
+
+        long blockMagic = c.bits.preReadUint(32).longValue();
+        if (blockMagic == 0x11ef55aa) {
+            return c;
+        }
+
+        int i = 0;
+        for (Cell ref : c.refs) {
+            return getFirstCellWithBlock(ref);
+        }
+
+        return null;
+    }
 
     private byte[] getBytes(byte[] src, int from, int length) {
         if (from + length > src.length) {

@@ -76,27 +76,27 @@ public class ByteReader {
         return Utils.reverseByteArray(preReadSignedBytes(num));
     }
 
-    public short readShortBigEndian() {
+    public short readShortLittleEndian() {
         return Utils.bytesToShort(readSignedBytesReversed(2));
     }
 
-    public short preReadShortBigEndian() {
+    public short preReadShortLittleEndian() {
         return Utils.bytesToShort(preReadSignedBytesReversed(2));
     }
 
-    public int readIntBigEndian() {
+    public int readIntLittleEndian() {
         return Utils.bytesToInt(readSignedBytesReversed(4));
     }
 
-    public int preReadIntBigEndian() {
+    public int preReadIntLittleEndian() {
         return Utils.bytesToInt(preReadSignedBytesReversed(4));
     }
 
-    public long readLongBigEndian() {
+    public long readLongLittleEndian() {
         return Utils.bytesToLong(readSignedBytesReversed(8));
     }
 
-    public long preReadLongBigEndian() {
+    public long preReadLongLittleEndian() {
         return Utils.bytesToLong(preReadSignedBytesReversed(8));
     }
 
