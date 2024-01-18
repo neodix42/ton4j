@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
@@ -32,10 +33,14 @@ public class DbBlockInfo {
     BlockIdExt nextRight;
     BigInteger lt;
     BigInteger ts;
-    BigInteger state;
+    int[] state;
     BigInteger masterChainRefSeqNo;
 
     private String getMagic() {
         return Long.toHexString(magic);
+    }
+
+    private String getState() {
+        return Utils.bytesToHex(state);
     }
 }

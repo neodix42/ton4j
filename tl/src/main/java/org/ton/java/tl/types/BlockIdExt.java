@@ -2,12 +2,14 @@ package org.ton.java.tl.types;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.utils.Utils;
 
 @ToString
 @Builder
 @Getter
+@Setter
 /**
  * ton_api.tl
  * tonNode.blockIdExt

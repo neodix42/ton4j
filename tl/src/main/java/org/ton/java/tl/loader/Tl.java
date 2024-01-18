@@ -22,54 +22,52 @@ public class Tl {
         if (isNull(c)) {
             return null;
         } else {
-            return load(clazz, CellSlice.beginParse(c), false);
-        }
-    }
-
-    public static Object load(Class clazz, Cell c, boolean skipMagic) {
-        if (isNull(c)) {
-            return null;
-        } else {
-            return load(clazz, CellSlice.beginParse(c), skipMagic);
+            return load(clazz, CellSlice.beginParse(c));
         }
     }
 
     public static Object load(Class c, CellSlice cs) {
-        return load(c, cs, false);
-    }
-
-    public static Object load(Class c, CellSlice cs, boolean skipMagic) {
 
         switch (c.getSimpleName()) {
             case "DbBlockInfo":
-                if (!skipMagic) {
-                    int magic = Integer.reverseBytes(cs.loadUint(32).intValue());
-                    assert (magic == DB_BLOCK_INFO_MAGIC) : "DbBlockInfo: magic not equal to 0x4ac6e727, found " + Long.toHexString(magic);
-                }
+                int magic = Integer.reverseBytes(cs.loadUint(32).intValue());
+                assert (magic == DB_BLOCK_INFO_MAGIC) : "DbBlockInfo: magic not equal to 0x4ac6e727, found " + Long.toHexString(magic);
                 DbBlockInfo dbBlockInfo = DbBlockInfo.builder()
                         .magic(DB_BLOCK_INFO_MAGIC)
-                        .id((BlockIdExt) Tl.load(BlockIdExt.class, cs, skipMagic))
+                        .id((BlockIdExt) Tl.load(BlockIdExt.class, cs))
                         .build();
-                BigInteger flags = cs.loadUint(32);
+                int f = Integer.reverseBytes(cs.loadUint(32).intValue());
+//                System.out.println("f " + f);
 
+//                BigInteger flags = cs.loadUint(32);
+                BigInteger flags = BigInteger.valueOf(f);
+
+                // todo improve little endian reading
                 dbBlockInfo.setFlags(flags);
-                dbBlockInfo.setPrevLeft(flags.testBit(32 - 1) ? (BlockIdExt) Tl.load(BlockIdExt.class, cs) : null);
-                dbBlockInfo.setPrevRight(flags.testBit(32 - 2) ? (BlockIdExt) Tl.load(BlockIdExt.class, cs) : null);
-                dbBlockInfo.setNextLeft(flags.testBit(32 - 3) ? (BlockIdExt) Tl.load(BlockIdExt.class, cs) : null);
-                dbBlockInfo.setNextRight(flags.testBit(32 - 4) ? (BlockIdExt) Tl.load(BlockIdExt.class, cs) : null);
-                dbBlockInfo.setLt(flags.testBit(32 - 13) ? cs.loadUint(64) : null);
-                dbBlockInfo.setTs(flags.testBit(32 - 14) ? cs.loadUint(32) : null);
-                dbBlockInfo.setState(flags.testBit(32 - 17) ? cs.loadUint(256) : null);
-                dbBlockInfo.setMasterChainRefSeqNo(flags.testBit(32 - 23) ? cs.loadUint(32) : null);
+                dbBlockInfo.setPrevLeft(flags.testBit(1) ? (BlockIdExt) Tl.load(BlockIdExt.class, cs) : null);
+                dbBlockInfo.setPrevRight(flags.testBit(2) ? (BlockIdExt) Tl.load(BlockIdExt.class, cs) : null);
+                dbBlockInfo.setNextLeft(flags.testBit(3) ? (BlockIdExt) Tl.load(BlockIdExt.class, cs) : null);
+                dbBlockInfo.setNextRight(flags.testBit(4) ? (BlockIdExt) Tl.load(BlockIdExt.class, cs) : null);
+                dbBlockInfo.setLt(flags.testBit(13) ? BigInteger.valueOf(Long.reverseBytes(cs.loadUint(64).longValue())) : null);
+                dbBlockInfo.setTs(flags.testBit(14) ? BigInteger.valueOf(Integer.reverseBytes(cs.loadUint(32).intValue())) : null);
+                dbBlockInfo.setState(flags.testBit(17) ? Utils.reverseIntArray(cs.loadBytes(256)) : null);
+                dbBlockInfo.setMasterChainRefSeqNo(flags.testBit(23) ? BigInteger.valueOf(Integer.reverseBytes(cs.loadUint(32).intValue())) : null);
                 return dbBlockInfo;
-            case "BlockIdExt":
-                return BlockIdExt.builder()
-                        .workchain(Utils.intsToInt(Utils.reverseIntArray(cs.loadBytes(32))))
-                        .shard(cs.loadUint(64).longValue())
-                        .seqno(Utils.intsToInt(Utils.reverseIntArray(cs.loadBytes(32))))
-                        .rootHash(Utils.reverseIntArray(cs.loadBytes(256)))
-                        .fileHash(Utils.reverseIntArray(cs.loadBytes(256)))
-                        .build();
+            case "BlockIdExt": {
+                try {
+                    BlockIdExt blockIdExt = BlockIdExt.builder()
+                            .workchain(Utils.intsToInt(Utils.reverseIntArray(cs.loadBytes(32))))
+                            .shard(Long.reverseBytes(cs.loadUint(64).longValue()))
+                            .seqno(Utils.intsToInt(Utils.reverseIntArray(cs.loadBytes(32))))
+                            .rootHash(Utils.reverseIntArray(cs.loadBytes(256)))
+                            .fileHash(Utils.reverseIntArray(cs.loadBytes(256)))
+                            .build();
+                    return blockIdExt;
+
+                } catch (Throwable t) {
+                    return null;
+                }
+            }
             case "Text":
                 int chunksNum = cs.loadUint(8).intValue();
                 int firstSize = 0;

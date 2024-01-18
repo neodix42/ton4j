@@ -4,18 +4,95 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.bitstring.BitString;
+import org.ton.java.cell.ByteReader;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.tl.loader.Tl;
+import org.ton.java.tl.types.DbBlockInfo;
+import org.ton.java.utils.Utils;
+
+import java.util.Arrays;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestTl {
+    /**
+     * hex data taken from rocksdb table archive.00000.index value column
+     * <p>
+     * db.block.info#4ac6e727 id:tonNode.blockIdExt flags:# prev_left:flags.1?tonNode.blockIdExt
+     * prev_right:flags.2?tonNode.blockIdExt
+     * next_left:flags.3?tonNode.blockIdExt
+     * next_right:flags.4?tonNode.blockIdExt
+     * lt:flags.13?long
+     * ts:flags.14?int
+     * state:flags.17?int256
+     * masterchain_ref_seqno:flags.23?int = db.block.Info;
+     */
     @Test
-    public void testBlockMaster() {
+    public void testRocksDbBlockInfoParsing() {
+        byte[] rawValue = Utils.hexToSignedBytes("27e7c64a0000000000000000000000404c000000c85856c6d9dd02c1c3d9881fbd88a1d3dc14f9e8e6e99f79ec33f84cae475cf8149bd099c820a51529e3fcb8d4f5bc908d3cee250ac31640fa8ab579ae5c8844aaf2d6080000000000000000000000804b000000278adf0a7f59da0e9530164f3e42930965ce44b276c86b67363463c54a6c07829963b6bc76af71a5be6c65b64dfc55154019eaa99157a300efa842fb8aabf7730000000000000000000000404d0000003fc2b02d46c1796066e140392bfbbdc63227367a3e8d35e20748db47040645b571c85e97d60ddc1f208793062642b39fbfc7f0dbaf35c905b651369d74782670c19ee60500000000cb7ca5659d4925c426aed39b2ae99e971cb19b3fbbab27b4887c04211c8a57e2505fc9835d000000");
+        ByteReader valueReader = new ByteReader(rawValue);
+        String valueMagicId = Utils.bytesToHex(getBytes(rawValue, 0, 4));
+        if (valueMagicId.equals("27e7c64a")) { // this is db.block.info#4ac6e727 in ton_api.tl line #471
+            log.info("db.block.info#4ac6e727: {}", Utils.bytesToHex(getBytes(rawValue, 0)));
 
+            BitString bs2 = new BitString(valueReader.readBytes());
+            Cell c2 = CellBuilder.beginCell().storeBitStringUnsafe(bs2).endCell();
+            CellSlice cs = CellSlice.beginParse(c2);
+            DbBlockInfo dbBlockInfo = (DbBlockInfo) Tl.load(DbBlockInfo.class, cs);
+
+            log.info("dbBlockInfo {}", dbBlockInfo);
+        }
     }
 
     @Test
-    public void testBlockNotMaster() {
-        Cell c = Cell.fromBoc("b5ee9c72e1021c0100040b00001c00c400de0170020402a0033c036a037c0387039e03b6041c048204ce04ea0536055405a005ec060406200700077007bc080908100817041011ef55aaffffff110102030402a09bc7a98700000000840101c745200000000100000000000000000000000000634e94ec00001d367caaae4000001d367caaae419bbc68ac00058fb00173ed920173bfbec400000003000000000000002e05060211b8e48dfb43b9aca00407080a8a04250ec78adc9d082383679c3289edc662b628be0e34e51a8f7c412e98d24c8a5fb59960f376a6ad4dce93f406ce904add5a2aea140c99b877d02f67f1cd1e5f51021902190c0d03894a33f6fdb1c342502d7261843b4a3bfdbfb766c45705b7c4410af03c358431620ff05a79b1be0d76ede085c08726e04bad3c5779d949364eb56540f06c2c49b98d514111401a1b1b009800001d367c9b6c040173ed92b57df82537164b18661e22f620e1a7a15826a73d7402eef9433d55c030232370a7caa150ac8f2f4c74cb5c77e6671edb6f8accd65c683faf6e48a88720b2c72d009800001d367c9b6c0101c7451f78d2820caf6a5f100a444450ddab2f7754bbce7c6027dce5349269227866124a33b3efd318a7ec75c8f26844fd4dce5f581927f670a0087d7fec56658b487d720225826b977bb75290e16c135cbbddba94870b40080909000d0010ee6b2800080201200a0b0013be000003bc91627aea900013bfffffffbc8b96fc9c50235b9023afe2ffffff110000000000000000000000000001c7451f00000001634e94e900001d367c9b6c010173ed91200e0f10235b9023afe2ffffff110000000000000000000000000001c7452000000001634e94ec00001d367caaae410173ed9220141516284801017e49cb3c190a5033a93c907c6631d4459cf4bf71f57f041dd14270fb919423dc000122138209ae5deedd4a4385b011192848010125e39d851243cee82c062dd588cfa4587461b7869f68023bad26988d33bf8a24000223130104d72ef76ea521c2d81213192848010105a0d0f5cf8e9d2d98f032e935e8de2208463332de6c74af0b9d5cfc2bc2802102162848010157c418ac5021e527850e982354ed5a21fd7a0b0ac719e443fcd3c80f496dc4db003401110000000000000000501722138209ae5deedd4a4385b0181921d90000000000000000ffffffffffffffff826b977bb75290e16bb5f5e54ddd448c900001d367c9b6c040173ed92b57df82537164b18661e22f620e1a7a15826a73d7402eef9433d55c030232370a7caa150ac8f2f4c74cb5c77e6671edb6f8accd65c683faf6e48a88720b2c72d819006bb0400000000000000000b9f6c900000e9b3e4db601ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc0284801012aa19c773967de4112363f58e8331a68fb2b3fcb1d55daf352b93c497a019ce4021728480101b3e9649d10ccb379368e81a3a7e8e49c8eb53f6acc69b0ba2ffa80082f70ee39000100030020000102b1e6b8f1");
+    public void testRocksDbBlockInfoParsing2() {
+        byte[] rawValue = Utils.hexToSignedBytes("27e7c64a0000000000000000000000804b000000278adf0a7f59da0e9530164f3e42930965ce44b276c86b67363463c54a6c07829963b6bc76af71a5be6c65b64dfc55154019eaa99157a300efa842fb8aabf773faf2d6080000000000000000000000804a0000001eb220d5b0bcd430b14386cc629d5d5f196df2a3978f34d43a0e1bd0cdc1d8259b3e3620c7985ff0b86535551f2fdf2dacccea04cc1cae33a9bcba8faddf680b0000000000000000000000404c000000c85856c6d9dd02c1c3d9881fbd88a1d3dc14f9e8e6e99f79ec33f84cae475cf8149bd099c820a51529e3fcb8d4f5bc908d3cee250ac31640fa8ab579ae5c88440000000000000000000000c04c000000f28bba3d68ce1b0da03bde7cf6f7dbb2bce2332eff0b5c44ab7c57000f9a76d29b8f82e37f202f65cbb18656d44704414ec59025aba1df7a5cf0ab129e15d9f541118b0500000000c47ca5653032689210e75872eb9817b00e7ff4f24383db218dafcddfffdbad281625026656000000");
+        ByteReader valueReader = new ByteReader(rawValue);
+        String valueMagicId = Utils.bytesToHex(getBytes(rawValue, 0, 4));
+        if (valueMagicId.equals("27e7c64a")) { // this is db.block.info#4ac6e727 in ton_api.tl line #471
+            log.info("db.block.info#4ac6e727: {}", Utils.bytesToHex(getBytes(rawValue, 0)));
+
+            BitString bs2 = new BitString(valueReader.readBytes());
+            Cell c2 = CellBuilder.beginCell().storeBitStringUnsafe(bs2).endCell();
+            CellSlice cs = CellSlice.beginParse(c2);
+            DbBlockInfo dbBlockInfo = (DbBlockInfo) Tl.load(DbBlockInfo.class, cs);
+
+            log.info("dbBlockInfo {}", dbBlockInfo);
+        }
+    }
+
+    @Test //todo
+    public void testRocksDbBlockInfoParsing3() {
+        byte[] rawValue = Utils.hexToSignedBytes("27e7c64affffffff000000000000008008010000155ae03cef502e0c8bcf8b7178b81a9445c00be3cf687361ded48db4d502f5451ae4c49a57ba39fac697bba2cc10ee14aa80e1eb062b99b60bd7188d15d118eda3ea5608ffffffff0000000000000080070100007964a2aab72253115ae1167acdf4b1e11fe8c5a7e647984fb0c09f0051c00ac34291e10bbda1d99e5dcfe117fcc1e4b0f41339c5d2e4251393f2d64eabc046a304ac1e1200000000a37da565db3eff18afd14ef1a7e570fa0e269f788815225875ee5d2936933988947fab15");
+        ByteReader valueReader = new ByteReader(rawValue);
+        String valueMagicId = Utils.bytesToHex(getBytes(rawValue, 0, 4));
+        if (valueMagicId.equals("27e7c64a")) { // this is db.block.info#4ac6e727 in ton_api.tl line #471
+            log.info("db.block.info#4ac6e727: {}", Utils.bytesToHex(getBytes(rawValue, 0)));
+
+            BitString bs2 = new BitString(valueReader.readBytes());
+            Cell c2 = CellBuilder.beginCell().storeBitStringUnsafe(bs2).endCell();
+            CellSlice cs = CellSlice.beginParse(c2);
+            DbBlockInfo dbBlockInfo = (DbBlockInfo) Tl.load(DbBlockInfo.class, cs);
+
+            log.info("dbBlockInfo {}", dbBlockInfo);
+        }
+    }
+
+
+    private byte[] getBytes(byte[] src, int from, int length) {
+        if (from + length > src.length) {
+            return new byte[0];
+        }
+        return Arrays.copyOfRange(src, from, from + length);
+    }
+
+    private byte[] getBytes(byte[] src, int from) {
+        if (from > src.length) {
+            return new byte[0];
+        }
+        return Arrays.copyOfRange(src, from, src.length);
     }
 }
