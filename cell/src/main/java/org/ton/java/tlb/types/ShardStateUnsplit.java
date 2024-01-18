@@ -47,7 +47,7 @@ public class ShardStateUnsplit {
     OutMsgQueueInfo outMsgQueueInfo;
     boolean beforeSplit;
     TonHashMapAugE accounts;
-    Cell stats;
+    ShardStateInfo shardStateInfo;
     McStateExtra custom;
 
     private String getMagic() {
@@ -71,7 +71,7 @@ public class ShardStateUnsplit {
                         v -> v,
                         e -> e,
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1))) // todo
-                .storeRef(stats)
+                .storeCell(shardStateInfo.toCell())
                 .storeRefMaybe(custom.toCell())
                 .endCell();
     }

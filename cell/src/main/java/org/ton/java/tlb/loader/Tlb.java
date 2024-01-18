@@ -202,8 +202,20 @@ public class Tlb {
                         .currencies((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
                         .build();
             }
+            case "ShardStateInfo": {
+                return ShardStateInfo.builder()
+                        .overloadHistory(cs.loadUint(64))
+                        .underloadHistory(cs.loadUint(64))
+                        .totalBalance((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
+                        .totalValidatorFees((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
+                        .libraries(cs.loadDictE(256,
+                                k -> k.readInt(256),
+                                v -> CellSlice.beginParse(v).loadTlb(LibDescr.class)))
+                        .masterRef(cs.loadBit() ? (ExtBlkRef) Tlb.load(ExtBlkRef.class, cs.loadRef()) : null)
+                        .build();
+            }
             case "ShardStateUnsplit": {
-                return ShardStateUnsplit.builder()
+                ShardStateUnsplit s = ShardStateUnsplit.builder()
                         .magic(cs.loadUint(32).longValue())
                         .globalId(cs.loadUint(32).intValue())
                         .shardIdent((ShardIdent) cs.loadTlb(ShardIdent.class))
@@ -218,13 +230,16 @@ public class Tlb {
                                 k -> k.readInt(256),
                                 v -> v.loadTlb(ShardAccount.class),
                                 e -> e.loadTlb(DepthBalanceInfo.class)))
-                        .stats(cs.loadRef())
-                        .custom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()))
+                        .shardStateInfo((ShardStateInfo) Tlb.load(ShardStateInfo.class, CellSlice.beginParse(cs.loadRef())))
                         .build();
+//                s.setCustom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()));
+                s.setCustom(cs.loadBit() ? (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()) : null);
+                //.custom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()))
+                //.build();
             }
             case "ShardIdent":
                 magic = cs.loadUint(2).longValue();
-                assert (magic == 0L) : "ShardIdent: magic not equal to 0b00, found " + Long.toHexString(magic);
+                assert (magic == 0L) : "ShardIdent: magic not equal to 0b00, found 0x" + Long.toHexString(magic);
                 return ShardIdent.builder()
                         .magic(0L)
                         .prefixBits(cs.loadUint(6).longValue())
@@ -250,25 +265,25 @@ public class Tlb {
                             .left((ShardStateUnsplit) cs.loadTlb(ShardStateUnsplit.class))
                             .build();
                 } else {
-                    throw new Error("unknown shardstate magic, found " + Long.toHexString(tag));
+                    throw new Error("unknown shardstate magic, found 0x" + Long.toHexString(tag));
                 }
             case "McStateExtra":
                 if (isNull(cs)) {
                     return null;
                 }
                 magic = cs.loadUint(16).longValue();
-                assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found " + Long.toHexString(magic);
+                assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found 0x" + Long.toHexString(magic);
 
                 return McStateExtra.builder()
                         .magic(0xcc26L)
                         .shardHashes(cs.loadDictE(32, k -> k.readInt(32), v -> v)) // todo BinTree
                         .configParams((ConfigParams) cs.loadTlb(ConfigParams.class))
-                        .info(cs.loadRef())
+                        .info(cs.loadRef()) // todo parse
                         .globalBalance((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
                         .build();
             case "McBlockExtra":
                 magic = cs.loadUint(16).longValue();
-                assert (magic == 0xcca5L) : "McBlockExtra: magic not equal to 0xcca5, found " + Long.toHexString(magic);
+                assert (magic == 0xcca5L) : "McBlockExtra: magic not equal to 0xcca5, found 0x" + Long.toHexString(magic);
 
                 boolean keyBlock = cs.loadBit();
                 return McBlockExtra.builder()
@@ -291,7 +306,7 @@ public class Tlb {
                         .build();
             case "GlobalVersion":
                 magic = cs.loadUint(8).longValue();
-                assert (magic == 0xc4L) : "GlobalVersion: magic not equal to 0xc4, found " + Long.toHexString(magic);
+                assert (magic == 0xc4L) : "GlobalVersion: magic not equal to 0xc4, found 0x" + Long.toHexString(magic);
 
                 return GlobalVersion.builder()
                         .magic(0xc4L)
@@ -328,7 +343,7 @@ public class Tlb {
                         .build();
             case "MsgEnvelope":
                 magic = cs.loadUint(4).longValue();
-                assert (magic == 4) : "MsgEnvelope: magic not equal to 4, found " + Long.toHexString(magic);
+                assert (magic == 4) : "MsgEnvelope: magic not equal to 4, found 0x" + Long.toHexString(magic);
 
                 return MsgEnvelope.builder()
                         .currAddr((IntermediateAddress) cs.loadTlb(IntermediateAddress.class))
@@ -393,7 +408,7 @@ public class Tlb {
                         }
                     }
                 }
-                throw new Error("unknown out_msg flag, found " + Long.toBinaryString(outMsgFlag));
+                throw new Error("unknown out_msg flag, found 0x" + Long.toBinaryString(outMsgFlag));
             }
             case "InMsg": {
                 int inMsgFlag = cs.loadUint(3).intValue();
@@ -449,7 +464,7 @@ public class Tlb {
                                 .build();
                     }
                 }
-                throw new Error("unknown in_msg flag, found " + Long.toBinaryString(inMsgFlag));
+                throw new Error("unknown in_msg flag, found 0x" + Long.toBinaryString(inMsgFlag));
             }
             case "InMsgDescr":
                 return InMsgDescr.builder()
@@ -465,9 +480,20 @@ public class Tlb {
                                 v -> CellSlice.beginParse(v).loadTlb(OutMsg.class),
                                 e -> CellSlice.beginParse(e).loadTlb(CurrencyCollection.class)))
                         .build();
-            case "BlockInfo":
+            case "LibDescr": {
+                magic = cs.loadUint(2).longValue();
+                assert (magic == 0b00) : "LibDescr: magic not equal to 0b00, found 0x" + Long.toHexString(magic);
+                return LibDescr.builder()
+                        .magic(0b00)
+                        .lib(cs.loadRef())
+                        .publishers(cs.loadDict(256,
+                                k -> k.readInt(256),
+                                v -> CellSlice.beginParse(v).loadBit()))
+                        .build();
+            }
+            case "BlockInfo": {
                 magic = cs.loadUint(32).longValue();
-                assert (magic == 0x9bc7a987L) : "BlockInfo: magic not equal to 0x9bc7a987, found " + Long.toHexString(magic);
+                assert (magic == 0x9bc7a987L) : "BlockInfo: magic not equal to 0x9bc7a987, found 0x" + Long.toHexString(magic);
 
                 BlockInfo blockInfo = BlockInfo.builder()
                         .magic(0x9bc7a987L)
@@ -497,6 +523,7 @@ public class Tlb {
                 blockInfo.setPrefRef(loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), blockInfo.isAfterMerge()));
                 blockInfo.setPrefVertRef(blockInfo.isVertSeqnoIncr() ? loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), blockInfo.isAfterMerge()) : null);
                 return blockInfo;
+            }
             case "BlockHandle":
                 return BlockHandle.builder()
                         .offset(cs.loadUint(64))
@@ -504,7 +531,7 @@ public class Tlb {
                         .build();
             case "BlockExtra":
                 magic = cs.loadUint(32).longValue();
-                assert (magic == 0x4a33f6fdL) : "Block: magic not equal to 0x4a33f6fdL, found " + Long.toHexString(magic);
+                assert (magic == 0x4a33f6fdL) : "Block: magic not equal to 0x4a33f6fdL, found 0x" + Long.toHexString(magic);
 
                 BlockExtra blockExtra = BlockExtra.builder()
                         .inMsgDesc((InMsgDescr) Tlb.load(InMsgDescr.class, cs.loadRef()))
@@ -523,7 +550,7 @@ public class Tlb {
                 System.out.println("block " + cs.sliceToCell().toHex());
 
                 magic = cs.loadUint(32).longValue();
-                assert (magic == 0x11ef55aaL) : "Block: magic not equal to 0x11ef55aa, found " + Long.toHexString(magic);
+                assert (magic == 0x11ef55aaL) : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
 
                 return Block.builder()
                         .magic(0x11ef55aaL)
@@ -535,7 +562,7 @@ public class Tlb {
                         .build();
             case "AccountBlock":
                 magic = cs.loadUint(4).longValue();
-                assert (magic == 0x5L) : "AccountBlock: magic not equal to 0x5, found " + Long.toHexString(magic);
+                assert (magic == 0x5L) : "AccountBlock: magic not equal to 0x5, found 0x" + Long.toHexString(magic);
 
                 return AccountBlock.builder()
                         .magic(0x5)
@@ -548,7 +575,7 @@ public class Tlb {
                         .build();
             case "ValueFlow":
                 magic = cs.loadUint(32).longValue();
-                assert (magic == 0xb8e48dfbL) : "ValueFlow: magic not equal to 0xb8e48dfb, found " + Long.toHexString(magic);
+                assert (magic == 0xb8e48dfbL) : "ValueFlow: magic not equal to 0xb8e48dfb, found 0x" + Long.toHexString(magic);
 
                 Cell c1 = cs.loadRef();
                 Cell c2 = cs.loadRef();
@@ -729,7 +756,6 @@ public class Tlb {
                         .list(cs.loadDictE(15,
                                 k -> k.readInt(15),
                                 v -> CellSlice.beginParse(v).loadTlb(Message.class)))
-//                                v -> Tlb.load(Message.class, CellSlice.beginParse(v).loadRef())))
                         .build();
             case "ComputeSkipReason": {
                 int skipReasonFlag = cs.loadUint(2).intValue();
@@ -751,7 +777,7 @@ public class Tlb {
                         }
                     }
                 }
-                throw new Error("unknown compute skip reason, found " + Integer.toBinaryString(skipReasonFlag));
+                throw new Error("unknown compute skip reason, found 0x" + Integer.toBinaryString(skipReasonFlag));
             }
             case "ComputePhase": {
                 boolean isNotSkipped = cs.loadBit();
@@ -762,13 +788,13 @@ public class Tlb {
             }
             case "BouncePhaseNegFounds": {
                 magic = cs.loadUint(1).intValue(); // review, should be 2
-                assert (magic == 0b0) : "BouncePhaseNegFounds: magic not equal to 0b0, found " + Long.toHexString(magic);
+                assert (magic == 0b0) : "BouncePhaseNegFounds: magic not equal to 0b0, found 0x" + Long.toHexString(magic);
 
                 return BouncePhaseNegFounds.builder().build();
             }
             case "BouncePhaseNoFounds": {
                 magic = cs.loadUint(2).intValue();
-                assert (magic == 0b01) : "BouncePhaseNoFounds: magic not equal to 0b01, found " + Long.toHexString(magic);
+                assert (magic == 0b01) : "BouncePhaseNoFounds: magic not equal to 0b01, found 0x" + Long.toHexString(magic);
 
                 return BouncePhaseNoFounds.builder()
                         .msgSize((StorageUsedShort) cs.loadTlb(StorageUsedShort.class))
@@ -777,7 +803,7 @@ public class Tlb {
             }
             case "BouncePhaseok": {
                 magic = cs.loadUint(1).intValue();
-                assert (magic == 0b1) : "BouncePhaseok: magic not equal to 0b1, found " + Long.toHexString(magic);
+                assert (magic == 0b1) : "BouncePhaseok: magic not equal to 0b1, found 0x" + Long.toHexString(magic);
 
                 return BouncePhaseok.builder()
                         .magic(0b1)
@@ -869,7 +895,7 @@ public class Tlb {
             }
             case "Transaction": {
                 magic = cs.loadUint(4).intValue();
-                assert (magic == 0b0111) : "Transaction: magic not equal to 0b0111, found " + Long.toBinaryString(magic);
+                assert (magic == 0b0111) : "Transaction: magic not equal to 0b0111, found 0b" + Long.toBinaryString(magic);
 
                 Transaction tx = Transaction.builder()
                         .magic(0b0111)
@@ -912,7 +938,7 @@ public class Tlb {
             }
             case "HashUpdate": {
                 magic = cs.loadUint(8).intValue();
-                assert (magic == 0x72) : "HashUpdate: magic not equal to 0x72, found " + Long.toHexString(magic);
+                assert (magic == 0x72) : "HashUpdate: magic not equal to 0x72, found 0x" + Long.toHexString(magic);
 
                 return HashUpdate.builder()
                         .magic(0x72)
@@ -955,11 +981,11 @@ public class Tlb {
                         return TransactionDescription.builder().description(descMergePrepare).build();
                     }
                 }
-                throw new Error("unknown transaction description type (must be in range [0..3], found " + Integer.toBinaryString(pfx));
+                throw new Error("unknown transaction description type (must be in range [0..3], found 0x" + Integer.toBinaryString(pfx));
             }
             case "TransactionDescriptionStorage": {
                 magic = cs.loadUint(4).intValue();
-                assert (magic == 0b0001) : "TransactionDescriptionStorage: magic not equal to 0b0001, found " + Long.toHexString(magic);
+                assert (magic == 0b0001) : "TransactionDescriptionStorage: magic not equal to 0b0001, found 0x" + Long.toHexString(magic);
 
                 return TransactionDescriptionStorage.builder()
                         .magic(0b0001)
@@ -968,7 +994,7 @@ public class Tlb {
             }
             case "TransactionDescriptionOrdinary": {
                 magic = cs.loadUint(4).intValue();
-                assert (magic == 0b0000) : "TransactionDescriptionOrdinary: magic not equal to 0b0000, found " + Long.toHexString(magic);
+                assert (magic == 0b0000) : "TransactionDescriptionOrdinary: magic not equal to 0b0000, found 0x" + Long.toHexString(magic);
 
                 return TransactionDescriptionOrdinary.builder()
                         .magic(0b0000)
@@ -986,7 +1012,7 @@ public class Tlb {
             }
             case "TransactionDescriptionTickTock": {
                 magic = cs.loadUint(3).intValue();
-                assert (magic == 0b001) : "TransactionDescriptionTickTock: magic not equal to 0b001, found " + Long.toHexString(magic);
+                assert (magic == 0b001) : "TransactionDescriptionTickTock: magic not equal to 0b001, found 0x" + Long.toHexString(magic);
 
                 return TransactionDescriptionTickTock.builder()
                         .magic(0b001)
@@ -1000,7 +1026,7 @@ public class Tlb {
             }
             case "TransactionDescriptionSplitInstall": {
                 magic = cs.loadUint(4).intValue();
-                assert (magic == 0b0101) : "TransactionDescriptionSplitInstall: magic not equal to 0b0101, found " + Long.toHexString(magic);
+                assert (magic == 0b0101) : "TransactionDescriptionSplitInstall: magic not equal to 0b0101, found 0x" + Long.toHexString(magic);
 
                 return TransactionDescriptionSplitInstall.builder()
                         .magic(0b0101)
@@ -1011,7 +1037,7 @@ public class Tlb {
             }
             case "TransactionDescriptionSplitPrepare": {
                 magic = cs.loadUint(4).intValue();
-                assert (magic == 0b0100) : "TransactionDescriptionSplitPrepare: magic not equal to 0b0100, found " + Long.toHexString(magic);
+                assert (magic == 0b0100) : "TransactionDescriptionSplitPrepare: magic not equal to 0b0100, found 0x" + Long.toHexString(magic);
 
                 return TransactionDescriptionMergeInstall.builder()
                         .magic(0b0100)
@@ -1025,7 +1051,7 @@ public class Tlb {
             }
             case "TransactionDescriptionMergeInstall": {
                 magic = cs.loadUint(4).intValue();
-                assert (magic == 0b0111) : "TransactionDescriptionMergeInstall: magic not equal to 0b0111, found " + Long.toHexString(magic);
+                assert (magic == 0b0111) : "TransactionDescriptionMergeInstall: magic not equal to 0b0111, found 0x" + Long.toHexString(magic);
 
                 return TransactionDescriptionMergeInstall.builder()
                         .magic(0b0111)
@@ -1041,12 +1067,12 @@ public class Tlb {
             }
             case "TransactionDescriptionMergePrepare": {
                 magic = cs.loadUint(4).intValue();
-                assert (magic == 0b0110) : "TransactionDescriptionMergePrepare: magic not equal to 0b0110, found " + Long.toHexString(magic);
+                assert (magic == 0b0110) : "TransactionDescriptionMergePrepare: magic not equal to 0b0110, found 0x" + Long.toHexString(magic);
 
                 return TransactionDescriptionMergePrepare.builder()
                         .magic(0b0110)
-                        .splitInfo((SplitMergeInfo) cs.loadTlb(SplitMergeInfo.class)) // todo
-                        .storagePhase((StoragePhase) cs.loadTlb(StoragePhase.class))// todo
+                        .splitInfo((SplitMergeInfo) cs.loadTlb(SplitMergeInfo.class))
+                        .storagePhase((StoragePhase) cs.loadTlb(StoragePhase.class))
                         .aborted(cs.loadBit())
                         .build();
             }
@@ -1063,7 +1089,7 @@ public class Tlb {
                 return AccStatusChange.builder().type("UNCHANGED").build();
             case "InternalMessage":
                 boolean magicBool = cs.loadBit();
-                assert (!magicBool) : "InternalMessage: magic not equal to 0, found " + magicBool;
+                assert (!magicBool) : "InternalMessage: magic not equal to 0, found 0x" + magicBool;
 
                 return InternalMessage.builder()
                         .magic(0L)
@@ -1077,31 +1103,25 @@ public class Tlb {
                         .fwdFee(cs.loadCoins())
                         .createdLt(cs.loadUint(64))
                         .createdAt(cs.loadUint(32).longValue())
-//                .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, cs.loadRef()) : (StateInit) cs.loadTlb(StateInit.class)) : null) //review
-//                .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
                         .build();
             case "ExternalMessage":
                 magic = cs.loadUint(2).intValue();
-                assert (magic == 0b10) : "ExternalMessage: magic not equal to 0b10, found " + Long.toBinaryString(magic);
+                assert (magic == 0b10) : "ExternalMessage: magic not equal to 0b10, found 0b" + Long.toBinaryString(magic);
                 return ExternalMessage.builder()
                         .magic(2L)
                         .srcAddr((MsgAddress) cs.loadTlb(MsgAddress.class))
                         .dstAddr((MsgAddress) cs.loadTlb(MsgAddress.class))
                         .importFee(cs.loadCoins())
-//                .stateInit(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, cs.loadRef()) : (StateInit) cs.loadTlb(StateInit.class)) : null) //review
-//                .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits())))
                         .build();
             case "ExternalMessageOut":
                 magic = cs.loadUint(2).intValue();
-                assert (magic == 0b11) : "ExternalMessageOut: magic not equal to 0b11, found " + Long.toBinaryString(magic);
+                assert (magic == 0b11) : "ExternalMessageOut: magic not equal to 0b11, found 0b" + Long.toBinaryString(magic);
                 return ExternalMessageOut.builder()
                         .magic(3L)
                         .srcAddr((MsgAddress) cs.loadTlb(MsgAddress.class))
                         .dstAddr((MsgAddress) cs.loadTlb(MsgAddress.class))
                         .createdLt(cs.loadUint(64))
                         .createdAt(cs.loadUint(32).longValue())
-//                .stateInit((StateInit) cs.loadTlb(StateInit.class))
-//                .body(cs.loadMaybeRefX())
                         .build();
             case "Text":
                 int chunksNum = cs.loadUint(8).intValue();
