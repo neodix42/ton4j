@@ -233,11 +233,12 @@ public class Tlb {
                                 k -> k.readInt(256),
                                 v -> v.loadTlb(ShardAccount.class),
                                 e -> e.loadTlb(DepthBalanceInfo.class)))
-                        .shardStateInfo((ShardStateInfo) Tlb.load(ShardStateInfo.class, CellSlice.beginParse(cs.loadRef())))
+//                        .shardStateInfo((ShardStateInfo) Tlb.load(ShardStateInfo.class, CellSlice.beginParse(cs.loadRef())))
+                        .shardStateInfo(cs.loadRef())
                         .build();
 //                s.setCustom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()));
                 s.setCustom(cs.loadBit() ? (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()) : null);
-
+                return s;
             }
             case "ShardIdent":
                 magic = cs.loadUint(2).longValue();
@@ -250,8 +251,8 @@ public class Tlb {
                         .build();
                 System.out.println(s);
                 return s;
-            case "ShardDesc": // todo
-                return ShardDesc.builder().build();
+            case "ShardDescr": // todo
+                return ShardDescr.builder().build();
             case "ShardState":
                 long tag = cs.preloadUint(32).longValue();
                 if (tag == 0x5f327da5L) {
@@ -269,7 +270,7 @@ public class Tlb {
                             .left((ShardStateUnsplit) cs.loadTlb(ShardStateUnsplit.class))
                             .build();
                 } else {
-                    throw new Error("unknown shardstate magic, found 0x" + Long.toHexString(tag));
+                    throw new Error("unknown ShardState magic, found 0x" + Long.toHexString(tag));
                 }
             case "McStateExtra":
                 if (isNull(cs)) {

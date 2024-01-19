@@ -40,7 +40,7 @@ public class ShardStateInfo {
                 .storeDict(libraries.serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
                         v -> CellBuilder.beginCell().storeCell(((LibDescr) v).toCell())))
-                .storeCell(masterRef.toCell())
+                .storeCellMaybe(masterRef.toCell())
                 .endCell();
     }
 

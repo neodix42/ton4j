@@ -50,8 +50,9 @@ public class McBlockExtra {
                         e -> CellBuilder.beginCell().storeRef((Cell) e), // todo ShardFeeCreated
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
                 ))
-                .storeCell(more)
-                .storeCell(keyBlock ? config.toCell() : CellBuilder.beginCell().endCell()).endCell();
+                .storeRef(more)
+                .storeCell(keyBlock ? config.toCell() : CellBuilder.beginCell().endCell())
+                .endCell();
 
     }
 }
