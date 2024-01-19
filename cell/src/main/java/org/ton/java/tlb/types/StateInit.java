@@ -6,7 +6,6 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
 
@@ -24,11 +23,11 @@ import static java.util.Objects.nonNull;
  *   library:(Maybe ^Cell) = StateInit;
  */
 public class StateInit {
-    BigInteger depth;  // `tlb:"maybe ## 5"`
-    TickTock tickTock; // `tlb:"maybe ."`
-    Cell code; // `tlb:"maybe ^"`
-    Cell data; // `tlb:"maybe ^"`
-    TonHashMapE lib; // `tlb:"dictE 256"`
+    BigInteger depth;
+    TickTock tickTock;
+    Cell code;
+    Cell data;
+    Cell lib;
 
     public Cell toCell() {
         return CellBuilder.beginCell() // todo review
@@ -37,11 +36,10 @@ public class StateInit {
                 .storeBit(nonNull(code))
                 .storeBit(nonNull(data))
                 .storeBit(nonNull(lib))
-                .storeRef(code)
-                .storeRef(data)
-                .storeRef(nonNull(lib) ? lib.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
-                        v -> CellBuilder.beginCell().storeUint((byte) v, 256)
-                ) : CellBuilder.beginCell().storeBit(false).endCell()).endCell();
+                .storeCellMaybe(tickTock.toCell())
+                .storeRefMaybe(code)
+                .storeRefMaybe(data)
+                .storeRefMaybe(lib)
+                .endCell();
     }
 }

@@ -42,7 +42,7 @@ public class ShardStateUnsplit {
     long seqno;
     long vertSeqno;
     long genUTime;
-    BigInteger genLT;
+    BigInteger genLt;
     long minRefMCSeqno;
     OutMsgQueueInfo outMsgQueueInfo;
     boolean beforeSplit;
@@ -62,7 +62,7 @@ public class ShardStateUnsplit {
                 .storeUint(seqno, 32)
                 .storeUint(vertSeqno, 32)
                 .storeUint(genUTime, 32)
-                .storeUint(genLT, 64)
+                .storeUint(genLt, 64)
                 .storeUint(minRefMCSeqno, 32)
                 .storeRef(outMsgQueueInfo.toCell())
                 .storeBit(beforeSplit)

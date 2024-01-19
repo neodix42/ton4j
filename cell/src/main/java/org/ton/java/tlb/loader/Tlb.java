@@ -54,19 +54,13 @@ public class Tlb {
                         .tickTock(cs.loadBit() ? (TickTock) cs.loadTlb(TickTock.class) : null)
                         .code(cs.loadMaybeRefX())
                         .data(cs.loadMaybeRefX())
-                        .lib(cs.loadDictE(256, k -> k.readInt(256), v -> v))
+                        .lib(cs.loadMaybeRefX())
                         .build();
             case "AccountStorage":
                 AccountStorage accountStorage = AccountStorage.builder().build();
 
                 BigInteger lastTransaction = cs.loadUint(64);
                 CurrencyCollection coins = (CurrencyCollection) cs.loadTlb(CurrencyCollection.class);
-
-//                boolean extraExists = cs.loadBit();
-//
-//                if (extraExists) {
-//                    throw new Error("extra currency info is not supported for AccountStorage");
-//                }
 
                 boolean isStatusActive = cs.loadBit();
                 if (isStatusActive) {
@@ -225,7 +219,7 @@ public class Tlb {
                         .seqno(cs.loadUint(32).longValue())
                         .vertSeqno(cs.loadUint(32).longValue())
                         .genUTime(cs.loadUint(32).longValue())
-                        .genLT(cs.loadUint(64))
+                        .genLt(cs.loadUint(64))
                         .minRefMCSeqno(cs.loadUint(32).longValue())
                         .outMsgQueueInfo((OutMsgQueueInfo) Tlb.load(OutMsgQueueInfo.class, CellSlice.beginParse(cs.loadRef())))
                         .beforeSplit(cs.loadBit())
@@ -236,7 +230,7 @@ public class Tlb {
 //                        .shardStateInfo((ShardStateInfo) Tlb.load(ShardStateInfo.class, CellSlice.beginParse(cs.loadRef())))
                         .shardStateInfo(cs.loadRef())
                         .build();
-//                s.setCustom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()));
+//  bug?               s.setCustom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()));
                 s.setCustom(cs.loadBit() ? (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()) : null);
                 return s;
             }
