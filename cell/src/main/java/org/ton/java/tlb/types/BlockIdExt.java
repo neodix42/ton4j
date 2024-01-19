@@ -19,7 +19,7 @@ import java.math.BigInteger;
  *   file_hash:bits256 = BlockIdExt;
  */
 public class BlockIdExt {
-    long workchain;
+    int workchain; // ShardIdent shardId;
     long shard;
     long seqno;
     BigInteger rootHash;
@@ -39,7 +39,8 @@ public class BlockIdExt {
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeUint(workchain, 32)
+//                .storeCell(shardId.toCell())
+                .storeInt(workchain, 32)
                 .storeUint(shard, 64)
                 .storeUint(seqno, 32)
                 .storeUint(rootHash, 256)

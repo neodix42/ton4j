@@ -23,7 +23,7 @@ import java.math.BigInteger;
 public class ShardIdent {
     long magic;
     long prefixBits;
-    long workchain;
+    int workchain;
     BigInteger shardPrefix;
 
     private String getMagic() {

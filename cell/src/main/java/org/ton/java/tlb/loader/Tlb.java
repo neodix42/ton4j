@@ -33,13 +33,16 @@ public class Tlb {
         long magic;
         switch (c.getSimpleName()) {
             case "BlockIdExt":
-                return BlockIdExt.builder()
-                        .workchain(cs.loadUint(32).longValue())
+                BlockIdExt b = BlockIdExt.builder()
+                        .workchain(cs.loadInt(32).intValue())
                         .shard(cs.loadUint(64).longValue())
+//                        .shardId((ShardIdent) cs.loadTlb(ShardIdent.class)) todo weird - this does not work
                         .seqno(cs.loadUint(32).longValue())
                         .rootHash(cs.loadUint(256))
                         .fileHash(cs.loadUint(256))
                         .build();
+                System.out.println("b " + b);
+                return b;
             case "TickTock":
                 return TickTock.builder()
                         .tick(cs.loadBit())
@@ -234,18 +237,19 @@ public class Tlb {
                         .build();
 //                s.setCustom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()));
                 s.setCustom(cs.loadBit() ? (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()) : null);
-                //.custom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()))
-                //.build();
+
             }
             case "ShardIdent":
                 magic = cs.loadUint(2).longValue();
-                assert (magic == 0L) : "ShardIdent: magic not equal to 0b00, found 0x" + Long.toHexString(magic);
-                return ShardIdent.builder()
+                assert (magic == 0b00) : "ShardIdent: magic not equal to 0b00, found 0b" + Long.toBinaryString(magic);
+                ShardIdent s = ShardIdent.builder()
                         .magic(0L)
                         .prefixBits(cs.loadUint(6).longValue())
-                        .workchain(cs.loadInt(32).longValue())
+                        .workchain(cs.loadInt(32).intValue())
                         .shardPrefix(cs.loadUint(64))
                         .build();
+                System.out.println(s);
+                return s;
             case "ShardDesc": // todo
                 return ShardDesc.builder().build();
             case "ShardState":
@@ -572,14 +576,15 @@ public class Tlb {
                 BlockExtra blockExtra = BlockExtra.builder()
                         .inMsgDesc((InMsgDescr) Tlb.load(InMsgDescr.class, cs.loadRef()))
                         .outMsgDesc((OutMsgDescr) Tlb.load(OutMsgDescr.class, cs.loadRef()))
-                        .shardAccountBlocks(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256, // todo review from ref
+                        .shardAccountBlocks(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
                                 k -> k.readUint(256),
                                 v -> v.loadTlb(AccountBlock.class),
                                 e -> e.loadTlb(CurrencyCollection.class)))
                         .randSeed(cs.loadUint(256))
                         .createdBy(cs.loadUint(256))
                         // was commented out
-                        .custom(isNull(cs.preloadMaybeRefX()) ? null : (McBlockExtra) Tlb.load(McBlockExtra.class, CellSlice.beginParse(cs.loadRef())))
+                        .custom(cs.loadBit() ? (McBlockExtra) Tlb.load(McBlockExtra.class, cs.loadRef()) : null)
+// bug?                       .custom(isNull(cs.preloadMaybeRefX()) ? null : (McBlockExtra) Tlb.load(McBlockExtra.class, CellSlice.beginParse(cs.loadRef())))
                         .build();
                 return blockExtra;
             case "Block":
@@ -594,7 +599,7 @@ public class Tlb {
                         .blockInfo((BlockInfo) Tlb.load(BlockInfo.class, cs.loadRef()))
                         .valueFlow((ValueFlow) Tlb.load(ValueFlow.class, cs.loadRef()))
                         .stateUpdate((StateUpdate) Tlb.load(StateUpdate.class, cs.loadRef()))
-                        .extra((BlockExtra) Tlb.load(BlockExtra.class, cs.loadRef()))//  todo test testLoadBlockNotMaster
+                        .extra((BlockExtra) Tlb.load(BlockExtra.class, cs.loadRef()))
                         .build();
             case "AccountBlock":
                 magic = cs.loadUint(4).longValue();
@@ -741,15 +746,6 @@ public class Tlb {
                             .msgType("INTERNAL")
                             .msg(internalMessage)
                             .build();
-
-//                    return Message.builder()
-//                            .msgType("INTERNAL")
-//                            .msg(AnyMessage.builder()
-//                                    .payload(internalMessage.getBody())
-////                                    .destAddr(internalMessage.getDstAddr()) //todo
-////                                    .senderAddr(internalMessage.getSrcAddr())
-//                                    .build())
-//                            .build();
                 } else {
                     boolean isOut = cs.preloadBitAt(2);
                     if (isOut) {
@@ -758,28 +754,12 @@ public class Tlb {
                                 .msgType("EXTERNAL_OUT")
                                 .msg(externalMessageOut)
                                 .build();
-//                        return Message.builder()
-//                                .msgType("EXTERNAL_OUT")
-//                                .msg(AnyMessage.builder()
-//                                        .payload(externalMessageOut.getBody())
-////                                        .destAddr(externalMessageOut.getDstAddr())
-////                                        .senderAddr(externalMessageOut.getSrcAddr())
-//                                        .build())
-//                                .build();
                     } else {
                         ExternalMessage externalMessage = (ExternalMessage) cs.loadTlb(ExternalMessage.class);
                         return CommonMsgInfo.builder()
                                 .msgType("EXTERNAL_IN")
                                 .msg(externalMessage)
                                 .build();
-//                        return Message.builder()
-//                                .msgType("EXTERNAL_IN")
-//                                .msg(AnyMessage.builder()
-//                                        .payload(externalMessage.getBody())
-////                                        .destAddr(externalMessage.getDstAddr())
-////                                        .senderAddr(externalMessage.getSrcAddr())
-//                                        .build())
-//                                .build();
                     }
                 }
                 //throw new Error("Unknown msg type ");
