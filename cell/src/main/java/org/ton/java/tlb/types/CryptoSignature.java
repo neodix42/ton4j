@@ -21,7 +21,6 @@ public class CryptoSignature {
     BigInteger r;
     BigInteger s;
 
-
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeUint(0x5, 8)

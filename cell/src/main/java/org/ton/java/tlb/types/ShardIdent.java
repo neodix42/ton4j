@@ -40,4 +40,6 @@ public class ShardIdent {
                 .endCell();
     }
 
+    // todo ConvertShardIdentToShard from tonutils.go
+
 }

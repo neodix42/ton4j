@@ -342,6 +342,15 @@ public class Utils {
         return Base64.getEncoder().encodeToString(str.getBytes(StandardCharsets.UTF_8));
     }
 
+    public static String bitStringToHex(String binary) {
+        int toPad = (binary.length() % 8) == 0 ? 0 : 8 - (binary.length() % 8);
+        final StringBuilder bits = new StringBuilder(binary);
+        if (toPad != 0) {
+            bits.append("0".repeat(toPad));
+        }
+        return new BigInteger(bits.toString(), 2).toString(16);
+    }
+
     public static String bitStringToBase64(String binary) throws DecoderException {
         int toPad = (binary.length() % 8) == 0 ? 0 : 8 - (binary.length() % 8);
         final StringBuilder bits = new StringBuilder(binary);

@@ -18,10 +18,10 @@ import java.math.BigInteger;
  *   root_hash:bits256
  *   file_hash:bits256 = BlockIdExt;
  */
-public class BlockIdExt {
-    int workchain;
-    long shard;
-    //    ShardIdent shardId;
+public class BlockIdExtShardIdent {
+    //    int workchain;
+//    long shard;
+    ShardIdent shardId;
     long seqno;
     BigInteger rootHash;
     BigInteger fileHash;
@@ -34,15 +34,15 @@ public class BlockIdExt {
         return fileHash.toString(16);
     }
 
-    public String getShard() {
-        return Long.toHexString(shard);
-    }
+//    public String getShard() {
+//        return Long.toHexString(shard);
+//    }
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-//                .storeCell(shardId.toCell())
-                .storeInt(workchain, 32)
-                .storeUint(shard, 64)
+                .storeCell(shardId.toCell())
+//                .storeInt(workchain, 32)
+//                .storeUint(shard, 64)
                 .storeUint(seqno, 32)
                 .storeUint(rootHash, 256)
                 .storeUint(fileHash, 256)

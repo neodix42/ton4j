@@ -19,7 +19,7 @@ import org.ton.java.cell.CellBuilder;
  */
 public class BlockProof {
     int magic;
-    BlockIdExt proofFor;
+    BlockIdExtShardIdent proofFor;
     Cell root;
     BlockSignatures signatures;
 

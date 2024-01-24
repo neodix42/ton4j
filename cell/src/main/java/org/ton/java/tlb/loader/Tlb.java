@@ -33,16 +33,25 @@ public class Tlb {
         long magic;
         switch (c.getSimpleName()) {
             case "BlockIdExt":
-                BlockIdExt b = BlockIdExt.builder()
+                BlockIdExt blockIdExt = BlockIdExt.builder()
                         .workchain(cs.loadInt(32).intValue())
                         .shard(cs.loadUint(64).longValue())
-//                        .shardId((ShardIdent) cs.loadTlb(ShardIdent.class)) todo weird - this does not work
+//                        .shardId((ShardIdent) cs.loadTlb(ShardIdent.class)) // todo weird - this does not work
                         .seqno(cs.loadUint(32).longValue())
                         .rootHash(cs.loadUint(256))
                         .fileHash(cs.loadUint(256))
                         .build();
-                System.out.println("b " + b);
-                return b;
+                System.out.println("blockIdExt " + blockIdExt);
+                return blockIdExt;
+            case "BlockIdExtShardIdent":
+                BlockIdExtShardIdent blockIdExtShardIdent = BlockIdExtShardIdent.builder()
+                        .shardId((ShardIdent) cs.loadTlb(ShardIdent.class))
+                        .seqno(cs.loadUint(32).longValue())
+                        .rootHash(cs.loadUint(256))
+                        .fileHash(cs.loadUint(256))
+                        .build();
+                System.out.println("bs " + blockIdExtShardIdent);
+                return blockIdExtShardIdent;
             case "TickTock":
                 return TickTock.builder()
                         .tick(cs.loadBit())
@@ -118,12 +127,14 @@ public class Tlb {
                 StorageInfo info = (StorageInfo) cs.loadTlb(StorageInfo.class);
                 AccountStorage storage = (AccountStorage) cs.loadTlb(AccountStorage.class);
 
-                return Account.builder()
+                Account account = Account.builder()
                         .isNone(false)
                         .address(address)
                         .storageInfo(info)
                         .accountStorage(storage)
                         .build();
+                System.out.println("account " + account);
+                return account;
             }
             case "AccountStatus":
                 byte status = cs.loadUint(2).byteValueExact();
@@ -214,7 +225,7 @@ public class Tlb {
             case "ShardStateUnsplit": {
                 ShardStateUnsplit s = ShardStateUnsplit.builder()
                         .magic(cs.loadUint(32).longValue())
-                        .globalId(cs.loadUint(32).intValue())
+                        .globalId(cs.loadInt(32).intValue())
                         .shardIdent((ShardIdent) cs.loadTlb(ShardIdent.class))
                         .seqno(cs.loadUint(32).longValue())
                         .vertSeqno(cs.loadUint(32).longValue())
@@ -230,7 +241,7 @@ public class Tlb {
 //                        .shardStateInfo((ShardStateInfo) Tlb.load(ShardStateInfo.class, CellSlice.beginParse(cs.loadRef())))
                         .shardStateInfo(cs.loadRef())
                         .build();
-//  bug?               s.setCustom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()));
+//                s.setCustom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()));
                 s.setCustom(cs.loadBit() ? (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()) : null);
                 return s;
             }
@@ -270,6 +281,7 @@ public class Tlb {
                 if (isNull(cs)) {
                     return null;
                 }
+                System.out.println("McStateExtra " + Utils.bitStringToHex(cs.toString()));
                 magic = cs.loadUint(16).longValue();
                 assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found 0x" + Long.toHexString(magic);
 
@@ -496,6 +508,23 @@ public class Tlb {
                         .catchainSeqno(cs.loadUint(32).longValue())
                         .build();
             }
+            case "CryptoSignaturePair": {
+                return CryptoSignaturePair.builder()
+                        .nodeIdShort(cs.loadUint(256))
+                        .sign((CryptoSignature) cs.loadTlb(CryptoSignature.class))
+                        .build();
+            }
+            case "CryptoSignature": {
+                magic = cs.loadUint(4).longValue();
+                assert (magic == 0x5) : "CryptoSignature: magic not equal to 0x5, found 0x" + Long.toHexString(magic);
+
+                return CryptoSignature.builder()
+                        .magic(0x5)
+                        .r(cs.loadUint(256))
+                        .s(cs.loadUint(256))
+                        .build();
+
+            }
             case "BlockSignaturesPure": {
                 return BlockSignaturesPure.builder()
                         .sigCount(cs.loadUint(32).longValue())
@@ -506,8 +535,8 @@ public class Tlb {
                         .build();
             }
             case "BlockSignatures": {
-                magic = cs.loadUint(2).longValue();
-                assert (magic == 0b11) : "BlockSignatures: magic not equal to 0b11, found 0b" + Long.toBinaryString(magic);
+                magic = cs.loadUint(8).longValue();
+                assert (magic == 0x11) : "BlockSignatures: magic not equal to 0x11, found 0x" + Long.toHexString(magic);
 
                 return BlockSignatures.builder()
                         .magic(0b11)
@@ -521,7 +550,7 @@ public class Tlb {
 
                 return BlockProof.builder()
                         .magic(0xc3)
-                        .proofFor((BlockIdExt) cs.loadTlb(BlockIdExt.class))
+                        .proofFor((BlockIdExtShardIdent) cs.loadTlb(BlockIdExtShardIdent.class))
                         .root(cs.loadRef())
                         .signatures(cs.loadBit() ? (BlockSignatures) Tlb.load(BlockSignatures.class, cs.loadRef()) : null)
                         .build();
