@@ -13,6 +13,14 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class Cell {
+
+    public static final int ORDINARY_CELL_TYPE = 0x00;
+    public static final int PRUNED_CELL_TYPE = 0x01;
+    public static final int LIBRARY_CELL_TYPE = 0x02;
+    public static final int MERKLE_PROOF_CELL_TYPE = 0x03;
+    public static final int MERKLE_UPDATE_CELL_TYPE = 0x04;
+    public static final int UNKNOWN_CELL_TYPE = 0xFF;
+
     private static final int[] reachBocMagicPrefix = Utils.hexToUnsignedBytes("B5EE9C72");
     private static final int HASH_SIZE = 32;
     private static final int DEPTH_SIZE = 2;
@@ -23,13 +31,16 @@ public class Cell {
     public int index;
 
     public boolean special;
-    public byte levelMask;
+    public LevelMask levelMask;
+
+    public CellType type;
 
     public Cell() {
         this.bits = new BitString();
         this.refs = new ArrayList<>();
         this.special = false;
-        this.levelMask = 0;
+        this.type = CellType.ORDINARY;
+        this.levelMask = new LevelMask(0);
     }
 
     public Cell(BitString bits, List<Cell> refs) {
@@ -37,15 +48,55 @@ public class Cell {
         this.bits.writeBitString(bits.clone());
         this.refs = new ArrayList<>(refs);
         this.special = false;
-        this.levelMask = 0;
+        this.levelMask = new LevelMask(0);
     }
 
-    public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, byte levelMask) {
+    public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, LevelMask levelMask) {
         this.bits = new BitString(bitSize);
         this.bits.writeBitString(bits);
         this.refs = refs;
         this.special = special;
         this.levelMask = levelMask;
+    }
+
+    public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, CellType cellType) {
+        this.bits = new BitString(bitSize);
+        this.bits.writeBitString(bits);
+        this.refs = refs;
+        this.special = special;
+        this.type = cellType;
+        this.levelMask = resolveMask();
+    }
+
+    public LevelMask resolveMask() {
+        // taken from pytoniq-core
+        if (this.type == CellType.ORDINARY) {
+            // Ordinary Cell level = max(Cell refs)
+            int mask = 0;
+            for (Cell r : refs) {
+                mask |= r.getMaxLevel();
+            }
+            return new LevelMask(mask);
+        } else if (this.type == CellType.PRUNED_BRANCH) {
+            // prunned branch doesn't have refs
+            if (!refs.isEmpty()) {
+                throw new Error("Pruned branch must not has refs");
+            }
+            BitString bs = bits.clone();
+            bs.readUint8();
+
+            return new LevelMask(bs.readUint8().intValue()); // todo test
+        } else if (this.type == CellType.MERKLE_PROOF) {
+            // merkle proof cell has exactly one ref
+            return new LevelMask(refs.get(0).levelMask.getMask() >> 1);
+        } else if (this.type == CellType.MERKLE_UPDATE) {
+            // merkle update cell has exactly 2 refs
+            return new LevelMask(refs.get(0).levelMask.getMask() | refs.get(1).levelMask.getMask() >> 1);
+        } else if (this.type == CellType.LIBRARY) {
+            return new LevelMask(0);
+        } else {
+            throw new Error("Unknown cell type " + this.type);
+        }
     }
 
     public static Cell fromBoc(String data) {
@@ -54,6 +105,14 @@ public class Cell {
 
     public static Cell fromBoc(int[] data) {
         return fromBocMultiRoot(data).get(0);
+    }
+
+    public static List<Cell> fromBocMultiRoots(String data) {
+        return fromBocMultiRoot(Utils.hexToUnsignedBytes(data));
+    }
+
+    public static List<Cell> fromBocMultiRoots(int[] data) {
+        return fromBocMultiRoot(data);
     }
 
     public String toString() {
@@ -67,6 +126,8 @@ public class Cell {
             c.refs.add(refCell.clone());
         }
         c.special = this.special;
+        c.type = this.type;
+        c.levelMask = this.levelMask.clone();
         return c;
     }
 
@@ -215,7 +276,7 @@ public class Cell {
             int refsNum = flags & 0b111;
             boolean special = (flags & 0b1000) != 0;
             boolean withHashes = (flags & 0b10000) != 0;
-            byte levelMask = (byte) (flags >> 5);
+            LevelMask levelMask = new LevelMask(flags >> 5);
 
             if (refsNum > 4) {
                 throw new Error("too many refs in cell");
@@ -231,7 +292,7 @@ public class Cell {
             }
 
             if (withHashes) {
-                int maskBits = (int) Math.ceil(Math.log(levelMask + 1) / Math.log(2));
+                int maskBits = (int) Math.ceil(Math.log(levelMask.mask + 1) / Math.log(2));
                 int hashesNum = maskBits + 1;
                 offset += hashesNum * HASH_SIZE + hashesNum * DEPTH_SIZE;
             }
@@ -254,8 +315,7 @@ public class Cell {
 
             List<Cell> refs = new ArrayList<>();
 
-            for (int y = 0; y < refsIndex.length; y++) {
-                int id = refsIndex[y];
+            for (int id : refsIndex) {
                 if (i == id) {
                     throw new Error("recursive reference of cells");
                 }
@@ -481,10 +541,14 @@ public class Cell {
          = BagOfCells;
     */
     public int[] toBocNew() {
-        return toBocNew(true);
+        return toBocNew(true, false, false, 0);
     }
 
     public int[] toBocNew(boolean withCRC) {
+        return toBocNew(withCRC, false, false, 0);
+    }
+
+    public int[] toBocNew(boolean withCRC, boolean withIdx, boolean withCacheBits, int pFlags) {
         // recursively go through cells, build hash index and store unique in slice
         List<Cell> orderCells = flattenIndex(List.of(this));
 
@@ -499,13 +563,12 @@ public class Cell {
         int sizeBits = Utils.log2(payload.size() + 1);
         int sizeBytes = (int) Math.ceil((double) sizeBits / 8);
 
-        // has_idx 1bit, hash_crc32 1bit,  has_cache_bits 1bit, flags 2bit, size_bytes 3 bit
-        int flags = 0b0_0_0_00_000;
+        int flags = 0b0_0_0_00_000;//, has_idx 1bit, hash_crc32 1bit,  has_cache_bits 1bit, flags 2bit, size_bytes 3 bit
+//        int flags = ((withIdx ? 1 : 0) * 128 + (withCRC ? 1 : 0) * 64 + (withCacheBits ? 1 : 0) * 32 + pFlags * 8 + sizeBytes);
 
         if (withCRC) {
             flags |= 0b0_1_0_00_000;
         }
-
         flags |= cellSizeBytes;
 
         List<Integer> data = new ArrayList<>();
@@ -646,7 +709,7 @@ public class Cell {
         return data;
     }
 
-    private Pair<Integer, Integer> getDescriptors(byte levelMask) {
+    private Pair<Integer, Integer> getDescriptors(LevelMask levelMask) {
         int ln = (bits.getLength() / 8) * 2;
         if (bits.getLength() % 8 != 0) {
             ln++;
@@ -657,7 +720,49 @@ public class Cell {
             specialBit = 8;
         }
 
-        return Pair.of(this.refs.size() + specialBit + levelMask * 32, ln);
+        return Pair.of(this.refs.size() + specialBit + levelMask.getMask() * 32, ln);
     }
+
+    public CellType getCellType() {
+        if (!special) {
+            return CellType.ORDINARY;
+        }
+
+        if (bits.getLength() < 8) {
+            return CellType.UNKNOWN;
+        }
+
+        BitString clonedBits = bits.clone();
+        switch (clonedBits.readUint(8).intValue()) {
+            case PRUNED_CELL_TYPE: {
+                if (bits.getLength() >= 288) {
+                    //int msk = clonedBits.readUint(8).intValue();
+                    LevelMask msk = new LevelMask(clonedBits.readUint(8).intValue());
+//                    byte msk = levelMask;
+                    int lvl = msk.getLevel();
+                    if ((lvl > 0) && (lvl <= 3) && (bits.getLength() >= 16 + (256 + 16) * msk.apply(lvl - 1).getHashIndex() + 1)) {
+                        return CellType.PRUNED_BRANCH;
+                    }
+                }
+            }
+            case MERKLE_PROOF_CELL_TYPE: {
+                if ((refs.size() == 1) && (bits.getLength() == 280)) {
+                    return CellType.MERKLE_PROOF;
+                }
+            }
+            case MERKLE_UPDATE_CELL_TYPE: {
+                if ((refs.size() == 1) && (bits.getLength() == 552)) {
+                    return CellType.MERKLE_UPDATE;
+                }
+            }
+            case LIBRARY_CELL_TYPE: {
+                if (bits.getLength() == (8 + 256)) {
+                    return CellType.LIBRARY;
+                }
+            }
+        }
+        return CellType.UNKNOWN;
+    }
+
 }
 

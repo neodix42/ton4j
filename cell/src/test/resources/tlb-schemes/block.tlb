@@ -195,23 +195,14 @@ import_fees$_ fees_collected:Grams
 
 _ (HashmapAugE 256 InMsg ImportFees) = InMsgDescr;
 
-msg_export_ext$000 msg:^(Message Any)
-    transaction:^Transaction = OutMsg;
-msg_export_imm$010 out_msg:^MsgEnvelope 
-    transaction:^Transaction reimport:^InMsg = OutMsg;
-msg_export_new$001 out_msg:^MsgEnvelope 
-    transaction:^Transaction = OutMsg;
-msg_export_tr$011  out_msg:^MsgEnvelope 
-    imported:^InMsg = OutMsg;
-msg_export_deq$1100 out_msg:^MsgEnvelope
-    import_block_lt:uint63 = OutMsg;
-msg_export_deq_short$1101 msg_env_hash:bits256
-    next_workchain:int32 next_addr_pfx:uint64
-    import_block_lt:uint64 = OutMsg;
-msg_export_tr_req$111 out_msg:^MsgEnvelope 
-    imported:^InMsg = OutMsg;
-msg_export_deq_imm$100 out_msg:^MsgEnvelope 
-    reimport:^InMsg = OutMsg;
+msg_export_ext$000 msg:^(Message Any)    transaction:^Transaction = OutMsg;
+msg_export_imm$010 out_msg:^MsgEnvelope  transaction:^Transaction reimport:^InMsg = OutMsg;
+msg_export_new$001 out_msg:^MsgEnvelope  transaction:^Transaction = OutMsg;
+msg_export_tr$011  out_msg:^MsgEnvelope  imported:^InMsg = OutMsg;
+msg_export_deq$1100 out_msg:^MsgEnvelope import_block_lt:uint63 = OutMsg;
+msg_export_deq_short$1101 msg_env_hash:bits256 next_workchain:int32 next_addr_pfx:uint64 import_block_lt:uint64 = OutMsg;
+msg_export_tr_req$111 out_msg:^MsgEnvelope  imported:^InMsg = OutMsg;
+msg_export_deq_imm$100 out_msg:^MsgEnvelope reimport:^InMsg = OutMsg;
 
 _ enqueued_lt:uint64 out_msg:^MsgEnvelope = EnqueuedMsg;
 
@@ -274,14 +265,16 @@ transaction$0111 account_addr:bits256 lt:uint64
   prev_trans_hash:bits256 prev_trans_lt:uint64 now:uint32
   outmsg_cnt:uint15
   orig_status:AccountStatus end_status:AccountStatus
-  ^[ in_msg:(Maybe ^(Message Any)) out_msgs:(HashmapE 15 ^(Message Any)) ]
-  total_fees:CurrencyCollection state_update:^(HASH_UPDATE Account)
+  ^[
+     in_msg:(Maybe ^(Message Any))
+     out_msgs:(HashmapE 15 ^(Message Any))
+  ]
+  total_fees:CurrencyCollection
+  state_update:^(HASH_UPDATE Account)
   description:^TransactionDescr = Transaction;
 
-!merkle_update#02 {X:Type} old_hash:bits256 new_hash:bits256
-  old:^X new:^X = MERKLE_UPDATE X;
-update_hashes#72 {X:Type} old_hash:bits256 new_hash:bits256
-  = HASH_UPDATE X;
+!merkle_update#02 {X:Type} old_hash:bits256 new_hash:bits256 old:^X new:^X = MERKLE_UPDATE X;
+update_hashes#72 {X:Type} old_hash:bits256 new_hash:bits256 = HASH_UPDATE X;
 !merkle_proof#03 {X:Type} virtual_hash:bits256 depth:uint16 virtual_root:^X = MERKLE_PROOF X;
 
 acc_trans#5 account_addr:bits256

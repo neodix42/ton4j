@@ -35,6 +35,7 @@ public class ValueFlow {
     CurrencyCollection imported;
     CurrencyCollection exported;
     CurrencyCollection feesCollected;
+    CurrencyCollection burned;
     CurrencyCollection feesImported;
     CurrencyCollection recovered;
     CurrencyCollection created;
@@ -58,7 +59,7 @@ public class ValueFlow {
                 .storeCell(created.toCell())
                 .storeCell(minted.toCell())
                 .endCell();
-        
+
         return CellBuilder.beginCell()
                 .storeUint(0xb8e48dfbL, 32)
                 .storeRef(cell1)

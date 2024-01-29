@@ -47,6 +47,8 @@ public class TestCellSlice {
                 .storeAddress(addr)
                 .endCell();
 
+        log.info("CellType {}", c0.getCellType());
+
         CellSlice cs0 = CellSlice.beginParse(c0);
         assertThat(cs0.loadUint(8).longValue()).isEqualTo(10);
         assertThat(cs0.loadUint(8).longValue()).isEqualTo(20);

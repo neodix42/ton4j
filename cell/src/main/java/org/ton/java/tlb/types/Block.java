@@ -24,7 +24,7 @@ public class Block {
     int globalId;
     BlockInfo blockInfo;
     ValueFlow valueFlow;
-    StateUpdate stateUpdate;
+    MerkleUpdate stateUpdate;
     BlockExtra extra;
 
     public Cell toCell() {

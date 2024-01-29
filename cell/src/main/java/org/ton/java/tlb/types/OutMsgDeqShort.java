@@ -23,7 +23,7 @@ import java.math.BigInteger;
 public class OutMsgDeqShort implements OutMsg {
 
     BigInteger msgEnvHash;
-    BigInteger nextWorkchain;
+    long nextWorkchain;
     BigInteger nextAddrPfx;
     BigInteger importBlockLt;
 
@@ -32,7 +32,7 @@ public class OutMsgDeqShort implements OutMsg {
         return CellBuilder.beginCell()
                 .storeUint(0b1101, 4)
                 .storeUint(msgEnvHash, 256)
-                .storeUint(nextWorkchain, 32)
+                .storeInt(nextWorkchain, 32)
                 .storeUint(nextAddrPfx, 64)
                 .storeUint(importBlockLt, 64)
                 .endCell();

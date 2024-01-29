@@ -1,10 +1,7 @@
 package org.ton.java.tlb.loader;
 
 import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonHashMapE;
+import org.ton.java.cell.*;
 import org.ton.java.tlb.types.*;
 import org.ton.java.utils.Utils;
 
@@ -152,9 +149,19 @@ public class Tlb {
                         return "UNINIT";
                     }
                 }
-            case "StateUpdate":
-                System.out.println("stateUpdate " + cs.sliceToCell().toHex());
-                return StateUpdate.builder()
+            case "MerkleUpdate":
+                Cell cell = cs.sliceToCell();
+                System.out.println("MerkleUpdate " + cs.sliceToCell().toHex());
+                System.out.println("CellType " + cell.getCellType());
+
+                if (cell.getCellType() != CellType.MERKLE_UPDATE) {
+                    return null;
+                }
+
+                magic = cs.loadUint(8).intValue();
+                assert (magic == 0x02) : "MerkleUpdate: magic not equal to 0x02, found 0x" + Long.toHexString(magic);
+
+                return MerkleUpdate.builder()
                         .oldHash(cs.loadUint(256))
                         .newHash(cs.loadUint(256))
                         .oldShardState((ShardState) Tlb.load(ShardState.class, CellSlice.beginParse(cs.loadRef())))
@@ -200,7 +207,7 @@ public class Tlb {
             case "ShardAccount": {
                 return ShardAccount.builder()
                         .account((Account) Tlb.load(Account.class, CellSlice.beginParse(cs.loadRef())))
-                        .lastTransHash(cs.loadUint(64))
+                        .lastTransHash(cs.loadUint(256))
                         .lastTransLt(cs.loadUint(64))
                         .build();
             }
@@ -239,8 +246,12 @@ public class Tlb {
                                 v -> v.loadTlb(ShardAccount.class),
                                 e -> e.loadTlb(DepthBalanceInfo.class)))
 //                        .shardStateInfo((ShardStateInfo) Tlb.load(ShardStateInfo.class, CellSlice.beginParse(cs.loadRef())))
-                        .shardStateInfo(cs.loadRef())
+//                        .shardStateInfo(cs.loadRef())
                         .build();
+                Cell ref = cs.loadRef();
+                if (!ref.special) {
+                    s.setShardStateInfo(ref);
+                }
 //                s.setCustom(isNull(cs.preloadMaybeRefX()) ? null : (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()));
                 s.setCustom(cs.loadBit() ? (McStateExtra) Tlb.load(McStateExtra.class, cs.loadRef()) : null);
                 return s;
@@ -275,7 +286,7 @@ public class Tlb {
                             .left((ShardStateUnsplit) cs.loadTlb(ShardStateUnsplit.class))
                             .build();
                 } else {
-                    throw new Error("unknown ShardState magic, found 0x" + Long.toHexString(tag));
+                    throw new Error("ShardState magic not equal neither to 0x5f327da5L nor 0x9023afe2L, found 0x" + Long.toHexString(tag));
                 }
             case "McStateExtra":
                 if (isNull(cs)) {
@@ -283,7 +294,11 @@ public class Tlb {
                 }
                 System.out.println("McStateExtra " + Utils.bitStringToHex(cs.toString()));
                 magic = cs.loadUint(16).longValue();
-                assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found 0x" + Long.toHexString(magic);
+//                assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found 0x" + Long.toHexString(magic);
+                if (magic != 0xcc26L) {
+                    System.out.println("McStateExtra: magic not equal to 0xcc26, found 0x" + Long.toHexString(magic));
+                    return McStateExtra.builder().magic(-1L).build();
+                }
 
                 return McStateExtra.builder()
                         .magic(0xcc26L)
@@ -373,48 +388,48 @@ public class Tlb {
                     }
                     case 0b010 -> {
                         return OutMsgImm.builder()
-                                .msg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
+                                .msg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
                                 .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef()))
                                 .reimport((InMsg) Tlb.load(InMsg.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b001 -> {
                         return OutMsgNew.builder()
-                                .outMsg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
+                                .outMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
                                 .transaction((Transaction) Tlb.load(Transaction.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b011 -> {
                         return OutMsgTr.builder()
-                                .outMsg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
+                                .outMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
                                 .imported((InMsg) Tlb.load(InMsg.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b111 -> {
                         return OutMsgTrReq.builder()
-                                .msg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
+                                .msg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
                                 .imported((InMsg) Tlb.load(InMsg.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b100 -> {
                         return OutMsgDeqImm.builder()
-                                .msg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
+                                .msg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
                                 .reimport((InMsg) Tlb.load(InMsg.class, cs.loadRef()))
                                 .build();
                     }
                     case 0b110 -> {
                         boolean outMsgSubFlag = cs.loadBit();
-                        if (outMsgSubFlag) { // 001101 msg_export_deq_short$1101
+                        if (outMsgSubFlag) {
                             return OutMsgDeqShort.builder()
                                     .msgEnvHash(cs.loadUint(256))
-                                    .nextWorkchain(cs.loadUint(32))
+                                    .nextWorkchain(cs.loadInt(32).longValue())
                                     .nextAddrPfx(cs.loadUint(64))
                                     .importBlockLt(cs.loadUint(64))
                                     .build();
                         } else {
                             return OutMsgDeq.builder()
-                                    .outMsg((MsgEnvelope) Tlb.load(Message.class, cs.loadRef()))
-                                    .importBlockLt(cs.loadUint(64))
+                                    .outMsg((MsgEnvelope) Tlb.load(MsgEnvelope.class, cs.loadRef()))
+                                    .importBlockLt(cs.loadUint(63))
                                     .build();
                         }
                     }
@@ -617,14 +632,20 @@ public class Tlb {
                 magic = cs.loadUint(32).longValue();
                 assert (magic == 0x11ef55aaL) : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
 
-                return Block.builder()
+                Block block = Block.builder()
                         .magic(0x11ef55aaL)
                         .globalId(cs.loadInt(32).intValue())
                         .blockInfo((BlockInfo) Tlb.load(BlockInfo.class, cs.loadRef()))
                         .valueFlow((ValueFlow) Tlb.load(ValueFlow.class, cs.loadRef()))
-                        .stateUpdate((StateUpdate) Tlb.load(StateUpdate.class, cs.loadRef()))
-                        .extra((BlockExtra) Tlb.load(BlockExtra.class, cs.loadRef()))
                         .build();
+                System.out.println(block);
+//                cs.loadRef(); //skip MerkleUpdate temp todo
+
+                block.setStateUpdate((MerkleUpdate) Tlb.load(MerkleUpdate.class, cs.loadRef()));
+                block.setExtra((BlockExtra) Tlb.load(BlockExtra.class, cs.loadRef()));
+                System.out.println(block);
+
+                return block;
             case "AccountBlock":
                 magic = cs.loadUint(4).longValue();
                 assert (magic == 0x5L) : "AccountBlock: magic not equal to 0x5, found 0x" + Long.toHexString(magic);
@@ -632,40 +653,76 @@ public class Tlb {
                 return AccountBlock.builder()
                         .magic(0x5)
                         .addr(cs.loadUint(256))
-                        .transactions(cs.loadDictAugE(64,
+                        .transactions(cs.loadDictAug(64,
                                 k -> k.readInt(64),
                                 v -> Tlb.load(Transaction.class, v.loadRef()),
                                 e -> e.loadTlb(CurrencyCollection.class)))
-                        .stateUpdate(cs.loadRef())
+                        .stateUpdate(cs.loadRef()) // ^(HASH_UPDATE Account) todo
                         .build();
             case "ValueFlow":
                 magic = cs.loadUint(32).longValue();
-                assert (magic == 0xb8e48dfbL) : "ValueFlow: magic not equal to 0xb8e48dfb, found 0x" + Long.toHexString(magic);
+                if (magic == 0xb8e48dfbL) {
 
-                Cell c1 = cs.loadRef();
-                Cell c2 = cs.loadRef();
-                CurrencyCollection fromPrevBlk = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
-                CurrencyCollection toNextBlk = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
-                CurrencyCollection imported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
-                CurrencyCollection exported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
-                CurrencyCollection feesCollected = (CurrencyCollection) Tlb.load(CurrencyCollection.class, cs);
-                CurrencyCollection feesImported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
-                CurrencyCollection recovered = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
-                CurrencyCollection created = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
-                CurrencyCollection minted = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+                    Cell c1 = cs.loadRef();
+                    Cell c2 = cs.loadRef();
 
-                return ValueFlow.builder()
-                        .magic(0xb8e48dfbL)
-                        .fromPrevBlk(fromPrevBlk)
-                        .toNextBlk(toNextBlk)
-                        .imported(imported)
-                        .exported(exported)
-                        .feesCollected(feesCollected)
-                        .feesImported(feesImported)
-                        .recovered(recovered)
-                        .created(created)
-                        .minted(minted)
-                        .build();
+                    CurrencyCollection fromPrevBlk = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+                    CurrencyCollection toNextBlk = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+                    CurrencyCollection imported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+                    CurrencyCollection exported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+
+                    CurrencyCollection feesCollected = (CurrencyCollection) Tlb.load(CurrencyCollection.class, cs);
+
+                    CurrencyCollection feesImported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+                    CurrencyCollection recovered = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+                    CurrencyCollection created = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+                    CurrencyCollection minted = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+
+                    return ValueFlow.builder()
+                            .magic(0xb8e48dfbL)
+                            .fromPrevBlk(fromPrevBlk)
+                            .toNextBlk(toNextBlk)
+                            .imported(imported)
+                            .exported(exported)
+                            .feesCollected(feesCollected)
+                            .feesImported(feesImported)
+                            .recovered(recovered)
+                            .created(created)
+                            .minted(minted)
+                            .build();
+                }
+                if (magic == 0x3ebf98b7L) {
+                    Cell c1 = cs.loadRef();
+                    Cell c2 = cs.loadRef();
+
+                    CurrencyCollection fromPrevBlk = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+                    CurrencyCollection toNextBlk = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+                    CurrencyCollection imported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+                    CurrencyCollection exported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c1);
+
+                    CurrencyCollection feesCollected = (CurrencyCollection) Tlb.load(CurrencyCollection.class, cs);
+                    CurrencyCollection burned = (CurrencyCollection) Tlb.load(CurrencyCollection.class, cs);
+
+                    CurrencyCollection feesImported = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+                    CurrencyCollection recovered = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+                    CurrencyCollection created = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+                    CurrencyCollection minted = (CurrencyCollection) Tlb.load(CurrencyCollection.class, c2);
+
+                    return ValueFlow.builder()
+                            .magic(0xb8e48dfbL)
+                            .fromPrevBlk(fromPrevBlk)
+                            .toNextBlk(toNextBlk)
+                            .imported(imported)
+                            .exported(exported)
+                            .feesCollected(feesCollected)
+                            .feesImported(feesImported)
+                            .recovered(recovered)
+                            .created(created)
+                            .minted(minted)
+                            .build();
+                } else {
+                    throw new Error("ValueFlow: magic not equal to 0xb8e48dfb, found 0x" + Long.toHexString(magic));
+                }
             case "ValidatorSet":
                 return ValidatorSet.builder().build();
             case "ValidatorSetExt":
@@ -753,9 +810,15 @@ public class Tlb {
             case "Message": {
                 CommonMsgInfo commonMsgInfo = (CommonMsgInfo) cs.loadTlb(CommonMsgInfo.class);
                 return Message.builder()
+                        .msgType(commonMsgInfo.getMsgType())
                         .info(commonMsgInfo)
-                        .init(cs.loadBit() ? (cs.loadBit() ? (StateInit) Tlb.load(StateInit.class, cs.loadRef()) : (StateInit) cs.loadTlb(StateInit.class)) : null) //review
-                        .body(cs.loadBit() ? cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
+                        .init(cs.loadBit() ?
+                                (cs.loadBit() ?
+                                        (StateInit) Tlb.load(StateInit.class, cs.loadRef())
+                                        : (StateInit) cs.loadTlb(StateInit.class))
+                                : StateInit.builder().build())
+                        .body(cs.loadBit() ?
+                                cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
                         .build();
             }
             case "CommonMsgInfo": {
@@ -855,14 +918,14 @@ public class Tlb {
             case "BouncePhase": {
                 boolean isOk = cs.preloadBit();
                 if (isOk) {
-                    return cs.loadTlb(BouncePhaseok.class); // skipped was true
+                    return cs.loadTlb(BouncePhaseok.class);
                 }
                 //cs.loadBit();
                 boolean isNoFunds = cs.preloadBit();
                 if (isNoFunds) {
-                    return cs.loadTlb(BouncePhaseNoFounds.class); // skipped was true
+                    return cs.loadTlb(BouncePhaseNoFounds.class);
                 }
-                return cs.loadTlb(BouncePhaseNegFounds.class); // skipped was true
+                return cs.loadTlb(BouncePhaseNegFounds.class);
             }
             case "StoragePhase": {
                 return StoragePhase.builder()
@@ -950,12 +1013,11 @@ public class Tlb {
                         .totalFees((CurrencyCollection) cs.loadTlb(CurrencyCollection.class))
                         .build();
 
-                CellSlice io = CellSlice.beginParse(cs.loadRef());
-                Message msg = (Message) Tlb.load(Message.class, io.loadMaybeRefX());
-                Cell outMsgDict = io.loadMaybeRefX();
-                TonHashMapE out = nonNull(outMsgDict) ? CellSlice.beginParse(outMsgDict).loadDictE(15,
+                CellSlice inOutMsgs = CellSlice.beginParse(cs.loadRef());
+                Message msg = (Message) Tlb.load(Message.class, inOutMsgs.loadMaybeRefX());
+                TonHashMapE out = inOutMsgs.loadDictE(15,
                         k -> k.readInt(15),
-                        v -> CellSlice.beginParse(v).loadTlb(Message.class)) : null;
+                        v -> Tlb.load(Message.class, CellSlice.beginParse(v).loadRef()));
 
                 tx.setInOut(TransactionIO.builder()
                         .in(msg)
@@ -964,13 +1026,10 @@ public class Tlb {
 
                 if (nonNull(tx.getInOut().getOut())) { // todo cleanup
                     for (Map.Entry<Object, Object> entry : tx.getInOut().getOut().elements.entrySet()) {
-                        System.out.println("key " + entry.getKey() + ", value " + ((Cell) entry.getValue()).print());
-                        Message i = (Message) Tlb.load(Message.class, (Cell) entry.getValue());
-                        System.out.println("i = " + i.toString());
+                        System.out.println("key " + entry.getKey() + ", value " + ((Message) entry.getValue()));
                     }
                 }
 
-//                tx.setTotalFees((CurrencyCollection) cs.loadTlb(CurrencyCollection.class));
                 tx.setStateUpdate((HashUpdate) Tlb.load(HashUpdate.class, cs.loadRef()));
                 tx.setDescription((TransactionDescription) Tlb.load(TransactionDescription.class, cs.loadRef()));
 

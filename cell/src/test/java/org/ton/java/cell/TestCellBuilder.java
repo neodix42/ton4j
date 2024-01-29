@@ -21,6 +21,7 @@ public class TestCellBuilder {
         Cell c = CellBuilder.beginCell().endCell();
         assertThat(0).isEqualTo(c.bits.getUsedBits());
         log.info(Utils.bytesToHex(c.toBocNew(false)));
+        log.info("CellType {}", c.getCellType());
     }
 
     @Test
@@ -189,5 +190,15 @@ public class TestCellBuilder {
         );
         Cell cellDict = CellBuilder.beginCell().storeDict(dict).endCell();
         assertThat(cellDict).isNotNull();
+    }
+
+    @Test
+    public void testCellMask() {
+//        log.info("min bits {} for int {}", Cell.calculateMinimumBits(6), 6);
+//        log.info("min bits {} for int {}", Cell.calculateMinimumBits(7), 7);
+//        log.info("min bits {} for int {}", Cell.calculateMinimumBits(11), 11);
+//        log.info("ones bits {} for int {}", Cell.calculateOnesBits(7), 7);
+//        log.info("ones bits {} for int {}", Cell.calculateOnesBits(6), 6);
+//        log.info("ones bits {} for int {}", Cell.calculateOnesBits(11), 11);
     }
 }

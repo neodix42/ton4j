@@ -6,7 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.TonHashMapAugE;
+import org.ton.java.cell.TonHashMapAug;
 
 import java.math.BigInteger;
 
@@ -24,8 +24,8 @@ import java.math.BigInteger;
 public class AccountBlock {
     long magic;
     BigInteger addr;
-    TonHashMapAugE transactions;
-    Cell stateUpdate; // todo
+    TonHashMapAug transactions;
+    Cell stateUpdate; // todo deserialize
 
     public Cell toCell() {
         Cell dictCell = transactions.serialize(

@@ -21,11 +21,10 @@ import static java.util.Objects.isNull;
  *   body:(Either X ^X) = Message X;
  */
 public class Message {
-    String msgType;//   `tlb:"-"`
+    String msgType;
     CommonMsgInfo info;
     StateInit init;
     Cell body;
-    //AnyMessage msg;// `tlb:"."`
 
     public static void dump(InternalMessage intMsg) {
 //        return fmt.Sprintf("Amount %s TON, Created at: %d, Created lt %d\nBounce: %t, Bounced %t, IHRDisabled %t\nSrcAddr: %s\nDstAddr: %s\nPayload: %s",
@@ -41,11 +40,9 @@ public class Message {
             }
             case "EXTERNAL_IN" -> {
                 c.storeSlice(CellSlice.beginParse(((ExternalMessage) info.getMsg()).toCell()));
-//                return ((ExternalMessage) info.getMsg()).toCell();
             }
             case "EXTERNAL_OUT" -> {
                 c.storeSlice(CellSlice.beginParse(((ExternalMessageOut) info.getMsg()).toCell()));
-//                return ((ExternalMessageOut) info.getMsg()).toCell();
             }
         }
 

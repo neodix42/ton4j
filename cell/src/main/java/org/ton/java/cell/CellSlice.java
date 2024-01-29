@@ -66,17 +66,12 @@ public class CellSlice {
         }
     }
 
-    public Cell loadRefX() {
-        return loadRef();
-    }
-
-
     public Cell loadMaybeRefX() {
         boolean maybe = loadBit();
         if (!maybe) {
             return null;
         }
-        return loadRefX();
+        return loadRef();
     }
 
 
