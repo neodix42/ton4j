@@ -2,6 +2,7 @@ package org.ton.java.cell;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.bitstring.BitString;
+import org.ton.java.tlb.types.Boc;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -37,6 +38,14 @@ public class Cell {
 
     public Cell() {
         this.bits = new BitString();
+        this.refs = new ArrayList<>();
+        this.special = false;
+        this.type = CellType.ORDINARY;
+        this.levelMask = new LevelMask(0);
+    }
+
+    public Cell(int bitSize) {
+        this.bits = new BitString(bitSize);
         this.refs = new ArrayList<>();
         this.special = false;
         this.type = CellType.ORDINARY;
@@ -423,7 +432,7 @@ public class Cell {
      */
     public void toFile(String filename, boolean withCrc) {
 
-        int[] boc = toBocNew(withCrc);
+        int[] boc = toBoc(withCrc);
         try {
             Files.write(Paths.get(filename), Utils.unsignedBytesToSigned(boc));
         } catch (Exception e) {
@@ -436,19 +445,19 @@ public class Cell {
     }
 
     public String toHex(boolean withCrc) {
-        return Utils.bytesToHex(toBocNew(withCrc));
+        return Utils.bytesToHex(toBoc(withCrc));
     }
 
     public String toHex() {
-        return Utils.bytesToHex(toBocNew(true));
+        return Utils.bytesToHex(toBoc(true));
     }
 
     public String toBase64() {
-        return Utils.bytesToBase64(toBocNew(true));
+        return Utils.bytesToBase64(toBoc(true));
     }
 
     public String toBase64(boolean withCrc) {
-        return Utils.bytesToBase64(toBocNew(withCrc));
+        return Utils.bytesToBase64(toBoc(withCrc));
     }
 
     public int[] hash() {
@@ -540,15 +549,15 @@ public class Cell {
           crc32c:has_crc32c?uint32
          = BagOfCells;
     */
-    public int[] toBocNew() {
-        return toBocNew(true, false, false, 0);
+    public int[] toBoc() {
+        return toBoc(true, false, false);
     }
 
-    public int[] toBocNew(boolean withCRC) {
-        return toBocNew(withCRC, false, false, 0);
+    public int[] toBoc(boolean withCRC) {
+        return toBoc(withCRC, false, false);
     }
 
-    public int[] toBocNew(boolean withCRC, boolean withIdx, boolean withCacheBits, int pFlags) {
+    public int[] toBoc(boolean hasCrc32c, boolean hasIdx, boolean hasCacheBits) {
         // recursively go through cells, build hash index and store unique in slice
         List<Cell> orderCells = flattenIndex(List.of(this));
 
@@ -563,44 +572,23 @@ public class Cell {
         int sizeBits = Utils.log2(payload.size() + 1);
         int sizeBytes = (int) Math.ceil((double) sizeBits / 8);
 
-        int flags = 0b0_0_0_00_000;//, has_idx 1bit, hash_crc32 1bit,  has_cache_bits 1bit, flags 2bit, size_bytes 3 bit
-//        int flags = ((withIdx ? 1 : 0) * 128 + (withCRC ? 1 : 0) * 64 + (withCacheBits ? 1 : 0) * 32 + pFlags * 8 + sizeBytes);
+        Boc boc = Boc.builder()
+                .hasIdx(hasIdx)
+                .hasCrc32c(hasCrc32c)
+                .hasCacheBits(hasCacheBits)
+                .flags(0)
+                .size(cellSizeBytes)
+                .offBytes(sizeBytes)
+                .cells(orderCells.size())
+                .roots(1)
+                .absent(0)
+                .totalCellsSize(payload.size())
+                .rootList(0)
+                .index(0) // len in bytes of all cells, todo
+                .cellData(payload.stream().mapToInt(Integer::intValue).toArray())
+                .build();
 
-        if (withCRC) {
-            flags |= 0b0_1_0_00_000;
-        }
-        flags |= cellSizeBytes;
-
-        List<Integer> data = new ArrayList<>();
-        int[] bocMagic = new int[]{0xB5, 0xEE, 0x9C, 0x72};
-        data.addAll(Arrays.stream(bocMagic).boxed().toList());
-        data.addAll(Arrays.stream(Utils.uintToBytes(flags)).boxed().toList());
-
-        // bytes needed to store size
-        data.addAll(Arrays.stream(Utils.uintToBytes(sizeBytes)).boxed().toList());
-
-        // cells num
-        data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.valueOf(orderCells.size()), cellSizeBytes)).boxed().toList());
-
-        // roots num (only 1 supported for now)
-        data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.ONE, cellSizeBytes)).boxed().toList());
-
-        // complete BOCs = 0
-        data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.ZERO, cellSizeBytes)).boxed().toList());
-
-        // len of data
-        data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.valueOf(payload.size()), sizeBytes)).boxed().toList());
-
-        // root should have index 0
-        data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.ZERO, cellSizeBytes)).boxed().toList());
-        data.addAll(payload);
-
-        if (withCRC) {
-            int[] checksum = new int[4];
-            checksum = Utils.getCRC32ChecksumAsBytesReversed(data.stream().mapToInt(Integer::intValue).toArray());
-            data.addAll(Arrays.stream(checksum).boxed().toList());
-        }
-        return data.stream().mapToInt(Integer::intValue).toArray();
+        return boc.toCell().bits.toUnsignedByteArray();
     }
 
     private List<Cell> flattenIndex(List<Cell> src) {

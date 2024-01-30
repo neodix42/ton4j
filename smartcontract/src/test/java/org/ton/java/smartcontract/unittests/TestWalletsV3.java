@@ -54,7 +54,7 @@ public class TestWalletsV3 {
                 "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
                 "signing message: " + msg.signingMessage.print() + ", hex: " + msg.signingMessage.toHex() + "\n" +
                 "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
+                Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
@@ -114,7 +114,7 @@ public class TestWalletsV3 {
                 "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
                 "signing message: " + msg.signingMessage.print() + "\n" +
                 "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
+                Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
         assertThat(msg.message).isNotNull();

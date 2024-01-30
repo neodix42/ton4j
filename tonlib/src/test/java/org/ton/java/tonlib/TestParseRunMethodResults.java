@@ -36,7 +36,7 @@ public class TestParseRunMethodResults {
         Deque<String> d = new ArrayDeque<>();
 
         d.offer("[num, 300]");
-        d.offer("[cell, " + Utils.bytesToHex(c1.endCell().toBocNew()) + "]");
+        d.offer("[cell, " + Utils.bytesToHex(c1.endCell().toBoc()) + "]");
 
         Deque<TvmStackEntry> r0 = ParseRunResult.renderTvmStack(d);
         Deque<TvmStackEntry> r1 = ((ArrayDeque) r0).clone();

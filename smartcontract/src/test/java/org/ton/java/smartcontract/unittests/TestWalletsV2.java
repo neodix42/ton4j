@@ -51,7 +51,7 @@ public class TestWalletsV2 {
                 "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
                 "signing message: " + msg.signingMessage.print() + "\n" +
                 "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
+                Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
@@ -93,7 +93,7 @@ public class TestWalletsV2 {
                 "Body of transfer message is x{}" + "\n\n" +
                 "signing message: " + msg.signingMessage.print() + "\n" +
                 "resulting external message: " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
+                Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n" +
                 "Query expires in 60 seconds\n" +
                 "(Saved to file wallet-query.boc)\n";
 

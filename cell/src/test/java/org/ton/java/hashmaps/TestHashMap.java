@@ -26,7 +26,7 @@ public class TestHashMap {
 
         Cell cell = Cell.fromBoc(t);
         log.info("cell {}", cell.print());
-        log.info("cell {}", Utils.bytesToHex(cell.toBocNew()));
+        log.info("cell {}", Utils.bytesToHex(cell.toBoc()));
 
         // deserialize hashmap from cell, by providing key-deserializator and value-deserializator
         CellSlice cs = CellSlice.beginParse(cell);
@@ -50,7 +50,7 @@ public class TestHashMap {
         );
 
         log.info("Serialized hashmap in cell");
-        log.info("cell {}", Utils.bytesToHex(cellSerialized.toBocNew()));
+        log.info("cell {}", Utils.bytesToHex(cellSerialized.toBoc()));
         log.info("cellSerialized {}", cellSerialized.print());
     }
 
@@ -115,7 +115,7 @@ public class TestHashMap {
 
         Cell cell = Cell.fromBoc(t);
         log.info("cell {}", cell.print());
-        log.info("cell {}", Utils.bytesToHex(cell.toBocNew()));
+        log.info("cell {}", Utils.bytesToHex(cell.toBoc()));
 
         //TonHashMap dex = new TonHashMap(16);
         CellSlice cs = CellSlice.beginParse(cell);

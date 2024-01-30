@@ -172,6 +172,6 @@ public class DnsCollection implements Contract {
                 this.createStateInit().stateInit
         );
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
+        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
     }
 }

@@ -42,12 +42,12 @@ public class ParseRunResult implements Serializable {
             } else if (elementType.contains("cell")) {
                 int[] e = Utils.hexToUnsignedBytes(element);
                 Cell cell = Cell.fromBoc(e);
-                String cellBase64 = bytesToBase64(cell.toBocNew(false));
+                String cellBase64 = bytesToBase64(cell.toBoc(false));
                 return TvmStackEntryCell.builder().cell(TvmCell.builder().bytes(cellBase64).build()).build();
             } else if (elementType.contains("slice")) {
                 int[] e = Utils.hexToUnsignedBytes(element);
                 Cell cell = Cell.fromBoc(e);
-                String cellBase64 = bytesToBase64(cell.toBocNew(false));
+                String cellBase64 = bytesToBase64(cell.toBoc(false));
                 return TvmStackEntrySlice.builder().slice(TvmSlice.builder().bytes(cellBase64).build()).build();
             } else if (elementType.contains("dict")) {
                 // TODO support list, dict and tuple

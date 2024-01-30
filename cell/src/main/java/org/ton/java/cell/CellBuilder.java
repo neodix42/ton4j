@@ -16,10 +16,22 @@ public class CellBuilder extends Cell {
         super();
     }
 
+    private CellBuilder(int bitSize) {
+        super(bitSize);
+    }
+
 
     public static CellBuilder beginCell() {
 
         return new CellBuilder();
+    }
+
+    /**
+     * Create a cell with custom length of bit.
+     */
+    public static CellBuilder beginCell(int bitSize) {
+
+        return new CellBuilder(bitSize);
     }
 
     /**
@@ -252,6 +264,12 @@ public class CellBuilder extends Cell {
     }
 
     public CellBuilder storeBytes(byte[] number, int bitLength) {
+        checkBitsOverflow(bitLength);
+        bits.writeBytes(number);
+        return this;
+    }
+
+    public CellBuilder storeBytes(int[] number, int bitLength) {
         checkBitsOverflow(bitLength);
         bits.writeBytes(number);
         return this;

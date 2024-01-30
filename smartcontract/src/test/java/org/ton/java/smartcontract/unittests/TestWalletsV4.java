@@ -49,7 +49,7 @@ public class TestWalletsV4 {
                 "Bounceable address (for later access): " + walletAddress.toString(true, true, true, true) + "\n" +
                 "signing message: " + msg.signingMessage.print() + "\n" +
                 "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBocNew()).toUpperCase() + "\n" +
+                Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
         assertThat(msg.message).isNotNull();

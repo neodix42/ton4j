@@ -56,7 +56,7 @@ public class WalletV1ContractR1 implements WalletContract {
      */
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
         ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, 0);
-        return tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBocNew()));
+        return tonlib.sendRawMessage(Utils.bytesToBase64(msg.message.toBoc()));
     }
 
     /**
@@ -135,6 +135,6 @@ public class WalletV1ContractR1 implements WalletContract {
     }
 
     public void deploy(Tonlib tonlib, byte[] secretKey) {
-        tonlib.sendRawMessage(Utils.bytesToBase64(createInitExternalMessage(secretKey).message.toBocNew()));
+        tonlib.sendRawMessage(Utils.bytesToBase64(createInitExternalMessage(secretKey).message.toBoc()));
     }
 }

@@ -53,6 +53,6 @@ public class TestPfxHashMapE {
 
         log.info("pfx-hashmapE x {}", dex);
 
-        assertThat(Utils.bytesToHex(cell.toBocNew())).isEqualTo(Utils.bytesToHex(cell.toBocNew()));
+        assertThat(Utils.bytesToHex(cell.toBoc())).isEqualTo(Utils.bytesToHex(cell.toBoc()));
     }
 }
