@@ -46,7 +46,7 @@ public class Boc {
     int[] cellData;
 
     public Cell toCell() {
-        CellBuilder cell = CellBuilder.beginCell((offBytes + size + totalCellsSize + 100) * 8)
+        CellBuilder cell = CellBuilder.beginCell((cells * offBytes + offBytes + size * 4 + totalCellsSize + 10) * 8)
                 .storeInt(0xb5ee9c72, 32)
                 .storeBit(hasIdx)
                 .storeBit(hasCrc32c)

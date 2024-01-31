@@ -485,7 +485,7 @@ public class Cell {
 
     int[] getRefsDescriptor() {
         int[] d1 = new int[1];
-        d1[0] = (refs.size() + ((special ? 1 : 0) * 8) + getMaxLevel() * 32);
+        d1[0] = (refs.size() + ((special ? 1 : 0) * 8) + levelMask.getMask() * 32);
         return d1;
     }
 
