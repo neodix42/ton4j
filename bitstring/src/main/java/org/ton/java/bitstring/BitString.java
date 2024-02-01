@@ -6,9 +6,7 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
+import java.util.*;
 
 import static java.util.Objects.isNull;
 
@@ -570,6 +568,19 @@ public class BitString {
         int j = 0;
         for (String str : bin.split("(?<=\\G.{8})")) {
             result[j++] = Integer.parseInt(str, 2);
+        }
+        return result;
+    }
+
+    public List<BigInteger> toByteList() {
+        if (array.size() == 0) {
+            return new ArrayList<>();
+        }
+        String bin = getBitString();
+        List<BigInteger> result = new ArrayList<>((int) Math.ceil(bin.length() / (double) 8));
+        int j = 0;
+        for (String str : bin.split("(?<=\\G.{8})")) {
+            result.add(new BigInteger(str, 2));
         }
         return result;
     }

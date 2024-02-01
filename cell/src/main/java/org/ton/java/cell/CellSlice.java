@@ -334,6 +334,16 @@ public class CellSlice {
         return bitString.toUnsignedByteArray();
     }
 
+    public List<BigInteger> loadList(int elementNum, int elementBitLength) {
+        checkBitsOverflow(elementNum * elementBitLength);
+        List<BigInteger> result = new ArrayList<>(elementNum);
+        for (int i = 0; i < elementNum; i++) {
+            result.add(bits.readUint(elementBitLength));
+
+        }
+        return result;
+    }
+
     /**
      * load rest of bytes
      *

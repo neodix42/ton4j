@@ -22,19 +22,24 @@ public class Cell {
     public static final int MERKLE_UPDATE_CELL_TYPE = 0x04;
     public static final int UNKNOWN_CELL_TYPE = 0xFF;
 
-    private static final int[] reachBocMagicPrefix = Utils.hexToUnsignedBytes("B5EE9C72");
+    private static final int[] SERIALIZED_BOC_PREFIX = Utils.hexToUnsignedBytes("B5EE9C72");
+    private static final int[] SERIALIZED_BOC_IDX_PREFIX = Utils.hexToUnsignedBytes("68ff65f3");
+    private static final int[] SERIALIZED_BOC_IDX_CRC32C = Utils.hexToUnsignedBytes("acc3a728");
     private static final int HASH_SIZE = 32;
     private static final int DEPTH_SIZE = 2;
 
     public BitString bits;
     public List<Cell> refs;
 
+    public CellType type;
+    private int cellType;
+    private int[] refsIndexes;
+
+
     public int index;
 
     public boolean special;
     public LevelMask levelMask;
-
-    public CellType type;
 
     public Cell() {
         this.bits = new BitString();
@@ -57,24 +62,62 @@ public class Cell {
         this.bits.writeBitString(bits.clone());
         this.refs = new ArrayList<>(refs);
         this.special = false;
+        this.type = CellType.ORDINARY;
+        this.levelMask = new LevelMask(0);
+    }
+
+    public Cell(BitString bits, List<Cell> refs, int cellType) {
+        this.bits = new BitString(bits.getLength());
+        this.bits.writeBitString(bits.clone());
+        this.refs = new ArrayList<>(refs);
+        this.special = false;
+        this.type = toCellType(cellType);
         this.levelMask = new LevelMask(0);
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, LevelMask levelMask) {
         this.bits = new BitString(bitSize);
         this.bits.writeBitString(bits);
-        this.refs = refs;
+        this.refs = new ArrayList<>(refs);
         this.special = special;
+        this.type = toCellType(cellType);
         this.levelMask = levelMask;
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, CellType cellType) {
         this.bits = new BitString(bitSize);
         this.bits.writeBitString(bits);
-        this.refs = refs;
+        this.refs = new ArrayList<>(refs);
         this.special = special;
         this.type = cellType;
         this.levelMask = resolveMask();
+    }
+
+    public Cell(BitString bits, int[] refsIndexes, int cellType) {
+        this.bits = new BitString(bits);
+        this.refsIndexes = refsIndexes;
+        this.type = toCellType(cellType);
+        this.cellType = cellType;
+    }
+
+    public Cell(BitString bits, int bitSize, List<Cell> refs, int cellType) {
+        this.bits = new BitString(bitSize);
+        this.bits.writeBitString(bits);
+        this.refs = new ArrayList<>(refs);
+        this.type = toCellType(cellType);
+        this.cellType = cellType;
+        this.levelMask = resolveMask();
+    }
+
+    public CellType toCellType(int cellType) {
+        return switch (cellType) {
+            case -1, 0 -> CellType.ORDINARY;
+            case 1 -> CellType.PRUNED_BRANCH;
+            case 2 -> CellType.LIBRARY;
+            case 3 -> CellType.MERKLE_PROOF;
+            case 4 -> CellType.MERKLE_UPDATE;
+            default -> CellType.UNKNOWN;
+        };
     }
 
     public LevelMask resolveMask() {
@@ -199,66 +242,130 @@ public class Cell {
         }
     }
 
-    static List<Cell> fromBocMultiRoot(int[] data) {
-        if (data.length < 10) {
-            throw new Error("Invalid boc");
+    /**
+     * taken from pytoniq-core
+     */
+    static Pair<Cell, Integer> deserializeCell(int[] data, int refIndexSize) {
+        int dataLen = data.length;
+        int refsDescriptor = data[0];
+        int level = refsDescriptor >> 5;
+        int totalRefs = refsDescriptor & 7;
+        boolean hasHashes = (refsDescriptor & 16) != 0;
+        boolean isExotic = (refsDescriptor & 8) != 0;
+        boolean isAbsent = (totalRefs == 7) && hasHashes;
+        if (isAbsent) {
+            throw new Error("Cannot deserialize absent cell");
         }
-        ByteReader r = new ByteReader(data);
-        if (!Utils.compareBytes(reachBocMagicPrefix, r.readBytes(4))) {
-            throw new Error("Invalid boc magic header");
-        }
+        int bitsDescriptor = data[1];
+        boolean isAugmented = (bitsDescriptor & 1) != 0;
+        int dataSize = (bitsDescriptor & 1) + (bitsDescriptor >> 1); // todo review !
+        int hashesSize = (level + 1) * (hasHashes ? 32 : 0);
+        int depthSize = (level + 1) * (hasHashes ? 2 : 0);
+        int i = 2;
 
-        BocFlags bocFlags = parseBocFlags(r.readSignedByte());
-        int dataSizeBytes = r.readByte(); // off_bytes:(## 8) { off_bytes <= 8 }
-
-        long cellsNum = Utils.dynInt(r.readSignedBytes(bocFlags.cellNumSizeBytes)); // cells:(##(size * 8))
-        long rootsNum = Utils.dynInt(r.readSignedBytes(bocFlags.cellNumSizeBytes)); // roots:(##(size * 8)) { roots >= 1 }
-
-        r.readBytes(bocFlags.cellNumSizeBytes);
-        long dataLen = Utils.dynInt(r.readSignedBytes(dataSizeBytes));
-
-        if (bocFlags.hasCrc32c) {
-            int[] bocWithoutCrc = Arrays.copyOfRange(data, 0, data.length - 4);
-            int[] crcInBoc = Arrays.copyOfRange(data, data.length - 4, data.length);
-            int[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(bocWithoutCrc);
-            if (!Utils.compareBytes(crc32, crcInBoc)) {
-                throw new Error("Crc32c hashsum mismatch");
-            }
+        if ((dataLen - i) < (hashesSize + depthSize + dataSize + refIndexSize * totalRefs)) {
+            throw new Error("Not enough bytes to encode cell data");
         }
 
-        // root_list:(roots * ##(size * 8))
-        byte[] rootList = r.readSignedBytes(rootsNum * bocFlags.cellNumSizeBytes); // todo
-        long rootIndex = Utils.dynInt(Arrays.copyOfRange(rootList, 0, bocFlags.cellNumSizeBytes));
-
-        if (bocFlags.hasCacheBits && !bocFlags.hasIndex) {
-            throw new Error("cache flag cant be set without index flag");
+        if (hasHashes) {
+            i += hashesSize + depthSize;
         }
 
-        int[] index = new int[0];
-        int j = 0;
-        if (bocFlags.hasIndex) {
-            index = new int[(int) cellsNum];
-            byte[] idxData = r.readSignedBytes(cellsNum * dataSizeBytes);
-            int n = 0;
-            for (int i = 0; i < cellsNum; i++) {
-                int off = i * dataSizeBytes;
-                int val = Utils.dynInt(Arrays.copyOfRange(idxData, off, off + dataSizeBytes));
-                if (bocFlags.hasCacheBits) {
-                    if (val % 2 == 1) {
-                        n++;
-                    }
-                    val = val / 2;
-                    index[j++] = val;
+        int[] ret = Arrays.copyOfRange(data, i, i + dataSize);
+        i += dataSize;
+
+        int end = 0;
+        if (isAugmented && ret.length != 0) {
+            // find last bit of byte which indicates the end and cut it and next        
+            for (int y = 0; y < 8; y++) {
+                if (((ret[ret.length - 1] >> y) & 1) == 1) {
+                    end = y + 1;
+                    break;
                 }
             }
         }
 
-        int[] payload = r.readBytes(dataLen);
+        BitString bits = new BitString(ret, ret.length * 8 - end);
 
-        List<Cell> cells = parseCells(rootsNum, cellsNum, bocFlags.cellNumSizeBytes, payload, index);
+        int cellType = -1;
+        if (isExotic) {
+            if (bits.getLength() < 8) {
+                throw new Error("not enough bytes for an exotic cell type");
+            }
+            cellType = bits.readUint(8).intValue();
+        }
+        int[] cellRefsIndex = new int[totalRefs];
 
-        return cells;
+        for (int j = 0; j < totalRefs; j++) {
+            cellRefsIndex[j] = Utils.bytesToIntX(Arrays.copyOfRange(data, i, i + refIndexSize));
+            i += refIndexSize;
+        }
+
+        Cell c = new Cell(bits, cellRefsIndex, cellType);
+        return Pair.of(c, i);
+
     }
+
+    static List<Cell> fromBocMultiRoot(int[] data) {
+        if (data.length < 10) {
+            throw new Error("Invalid boc");
+        }
+        Boc boc = deserializeBocHeader(data);
+        Cell[] cells = new Cell[boc.getCells()];
+        int i = 0;
+        for (int x = 0; x < boc.getCells(); x++) {
+            int[] ret = Arrays.copyOfRange(boc.getCellData(), i, boc.getCellData().length);
+            Pair<Cell, Integer> ci = deserializeCell(ret, boc.getSize());
+            i += ci.getRight();
+            cells[x] = ci.getLeft();
+        }
+
+        for (int ci = boc.getCells() - 1; ci >= 0; ci--) {
+            Cell c = cells[ci];
+            List<Cell> refs = new ArrayList<>();
+
+            for (int ri = 0; ri < c.refsIndexes.length; ri++) {
+                int r = c.refsIndexes[ri];
+                if (r < ci) {
+                    throw new Error("Topological order is broken");
+                }
+                refs.add(cells[r]);
+            }
+
+            cells[ci] = new Cell(cells[ci].bits, refs, cells[ci].cellType);
+        }
+
+        List<Cell> rootCells = new ArrayList<>();
+        for (int ri = 0; ri < boc.getRootList().size(); ri++) {
+            rootCells.add(cells[ri]);
+        }
+        return rootCells;
+    }
+
+    private static Boc deserializeBocHeader(int data[]) {
+        Cell rawCell = CellBuilder.beginCell(data.length * 8).storeBytes(data);
+        CellSlice cs = CellSlice.beginParse(rawCell);
+        Boc boc = Boc.builder()
+                .magic(cs.loadUint(32).longValue())
+                .build();
+        boc.setHasIdx(cs.loadBit());
+        boc.setHasCrc32c(cs.loadBit());
+        boc.setHasCacheBits(cs.loadBit());
+        boc.setFlags(cs.loadUint(2).intValue());
+        boc.setSize(cs.loadUint(3).intValue());
+        boc.setOffBytes(cs.loadUint(8).intValue());
+        boc.setCells(cs.loadUint(boc.getSize() * 8).intValue());
+        boc.setRoots(cs.loadUint(boc.getSize() * 8).intValue());
+        boc.setAbsent(cs.loadUint(boc.getSize() * 8).intValue());
+        boc.setTotalCellsSize(cs.loadUint(boc.getOffBytes() * 8).intValue());
+        boc.setRootList(cs.loadList(boc.getRoots(), boc.getSize() * 8));
+        boc.setIndex(boc.isHasIdx() ? cs.loadList(boc.getCells(), boc.getOffBytes() * 8) : null);
+        boc.setCellData(cs.loadBytes(boc.getTotalCellsSize() * 8));
+        boc.setCrc32c(boc.isHasCrc32c() ? cs.loadUint(32).longValue() : 0);
+
+        return boc;
+    }
+
 
     private static List<Cell> parseCells(long rootsNum, long cellsNum, int refSzBytes, int[] data, int[] index) {
         Cell[] cells = new Cell[(int) cellsNum];
@@ -376,26 +483,6 @@ public class Cell {
 
         return roots;
     }
-
-    /**
-     * has_idx:(## 1)
-     * has_crc32c:(## 1)
-     * has_cache_bits:(## 1)
-     * flags:(## 2) { flags = 0 }
-     * size:(## 3) { size <= 4 }
-     *
-     * @param data
-     * @return BocFlags
-     */
-    static BocFlags parseBocFlags(byte data) {
-        BocFlags bocFlags = new BocFlags();
-        bocFlags.hasIndex = (data & (1 << 7)) > 0;
-        bocFlags.hasCrc32c = (data & (1 << 6)) > 0;
-        bocFlags.hasCacheBits = (data & (1 << 5)) > 0;
-        bocFlags.cellNumSizeBytes = (data & 0b00000111);
-        return bocFlags;
-    }
-
 
     /**
      * Recursively prints cell's content like Fift
@@ -572,6 +659,8 @@ public class Cell {
         int sizeBits = Utils.log2(payload.size() + 1);
         int sizeBytes = (int) Math.ceil((double) sizeBits / 8);
 
+        List<BigInteger> rootList = new ArrayList<>();
+
         Boc boc = Boc.builder()
                 .hasIdx(hasIdx)
                 .hasCrc32c(hasCrc32c)
@@ -583,8 +672,8 @@ public class Cell {
                 .roots(1)
                 .absent(0)
                 .totalCellsSize(payload.size())
-                .rootList(0)
-                .index(0) // len in bytes of all cells, todo
+                .rootList(List.of(BigInteger.ZERO))
+                .index(List.of(BigInteger.ZERO)) // len in bytes of all cells, todo
                 .cellData(payload.stream().mapToInt(Integer::intValue).toArray())
                 .build();
 

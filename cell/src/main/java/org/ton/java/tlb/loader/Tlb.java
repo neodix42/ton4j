@@ -641,7 +641,9 @@ public class Tlb {
                 System.out.println(block);
 //                cs.loadRef(); //skip MerkleUpdate temp todo
 
-                block.setStateUpdate((MerkleUpdate) Tlb.load(MerkleUpdate.class, cs.loadRef()));
+                MerkleUpdate merkleUpdate = (MerkleUpdate) Tlb.load(MerkleUpdate.class, cs.loadRef());
+                block.setStateUpdate(merkleUpdate);
+                System.out.println(merkleUpdate);
                 block.setExtra((BlockExtra) Tlb.load(BlockExtra.class, cs.loadRef()));
                 System.out.println(block);
 

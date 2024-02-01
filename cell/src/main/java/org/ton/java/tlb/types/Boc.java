@@ -8,6 +8,9 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.utils.Utils;
 
+import java.math.BigInteger;
+import java.util.List;
+
 /**
  * serialized_boc#b5ee9c72
  * has_idx:(## 1)
@@ -31,6 +34,7 @@ import org.ton.java.utils.Utils;
 @Setter
 @ToString
 public class Boc {
+    long magic;
     boolean hasIdx;
     boolean hasCrc32c;
     boolean hasCacheBits;
@@ -41,9 +45,10 @@ public class Boc {
     int roots;
     int absent;
     int totalCellsSize;
-    int rootList;
-    int index;
+    List<BigInteger> rootList;
+    List<BigInteger> index;
     int[] cellData;
+    long crc32c;
 
     public Cell toCell() {
         CellBuilder cell = CellBuilder.beginCell((cells * offBytes + offBytes + size * 4 + totalCellsSize + 10) * 8)
@@ -58,8 +63,8 @@ public class Boc {
                 .storeUint(roots, size * 8)
                 .storeUint(absent, size * 8)
                 .storeUint(totalCellsSize, offBytes * 8)
-                .storeUint(rootList, size * 8)
-                .storeUint(index, hasIdx ? cells * offBytes * 8 : 0)
+                .storeList(rootList, size * 8)
+                .storeList(index, hasIdx ? cells * offBytes * 8 : 0)
                 .storeBytes(cellData, totalCellsSize * 8);
 
         if (hasCrc32c) {

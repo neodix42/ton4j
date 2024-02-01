@@ -263,6 +263,14 @@ public class CellBuilder extends Cell {
         return this;
     }
 
+    public CellBuilder storeList(List<BigInteger> bytes, int bitLength) {
+        checkBitsOverflow(bitLength);
+        for (BigInteger b : bytes) {
+            bits.writeUint(b, bitLength);
+        }
+        return this;
+    }
+
     public CellBuilder storeBytes(byte[] number, int bitLength) {
         checkBitsOverflow(bitLength);
         bits.writeBytes(number);

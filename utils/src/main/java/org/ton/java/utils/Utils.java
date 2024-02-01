@@ -107,6 +107,15 @@ public class Utils {
         return result;
     }
 
+    public static int bytesToIntX(final int[] b) {
+        int result = 0;
+        for (int i = 0; i < b.length; i++) {
+            result <<= 8;
+            result |= b[i];
+        }
+        return result;
+    }
+
     public static short bytesToShort(final byte[] b) {
         short result = 0;
         for (int i = 0; i < 2; i++) {
