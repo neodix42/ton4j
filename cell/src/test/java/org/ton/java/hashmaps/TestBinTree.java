@@ -6,9 +6,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.cell.BinTree;
 import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.tlb.types.CurrencyCollection;
+import org.ton.java.tlb.types.FutureSplitMerge;
+import org.ton.java.tlb.types.ShardDescr;
 
+import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
@@ -19,72 +22,133 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(JUnit4.class)
 public class TestBinTree {
 
-    @Test
-    public void testBinTree() {
-
-        Cell c1 = CellBuilder.beginCell()
-                .storeBit(false)
-                .storeUint(42, 32)
-                .endCell();
-        Cell c2 = CellBuilder.beginCell()
-                .storeBit(false)
-                .storeUint(43, 32)
-                .endCell();
-        Cell c3 = CellBuilder.beginCell()
-                .storeBit(true)
-                .storeRef(c1)
-                .storeRef(c2)
-                .endCell();
-        Cell c4 = CellBuilder.beginCell()
-                .storeBit(true)
-                .storeRef(c3)
-                .storeRef(c1)
-                .endCell();
-        Cell c5 = CellBuilder.beginCell()
-                .storeBit(true)
-                .storeRef(c4)
-                .endCell();
-
-        List<Cell> bt = BinTree.deserialize(CellSlice.beginParse(c5));
-
-        for (Cell c : bt) {
-            log.info("cell: {}", CellSlice.beginParse(c).loadUint(32));
-        }
+    private ShardDescr createShardDescr(int seqno) {
+        return ShardDescr.builder()
+                .magic(0xb)
+                .seqNo(seqno)
+                .regMcSeqno(1)
+                .startLt(BigInteger.TEN)
+                .endLt(BigInteger.TEN)
+                .rootHash(BigInteger.TWO)
+                .fileHash(BigInteger.TWO)
+                .beforeSplit(true)
+                .beforeMerge(true)
+                .wantSplit(false)
+                .wantMerge(false)
+                .nXCCUpdated(true)
+                .flags(1)
+                .nextCatchainSeqNo(11)
+                .nextValidatorShard(BigInteger.TEN)
+                .minRefMcSeqNo(22)
+                .genUTime(12345)
+                .splitMergeAt(FutureSplitMerge.builder()
+                        .flag(0b10)
+                        .splitUTime(42)
+                        .interval(43)
+                        .build())
+                .feesCollected(CurrencyCollection.builder()
+                        .coins(BigInteger.TWO)
+                        .build())
+                .fundsCreated(CurrencyCollection.builder()
+                        .coins(BigInteger.TWO)
+                        .build())
+                .build();
     }
 
     @Test
     public void testBinTreeDeque() {
-        Cell c1 = CellBuilder.beginCell()
-                .storeUint(42, 32)
-                .endCell();
-        Cell c2 = CellBuilder.beginCell()
-                .storeUint(43, 32)
-                .endCell();
-        Cell c3 = CellBuilder.beginCell()
-                .storeUint(44, 32)
-                .endCell();
-        Cell c4 = CellBuilder.beginCell()
-                .storeUint(45, 32)
-                .endCell();
-        Cell c5 = CellBuilder.beginCell()
-                .storeUint(46, 32)
-                .endCell();
+        ShardDescr shardDescr1 = createShardDescr(1);
+        ShardDescr shardDescr2 = createShardDescr(2);
+        ShardDescr shardDescr3 = createShardDescr(3);
+        ShardDescr shardDescr4 = createShardDescr(4);
+        ShardDescr shardDescr5 = createShardDescr(5);
 
-        Deque<Cell> cells = new ArrayDeque<>();
-        cells.add(c1);
-        cells.add(c2);
-        cells.add(c3);
-        cells.add(c4);
-        cells.add(c5);
 
-        Cell c = BinTree.toCell(cells);
+        Deque<ShardDescr> cells = new ArrayDeque<>();
+        cells.add(shardDescr1);
+        cells.add(shardDescr2);
+        cells.add(shardDescr3);
+        cells.add(shardDescr4);
+        cells.add(shardDescr5);
 
-        List<Cell> bt = BinTree.deserialize(CellSlice.beginParse(c));
 
-        for (Cell cc : bt) {
-            log.info("cell: {}", CellSlice.beginParse(cc).loadUint(32));
+        Cell c = new BinTree(cells).toCell();
+
+        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c));
+
+        for (ShardDescr cc : bt) {
+            log.info("ShardDescr: {}", cc);
         }
 
         assertThat(bt.size()).isEqualTo(5);
+    }
+
+    @Test
+    public void testBinTreeEmpty() {
+        Deque<ShardDescr> cells = new ArrayDeque<>();
+        Cell c = new BinTree(cells).toCell();
+    }
+
+
+    @Test
+    public void testBinTreeOne() {
+        ShardDescr shardDescr1 = createShardDescr(1);
+
+        Deque<ShardDescr> cells = new ArrayDeque<>();
+        cells.add(shardDescr1);
+
+        Cell c = new BinTree(cells).toCell();
+
+        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c));
+
+        for (ShardDescr cc : bt) {
+            log.info("ShardDescr: {}", cc);
+        }
+
+        assertThat(bt.size()).isEqualTo(1);
+    }
+
+    @Test
+    public void testBinTreeTwo() {
+        ShardDescr shardDescr1 = createShardDescr(1);
+        ShardDescr shardDescr2 = createShardDescr(2);
+
+        Deque<ShardDescr> cells = new ArrayDeque<>();
+        cells.add(shardDescr1);
+        cells.add(shardDescr2);
+
+        Cell c = new BinTree(cells).toCell();
+
+        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c));
+
+        for (ShardDescr cc : bt) {
+            log.info("ShardDescr: {}", cc);
+        }
+
+        assertThat(bt.size()).isEqualTo(2);
+    }
+
+    @Test
+    public void testBinTreeThree() {
+        ShardDescr shardDescr1 = createShardDescr(1);
+        ShardDescr shardDescr2 = createShardDescr(2);
+        ShardDescr shardDescr3 = createShardDescr(3);
+
+        Deque<ShardDescr> cells = new ArrayDeque<>();
+        cells.add(shardDescr1);
+        cells.add(shardDescr2);
+        cells.add(shardDescr3);
+
+        Cell c = new BinTree(cells).toCell();
+
+        log.info("ShardDescr: {}", c);
+
+        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c));
+
+        for (ShardDescr cc : bt) {
+            log.info("ShardDescr: {}", cc);
+        }
+
+        assertThat(bt.size()).isEqualTo(3);
     }
 }

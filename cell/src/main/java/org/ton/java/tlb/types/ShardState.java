@@ -46,6 +46,7 @@ public class ShardState {
     }
 
     public static ShardState deserialize(CellSlice cs) {
+        System.out.println("shard state: " + cs.sliceToCell().toHex());
         long tag = cs.preloadUint(32).longValue();
         if (tag == 0x5f327da5L) {
             ShardStateUnsplit left, right;

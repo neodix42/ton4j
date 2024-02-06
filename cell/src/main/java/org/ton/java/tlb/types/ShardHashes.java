@@ -21,7 +21,7 @@ public class ShardHashes {
         return CellBuilder.beginCell()
                 .storeDict(shardHashes.serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                        v -> CellBuilder.beginCell().storeCell(((OutMsg) v).toCell())
+                        v -> CellBuilder.beginCell().storeCell(((BinTree) v).toCell())
                 )).endCell();
     }
 

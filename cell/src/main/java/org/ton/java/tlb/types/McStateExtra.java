@@ -62,23 +62,21 @@ public class McStateExtra {
         if (cs.isExotic()) {
             return null;
         }
-//        System.out.println("McStateExtra " + Utils.bitStringToHex(cs.toString()));
         long magic = cs.loadUint(16).longValue();
         assert (magic == 0xcc26L) : "McStateExtra: magic not equal to 0xcc26, found 0x" + Long.toHexString(magic);
-//        if (magic != 0xcc26L) {
-//            System.out.println("McStateExtra: magic not equal to 0xcc26, found 0x" + Long.toHexString(magic));
-//            return McStateExtra.builder().magic(-1L).build();
-//        }
 
-        return McStateExtra.builder()
+        McStateExtra mcStateExtra = McStateExtra.builder()
                 .magic(0xcc26L)
 //                .shardHashes(ShardHashes.deserialize(cs))
                 .shardHashes(cs.loadDictE(32,
                         k -> k.readInt(32),
                         v -> v)) // todo BinTree
-                .configParams(ConfigParams.deserialize(cs))
-                .info(McStateExtraInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .globalBalance(CurrencyCollection.deserialize(cs))
                 .build();
+
+        mcStateExtra.setConfigParams(ConfigParams.deserialize(cs));
+        mcStateExtra.setInfo(McStateExtraInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
+        mcStateExtra.setGlobalBalance(CurrencyCollection.deserialize(cs));
+
+        return mcStateExtra;
     }
 }

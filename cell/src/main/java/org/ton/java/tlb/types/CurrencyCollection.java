@@ -11,6 +11,8 @@ import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
+
 @Builder
 @Getter
 @Setter
@@ -24,13 +26,20 @@ public class CurrencyCollection {
     TonHashMapE extraCurrencies;
 
     public Cell toCell() {
-        Cell dictCell = extraCurrencies.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                v -> CellBuilder.beginCell().storeVarUint((byte) v, 32)
-        );
+
+        Cell dict;
+
+        if (isNull(extraCurrencies)) {
+            dict = CellBuilder.beginCell().storeBit(false).endCell();
+        } else {
+            dict = extraCurrencies.serialize(
+                    k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
+                    v -> CellBuilder.beginCell().storeVarUint((byte) v, 32)
+            );
+        }
         return CellBuilder.beginCell()
                 .storeCoins(coins)
-                .storeDict(dictCell)
+                .storeDict(dict)
                 .endCell();
     }
 

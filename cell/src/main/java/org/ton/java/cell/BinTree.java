@@ -1,26 +1,37 @@
 package org.ton.java.cell;
 
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import org.ton.java.tlb.types.ShardDescr;
+
+import java.util.*;
 
 import static java.util.Objects.isNull;
 
 public class BinTree {
 
-    public static Cell toCell(Deque<Cell> l) {
-        return addToBinTree(l, null);
+    private Deque<ShardDescr> list;
+
+    public BinTree(Deque<ShardDescr> list) {
+        this.list = new ArrayDeque<>(list);
     }
 
-    private static Cell addToBinTree(Deque<Cell> cells, Cell left) {
+    public Cell toCell() {
+        if (list.size() == 0) {
+            return CellBuilder.beginCell().endCell();
+        }
+        return addToBinTree(list, null);
+    }
+
+    private static Cell addToBinTree(Deque<ShardDescr> cells, Cell left) {
         CellBuilder c = CellBuilder.beginCell();
         if (cells.size() >= 1) {
             CellBuilder cb = CellBuilder.beginCell();
             cb.storeBit(true);
             cb.storeRef(CellBuilder.beginCell()
                     .storeBit(false)
-                    .storeCell(isNull(left) ? cells.pop() : left));
-            cb.storeRef(addToBinTree(cells, cells.pop()));
+                    .storeCell(isNull(left) ? cells.pop().toCell() : left));
+            if (cells.size() != 0) {
+                cb.storeRef(addToBinTree(cells, cells.pop().toCell()));
+            }
             return cb.endCell();
         } else {
             CellBuilder cb = CellBuilder.beginCell();
@@ -30,13 +41,13 @@ public class BinTree {
         }
     }
 
-    public static List<Cell> deserialize(CellSlice cs) {
+    public static List<ShardDescr> deserialize(CellSlice cs) {
         if (cs.isExotic()) {
-            return List.of(cs.sliceToCell());
+            return Collections.emptyList();
         }
 
         if (cs.loadBit()) {
-            List<Cell> l = new ArrayList<>();
+            List<ShardDescr> l = new ArrayList<>();
             if (cs.refs.size() != 0) {
                 l.addAll(deserialize(CellSlice.beginParse(cs.loadRef())));
             }
@@ -45,7 +56,7 @@ public class BinTree {
             }
             return l;
         } else {
-            return List.of(cs.sliceToCell());
+            return List.of(ShardDescr.deserialize(cs));
         }
     }
 }

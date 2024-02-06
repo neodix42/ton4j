@@ -19,7 +19,7 @@ import static java.util.Objects.isNull;
  * _ (HashmapAugE 32 KeyExtBlkRef KeyMaxLt) = OldMcBlocksInfo;
  */
 public class OldMcBlocksInfo {
-    TonHashMapAugE list; //dict 15
+    TonHashMapAugE list;
 
 
     public Cell toCell() {

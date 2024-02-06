@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
@@ -57,8 +59,8 @@ import java.math.BigInteger;
  */
 public class ShardDescr {
     long magic;
-    long SeqNo;
-    long RegMcSeqno;
+    long seqNo;
+    long regMcSeqno;
     BigInteger startLt;
     BigInteger endLt;
     BigInteger rootHash;
@@ -68,11 +70,15 @@ public class ShardDescr {
     boolean wantSplit;
     boolean wantMerge;
     boolean nXCCUpdated;
-    byte flags;
+    int flags;
     long nextCatchainSeqNo;
     BigInteger nextValidatorShard;
     long minRefMcSeqNo;
     long genUTime;
+    FutureSplitMerge splitMergeAt;
+    CurrencyCollection feesCollected;
+    CurrencyCollection fundsCreated;
+    Cell refInfoA;
 
     private String getMagic() {
         return Long.toHexString(magic);
@@ -86,7 +92,110 @@ public class ShardDescr {
         return fileHash.toString(16);
     }
 
+    public Cell toCell() {
+        if (magic == 0xB) {
+            return CellBuilder.beginCell()
+                    .storeUint(0xB, 8)
+                    .storeUint(seqNo, 32)
+                    .storeUint(regMcSeqno, 32)
+                    .storeUint(startLt, 64)
+                    .storeUint(endLt, 64)
+                    .storeUint(rootHash, 64)
+                    .storeUint(fileHash, 64)
+                    .storeBit(beforeSplit)
+                    .storeBit(beforeMerge)
+                    .storeBit(wantSplit)
+                    .storeBit(wantMerge)
+                    .storeBit(nXCCUpdated)
+                    .storeUint(flags, 3)
+                    .storeUint(nextCatchainSeqNo, 32)
+                    .storeUint(nextValidatorShard, 64)
+                    .storeUint(minRefMcSeqNo, 32)
+                    .storeUint(genUTime, 32)
+                    .storeCell(splitMergeAt.toCell())
+                    .storeCell(feesCollected.toCell())
+                    .storeCell(fundsCreated.toCell())
+                    .endCell();
+        } else if (magic == 0xA) {
+            return CellBuilder.beginCell()
+                    .storeUint(0xB, 8)
+                    .storeUint(seqNo, 32)
+                    .storeUint(regMcSeqno, 32)
+                    .storeUint(startLt, 64)
+                    .storeUint(endLt, 64)
+                    .storeUint(rootHash, 64)
+                    .storeUint(fileHash, 64)
+                    .storeBit(beforeSplit)
+                    .storeBit(beforeMerge)
+                    .storeBit(wantSplit)
+                    .storeBit(wantMerge)
+                    .storeBit(nXCCUpdated)
+                    .storeUint(flags, 3)
+                    .storeUint(nextCatchainSeqNo, 32)
+                    .storeUint(nextValidatorShard, 64)
+                    .storeUint(minRefMcSeqNo, 32)
+                    .storeUint(genUTime, 32)
+                    .storeCell(splitMergeAt.toCell())
+                    .storeRef(CellBuilder.beginCell()
+                            .storeCell(feesCollected.toCell())
+                            .storeCell(fundsCreated.toCell())
+                            .endCell())
+                    .endCell();
+        } else {
+            throw new Error("ShardDescr: magic neither equal to 0xA nor 0xB, found 0x" + Long.toHexString(magic));
+        }
+    }
+
     public static ShardDescr deserialize(CellSlice cs) {
-        return null;
+        long magic = cs.loadUint(8).intValue();
+        if (magic == 0xB) {
+            return ShardDescr.builder()
+                    .magic(0xb)
+                    .seqNo(cs.loadUint(32).longValue())
+                    .regMcSeqno(cs.loadUint(32).longValue())
+                    .startLt(cs.loadUint(64))
+                    .endLt(cs.loadUint(64))
+                    .rootHash(cs.loadUint(64))
+                    .fileHash(cs.loadUint(64))
+                    .beforeSplit(cs.loadBit())
+                    .beforeMerge(cs.loadBit())
+                    .wantSplit(cs.loadBit())
+                    .wantMerge(cs.loadBit())
+                    .nXCCUpdated(cs.loadBit())
+                    .flags(cs.loadUint(3).intValue())
+                    .nextCatchainSeqNo(cs.loadUint(32).longValue())
+                    .nextValidatorShard(cs.loadUint(64))
+                    .minRefMcSeqNo(cs.loadUint(32).longValue())
+                    .genUTime(cs.loadUint(32).longValue())
+                    .splitMergeAt(FutureSplitMerge.deserialize(cs))
+                    .feesCollected(CurrencyCollection.deserialize(cs))
+                    .fundsCreated(CurrencyCollection.deserialize(cs))
+                    .build();
+        }
+        if (magic == 0xA) {
+            return ShardDescr.builder()
+                    .magic(0xb)
+                    .seqNo(cs.loadUint(32).longValue())
+                    .regMcSeqno(cs.loadUint(32).longValue())
+                    .startLt(cs.loadUint(64))
+                    .endLt(cs.loadUint(64))
+                    .rootHash(cs.loadUint(64))
+                    .fileHash(cs.loadUint(64))
+                    .beforeSplit(cs.loadBit())
+                    .beforeMerge(cs.loadBit())
+                    .wantSplit(cs.loadBit())
+                    .wantMerge(cs.loadBit())
+                    .nXCCUpdated(cs.loadBit())
+                    .flags(cs.loadUint(3).intValue())
+                    .nextCatchainSeqNo(cs.loadUint(32).longValue())
+                    .nextValidatorShard(cs.loadUint(64))
+                    .minRefMcSeqNo(cs.loadUint(32).longValue())
+                    .genUTime(cs.loadUint(32).longValue())
+                    .splitMergeAt(FutureSplitMerge.deserialize(cs))
+                    .refInfoA(cs.loadRef()) // minor todo
+                    .build();
+        } else {
+            throw new Error("ShardDescr: magic neither equal to 0xA nor 0xB, found 0x" + Long.toHexString(magic));
+        }
     }
 }

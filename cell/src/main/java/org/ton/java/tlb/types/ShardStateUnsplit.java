@@ -89,12 +89,12 @@ public class ShardStateUnsplit {
                 .genLt(cs.loadUint(64))
                 .minRefMCSeqno(cs.loadUint(32).longValue())
                 .outMsgQueueInfo(OutMsgQueueInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .beforeSplit(cs.loadBit())
-                .accounts(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
-                        k -> k.readInt(256),
-                        v -> ShardAccount.deserialize(v),
-                        e -> DepthBalanceInfo.deserialize(e)))
                 .build();
+        shardStateUnsplit.setBeforeSplit(cs.loadBit());
+        shardStateUnsplit.setAccounts(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
+                k -> k.readInt(256),
+                v -> ShardAccount.deserialize(v),
+                e -> DepthBalanceInfo.deserialize(e)));
 
         if (!cs.isExotic()) {
             shardStateUnsplit.setShardStateInfo(ShardStateInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
