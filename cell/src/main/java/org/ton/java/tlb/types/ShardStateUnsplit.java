@@ -7,7 +7,6 @@ import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonHashMapAugE;
 
 import java.math.BigInteger;
 
@@ -45,10 +44,11 @@ public class ShardStateUnsplit {
     long genUTime;
     BigInteger genLt;
     long minRefMCSeqno;
+    Cell outMsgQueueInfo;
     //    OutMsgQueueInfo outMsgQueueInfo;
-    OutMsgQueueInfo outMsgQueueInfo;
     boolean beforeSplit;
-    TonHashMapAugE accounts;
+    //    ShardAccounts shardAccounts;
+    Cell shardAccounts;
     ShardStateInfo shardStateInfo;
     McStateExtra custom;
 
@@ -66,13 +66,9 @@ public class ShardStateUnsplit {
                 .storeUint(genUTime, 32)
                 .storeUint(genLt, 64)
                 .storeUint(minRefMCSeqno, 32)
-                .storeRef(outMsgQueueInfo.toCell())
+                .storeRef(outMsgQueueInfo) // todo
                 .storeBit(beforeSplit)
-                .storeDict(accounts.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
-                        v -> v,
-                        e -> e,
-                        (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1))) // todo
+                .storeRef(shardAccounts) // todo
                 .storeRef(shardStateInfo.toCell())
                 .storeRefMaybe(custom.toCell())
                 .endCell();
@@ -88,13 +84,12 @@ public class ShardStateUnsplit {
                 .genUTime(cs.loadUint(32).longValue())
                 .genLt(cs.loadUint(64))
                 .minRefMCSeqno(cs.loadUint(32).longValue())
-                .outMsgQueueInfo(OutMsgQueueInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
+//                .outMsgQueueInfo(OutMsgQueueInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .outMsgQueueInfo(cs.loadRef())
                 .build();
         shardStateUnsplit.setBeforeSplit(cs.loadBit());
-        shardStateUnsplit.setAccounts(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
-                k -> k.readInt(256),
-                v -> ShardAccount.deserialize(v),
-                e -> DepthBalanceInfo.deserialize(e)));
+//        shardStateUnsplit.setShardAccounts(ShardAccounts.deserialize(CellSlice.beginParse(cs.loadRef())));
+        shardStateUnsplit.setShardAccounts(cs.loadRef());
 
         if (!cs.isExotic()) {
             shardStateUnsplit.setShardStateInfo(ShardStateInfo.deserialize(CellSlice.beginParse(cs.loadRef())));

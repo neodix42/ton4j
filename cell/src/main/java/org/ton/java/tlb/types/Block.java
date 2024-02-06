@@ -49,8 +49,10 @@ public class Block {
                 .magic(0x11ef55aaL)
                 .globalId(cs.loadInt(32).intValue())
                 .blockInfo(BlockInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .valueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())))
                 .build();
+
+        block.setValueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())));
+
         System.out.println(block);
 
         MerkleUpdate merkleUpdate = MerkleUpdate.deserialize(CellSlice.beginParse(cs.loadRef()));

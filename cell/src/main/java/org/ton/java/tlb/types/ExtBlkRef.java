@@ -27,11 +27,11 @@ public class ExtBlkRef {
     BigInteger rootHash;
     BigInteger fileHash;
 
-    private String getRootHash() {
+    public String getRootHash() {
         return rootHash.toString(16);
     }
 
-    private String getFileHash() {
+    public String getFileHash() {
         return fileHash.toString(16);
     }
 

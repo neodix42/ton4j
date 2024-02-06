@@ -37,16 +37,13 @@ public class MerkleUpdate {
     }
 
     public static MerkleUpdate deserialize(CellSlice cs) {
-//                Cell cell = cs.sliceToCell();
-//                System.out.println("MerkleUpdate " + cs.sliceToCell().toHex());
-//                System.out.println("CellType " + cell.getCellType());
 
         if (cs.type != CellType.MERKLE_UPDATE) {
             return null;
         }
 
-//                magic = cs.loadUint(8).intValue();
-//                assert (magic == 0x02) : "MerkleUpdate: magic not equal to 0x02, found 0x" + Long.toHexString(magic);
+        long magic = cs.loadUint(8).intValue();
+//        assert (magic == 0x02) : "MerkleUpdate: magic not equal to 0x02, found 0x" + Long.toHexString(magic);
 
         return MerkleUpdate.builder()
                 .oldHash(cs.loadUint(256))

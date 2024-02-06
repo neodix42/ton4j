@@ -263,13 +263,14 @@ public class TonHashMapAug {
     }
 
     private BitString deserializeLabelLong(CellSlice edge, int m) {
-        BigInteger length = edge.loadUint((int) Math.ceil(log2((m + 1))));
+//        BigInteger length = edge.loadUint((int) Math.ceil(log2((m + 1))));
+        BigInteger length = edge.loadUint(BigInteger.valueOf(m).bitLength());
         return edge.loadBits(length.intValue());
     }
 
     private BitString deserializeLabelSame(CellSlice edge, int m) {
         boolean v = edge.loadBit();
-        BigInteger length = edge.loadUint((int) Math.ceil(log2((m + 1))));
+        BigInteger length = edge.loadUint(BigInteger.valueOf(m).bitLength());
         BitString r = new BitString(length.intValue());
         for (int i = 0; i < length.intValue(); i++) {
             r.writeBit(v);

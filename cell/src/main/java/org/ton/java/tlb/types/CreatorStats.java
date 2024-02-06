@@ -24,14 +24,14 @@ public class CreatorStats {
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeUint(0x4, 8)
+                .storeUint(0x4, 4)
                 .storeCell(mcBlocks.toCell())
                 .storeCell(shardBlocks.toCell())
                 .endCell();
     }
 
     public static CreatorStats deserialize(CellSlice cs) {
-        long magic = cs.loadUint(8).longValue();
+        long magic = cs.loadUint(4).longValue();
         assert (magic == 0x4) : "CreatorStats: magic not equal to 0x4, found 0x" + Long.toHexString(magic);
 
         return CreatorStats.builder()

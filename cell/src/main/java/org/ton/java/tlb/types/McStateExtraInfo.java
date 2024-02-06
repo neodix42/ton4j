@@ -7,6 +7,7 @@ import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonHashMapAugE;
 
 import java.math.BigInteger;
 
@@ -28,7 +29,8 @@ import java.math.BigInteger;
 public class McStateExtraInfo {
     BigInteger flags;
     ValidatorInfo validatorInfo;
-    OldMcBlocksInfo prevBlocks;
+    //    OldMcBlocksInfo prevBlocks;
+    TonHashMapAugE prevBlocks;
     Boolean afterKeyBlock;
     ExtBlkRef lastKeyBlock;
     BlockCreateStats blockCreateStats;
@@ -37,7 +39,11 @@ public class McStateExtraInfo {
         return CellBuilder.beginCell()
                 .storeUint(flags, 16)
                 .storeCell(validatorInfo.toCell())
-                .storeCell(prevBlocks.toCell())
+                .storeDict(prevBlocks.serialize(
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
+                        v -> CellBuilder.beginCell().storeCell(((KeyExtBlkRef) v).toCell()),
+                        e -> CellBuilder.beginCell().storeCell(((KeyMaxLt) e).toCell()),
+                        (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1)))
                 .storeBit(afterKeyBlock)
                 .storeCellMaybe(lastKeyBlock.toCell())
                 .storeCell(flags.testBit(0) ? blockCreateStats.toCell() : null)
@@ -52,7 +58,11 @@ public class McStateExtraInfo {
         McStateExtraInfo mcStateExtraInfo = McStateExtraInfo.builder()
                 .flags(cs.loadUint(16))
                 .validatorInfo(ValidatorInfo.deserialize(cs))
-                .prevBlocks(OldMcBlocksInfo.deserialize(cs))
+//                .prevBlocks(OldMcBlocksInfo.deserialize(cs))
+                .prevBlocks(cs.loadDictAugE(32,
+                        k -> k.readInt(32),
+                        v -> v,
+                        e -> e))
                 .afterKeyBlock(cs.loadBit())
                 .build();
 
