@@ -30,4 +30,11 @@ public class ImportFees {
                 .storeSlice(CellSlice.beginParse(valueImported.toCell()))
                 .endCell();
     }
+
+    public static ImportFees deserialize(CellSlice cs) {
+        return ImportFees.builder()
+                .feesCollected(cs.loadCoins())
+                .valueImported(CurrencyCollection.deserialize(cs))
+                .build();
+    }
 }

@@ -7,6 +7,7 @@ import lombok.ToString;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -23,6 +24,10 @@ public class AnyMessage {
                 .storeAddress(senderAddr)
                 .storeAddress(destAddr)
                 .endCell();
+    }
+
+    public static AnyMessage deserialize(CellSlice cs) {
+        return null;
     }
 
 }

@@ -6,7 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.tlb.loader.Tlb;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -34,9 +34,18 @@ public class InMsgImportIhr implements InMsg {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeUint(0b010, 3)
-                .storeRef(Tlb.save(transaction))
+                .storeRef(transaction.toCell())
                 .storeCoins(ihrFee)
                 .storeRef(proofCreated)
                 .endCell();
+    }
+
+    public static InMsgImportIhr deserialize(CellSlice cs) {
+        return InMsgImportIhr.builder()
+                .msg(Message.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .ihrFee(cs.loadCoins())
+                .proofCreated(cs.loadRef())
+                .build();
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapAugE;
 
 import java.math.BigInteger;
@@ -29,7 +30,7 @@ public class BlockExtra {
     TonHashMapAugE shardAccountBlocks; // _ (HashmapAugE 256 AccountBlock CurrencyCollection) = ShardAccountBlocks;
     BigInteger randSeed;
     BigInteger createdBy;
-    McBlockExtra custom;
+    McBlockExtra mcBlockExtra;
 
     private String getRandSeed() {
         return randSeed.toString(16);
@@ -56,8 +57,33 @@ public class BlockExtra {
                 ))
                 .storeUint(randSeed, 256)
                 .storeUint(createdBy, 256)
-                .storeRefMaybe(custom.toCell())
+                .storeRefMaybe(mcBlockExtra.toCell())
                 .endCell();
+    }
+
+    public static BlockExtra deserialize(CellSlice cs) {
+        if (cs.isExotic()) {
+            return null;
+        }
+        long magic = cs.loadUint(32).longValue();
+        assert (magic == 0x4a33f6fdL) : "Block: magic not equal to 0x4a33f6fdL, found 0x" + Long.toHexString(magic);
+
+        InMsgDescr inMsgDescr = InMsgDescr.deserialize(CellSlice.beginParse(cs.loadRef()));
+        OutMsgDescr outMsgDescr = OutMsgDescr.deserialize(CellSlice.beginParse(cs.loadRef()));
+        BlockExtra blockExtra = BlockExtra.builder()
+                .inMsgDesc(inMsgDescr)
+                .outMsgDesc(outMsgDescr)
+                .shardAccountBlocks(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
+                        k -> k.readUint(256),
+                        v -> AccountBlock.deserialize(v),
+                        e -> CurrencyCollection.deserialize(e)))
+                .randSeed(cs.loadUint(256))
+                .createdBy(cs.loadUint(256))
+                .build();
+        blockExtra.setMcBlockExtra(cs.loadBit() ? McBlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
+// bug?                       .custom(isNull(cs.preloadMaybeRefX()) ? null : (McBlockExtra) Tlb.load(McBlockExtra.class, CellSlice.beginParse(cs.loadRef())))
+
+        return blockExtra;
     }
 }
 

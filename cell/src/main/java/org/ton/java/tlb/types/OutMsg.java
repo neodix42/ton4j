@@ -1,6 +1,7 @@
 package org.ton.java.tlb.types;
 
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellSlice;
 
 // msg_export_new extends OutMsg
 
@@ -29,4 +30,64 @@ import org.ton.java.cell.Cell;
  */
 public interface OutMsg {
     public Cell toCell();
+
+    public static OutMsg deserialize(CellSlice cs) {
+        int outMsgFlag = cs.loadUint(3).intValue();
+        switch (outMsgFlag) {
+            case 0b000 -> {
+                return OutMsgExt.builder()
+                        .msg(Message.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .build();
+            }
+            case 0b010 -> {
+                return OutMsgImm.builder()
+                        .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .reimport(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .build();
+            }
+            case 0b001 -> {
+                return OutMsgNew.builder()
+                        .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .build();
+            }
+            case 0b011 -> {
+                return OutMsgTr.builder()
+                        .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .imported(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .build();
+            }
+            case 0b111 -> {
+                return OutMsgTrReq.builder()
+                        .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .imported(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .build();
+            }
+            case 0b100 -> {
+                return OutMsgDeqImm.builder()
+                        .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .reimport(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
+                        .build();
+            }
+            case 0b110 -> {
+                boolean outMsgSubFlag = cs.loadBit();
+                if (outMsgSubFlag) {
+                    return OutMsgDeqShort.builder()
+                            .msgEnvHash(cs.loadUint(256))
+                            .nextWorkchain(cs.loadInt(32).longValue())
+                            .nextAddrPfx(cs.loadUint(64))
+                            .importBlockLt(cs.loadUint(64))
+                            .build();
+                } else {
+                    return OutMsgDeq.builder()
+                            .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                            .importBlockLt(cs.loadUint(63))
+                            .build();
+                }
+            }
+        }
+        throw new Error("unknown out_msg flag, found 0x" + Long.toBinaryString(outMsgFlag));
+    }
 }

@@ -36,4 +36,14 @@ public class BouncePhaseNoFounds implements BouncePhase {
                 .storeCoins(reqFwdFees)
                 .endCell();
     }
+
+    public static BouncePhaseNoFounds deserialize(CellSlice cs) {
+        long magic = cs.loadUint(2).intValue();
+        assert (magic == 0b01) : "BouncePhaseNoFounds: magic not equal to 0b01, found 0x" + Long.toHexString(magic);
+
+        return BouncePhaseNoFounds.builder()
+                .msgSize(StorageUsedShort.deserialize(cs))
+                .reqFwdFees(cs.loadCoins())
+                .build();
+    }
 }

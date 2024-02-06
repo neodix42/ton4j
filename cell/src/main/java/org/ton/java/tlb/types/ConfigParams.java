@@ -7,6 +7,7 @@ import lombok.ToString;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMap;
 
 @Builder
@@ -25,5 +26,12 @@ public class ConfigParams {
                         v -> CellBuilder.beginCell().storeRef((Cell) v))
                 )
                 .endCell();
+    }
+
+    public static ConfigParams deserialize(CellSlice cs) {
+        return ConfigParams.builder()
+                .configAddr(Address.of((byte) 0x11, 255, cs.loadBits(256).toByteArray())) // TODO prio 1
+                .config(CellSlice.beginParse(cs.loadRef()).loadDict(32, k -> k.readUint(32), v -> v))
+                .build();
     }
 }

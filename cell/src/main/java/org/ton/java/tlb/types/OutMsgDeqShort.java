@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -36,5 +37,9 @@ public class OutMsgDeqShort implements OutMsg {
                 .storeUint(nextAddrPfx, 64)
                 .storeUint(importBlockLt, 64)
                 .endCell();
+    }
+
+    public static OutMsgDeqShort deserialize(CellSlice cs) {
+        return null;
     }
 }

@@ -41,8 +41,6 @@ public class InternalMessage extends CommonMsg {
     BigInteger fwdFee;
     BigInteger createdLt;
     Long createdAt;
-//    StateInit stateInit;
-//    Cell body;
 
     private String getMagic() {
         return Long.toHexString(magic);
@@ -67,30 +65,26 @@ public class InternalMessage extends CommonMsg {
                 .storeCoins(fwdFee)
                 .storeUint(createdLt, 64)
                 .storeUint(createdAt, 32);
-//                .storeBit(nonNull(stateInit)); //maybe
 //
-//        if (nonNull(stateInit)) { //either
-//            Cell stateInitCell = stateInit.toCell();
-//            if ((result.bits.getFreeBits() - 2 < stateInitCell.bits.getUsedBytes()) || (result.getFreeRefs() - 1 < result.getMaxRefs())) {
-//                result.storeBit(true);
-//                result.storeRef(stateInitCell);
-//            } else {
-//                result.storeBit(false);
-//                result.storeSlice(CellSlice.beginParse(stateInitCell));
-//            }
-//        }
-//
-//        if (nonNull(body)) { //either
-//            if ((result.bits.getFreeBits() - 1 < body.bits.getUsedBytes()) || (result.getFreeRefs() < body.getMaxRefs())) {
-//                result.storeBit(true);
-//                result.storeRef(body);
-//            } else {
-//                result.storeBit(false);
-//                result.storeSlice(CellSlice.beginParse(body));
-//            }
-//        } else {
-//            result.storeBit(false);
-//        }
         return result.endCell();
+    }
+
+    public static InternalMessage deserialize(CellSlice cs) {
+        boolean magicBool = cs.loadBit();
+        assert (!magicBool) : "InternalMessage: magic not equal to 0, found 0x" + magicBool;
+
+        return InternalMessage.builder()
+                .magic(0L)
+                .iHRDisabled(cs.loadBit())
+                .bounce(cs.loadBit())
+                .bounced(cs.loadBit())
+                .srcAddr(MsgAddress.deserialize(cs))
+                .dstAddr(MsgAddress.deserialize(cs))
+                .value(CurrencyCollection.deserialize(cs))
+                .iHRFee(cs.loadCoins())
+                .fwdFee(cs.loadCoins())
+                .createdLt(cs.loadUint(64))
+                .createdAt(cs.loadUint(32).longValue())
+                .build();
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import static org.ton.java.utils.Utils.log2;
 
@@ -24,5 +25,12 @@ public class DepthBalanceInfo {
         return CellBuilder.beginCell()
                 .storeUint(depth, (int) Math.ceil(log2((depth))))
                 .storeCell(currencies.toCell()).endCell();
+    }
+
+    public static DepthBalanceInfo deserialize(CellSlice cs) {
+        return DepthBalanceInfo.builder()
+                .depth(cs.loadUint(5).intValue()) // tlb #<= 60
+                .currencies(CurrencyCollection.deserialize(cs))
+                .build();
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -31,5 +32,16 @@ public class GlobalVersion {
                 .storeUint(version, 32)
                 .storeUint(capabilities, 64)
                 .endCell();
+    }
+
+    public static GlobalVersion deserialize(CellSlice cs) {
+        long magic = cs.loadUint(8).longValue();
+        assert (magic == 0xc4L) : "GlobalVersion: magic not equal to 0xc4, found 0x" + Long.toHexString(magic);
+
+        return GlobalVersion.builder()
+                .magic(0xc4L)
+                .version(cs.loadUint(32).longValue())
+                .capabilities(cs.loadUint(64))
+                .build();
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
 @Builder
@@ -32,5 +33,9 @@ public class TransactionIO {
                 .storeRefMaybe(in.toCell())
                 .storeDict(dictCell)
                 .endCell();
+    }
+
+    public static TransactionIO deserialize(CellSlice cs) {
+        return null;
     }
 }

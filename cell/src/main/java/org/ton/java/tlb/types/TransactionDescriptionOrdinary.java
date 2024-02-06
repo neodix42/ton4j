@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -50,5 +51,22 @@ public class TransactionDescriptionOrdinary {
                 .storeCellMaybe(bouncePhase.toCell())
                 .storeBit(destroyed)
                 .endCell();
+    }
+
+    public static TransactionDescriptionOrdinary deserialize(CellSlice cs) {
+        long magic = cs.loadUint(4).intValue();
+        assert (magic == 0b0000) : "TransactionDescriptionOrdinary: magic not equal to 0b0000, found 0x" + Long.toHexString(magic);
+
+        return TransactionDescriptionOrdinary.builder()
+                .magic(0b0000)
+                .creditFirst(cs.loadBit())
+                .storagePhase(cs.loadBit() ? StoragePhase.deserialize(cs) : null)
+                .creditPhase(cs.loadBit() ? CreditPhase.deserialize(cs) : null)
+                .computePhase(ComputePhase.deserialize(cs))
+                .actionPhase(cs.loadBit() ? ActionPhase.deserialize(CellSlice.beginParse(cs.loadRef())) : null)
+                .aborted(cs.loadBit())
+                .bouncePhase(cs.loadBit() ? BouncePhase.deserialize(CellSlice.beginParse(cs.loadRef())) : null)
+                .destroyed(cs.loadBit())
+                .build();
     }
 }

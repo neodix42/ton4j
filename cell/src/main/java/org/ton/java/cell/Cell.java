@@ -292,7 +292,7 @@ public class Cell {
             if (bits.getLength() < 8) {
                 throw new Error("not enough bytes for an exotic cell type");
             }
-            cellType = bits.readUint(8).intValue();
+            cellType = bits.preReadUint(8).intValue();
         }
         int[] cellRefsIndex = new int[totalRefs];
 

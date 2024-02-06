@@ -62,4 +62,19 @@ public class Message {
         }
         return c.endCell();
     }
+
+    public static Message deserialize(CellSlice cs) {
+        CommonMsgInfo commonMsgInfo = CommonMsgInfo.deserialize(cs);
+        return Message.builder()
+                .msgType(commonMsgInfo.getMsgType())
+                .info(commonMsgInfo)
+                .init(cs.loadBit() ?
+                        (cs.loadBit() ?
+                                StateInit.deserialize(CellSlice.beginParse(cs.loadRef()))
+                                : StateInit.deserialize(cs))
+                        : StateInit.builder().build())
+                .body(cs.loadBit() ?
+                        cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
+                .build();
+    }
 }

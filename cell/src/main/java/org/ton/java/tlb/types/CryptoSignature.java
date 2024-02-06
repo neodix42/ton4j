@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -27,5 +28,16 @@ public class CryptoSignature {
                 .storeUint(r, 256)
                 .storeUint(s, 256)
                 .endCell();
+    }
+
+    public static CryptoSignature deserialize(CellSlice cs) {
+        long magic = cs.loadUint(4).longValue();
+        assert (magic == 0x5) : "CryptoSignature: magic not equal to 0x5, found 0x" + Long.toHexString(magic);
+
+        return CryptoSignature.builder()
+                .magic(0x5)
+                .r(cs.loadUint(256))
+                .s(cs.loadUint(256))
+                .build();
     }
 }

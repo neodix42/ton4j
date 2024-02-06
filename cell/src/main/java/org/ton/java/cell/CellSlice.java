@@ -3,7 +3,6 @@ package org.ton.java.cell;
 
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
-import org.ton.java.tlb.loader.Tlb;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -19,6 +18,8 @@ public class CellSlice {
     BitString bits;
     List<Cell> refs;
 
+    public CellType type;
+
     private CellSlice() {
     }
 
@@ -27,8 +28,18 @@ public class CellSlice {
         this.refs = new ArrayList<>(refs);
     }
 
+    private CellSlice(BitString bits, List<Cell> refs, CellType cellType) {
+        this.bits = bits.clone();
+        this.refs = new ArrayList<>(refs);
+        this.type = cellType;
+    }
+
+    public boolean isExotic() {
+        return this.type != CellType.ORDINARY;
+    }
+
     public static CellSlice beginParse(Cell cell) {
-        return new CellSlice(cell.bits, cell.refs);
+        return new CellSlice(cell.bits, cell.refs, cell.type);
     }
 
     public static CellSlice beginParse(Object cell) {
@@ -190,6 +201,9 @@ public class CellSlice {
      * Returns only value and extra of all edges, without extras of fork-nodes.
      */
     public TonHashMapAugE loadDictAugE(int n, Function<BitString, Object> keyParser, Function<CellSlice, Object> valueParser, Function<CellSlice, Object> extraParser) {
+        if (this.isExotic()) {
+            return new TonHashMapAugE(n);
+        }
         boolean isEmpty = !this.loadBit();
         if (isEmpty) {
             return new TonHashMapAugE(n);
@@ -584,9 +598,5 @@ public class CellSlice {
 
         String address = workchain + ":" + String.format("%64s", hashPart.toString(16)).replace(' ', '0');
         return Address.of(address);
-    }
-
-    public Object loadTlb(Class clazz) {
-        return Tlb.load(clazz, this);
     }
 }

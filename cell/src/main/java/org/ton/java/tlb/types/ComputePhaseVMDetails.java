@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -55,5 +56,19 @@ public class ComputePhaseVMDetails {
                 .storeUint(vMInitStateHash, 256)
                 .storeUint(vMFinalStateHash, 256)
                 .endCell();
+    }
+
+    public static ComputePhaseVMDetails deserialize(CellSlice cs) {
+        return ComputePhaseVMDetails.builder()
+                .gasUsed(cs.loadVarUInteger(BigInteger.valueOf(7)))
+                .gasLimit(cs.loadVarUInteger(BigInteger.valueOf(7)))
+                .gasCredit(cs.loadBit() ? cs.loadVarUInteger(BigInteger.valueOf(3)) : BigInteger.ZERO)
+                .mode(cs.loadUint(8).intValue())
+                .exitCode(cs.loadUint(32).longValue())
+                .exitArg(cs.loadBit() ? cs.loadUint(32).longValue() : 0L)
+                .vMSteps(cs.loadUint(32).longValue())
+                .vMInitStateHash(cs.loadUint(256))
+                .vMFinalStateHash(cs.loadUint(256))
+                .build();
     }
 }

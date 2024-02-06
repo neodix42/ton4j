@@ -6,7 +6,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.tlb.loader.Tlb;
 import org.ton.java.tlb.types.Text;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +26,7 @@ public class TestTlbTextReader {
         Cell c = txt.toCell();
         log.info("txtCell {}", c);
 
-        Text loadedTxt = (Text) Tlb.load(Text.class, CellSlice.beginParse(c));
+        Text loadedTxt = Text.deserialize(CellSlice.beginParse(c));
         log.info("loadedTxt {}", loadedTxt);
         assertThat(loadedTxt.getValue()).isEqualTo(txt.getValue());
     }

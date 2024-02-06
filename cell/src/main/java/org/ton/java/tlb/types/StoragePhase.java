@@ -32,4 +32,12 @@ public class StoragePhase {
                 .storeSlice(CellSlice.beginParse(((AccStatusChange) statusChange).toCell()))
                 .endCell();
     }
+
+    public static StoragePhase deserialize(CellSlice cs) {
+        return StoragePhase.builder()
+                .storageFeesCollected(cs.loadCoins())
+                .storageFeesDue(cs.loadBit() ? cs.loadCoins() : null)
+                .statusChange(AccStatusChange.deserialize(cs))
+                .build();
+    }
 }

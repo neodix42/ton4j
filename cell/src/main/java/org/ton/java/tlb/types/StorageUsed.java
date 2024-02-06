@@ -7,6 +7,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -31,5 +32,13 @@ public class StorageUsed {
                 .storeVarUint(cellsUsed, 7)
                 .storeVarUint(publicCellsUsed, 7)
                 .endCell();
+    }
+
+    public static StorageUsed deserialize(CellSlice cs) {
+        return StorageUsed.builder()
+                .cellsUsed(cs.loadVarUInteger(BigInteger.valueOf(7)))
+                .bitsUsed(cs.loadVarUInteger(BigInteger.valueOf(7)))
+                .publicCellsUsed(cs.loadVarUInteger(BigInteger.valueOf(7)))
+                .build();
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
@@ -32,4 +33,14 @@ public class CurrencyCollection {
                 .storeDict(dictCell)
                 .endCell();
     }
+
+    public static CurrencyCollection deserialize(CellSlice cs) {
+        return CurrencyCollection.builder()
+                .coins(cs.loadCoins())
+                .extraCurrencies(cs.loadDictE(32,
+                        k -> k.readUint(32),// todo read varuint32
+                        v -> v))
+                .build();
+    }
+
 }

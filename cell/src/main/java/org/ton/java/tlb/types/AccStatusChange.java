@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -27,5 +28,17 @@ public class AccStatusChange {
             }
         }
         throw new Error("unknown account status change");
+    }
+
+    public static AccStatusChange deserialize(CellSlice cs) {
+        boolean isChanged = cs.loadBit();
+        if (isChanged) {
+            boolean isDeleted = cs.loadBit();
+            if (isDeleted) {
+                return AccStatusChange.builder().type("DELETED").build();
+            }
+            return AccStatusChange.builder().type("FROZEN").build();
+        }
+        return AccStatusChange.builder().type("UNCHANGED").build();
     }
 }

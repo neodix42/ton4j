@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -25,5 +26,12 @@ public class CryptoSignaturePair {
                 .storeUint(nodeIdShort, 256)
                 .storeCell(sign.toCell())
                 .endCell();
+    }
+
+    public static CryptoSignaturePair deserialize(CellSlice cs) {
+        return CryptoSignaturePair.builder()
+                .nodeIdShort(cs.loadUint(256))
+                .sign(CryptoSignature.deserialize(cs))
+                .build();
     }
 }

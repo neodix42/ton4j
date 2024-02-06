@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.CellSlice;
 
 /**
  * int_msg_info$0
@@ -38,4 +39,35 @@ import lombok.ToString;
 public class CommonMsgInfo {
     String msgType;
     CommonMsg msg;
+
+    public static CommonMsgInfo deserialize(CellSlice cs) {
+//        if (isNull(cs)) {
+//            return Message.builder().build();
+//        }
+        boolean isExternal = cs.preloadBit();
+        if (!isExternal) {
+            InternalMessage internalMessage = InternalMessage.deserialize(cs);
+
+            return CommonMsgInfo.builder()
+                    .msgType("INTERNAL")
+                    .msg(internalMessage)
+                    .build();
+        } else {
+            boolean isOut = cs.preloadBitAt(2);
+            if (isOut) {
+                ExternalMessageOut externalMessageOut = ExternalMessageOut.deserialize(cs);
+                return CommonMsgInfo.builder()
+                        .msgType("EXTERNAL_OUT")
+                        .msg(externalMessageOut)
+                        .build();
+            } else {
+                ExternalMessage externalMessage = ExternalMessage.deserialize(cs);
+                return CommonMsgInfo.builder()
+                        .msgType("EXTERNAL_IN")
+                        .msg(externalMessage)
+                        .build();
+            }
+        }
+        //throw new Error("Unknown msg type ");
+    }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -26,5 +27,13 @@ public class Anycast {
                 .storeUint(depth, 5)
                 .storeUint(rewritePfx, depth)
                 .endCell();
+    }
+
+    public static Anycast deserialize(CellSlice cs) {
+        int depth = cs.loadUint(5).intValue();
+        return Anycast.builder()
+                .depth(depth)
+                .rewritePfx(cs.loadUint(depth).byteValueExact())
+                .build();
     }
 }

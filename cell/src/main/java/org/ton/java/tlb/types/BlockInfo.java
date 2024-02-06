@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -110,6 +111,54 @@ public class BlockInfo {
         }
 
         return result;
+    }
 
+    public static BlockInfo deserialize(CellSlice cs) {
+        long magic = cs.loadUint(32).longValue();
+        assert (magic == 0x9bc7a987L) : "BlockInfo: magic not equal to 0x9bc7a987, found 0x" + Long.toHexString(magic);
+
+        BlockInfo blockInfo = BlockInfo.builder()
+                .magic(0x9bc7a987L)
+                .version(cs.loadUint(32).longValue())
+                .notMaster(cs.loadBit())
+                .afterMerge(cs.loadBit())
+                .beforeSplit(cs.loadBit())
+                .afterSplit(cs.loadBit())
+                .wantSplit(cs.loadBit())
+                .wantMerge(cs.loadBit())
+                .keyBlock(cs.loadBit())
+                .vertSeqnoIncr(cs.loadBit())
+                .flags(cs.loadUint(8).longValue())
+                .seqno(cs.loadUint(32).longValue())
+                .vertSeqno(cs.loadUint(32).longValue())
+                .shard(ShardIdent.deserialize(cs))
+                .genuTime(cs.loadUint(32).longValue())
+                .startLt(cs.loadUint(64))
+                .endLt(cs.loadUint(64))
+                .genValidatorListHashShort(cs.loadUint(32).longValue())
+                .genCatchainSeqno(cs.loadUint(32).longValue())
+                .minRefMcSeqno(cs.loadUint(32).longValue())
+                .prevKeyBlockSeqno(cs.loadUint(32).longValue())
+                .build();
+        blockInfo.setGlobalVersion(((blockInfo.getFlags() & 0x1L) == 0x1L) ? GlobalVersion.deserialize(cs) : null);
+        blockInfo.setMasterRef(blockInfo.isNotMaster() ? ExtBlkRef.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
+        blockInfo.setPrefRef(loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), blockInfo.isAfterMerge()));
+        blockInfo.setPrefVertRef(blockInfo.isVertSeqnoIncr() ? loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), blockInfo.isAfterMerge()) : null);
+        return blockInfo;
+    }
+
+    private static BlkPrevInfo loadBlkPrevInfo(CellSlice cs, boolean afterMerge) {
+        BlkPrevInfo blkPrevInfo = BlkPrevInfo.builder().build();
+        if (!afterMerge) {
+            ExtBlkRef blkRef = ExtBlkRef.deserialize(cs);
+            blkPrevInfo.setPrev1(blkRef);
+            return blkPrevInfo;
+        }
+
+        ExtBlkRef blkRef1 = ExtBlkRef.deserialize(CellSlice.beginParse(cs.loadRef()));
+        ExtBlkRef blkRef2 = ExtBlkRef.deserialize(CellSlice.beginParse(cs.loadRef()));
+        blkPrevInfo.setPrev1(blkRef1);
+        blkPrevInfo.setPrev2(blkRef2);
+        return blkPrevInfo;
     }
 }

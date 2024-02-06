@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -41,5 +42,15 @@ public class StateInit {
                 .storeRefMaybe(data)
                 .storeRefMaybe(lib)
                 .endCell();
+    }
+
+    public static StateInit deserialize(CellSlice cs) {
+        return StateInit.builder()
+                .depth(cs.loadBit() ? cs.loadUint(5) : BigInteger.ZERO)
+                .tickTock(cs.loadBit() ? TickTock.deserialize(cs) : null)
+                .code(cs.loadMaybeRefX())
+                .data(cs.loadMaybeRefX())
+                .lib(cs.loadMaybeRefX())
+                .build();
     }
 }

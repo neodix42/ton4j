@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -19,5 +20,9 @@ public class AccountStateUninit implements AccountState {
         return CellBuilder.beginCell()
                 .storeUint(0, 2)
                 .endCell();
+    }
+
+    public static AccountStateUninit deserialize(CellSlice cs) {
+        return null;
     }
 }

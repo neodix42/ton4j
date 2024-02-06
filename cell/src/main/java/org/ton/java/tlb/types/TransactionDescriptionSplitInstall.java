@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -34,5 +35,17 @@ public class TransactionDescriptionSplitInstall {
                 .storeRef(prepareTransaction.toCell())
                 .storeBit(installed)
                 .endCell();
+    }
+
+    public static TransactionDescriptionSplitInstall deserialize(CellSlice cs) {
+        long magic = cs.loadUint(4).intValue();
+        assert (magic == 0b0101) : "TransactionDescriptionSplitInstall: magic not equal to 0b0101, found 0x" + Long.toHexString(magic);
+
+        return TransactionDescriptionSplitInstall.builder()
+                .magic(0b0101)
+                .splitInfo(SplitMergeInfo.deserialize(cs))
+                .prepareTransaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .installed(cs.loadBit())
+                .build();
     }
 }

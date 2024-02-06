@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -38,6 +39,19 @@ public class ShardIdent {
                 .storeInt(workchain, 32)
                 .storeUint(shardPrefix, 64)
                 .endCell();
+    }
+
+    public static ShardIdent deserialize(CellSlice cs) {
+        long magic = cs.loadUint(2).longValue();
+        assert (magic == 0b00) : "ShardIdent: magic not equal to 0b00, found 0b" + Long.toBinaryString(magic);
+        ShardIdent s = ShardIdent.builder()
+                .magic(0L)
+                .prefixBits(cs.loadUint(6).longValue())
+                .workchain(cs.loadInt(32).intValue())
+                .shardPrefix(cs.loadUint(64))
+                .build();
+        System.out.println(s);
+        return s;
     }
 
     // todo ConvertShardIdentToShard from tonutils.go

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
@@ -32,5 +33,15 @@ public class BlockSignaturesPure {
                         v -> CellBuilder.beginCell().storeCell(((CryptoSignaturePair) v).toCell())
                 ))
                 .endCell();
+    }
+
+    public static BlockSignaturesPure deserialize(CellSlice cs) {
+        return BlockSignaturesPure.builder()
+                .sigCount(cs.loadUint(32).longValue())
+                .sigWeight(cs.loadUint(64))
+                .signatures(cs.loadDictE(16,
+                        k -> k.readUint(16),
+                        v -> CryptoSignaturePair.deserialize(CellSlice.beginParse(v))))
+                .build();
     }
 }

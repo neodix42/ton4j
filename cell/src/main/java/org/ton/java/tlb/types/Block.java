@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -36,6 +37,29 @@ public class Block {
                 .storeRef(stateUpdate.toCell())
                 .storeRef(extra.toCell())
                 .endCell();
+    }
+
+    public static Block deserialize(CellSlice cs) {
+//        System.out.println("block " + cs.sliceToCell().toHex());
+
+        long magic = cs.loadUint(32).longValue();
+        assert (magic == 0x11ef55aaL) : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
+
+        Block block = Block.builder()
+                .magic(0x11ef55aaL)
+                .globalId(cs.loadInt(32).intValue())
+                .blockInfo(BlockInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .valueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
+        System.out.println(block);
+
+        MerkleUpdate merkleUpdate = MerkleUpdate.deserialize(CellSlice.beginParse(cs.loadRef()));
+        block.setStateUpdate(merkleUpdate);
+        System.out.println(merkleUpdate);
+        block.setExtra(BlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())));
+        System.out.println(block);
+
+        return block;
     }
 
 /*

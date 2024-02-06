@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapAug;
 
 import java.math.BigInteger;
@@ -40,5 +41,20 @@ public class AccountBlock {
                 .storeDict(dictCell)
                 .storeRef(stateUpdate)
                 .endCell();
+    }
+
+    public static AccountBlock deserialize(CellSlice cs) {
+        long magic = cs.loadUint(4).longValue();
+        assert (magic == 0x5L) : "AccountBlock: magic not equal to 0x5, found 0x" + Long.toHexString(magic);
+
+        return AccountBlock.builder()
+                .magic(0x5)
+                .addr(cs.loadUint(256))
+                .transactions(cs.loadDictAug(64,
+                        k -> k.readInt(64),
+                        v -> Transaction.deserialize(CellSlice.beginParse(v.loadRef())),
+                        e -> CurrencyCollection.deserialize(e)))
+                .stateUpdate(cs.loadRef()) // ^(HASH_UPDATE Account) todo
+                .build();
     }
 }

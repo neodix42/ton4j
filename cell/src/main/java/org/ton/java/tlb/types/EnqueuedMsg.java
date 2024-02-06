@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -26,5 +27,12 @@ public class EnqueuedMsg implements InMsg {
                 .storeUint(enqueuedLt, 64)
                 .storeRef(outMsg.toCell())
                 .endCell();
+    }
+
+    public static EnqueuedMsg deserialize(CellSlice cs) {
+        return EnqueuedMsg.builder()
+                .enqueuedLt(cs.loadUint(64))
+                .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
     }
 }

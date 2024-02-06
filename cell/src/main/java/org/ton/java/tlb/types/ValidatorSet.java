@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMap;
 
 @Builder
@@ -20,5 +21,9 @@ public class ValidatorSet {
 
     private String getMagic() {
         return Long.toBinaryString(magic);
+    }
+
+    public static ValidatorSet deserialize(CellSlice cs) {
+        return null;
     }
 }

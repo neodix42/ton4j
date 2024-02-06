@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -30,5 +31,25 @@ public class Account {
                     .storeCell(accountStorage.toCell())
                     .endCell();
         }
+    }
+
+    public static Account deserialize(CellSlice cs) {
+        boolean isAccount = cs.loadBit();
+        if (!isAccount) {
+            return Account.builder().isNone(true).build();
+
+        }
+        MsgAddressInt address = MsgAddressInt.deserialize(cs);
+        StorageInfo info = StorageInfo.deserialize(cs);
+        AccountStorage storage = AccountStorage.deserialize(cs);
+
+        Account account = Account.builder()
+                .isNone(false)
+                .address(address)
+                .storageInfo(info)
+                .accountStorage(storage)
+                .build();
+        System.out.println("account " + account);
+        return account;
     }
 }

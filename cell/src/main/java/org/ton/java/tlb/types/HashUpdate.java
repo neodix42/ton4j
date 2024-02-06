@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -35,5 +36,16 @@ public class HashUpdate {
                 .storeUint(0x72, 32)
                 .storeUint(oldHash, 256)
                 .storeUint(newHash, 256).endCell();
+    }
+
+    public static HashUpdate deserialize(CellSlice cs) {
+        long magic = cs.loadUint(8).intValue();
+        assert (magic == 0x72) : "HashUpdate: magic not equal to 0x72, found 0x" + Long.toHexString(magic);
+
+        return HashUpdate.builder()
+                .magic(0x72)
+                .oldHash(cs.loadUint(256))
+                .newHash(cs.loadUint(256))
+                .build();
     }
 }

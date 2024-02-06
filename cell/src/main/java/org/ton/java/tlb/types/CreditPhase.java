@@ -29,4 +29,11 @@ public class CreditPhase {
                 .storeSlice(CellSlice.beginParse(((CurrencyCollection) credit).toCell()))
                 .endCell();
     }
+
+    public static CreditPhase deserialize(CellSlice cs) {
+        return CreditPhase.builder()
+                .dueFeesCollected(cs.loadBit() ? cs.loadCoins() : BigInteger.ZERO)
+                .credit(CurrencyCollection.deserialize(cs))
+                .build();
+    }
 }

@@ -70,4 +70,23 @@ public class ActionPhase {
                 .storeSlice(CellSlice.beginParse(((StorageUsedShort) totalMsgSize).toCell()))
                 .endCell();
     }
+
+    public static ActionPhase deserialize(CellSlice cs) {
+        return ActionPhase.builder()
+                .success(cs.loadBit())
+                .valid(cs.loadBit())
+                .noFunds(cs.loadBit())
+                .statusChange(AccStatusChange.deserialize(cs))
+                .totalFwdFees(cs.loadBit() ? cs.loadCoins() : null)
+                .totalActionFees(cs.loadBit() ? cs.loadCoins() : null)
+                .resultCode(cs.loadUint(32).longValue())
+                .resultArg(cs.loadBit() ? cs.loadUint(32).longValue() : 0)
+                .totalActions(cs.loadUint(16).longValue())
+                .specActions(cs.loadUint(16).longValue())
+                .skippedActions(cs.loadUint(16).longValue())
+                .messagesCreated(cs.loadUint(16).longValue())
+                .actionListHash(cs.loadUint(256))
+                .totalMsgSize(StorageUsedShort.deserialize(cs))
+                .build();
+    }
 }

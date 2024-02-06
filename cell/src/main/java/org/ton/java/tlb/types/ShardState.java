@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -41,6 +42,27 @@ public class ShardState {
                     .endCell();
         } else {
             throw new Error("wrong magic number");
+        }
+    }
+
+    public static ShardState deserialize(CellSlice cs) {
+        long tag = cs.preloadUint(32).longValue();
+        if (tag == 0x5f327da5L) {
+            ShardStateUnsplit left, right;
+            left = ShardStateUnsplit.deserialize(CellSlice.beginParse(cs.loadRef()));
+            right = ShardStateUnsplit.deserialize(CellSlice.beginParse(cs.loadRef()));
+            return ShardState.builder()
+                    .magic(tag)
+                    .left(left)
+                    .right(right)
+                    .build();
+        } else if (tag == 0x9023afe2L) {
+            return ShardState.builder()
+                    .magic(tag)
+                    .left(ShardStateUnsplit.deserialize(cs))
+                    .build();
+        } else {
+            throw new Error("ShardState magic not equal neither to 0x5f327da5L nor 0x9023afe2L, found 0x" + Long.toHexString(tag));
         }
     }
 }

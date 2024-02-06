@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -33,5 +34,37 @@ public class AccountStorage {
                 .storeCell(balance.toCell())
                 .storeCell(accountState.toCell())
                 .endCell();
+    }
+
+    public static AccountStorage deserialize(CellSlice cs) {
+        AccountStorage accountStorage = AccountStorage.builder().build();
+
+        BigInteger lastTransaction = cs.loadUint(64);
+        CurrencyCollection coins = CurrencyCollection.deserialize(cs);
+
+        boolean isStatusActive = cs.loadBit();
+        if (isStatusActive) {
+            accountStorage.setAccountStatus("ACTIVE");
+            accountStorage.setAccountState(AccountStateActive.deserialize(cs));
+        } else {
+            boolean isStatusFrozen = cs.loadBit();
+            if (isStatusFrozen) {
+                accountStorage.setAccountStatus("FROZEN");
+                if (cs.getRestBits() != 0) {
+                    BigInteger stateHash = cs.loadUint(256);
+                    accountStorage.setAccountState(
+                            AccountStateFrozen.builder()
+                                    .stateHash(stateHash)
+                                    .build());
+                }
+            } else {
+                accountStorage.setAccountStatus("UNINIT");
+                accountStorage.setAccountState(
+                        AccountStateUninit.builder().build());
+            }
+        }
+        accountStorage.setLastTransactionLt(lastTransaction);
+        accountStorage.setBalance(coins);
+        return accountStorage;
     }
 }

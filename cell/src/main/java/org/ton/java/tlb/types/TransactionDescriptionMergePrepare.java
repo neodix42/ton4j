@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -37,5 +38,17 @@ public class TransactionDescriptionMergePrepare {
                 .storeCellMaybe(storagePhase.toCell())
                 .storeBit(aborted)
                 .endCell();
+    }
+
+    public static TransactionDescriptionMergePrepare deserialize(CellSlice cs) {
+        long magic = cs.loadUint(4).intValue();
+        assert (magic == 0b0110) : "TransactionDescriptionMergePrepare: magic not equal to 0b0110, found 0x" + Long.toHexString(magic);
+
+        return TransactionDescriptionMergePrepare.builder()
+                .magic(0b0110)
+                .splitInfo(SplitMergeInfo.deserialize(cs))
+                .storagePhase(StoragePhase.deserialize(cs))
+                .aborted(cs.loadBit())
+                .build();
     }
 }

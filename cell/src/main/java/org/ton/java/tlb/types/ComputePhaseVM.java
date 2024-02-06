@@ -46,4 +46,15 @@ public class ComputePhaseVM implements ComputePhase {
                 .storeSlice(CellSlice.beginParse(((ComputePhaseVMDetails) details).toCell()))
                 .endCell();
     }
+
+    public static ComputePhase deserialize(CellSlice cs) {
+        return ComputePhaseVM.builder()
+                .magic(1)
+                .success(cs.loadBit())
+                .msgStateUsed(cs.loadBit())
+                .accountActivated(cs.loadBit())
+                .gasFees(cs.loadCoins())
+                .details(ComputePhaseVMDetails.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
+    }
 }

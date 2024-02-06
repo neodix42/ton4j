@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -15,5 +16,9 @@ public class SigPubKeyED25519 {
 
     private String getMagic() {
         return Long.toHexString(magic);
+    }
+
+    public static SigPubKeyED25519 deserialize(CellSlice cs) {
+        return null;
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -27,5 +28,12 @@ public class ValidatorBaseInfo {
                 .storeUint(validatorListHashShort, 32)
                 .storeUint(catchainSeqno, 32)
                 .endCell();
+    }
+
+    public static ValidatorBaseInfo deserialize(CellSlice cs) {
+        return ValidatorBaseInfo.builder()
+                .validatorListHashShort(cs.loadUint(32).longValue())
+                .catchainSeqno(cs.loadUint(32).longValue())
+                .build();
     }
 }

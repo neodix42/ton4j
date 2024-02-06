@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -23,5 +24,9 @@ public class AccountStateFrozen implements AccountState {
                 .storeUint(0b01, 2)
                 .storeUint(stateHash, 256)
                 .endCell();
+    }
+
+    public static AccountStateFrozen deserialize(CellSlice cs) {
+        return null;
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -39,5 +40,17 @@ public class MsgEnvelope {
                 .storeCoins(fwdFeeRemaining)
                 .storeRef(msg.toCell())
                 .endCell();
+    }
+
+    public static MsgEnvelope deserialize(CellSlice cs) {
+        long magic = cs.loadUint(4).longValue();
+        assert (magic == 4) : "MsgEnvelope: magic not equal to 4, found 0x" + Long.toHexString(magic);
+
+        return MsgEnvelope.builder()
+                .currAddr(IntermediateAddress.deserialize(cs))
+                .nextAddr(IntermediateAddress.deserialize(cs))
+                .fwdFeeRemaining(cs.loadCoins())
+                .msg(Message.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
     }
 }

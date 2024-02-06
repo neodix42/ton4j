@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -21,5 +22,11 @@ public class AccountStateActive implements AccountState {
                 .storeUint(1, 1)
                 .storeCell(stateInit.toCell())
                 .endCell();
+    }
+
+    public static AccountStateActive deserialize(CellSlice cs) {
+        return AccountStateActive.builder()
+                .stateInit(StateInit.deserialize(cs))
+                .build();
     }
 }

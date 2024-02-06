@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapAugE;
 
 import java.math.BigInteger;
@@ -44,10 +45,11 @@ public class ShardStateUnsplit {
     long genUTime;
     BigInteger genLt;
     long minRefMCSeqno;
+    //    OutMsgQueueInfo outMsgQueueInfo;
     OutMsgQueueInfo outMsgQueueInfo;
     boolean beforeSplit;
     TonHashMapAugE accounts;
-    Cell shardStateInfo;
+    ShardStateInfo shardStateInfo;
     McStateExtra custom;
 
     private String getMagic() {
@@ -71,8 +73,34 @@ public class ShardStateUnsplit {
                         v -> v,
                         e -> e,
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1))) // todo
-                .storeRef(shardStateInfo)
+                .storeRef(shardStateInfo.toCell())
                 .storeRefMaybe(custom.toCell())
                 .endCell();
+    }
+
+    public static ShardStateUnsplit deserialize(CellSlice cs) {
+        ShardStateUnsplit shardStateUnsplit = ShardStateUnsplit.builder()
+                .magic(cs.loadUint(32).longValue())
+                .globalId(cs.loadInt(32).intValue())
+                .shardIdent(ShardIdent.deserialize(cs))
+                .seqno(cs.loadUint(32).longValue())
+                .vertSeqno(cs.loadUint(32).longValue())
+                .genUTime(cs.loadUint(32).longValue())
+                .genLt(cs.loadUint(64))
+                .minRefMCSeqno(cs.loadUint(32).longValue())
+                .outMsgQueueInfo(OutMsgQueueInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .beforeSplit(cs.loadBit())
+                .accounts(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
+                        k -> k.readInt(256),
+                        v -> ShardAccount.deserialize(v),
+                        e -> DepthBalanceInfo.deserialize(e)))
+                .build();
+
+        if (!cs.isExotic()) {
+            shardStateUnsplit.setShardStateInfo(ShardStateInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
+        }
+
+        shardStateUnsplit.setCustom(cs.loadBit() ? McStateExtra.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
+        return shardStateUnsplit;
     }
 }

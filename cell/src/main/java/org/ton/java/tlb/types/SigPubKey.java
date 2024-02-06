@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -25,5 +26,9 @@ public class SigPubKey {
                 .storeUint(0x8e81278a, 32)
                 .storeUint(pubkey, 256)
                 .endCell();
+    }
+
+    public static SigPubKey deserialize(CellSlice cs) {
+        return null;
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -27,5 +28,12 @@ public class InMsgImportExt implements InMsg {
                 .storeRef(msg.toCell())
                 .storeRef(transaction.toCell())
                 .endCell();
+    }
+
+    public static InMsgImportExt deserialize(CellSlice cs) {
+        return InMsgImportExt.builder()
+                .msg(Message.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
     }
 }

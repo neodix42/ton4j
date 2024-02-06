@@ -12,7 +12,6 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tl.loader.Tl;
 import org.ton.java.tl.types.DbBlockInfo;
-import org.ton.java.tlb.loader.Tlb;
 import org.ton.java.tlb.types.Block;
 import org.ton.java.tlb.types.BlockProof;
 import org.ton.java.utils.Utils;
@@ -115,7 +114,7 @@ public class TestTl {
             Cell c = CellBuilder.fromBoc(r.readBytes(bocSize));
             if (c.bits.preReadUint(8).longValue() == 0xc3) {
                 //c.bits.readUint(8);
-                BlockProof blockProof = (BlockProof) Tlb.load(BlockProof.class, c); // block tlb magic 11ef55aa
+                BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c)); // block tlb magic 11ef55aa
                 log.info("skip proof block: {}", blockProof);
                 continue;
             }
@@ -129,7 +128,7 @@ public class TestTl {
 //            System.out.println("--------------------------------");
 //            Cell c00 = CellSlice.beginParse(c0).loadRef();
 //            log.info(c00.print());
-            Block block = (Block) Tlb.load(Block.class, blockCell); // block tlb magic 11ef55aa
+            Block block = Block.deserialize(CellSlice.beginParse(blockCell)); // block tlb magic 11ef55aa
             log.info("block {}", block);
 //            log.info("data size {}", r.getDataSize()); // 179723-178587 = 1136
             //log.info("data {}", Utils.bytesToHex(f));

@@ -71,4 +71,16 @@ public class ExternalMessageOut extends CommonMsg {
 
         return result.endCell();
     }
+
+    public static ExternalMessageOut deserialize(CellSlice cs) {
+        long magic = cs.loadUint(2).intValue();
+        assert (magic == 0b11) : "ExternalMessageOut: magic not equal to 0b11, found 0b" + Long.toBinaryString(magic);
+        return ExternalMessageOut.builder()
+                .magic(3L)
+                .srcAddr(MsgAddress.deserialize(cs))
+                .dstAddr(MsgAddress.deserialize(cs))
+                .createdLt(cs.loadUint(64))
+                .createdAt(cs.loadUint(32).longValue())
+                .build();
+    }
 }

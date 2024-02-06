@@ -41,4 +41,15 @@ public class ExternalMessage extends CommonMsg {
 
         return result.endCell();
     }
+
+    public static ExternalMessage deserialize(CellSlice cs) {
+        long magic = cs.loadUint(2).intValue();
+        assert (magic == 0b10) : "ExternalMessage: magic not equal to 0b10, found 0b" + Long.toBinaryString(magic);
+        return ExternalMessage.builder()
+                .magic(2L)
+                .srcAddr(MsgAddress.deserialize(cs))
+                .dstAddr(MsgAddress.deserialize(cs))
+                .importFee(cs.loadCoins())
+                .build();
+    }
 }

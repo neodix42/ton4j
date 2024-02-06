@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -30,5 +31,13 @@ public class ShardAccount {
                 .storeUint(lastTransHash, 256)
                 .storeUint(lastTransLt, 64)
                 .endCell();
+    }
+
+    public static ShardAccount deserialize(CellSlice cs) {
+        return ShardAccount.builder()
+                .account(Account.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .lastTransHash(cs.loadUint(256))
+                .lastTransLt(cs.loadUint(64))
+                .build();
     }
 }

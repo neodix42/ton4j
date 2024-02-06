@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -43,5 +44,20 @@ public class TransactionDescriptionTickTock {
                 .storeBit(aborted)
                 .storeBit(destroyed)
                 .endCell();
+    }
+
+    public static TransactionDescriptionTickTock deserialize(CellSlice cs) {
+        long magic = cs.loadUint(3).intValue();
+        assert (magic == 0b001) : "TransactionDescriptionTickTock: magic not equal to 0b001, found 0x" + Long.toHexString(magic);
+
+        return TransactionDescriptionTickTock.builder()
+                .magic(0b001)
+                .isTock(cs.loadBit())
+                .storagePhase(StoragePhase.deserialize(cs))
+                .computePhase(ComputePhase.deserialize(cs))
+                .actionPhase(cs.loadBit() ? ActionPhase.deserialize(CellSlice.beginParse(cs.loadRef())) : null)
+                .aborted(cs.loadBit())
+                .destroyed(cs.loadBit())
+                .build();
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMap;
 
 @Builder
@@ -33,5 +34,17 @@ public class LibDescr {
                         k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
                         v -> CellBuilder.beginCell().storeBit(true)))
                 .endCell();
+    }
+
+    public static LibDescr deserialize(CellSlice cs) {
+        long magic = cs.loadUint(2).longValue();
+        assert (magic == 0b00) : "LibDescr: magic not equal to 0b00, found 0x" + Long.toHexString(magic);
+        return LibDescr.builder()
+                .magic(0b00)
+                .lib(cs.loadRef())
+                .publishers(cs.loadDict(256,
+                        k -> k.readInt(256),
+                        v -> CellSlice.beginParse(v).loadBit()))
+                .build();
     }
 }

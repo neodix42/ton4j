@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -20,5 +21,12 @@ public class TickTock {
                 .storeBit(tick)
                 .storeBit(tock)
                 .endCell();
+    }
+
+    public static TickTock deserialize(CellSlice cs) {
+        return TickTock.builder()
+                .tick(cs.loadBit())
+                .tock(cs.loadBit())
+                .build();
     }
 }

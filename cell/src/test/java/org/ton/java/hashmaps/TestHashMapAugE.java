@@ -16,7 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(JUnit4.class)
 public class TestHashMapAugE {
 
-
     @Test
     public void testHashMapAugeSerialization() {
         TonHashMapAugE hashmapAugE = new TonHashMapAugE(32);

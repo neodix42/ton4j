@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -83,5 +84,9 @@ public class ShardDescr {
 
     private String getFileHash() {
         return fileHash.toString(16);
+    }
+
+    public static ShardDescr deserialize(CellSlice cs) {
+        return null;
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -41,5 +42,14 @@ public class ExtBlkRef {
                 .storeUint(rootHash, 256)
                 .storeUint(fileHash, 256)
                 .endCell();
+    }
+
+    public static ExtBlkRef deserialize(CellSlice cs) {
+        return ExtBlkRef.builder()
+                .endLt(cs.loadUint(64))
+                .seqno(cs.loadUint(32).intValue())
+                .rootHash(cs.loadUint(256))
+                .fileHash(cs.loadUint(256))
+                .build();
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -28,5 +29,9 @@ public class OutMsgDeq implements OutMsg {
                 .storeRef(outMsg.toCell())
                 .storeUint(importBlockLt, 63)
                 .endCell();
+    }
+
+    public static OutMsgDeq deserialize(CellSlice cs) {
+        return null;
     }
 }

@@ -4,10 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.TonHashMapAugE;
-import org.ton.java.cell.TonHashMapE;
+import org.ton.java.cell.*;
 
 @Builder
 @Getter
@@ -38,5 +35,26 @@ public class OutMsgQueueInfo {
                         k -> CellBuilder.beginCell().storeUint((Long) k, 320).bits,
                         v -> CellBuilder.beginCell().storeUint((Long) v, 64).endCell()))
                 .endCell();
+    }
+
+    public static OutMsgQueueInfo deserialize(CellSlice cs) {
+        return OutMsgQueueInfo.builder()
+                .outMsgQueue(
+                        cs.loadDictAugE(352,
+                                k -> k.readInt(352),
+                                v -> EnqueuedMsg.deserialize(v),
+                                e -> CellSlice.beginParse(e).loadUint(64)
+                        ))
+                .processedInfo(
+                        cs.loadDictE(96,
+                                k -> k.readInt(96),
+                                v -> ProcessedUpto.deserialize(CellSlice.beginParse(v))
+                        ))
+                .ihrPendingInfo(
+                        cs.loadDictE(320,
+                                k -> k.readInt(320),
+                                v -> CellSlice.beginParse(v).loadUint(64)
+                        ))
+                .build();
     }
 }

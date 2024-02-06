@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -47,5 +48,16 @@ public class BlockIdExtShardIdent {
                 .storeUint(rootHash, 256)
                 .storeUint(fileHash, 256)
                 .endCell();
+    }
+
+    public static BlockIdExtShardIdent deserialize(CellSlice cs) {
+        BlockIdExtShardIdent blockIdExtShardIdent = BlockIdExtShardIdent.builder()
+                .shardId(ShardIdent.deserialize(cs))
+                .seqno(cs.loadUint(32).longValue())
+                .rootHash(cs.loadUint(256))
+                .fileHash(cs.loadUint(256))
+                .build();
+        System.out.println("bs " + blockIdExtShardIdent);
+        return blockIdExtShardIdent;
     }
 }

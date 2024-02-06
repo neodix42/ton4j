@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -26,5 +27,12 @@ public class ProcessedUpto {
                 .storeUint(lastMsgLt, 64)
                 .storeUint(lastMsgHash, 64)
                 .endCell();
+    }
+
+    public static ProcessedUpto deserialize(CellSlice cs) {
+        return ProcessedUpto.builder()
+                .lastMsgLt(cs.loadUint(64))
+                .lastMsgHash(cs.loadUint(64))
+                .build();
     }
 }

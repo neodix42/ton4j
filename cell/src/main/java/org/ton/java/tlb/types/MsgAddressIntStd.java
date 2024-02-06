@@ -7,6 +7,7 @@ import lombok.ToString;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -48,6 +49,18 @@ public class MsgAddressIntStd implements MsgAddressInt {
         return result;
     }
 
+    public static MsgAddressIntStd deserialize(CellSlice cs) {
+        Anycast anycast = null;
+        if (cs.loadBit()) {
+            anycast = Anycast.deserialize(cs);
+        }
+        return MsgAddressIntStd.builder()
+                .magic(0b10)
+                .anycast(anycast)
+                .workchainId(cs.loadUint(8).byteValue())
+                .address(cs.loadUint(256))
+                .build();
+    }
 
     public Address toAddress() {
         return Address.of(toString());

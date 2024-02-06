@@ -28,6 +28,9 @@ public class TonHashMapAug {
     }
 
     public List<Node> deserializeEdge(CellSlice edge, int keySize, final BitString key) {
+        if (edge.type != CellType.ORDINARY) {
+            return new ArrayList<>();
+        }
         List<Node> nodes = new ArrayList<>();
         BitString l = deserializeLabel(edge, keySize - key.toBitString().length());
         key.writeBitString(l);

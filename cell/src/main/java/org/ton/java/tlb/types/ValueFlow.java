@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -66,5 +67,72 @@ public class ValueFlow {
                 .storeCell(feesCollected.toCell())
                 .storeRef(cell2)
                 .endCell();
+    }
+
+    public static ValueFlow deserialize(CellSlice cs) {
+        long magic = cs.loadUint(32).longValue();
+        if (magic == 0xb8e48dfbL) {
+
+            CellSlice c1 = CellSlice.beginParse(cs.loadRef());
+            CellSlice c2 = CellSlice.beginParse(cs.loadRef());
+
+            CurrencyCollection fromPrevBlk = CurrencyCollection.deserialize(c1);
+            CurrencyCollection toNextBlk = CurrencyCollection.deserialize(c1);
+            CurrencyCollection imported = CurrencyCollection.deserialize(c1);
+            CurrencyCollection exported = CurrencyCollection.deserialize(c1);
+
+            CurrencyCollection feesCollected = CurrencyCollection.deserialize(cs);
+
+            CurrencyCollection feesImported = CurrencyCollection.deserialize(c2);
+            CurrencyCollection recovered = CurrencyCollection.deserialize(c2);
+            CurrencyCollection created = CurrencyCollection.deserialize(c2);
+            CurrencyCollection minted = CurrencyCollection.deserialize(c2);
+
+            return ValueFlow.builder()
+                    .magic(0xb8e48dfbL)
+                    .fromPrevBlk(fromPrevBlk)
+                    .toNextBlk(toNextBlk)
+                    .imported(imported)
+                    .exported(exported)
+                    .feesCollected(feesCollected)
+                    .feesImported(feesImported)
+                    .recovered(recovered)
+                    .created(created)
+                    .minted(minted)
+                    .build();
+        }
+        if (magic == 0x3ebf98b7L) {
+            CellSlice c1 = CellSlice.beginParse(cs.loadRef());
+            CellSlice c2 = CellSlice.beginParse(cs.loadRef());
+
+            CurrencyCollection fromPrevBlk = CurrencyCollection.deserialize(c1);
+            CurrencyCollection toNextBlk = CurrencyCollection.deserialize(c1);
+            CurrencyCollection imported = CurrencyCollection.deserialize(c1);
+            CurrencyCollection exported = CurrencyCollection.deserialize(c1);
+
+            CurrencyCollection feesCollected = CurrencyCollection.deserialize(cs);
+            CurrencyCollection burned = CurrencyCollection.deserialize(cs);
+
+            CurrencyCollection feesImported = CurrencyCollection.deserialize(c2);
+            CurrencyCollection recovered = CurrencyCollection.deserialize(c2);
+            CurrencyCollection created = CurrencyCollection.deserialize(c2);
+            CurrencyCollection minted = CurrencyCollection.deserialize(c2);
+
+            return ValueFlow.builder()
+                    .magic(0xb8e48dfbL)
+                    .fromPrevBlk(fromPrevBlk)
+                    .toNextBlk(toNextBlk)
+                    .imported(imported)
+                    .exported(exported)
+                    .feesCollected(feesCollected)
+                    .burned(burned)
+                    .feesImported(feesImported)
+                    .recovered(recovered)
+                    .created(created)
+                    .minted(minted)
+                    .build();
+        } else {
+            throw new Error("ValueFlow: magic not equal to 0xb8e48dfb, found 0x" + Long.toHexString(magic));
+        }
     }
 }

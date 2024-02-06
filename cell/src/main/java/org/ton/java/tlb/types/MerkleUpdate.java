@@ -6,6 +6,8 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.CellType;
 
 import java.math.BigInteger;
 
@@ -32,6 +34,26 @@ public class MerkleUpdate {
                 .storeRef(oldShardState.toCell())
                 .storeRef(newShardState.toCell())
                 .endCell();
+    }
+
+    public static MerkleUpdate deserialize(CellSlice cs) {
+//                Cell cell = cs.sliceToCell();
+//                System.out.println("MerkleUpdate " + cs.sliceToCell().toHex());
+//                System.out.println("CellType " + cell.getCellType());
+
+        if (cs.type != CellType.MERKLE_UPDATE) {
+            return null;
+        }
+
+//                magic = cs.loadUint(8).intValue();
+//                assert (magic == 0x02) : "MerkleUpdate: magic not equal to 0x02, found 0x" + Long.toHexString(magic);
+
+        return MerkleUpdate.builder()
+                .oldHash(cs.loadUint(256))
+                .newHash(cs.loadUint(256))
+                .oldShardState(ShardState.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .newShardState(ShardState.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
     }
 
     private String getOldHash() {

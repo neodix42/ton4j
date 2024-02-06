@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -34,5 +35,14 @@ public class SplitMergeInfo {
                 .storeUint(thisAddr, 256)
                 .storeUint(siblingAddr, 256)
                 .endCell();
+    }
+
+    public static SplitMergeInfo deserialize(CellSlice cs) {
+        return SplitMergeInfo.builder()
+                .curShardPfxLen(cs.loadUint(6).intValue())
+                .accSplitDepth(cs.loadUint(6).intValue())
+                .thisAddr(cs.loadUint(256))
+                .siblingAddr(cs.loadUint(256))
+                .build();
     }
 }

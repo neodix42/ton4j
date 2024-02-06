@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -29,5 +30,15 @@ public class TransactionDescriptionStorage {
                 .storeUint(0b0001, 4)
                 .storeCell(storagePhase.toCell())
                 .endCell();
+    }
+
+    public static TransactionDescriptionStorage deserialize(CellSlice cs) {
+        long magic = cs.loadUint(4).intValue();
+        assert (magic == 0b0001) : "TransactionDescriptionStorage: magic not equal to 0b0001, found 0x" + Long.toHexString(magic);
+
+        return TransactionDescriptionStorage.builder()
+                .magic(0b0001)
+                .storagePhase(StoragePhase.deserialize(cs))
+                .build();
     }
 }

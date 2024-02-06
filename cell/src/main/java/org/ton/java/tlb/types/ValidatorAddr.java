@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -23,5 +24,9 @@ public class ValidatorAddr {
 
     private String getAdnlAddr() {
         return adnlAddr.toString(16);
+    }
+
+    public static ValidatorAddr deserialize(CellSlice cs) {
+        return null;
     }
 }

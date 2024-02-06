@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -30,5 +31,16 @@ public class StorageInfo {
                 .storeUint(lastPaid, 32)
                 .storeCoinsMaybe(duePayment)
                 .endCell();
+    }
+
+    public static StorageInfo deserialize(CellSlice cs) {
+        StorageUsed storageUsed = StorageUsed.deserialize(cs);
+        long lastPaid = cs.loadUint(32).longValue();
+        boolean isDuePayment = cs.loadBit();
+        return StorageInfo.builder()
+                .storageUsed(storageUsed)
+                .lastPaid(lastPaid)
+                .duePayment(isDuePayment ? cs.loadUint(64) : null)
+                .build();
     }
 }

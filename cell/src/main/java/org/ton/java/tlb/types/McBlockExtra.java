@@ -4,10 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.TonHashMapAugE;
-import org.ton.java.cell.TonHashMapE;
+import org.ton.java.cell.*;
 
 @Builder
 @Getter
@@ -53,6 +50,23 @@ public class McBlockExtra {
                 .storeRef(more)
                 .storeCell(keyBlock ? config.toCell() : CellBuilder.beginCell().endCell())
                 .endCell();
+    }
 
+    public static McBlockExtra deserialize(CellSlice cs) {
+        long magic = cs.loadUint(16).longValue();
+        assert (magic == 0xcca5L) : "McBlockExtra: magic not equal to 0xcca5, found 0x" + Long.toHexString(magic);
+
+        boolean keyBlock = cs.loadBit();
+        return McBlockExtra.builder()
+                .magic(0xcca5L)
+                .keyBlock(keyBlock)
+                .shardHashes(cs.loadDictE(32, k -> k.readInt(32), v -> v))
+                .shardFees(cs.loadDictAugE(92,
+                        k -> k.readInt(92),
+                        v -> v,
+                        e -> e))
+                .more(cs.loadRef())
+                .config(keyBlock ? ConfigParams.deserialize(cs) : null)
+                .build();
     }
 }

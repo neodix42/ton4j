@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
@@ -42,6 +43,19 @@ public class ShardStateInfo {
                         v -> CellBuilder.beginCell().storeCell(((LibDescr) v).toCell())))
                 .storeCellMaybe(masterRef.toCell())
                 .endCell();
+    }
+
+    public static ShardStateInfo deserialize(CellSlice cs) {
+        return ShardStateInfo.builder()
+                .overloadHistory(cs.loadUint(64))
+                .underloadHistory(cs.loadUint(64))
+                .totalBalance(CurrencyCollection.deserialize(cs))
+                .totalValidatorFees(CurrencyCollection.deserialize(cs))
+                .libraries(cs.loadDictE(256,
+                        k -> k.readInt(256),
+                        v -> LibDescr.deserialize(CellSlice.beginParse(v))))
+                .masterRef(cs.loadBit() ? ExtBlkRef.deserialize(CellSlice.beginParse(cs.loadRef())) : null)
+                .build();
     }
 
 }

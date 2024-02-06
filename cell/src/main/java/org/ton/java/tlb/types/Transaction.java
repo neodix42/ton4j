@@ -6,8 +6,13 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
+import java.util.Map;
+
+import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -82,8 +87,47 @@ public class Transaction {
         c.storeRef(stateUpdate.toCell());
         c.storeRef(description.toCell());
 
-
         return c.endCell();
+    }
+
+    public static Transaction deserialize(CellSlice cs) {
+        long magic = cs.loadUint(4).intValue();
+        assert (magic == 0b0111) : "Transaction: magic not equal to 0b0111, found 0b" + Long.toBinaryString(magic);
+
+        Transaction tx = Transaction.builder()
+                .magic(0b0111)
+                .accountAddr(cs.loadUint(256))
+                .lt(cs.loadUint(64))
+                .prevTxHash(cs.loadUint(256))
+                .prevTxLt(cs.loadUint(64))
+                .now(cs.loadUint(32).longValue())
+                .outMsgCount(cs.loadUint(15).intValue())
+                .origStatus(deserializeAccountState(cs.loadUint(2).byteValue()))
+                .endStatus(deserializeAccountState(cs.loadUint(2).byteValueExact()))
+                .build();
+
+        CellSlice inOutMsgs = CellSlice.beginParse(cs.loadRef());
+        Message msg = inOutMsgs.loadBit() ? Message.deserialize(CellSlice.beginParse(inOutMsgs.loadRef())) : null;
+        TonHashMapE out = inOutMsgs.loadDictE(15,
+                k -> k.readInt(15),
+                v -> Message.deserialize(CellSlice.beginParse(CellSlice.beginParse(v).loadRef())));
+
+        tx.setInOut(TransactionIO.builder()
+                .in(msg)
+                .out(out)
+                .build());
+
+        if (nonNull(tx.getInOut().getOut())) { // todo cleanup
+            for (Map.Entry<Object, Object> entry : tx.getInOut().getOut().elements.entrySet()) {
+                System.out.println("key " + entry.getKey() + ", value " + ((Message) entry.getValue()));
+            }
+        }
+
+        tx.setTotalFees(CurrencyCollection.deserialize(cs));
+        tx.setStateUpdate(HashUpdate.deserialize(CellSlice.beginParse(cs.loadRef())));
+        tx.setDescription(TransactionDescription.deserialize(CellSlice.beginParse(cs.loadRef())));
+
+        return tx;
     }
 
     public static Cell serializeAccountState(AccountStates state) {

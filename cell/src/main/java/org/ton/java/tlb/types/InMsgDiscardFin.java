@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
@@ -32,5 +33,13 @@ public class InMsgDiscardFin implements InMsg {
                 .storeUint(transactionId, 64)
                 .storeCoins(fwdFee)
                 .endCell();
+    }
+
+    public static InMsgDiscardFin deserialize(CellSlice cs) {
+        return InMsgDiscardFin.builder()
+                .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .transactionId(cs.loadUint(64))
+                .fwdFee(cs.loadCoins())
+                .build();
     }
 }

@@ -20,7 +20,7 @@ import java.math.BigInteger;
  *   msg_fees:Grams
  *   fwd_fees:Grams = TrBouncePhase;
  */
-public class BouncePhaseok implements BouncePhase {
+public class BouncePhaseOk implements BouncePhase {
     int magic;
     StorageUsedShort msgSize;
     BigInteger msgFees;
@@ -38,5 +38,18 @@ public class BouncePhaseok implements BouncePhase {
                 .storeCoins(msgFees)
                 .storeCoins(fwdFees)
                 .endCell();
+    }
+
+    public static BouncePhaseOk deserialize(CellSlice cs) {
+        long magic = cs.loadUint(1).intValue();
+        assert (magic == 0b1) : "BouncePhaseok: magic not equal to 0b1, found 0x" + Long.toHexString(magic);
+
+        return BouncePhaseOk.builder()
+                .magic(0b1)
+                .msgSize(StorageUsedShort.deserialize(cs))
+                .msgFees(cs.loadCoins())
+                .fwdFees(cs.loadCoins())
+                .build();
+
     }
 }
