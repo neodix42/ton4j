@@ -70,9 +70,11 @@ public class McStateExtra {
 
         return McStateExtra.builder()
                 .magic(0xcc26L)
-                .shardHashes(cs.loadDictE(32, k -> k.readInt(32), v -> v)) // todo BinTree
+                .shardHashes(cs.loadDictE(32,
+                        k -> k.readInt(32),
+                        v -> v)) // todo BinTree
                 .configParams(ConfigParams.deserialize(cs))
-                .info(McStateExtraInfo.deserialize(CellSlice.beginParse(cs.loadRef()))) // todo parse
+                .info(McStateExtraInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
                 .globalBalance(CurrencyCollection.deserialize(cs))
                 .build();
     }

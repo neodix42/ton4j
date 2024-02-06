@@ -38,8 +38,8 @@ public class CurrencyCollection {
         return CurrencyCollection.builder()
                 .coins(cs.loadCoins())
                 .extraCurrencies(cs.loadDictE(32,
-                        k -> k.readUint(32),// todo read varuint32
-                        v -> v))
+                        k -> k.readUint(32),
+                        v -> CellSlice.beginParse(v).loadVarUInteger(BigInteger.valueOf(32))))
                 .build();
     }
 

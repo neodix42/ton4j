@@ -16,7 +16,7 @@ public interface IntermediateAddress {
     public static IntermediateAddress deserialize(CellSlice cs) {
         if (!cs.loadBit()) {
             return IntermediateAddressRegular.builder()
-                    .use_dest_bits(cs.loadUint(7).intValue()) // todo test if 7 bits
+                    .use_dest_bits(cs.loadUint(7).intValue())
                     .build();
         }
         if (!cs.loadBit()) {

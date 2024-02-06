@@ -74,7 +74,7 @@ public class Message {
                                 : StateInit.deserialize(cs))
                         : StateInit.builder().build())
                 .body(cs.loadBit() ?
-                        cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits()))) // todo
+                        cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits())))
                 .build();
     }
 }
