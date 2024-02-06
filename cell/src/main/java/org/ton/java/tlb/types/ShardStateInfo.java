@@ -46,15 +46,19 @@ public class ShardStateInfo {
     }
 
     public static ShardStateInfo deserialize(CellSlice cs) {
-        return ShardStateInfo.builder()
-                .overloadHistory(cs.loadUint(64))
-                .underloadHistory(cs.loadUint(64))
-                .totalBalance(CurrencyCollection.deserialize(cs))
-                .totalValidatorFees(CurrencyCollection.deserialize(cs))
-                .libraries(cs.loadDictE(256,
-                        k -> k.readInt(256),
-                        v -> LibDescr.deserialize(CellSlice.beginParse(v))))
-                .masterRef(cs.loadBit() ? ExtBlkRef.deserialize(CellSlice.beginParse(cs.loadRef())) : null)
-                .build();
+        if (!cs.isExotic()) {
+            return ShardStateInfo.builder()
+                    .overloadHistory(cs.loadUint(64))
+                    .underloadHistory(cs.loadUint(64))
+                    .totalBalance(CurrencyCollection.deserialize(cs))
+                    .totalValidatorFees(CurrencyCollection.deserialize(cs))
+                    .libraries(cs.loadDictE(256,
+                            k -> k.readInt(256),
+                            v -> LibDescr.deserialize(CellSlice.beginParse(v))))
+                    .masterRef(cs.loadBit() ? ExtBlkRef.deserialize(CellSlice.beginParse(cs)) : null)
+                    .build();
+        } else {
+            return ShardStateInfo.builder().build();
+        }
     }
 }

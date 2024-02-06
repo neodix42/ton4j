@@ -40,7 +40,6 @@ public class Block {
     }
 
     public static Block deserialize(CellSlice cs) {
-//        System.out.println("block " + cs.sliceToCell().toHex());
 
         long magic = cs.loadUint(32).longValue();
         assert (magic == 0x11ef55aaL) : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
@@ -53,11 +52,8 @@ public class Block {
 
         block.setValueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())));
 
-        System.out.println(block);
-
         MerkleUpdate merkleUpdate = MerkleUpdate.deserialize(CellSlice.beginParse(cs.loadRef()));
         block.setStateUpdate(merkleUpdate);
-        System.out.println(merkleUpdate);
         block.setExtra(BlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())));
         System.out.println(block);
 

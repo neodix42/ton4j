@@ -91,10 +91,9 @@ public class ShardStateUnsplit {
 //        shardStateUnsplit.setShardAccounts(ShardAccounts.deserialize(CellSlice.beginParse(cs.loadRef())));
         shardStateUnsplit.setShardAccounts(cs.loadRef());
 
-        if (!cs.isExotic()) {
-            shardStateUnsplit.setShardStateInfo(ShardStateInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
-        }
 
+        shardStateUnsplit.setShardStateInfo(ShardStateInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
+        
         shardStateUnsplit.setCustom(cs.loadBit() ? McStateExtra.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
         return shardStateUnsplit;
     }
