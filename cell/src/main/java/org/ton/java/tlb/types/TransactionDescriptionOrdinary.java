@@ -65,7 +65,7 @@ public class TransactionDescriptionOrdinary {
                 .computePhase(ComputePhase.deserialize(cs))
                 .actionPhase(cs.loadBit() ? ActionPhase.deserialize(CellSlice.beginParse(cs.loadRef())) : null)
                 .aborted(cs.loadBit())
-                .bouncePhase(cs.loadBit() ? BouncePhase.deserialize(CellSlice.beginParse(cs.loadRef())) : null)
+                .bouncePhase(cs.loadBit() ? BouncePhase.deserialize(cs) : null)
                 .destroyed(cs.loadBit())
                 .build();
     }
