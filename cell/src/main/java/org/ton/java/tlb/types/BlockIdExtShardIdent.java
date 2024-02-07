@@ -24,14 +24,14 @@ public class BlockIdExtShardIdent {
 //    long shard;
     ShardIdent shardId;
     long seqno;
-    BigInteger rootHash;
-    BigInteger fileHash;
+    public BigInteger rootHash;
+    public BigInteger fileHash;
 
-    private String getRootHash() {
+    public String getRootHash() {
         return rootHash.toString(16);
     }
 
-    private String getFileHash() {
+    public String getFileHash() {
         return fileHash.toString(16);
     }
 
@@ -57,7 +57,6 @@ public class BlockIdExtShardIdent {
                 .rootHash(cs.loadUint(256))
                 .fileHash(cs.loadUint(256))
                 .build();
-        System.out.println("bs " + blockIdExtShardIdent);
         return blockIdExtShardIdent;
     }
 }

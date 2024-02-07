@@ -109,9 +109,14 @@ public class TestTl {
             int filenameLength = r.readShortLittleEndian(); //16
             int bocSize = r.readIntLittleEndian(); //32
             String filename = new String(Utils.unsignedBytesToSigned(r.readBytes(filenameLength)));
+
+            log.info("");
+            log.info("");
             log.info("bocSize {}, filename {}", bocSize, filename);
 
-            Cell c = CellBuilder.fromBoc(r.readBytes(bocSize));
+            int[] boc = r.readBytes(bocSize);
+            log.info("boc: {}", Utils.bytesToHex(boc));
+            Cell c = CellBuilder.fromBoc(boc);
             if (c.bits.preReadUint(8).longValue() == 0xc3) {
                 //c.bits.readUint(8);
                 BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c)); // block tlb magic 11ef55aa

@@ -50,7 +50,6 @@ public class ShardIdent {
                 .workchain(cs.loadInt(32).intValue())
                 .shardPrefix(cs.loadUint(64))
                 .build();
-        System.out.println(s);
         return s;
     }
 

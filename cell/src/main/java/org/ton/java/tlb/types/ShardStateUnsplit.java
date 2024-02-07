@@ -75,8 +75,14 @@ public class ShardStateUnsplit {
     }
 
     public static ShardStateUnsplit deserialize(CellSlice cs) {
+        if (cs.isExotic()) {
+            return ShardStateUnsplit.builder().build();
+        }
+        long magic = cs.loadUint(32).longValue();
+        assert (magic == 0x9023afe2L) : "ShardStateUnsplit magic not equal to 0x9023afe2L, found 0x" + Long.toHexString(magic);
+
         ShardStateUnsplit shardStateUnsplit = ShardStateUnsplit.builder()
-                .magic(cs.loadUint(32).longValue())
+                .magic(magic)
                 .globalId(cs.loadInt(32).intValue())
                 .shardIdent(ShardIdent.deserialize(cs))
                 .seqno(cs.loadUint(32).longValue())
@@ -93,7 +99,7 @@ public class ShardStateUnsplit {
 
 
         shardStateUnsplit.setShardStateInfo(ShardStateInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
-        
+
         shardStateUnsplit.setCustom(cs.loadBit() ? McStateExtra.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
         return shardStateUnsplit;
     }

@@ -57,13 +57,11 @@ public class ShardState {
                     .left(left)
                     .right(right)
                     .build();
-        } else if (tag == 0x9023afe2L) {
+        } else {
             return ShardState.builder()
                     .magic(tag)
                     .left(ShardStateUnsplit.deserialize(cs))
                     .build();
-        } else {
-            throw new Error("ShardState magic not equal neither to 0x5f327da5L nor 0x9023afe2L, found 0x" + Long.toHexString(tag));
         }
     }
 }
