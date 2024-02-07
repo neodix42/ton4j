@@ -38,4 +38,8 @@ public class InMsgDescr {
                         e -> ImportFees.deserialize(e)))
                 .build();
     }
+
+    public long getCount() {
+        return inMsg.elements.size();
+    }
 }

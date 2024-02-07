@@ -15,7 +15,6 @@ import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
@@ -25,7 +24,6 @@ import java.util.stream.Collectors;
 import java.util.zip.CRC32C;
 import java.util.zip.Checksum;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class Utils {
@@ -412,13 +410,6 @@ public class Utils {
         return dst;
     }
 
-    public static int dynInt(byte[] data) {
-        byte[] tmp = new byte[8];
-        Utils.copy(tmp, 8 - data.length, data, 0);
-        //System.arraycopy(data, 0, tmp, 8 - data.length, data.length);
-        return new BigInteger(tmp).intValue();
-    }
-
     public static int dynInt(int[] data) {
         int[] tmp = new int[8];
         Utils.copy(tmp, 8 - data.length, data, 0);
@@ -444,37 +435,6 @@ public class Utils {
         return (int) Math.ceil(Math.log(val) / Math.log(2));
     }
 
-//    public static int[] concatBytes(int[] a, long b) {
-//        int[] bb = longToBytes(b);
-//        int[] c = new int[a.length + bb.length];
-//        System.arraycopy(a, 0, c, 0, a.length);
-//        System.arraycopy(bb, 0, c, a.length, bb.length);
-//        return c;
-//    }
-
-    public static int[] concatBytes(int[] a, long b) {
-        int[] bb = long4BytesToBytes(b);
-        int[] c = new int[a.length + bb.length];
-        System.arraycopy(a, 0, c, 0, a.length);
-        System.arraycopy(bb, 0, c, a.length, bb.length);
-        return c;
-    }
-
-    public static int[] concatBytes(int[] a, int b) {
-        int[] bb = new int[]{b};
-        int[] c = new int[a.length + 1];
-        System.arraycopy(a, 0, c, 0, a.length);
-        System.arraycopy(bb, 0, c, a.length, bb.length);
-        return c;
-    }
-
-    public static int[] concatBytes(int a, int[] b) {
-        int[] aa = new int[]{a};
-        int[] c = new int[b.length + 1];
-        System.arraycopy(aa, 0, c, 0, aa.length);
-        System.arraycopy(b, 0, c, aa.length, b.length);
-        return c;
-    }
 
     public static byte[] hexToSignedBytes(String hex) {
         return hexStringToByteArray(hex);
@@ -505,79 +465,6 @@ public class Utils {
             result[j++] = Integer.parseInt(str, 16);
         }
         return result;
-    }
-
-    public static boolean compareBytes(byte[] a, byte[] b) {
-        return Arrays.equals(a, b);
-    }
-
-    public static boolean compareBytes(int[] a, int[] b) {
-        return Arrays.equals(a, b);
-    }
-
-    /**
-     * @param n        int
-     * @param ui8array byte[]
-     * @return int
-     */
-    public static int readNBytesFromArray(int n, byte[] ui8array) {
-        int res = 0;
-        for (int c = 0; c < n; c++) {
-            res *= 256;
-            res += ui8array[c] & 0xFF;
-        }
-        return res;
-    }
-
-    public static int readNBytesFromArray(int n, int[] ui8array) {
-        int res = 0;
-        for (int c = 0; c < n; c++) {
-            res *= 256;
-            res += ui8array[c];
-        }
-        return res;
-    }
-
-
-    /**
-     * Finds matching closing bracket in string starting with pattern
-     */
-    public static int findPosOfClosingBracket(String str, String pattern) {
-        int i;
-        int openBracketIndex = pattern.indexOf("{");
-        int index = str.indexOf(pattern) + openBracketIndex;
-
-        ArrayDeque<Integer> st = new ArrayDeque<>();
-
-        for (i = index; i < str.length(); i++) {
-            if (str.charAt(i) == '{') {
-                st.push((int) str.charAt(i));
-            } else if (str.charAt(i) == '}') {
-                if (st.isEmpty()) {
-                    return i;
-                }
-                st.pop();
-                if (st.isEmpty()) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Finds single string-block starting with pattern and ending with }
-     */
-    private static String sbb(String str, String pattern) {
-        if (isNull(str) || !str.contains(pattern))
-            return null;
-
-        int openindex = str.indexOf(pattern) + pattern.indexOf("{");
-        int closeIndex = findPosOfClosingBracket(str, pattern);
-        if (closeIndex == -1) {
-            return null;
-        }
-        return str.substring(openindex, closeIndex + 1).trim();
     }
 
     /**

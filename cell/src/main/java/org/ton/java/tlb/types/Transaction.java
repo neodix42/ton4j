@@ -10,9 +10,6 @@ import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
-import java.util.Map;
-
-import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -117,11 +114,11 @@ public class Transaction {
                 .out(out)
                 .build());
 
-        if (nonNull(tx.getInOut().getOut())) { // todo cleanup
-            for (Map.Entry<Object, Object> entry : tx.getInOut().getOut().elements.entrySet()) {
-                System.out.println("key " + entry.getKey() + ", value " + ((Message) entry.getValue()));
-            }
-        }
+//        if (nonNull(tx.getInOut().getOut())) { // todo cleanup
+//            for (Map.Entry<Object, Object> entry : tx.getInOut().getOut().elements.entrySet()) {
+//                System.out.println("key " + entry.getKey() + ", value " + ((Message) entry.getValue()));
+//            }
+//        }
 
         tx.setTotalFees(CurrencyCollection.deserialize(cs));
         tx.setStateUpdate(HashUpdate.deserialize(CellSlice.beginParse(cs.loadRef())));

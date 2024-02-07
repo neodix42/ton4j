@@ -258,7 +258,6 @@ public class TonHashMap {
      * @param m    length at most possible bits of n (key)
      */
     public BitString deserializeLabel(CellSlice edge, int m) {
-//        System.out.println("deserializeLabel " + edge.bits.writeCursor + " = " + edge.bits.toBitString());
         if (!edge.loadBit()) {
             // hml_short$0 {m:#} {n:#} len:(Unary ~n) s:(n * Bit) = HmLabel ~n m;
             return deserializeLabelShort(edge);

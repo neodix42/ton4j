@@ -49,7 +49,7 @@ public class Account {
                 .storageInfo(info)
                 .accountStorage(storage)
                 .build();
-        System.out.println("account " + account);
+
         return account;
     }
 }

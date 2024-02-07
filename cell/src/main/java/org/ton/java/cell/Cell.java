@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class Cell {
@@ -342,6 +341,21 @@ public class Cell {
         return rootCells;
     }
 
+    /*
+    serialized_boc#b5ee9c72 has_idx:(## 1) has_crc32c:(## 1)
+      has_cache_bits:(## 1) flags:(## 2) { flags = 0 }
+      size:(## 3) { size <= 4 }
+      off_bytes:(## 8) { off_bytes <= 8 }
+      cells:(##(size * 8))
+      roots:(##(size * 8)) { roots >= 1 }
+      absent:(##(size * 8)) { roots + absent <= cells }
+      tot_cells_size:(##(off_bytes * 8))
+      root_list:(roots * ##(size * 8))
+      index:has_idx?(cells * ##(off_bytes * 8))
+      cell_data:(tot_cells_size * [ uint8 ])
+      crc32c:has_crc32c?uint32
+     = BagOfCells;
+*/
     private static Boc deserializeBocHeader(int data[]) {
         Cell rawCell = CellBuilder.beginCell(data.length * 8).storeBytes(data);
         CellSlice cs = CellSlice.beginParse(rawCell);
@@ -364,124 +378,6 @@ public class Cell {
         boc.setCrc32c(boc.isHasCrc32c() ? cs.loadUint(32).longValue() : 0);
 
         return boc;
-    }
-
-
-    private static List<Cell> parseCells(long rootsNum, long cellsNum, int refSzBytes, int[] data, int[] index) {
-        Cell[] cells = new Cell[(int) cellsNum];
-        for (int i = 0; i < cellsNum; i++) {
-            cells[i] = new Cell();
-        }
-        boolean[] referred = new boolean[(int) cellsNum];
-
-        int offset = 0;
-        for (int i = 0; i < cellsNum; i++) {
-            if ((data.length - offset) < 2) {
-                throw new Error("failed to parse cell header, corrupted data");
-            }
-
-            if (nonNull(index) && (index.length != 0)) {
-                // if we have index, then set offset from it, it stores end of each cell
-                offset = 0;
-                if (i > 0) {
-                    offset = index[i - 1];
-                }
-            }
-
-            int flags = data[offset];
-            int refsNum = flags & 0b111;
-            boolean special = (flags & 0b1000) != 0;
-            boolean withHashes = (flags & 0b10000) != 0;
-            LevelMask levelMask = new LevelMask(flags >> 5);
-
-            if (refsNum > 4) {
-                throw new Error("too many refs in cell");
-            }
-
-            int ln = data[offset + 1];
-            int oneMore = ln % 2;
-            int sz = (ln / 2 + oneMore);
-
-            offset += 2;
-            if ((data.length - offset) < sz) {
-                throw new Error("failed to parse cell payload, corrupted data");
-            }
-
-            if (withHashes) {
-                int maskBits = (int) Math.ceil(Math.log(levelMask.mask + 1) / Math.log(2));
-                int hashesNum = maskBits + 1;
-                offset += hashesNum * HASH_SIZE + hashesNum * DEPTH_SIZE;
-            }
-
-            int[] payload = Arrays.copyOfRange(data, offset, offset + sz);
-
-            offset += sz;
-            if ((data.length - offset) < (refsNum * refSzBytes)) {
-                throw new Error("failed to parse cell refs, corrupted data");
-            }
-
-            int[] refsIndex = new int[refsNum];
-            int x = 0;
-            for (int j = 0; j < refsNum; j++) {
-                int[] t = Arrays.copyOfRange(data, offset, offset + refSzBytes);
-                refsIndex[x++] = Utils.dynInt(t);
-
-                offset += refSzBytes;
-            }
-
-            List<Cell> refs = new ArrayList<>();
-
-            for (int id : refsIndex) {
-                if (i == id) {
-                    throw new Error("recursive reference of cells");
-                }
-
-                if ((id < i) && (isNull(index))) {
-                    throw new Error("reference to index which is behind parent cell");
-                }
-
-                if (id >= cells.length) {
-                    throw new Error("invalid index, out of scope");
-                }
-
-                refs.add(cells[id]);
-
-                referred[id] = true;
-            }
-
-            int bitSz = ln * 4;
-
-            // if not full byte
-            if ((ln % 2) != 0) {
-                // find last bit of byte which indicates the end and cut it and next
-                for (int y = 0; y < 8; y++) {
-                    if (((payload[payload.length - 1] >> y) & 1) == 1) {
-                        bitSz += 3 - y;
-                        break;
-                    }
-                }
-            }
-
-            cells[i].bits = new BitString(payload, bitSz);
-            cells[i].refs = refs;
-            cells[i].special = special;
-            cells[i].levelMask = levelMask;
-        }
-
-        List<Cell> roots = new ArrayList<>((int) rootsNum);
-
-        // get cells which are not referenced by another, these are root cells
-        for (int i = 0; i < referred.length; i++) {
-            if (!referred[i]) {
-                roots.add(cells[i]);
-            }
-        }
-
-        if (roots.size() != rootsNum) {
-            throw new Error("roots num not match actual num");
-        }
-
-        return roots;
     }
 
     /**

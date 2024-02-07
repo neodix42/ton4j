@@ -55,7 +55,6 @@ public class Block {
         MerkleUpdate merkleUpdate = MerkleUpdate.deserialize(CellSlice.beginParse(cs.loadRef()));
         block.setStateUpdate(merkleUpdate);
         block.setExtra(BlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())));
-        System.out.println(block);
 
         return block;
     }

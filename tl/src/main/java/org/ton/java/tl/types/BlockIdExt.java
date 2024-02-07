@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.utils.Utils;
 
 @ToString
@@ -36,5 +37,16 @@ public class BlockIdExt {
 
     public String getShard() {
         return Long.toHexString(shard);
+    }
+
+    public static BlockIdExt deserialize(CellSlice cs) {
+        BlockIdExt blockIdExt = BlockIdExt.builder()
+                .workchain(Utils.intsToInt(Utils.reverseIntArray(cs.loadBytes(32))))
+                .shard(Long.reverseBytes(cs.loadUint(64).longValue()))
+                .seqno(Utils.intsToInt(Utils.reverseIntArray(cs.loadBytes(32))))
+                .rootHash(Utils.reverseIntArray(cs.loadBytes(256)))
+                .fileHash(Utils.reverseIntArray(cs.loadBytes(256)))
+                .build();
+        return blockIdExt;
     }
 }

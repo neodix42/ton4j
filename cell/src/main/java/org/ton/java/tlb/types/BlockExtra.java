@@ -21,7 +21,7 @@ import java.math.BigInteger;
  * block_extra
  *   in_msg_descr:^InMsgDescr
  *   out_msg_descr:^OutMsgDescr
- *   account_blocks:^ShardAccountBlocks
+ *   account_blocks:^ShardAccountBlocks // _ (HashmapAugE 256 AccountBlock CurrencyCollection) = ShardAccountBlocks;
  *   rand_seed:bits256
  *   created_by:bits256
  *   custom:(Maybe ^McBlockExtra) = BlockExtra;

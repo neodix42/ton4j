@@ -10,7 +10,6 @@ import org.ton.java.cell.ByteReader;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.tl.loader.Tl;
 import org.ton.java.tl.types.DbBlockInfo;
 import org.ton.java.tlb.types.Block;
 import org.ton.java.tlb.types.BlockProof;
@@ -46,7 +45,7 @@ public class TestTl {
             BitString bs2 = new BitString(valueReader.readBytes());
             Cell c2 = CellBuilder.beginCell().storeBitStringUnsafe(bs2).endCell();
             CellSlice cs = CellSlice.beginParse(c2);
-            DbBlockInfo dbBlockInfo = (DbBlockInfo) Tl.load(DbBlockInfo.class, cs);
+            DbBlockInfo dbBlockInfo = DbBlockInfo.deserialize(cs);
 
             log.info("dbBlockInfo {}", dbBlockInfo);
         }
@@ -63,7 +62,7 @@ public class TestTl {
             BitString bs2 = new BitString(valueReader.readBytes());
             Cell c2 = CellBuilder.beginCell().storeBitStringUnsafe(bs2).endCell();
             CellSlice cs = CellSlice.beginParse(c2);
-            DbBlockInfo dbBlockInfo = (DbBlockInfo) Tl.load(DbBlockInfo.class, cs);
+            DbBlockInfo dbBlockInfo = DbBlockInfo.deserialize(cs);
 
             log.info("dbBlockInfo {}", dbBlockInfo);
         }
@@ -80,7 +79,7 @@ public class TestTl {
             BitString bs2 = new BitString(valueReader.readBytes());
             Cell c2 = CellBuilder.beginCell().storeBitStringUnsafe(bs2).endCell();
             CellSlice cs = CellSlice.beginParse(c2);
-            DbBlockInfo dbBlockInfo = (DbBlockInfo) Tl.load(DbBlockInfo.class, cs);
+            DbBlockInfo dbBlockInfo = DbBlockInfo.deserialize(cs);
 
             log.info("dbBlockInfo {}", dbBlockInfo);
         }
@@ -111,7 +110,6 @@ public class TestTl {
             String filename = new String(Utils.unsignedBytesToSigned(r.readBytes(filenameLength)));
 
             log.info("");
-            log.info("");
             log.info("bocSize {}, filename {}", bocSize, filename);
 
             int[] boc = r.readBytes(bocSize);
@@ -126,17 +124,13 @@ public class TestTl {
 
             Cell blockCell = getFirstCellWithBlock(c);
 
-            //log.info(c.print());
-            //System.out.println("--------------------------------");
-//            Cell c0 = CellSlice.beginParse(c).loadRef();
-//            log.info(c0.print());
-//            System.out.println("--------------------------------");
-//            Cell c00 = CellSlice.beginParse(c0).loadRef();
-//            log.info(c00.print());
             Block block = Block.deserialize(CellSlice.beginParse(blockCell)); // block tlb magic 11ef55aa
-            log.info("block {}", block);
-//            log.info("data size {}", r.getDataSize()); // 179723-178587 = 1136
-            //log.info("data {}", Utils.bytesToHex(f));
+            log.info("inMsg {}, outMsg {}, account blocks {}, block {}",
+                    block.getExtra().getInMsgDesc().getCount(),
+                    block.getExtra().getOutMsgDesc().getCount(),
+                    block.getExtra().getShardAccountBlocks().elements.size(),
+                    block);
+
         } while (r.getDataSize() != 0);
     }
 

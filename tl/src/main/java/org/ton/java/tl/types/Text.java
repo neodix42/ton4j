@@ -7,6 +7,7 @@ import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.utils.Utils;
 
 import java.util.Arrays;
 
@@ -78,5 +79,28 @@ public class Text {
             c.storeRef(f(depth + 1).endCell());
         }
         return c;
+    }
+
+    public static Text deserialize(CellSlice cs) {
+        int chunksNum = cs.loadUint(8).intValue();
+        int firstSize = 0;
+        int lengthOfChunk = 0;
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < chunksNum; i++) {
+            lengthOfChunk = cs.loadUint(8).intValue();
+            if (i == 0) {
+                firstSize = lengthOfChunk;
+            }
+            int[] dataOfChunk = cs.loadBytes(lengthOfChunk * 8);
+            result.append(new String(Utils.unsignedBytesToSigned(dataOfChunk)));
+
+            if (i < chunksNum - 1) {
+                cs = CellSlice.beginParse(cs.loadRef());
+            }
+        }
+        return Text.builder()
+                .maxFirstChunkSize(firstSize)
+                .value(result.toString())
+                .build();
     }
 }

@@ -38,4 +38,8 @@ public class OutMsgDescr {
                         e -> CurrencyCollection.deserialize(e)))
                 .build();
     }
+
+    public long getCount() {
+        return outMsg.elements.size();
+    }
 }
