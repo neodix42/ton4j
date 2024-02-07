@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -40,10 +42,9 @@ public class BlockExtra {
         return createdBy.toString(16);
     }
 
-//    @Override
-//    public String toString() {
-//        return ToStringBuilder.reflectionToString(this, ToStringStyle.JSON_STYLE);
-//    }
+    public String toJson() {
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.JSON_STYLE);
+    }
 
     public Cell toCell() {
         return CellBuilder.beginCell()
@@ -75,13 +76,13 @@ public class BlockExtra {
                 .outMsgDesc(outMsgDescr)
                 .shardAccountBlocks(CellSlice.beginParse(cs.loadRef()).loadDictAugE(256,
                         k -> k.readUint(256),
-                        v -> AccountBlock.deserialize(v),
-                        e -> CurrencyCollection.deserialize(e)))
+                        v -> v, //AccountBlock.deserialize(v),
+                        e -> e)) //CurrencyCollection.deserialize(e)))
                 .randSeed(cs.loadUint(256))
                 .createdBy(cs.loadUint(256))
                 .build();
+
         blockExtra.setMcBlockExtra(cs.loadBit() ? McBlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
-// bug?                       .custom(isNull(cs.preloadMaybeRefX()) ? null : (McBlockExtra) Tlb.load(McBlockExtra.class, CellSlice.beginParse(cs.loadRef())))
 
         return blockExtra;
     }
