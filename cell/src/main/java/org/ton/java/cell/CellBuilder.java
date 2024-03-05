@@ -41,7 +41,7 @@ public class CellBuilder extends Cell {
         return this;
     }
 
-    public CellBuilder storeBit(boolean bit) {
+    public CellBuilder storeBit(Boolean bit) {
         checkBitsOverflow(1);
         bits.writeBit(bit);
         return this;
@@ -55,7 +55,7 @@ public class CellBuilder extends Cell {
         return this;
     }
 
-    public CellBuilder storeBits(boolean[] arrayBits) {
+    public CellBuilder storeBits(Boolean[] arrayBits) {
         checkBitsOverflow(arrayBits.length);
         bits.writeBitArray(arrayBits);
         return this;

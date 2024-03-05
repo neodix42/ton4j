@@ -10,7 +10,12 @@ import java.util.*;
 
 import static java.util.Objects.isNull;
 
-public class BitString {
+/**
+ * Implements BitString where each bit is actually a Boolean variable in memory.
+ * Not efficient, but perfect for educational purposes.
+ * See RealBitString implementation where each element of BitString stored as real bit in a memory.
+ */
+public class BitString implements Bits<Boolean> {
 
     Deque<Boolean> array;
 
@@ -115,9 +120,9 @@ public class BitString {
     /**
      * Gets current bit without removing it
      *
-     * @return boolean    bit value at position `n`
+     * @return Boolean    bit value at position `n`
      */
-    public boolean get() {
+    public Boolean get() {
         return array.peekFirst();
     }
 
@@ -135,11 +140,12 @@ public class BitString {
     /**
      * Write bit and increase cursor
      *
-     * @param b boolean
+     * @param b Boolean
      */
-    public void writeBit(boolean b) {
+    public void writeBit(Boolean b) {
         array.addLast(b);
     }
+
 
     /**
      * Write bit and increase cursor
@@ -155,10 +161,10 @@ public class BitString {
     }
 
     /**
-     * @param ba boolean[]
+     * @param ba Boolean[]
      */
-    public void writeBitArray(boolean[] ba) {
-        for (boolean b : ba) {
+    public void writeBitArray(Boolean[] ba) {
+        for (Boolean b : ba) {
             writeBit(b);
         }
     }
@@ -351,7 +357,7 @@ public class BitString {
      *
      * @return true or false
      */
-    public boolean prereadBit() {
+    public Boolean prereadBit() {
         return get();
     }
 
@@ -360,7 +366,7 @@ public class BitString {
      *
      * @return true or false
      */
-    public boolean readBit() {
+    public Boolean readBit() {
 //        return array.getFirst();
         return array.pollFirst();
     }
@@ -406,7 +412,7 @@ public class BitString {
         }
         StringBuilder s = new StringBuilder();
         for (int i = 0; i < bitLength; i++) {
-            boolean b = cloned.readBit();
+            Boolean b = cloned.readBit();
             if (b) {
                 s.append("1");
             } else {
@@ -428,7 +434,7 @@ public class BitString {
         }
         StringBuilder s = new StringBuilder();
         for (int i = 0; i < bitLength; i++) {
-            boolean b = readBit();
+            Boolean b = readBit();
             if (b) {
                 s.append("1");
             } else {
@@ -449,7 +455,7 @@ public class BitString {
             throw new Error("Incorrect bitLength");
         }
 
-        boolean sign = readBit();
+        Boolean sign = readBit();
         if (bitLength == 1) {
             return sign ? new BigInteger("-1") : BigInteger.ZERO;
         }
@@ -621,9 +627,9 @@ public class BitString {
         return result;
     }
 
-    public boolean[] toBooleanArray() {
+    public Boolean[] toBooleanArray() {
         String bin = getBitString();
-        boolean[] result = new boolean[bin.length()];
+        Boolean[] result = new Boolean[bin.length()];
         int i = 0;
         for (Boolean b : array) {
             result[i] = b;
@@ -669,12 +675,12 @@ public class BitString {
         }
     }
 
-    public void setTopUppedArray(int[] arr, boolean fulfilledBytes) {
+    public void setTopUppedArray(int[] arr, Boolean fulfilledBytes) {
         int length = arr.length * 8;
         array = new BitString(arr).array;
 
         if (!(fulfilledBytes || (length == 0))) {
-            boolean foundEndBit = false;
+            Boolean foundEndBit = false;
             for (byte c = 0; c < 7; c++) {
                 if (array.pollLast()) {
                     foundEndBit = true;

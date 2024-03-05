@@ -88,7 +88,7 @@ public interface Contract {
 
         CellBuilder stateInit = CellBuilder.beginCell();
 
-        stateInit.storeBits(new boolean[]{nonNull(splitDepth), nonNull(ticktock), nonNull(code), nonNull(data), nonNull(library)});
+        stateInit.storeBits(new Boolean[]{nonNull(splitDepth), nonNull(ticktock), nonNull(code), nonNull(data), nonNull(library)});
 
         if (nonNull(code)) {
             stateInit.storeRef(code);

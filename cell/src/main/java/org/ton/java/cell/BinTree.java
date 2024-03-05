@@ -6,6 +6,9 @@ import java.util.*;
 
 import static java.util.Objects.isNull;
 
+/**
+ * not finished
+ */
 public class BinTree {
 
     private Deque<ShardDescr> list;

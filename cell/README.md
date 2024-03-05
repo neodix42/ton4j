@@ -6,7 +6,7 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>cell</artifactId>
-    <version>0.1.6</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -16,11 +16,11 @@
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>cell</artifactId>
-    <version>0.1.6</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
-## Serialization
+## Cell Serialization to BoC
 
 ```java
 Cell c1 = CellBuilder.beginCell().storeUint((long) Math.pow(2, 25), 26).endCell();
@@ -64,7 +64,7 @@ x{8004B1CA92C714D3015CBA78EC7055FA7E9E65C68905B5F86EA3C66B0B1391BC01A908A98989F_
   x{8000002_}
 ```
 
-## Deserialization
+## Cell Deserialization from BoC
 
 ```java
 byte[] serializedCell5 = c5.toBocNew();
@@ -76,6 +76,45 @@ c5 deserialized:
 x{8004B1CA92C714D3015CBA78EC7055FA7E9E65C68905B5F86EA3C66B0B1391BC01A908A98989F_}
  x{8000000002_}
   x{8000002_}
+```
+
+## TLB Serialization
+
+```java
+StorageUsed storageUsed = StorageUsed.builder()
+.bitsUsed(BigInteger.valueOf(5))
+.cellsUsed(BigInteger.valueOf(3))
+.publicCellsUsed(BigInteger.valueOf(3))
+.build();
+
+StorageInfo storageInfo = StorageInfo.builder()
+.storageUsed(storageUsed)
+.lastPaid(1709674914)
+.duePayment(BigInteger.valueOf(12))
+.build();
+
+Cell serializedStorageInfo = storageInfo.toCell();
+```
+
+## TLB Deserialization
+
+```java
+Cell c = Cell.fromBoc("b5ee9c72410106010054000211b8e48dfb4a0eebb0040105022581fa7454b05a2ea2ac0fd3a2a5d348d2954008020202012004030015bfffffffbcbd0efda563d00015be000003bcb355ab466ad0001d43b9aca00250775d8011954fc40008b63e6951");
+log.info("CellType {}", c.getCellType());
+ValueFlow valueFlow = ValueFlow.deserialize(CellSlice.beginParse(c));
+log.info("valueFlow {}", valueFlow);
+
+//result
+valueFlow ValueFlow(magic=b8e48dfb, fromPrevBlk=CurrencyCollection(coins=2280867924805872170,
+        extraCurrencies=([239,664333333334],[4294967279,998444444446])), 
+        toNextBlk=CurrencyCollection(coins=2280867927505872170, extraCurrencies=([239,664333333334], [4294967279,998444444446])), 
+        imported=CurrencyCollection(coins=0, extraCurrencies=()), 
+        exported=CurrencyCollection(coins=0, extraCurrencies=()), 
+        feesCollected=CurrencyCollection(coins=2700000000, extraCurrencies=()), 
+        burned=null, feesImported=CurrencyCollection(coins=1000000000, extraCurrencies=()), 
+        recovered=CurrencyCollection(coins=2700000000, extraCurrencies=()), 
+        created=CurrencyCollection(coins=1700000000, extraCurrencies=()), 
+        minted=CurrencyCollection(coins=0, extraCurrencies=()))
 ```
 
 More examples on how to construct [Cell](../cell/src/main/java/org/ton/java/cell/Cell.java)

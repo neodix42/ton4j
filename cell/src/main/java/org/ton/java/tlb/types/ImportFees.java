@@ -27,7 +27,7 @@ public class ImportFees {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeCoins(feesCollected)
-                .storeSlice(CellSlice.beginParse(valueImported.toCell()))
+                .storeCell(valueImported.toCell())
                 .endCell();
     }
 

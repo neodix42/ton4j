@@ -12,6 +12,10 @@ import java.util.*;
 
 import static java.util.Objects.nonNull;
 
+/**
+ * Implements Cell class, where BitString having elements of Boolean type.
+ * Later will be supporting BitString where each element will be stored as one bit in memory.
+ */
 public class Cell {
 
     public static final int ORDINARY_CELL_TYPE = 0x00;
@@ -216,7 +220,7 @@ public class Cell {
             BitString bs = new BitString(hexBitString.length() * 8);
             bs.writeBytes(b);
 
-            boolean[] ba = bs.toBooleanArray();
+            Boolean[] ba = bs.toBooleanArray();
             int i = ba.length - 1;
             // drop last elements up to first `1`, if incomplete
             while (incomplete && !ba[i]) {
