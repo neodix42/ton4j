@@ -1051,6 +1051,31 @@ public class Tonlib {
         throw new Error("Transaction not found");
     }
 
+    public RawTransaction getRawTransaction(byte workchain, ShortTxId tx) {
+        String addressHex = Utils.base64ToHexString(tx.getAccount());
+        String address = Address.of(workchain + ":" + addressHex).toString(false);
+        GetRawTransactionsV2Query getRawTransactionsQuery = GetRawTransactionsV2Query.builder()
+                .account_address(AccountAddressOnly.builder().account_address(address).build())
+                .from_transaction_id(LastTransactionId.builder()
+                        .lt(BigInteger.valueOf(tx.getLt()))
+                        .hash(tx.getHash())
+                        .build())
+                .count(1)
+                .try_decode_message(false)
+                .build();
+
+        send(gson.toJson(getRawTransactionsQuery));
+
+        String result = syncAndRead();
+        RawTransactions res = gson.fromJson(result, RawTransactions.class);
+        List<RawTransaction> t = res.getTransactions ();
+        if (t.size() >= 1) {
+            return t.get(0);
+        } else {
+            return RawTransaction.builder().build();
+        }
+    }
+
     public RawTransaction tryLocateTxByOutcomingMessage(Address source, Address destination, long creationLt) {
         Shards shards = getShards(0, creationLt, 0);
         for (BlockIdExt shardData : shards.getShards()) {
@@ -1090,6 +1115,27 @@ public class Tonlib {
 
         }
         throw new Error("Transaction not found");
+    }
+
+    // taken from PR by Vitaly Valtman
+    public DnsResolved dnsResolve(String name, AccountAddressOnly addr) {
+        if (addr == null) {
+            addr = AccountAddressOnly.builder()
+                    .account_address("-1:E56754F83426F69B09267BD876AC97C44821345B7E266BD956A7BFBFB98DF35C")
+                    .build ();
+        }
+        byte[] category = new byte[32];
+        Arrays.fill (category, (byte)0);
+        DnsResolveQuery query = DnsResolveQuery.builder()
+                .account_address (addr)
+                .name (name)
+                .category (Utils.bytesToBase64 (category))
+                .ttl (1)
+                .build();
+
+        send(gson.toJson(query));
+        String result = syncAndRead();
+        return gson.fromJson(result, DnsResolved.class);
     }
 
 }
