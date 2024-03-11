@@ -29,9 +29,9 @@ import org.ton.java.cell.CellSlice;
  * reimport:^InMsg = OutMsg;
  */
 public interface OutMsg {
-    public Cell toCell();
+    Cell toCell();
 
-    public static OutMsg deserialize(CellSlice cs) {
+    static OutMsg deserialize(CellSlice cs) {
         int outMsgFlag = cs.loadUint(3).intValue();
         switch (outMsgFlag) {
             case 0b000 -> {

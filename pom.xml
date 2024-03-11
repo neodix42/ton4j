@@ -18,6 +18,7 @@
         <module>tonlib</module>
         <module>mnemonic</module>
         <module>tl</module>
+        <module>emulator</module>
     </modules>
 
     <properties>

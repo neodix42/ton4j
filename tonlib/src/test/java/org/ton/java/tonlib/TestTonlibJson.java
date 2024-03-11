@@ -50,7 +50,6 @@ public class TestTonlibJson {
     }
 
     @Test
-
     public void testInitTonlibJson() throws IOException {
         TonlibJsonI tonlibJson = Native.load("tonlibjson.dll", TonlibJsonI.class);
 

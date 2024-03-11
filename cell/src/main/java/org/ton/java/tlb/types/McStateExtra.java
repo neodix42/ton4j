@@ -42,7 +42,7 @@ public class McStateExtra {
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeUint(0xcc26, 32)
+                .storeUint(0xcc26, 16)
 //                .storeDict(shardHashes.toCell())
                 .storeDict(shardHashes.serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,

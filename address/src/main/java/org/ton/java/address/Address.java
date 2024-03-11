@@ -102,6 +102,10 @@ public class Address {
         return new Address(address);
     }
 
+    public static Address of(byte[] hashCrc) {
+        return of(bounceable_tag, -1, hashCrc);
+    }
+
     public static Address of(byte flags, int wc, byte[] hashCrc) {
 
         int flagsByte = flags & 0xff;

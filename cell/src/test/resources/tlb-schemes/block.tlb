@@ -616,7 +616,8 @@ _ dns_root_addr:bits256 = ConfigParam 4;  // root TON DNS resolver
 
 burning_config#01
   blackhole_addr:(Maybe bits256)
-  fee_burn_num:# fee_burn_denom:# { fee_burn_num <= fee_burn_denom } { fee_burn_denom >= 1 } = BurningConfig;
+  fee_burn_num:#
+  fee_burn_denom:# { fee_burn_num <= fee_burn_denom } { fee_burn_denom >= 1 } = BurningConfig;
 _ BurningConfig = ConfigParam 5;
 
 _ mint_new_price:Grams mint_add_price:Grams = ConfigParam 6;
@@ -627,26 +628,51 @@ _ GlobalVersion = ConfigParam 8;  // all zero if absent
 _ mandatory_params:(Hashmap 32 True) = ConfigParam 9;
 _ critical_params:(Hashmap 32 True) = ConfigParam 10;
 
-cfg_vote_cfg#36 min_tot_rounds:uint8 max_tot_rounds:uint8 min_wins:uint8 max_losses:uint8 min_store_sec:uint32 max_store_sec:uint32 bit_price:uint32 cell_price:uint32 = ConfigProposalSetup;
-cfg_vote_setup#91 normal_params:^ConfigProposalSetup critical_params:^ConfigProposalSetup = ConfigVotingSetup;
+cfg_vote_cfg#36
+min_tot_rounds:uint8
+max_tot_rounds:uint8
+min_wins:uint8
+max_losses:uint8 min_store_sec:uint32 max_store_sec:uint32
+bit_price:uint32 cell_price:uint32 = ConfigProposalSetup;
+
+cfg_vote_setup#91
+normal_params:^ConfigProposalSetup
+critical_params:^ConfigProposalSetup = ConfigVotingSetup;
 _ ConfigVotingSetup = ConfigParam 11;
 
-cfg_proposal#f3 param_id:int32 param_value:(Maybe ^Cell) if_hash_equal:(Maybe uint256) 
+cfg_proposal#f3
+param_id:int32
+param_value:(Maybe ^Cell)
+if_hash_equal:(Maybe uint256)
   = ConfigProposal;
-cfg_proposal_status#ce expires:uint32 proposal:^ConfigProposal is_critical:Bool
-  voters:(HashmapE 16 True) remaining_weight:int64 validator_set_id:uint256 
-  rounds_remaining:uint8 wins:uint8 losses:uint8 = ConfigProposalStatus;
+
+cfg_proposal_status#ce
+expires:uint32
+proposal:^ConfigProposal
+is_critical:Bool
+voters:(HashmapE 16 True)
+remaining_weight:int64
+validator_set_id:uint256
+rounds_remaining:uint8
+wins:uint8
+losses:uint8 = ConfigProposalStatus;
 
 wfmt_basic#1 vm_version:int32 vm_mode:uint64 = WorkchainFormat 1;
-wfmt_ext#0 min_addr_len:(## 12) max_addr_len:(## 12) addr_len_step:(## 12)
+
+wfmt_ext#0
+min_addr_len:(## 12)
+max_addr_len:(## 12)
+addr_len_step:(## 12)
   { min_addr_len >= 64 } { min_addr_len <= max_addr_len } 
   { max_addr_len <= 1023 } { addr_len_step <= 1023 }
   workchain_type_id:(## 32) { workchain_type_id >= 1 }
   = WorkchainFormat 0;
 
 wc_split_merge_timings#0
-  split_merge_delay:uint32 split_merge_interval:uint32
-  min_split_merge_interval:uint32 max_split_merge_delay:uint32
+  split_merge_delay:uint32
+  split_merge_interval:uint32
+  min_split_merge_interval:uint32
+  max_split_merge_delay:uint32
   = WcSplitMergeTimings;
 
 //workchain#a5 enabled_since:uint32 min_split:(## 8) max_split:(## 8)

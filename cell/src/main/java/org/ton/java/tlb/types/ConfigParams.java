@@ -30,7 +30,7 @@ public class ConfigParams {
 
     public static ConfigParams deserialize(CellSlice cs) {
         return ConfigParams.builder()
-                .configAddr(Address.of((byte) 0x11, 255, cs.loadBits(256).toByteArray())) // TODO prio 1
+                .configAddr(Address.of(cs.loadBits(256).toByteArray())) // bounceable and workchain -1
                 .config(CellSlice.beginParse(cs.loadRef()).loadDict(32, k -> k.readUint(32), v -> v))
                 .build();
     }
