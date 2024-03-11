@@ -601,6 +601,7 @@ masterchain_block_extra#cca5
 
 validator#53 public_key:SigPubKey weight:uint64 = ValidatorDescr;
 validator_addr#73 public_key:SigPubKey weight:uint64 adnl_addr:bits256 = ValidatorDescr;
+
 validators#11 utime_since:uint32 utime_until:uint32 
   total:(## 16) main:(## 16) { main <= total } { main >= 1 } 
   list:(Hashmap 16 ValidatorDescr) = ValidatorSet;
@@ -712,10 +713,14 @@ _ max_validators:(## 16) max_main_validators:(## 16) min_validators:(## 16)
   { min_validators >= 1 }
   = ConfigParam 16;
 
-_ min_stake:Grams max_stake:Grams min_total_stake:Grams max_stake_factor:uint32 = ConfigParam 17;
+_ min_stake:Grams
+max_stake:Grams
+min_total_stake:Grams
+max_stake_factor:uint32 = ConfigParam 17;
 
 _#cc utime_since:uint32 bit_price_ps:uint64 cell_price_ps:uint64 
   mc_bit_price_ps:uint64 mc_cell_price_ps:uint64 = StoragePrices;
+
 _ (Hashmap 32 StoragePrices) = ConfigParam 18;
 
 _ global_id:int32 = ConfigParam 19;
@@ -736,6 +741,7 @@ config_gas_prices#_ GasLimitsPrices = ConfigParam 21;
 
 param_limits#c3 underload:# soft_limit:# { underload <= soft_limit }
   hard_limit:# { soft_limit <= hard_limit } = ParamLimits;
+
 block_limits#5d bytes:ParamLimits gas:ParamLimits lt_delta:ParamLimits
   = BlockLimits;
   
@@ -818,6 +824,10 @@ _ SizeLimitsConfig = ConfigParam 43;
 // key is [ wc:int32 addr:uint256 ]
 suspended_address_list#00 addresses:(HashmapE 288 Unit) suspended_until:uint32 = SuspendedAddressList;
 _ SuspendedAddressList = ConfigParam 44;
+
+precompiled_smc#b0 gas_usage:uint64 = PrecompiledSmc;
+precompiled_contracts_config#c0 list:(HashmapE 256 PrecompiledSmc) = PrecompiledContractsConfig;
+_ PrecompiledContractsConfig = ConfigParam 45;
 
 oracle_bridge_params#_ bridge_address:bits256 oracle_mutlisig_address:bits256 oracles:(HashmapE 256 uint256) external_chain_address:bits256 = OracleBridgeParams;
 _ OracleBridgeParams = ConfigParam 71; // Ethereum bridge

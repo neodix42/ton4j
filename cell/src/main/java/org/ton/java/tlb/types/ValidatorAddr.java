@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
@@ -12,11 +14,15 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
-public class ValidatorAddr {
-    long magic;             //Magic            `tlb:"#73"`
-    SigPubKeyED25519 publicKey;//SigPubKeyED25519 `tlb:"."`
-    BigInteger weight;      //uint64           `tlb:"## 64"`
-    BigInteger adnlAddr;        //[]byte           `tlb:"bits 256"`
+/**
+ * validator_addr#73 public_key:SigPubKey weight:uint64 adnl_addr:bits256 = ValidatorDescr;
+ */
+public class ValidatorAddr implements ValidatorDescr {
+    int magic;
+    //    SigPubKeyED25519 publicKey;
+    SigPubKey publicKey;
+    BigInteger weight;
+    BigInteger adnlAddr;
 
     private String getMagic() {
         return Long.toHexString(magic);
@@ -26,7 +32,22 @@ public class ValidatorAddr {
         return adnlAddr.toString(16);
     }
 
+    @Override
+    public Cell toCell() {
+        return CellBuilder.beginCell()
+                .storeUint(0x73, 8)
+                .storeCell(publicKey.toCell())
+                .storeUint(weight, 64)
+                .storeUint(adnlAddr, 256)
+                .endCell();
+    }
+
     public static ValidatorAddr deserialize(CellSlice cs) {
-        return null;
+        return ValidatorAddr.builder()
+                .magic(cs.loadUint(8).intValue())
+                .publicKey(SigPubKey.deserialize(cs))
+                .weight(cs.loadUint(64))
+                .adnlAddr(cs.loadUint(256))
+                .build();
     }
 }

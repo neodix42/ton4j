@@ -7,7 +7,7 @@ public interface WorkchainDescr {
     Cell toCell();
 
     static WorkchainDescr deserialize(CellSlice cs) {
-        int magic = cs.loadUint(8).intValue();
+        int magic = cs.preloadUint(8).intValue();
 
         if (magic == 0xa6) {
             return WorkchainDescrV1.deserialize(cs);

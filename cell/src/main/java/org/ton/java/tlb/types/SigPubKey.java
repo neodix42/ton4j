@@ -18,7 +18,7 @@ import java.math.BigInteger;
  ed25519_pubkey#8e81278a pubkey:bits256 = SigPubKey;  // 288 bits
  */
 public class SigPubKey {
-    int magic;
+    long magic;
     BigInteger pubkey;
 
     public Cell toCell() {
@@ -29,6 +29,9 @@ public class SigPubKey {
     }
 
     public static SigPubKey deserialize(CellSlice cs) {
-        return null;
+        return SigPubKey.builder()
+                .magic(cs.loadUint(32).longValue())
+                .pubkey(cs.loadUint(256))
+                .build();
     }
 }

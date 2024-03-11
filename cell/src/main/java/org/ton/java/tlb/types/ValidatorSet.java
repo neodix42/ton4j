@@ -1,29 +1,28 @@
 package org.ton.java.tlb.types;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonHashMap;
 
-@Builder
-@Getter
-@Setter
-@ToString
-public class ValidatorSet {
-    long magic;     // Magic            `tlb:"#11"`
-    long uTimeSince;// uint32           `tlb:"## 32"`
-    long uTimeUntil;// uint32           `tlb:"## 32"`
-    int total;      // uint16           `tlb:"## 16"`
-    int main;       // uint6            `tlb:"## 16"`
-    TonHashMap list;//                  `tlb:"dict 16"`
 
-    private String getMagic() {
-        return Long.toBinaryString(magic);
-    }
+/**
+ * validators#11 utime_since:uint32 utime_until:uint32
+ * total:(## 16) main:(## 16) { main <= total } { main >= 1 }
+ * list:(Hashmap 16 ValidatorDescr) = ValidatorSet;
+ * validators_ext#12 utime_since:uint32 utime_until:uint32
+ * total:(## 16) main:(## 16) { main <= total } { main >= 1 }
+ * total_weight:uint64 list:(HashmapE 16 ValidatorDescr) = ValidatorSet;
+ */
+public interface ValidatorSet {
+    Cell toCell();
 
-    public static ValidatorSet deserialize(CellSlice cs) {
-        return null;
+    static ValidatorSet deserialize(CellSlice cs) {
+        int magic = cs.preloadUint(8).intValue();
+        if (magic == 0x53) {
+            return Validators.deserialize(cs);
+        } else if (magic == 0x73) {
+            return ValidatorsExt.deserialize(cs);
+        } else {
+            throw new Error("Cannot deserialize ValidatorSet, magic: " + magic);
+        }
     }
 }
