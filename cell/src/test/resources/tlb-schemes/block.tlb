@@ -807,18 +807,38 @@ signed_temp_key#4 key:^ValidatorTempKey signature:CryptoSignature = ValidatorSig
 _ (HashmapE 256 ValidatorSignedTempKey) = ConfigParam 39;
 
 misbehaviour_punishment_config_v1#01 
-  default_flat_fine:Grams default_proportional_fine:uint32
-  severity_flat_mult:uint16 severity_proportional_mult:uint16
+  default_flat_fine:Grams
+  default_proportional_fine:uint32
+  severity_flat_mult:uint16
+  severity_proportional_mult:uint16
   unpunishable_interval:uint16
-  long_interval:uint16 long_flat_mult:uint16 long_proportional_mult:uint16
-  medium_interval:uint16 medium_flat_mult:uint16 medium_proportional_mult:uint16
+  long_interval:uint16
+  long_flat_mult:uint16
+  long_proportional_mult:uint16
+  medium_interval:uint16
+  medium_flat_mult:uint16
+  medium_proportional_mult:uint16
    = MisbehaviourPunishmentConfig;
 _ MisbehaviourPunishmentConfig = ConfigParam 40;
 
-size_limits_config#01 max_msg_bits:uint32 max_msg_cells:uint32 max_library_cells:uint32 max_vm_data_depth:uint16
-  max_ext_msg_size:uint32 max_ext_msg_depth:uint16 = SizeLimitsConfig;
-size_limits_config_v2#02 max_msg_bits:uint32 max_msg_cells:uint32 max_library_cells:uint32 max_vm_data_depth:uint16
-  max_ext_msg_size:uint32 max_ext_msg_depth:uint16 max_acc_state_cells:uint32 max_acc_state_bits:uint32 = SizeLimitsConfig;
+size_limits_config#01
+  max_msg_bits:uint32
+  max_msg_cells:uint32
+  max_library_cells:uint32
+  max_vm_data_depth:uint16
+  max_ext_msg_size:uint32
+  max_ext_msg_depth:uint16 = SizeLimitsConfig;
+
+size_limits_config_v2#02
+  max_msg_bits:uint32
+  max_msg_cells:uint32
+  max_library_cells:uint32
+  max_vm_data_depth:uint16
+  max_ext_msg_size:uint32
+  max_ext_msg_depth:uint16
+  max_acc_state_cells:uint32
+  max_acc_state_bits:uint32 = SizeLimitsConfig;
+
 _ SizeLimitsConfig = ConfigParam 43;
 
 // key is [ wc:int32 addr:uint256 ]

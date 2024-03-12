@@ -6,7 +6,6 @@ import org.ton.java.cell.CellSlice;
 
 public interface ConsensusConfig {
 
-
     Cell toCell();
 
     static ConsensusConfig deserialize(CellSlice cs) {
@@ -20,7 +19,7 @@ public interface ConsensusConfig {
         } else if (magic == 0xd9) {
             return ConsensusConfigV4.deserialize(cs);
         } else {
-            throw new Error("Wrong magic in ConsensusConfig: ");
+            throw new Error("Wrong magic in ConsensusConfig: " + magic);
         }
     }
 }

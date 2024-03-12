@@ -16,7 +16,7 @@ public interface CatchainConfig {
         } else if (magic == 0xc2) {
             return CatchainConfigC2.deserialize(cs);
         } else {
-            throw new Error("Wrong magic in CatchainConfig: ");
+            throw new Error("Wrong magic in CatchainConfig: " + magic);
         }
     }
 }
