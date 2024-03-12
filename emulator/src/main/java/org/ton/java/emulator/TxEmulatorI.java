@@ -2,7 +2,7 @@ package org.ton.java.emulator;
 
 import com.sun.jna.Library;
 
-public interface EmulatorI extends Library {
+public interface TxEmulatorI extends Library {
 
     /**
      * @param configParamBoc Base64 encoded BoC serialized Config dictionary (Hashmap 32 ^Cell)

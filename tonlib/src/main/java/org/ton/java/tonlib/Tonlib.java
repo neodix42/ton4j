@@ -101,6 +101,7 @@ public class Tonlib {
     private boolean synced;
 
     RunResultParser runResultParser;
+    LibraryResultParser libraryResultParser;
 
     public static TonlibBuilder builder() {
         return new CustomTonlibBuilder();
@@ -149,6 +150,7 @@ public class Tonlib {
 
                 super.synced = false;
                 super.runResultParser = new RunResultParser();
+                super.libraryResultParser = new LibraryResultParser();
 
                 String configData;
                 if (isNull(super.pathToGlobalConfig)) {
@@ -750,6 +752,21 @@ public class Tonlib {
     }
 
 
+    public Cell getConfigAll(int mode) {
+        synchronized (gson) {
+            GetConfigAllQuery configParamQuery = GetConfigAllQuery.builder()
+                    .mode(mode)
+                    .build();
+
+            send(gson.toJson(configParamQuery));
+
+            String result = syncAndRead();
+            System.out.println(result);
+            ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
+            return CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(ci.getConfig().getBytes()));
+        }
+    }
+
     public Cell getConfigParam(BlockIdExt id, long param) {
         synchronized (gson) {
             GetConfigParamQuery configParamQuery = GetConfigParamQuery.builder()
@@ -774,6 +791,32 @@ public class Tonlib {
                     .build();
 
             send(gson.toJson(loadContractQuery));
+
+            String result = syncAndRead();
+
+            return gson.fromJson(result, LoadContract.class).getId();
+        }
+    }
+    public long loadContract(AccountAddressOnly address, long seqno) {
+        synchronized (gson) {
+            BlockIdExt fullBlock;
+            if (seqno != 0) {
+            fullBlock = lookupBlock(seqno,-1,-9223372036854775808L,0 );
+            }
+            else {
+                fullBlock = getMasterChainInfo().getLast();
+            }
+
+            LoadContractQuery loadContractQuery = LoadContractQuery.builder()
+                    .account_address(address)
+                    .build();
+
+            WithBlockQuery withBlockQuery = WithBlockQuery.builder()
+                           .id(fullBlock)
+                    .function(loadContractQuery)
+                    .build();
+
+            send(gson.toJson(withBlockQuery));
 
             String result = syncAndRead();
 
@@ -1138,4 +1181,21 @@ public class Tonlib {
         return gson.fromJson(result, DnsResolved.class);
     }
 
+    /**
+     *
+     * @param librariesHashes list of base64-encoded libraries hashes
+     * @return RunResult
+     */
+
+    public SmcLibraryResult getLibraries(List<String> librariesHashes) {
+        synchronized (gson) {
+            GetLibrariesQuery getLibrariesQuery = GetLibrariesQuery.builder()
+                    .library_list(librariesHashes)
+                    .build();
+
+            send(gson.toJson(getLibrariesQuery));
+            String result = syncAndRead();
+            return libraryResultParser.parse(result);
+        }
+    }
 }

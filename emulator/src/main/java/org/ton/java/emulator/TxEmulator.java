@@ -9,22 +9,22 @@ import static java.util.Objects.isNull;
 
 @Log
 @Builder
-public class Emulator {
+public class TxEmulator {
 
     private String pathToEmulatorSharedLib;
-    private final EmulatorI emulatorI;
-    private final long emulator;
+    private final TxEmulatorI txEmulatorI;
+    private final long txEmulator;
 
     private String configBoc;
     private int verbosityLevel;
 
-    public static EmulatorBuilder builder() {
+    public static TxEmulatorBuilder builder() {
         return new CustomEmulatorBuilder();
     }
 
-    private static class CustomEmulatorBuilder extends EmulatorBuilder {
+    private static class CustomEmulatorBuilder extends TxEmulatorBuilder {
         @Override
-        public Emulator build() {
+        public TxEmulator build() {
             String emulatorName = switch (Utils.getOS()) {
                 case LINUX -> "libemulator-linux-x86-64.so";
                 case LINUX_ARM -> "libemulator-linux-arm64.so";
@@ -39,16 +39,16 @@ public class Emulator {
                 super.pathToEmulatorSharedLib = emulatorName;
             }
 
-            super.emulatorI = Native.load(super.pathToEmulatorSharedLib, EmulatorI.class);
+            super.txEmulatorI = Native.load(super.pathToEmulatorSharedLib, TxEmulatorI.class);
             if (isNull(super.verbosityLevel)) {
                 super.verbosityLevel = 2;
             }
             if (isNull(super.configBoc)) {
                 throw new Error("Config is not set");
             }
-            super.emulator = super.emulatorI.transaction_emulator_create(super.configBoc, super.verbosityLevel);
+            super.txEmulator = super.txEmulatorI.transaction_emulator_create(super.configBoc, super.verbosityLevel);
 
-            if (super.emulator == 0) {
+            if (super.txEmulator == 0) {
                 throw new Error("Can't create emulator instance");
             }
 
@@ -63,11 +63,11 @@ public class Emulator {
     }
 
     public void destroy() {
-        emulatorI.transaction_emulator_destroy(emulator);
+        txEmulatorI.transaction_emulator_destroy(txEmulator);
     }
 
     public void setVerbosityLevel(int verbosityLevel) {
-        emulatorI.emulator_set_verbosity_level(emulator, verbosityLevel);
+        txEmulatorI.emulator_set_verbosity_level(txEmulator, verbosityLevel);
     }
 }
 

@@ -18,14 +18,11 @@ public class ConfigParams12 {
 
     public Cell toCell() {
 
-        Cell dict;
-
-        dict = workchains.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                v -> CellBuilder.beginCell().storeCell(((WorkchainDescr) v).toCell())
-        );
         return CellBuilder.beginCell()
-                .storeDict(dict)
+                .storeDict(workchains.serialize(
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
+                        v -> CellBuilder.beginCell().storeCell(((WorkchainDescr) v).toCell())
+                ))
                 .endCell();
     }
 

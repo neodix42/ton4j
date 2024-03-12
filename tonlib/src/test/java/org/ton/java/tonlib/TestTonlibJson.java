@@ -22,10 +22,7 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static java.util.Objects.nonNull;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -495,6 +492,38 @@ public class TestTonlibJson {
     }
 
     @Test
+    public void testTonlibGetConfigAll() {
+        Tonlib tonlib = Tonlib
+                .builder()
+                .build();
+        MasterChainInfo mc = tonlib.getLast();
+        Cell c = tonlib.getConfigAll(128);
+        log.info(c.print());
+    }
+
+    @Test
+    public void testTonlibLoadContract() {
+        Tonlib tonlib = Tonlib
+                .builder()
+                .build();
+        AccountAddressOnly address = AccountAddressOnly.builder().account_address("EQAPZ3Trml6zO403fnA6fiqbjPw9JcOCSk0OVY6dVdyM2fEM").build();
+        long result = tonlib.loadContract(address);
+
+        log.info("result {}", result);
+    }
+
+    @Test
+    public void testTonlibLoadContractSeqno() {
+        Tonlib tonlib = Tonlib
+                .builder()
+                .build();
+        AccountAddressOnly address = AccountAddressOnly.builder().account_address("EQAPZ3Trml6zO403fnA6fiqbjPw9JcOCSk0OVY6dVdyM2fEM").build();
+        long result = tonlib.loadContract(address, 36661567);
+
+        log.info("result {}", result);
+    }
+
+    @Test
     public void testTonlibRunMethodComputeReturnedStake() {
         Address elector = Address.of(ELECTOR_ADDRESSS);
         RunResult result = tonlib.runMethod(elector, "compute_returned_stake", null);
@@ -582,5 +611,15 @@ public class TestTonlibJson {
         log.info("frozen_hash {}, status {}", accountState1.getAccount_state().getFrozen_hash(), accountState1Status);
         log.info("rawAccountState2 {}", accountState2);
         assertThat(accountState1.getBalance()).isEqualTo(accountState2.getBalance());
+    }
+
+    @Test
+    public void testTonlibGetLibraries() {
+
+        SmcLibraryResult result = tonlib.getLibraries(
+                List.of("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
+        log.info("result: {}", result);
+
+        assertThat(result.getResult().get(0).getHash()).isEqualTo("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M=");
     }
 }
