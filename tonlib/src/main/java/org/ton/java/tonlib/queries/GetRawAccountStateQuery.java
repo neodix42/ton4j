@@ -11,7 +11,7 @@ import org.ton.java.tonlib.types.AccountAddress;
 @Setter
 @Getter
 @ToString
-public class GetRawAccountStateQuery {
+public class GetRawAccountStateQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "raw.getAccountState";
     AccountAddress account_address;

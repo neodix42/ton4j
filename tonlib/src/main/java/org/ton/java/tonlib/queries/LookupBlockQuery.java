@@ -11,7 +11,7 @@ import org.ton.java.tonlib.types.BlockId;
 @Setter
 @Getter
 @ToString
-public class LookupBlockQuery {
+public class LookupBlockQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "blocks.lookupBlock";
     long mode;

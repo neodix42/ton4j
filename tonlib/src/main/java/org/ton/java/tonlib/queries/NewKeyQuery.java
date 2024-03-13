@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class NewKeyQuery {
+public class NewKeyQuery extends ExtraQuery {
     @SerializedName("@type")
     final String type = "createNewKey";
     String mnemonic_password;

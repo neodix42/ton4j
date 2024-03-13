@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class SendQuery {
+public class SendQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "query.send";
     long id; // result from createQuery

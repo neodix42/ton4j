@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class VerbosityLevelQuery {
+public class VerbosityLevelQuery extends ExtraQuery {
     @SerializedName("@type")
     final String type = "setLogVerbosityLevel";
     int new_verbosity_level;

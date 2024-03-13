@@ -207,6 +207,7 @@ public class TestTonlibJson {
         assertThat(rawTransactions.getTransactions().size()).isLessThan(4);
     }
 
+
     @Test
     public void testTonlibGetAllTxsByAddress() {
         Address address = Address.of("EQAL66-DGwFvP046ysD_o18wvwt-0A6_aJoVmQpVNIqV_ZvK");
@@ -493,9 +494,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibGetConfigAll() {
-        Tonlib tonlib = Tonlib
-                .builder()
-                .build();
         MasterChainInfo mc = tonlib.getLast();
         Cell c = tonlib.getConfigAll(128);
         log.info(c.print());
@@ -503,23 +501,15 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibLoadContract() {
-        Tonlib tonlib = Tonlib
-                .builder()
-                .build();
         AccountAddressOnly address = AccountAddressOnly.builder().account_address("EQAPZ3Trml6zO403fnA6fiqbjPw9JcOCSk0OVY6dVdyM2fEM").build();
         long result = tonlib.loadContract(address);
-
         log.info("result {}", result);
     }
 
     @Test
     public void testTonlibLoadContractSeqno() {
-        Tonlib tonlib = Tonlib
-                .builder()
-                .build();
         AccountAddressOnly address = AccountAddressOnly.builder().account_address("EQAPZ3Trml6zO403fnA6fiqbjPw9JcOCSk0OVY6dVdyM2fEM").build();
         long result = tonlib.loadContract(address, 36661567);
-
         log.info("result {}", result);
     }
 
@@ -558,18 +548,16 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibLookupBlock() {
-        Tonlib tonlib = Tonlib.builder()
-                .keystoreInMemory(true)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
+        MasterChainInfo mcInfo = tonlib.getLast();
 
-        Shards shards = tonlib.getShards(0, 31800427000002L, 0);
+        Shards shards = tonlib.getShards(mcInfo.getLast().getSeqno(), 0, 0);
         log.info("shards-- {}", shards.getShards());
 
         BlockIdExt shard = shards.getShards().get(0);
 
-        BlockIdExt fullblock = tonlib.lookupBlock(0, shard.getWorkchain(), shard.getShard(), 31800427000002L + 1000000, 0);
+        BlockIdExt fullblock = tonlib.lookupBlock(shard.getSeqno(), shard.getWorkchain(), shard.getShard(), 0, 0);
         log.info("fullBlock-- {}", fullblock);
+        assertThat(fullblock).isNotNull();
     }
 
     @Test
@@ -602,11 +590,14 @@ public class TestTonlibJson {
     public void testTonlibStateAndStatus() {
         int i = 0;
         FullAccountState accountState1 = tonlib.getAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
+        log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState1.getBalance(), accountState1);
+
+        RawAccountState accountState2 = tonlib.getRawAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
+        log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState2.getBalance(), accountState2);
+
         String accountState1Status = tonlib.getRawAccountStatus(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
         log.info("==========================================");
-        RawAccountState accountState2 = tonlib.getRawAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
-        log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState1.getBalance(), accountState1);
-        log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState2.getBalance(), accountState2);
+
         log.info("wallet_id {}, seqno {}", accountState1.getAccount_state().getWallet_id(), accountState1.getAccount_state().getSeqno());
         log.info("frozen_hash {}, status {}", accountState1.getAccount_state().getFrozen_hash(), accountState1Status);
         log.info("rawAccountState2 {}", accountState2);
@@ -615,7 +606,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibGetLibraries() {
-
         SmcLibraryResult result = tonlib.getLibraries(
                 List.of("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
         log.info("result: {}", result);

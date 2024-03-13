@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class GetLastQuery {
+public class GetLastQuery extends ExtraQuery {
     @SerializedName("@type")
     final String type = "blocks.getMasterchainInfo";
 }

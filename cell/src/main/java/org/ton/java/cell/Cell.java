@@ -154,8 +154,24 @@ public class Cell {
         }
     }
 
+    /**
+     * Converts BoC in hex string to Cell
+     *
+     * @param data hex string containing valid BoC
+     * @return Cell
+     */
     public static Cell fromBoc(String data) {
         return fromBocMultiRoot(Utils.hexToUnsignedBytes(data)).get(0);
+    }
+
+    /**
+     * Converts BoC in base64 string to Cell
+     *
+     * @param data base64 string containing valid BoC
+     * @return Cell
+     */
+    public static Cell fromBocBase64(String data) {
+        return fromBocMultiRoot(Utils.base64ToUnsignedBytes(data)).get(0);
     }
 
     public static Cell fromBoc(int[] data) {

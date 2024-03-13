@@ -11,7 +11,7 @@ import org.ton.java.tonlib.types.AccountAddressOnly;
 @Setter
 @Getter
 @ToString
-public class CreateAndSendRawMessageQuery {
+public class CreateAndSendRawMessageQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "raw.createAndSendMessage";
     AccountAddressOnly destination;

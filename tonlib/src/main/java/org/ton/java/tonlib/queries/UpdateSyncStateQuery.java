@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class UpdateSyncStateQuery {
+public class UpdateSyncStateQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "updateSyncState";
     long id; // result from createQuery

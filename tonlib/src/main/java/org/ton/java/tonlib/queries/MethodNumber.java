@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class MethodNumber {
+public class MethodNumber extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "smc.methodIdNumber";
     long number;

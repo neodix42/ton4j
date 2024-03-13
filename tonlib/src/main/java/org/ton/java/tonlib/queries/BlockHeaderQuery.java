@@ -11,7 +11,7 @@ import org.ton.java.tonlib.types.BlockIdExt;
 @Setter
 @Getter
 @ToString
-public class BlockHeaderQuery {
+public class BlockHeaderQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "blocks.getBlockHeader";
     BlockIdExt id;

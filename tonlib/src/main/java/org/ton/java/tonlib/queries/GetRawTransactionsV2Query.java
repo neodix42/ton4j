@@ -12,7 +12,7 @@ import org.ton.java.tonlib.types.LastTransactionId;
 @Setter
 @Getter
 @ToString
-public class GetRawTransactionsV2Query {
+public class GetRawTransactionsV2Query extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "raw.getTransactionsV2";
     AccountAddressOnly account_address;

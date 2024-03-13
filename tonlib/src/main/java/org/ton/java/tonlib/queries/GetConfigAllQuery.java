@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class GetConfigAllQuery {
+public class GetConfigAllQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "getConfigAll";
     int mode;

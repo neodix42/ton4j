@@ -11,7 +11,7 @@ import org.ton.java.tonlib.types.BlockIdExt;
 @Setter
 @Getter
 @ToString
-public class GetConfigParamQuery {
+public class GetConfigParamQuery extends ExtraQuery {
     @SerializedName("@type")
     final String type = "getConfigParam";
     BlockIdExt id;

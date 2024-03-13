@@ -2,6 +2,7 @@ package com.ton.java.emulator;
 
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -16,49 +17,95 @@ import org.ton.java.tlb.types.WorkchainDescr;
 import org.ton.java.tlb.types.WorkchainDescrV1;
 import org.ton.java.tlb.types.WorkchainFormatBasic;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.BlockHeader;
-import org.ton.java.tonlib.types.MasterChainInfo;
+import org.ton.java.tonlib.types.SmcLibraryEntry;
+import org.ton.java.tonlib.types.SmcLibraryResult;
 
 import java.math.BigInteger;
+import java.util.List;
+
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestTxEmulator {
 
     static TxEmulator txEmulator;
+    static Tonlib tonlib;
+    static Cell config;
+
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
+        tonlib = Tonlib.builder().build();
+        config = tonlib.getConfigAll(128);
+    }
 
     @Test
-    public void testInitTonlibJson() {
+    public void testInitTxEmualator() {
         TxEmulatorI txEmulatorI = Native.load("emulator.dll", TxEmulatorI.class);
-        String configBoc = "configBoc";
-        int verbosityLevel = 2;
-        long emulator = txEmulatorI.transaction_emulator_create(configBoc, verbosityLevel);
-        System.out.println(emulator);
+
+        long emulator = txEmulatorI.transaction_emulator_create(config.toBase64(), 2);
+        assertNotEquals(0, emulator);
     }
 
     @Test
     public void testSimpleTx() {
 
-        Tonlib tonlib = Tonlib.builder()
-//                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
-        MasterChainInfo masterChainInfo = tonlib.getLast();
-        log.info("last masterChainInfo {}", masterChainInfo);
-
-        BlockHeader blockHeader = tonlib.getBlockHeader(masterChainInfo.getLast());
-        log.info("last blockHeader {}", blockHeader);
-
-        Cell config = tonlib.getConfigAll(128);
+//        MasterChainInfo masterChainInfo = tonlib.getLast();
+//        log.info("last masterChainInfo {}", masterChainInfo);
+//
+//        BlockHeader blockHeader = tonlib.getBlockHeader(masterChainInfo.getLast());
+//        log.info("last blockHeader {}", blockHeader);
 
 //        Cell cellConfig = createEmulatorConfig();
 
-        String configBoc = config.toBase64();
-
         txEmulator = TxEmulator.builder()
-                .configBoc(configBoc)
+                .configBoc(config.toBase64())
                 .verbosityLevel(2)
                 .build();
         txEmulator.setVerbosityLevel(4);
+    }
+
+    @Test
+    public void testTxEmulatorIgnoreCheckSignature() {
+
+        txEmulator = TxEmulator.builder()
+                .configBoc(config.toBase64())
+                .verbosityLevel(2)
+                .build();
+
+        assertTrue(txEmulator.setIgnoreCheckSignature(true));
+    }
+
+    @Test
+    public void testTxEmulatorSetLt() {
+        txEmulator = TxEmulator.builder()
+                .configBoc(config.toBase64())
+                .verbosityLevel(2)
+                .build();
+
+        assertTrue(txEmulator.setEmulatorLt(200000));
+    }
+
+    @Test
+    public void testTxEmulatorSetLibs() {
+        txEmulator = TxEmulator.builder()
+                .configBoc(config.toBase64())
+                .verbosityLevel(2)
+                .build();
+
+        SmcLibraryResult result = tonlib.getLibraries(
+                List.of("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
+        log.info("result: {}", result);
+
+        for (SmcLibraryEntry l : result.getResult()) {
+            String cellLibBoc = l.getData();
+            Cell lib = Cell.fromBocBase64(cellLibBoc);
+            log.info("cell lib {}", lib.toHex());
+        }
+        //tonlib.getLibraries()
+
+        //assertTrue(txEmulator.setLibs(200000));
     }
 
 

@@ -8,7 +8,7 @@ import lombok.Setter;
 @Builder
 @Setter
 @Getter
-public class EstimateFeesQuery {
+public class EstimateFeesQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "query.estimateFees";
     @SerializedName(value = "id")

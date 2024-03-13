@@ -59,15 +59,16 @@ public interface TxEmulatorI extends Library {
     boolean transaction_emulator_set_unixtime(long txEmulator, long unixtime);
 
     /**
+     * Set rand seed for emulation
+     *
      * @param txEmulator  Pointer to TransactionEmulator object
      * @param randSeedHex Hex string of length 64
      * @return true in case of success, false in case of error
-     * @brief Set rand seed for emulation
      */
     boolean transaction_emulator_set_rand_seed(long txEmulator, String randSeedHex);
 
     /**
-     * Set unixtime for emulation
+     * Set config for emulation
      *
      * @param txEmulator Pointer to TransactionEmulator object
      * @param configBoc  Base64 encoded BoC serialized Config dictionary (Hashmap 32 ^Cell)
@@ -76,7 +77,7 @@ public interface TxEmulatorI extends Library {
     boolean transaction_emulator_set_config(long txEmulator, String configBoc);
 
     /**
-     * Set unixtime for emulation
+     * Set libs for emulation
      *
      * @param txEmulator Pointer to TransactionEmulator object
      * @param libsBoc    Base64 encoded BoC serialized shared libraries dictionary (HashmapE 256 ^Cell).
@@ -100,7 +101,7 @@ public interface TxEmulatorI extends Library {
      * @param infoBoc    Base64 encoded BoC serialized TVM tuple (VmStackValue).
      * @return true in case of success, false in case of error
      */
-    boolean transaction_emulator_set_prev_blocks_info(long txEmulator, boolean infoBoc);
+    boolean transaction_emulator_set_prev_blocks_info(long txEmulator, String infoBoc);
 
 
     /**

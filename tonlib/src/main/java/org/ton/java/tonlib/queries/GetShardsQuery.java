@@ -11,7 +11,7 @@ import org.ton.java.tonlib.types.BlockIdExt;
 @Setter
 @Getter
 @ToString
-public class GetShardsQuery {
+public class GetShardsQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "blocks.getShards";
     BlockIdExt id;

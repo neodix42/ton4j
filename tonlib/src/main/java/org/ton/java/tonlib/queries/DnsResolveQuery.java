@@ -11,7 +11,7 @@ import org.ton.java.tonlib.types.AccountAddressOnly;
 @Setter
 @Getter
 @ToString
-public class DnsResolveQuery {
+public class DnsResolveQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "dns.resolve";
     AccountAddressOnly account_address;

@@ -3,7 +3,6 @@ package org.ton.java.tlb.types;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -17,7 +16,6 @@ import static java.util.Objects.nonNull;
 @Builder
 @Getter
 @Setter
-@ToString
 /**
  * addr_var$11
  *   anycast:(Maybe Anycast)

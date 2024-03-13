@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class SendRawMessageQuery {
+public class SendRawMessageQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "raw.sendMessage";
     String body;

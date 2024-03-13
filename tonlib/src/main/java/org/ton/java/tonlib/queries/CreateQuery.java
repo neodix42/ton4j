@@ -11,7 +11,7 @@ import org.ton.java.tonlib.types.Destination;
 @Setter
 @Getter
 @ToString
-public class CreateQuery {
+public class CreateQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "raw.createQuery";
     String body; //base64 encoded

@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class RunMethodIntQuery {
+public class RunMethodIntQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "smc.runGetMethod";
     long id;

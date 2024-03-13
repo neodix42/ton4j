@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class DecryptQuery {
+public class DecryptQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "decrypt";
     String encrypted_data;
