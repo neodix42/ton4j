@@ -6,11 +6,11 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.2.0</version>
+        <version>0.2.1</version>
     </parent>
 
     <artifactId>emulator</artifactId>
-    <name>TON Java emulator wrapper</name>
+    <name>TON Java Emulator wrapper</name>
 
     <description>Java wrapper for emulator shared library.</description>
 
@@ -88,13 +88,13 @@
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>utils</artifactId>
-            <version>0.2.0</version>
+            <version>0.2.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>tonlib</artifactId>
-            <version>0.2.0</version>
+            <version>0.2.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
