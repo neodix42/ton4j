@@ -172,7 +172,7 @@ public class TxEmulator {
      * "elapsed_time": 0.02
      * }
      */
-    public String setRandSeed(String shardAccountBoc, boolean isTock) {
+    public String emulateTickTockTransaction(String shardAccountBoc, boolean isTock) {
         return txEmulatorI.transaction_emulator_emulate_tick_tock_transaction(txEmulator, shardAccountBoc, isTock);
     }
 

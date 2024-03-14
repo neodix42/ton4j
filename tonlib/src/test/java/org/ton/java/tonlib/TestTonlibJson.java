@@ -485,7 +485,6 @@ public class TestTonlibJson {
     public void testTonlibGetConfig() {
         Tonlib tonlib = Tonlib
                 .builder()
-                .testnet(true)
                 .build();
         MasterChainInfo mc = tonlib.getLast();
         Cell c = tonlib.getConfigParam(mc.getLast(), 22);

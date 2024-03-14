@@ -84,7 +84,7 @@ public class Tonlib {
     private String keystorePath;
 
     /**
-     * Default value 3
+     * Default value 5
      */
     private int receiveRetryTimes;
     /**
@@ -137,7 +137,7 @@ public class Tonlib {
                 super.keystorePath = super.keystorePath.replace("\\", "/");
 
                 if (super.receiveRetryTimes == 0) {
-                    super.receiveRetryTimes = 3;
+                    super.receiveRetryTimes = 5;
                 }
 
                 if (super.receiveTimeout == 0) {
@@ -263,37 +263,37 @@ public class Tonlib {
             response = receive();
             int retry = 0;
             do {
-                if (nonNull(response) && !response.contains("syncStateInProgress")) {
+                do {
+                    if (nonNull(response) && !response.contains("syncStateInProgress")) {
 
-                    if (++retry > receiveRetryTimes) {
-                        throw new RuntimeException("Error in tonlib.syncAndRead(), " + receiveRetryTimes + " times was not able retrieve result from lite-server. Last response: " + response);
+                        if (++retry > 50) {
+                            throw new RuntimeException("Error in tonlib.syncAndRead(), " + receiveRetryTimes + " times was not able to retrieve result from lite-server. Last response: " + response);
+                        }
+
+                        tonlibJson.tonlib_client_json_send(tonlib, query);
+                    }
+                    TimeUnit.MILLISECONDS.sleep(200);
+                    response = receive();
+//                System.out.println("response: " + response);
+
+                    UpdateSyncState sync = gson.fromJson(response, UpdateSyncState.class);
+                    if (nonNull(sync) && nonNull(sync.getSync_state()) && sync.getType().equals("updateSyncState") && !response.contains("syncStateDone")) {
+                        double pct = 0.0;
+                        if (sync.getSync_state().getTo_seqno() != 0) {
+                            pct = (sync.getSync_state().getCurrent_seqno() * 100) / (double) sync.getSync_state().getTo_seqno();
+                        }
+                        System.out.println("Synchronized: " + String.format("%.2f%%", pct));
+                    }
+                    if (isNull(response)) {
+                        throw new RuntimeException("Error in waitForSyncDone(), response is null.");
                     }
 
-                    tonlibJson.tonlib_client_json_send(tonlib, query);
-                }
-                TimeUnit.MILLISECONDS.sleep(200);
-                response = receive();
-                System.out.println("response: " + response);
+                } while (response.contains("error") || response.contains("syncStateInProgress"));
 
-                UpdateSyncState sync = gson.fromJson(response, UpdateSyncState.class);
-                if (nonNull(sync) && nonNull(sync.getSync_state()) && sync.getType().equals("updateSyncState") && !response.contains("syncStateDone")) {
-                    double pct = 0.0;
-                    if (sync.getSync_state().getTo_seqno() != 0) {
-                        pct = (sync.getSync_state().getCurrent_seqno() * 100) / (double) sync.getSync_state().getTo_seqno();
-                    }
-                    System.out.println("Synchronized: " + String.format("%.2f%%", pct));
+                if (response.contains("syncStateDone")) {
+                    response = receive();
                 }
-                if (isNull(response)) {
-                    throw new RuntimeException("Error in waitForSyncDone(), response is null.");
-                }
-
             } while (response.contains("error") || response.contains("syncStateInProgress"));
-
-
-            if (response.contains("syncStateDone")) {
-                String result = receive();
-                return result;
-            }
 
             return response;
 
