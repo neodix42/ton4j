@@ -46,7 +46,6 @@ public interface TxEmulatorI extends Library {
      * "elapsed_time": 0.02
      * }
      */
-
     String transaction_emulator_emulate_transaction(long txEmulator, String shardAccountBoc, String messageBoc);
 
     /**

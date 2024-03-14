@@ -191,8 +191,7 @@
                 <configuration>
                     <!-- <sourcepath>${delombok.output}</sourcepath> -->
                     <doclint>none</doclint>
-                    <excludePackageNames>org.ton.java.tonlib</excludePackageNames>
-                    <excludePackageNames>org.ton.java.emulator</excludePackageNames>
+                    <!--                    <excludePackageNames>org.ton.java.tonlib,org.ton.java.emulator</excludePackageNames>-->
                 </configuration>
                 <executions>
                     <execution>

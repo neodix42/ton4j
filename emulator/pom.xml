@@ -87,12 +87,6 @@
         </dependency>
         <dependency>
             <groupId>io.github.neodix42</groupId>
-            <artifactId>utils</artifactId>
-            <version>0.2.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.neodix42</groupId>
             <artifactId>tonlib</artifactId>
             <version>0.2.1</version>
             <scope>test</scope>

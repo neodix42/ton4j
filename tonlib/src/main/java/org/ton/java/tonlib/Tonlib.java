@@ -103,6 +103,9 @@ public class Tonlib {
     RunResultParser runResultParser;
     LibraryResultParser libraryResultParser;
 
+    public static class TonlibBuilder {
+    }
+
     public static TonlibBuilder builder() {
         return new CustomTonlibBuilder();
     }
