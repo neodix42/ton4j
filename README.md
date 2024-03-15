@@ -44,6 +44,8 @@ You can use each submodule individually. Click the module below to get more deta
 * [BitString](bitstring/README.md) - construct bit-strings.
 * [Address](address/README.md) - create and parse TON wallet addresses.
 * [Mnemonic](mnemonic/README.md) - helpful methods for generating deterministic keys for TON blockchain.
+* [Emulator](emulator/README.md) - wrapper for using with external precompiled emulator shared library.
+* [Liteclient](liteclient/README.md) - wrapper for using with external precompiled lite-client binary. 
 * [Utils](utils/README.md) - create private and public keys, convert data, etc.
 
 ### Features

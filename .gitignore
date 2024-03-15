@@ -1,4 +1,6 @@
 **/*.boc
+**/*.exe
+**/*.json
 **/*.blkstate
 target/
 **/resources/**/*.zip

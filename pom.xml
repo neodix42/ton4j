@@ -19,6 +19,7 @@
         <module>mnemonic</module>
         <module>tl</module>
         <module>emulator</module>
+        <module>liteclient</module>
     </modules>
 
     <properties>
@@ -43,6 +44,7 @@
         <maven.compiler.plugin>3.10.1</maven.compiler.plugin>
         <maven.deploy.plugin>3.0.0</maven.deploy.plugin>
         <commons-io.version>2.7</commons-io.version>
+        <log4j.version>2.17.1</log4j.version>
     </properties>
 
     <name>ton4j parent module</name>
