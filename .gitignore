@@ -1,7 +1,7 @@
 **/*.boc
 **/*.exe
 **/*.json
-**/tonlib.libcache
+**/**/tonlib.libcache
 **/lite-client.exe
 **/testnet-global.config.json
 **/global.config.json
