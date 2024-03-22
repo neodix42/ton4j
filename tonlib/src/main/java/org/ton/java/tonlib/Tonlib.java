@@ -269,7 +269,7 @@ public class Tonlib {
                 do {
                     if (nonNull(response) && !response.contains("syncStateInProgress")) {
 
-                        if (++retry > 50) {
+                        if (++retry > 10) {
                             throw new RuntimeException("Error in tonlib.syncAndRead(), " + receiveRetryTimes + " times was not able to retrieve result from lite-server. Last response: " + response);
                         }
 
@@ -295,6 +295,9 @@ public class Tonlib {
 
                 if (response.contains("syncStateDone")) {
                     response = receive();
+                }
+                if (response.contains("error")) {
+                    System.out.println(response);
                 }
             } while (response.contains("error") || response.contains("syncStateInProgress"));
 
