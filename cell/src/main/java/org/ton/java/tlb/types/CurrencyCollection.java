@@ -34,7 +34,7 @@ public class CurrencyCollection {
         } else {
             dict = extraCurrencies.serialize(
                     k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                    v -> CellBuilder.beginCell().storeVarUint((byte) v, 32)
+                    v -> CellBuilder.beginCell().storeVarUint((byte) v, 5)
             );
         }
         return CellBuilder.beginCell()
@@ -48,7 +48,7 @@ public class CurrencyCollection {
                 .coins(cs.loadCoins())
                 .extraCurrencies(cs.loadDictE(32,
                         k -> k.readUint(32),
-                        v -> CellSlice.beginParse(v).loadVarUInteger(BigInteger.valueOf(32))))
+                        v -> CellSlice.beginParse(v).loadVarUInteger(BigInteger.valueOf(5))))
                 .build();
     }
 

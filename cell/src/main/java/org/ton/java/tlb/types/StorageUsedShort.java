@@ -25,15 +25,15 @@ public class StorageUsedShort {
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeVarUint(cells, 7)
-                .storeVarUint(bits, 7)
+                .storeVarUint(cells, 3) // (VarUInteger 7)
+                .storeVarUint(bits, 3)
                 .endCell();
     }
 
     public static StorageUsedShort deserialize(CellSlice cs) {
         return StorageUsedShort.builder()
-                .cells(cs.loadVarUInteger(BigInteger.valueOf(7)))
-                .bits(cs.loadVarUInteger(BigInteger.valueOf(7)))
+                .cells(cs.loadVarUInteger(BigInteger.valueOf(3)))
+                .bits(cs.loadVarUInteger(BigInteger.valueOf(3)))
                 .build();
     }
 }

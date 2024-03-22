@@ -31,17 +31,25 @@ public class StateInit {
     Cell lib;
 
     public Cell toCell() {
-        return CellBuilder.beginCell() // todo review
-                .storeBit(nonNull(depth))
-                .storeBit(nonNull(tickTock))
-                .storeBit(nonNull(code))
-                .storeBit(nonNull(data))
-                .storeBit(nonNull(lib))
-                .storeCellMaybe(tickTock.toCell())
-                .storeRefMaybe(code)
-                .storeRefMaybe(data)
-                .storeRefMaybe(lib)
-                .endCell();
+        if (nonNull(depth)) {
+            return CellBuilder.beginCell()
+                    .storeBit(true)
+                    .storeUint(depth, 5)
+                    .storeCellMaybe(nonNull(tickTock) ? tickTock.toCell() : null)
+                    .storeRefMaybe(code)
+                    .storeRefMaybe(data)
+                    .storeRefMaybe(lib)
+                    .endCell();
+
+        } else {
+            return CellBuilder.beginCell()
+                    .storeBit(false)
+                    .storeCellMaybe(nonNull(tickTock) ? tickTock.toCell() : null)
+                    .storeRefMaybe(code)
+                    .storeRefMaybe(data)
+                    .storeRefMaybe(lib)
+                    .endCell();
+        }
     }
 
     public static StateInit deserialize(CellSlice cs) {

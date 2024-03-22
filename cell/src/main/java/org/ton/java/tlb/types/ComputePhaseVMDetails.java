@@ -46,9 +46,9 @@ public class ComputePhaseVMDetails {
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeVarUint(gasCredit, 7)
-                .storeVarUint(gasLimit, 7)
-                .storeVarUintMaybe(gasCredit, 3)
+                .storeVarUint(gasCredit, 3) // (VarUInteger 7)
+                .storeVarUint(gasLimit, 3)
+                .storeVarUintMaybe(gasCredit, 2)
                 .storeInt(mode, 8)
                 .storeInt(exitCode, 32)
                 .storeIntMaybe(exitArg, 32)
@@ -60,9 +60,9 @@ public class ComputePhaseVMDetails {
 
     public static ComputePhaseVMDetails deserialize(CellSlice cs) {
         return ComputePhaseVMDetails.builder()
-                .gasUsed(cs.loadVarUInteger(BigInteger.valueOf(7)))
-                .gasLimit(cs.loadVarUInteger(BigInteger.valueOf(7)))
-                .gasCredit(cs.loadBit() ? cs.loadVarUInteger(BigInteger.valueOf(3)) : BigInteger.ZERO)
+                .gasUsed(cs.loadVarUInteger(BigInteger.valueOf(3))) // (VarUInteger 7)
+                .gasLimit(cs.loadVarUInteger(BigInteger.valueOf(3)))
+                .gasCredit(cs.loadBit() ? cs.loadVarUInteger(BigInteger.valueOf(2)) : BigInteger.ZERO)
                 .mode(cs.loadUint(8).intValue())
                 .exitCode(cs.loadUint(32).longValue())
                 .exitArg(cs.loadBit() ? cs.loadUint(32).longValue() : 0L)

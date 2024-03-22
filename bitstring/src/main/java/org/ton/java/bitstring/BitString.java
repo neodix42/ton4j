@@ -306,17 +306,17 @@ public class BitString implements Bits<Boolean> {
         }
     }
 
-    public void writeVarUint(BigInteger i, int bitLength) {
+    public void writeVarUint(BigInteger value, int bitLength) {
 
-        if (i.compareTo(BigInteger.ZERO) == 0) {
-            writeUint(BigInteger.ZERO, 4);
+        if (value.compareTo(BigInteger.ZERO) == 0) {
+            writeUint(BigInteger.ZERO, bitLength);
         } else {
-            int bytesSize = (int) Math.ceil((i.bitLength() / (double) 8));
+            int bytesSize = (int) Math.ceil((value.bitLength() / (double) 8));
             if (bytesSize >= bitLength) {
                 throw new Error("Amount is too big. Should fit in " + bitLength + " bits");
             }
-            writeUint(BigInteger.valueOf(bytesSize), 4);
-            writeUint(i, bytesSize * 8);
+            writeUint(BigInteger.valueOf(bytesSize), bitLength);
+            writeUint(value, bytesSize * 8);
         }
     }
 

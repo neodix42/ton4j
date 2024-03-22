@@ -28,17 +28,17 @@ public class StorageUsed {
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeVarUint(bitsUsed, 7)
-                .storeVarUint(cellsUsed, 7)
-                .storeVarUint(publicCellsUsed, 7)
+                .storeVarUint(bitsUsed, 3)
+                .storeVarUint(cellsUsed, 3)
+                .storeVarUint(publicCellsUsed, 3)
                 .endCell();
     }
 
     public static StorageUsed deserialize(CellSlice cs) {
         return StorageUsed.builder()
-                .cellsUsed(cs.loadVarUInteger(BigInteger.valueOf(7)))
-                .bitsUsed(cs.loadVarUInteger(BigInteger.valueOf(7)))
-                .publicCellsUsed(cs.loadVarUInteger(BigInteger.valueOf(7)))
+                .cellsUsed(cs.loadVarUInteger(BigInteger.valueOf(3)))
+                .bitsUsed(cs.loadVarUInteger(BigInteger.valueOf(3)))
+                .publicCellsUsed(cs.loadVarUInteger(BigInteger.valueOf(3)))
                 .build();
     }
 }

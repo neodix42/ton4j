@@ -535,8 +535,8 @@ public class CellSlice {
      * <p>
      * var_uint$_ {n:#} len:(#< n) value:(uint (len * 8)) = VarUInteger n;
      */
-    public BigInteger loadVarUInteger(BigInteger n) {
-        BigInteger len = loadUintLess(n);
+    public BigInteger loadVarUInteger(BigInteger bitLength) {
+        BigInteger len = loadUint(bitLength.intValue());
         if (len.compareTo(BigInteger.ZERO) == 0) {
             return BigInteger.ZERO;
         } else {
@@ -550,15 +550,26 @@ public class CellSlice {
      * nanograms$_ amount:(VarUInteger 16) = Grams;
      */
     public BigInteger loadCoins() {
-        return loadVarUInteger(BigInteger.valueOf(16L));
+        BigInteger len = loadUint(4);
+        if (len.compareTo(BigInteger.ZERO) == 0) {
+            return BigInteger.ZERO;
+        } else {
+            return loadUint(len.multiply(BigInteger.valueOf(8L)).intValue());
+        }
     }
 
     public BigInteger preloadCoins() {
         BitString savedBits = bits.clone();
         try {
-            BigInteger result = loadVarUInteger(BigInteger.valueOf(16L));
-            bits = savedBits;
-            return result;
+            BigInteger len = loadUint(4);
+            if (len.compareTo(BigInteger.ZERO) == 0) {
+                bits = savedBits;
+                return BigInteger.ZERO;
+            } else {
+                BigInteger result = loadUint(len.multiply(BigInteger.valueOf(8L)).intValue());
+                bits = savedBits;
+                return result;
+            }
         } catch (Throwable e) {
             bits = savedBits;
             throw e;
@@ -566,7 +577,7 @@ public class CellSlice {
     }
 
     public BigInteger skipCoins() {
-        return loadVarUInteger(BigInteger.valueOf(16L));
+        return loadCoins();
     }
 
     void checkBitsOverflow(int length) {

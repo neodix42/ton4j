@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 
 @Slf4j
@@ -61,6 +62,27 @@ public class TestCellSlice {
         assertThat(csRef1.loadUint(3)).isEqualTo(2);
         assertThat(csRef1.loadUint(8)).isEqualTo(200);
         assertThat(cs0.loadAddress().toString(false)).isEqualTo(Address.of("0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3").toString(false));
+    }
+
+    @Test
+    public void testBitStringVarUint1() {
+
+        for (int i = 3; i <= 18; i++) {
+            CellBuilder cell = CellBuilder.beginCell().storeVarUint(BigInteger.valueOf(777), i);
+            BigInteger loadedValue = CellSlice.beginParse(cell).loadVarUInteger(BigInteger.valueOf(i));
+            log.info("loaded {}", loadedValue);
+            if (loadedValue.intValue() != 777) {
+                assertFalse(true);
+            }
+        }
+    }
+
+    @Test
+    public void testBitStringVarUint2() {
+
+        CellBuilder cell1 = CellBuilder.beginCell().storeVarUint(BigInteger.valueOf(10), 10);
+        BigInteger loadedValue1 = CellSlice.beginParse(cell1).loadVarUInteger(BigInteger.valueOf(10));
+        assertThat(loadedValue1).isEqualTo(BigInteger.valueOf(10));
     }
 
     @Test

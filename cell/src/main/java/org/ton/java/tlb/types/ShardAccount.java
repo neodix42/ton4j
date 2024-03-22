@@ -27,7 +27,7 @@ public class ShardAccount {
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeCell(account.toCell())
+                .storeRef(account.toCell())
                 .storeUint(lastTransHash, 256)
                 .storeUint(lastTransLt, 64)
                 .endCell();

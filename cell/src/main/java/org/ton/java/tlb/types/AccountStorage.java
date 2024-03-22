@@ -39,7 +39,7 @@ public class AccountStorage {
     public static AccountStorage deserialize(CellSlice cs) {
         AccountStorage accountStorage = AccountStorage.builder().build();
 
-        BigInteger lastTransaction = cs.loadUint(64);
+        BigInteger lastTransactionLt = cs.loadUint(64);
         CurrencyCollection coins = CurrencyCollection.deserialize(cs);
 
         boolean isStatusActive = cs.loadBit();
@@ -63,7 +63,7 @@ public class AccountStorage {
                         AccountStateUninit.builder().build());
             }
         }
-        accountStorage.setLastTransactionLt(lastTransaction);
+        accountStorage.setLastTransactionLt(lastTransactionLt);
         accountStorage.setBalance(coins);
         return accountStorage;
     }

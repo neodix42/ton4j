@@ -34,14 +34,14 @@ public class MsgAddressIntStd implements MsgAddressInt {
 
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell();
-        result.storeUint(2, 2);
+        result.storeUint(0b10, 2);
         if (isNull(anycast)) {
             result.storeBit(false);
         } else {
             result.storeBit(true);
             result.writeCell(anycast.toCell());
         }
-        result.storeUint(workchainId, 8)
+        result.storeInt(workchainId, 8)
                 .storeUint(address, 256)
                 .endCell();
         return result;
@@ -55,7 +55,7 @@ public class MsgAddressIntStd implements MsgAddressInt {
         return MsgAddressIntStd.builder()
                 .magic(0b10)
                 .anycast(anycast)
-                .workchainId(cs.loadUint(8).byteValue())
+                .workchainId(cs.loadInt(8).byteValue())
                 .address(cs.loadUint(256))
                 .build();
     }

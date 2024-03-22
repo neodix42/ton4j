@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 public class CellBuilder extends Cell {
 
@@ -104,7 +105,7 @@ public class CellBuilder extends Cell {
     public CellBuilder storeUint(BigInteger number, int bitLength) {
         checkBitsOverflow(bitLength);
         checkSign(number);
-        bits.writeUint(number, bitLength);
+        bits.writeUint(isNull(number) ? BigInteger.ZERO : number, bitLength);
         return this;
     }
 
@@ -349,9 +350,9 @@ public class CellBuilder extends Cell {
 
     public CellBuilder storeCellMaybe(Cell cell) {
         if (isNull(cell)) {
-            cell.bits.writeBit(false);
+            bits.writeBit(false);
         } else {
-            cell.bits.writeBit(true);
+            bits.writeBit(true);
             storeCell(cell);
         }
         return this;
@@ -405,7 +406,7 @@ public class CellBuilder extends Cell {
     }
 
     void checkSign(BigInteger i) {
-        if (i.signum() < 0) {
+        if (nonNull(i) && (i.signum() < 0)) {
             throw new Error("Integer " + i + " must be unsigned");
         }
     }

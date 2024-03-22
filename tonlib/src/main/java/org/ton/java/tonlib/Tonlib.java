@@ -728,7 +728,6 @@ public class Tonlib {
                     .build();
 
             String result = syncAndRead(gson.toJson(configParamQuery));
-            System.out.println(result);
             ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
             return CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(ci.getConfig().getBytes()));
         }

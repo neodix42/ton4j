@@ -91,6 +91,12 @@
             <version>0.2.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>liteclient</artifactId>
+            <version>0.2.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

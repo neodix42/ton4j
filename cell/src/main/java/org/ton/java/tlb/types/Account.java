@@ -21,11 +21,11 @@ public class Account {
     public Cell toCell() {
         if (isNone) {
             return CellBuilder.beginCell()
-                    .storeBit(true)
+                    .storeBit(false)
                     .endCell();
         } else {
             return CellBuilder.beginCell()
-                    .storeBit(false)
+                    .storeBit(true)
                     .storeCell(address.toCell())
                     .storeCell(storageInfo.toCell())
                     .storeCell(accountStorage.toCell())
@@ -36,20 +36,18 @@ public class Account {
     public static Account deserialize(CellSlice cs) {
         boolean isAccount = cs.loadBit();
         if (!isAccount) {
-            return Account.builder().isNone(true).build();
+            return Account.builder().isNone(false).build();
 
         }
         MsgAddressInt address = MsgAddressInt.deserialize(cs);
         StorageInfo info = StorageInfo.deserialize(cs);
         AccountStorage storage = AccountStorage.deserialize(cs);
 
-        Account account = Account.builder()
-                .isNone(false)
+        return Account.builder()
+                .isNone(true)
                 .address(address)
                 .storageInfo(info)
                 .accountStorage(storage)
                 .build();
-
-        return account;
     }
 }

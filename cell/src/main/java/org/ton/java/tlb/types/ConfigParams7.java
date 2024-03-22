@@ -27,9 +27,9 @@ public class ConfigParams7 {
         if (isNull(extraCurrencies)) {
             dict = CellBuilder.beginCell().storeBit(false).endCell();
         } else {
-            dict = extraCurrencies.serialize(
+            dict = extraCurrencies.serialize( // dict:(HashmapE 32 (VarUInteger 32))
                     k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                    v -> CellBuilder.beginCell().storeVarUint((byte) v, 32)
+                    v -> CellBuilder.beginCell().storeVarUint((byte) v, 5)
             );
         }
         return CellBuilder.beginCell()
@@ -41,7 +41,7 @@ public class ConfigParams7 {
         return ConfigParams7.builder()
                 .extraCurrencies(cs.loadDictE(32,
                         k -> k.readUint(32),
-                        v -> CellSlice.beginParse(v).loadVarUInteger(BigInteger.valueOf(32))))
+                        v -> CellSlice.beginParse(v).loadVarUInteger(BigInteger.valueOf(5))))
                 .build();
     }
 }

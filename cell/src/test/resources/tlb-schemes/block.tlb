@@ -230,11 +230,14 @@ storage_info$_ used:StorageUsed last_paid:uint32
               due_payment:(Maybe Grams) = StorageInfo;
 
 account_none$0 = Account;
-account$1 addr:MsgAddressInt storage_stat:StorageInfo
+account$1 addr:MsgAddressInt
+          storage_stat:StorageInfo
           storage:AccountStorage = Account;
 
-account_storage$_ last_trans_lt:uint64
-    balance:CurrencyCollection state:AccountState 
+account_storage$_
+ last_trans_lt:uint64
+ balance:CurrencyCollection
+ state:AccountState
   = AccountStorage;
 
 account_uninit$00 = AccountState;
@@ -249,8 +252,10 @@ acc_state_nonexist$11 = AccountStatus;
 /* duplicates
 tick_tock$_ tick:Bool tock:Bool = TickTock;
 
-_ split_depth:(Maybe (## 5)) special:(Maybe TickTock)
-  code:(Maybe ^Cell) data:(Maybe ^Cell)
+_ split_depth:(Maybe (## 5))
+  special:(Maybe TickTock)
+  code:(Maybe ^Cell)
+  data:(Maybe ^Cell)
   library:(Maybe ^Cell) = StateInit;
 */
 

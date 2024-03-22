@@ -34,13 +34,10 @@ public class StorageInfo {
     }
 
     public static StorageInfo deserialize(CellSlice cs) {
-        StorageUsed storageUsed = StorageUsed.deserialize(cs);
-        long lastPaid = cs.loadUint(32).longValue();
-        boolean isDuePayment = cs.loadBit();
         return StorageInfo.builder()
-                .storageUsed(storageUsed)
-                .lastPaid(lastPaid)
-                .duePayment(isDuePayment ? cs.loadUint(64) : null)
+                .storageUsed(StorageUsed.deserialize(cs))
+                .lastPaid(cs.loadUint(32).longValue())
+                .duePayment(cs.loadBit() ? cs.loadCoins() : null)
                 .build();
     }
 }
