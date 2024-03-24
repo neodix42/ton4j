@@ -129,8 +129,10 @@ int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
   src:MsgAddressInt dest:MsgAddressInt 
   value:CurrencyCollection ihr_fee:Grams fwd_fee:Grams
   created_lt:uint64 created_at:uint32 = CommonMsgInfo;
+
 ext_in_msg_info$10 src:MsgAddressExt dest:MsgAddressInt 
   import_fee:Grams = CommonMsgInfo;
+
 ext_out_msg_info$11 src:MsgAddressInt dest:MsgAddressExt
   created_lt:uint64 created_at:uint32 = CommonMsgInfo;
 
@@ -138,6 +140,7 @@ int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
   src:MsgAddress dest:MsgAddressInt 
   value:CurrencyCollection ihr_fee:Grams fwd_fee:Grams
   created_lt:uint64 created_at:uint32 = CommonMsgInfoRelaxed;
+
 ext_out_msg_info$11 src:MsgAddress dest:MsgAddressExt
   created_lt:uint64 created_at:uint32 = CommonMsgInfoRelaxed;
 
@@ -154,7 +157,8 @@ _ split_depth:(Maybe (## 5)) special:(Maybe TickTock)
 
 simple_lib$_ public:Bool root:^Cell = SimpleLib;
 
-message$_ {X:Type} info:CommonMsgInfo
+message$_ {X:Type}
+  info:CommonMsgInfo
   init:(Maybe (Either StateInit ^StateInit))
   body:(Either X ^X) = Message X;
 

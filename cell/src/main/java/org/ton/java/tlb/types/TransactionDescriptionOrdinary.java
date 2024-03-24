@@ -8,6 +8,8 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import static java.util.Objects.nonNull;
+
 @Builder
 @Getter
 @Setter
@@ -43,12 +45,12 @@ public class TransactionDescriptionOrdinary {
         return CellBuilder.beginCell()
                 .storeUint(0b0000, 4)
                 .storeBit(creditFirst)
-                .storeCellMaybe(storagePhase.toCell())
-                .storeCellMaybe(creditPhase.toCell())
+                .storeCellMaybe(nonNull(storagePhase) ? storagePhase.toCell() : null)
+                .storeCellMaybe(nonNull(creditPhase) ? creditPhase.toCell() : null)
                 .storeCell(computePhase.toCell())
-                .storeRefMaybe(actionPhase.toCell())
+                .storeRefMaybe(nonNull(actionPhase) ? actionPhase.toCell() : null)
                 .storeBit(aborted)
-                .storeCellMaybe(bouncePhase.toCell())
+                .storeCellMaybe(nonNull(bouncePhase) ? bouncePhase.toCell() : null)
                 .storeBit(destroyed)
                 .endCell();
     }

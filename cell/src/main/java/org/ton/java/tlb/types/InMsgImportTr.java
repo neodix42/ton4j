@@ -21,6 +21,7 @@ import java.math.BigInteger;
  *  transit_fee:Grams = InMsg;
  */
 public class InMsgImportTr implements InMsg {
+    int magic;
     MsgEnvelope inMsg;
     MsgEnvelope outMsg;
     BigInteger transitFee;
@@ -37,6 +38,7 @@ public class InMsgImportTr implements InMsg {
 
     public static InMsgImportTr deserialize(CellSlice cs) {
         return InMsgImportTr.builder()
+                .magic(cs.loadUint(3).intValue()) // todo noticed bug
                 .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                 .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                 .transitFee(cs.loadCoins())

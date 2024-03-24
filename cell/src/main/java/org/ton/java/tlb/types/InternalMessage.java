@@ -29,13 +29,13 @@ import static java.util.Objects.nonNull;
  *   created_lt:uint64
  *   created_at:uint32
  */
-public class InternalMessage extends CommonMsg {
+public class InternalMessage implements CommonMsgInfo {
     long magic; // must be 0
     boolean iHRDisabled;
     boolean bounce;
     boolean bounced;
-    MsgAddress srcAddr;
-    MsgAddress dstAddr;
+    MsgAddressInt srcAddr;
+    MsgAddressInt dstAddr;
     CurrencyCollection value;
     BigInteger iHRFee;
     BigInteger fwdFee;
@@ -78,8 +78,8 @@ public class InternalMessage extends CommonMsg {
                 .iHRDisabled(cs.loadBit())
                 .bounce(cs.loadBit())
                 .bounced(cs.loadBit())
-                .srcAddr(MsgAddress.deserialize(cs))
-                .dstAddr(MsgAddress.deserialize(cs))
+                .srcAddr(MsgAddressInt.deserialize(cs))
+                .dstAddr(MsgAddressInt.deserialize(cs))
                 .value(CurrencyCollection.deserialize(cs))
                 .iHRFee(cs.loadCoins())
                 .fwdFee(cs.loadCoins())

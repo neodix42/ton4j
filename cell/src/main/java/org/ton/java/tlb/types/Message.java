@@ -21,7 +21,6 @@ import static java.util.Objects.isNull;
  *   body:(Either X ^X) = Message X;
  */
 public class Message {
-    String msgType;
     CommonMsgInfo info;
     StateInit init;
     Cell body;
@@ -34,17 +33,7 @@ public class Message {
     public Cell toCell() {
         CellBuilder c = CellBuilder.beginCell();
 
-        switch (msgType) {
-            case "INTERNAL" -> {
-                c.storeSlice(CellSlice.beginParse(((InternalMessage) info.getMsg()).toCell()));
-            }
-            case "EXTERNAL_IN" -> {
-                c.storeSlice(CellSlice.beginParse(((ExternalMessage) info.getMsg()).toCell()));
-            }
-            case "EXTERNAL_OUT" -> {
-                c.storeSlice(CellSlice.beginParse(((ExternalMessageOut) info.getMsg()).toCell()));
-            }
-        }
+        c.storeCell(info.toCell());
 
         if (isNull(init)) {
             c.storeBit(false);
@@ -66,7 +55,6 @@ public class Message {
     public static Message deserialize(CellSlice cs) {
         CommonMsgInfo commonMsgInfo = CommonMsgInfo.deserialize(cs);
         return Message.builder()
-                .msgType(commonMsgInfo.getMsgType())
                 .info(commonMsgInfo)
                 .init(cs.loadBit() ?
                         (cs.loadBit() ?

@@ -107,7 +107,7 @@ public class TxEmulator {
      * "elapsed_time": 0.02
      * }
      */
-    public String setConfig(String shardAccountBoc, String messageBoc) {
+    public String emulateTransaction(String shardAccountBoc, String messageBoc) {
         return txEmulatorI.transaction_emulator_emulate_transaction(txEmulator, shardAccountBoc, messageBoc);
     }
 

@@ -7,7 +7,10 @@ import org.junit.runners.JUnit4;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.tlb.types.Transaction;
+import org.ton.java.cell.TonHashMapE;
+import org.ton.java.tlb.types.*;
+
+import java.math.BigInteger;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -28,5 +31,103 @@ public class TestTlbTransactionReader {
         CellSlice cs = CellSlice.beginParse(c);
         Transaction transaction = Transaction.deserialize(cs);
         log.info("transaction {}", transaction);
+    }
+
+    @Test
+    public void testLoadTransactionSeDeserializer() {
+
+        Message msgExtIn = Message.builder()
+                .info(ExternalMessage.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId((byte) -1)
+                                .address(BigInteger.valueOf(20))
+                                .build())
+                        .importFee(BigInteger.TEN)
+                        .build())
+                .body(CellBuilder.beginCell().storeBit(true).endCell())
+                .build();
+
+        Message msgInternal = Message.builder()
+                .info(InternalMessage.builder()
+                        .iHRDisabled(false)
+                        .bounce(false)
+                        .bounced(false)
+                        .srcAddr(MsgAddressIntStd.builder()
+                                .workchainId((byte) -1)
+                                .address(BigInteger.valueOf(20))
+                                .build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId((byte) -1)
+                                .address(BigInteger.valueOf(22))
+                                .build())
+                        .value(CurrencyCollection.builder()
+                                .coins(BigInteger.TWO)
+                                .build())
+                        .iHRFee(BigInteger.ZERO)
+                        .fwdFee(BigInteger.ZERO)
+                        .createdLt(BigInteger.ZERO)
+                        .createdAt(0L)
+                        .build())
+                .build();
+
+
+        int keySizeX = 15;
+        TonHashMapE outMsgs = new TonHashMapE(keySizeX);
+
+        outMsgs.elements.put(100L, msgExtIn.toCell());
+        outMsgs.elements.put(101L, msgExtIn.toCell());
+
+        Transaction tx = Transaction.builder()
+                .accountAddr(new BigInteger("000000000000000000000000000000000000000000000000000000000000000", 16))
+                .lt(BigInteger.ZERO)
+                .prevTxHash(BigInteger.ZERO)
+                .origStatus(AccountStates.ACTIVE)
+                .endStatus(AccountStates.ACTIVE)
+                .totalFees(CurrencyCollection.builder()
+                        .coins(BigInteger.TEN)
+                        .build())
+                .inOut(TransactionIO.builder()
+//                                .in(msgExtIn)
+                        .in(msgInternal)
+                        .out(outMsgs)
+                        .build())
+                .stateUpdate(HashUpdate.builder()
+                        .oldHash(BigInteger.valueOf(42))
+                        .newHash(BigInteger.valueOf(43))
+                        .build())
+                .description(TransactionDescription.builder()
+                        .description(TransactionDescriptionOrdinary.builder()
+                                .creditFirst(false)
+                                .computePhase(ComputePhaseVM.builder()
+                                        .success(true)
+                                        .msgStateUsed(false)
+                                        .accountActivated(true)
+                                        .gasFees(BigInteger.ZERO)
+                                        .details(ComputePhaseVMDetails.builder()
+                                                .gasUsed(BigInteger.valueOf(1000))
+                                                .gasLimit(BigInteger.ZERO)
+                                                .gasCredit(BigInteger.ZERO)
+                                                .mode(0)
+                                                .exitCode(0)
+                                                .exitArg(0)
+                                                .vMSteps(2)
+                                                .vMInitStateHash(BigInteger.ONE)
+                                                .vMFinalStateHash(BigInteger.TWO)
+                                                .build())
+                                        .build())
+                                //actionPhase
+                                .aborted(false)
+                                .destroyed(false)
+                                .build())
+                        .build())
+                .build();
+        log.info("tx-base64 {}", tx.toCell().toBase64());
+        log.info("tx-internal-msg-base64 {}", msgInternal.toCell().toBase64());
+
+        Transaction transaction = Transaction.deserialize(CellSlice.beginParse(tx.toCell()));
+
+        log.info("tx {}", transaction);
+
     }
 }

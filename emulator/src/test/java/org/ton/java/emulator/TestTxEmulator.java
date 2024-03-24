@@ -39,6 +39,7 @@ public class TestTxEmulator {
         tonlib = Tonlib.builder().build();
         config = tonlib.getConfigAll(128);
         txEmulator = TxEmulator.builder()
+                .verbosityLevel(4)
                 .configBoc(config.toBase64())
                 .build();
     }
@@ -104,7 +105,7 @@ public class TestTxEmulator {
                                 .accountStorage(AccountStorage.builder()
 //                                        .lastTransactionLt(BigInteger.TWO)
                                         .balance(CurrencyCollection.builder()
-                                                .coins(Utils.toNano(2))
+                                                .coins(Utils.toNano(20))
                                                 .build())
                                         .accountState(AccountStateActive.builder()
                                                 .stateInit(StateInit.builder()
@@ -129,6 +130,189 @@ public class TestTxEmulator {
         String shardAccountBocBase64 = shardAccount.toCell().toBase64();
         log.info("shardAccountCellBocBase64: {}", shardAccountBocBase64);
         String result = txEmulator.emulateTickTockTransaction(shardAccountBocBase64, false);
+        log.info("result {}", result);
+    }
+
+    @Test
+    public void testTxEmulatorEmulateTx() {
+//        Cell dictLibs = getLibs();
+//        txEmulator.setLibs(dictLibs.toBase64());
+
+//        ResultLastBlock lightBlock = LiteClientParser.parseLast(liteClient.executeLast());
+//        Block block = LiteClientParser.parseDumpblock(liteClient.executeDumpblock(lightBlock), true, true);
+//        log.info("block: {}", block);
+
+        txEmulator.setVerbosityLevel(4);
+        log.info("set setDebugEnabled 4 {}", txEmulator.setDebugEnabled(true));
+
+        ShardAccount shardAccount = ShardAccount.builder()
+                .account(
+                        Account.builder()
+                                .isNone(false)
+                                .address(MsgAddressIntStd.builder()
+                                        .workchainId((byte) -1)
+                                        .address(new BigInteger("000000000000000000000000000000000000000000000000000000000000000", 16))
+//                                        .address(new BigInteger("333333333333333333333333333333333333333333333333333333333333333", 16))
+//                                        .address(new BigInteger("555555555555555555555555555555555555555555555555555555555555555", 16))
+                                        .build())
+                                .storageInfo(StorageInfo.builder()
+                                        .storageUsed(StorageUsed.builder()
+                                                .cellsUsed(BigInteger.ZERO)
+                                                .bitsUsed(BigInteger.ZERO)
+                                                .publicCellsUsed(BigInteger.ZERO)
+                                                .build())
+                                        .lastPaid(123654)
+                                        .duePayment(Utils.toNano(2))
+                                        .build())
+                                .accountStorage(AccountStorage.builder()
+//                                        .lastTransactionLt(BigInteger.TWO)
+                                        .balance(CurrencyCollection.builder()
+                                                .coins(Utils.toNano(20))
+                                                .build())
+                                        .accountState(AccountStateActive.builder()
+                                                .stateInit(StateInit.builder()
+//                                                        .depth(BigInteger.valueOf(1))
+//                                                        .tickTock(TickTock.builder()
+//                                                                .tick(false)
+//                                                                .tock(true)
+//                                                                .build())
+                                                        .code(Cell.fromBoc("b5ee9c7241010101004e000098ff0020dd2082014c97ba9730ed44d0d70b1fe0a4f260810200d71820d70b1fed44d0d31fd3ffd15112baf2a122f901541044f910f2a2f80001d31f31d307d4d101fb00a4c8cb1fcbffc9ed5470102286"))
+//                                                        .data(CellBuilder.beginCell().storeBit(true).endCell())
+                                                        .build())
+                                                .build())
+                                        .accountStatus("ACTIVE")
+                                        .build())
+                                .build()
+                )
+//                .lastTransLt(BigInteger.ONE)
+                .lastTransHash(BigInteger.TWO)
+                .build();
+
+        log.info("shardAccount: {}", shardAccount);
+        String shardAccountBocBase64 = shardAccount.toCell().toBase64();
+        log.info("shardAccountCellBocBase64: {}", shardAccountBocBase64);
+
+        Message msgExtIn = Message.builder()
+                .info(ExternalMessage.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId((byte) -1)
+                                .address(BigInteger.valueOf(20))
+                                .build())
+                        .importFee(BigInteger.TEN)
+                        .build())
+                .body(CellBuilder.beginCell().storeBit(true).endCell())
+                .build();
+
+        Message msgInternal = Message.builder()
+                .info(InternalMessage.builder()
+                        .iHRDisabled(false)
+                        .bounce(false)
+                        .bounced(false)
+                        .srcAddr(MsgAddressIntStd.builder()
+                                .workchainId((byte) -1)
+                                .address(BigInteger.valueOf(20))
+                                .build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId((byte) -1)
+                                .address(BigInteger.valueOf(22))
+                                .build())
+                        .value(CurrencyCollection.builder()
+                                .coins(BigInteger.TWO)
+                                .build())
+                        .iHRFee(BigInteger.ZERO)
+                        .fwdFee(BigInteger.ZERO)
+                        .createdLt(BigInteger.ZERO)
+                        .createdAt(0L)
+                        .build())
+                .build();
+
+
+        int keySizeX = 15;
+        TonHashMapE outMsgs = new TonHashMapE(keySizeX);
+
+        outMsgs.elements.put(100L, msgInternal.toCell());
+        outMsgs.elements.put(101L, msgInternal.toCell());
+
+
+        InMsg inMsgTr = InMsgImportTr.builder()
+                .inMsg(MsgEnvelope.builder()
+                        .currAddr(IntermediateAddressSimple.builder()
+                                .workchainId(-1)
+                                .addrPfx(BigInteger.TEN)
+                                .build())
+                        .nextAddr(IntermediateAddressSimple.builder()
+                                .workchainId(-1)
+                                .addrPfx(BigInteger.valueOf(11))
+                                .build())
+                        .msg(msgExtIn)
+//                        .msg(msgInternal)
+                        .build())
+                .outMsg(MsgEnvelope.builder()
+                        .currAddr(IntermediateAddressSimple.builder()
+                                .workchainId(-1)
+                                .addrPfx(BigInteger.valueOf(11))
+                                .build())
+                        .nextAddr(IntermediateAddressSimple.builder()
+                                .workchainId(-1)
+                                .addrPfx(BigInteger.valueOf(11))
+                                .build())
+                        .msg(msgExtIn)
+//                        .msg(msgInternal)
+                        .build())
+                .transitFee(BigInteger.valueOf(3000))
+                .build();
+
+
+        InMsg inMsgExt = InMsgImportExt.builder()
+                .msg(msgInternal)
+                .transaction(Transaction.builder()
+                        .accountAddr(new BigInteger("000000000000000000000000000000000000000000000000000000000000000", 16))
+                        .lt(BigInteger.ZERO)
+                        .prevTxHash(BigInteger.ZERO)
+                        .origStatus(AccountStates.ACTIVE)
+                        .endStatus(AccountStates.ACTIVE)
+                        .totalFees(CurrencyCollection.builder()
+                                .coins(BigInteger.TEN)
+                                .build())
+                        .inOut(TransactionIO.builder()
+//                                .in(msgExtIn)
+                                .in(msgInternal)
+                                .out(outMsgs)
+                                .build())
+                        .stateUpdate(HashUpdate.builder()
+                                .oldHash(BigInteger.valueOf(42))
+                                .newHash(BigInteger.valueOf(43))
+                                .build())
+                        .description(TransactionDescription.builder()
+                                .description(TransactionDescriptionOrdinary.builder()
+                                        .creditFirst(false)
+                                        .computePhase(ComputePhaseVM.builder()
+                                                .success(true)
+                                                .msgStateUsed(false)
+                                                .accountActivated(true)
+                                                .gasFees(BigInteger.ZERO)
+                                                .details(ComputePhaseVMDetails.builder()
+                                                        .gasUsed(BigInteger.valueOf(1000))
+                                                        .gasLimit(BigInteger.ZERO)
+                                                        .gasCredit(BigInteger.ZERO)
+                                                        .mode(0)
+                                                        .exitCode(0)
+                                                        .exitArg(0)
+                                                        .vMSteps(2)
+                                                        .vMInitStateHash(BigInteger.ONE)
+                                                        .vMFinalStateHash(BigInteger.TWO)
+                                                        .build())
+                                                .build())
+                                        //actionPhase
+                                        .aborted(false)
+                                        .destroyed(false)
+                                        .build())
+                                .build())
+                        .build())
+                .build();
+
+        String result = txEmulator.emulateTransaction(shardAccountBocBase64, inMsgExt.toCell().toBase64());
         log.info("result {}", result);
     }
 

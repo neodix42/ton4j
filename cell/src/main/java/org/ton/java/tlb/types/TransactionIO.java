@@ -9,6 +9,8 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
+import static java.util.Objects.nonNull;
+
 @Builder
 @Getter
 @Setter
@@ -30,7 +32,7 @@ public class TransactionIO {
                 v -> CellBuilder.beginCell().storeRef((Cell) v)
         );
         return CellBuilder.beginCell()
-                .storeRefMaybe(in.toCell())
+                .storeRefMaybe(nonNull(in) ? in.toCell() : null)
                 .storeDict(dictCell)
                 .endCell();
     }

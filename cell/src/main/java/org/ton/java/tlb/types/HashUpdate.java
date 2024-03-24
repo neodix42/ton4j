@@ -14,10 +14,13 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
+/**
+ * update_hashes#72 {X:Type} old_hash:bits256 new_hash:bits256 = HASH_UPDATE X;
+ */
 public class HashUpdate {
-    int magic; //  `tlb:"#72"`
-    BigInteger oldHash; // `tlb:"bits 256"`
-    BigInteger newHash; // `tlb:"bits 256"`
+    int magic;
+    BigInteger oldHash;
+    BigInteger newHash;
 
     private String getMagic() {
         return Long.toHexString(magic);
@@ -33,7 +36,7 @@ public class HashUpdate {
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeUint(0x72, 32)
+                .storeUint(0x72, 8)
                 .storeUint(oldHash, 256)
                 .storeUint(newHash, 256).endCell();
     }

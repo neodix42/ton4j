@@ -6,7 +6,10 @@ import org.ton.java.cell.CellSlice;
 
 
 /**
- * addr_std$10 anycast:(Maybe Anycast)  workchain_id:int8 address:bits256  = MsgAddressInt;
+ * addr_std$10
+ * anycast:(Maybe Anycast)
+ * workchain_id:int8
+ * address:bits256  = MsgAddressInt;
  * <p>
  * addr_var$11
  * anycast:(Maybe Anycast)
@@ -14,12 +17,12 @@ import org.ton.java.cell.CellSlice;
  * workchain_id:int32
  * address:(bits addr_len) = MsgAddressInt;
  */
-public interface MsgAddressInt {
-    public Cell toCell();
+public interface MsgAddressInt extends MsgAddress {
+    Cell toCell();
 
-    public Address toAddress();
+    Address toAddress();
 
-    public static MsgAddressInt deserialize(CellSlice cs) {
+    static MsgAddressInt deserialize(CellSlice cs) {
         MsgAddressInt intMsgAddr = null;
         int flagMsg = cs.loadUint(2).intValue();
         switch (flagMsg) {

@@ -12,21 +12,33 @@ import org.ton.java.cell.CellSlice;
 @Getter
 @Setter
 @ToString
-public class TransactionDescription {
+public class TransactionDescription { //rework todo
     Object description; // `tlb:"."`
 
     public Cell toCell() {
         CellBuilder c = CellBuilder.beginCell();
 
         if (description instanceof TransactionDescriptionStorage) {
-            c.storeUint(0b0001, 3);
+            c.storeUint(0b0001, 4);
             c.storeSlice(CellSlice.beginParse(((TransactionDescriptionStorage) description).toCell()));
         } else if (description instanceof TransactionDescriptionOrdinary) {
-            c.storeUint(0b000, 3);
+            c.storeUint(0b0000, 4);
             c.storeSlice(CellSlice.beginParse(((TransactionDescriptionOrdinary) description).toCell()));
-        } else if (description instanceof TransactionDescriptionOrdinary) {
-            c.storeUint(0b000, 3);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionOrdinary) description).toCell()));
+        } else if (description instanceof TransactionDescriptionTickTock) {
+            c.storeUint(0b001, 3);
+            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionTickTock) description).toCell()));
+        } else if (description instanceof TransactionDescriptionSplitInstall) {
+            c.storeUint(0b0101, 4);
+            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionSplitInstall) description).toCell()));
+        } else if (description instanceof TransactionDescriptionSplitPrepare) {
+            c.storeUint(0b0100, 4);
+            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionSplitPrepare) description).toCell()));
+        } else if (description instanceof TransactionDescriptionMergeInstall) {
+            c.storeUint(0b0111, 4);
+            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionMergeInstall) description).toCell()));
+        } else if (description instanceof TransactionDescriptionMergePrepare) {
+            c.storeUint(0b0110, 4);
+            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionMergePrepare) description).toCell()));
         }
         return c.endCell();
     }

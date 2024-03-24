@@ -21,14 +21,12 @@ import java.math.BigInteger;
  *   created_lt:uint64
  *   created_at:uint32
  */
-public class ExternalMessageOut extends CommonMsg {
+public class ExternalMessageOut implements CommonMsgInfo {
     long magic;
-    MsgAddress srcAddr;
-    MsgAddress dstAddr;
+    MsgAddressInt srcAddr;
+    MsgAddressExt dstAddr;
     BigInteger createdLt;
     Long createdAt;
-//    StateInit stateInit;    // `tlb:"maybe either . ^"`
-//    Cell body;              // `tlb:"either . ^"`
 
     private String getMagic() {
         return Long.toHexString(magic);
@@ -39,36 +37,8 @@ public class ExternalMessageOut extends CommonMsg {
                 .storeUint(3, 2)
                 .storeSlice(CellSlice.beginParse(srcAddr.toCell()))
                 .storeSlice(CellSlice.beginParse(dstAddr.toCell()))
-//                .storeAddress(isNull(srcAddr) ? null : Address.of((byte) 0x11, srcAddr.getMsgAddressInt().getWorkchainId(), srcAddr.getMsgAddressInt().address.toByteArray()))
-//                .storeAddress(isNull(dstAddr) ? null : Address.of((byte) 0x51, 0, dstAddr.getMsgAddressExt().externalAddress.toByteArray())) // todo review flag
                 .storeUint(createdLt, 64)
                 .storeUint(createdAt, 32);
-//                .storeBit(nonNull(stateInit)); //maybe
-
-
-//        if (nonNull(stateInit)) { //either
-//            Cell stateInitCell = stateInit.toCell();
-//            if ((result.bits.getFreeBits() - 2 < stateInitCell.bits.getUsedBytes()) || (result.getFreeRefs() - 1 < result.getMaxRefs())) {
-//                result.storeBit(true);
-//                result.storeRef(stateInitCell);
-//            } else {
-//                result.storeBit(false);
-//                result.storeSlice(CellSlice.beginParse(stateInitCell));
-//            }
-//        }
-
-//        if (nonNull(body)) { //either
-//            if ((result.bits.getFreeBits() - 1 < body.bits.getUsedBytes()) || (result.getFreeRefs() < body.getMaxRefs())) {
-//                result.storeBit(true);
-//                result.storeRef(body);
-//            } else {
-//                result.storeBit(false);
-//                result.storeSlice(CellSlice.beginParse(body));
-//            }
-//        } else {
-//            result.storeBit(false);
-//        }
-
         return result.endCell();
     }
 
@@ -77,8 +47,8 @@ public class ExternalMessageOut extends CommonMsg {
         assert (magic == 0b11) : "ExternalMessageOut: magic not equal to 0b11, found 0b" + Long.toBinaryString(magic);
         return ExternalMessageOut.builder()
                 .magic(3L)
-                .srcAddr(MsgAddress.deserialize(cs))
-                .dstAddr(MsgAddress.deserialize(cs))
+                .srcAddr(MsgAddressInt.deserialize(cs))
+                .dstAddr((MsgAddressExt) MsgAddress.deserialize(cs))
                 .createdLt(cs.loadUint(64))
                 .createdAt(cs.loadUint(32).longValue())
                 .build();

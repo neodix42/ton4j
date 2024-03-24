@@ -20,23 +20,21 @@ import java.math.BigInteger;
  *   dest:MsgAddressInt
  *   import_fee:Grams
  */
-public class ExternalMessage extends CommonMsg {
-    long magic; //0b10
-    MsgAddress srcAddr;
-    MsgAddress dstAddr;
+public class ExternalMessage implements CommonMsgInfo {
+    long magic;
+    MsgAddressExt srcAddr;
+    MsgAddressInt dstAddr;
     BigInteger importFee;
 
     private String getMagic() {
-        return Long.toHexString(magic);
+        return Long.toBinaryString(magic);
     }
 
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell()
-                .storeUint(magic, 2)
+                .storeUint(0b10, 2)
                 .storeSlice(CellSlice.beginParse(srcAddr.toCell()))
                 .storeSlice(CellSlice.beginParse(dstAddr.toCell()))
-//                .storeAddress(isNull(srcAddr) ? null : Address.of((byte) 0x51, 0, srcAddr.getMsgAddressExt().externalAddress.toByteArray())) // todo review flag
-//                .storeAddress(isNull(dstAddr) ? null : Address.of((byte) 0x11, dstAddr.getMsgAddressInt().getWorkchainId(), dstAddr.getMsgAddressInt().address.toByteArray()))
                 .storeCoins(importFee);
 
         return result.endCell();
@@ -47,8 +45,8 @@ public class ExternalMessage extends CommonMsg {
         assert (magic == 0b10) : "ExternalMessage: magic not equal to 0b10, found 0b" + Long.toBinaryString(magic);
         return ExternalMessage.builder()
                 .magic(2L)
-                .srcAddr(MsgAddress.deserialize(cs))
-                .dstAddr(MsgAddress.deserialize(cs))
+                .srcAddr((MsgAddressExt) MsgAddress.deserialize(cs))
+                .dstAddr(MsgAddressInt.deserialize(cs))
                 .importFee(cs.loadCoins())
                 .build();
     }

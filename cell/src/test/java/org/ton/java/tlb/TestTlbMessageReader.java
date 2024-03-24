@@ -36,7 +36,7 @@ public class TestTlbMessageReader {
         Cell c = CellBuilder.fromBoc("b5ee9c724101020100860001b36800bf4c6bdca25797e55d700c1a5448e2af5d1ac16f9a9628719a4e1eb2b44d85e33fd104a366f6fb17799871f82e00e4f2eb8ae6aaf6d3e0b3fb346cd0208e23725e14094ba15d20071f12260000446ee17a9b0cc8c028d8c001004d8002b374733831aac3455708e8f1d2c7f129540b982d3a5de8325bf781083a8a3d2a04a7f943813277f3ea");
         Message message = Message.deserialize(CellSlice.beginParse(c));
         log.info("internalMessage {}", message);
-        InternalMessage internalMessage = (InternalMessage) message.getInfo().getMsg();
+        InternalMessage internalMessage = InternalMessage.deserialize(CellSlice.beginParse(message.getInfo().toCell()));
         assertThat(internalMessage.isIHRDisabled()).isTrue();
         assertThat(internalMessage.getValue().getCoins()).isEqualTo(BigInteger.valueOf(9980893000L));
         assertThat(internalMessage.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
@@ -54,7 +54,55 @@ public class TestTlbMessageReader {
 //        assertThat(externalMessage.getStateInit().getCode().toString()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED54");
 //        assertThat(externalMessage.getStateInit().getData().toString()).isEqualTo("0000000029A9A31782A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
 //        assertThat(externalMessage.getBody().toString()).isEqualTo("A94EF7A240E3066C0843FE3D82C3CBD7EE75E60DF093F7162383E0F0E079E897CAAF61EF0E31F38A43B5498FB63789F34C014211C554FCA58762C2CD9BE26F0F29A9A317FFFFFFFF00000000");
-        assertThat(externalMessage.getDstAddr().getMsgAddressInt().toString()).isEqualTo("0:4fa67ec55b4e5904320b071d20727abc321dadada04e28d010aed2bcecaf24fb");
+        assertThat(externalMessage.getDstAddr().toString()).isEqualTo("0:4fa67ec55b4e5904320b071d20727abc321dadada04e28d010aed2bcecaf24fb");
+    }
+
+    @Test
+    public void testInternalMessageLoadFromCell2() {
+        Message msgExtIn = Message.builder()
+                .info(ExternalMessage.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId((byte) -1)
+                                .address(BigInteger.valueOf(20))
+                                .build())
+                        .importFee(BigInteger.TEN)
+                        .build())
+                .body(CellBuilder.beginCell().storeBit(true).endCell())
+                .build();
+
+        Message msg = Message.deserialize(CellSlice.beginParse(msgExtIn.toCell()));
+        log.info("msg {}", msg);
+    }
+
+    @Test
+    public void testInternalMessageLoadFromCell3() {
+        Message msgExtIn = Message.builder()
+                .info(InternalMessage.builder()
+                        .iHRDisabled(false)
+                        .bounce(false)
+                        .bounced(false)
+                        .srcAddr(MsgAddressIntStd.builder()
+                                .workchainId((byte) -1)
+                                .address(BigInteger.valueOf(20))
+                                .build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId((byte) -1)
+                                .address(BigInteger.valueOf(22))
+                                .build())
+                        .value(CurrencyCollection.builder()
+                                .coins(BigInteger.TWO)
+                                .build())
+                        .iHRFee(BigInteger.ZERO)
+                        .fwdFee(BigInteger.ZERO)
+                        .createdLt(BigInteger.ZERO)
+                        .createdAt(0L)
+                        .build())
+                .body(CellBuilder.beginCell().storeBit(true).endCell())
+                .build();
+
+        Message msg = Message.deserialize(CellSlice.beginParse(msgExtIn.toCell()));
+        log.info("msg {}", msg);
     }
 
     @Test
@@ -63,8 +111,14 @@ public class TestTlbMessageReader {
                 .iHRDisabled(false)
                 .bounce(true)
                 .bounced(false)
-                .srcAddr(MsgAddress.builder().magic(0).build())
-                .dstAddr(MsgAddress.builder().magic(0).build()) // todo toAddress
+                .srcAddr(MsgAddressIntStd.builder()
+                        .workchainId((byte) -1)
+                        .address(BigInteger.TEN)
+                        .build())
+                .dstAddr(MsgAddressIntStd.builder()
+                        .workchainId((byte) -1)
+                        .address(BigInteger.TWO)
+                        .build()) // todo toAddress
 //                .srcAddr(Address.of("EQAOp1zuKuX4zY6L9rEdSLam7J3gogIHhfRu_gH70u2MQnmd"))
 //                .dstAddr(Address.of("EQA_B407fiLIlE5VYZCaI2rki0in6kLyjdhhwitvZNfpe7eY"))
                 .value(CurrencyCollection.builder().coins(Utils.toNano(0.5)).build())
@@ -90,8 +144,14 @@ public class TestTlbMessageReader {
                 .iHRDisabled(false)
                 .bounce(true)
                 .bounced(false)
-                .srcAddr(MsgAddress.builder().magic(0).build())
-                .dstAddr(MsgAddress.builder().magic(0).build())
+                .srcAddr(MsgAddressIntStd.builder()
+                        .workchainId((byte) -1)
+                        .address(BigInteger.TEN)
+                        .build())
+                .dstAddr(MsgAddressIntStd.builder()
+                        .workchainId((byte) -1)
+                        .address(BigInteger.TWO)
+                        .build())
                 .value(CurrencyCollection.builder().coins(Utils.toNano(0.5)).build())
                 .createdAt(5L)
                 .createdLt(BigInteger.TWO)
@@ -108,8 +168,8 @@ public class TestTlbMessageReader {
     public void testExternalMessageLoadFromCell() {
         ExternalMessage externalMessage = ExternalMessage.builder()
                 .magic(0b10)
-                .srcAddr(MsgAddress.builder().magic(0).build())
-                .dstAddr(MsgAddress.builder().magic(0).build())
+                .srcAddr(MsgAddressExtNone.builder().build())
+                .dstAddr(MsgAddressIntStd.builder().build())
                 .importFee(BigInteger.TEN)
 //                .stateInit(null)
 //                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
@@ -123,8 +183,14 @@ public class TestTlbMessageReader {
     @Test
     public void testExternalMessageOutLoadFromCell() {
         ExternalMessageOut externalMessageOut = ExternalMessageOut.builder()
-                .srcAddr(MsgAddress.builder().magic(0).build())
-                .dstAddr(MsgAddress.builder().magic(0).build())
+                .srcAddr(MsgAddressIntStd.builder()
+                        .workchainId((byte) -1)
+                        .address(BigInteger.TEN)
+                        .build())
+                .dstAddr(MsgAddressExtern.builder()
+                        .len(32)
+                        .externalAddress(BigInteger.TEN)
+                        .build())
                 .createdLt(BigInteger.TEN)
                 .createdAt(5L)
 //                .stateInit(null)

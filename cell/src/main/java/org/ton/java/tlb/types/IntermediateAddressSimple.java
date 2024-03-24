@@ -24,7 +24,7 @@ public class IntermediateAddressSimple implements IntermediateAddress {
         return CellBuilder.beginCell()
                 .storeBit(true)
                 .storeBit(false)
-                .storeUint(workchainId, 8)
+                .storeInt(workchainId, 8)
                 .storeUint(addrPfx, 64)
                 .endCell();
     }

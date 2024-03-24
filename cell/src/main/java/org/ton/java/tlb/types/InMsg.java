@@ -17,9 +17,9 @@ import org.ton.java.cell.CellSlice;
 
 public interface InMsg {
 
-    public Cell toCell();
+    Cell toCell();
 
-    public static InMsg deserialize(CellSlice cs) {
+    static InMsg deserialize(CellSlice cs) {
         int inMsgFlag = cs.loadUint(3).intValue();
         switch (inMsgFlag) {
             case 0b000 -> {
