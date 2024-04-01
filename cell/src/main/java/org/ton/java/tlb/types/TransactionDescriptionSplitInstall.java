@@ -18,7 +18,7 @@ import org.ton.java.cell.CellSlice;
  *   prepare_transaction:^Transaction
  *   installed:Bool = TransactionDescr;
  */
-public class TransactionDescriptionSplitInstall {
+public class TransactionDescriptionSplitInstall  implements  TransactionDescription {
     int magic;
     SplitMergeInfo splitInfo;
     Transaction prepareTransaction;

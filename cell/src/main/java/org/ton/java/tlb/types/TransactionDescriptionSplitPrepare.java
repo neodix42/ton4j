@@ -21,7 +21,7 @@ import org.ton.java.cell.CellSlice;
  *   aborted:Bool destroyed:Bool
  *   = TransactionDescr;
  */
-public class TransactionDescriptionSplitPrepare {
+public class TransactionDescriptionSplitPrepare implements TransactionDescription {
     int magic;
     SplitMergeInfo splitInfo;
     StoragePhase storagePhase;

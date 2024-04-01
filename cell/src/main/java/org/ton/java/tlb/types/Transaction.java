@@ -76,11 +76,13 @@ public class Transaction {
         c.storeUint(prevTxLt, 64);
         c.storeUint(now, 32);
         c.storeUint(outMsgCount, 15);
+
         c.storeCell(serializeAccountState(origStatus));
         c.storeCell(serializeAccountState(endStatus));
-        c.storeCell(totalFees.toCell());
 
         c.storeRef(inOut.toCell());
+
+        c.storeCell(totalFees.toCell());
         c.storeRef(stateUpdate.toCell());
         c.storeRef(description.toCell());
 

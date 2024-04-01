@@ -43,7 +43,7 @@ public class ComputePhaseVM implements ComputePhase {
                 .storeBit(msgStateUsed)
                 .storeBit(accountActivated)
                 .storeCoins(gasFees)
-                .storeSlice(CellSlice.beginParse(((ComputePhaseVMDetails) details).toCell()))
+                .storeRef(details.toCell())
                 .endCell();
     }
 

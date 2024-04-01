@@ -23,7 +23,7 @@ import org.ton.java.cell.CellSlice;
  *   aborted:Bool destroyed:Bool
  *   = TransactionDescr;
  */
-public class TransactionDescriptionMergeInstall {
+public class TransactionDescriptionMergeInstall implements TransactionDescription {
     int magic;
     SplitMergeInfo splitInfo;
     Transaction prepareTransaction;

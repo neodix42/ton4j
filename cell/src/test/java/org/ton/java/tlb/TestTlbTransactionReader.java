@@ -78,6 +78,42 @@ public class TestTlbTransactionReader {
         outMsgs.elements.put(100L, msgExtIn.toCell());
         outMsgs.elements.put(101L, msgExtIn.toCell());
 
+//0000 0000 0001 10100000000
+        TransactionDescriptionOrdinary txDescr = TransactionDescriptionOrdinary.builder()
+                        .creditFirst(false)
+//                                .computePhase(ComputeSkipReason.builder()
+//                                        .type("NO_STATE")
+//                                        .build())
+                        .computePhase(ComputePhaseVM.builder()
+                                .success(true)
+                                .msgStateUsed(false)
+                                .accountActivated(true)
+                                .gasFees(BigInteger.ZERO)
+                                .details(ComputePhaseVMDetails.builder()
+                                        .gasUsed(BigInteger.valueOf(1000))
+                                        .gasLimit(BigInteger.ZERO)
+                                        .gasCredit(BigInteger.ZERO)
+                                        .mode(0)
+                                        .exitCode(0)
+                                        .exitArg(0)
+                                        .vMSteps(2)
+                                        .vMInitStateHash(BigInteger.ONE)
+                                        .vMFinalStateHash(BigInteger.TWO)
+                                        .build())
+                                .build())
+                        //actionPhase
+                        .aborted(false)
+                        .destroyed(false)
+                        .build();
+
+        Cell txDescCell = txDescr.toCell();
+        log.info("txDescCell {}", txDescCell);
+
+        log.info("txDescr-base64 {}", txDescr.toCell().toBase64());
+
+        TransactionDescription transactionDescription = TransactionDescription.deserialize(CellSlice.beginParse(txDescr.toCell()));
+        log.info("txDescr {}", transactionDescription);
+
         Transaction tx = Transaction.builder()
                 .accountAddr(new BigInteger("000000000000000000000000000000000000000000000000000000000000000", 16))
                 .lt(BigInteger.ZERO)
@@ -96,31 +132,7 @@ public class TestTlbTransactionReader {
                         .oldHash(BigInteger.valueOf(42))
                         .newHash(BigInteger.valueOf(43))
                         .build())
-                .description(TransactionDescription.builder()
-                        .description(TransactionDescriptionOrdinary.builder()
-                                .creditFirst(false)
-                                .computePhase(ComputePhaseVM.builder()
-                                        .success(true)
-                                        .msgStateUsed(false)
-                                        .accountActivated(true)
-                                        .gasFees(BigInteger.ZERO)
-                                        .details(ComputePhaseVMDetails.builder()
-                                                .gasUsed(BigInteger.valueOf(1000))
-                                                .gasLimit(BigInteger.ZERO)
-                                                .gasCredit(BigInteger.ZERO)
-                                                .mode(0)
-                                                .exitCode(0)
-                                                .exitArg(0)
-                                                .vMSteps(2)
-                                                .vMInitStateHash(BigInteger.ONE)
-                                                .vMFinalStateHash(BigInteger.TWO)
-                                                .build())
-                                        .build())
-                                //actionPhase
-                                .aborted(false)
-                                .destroyed(false)
-                                .build())
-                        .build())
+                .description(txDescr)
                 .build();
         log.info("tx-base64 {}", tx.toCell().toBase64());
         log.info("tx-internal-msg-base64 {}", msgInternal.toCell().toBase64());

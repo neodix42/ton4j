@@ -46,7 +46,7 @@ public class ComputePhaseVMDetails {
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeVarUint(gasCredit, 3) // (VarUInteger 7)
+                .storeVarUint(gasUsed, 3) // (VarUInteger 7)
                 .storeVarUint(gasLimit, 3)
                 .storeVarUintMaybe(gasCredit, 2)
                 .storeInt(mode, 8)

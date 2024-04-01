@@ -8,74 +8,44 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-@Builder
-@Getter
-@Setter
-@ToString
-public class TransactionDescription { //rework todo
-    Object description; // `tlb:"."`
 
-    public Cell toCell() {
-        CellBuilder c = CellBuilder.beginCell();
+public interface TransactionDescription {
 
-        if (description instanceof TransactionDescriptionStorage) {
-            c.storeUint(0b0001, 4);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionStorage) description).toCell()));
-        } else if (description instanceof TransactionDescriptionOrdinary) {
-            c.storeUint(0b0000, 4);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionOrdinary) description).toCell()));
-        } else if (description instanceof TransactionDescriptionTickTock) {
-            c.storeUint(0b001, 3);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionTickTock) description).toCell()));
-        } else if (description instanceof TransactionDescriptionSplitInstall) {
-            c.storeUint(0b0101, 4);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionSplitInstall) description).toCell()));
-        } else if (description instanceof TransactionDescriptionSplitPrepare) {
-            c.storeUint(0b0100, 4);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionSplitPrepare) description).toCell()));
-        } else if (description instanceof TransactionDescriptionMergeInstall) {
-            c.storeUint(0b0111, 4);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionMergeInstall) description).toCell()));
-        } else if (description instanceof TransactionDescriptionMergePrepare) {
-            c.storeUint(0b0110, 4);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionMergePrepare) description).toCell()));
-        }
-        return c.endCell();
-    }
+    Cell toCell();
 
-    public static TransactionDescription deserialize(CellSlice cs) {
+    static TransactionDescription deserialize(CellSlice cs) {
         int pfx = cs.preloadUint(3).intValue();
         switch (pfx) {
             case 0b000 -> {
                 boolean isStorage = cs.preloadBit();
                 if (isStorage) {
-                    TransactionDescriptionStorage desc = TransactionDescriptionStorage.deserialize(cs);
-                    return TransactionDescription.builder().description(desc).build();
+                    return TransactionDescriptionStorage.deserialize(cs);
+                    //return TransactionDescription.builder().description(desc).build();
                 }
-                TransactionDescriptionOrdinary descOrdinary = TransactionDescriptionOrdinary.deserialize(cs); // skipped was true
-                return TransactionDescription.builder().description(descOrdinary).build();
+                return TransactionDescriptionOrdinary.deserialize(cs); // skipped was true
+//                return TransactionDescription.builder().description(descOrdinary).build();
             }
             case 0b001 -> {
-                TransactionDescriptionTickTock descTickTock = TransactionDescriptionTickTock.deserialize(cs); // skipped was true
-                return TransactionDescription.builder().description(descTickTock).build();
+                return TransactionDescriptionTickTock.deserialize(cs); // skipped was true
+//                return TransactionDescription.builder().description(descTickTock).build();
             }
             case 0b010 -> {
                 boolean isInstall = cs.preloadBit();
                 if (isInstall) {
-                    TransactionDescriptionSplitInstall descSplit = TransactionDescriptionSplitInstall.deserialize(cs); // skipped was true
-                    return TransactionDescription.builder().description(descSplit).build();
+                    return TransactionDescriptionSplitInstall.deserialize(cs); // skipped was true
+//                    return TransactionDescription.builder().description(descSplit).build();
                 }
-                TransactionDescriptionSplitPrepare descSplitPrepare = TransactionDescriptionSplitPrepare.deserialize(cs); // skipped was true
-                return TransactionDescription.builder().description(descSplitPrepare).build();
+                return TransactionDescriptionSplitPrepare.deserialize(cs); // skipped was true
+//                return TransactionDescription.builder().description(descSplitPrepare).build();
             }
             case 0b011 -> {
                 boolean isInstall = cs.preloadBit();
                 if (isInstall) {
-                    TransactionDescriptionMergeInstall descMerge = TransactionDescriptionMergeInstall.deserialize(cs); // skipped was true
-                    return TransactionDescription.builder().description(descMerge).build();
+                    return TransactionDescriptionMergeInstall.deserialize(cs); // skipped was true
+//                    return TransactionDescription.builder().description(descMerge).build();
                 }
-                TransactionDescriptionMergePrepare descMergePrepare = TransactionDescriptionMergePrepare.deserialize(cs); // skipped was true
-                return TransactionDescription.builder().description(descMergePrepare).build();
+                return TransactionDescriptionMergePrepare.deserialize(cs); // skipped was true
+//                return TransactionDescription.builder().description(descMergePrepare).build();
             }
         }
         throw new Error("unknown transaction description type (must be in range [0..3], found 0x" + Integer.toBinaryString(pfx));

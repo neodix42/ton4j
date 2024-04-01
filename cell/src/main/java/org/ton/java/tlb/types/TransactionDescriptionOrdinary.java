@@ -26,7 +26,7 @@ import static java.util.Objects.nonNull;
  *   destroyed:Bool
  *   = TransactionDescr;
  */
-public class TransactionDescriptionOrdinary {
+public class TransactionDescriptionOrdinary implements TransactionDescription {
     int magic;
     boolean creditFirst;
     StoragePhase storagePhase;

@@ -17,7 +17,7 @@ import org.ton.java.cell.CellSlice;
  *    storage_ph:TrStoragePhase
  *   = TransactionDescr;
  */
-public class TransactionDescriptionStorage {
+public class TransactionDescriptionStorage implements TransactionDescription {
     int magic;
     StoragePhase storagePhase;
 

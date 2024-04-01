@@ -307,6 +307,7 @@ tr_phase_credit$_ due_fees_collected:(Maybe Grams)
 
 tr_phase_compute_skipped$0 reason:ComputeSkipReason
   = TrComputePhase;
+
 tr_phase_compute_vm$1 success:Bool msg_state_used:Bool 
   account_activated:Bool gas_fees:Grams
   ^[ gas_used:(VarUInteger 7)
@@ -315,6 +316,7 @@ tr_phase_compute_vm$1 success:Bool msg_state_used:Bool
   vm_steps:uint32
   vm_init_state_hash:bits256 vm_final_state_hash:bits256 ]
   = TrComputePhase;
+
 cskip_no_state$00 = ComputeSkipReason;
 cskip_bad_state$01 = ComputeSkipReason;
 cskip_no_gas$10 = ComputeSkipReason;
@@ -337,7 +339,8 @@ tr_phase_bounce_ok$1 msg_size:StorageUsedShort
 trans_ord$0000 credit_first:Bool
   storage_ph:(Maybe TrStoragePhase)
   credit_ph:(Maybe TrCreditPhase)
-  compute_ph:TrComputePhase action:(Maybe ^TrActionPhase)
+  compute_ph:TrComputePhase
+  action:(Maybe ^TrActionPhase)
   aborted:Bool bounce:(Maybe TrBouncePhase)
   destroyed:Bool
   = TransactionDescr;

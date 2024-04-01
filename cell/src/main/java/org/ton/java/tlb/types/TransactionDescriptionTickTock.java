@@ -21,7 +21,7 @@ import org.ton.java.cell.CellSlice;
  *   aborted:Bool
  *   destroyed:Bool = TransactionDescr;
  */
-public class TransactionDescriptionTickTock {
+public class TransactionDescriptionTickTock implements TransactionDescription {
     int magic;
     boolean isTock;
     StoragePhase storagePhase;

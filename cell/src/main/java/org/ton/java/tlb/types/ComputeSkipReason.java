@@ -12,22 +12,34 @@ import org.ton.java.cell.CellSlice;
 @Getter
 @Setter
 @ToString
+/**
+ *
+ * cskip_no_state$00 = ComputeSkipReason;
+ * cskip_bad_state$01 = ComputeSkipReason;
+ * cskip_no_gas$10 = ComputeSkipReason;
+ * cskip_suspended$110 = ComputeSkipReason;
+ *
+ * tr_phase_compute_skipped$0 reason:ComputeSkipReason
+ *   = TrComputePhase;
+ */
 public class ComputeSkipReason implements ComputePhase {
     String type;
 
     public Cell toCell() {
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeBit(false);
         switch (type) {
             case "NO_STATE" -> {
-                return CellBuilder.beginCell().storeUint(0b00, 2).endCell();
+                return cell.storeUint(0b00, 2).endCell();
             }
             case "BAD_STATE" -> {
-                return CellBuilder.beginCell().storeUint(0b01, 2).endCell();
+                return cell.storeUint(0b01, 2).endCell();
             }
             case "NO_GAS" -> {
-                return CellBuilder.beginCell().storeUint(0b10, 2).endCell();
+                return cell.storeUint(0b10, 2).endCell();
             }
             case "SUSPENDED" -> {
-                return CellBuilder.beginCell().storeUint(0b110, 3).endCell();
+                return cell.storeUint(0b110, 3).endCell();
             }
         }
         throw new Error("unknown compute skip reason");
