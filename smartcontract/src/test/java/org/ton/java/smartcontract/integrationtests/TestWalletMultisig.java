@@ -351,7 +351,7 @@ public class TestWalletMultisig extends CommonTest {
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey1 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
 
-        BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32));
+        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32);
 
         Long walletId = new Random().nextLong() & 0xffffffffL;
         log.info("queryId {}, walletId {}", queryId.toString(10), walletId);
@@ -603,7 +603,7 @@ public class TestWalletMultisig extends CommonTest {
         log.info("pubKey4 {}", Utils.bytesToHex(keyPair4.getPublicKey()));
         log.info("pubKey5 {}", Utils.bytesToHex(keyPair5.getPublicKey()));
 
-        BigInteger queryId1 = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32));
+        BigInteger queryId1 = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32);
         BigInteger queryId2 = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 10 * 60L, 32) - 5);
 
         Long walletId = new Random().nextLong() & 0xffffffffL;
