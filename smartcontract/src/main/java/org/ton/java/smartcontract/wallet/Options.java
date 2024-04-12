@@ -36,6 +36,7 @@ public class Options {
     public Long walletId;
     public LockupConfig lockupConfig;
     public HighloadConfig highloadConfig;
+    public int timeout;
     public SubscriptionInfo subscriptionConfig;
     public String index; //dns item index, sha256
     public Address collectionAddress; // todo dns config

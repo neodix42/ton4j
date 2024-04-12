@@ -17,6 +17,7 @@ public enum WalletVersion {
     nftCollection("NFT Collection"),
     payments("Payments"),
     highload("Highload"),
+    highloadV3("Highload V3"),
     multisig("Multisig"),
     /**
      * reserved for internal usage

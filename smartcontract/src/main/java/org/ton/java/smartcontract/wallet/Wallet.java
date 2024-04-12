@@ -3,6 +3,7 @@ package org.ton.java.smartcontract.wallet;
 import org.ton.java.smartcontract.dns.DnsCollection;
 import org.ton.java.smartcontract.dns.DnsItem;
 import org.ton.java.smartcontract.highload.HighloadWallet;
+import org.ton.java.smartcontract.highload.HighloadWalletV3;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
 import org.ton.java.smartcontract.multisig.MultisigWallet;
 import org.ton.java.smartcontract.payments.PaymentChannel;
@@ -53,6 +54,7 @@ public class Wallet {
             case nftCollection -> new NftCollection(options);
             case payments -> new PaymentChannel(options);
             case highload -> new HighloadWallet(options);
+            case highloadV3 -> new HighloadWalletV3(options);
             case multisig -> new MultisigWallet(options);
             case master -> throw new Error("not implemented");
             case config -> throw new Error("not implemented");
