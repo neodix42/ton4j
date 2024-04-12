@@ -35,7 +35,7 @@ public class TestWalletV2Highload extends CommonTest {
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
                 .walletId(42L)
-                .highloadQueryId(BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32))
+                .highloadQueryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32)
                         .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
                 .wc(0L)
                 .build();
@@ -60,7 +60,7 @@ public class TestWalletV2Highload extends CommonTest {
         Utils.sleep(60, "deploying");
 
         HighloadConfig highloadConfig = HighloadConfig.builder()
-                .queryId(BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32)))
+                .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
                 .destinations(List.of(
                         Destination.builder()
                                 .address(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
@@ -128,7 +128,7 @@ public class TestWalletV2Highload extends CommonTest {
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
                 .walletId(42L)
-                .highloadQueryId(BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32))
+                .highloadQueryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32)
                         .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
                 .wc(0L)
                 .build();
@@ -155,7 +155,7 @@ public class TestWalletV2Highload extends CommonTest {
         List<Destination> destinations = generateTargetsWithSameAmountAndSendMode(200, keyPair.getPublicKey());
 
         HighloadConfig highloadConfig = HighloadConfig.builder()
-                .queryId(BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 5 * 60L, 32)))
+                .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
                 .destinations(destinations)
                 .build();
 
