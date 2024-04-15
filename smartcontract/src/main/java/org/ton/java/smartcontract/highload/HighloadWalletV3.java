@@ -3,10 +3,7 @@ package org.ton.java.smartcontract.highload;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.TonHashMap;
-import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.ExternalMessage;
-import org.ton.java.smartcontract.types.HighloadConfig;
 import org.ton.java.smartcontract.types.HighloadV3BatchItem;
 import org.ton.java.smartcontract.types.HighloadV3Config;
 import org.ton.java.smartcontract.types.WalletCodes;
@@ -25,12 +22,11 @@ import static java.util.Objects.nonNull;
 
 public class HighloadWalletV3 implements WalletContract {
 
-    //https://github.com/ton-blockchain/ton/blob/master/crypto/smartcont/highload-wallet-v2-code.fc
     Options options;
     Address address;
 
     /**
-     * interface to <a href="https://github.com/ton-blockchain/ton/blob/master/crypto/smartcont/highload-wallet-v2-code.fc">highload smart-contract</a>
+     * interface to <a href="https://github.com/ton-blockchain/highload-wallet-contract-v3/blob/main/contracts/highload-wallet-v3.func">highload-v3 smart-contract</a>
      *
      * @param options Options - mandatory -  highloadQueryId, walletId, publicKey
      */
@@ -95,6 +91,15 @@ public class HighloadWalletV3 implements WalletContract {
         return message.endCell();
     }
 
+    /**
+     * Construct MsgInner according to TL-B:
+     * <pre>
+     *     _ {n:#}  subwallet_id:uint32 message_to_send:^Cell send_mode:uint8 query_id:QueryId created_at:uint64 timeout:uint22 = MsgInner;`
+     * </pre>
+     *
+     * @param highloadConfig HighloadV3Config
+     * @return Cell
+     */
     public Cell createSigningMessageInternal(HighloadV3Config highloadConfig) {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);

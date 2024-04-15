@@ -7,29 +7,29 @@ public class HighloadQueryId {
     static final int BITNUMBER_SIZE = 10;
 
     int shift;
-    int bitnumber;
+    int bitNumber;
 
     public HighloadQueryId() {
         shift = 0;
-        bitnumber = 0;
+        bitNumber = 0;
     }
 
-    public static HighloadQueryId fromShiftAndBitNumber(int shift, int bitnumber) throws IllegalArgumentException {
+    public static HighloadQueryId fromShiftAndBitNumber(int shift, int bitNumber) throws IllegalArgumentException {
         if (shift < 0) {
             throw new IllegalArgumentException("Shift cannot be less than 0");
         }
         if (shift > MAX_SHIFT) {
             throw new IllegalArgumentException("Shift cannot be greater than " + MAX_SHIFT);
         }
-        if (bitnumber < 0) {
-            throw new IllegalArgumentException("Bitnumber cannot be less than 0");
+        if (bitNumber < 0) {
+            throw new IllegalArgumentException("BitNumber cannot be less than 0");
         }
-        if (bitnumber > MAX_BITNUMBER) {
-            throw new IllegalArgumentException("Bitnumber cannot be greater than " + MAX_BITNUMBER);
+        if (bitNumber > MAX_BITNUMBER) {
+            throw new IllegalArgumentException("BitNumber cannot be greater than " + MAX_BITNUMBER);
         }
         HighloadQueryId qid = new HighloadQueryId();
         qid.shift = shift;
-        qid.bitnumber = bitnumber;
+        qid.bitNumber = bitNumber;
         return qid;
     }
 
@@ -42,16 +42,16 @@ public class HighloadQueryId {
     }
 
     public int getQueryId() {
-        return (shift << BITNUMBER_SIZE) + bitnumber;
+        return (shift << BITNUMBER_SIZE) + bitNumber;
     }
 
     public boolean hasNext() {
-        boolean isEnd = bitnumber >= (MAX_BITNUMBER - 1) && shift >= MAX_SHIFT; // last usable queryId is left for emergency withdrawal
+        boolean isEnd = bitNumber >= (MAX_BITNUMBER - 1) && shift >= MAX_SHIFT; // last usable queryId is left for emergency withdrawal
         return !isEnd;
     }
 
     public HighloadQueryId getNext() throws IllegalStateException {
-        int newBitnumber = bitnumber + 1;
+        int newBitnumber = bitNumber + 1;
         int newShift = shift;
 
         if (newShift >= MAX_SHIFT && newBitnumber > (MAX_BITNUMBER - 1)) {
@@ -73,11 +73,11 @@ public class HighloadQueryId {
         return shift;
     }
 
-    public int getBitnumber() {
-        return bitnumber;
+    public int getBitNumber() {
+        return bitNumber;
     }
 
     public int toSeqno() {
-        return shift * 1023 + bitnumber;
+        return shift * 1023 + bitNumber;
     }
 }

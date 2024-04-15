@@ -17,6 +17,7 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.time.Instant;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
@@ -24,7 +25,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public class TestHighloadWalletV3 extends CommonTest {
 
     @Test
-    public void testSimple() throws InterruptedException {
+    public void testSinglePayloadTransfer() throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -45,7 +46,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("           raw address {}", contract.getAddress().toString(false));
 
         // top up new wallet using test-faucet-wallet        
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
         Utils.sleep(10, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
@@ -54,20 +55,20 @@ public class TestHighloadWalletV3 extends CommonTest {
         Utils.sleep(60, "deploying");
 
         HighloadV3Config config = HighloadV3Config
-            .builder()
-            .amount(BigInteger.valueOf(10000000))
-            .body(null)
-            .createdAt(Instant.now().getEpochSecond() - 10)
-            .destination(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
-            .mode((byte) 3)
-            .queryId(0)
-            .build();
+                .builder()
+                .amount(BigInteger.valueOf(10000000))
+                .body(null)
+                .createdAt(Instant.now().getEpochSecond() - 10)
+                .destination(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
+                .mode((byte) 3)
+                .queryId(0)
+                .build();
 
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
     }
 
     @Test
-    public void testHighloadQueryId() throws InterruptedException {
+    public void testHighloadQueryId() {
         HighloadQueryId qid = new HighloadQueryId();
         assertThat(qid.getQueryId()).isEqualTo(0);
         qid = qid.getNext();

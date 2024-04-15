@@ -13,7 +13,7 @@ public class CommonTest {
     static Tonlib tonlib;
 
     @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
+    public static void setUpBeforeClass() {
         tonlib = Tonlib.builder().testnet(true).build();
     }
 }

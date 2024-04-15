@@ -4,12 +4,14 @@
 [![Based on TON][ton-svg]][ton]
 ![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton4j)
 
-Java libraries for interacting with TON blockchain. 
-Do not forget to place tonlibjson library to your project. Latest Tonlib libraries can be found [here](https://github.com/ton-blockchain/ton/actions).
+Java libraries for interacting with TON blockchain.
+Do not forget to place tonlibjson library to your project. Latest Tonlib libraries can be
+found [here](https://github.com/ton-blockchain/ton/actions).
 
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
 ```xml
+
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
@@ -20,6 +22,7 @@ Do not forget to place tonlibjson library to your project. Latest Tonlib librari
 ## Jitpack [![JitPack][jitpack-svg]][jitpack]
 
 ```xml
+
 <repositories>
     <repository>
         <id>jitpack.io</id>
@@ -29,6 +32,7 @@ Do not forget to place tonlibjson library to your project. Latest Tonlib librari
 ```
 
 ```xml
+
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>ton4j</artifactId>
@@ -45,7 +49,7 @@ You can use each submodule individually. Click the module below to get more deta
 * [Address](address/README.md) - create and parse TON wallet addresses.
 * [Mnemonic](mnemonic/README.md) - helpful methods for generating deterministic keys for TON blockchain.
 * [Emulator](emulator/README.md) - wrapper for using with external precompiled emulator shared library.
-* [Liteclient](liteclient/README.md) - wrapper for using with external precompiled lite-client binary. 
+* [Liteclient](liteclient/README.md) - wrapper for using with external precompiled lite-client binary.
 * [Utils](utils/README.md) - create private and public keys, convert data, etc.
 
 ### Features
@@ -54,7 +58,7 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ Cells serialization / deserialization
 * ✅ TL-B serialization / deserialization
 * ✅ Cell builder and cell slicer (reader)
-* ✅ Tonlib wrapper 
+* ✅ Tonlib wrapper
 * ✅ Support num, cell and slice as arguments for runMethod
 * ✅ Render List, Tuple, Slice, Cell and Number results from runMethod
 * ✅ Generate or import private key, sign, encrypt and decrypt using Tonlib
@@ -62,10 +66,12 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ Send external message
 * ✅ Get block transactions
 * ✅ Deploy contracts and send external messages using Tonlib
-* ✅ Wallets - Simple (V1), V2, V3, V4 (plugins), Lockup, Highload, DNS, Jetton, NFT, Payment-channels, Multisig
+* ✅ Wallets - Simple (V1), V2, V3, V4 (plugins), Lockup, Highload/Highload-V3, DNS, Jetton, NFT, Payment-channels,
+  Multisig
 * ✅ HashMap, HashMapE, PfxHashMap, PfxHashMapE, HashMapAug, HashMapAugE serialization / deserialization
 
 ### Todo
+
 * Support tuple and list as arguments for runMethod
 * Improve code coverage and add more integration tests
 * Add methods to store jettons metadata onchain
