@@ -92,7 +92,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.example</groupId>
+            <groupId>io.github.neodix42</groupId>
             <artifactId>liteclient</artifactId>
             <version>0.2.4</version>
             <scope>test</scope>
