@@ -145,6 +145,10 @@ public class Address {
         return new BigInteger(Utils.bytesToHex(hashPart), 16).toString(10);
     }
 
+    public BigInteger toBigInteger() {
+        return new BigInteger(Utils.bytesToHex(hashPart), 16);
+    }
+
     public String toHex() {
         return Utils.bytesToHex(hashPart);
     }

@@ -100,14 +100,13 @@ phme_root$1 {n:#} {X:Type} root:^(PfxHashmap n X)
 // TON BLOCK LAYOUT
 //
 addr_none$00 = MsgAddressExt;
-addr_extern$01 len:(## 9) external_address:(bits len) 
-             = MsgAddressExt;
-anycast_info$_ depth:(#<= 30) { depth >= 1 }
-   rewrite_pfx:(bits depth) = Anycast;
-addr_std$10 anycast:(Maybe Anycast) 
-   workchain_id:int8 address:bits256  = MsgAddressInt;
-addr_var$11 anycast:(Maybe Anycast) addr_len:(## 9) 
-   workchain_id:int32 address:(bits addr_len) = MsgAddressInt;
+addr_extern$01 len:(## 9) external_address:(bits len) = MsgAddressExt;
+
+anycast_info$_ depth:(#<= 30) { depth >= 1 } rewrite_pfx:(bits depth) = Anycast;
+
+addr_std$10 anycast:(Maybe Anycast) workchain_id:int8 address:bits256  = MsgAddressInt;
+addr_var$11 anycast:(Maybe Anycast) addr_len:(## 9)  workchain_id:int32 address:(bits addr_len) = MsgAddressInt;
+
 _ _:MsgAddressInt = MsgAddress;
 _ _:MsgAddressExt = MsgAddress;
 //
@@ -129,6 +128,7 @@ int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
   src:MsgAddressInt dest:MsgAddressInt 
   value:CurrencyCollection ihr_fee:Grams fwd_fee:Grams
   created_lt:uint64 created_at:uint32 = CommonMsgInfo;
+
 ext_in_msg_info$10 src:MsgAddressExt dest:MsgAddressInt 
   import_fee:Grams = CommonMsgInfo;
 ext_out_msg_info$11 src:MsgAddressInt dest:MsgAddressExt
@@ -138,6 +138,7 @@ int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
   src:MsgAddress dest:MsgAddressInt 
   value:CurrencyCollection ihr_fee:Grams fwd_fee:Grams
   created_lt:uint64 created_at:uint32 = CommonMsgInfoRelaxed;
+
 ext_out_msg_info$11 src:MsgAddress dest:MsgAddressExt
   created_lt:uint64 created_at:uint32 = CommonMsgInfoRelaxed;
 

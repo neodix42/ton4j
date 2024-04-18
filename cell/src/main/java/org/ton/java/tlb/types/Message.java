@@ -26,11 +26,6 @@ public class Message {
     StateInit init;
     Cell body;
 
-    public static void dump(InternalMessage intMsg) {
-//        return fmt.Sprintf("Amount %s TON, Created at: %d, Created lt %d\nBounce: %t, Bounced %t, IHRDisabled %t\nSrcAddr: %s\nDstAddr: %s\nPayload: %s",
-//                m.Amount.TON(), m.CreatedAt, m.CreatedLT, m.Bounce, m.Bounced, m.IHRDisabled, m.SrcAddr, m.DstAddr, m.Body.Dump())
-    }
-
     public Cell toCell() {
         CellBuilder c = CellBuilder.beginCell();
         c.storeCell(info.toCell());
@@ -53,7 +48,6 @@ public class Message {
     }
 
     public static Message deserialize(CellSlice cs) {
-//        CommonMsgInfo commonMsgInfo = CommonMsgInfo.deserialize(cs);
         return Message.builder()
                 .info(CommonMsgInfo.deserialize(cs))
                 .init(cs.loadBit() ?

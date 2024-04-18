@@ -48,12 +48,15 @@ public class MsgAddressIntStd implements MsgAddressInt {
     }
 
     public static MsgAddressIntStd deserialize(CellSlice cs) {
+        int magic = cs.loadUint(2).intValue();
+        assert (magic == 0b10) : "MsgAddressIntStd: magic not equal to 0b10, found " + magic;
+
         Anycast anycast = null;
         if (cs.loadBit()) {
             anycast = Anycast.deserialize(cs);
         }
         return MsgAddressIntStd.builder()
-                .magic(0b10)
+                .magic(magic)
                 .anycast(anycast)
                 .workchainId(cs.loadInt(8).byteValue())
                 .address(cs.loadUint(256))

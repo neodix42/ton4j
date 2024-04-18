@@ -23,8 +23,8 @@ import java.math.BigInteger;
  */
 public class ExternalMessageOut implements CommonMsgInfo {
     long magic;
-    MsgAddress srcAddr;
-    MsgAddress dstAddr;
+    MsgAddressInt srcAddr;
+    MsgAddressExt dstAddr;
     BigInteger createdLt;
     Long createdAt;
 
@@ -34,7 +34,7 @@ public class ExternalMessageOut implements CommonMsgInfo {
 
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell()
-                .storeUint(3, 2)
+                .storeUint(0b11, 2)
                 .storeSlice(CellSlice.beginParse(srcAddr.toCell()))
                 .storeSlice(CellSlice.beginParse(dstAddr.toCell()))
                 .storeUint(createdLt, 64)
@@ -46,9 +46,9 @@ public class ExternalMessageOut implements CommonMsgInfo {
         long magic = cs.loadUint(2).intValue();
         assert (magic == 0b11) : "ExternalMessageOut: magic not equal to 0b11, found 0b" + Long.toBinaryString(magic);
         return ExternalMessageOut.builder()
-                .magic(3L)
-                .srcAddr(MsgAddress.deserialize(cs))
-                .dstAddr(MsgAddress.deserialize(cs))
+                .magic(magic)
+                .srcAddr(MsgAddressInt.deserialize(cs))
+                .dstAddr(MsgAddressExt.deserialize(cs))
                 .createdLt(cs.loadUint(64))
                 .createdAt(cs.loadUint(32).longValue())
                 .build();

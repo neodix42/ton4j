@@ -11,9 +11,9 @@ import org.ton.java.cell.CellSlice;
 
 public interface IntermediateAddress {
 
-    public Cell toCell();
+    Cell toCell();
 
-    public static IntermediateAddress deserialize(CellSlice cs) {
+    static IntermediateAddress deserialize(CellSlice cs) {
         if (!cs.loadBit()) {
             return IntermediateAddressRegular.builder()
                     .use_dest_bits(cs.loadUint(7).intValue())

@@ -21,9 +21,9 @@ import java.math.BigInteger;
  import_fee:Grams = CommonMsgInfo;
  */
 public class ExternalMessage implements CommonMsgInfo {
-    long magic; //0b10
-    MsgAddress srcAddr;
-    MsgAddress dstAddr;
+    long magic;
+    MsgAddressExt srcAddr;
+    MsgAddressInt dstAddr;
     BigInteger importFee;
 
     private String getMagic() {
@@ -32,11 +32,10 @@ public class ExternalMessage implements CommonMsgInfo {
 
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell()
-                .storeUint(magic, 2)
+                .storeUint(0b10, 2)
                 .storeSlice(CellSlice.beginParse(srcAddr.toCell()))
                 .storeSlice(CellSlice.beginParse(dstAddr.toCell()))
                 .storeCoins(importFee);
-
         return result.endCell();
     }
 
@@ -44,9 +43,9 @@ public class ExternalMessage implements CommonMsgInfo {
         long magic = cs.loadUint(2).intValue();
         assert (magic == 0b10) : "ExternalMessage: magic not equal to 0b10, found 0b" + Long.toBinaryString(magic);
         return ExternalMessage.builder()
-                .magic(2L)
-                .srcAddr(MsgAddress.deserialize(cs))
-                .dstAddr(MsgAddress.deserialize(cs))
+                .magic(magic)
+                .srcAddr(MsgAddressExt.deserialize(cs))
+                .dstAddr(MsgAddressInt.deserialize(cs))
                 .importFee(cs.loadCoins())
                 .build();
     }

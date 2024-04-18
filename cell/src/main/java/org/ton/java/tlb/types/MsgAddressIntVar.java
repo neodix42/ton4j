@@ -37,7 +37,7 @@ public class MsgAddressIntVar implements MsgAddressInt {
 
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell();
-        result.storeUint(3, 2);
+        result.storeUint(0b11, 2);
         if (isNull(anycast)) {
             result.storeBit(false);
         } else {
@@ -52,13 +52,16 @@ public class MsgAddressIntVar implements MsgAddressInt {
     }
 
     public static MsgAddressIntVar deserialize(CellSlice cs) {
+        int magic = cs.loadUint(2).intValue();
+        assert (magic == 0b11) : "MsgAddressIntVar: magic not equal to 0b11, found " + magic;
+
         Anycast anycast = null;
         if (cs.loadBit()) {
             anycast = Anycast.deserialize(cs);
         }
         int addrLen = cs.loadUint(9).intValue();
         return MsgAddressIntVar.builder()
-                .magic(0b11)
+                .magic(magic)
                 .anycast(anycast)
                 .addrLen(addrLen)
                 .workchainId(cs.loadUint(32).intValue())

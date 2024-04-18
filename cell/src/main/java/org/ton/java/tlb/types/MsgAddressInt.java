@@ -14,22 +14,21 @@ import org.ton.java.cell.CellSlice;
  * workchain_id:int32
  * address:(bits addr_len) = MsgAddressInt;
  */
-public interface MsgAddressInt {
-    public Cell toCell();
+public interface MsgAddressInt extends MsgAddress {
+    Cell toCell();
 
-    public Address toAddress();
+    Address toAddress();
 
-    public static MsgAddressInt deserialize(CellSlice cs) {
-        MsgAddressInt intMsgAddr = null;
-        int flagMsg = cs.loadUint(2).intValue();
-        switch (flagMsg) {
+    static MsgAddressInt deserialize(CellSlice cs) {
+        int magic = cs.preloadUint(2).intValue();
+        switch (magic) {
             case 0b10 -> {
-                intMsgAddr = MsgAddressIntStd.deserialize(cs);
+                return MsgAddressIntStd.deserialize(cs);
             }
             case 0b11 -> {
-                intMsgAddr = MsgAddressIntVar.deserialize(cs);
+                return MsgAddressIntVar.deserialize(cs);
             }
         }
-        return intMsgAddr;
+        throw new Error("Wrong magic for MsgAddressInt, found " + magic);
     }
 }

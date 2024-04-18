@@ -30,12 +30,12 @@ import static java.util.Objects.nonNull;
  *   created_at:uint32
  */
 public class InternalMessage implements CommonMsgInfo {
-    long magic; // must be 0
+    int magic;
     boolean iHRDisabled;
     boolean bounce;
     boolean bounced;
-    MsgAddress srcAddr;
-    MsgAddress dstAddr;
+    MsgAddressInt srcAddr;
+    MsgAddressInt dstAddr;
     CurrencyCollection value;
     BigInteger iHRFee;
     BigInteger fwdFee;
@@ -52,8 +52,8 @@ public class InternalMessage implements CommonMsgInfo {
                 .storeBit(iHRDisabled)
                 .storeBit(bounce)
                 .storeBit(bounced)
-                .storeSlice(CellSlice.beginParse(srcAddr.toCell())) //MsgAddressInt
-                .storeSlice(CellSlice.beginParse(dstAddr.toCell())) //MsgAddressInt
+                .storeCell(srcAddr.toCell())
+                .storeCell(dstAddr.toCell())
                 .storeCoins(value.getCoins())
                 .storeDict(nonNull(value.getExtraCurrencies()) ? value.getExtraCurrencies().serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
@@ -67,16 +67,16 @@ public class InternalMessage implements CommonMsgInfo {
     }
 
     public static InternalMessage deserialize(CellSlice cs) {
-        boolean magicBool = cs.loadBit();
-        assert (!magicBool) : "InternalMessage: magic not equal to 0, found 0x" + magicBool;
+        int magic = cs.loadUint(1).intValue();
+        assert (magic == 0b0) : "InternalMessage: magic not equal to 0, found " + magic;
 
         return InternalMessage.builder()
-                .magic(0L)
+                .magic(magic)
                 .iHRDisabled(cs.loadBit())
                 .bounce(cs.loadBit())
                 .bounced(cs.loadBit())
-                .srcAddr(MsgAddress.deserialize(cs))
-                .dstAddr(MsgAddress.deserialize(cs))
+                .srcAddr(MsgAddressInt.deserialize(cs))
+                .dstAddr(MsgAddressInt.deserialize(cs))
                 .value(CurrencyCollection.deserialize(cs))
                 .iHRFee(cs.loadCoins())
                 .fwdFee(cs.loadCoins())
