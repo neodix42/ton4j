@@ -15,21 +15,15 @@ import static java.util.Objects.isNull;
 @Setter
 @ToString
 /**
- * message$_ {X:Type}
- *   info:CommonMsgInfo
- *   init:(Maybe (Either StateInit ^StateInit))
- *   body:(Either X ^X) = Message X;
+ message$_ {X:Type}
+ info:CommonMsgInfoRelaxed
+ init:(Maybe (Either StateInit ^StateInit))
+ body:(Either X ^X) = MessageRelaxed X;
  */
-public class Message {
-    String msgType;
+public class MessageRelaxed {
     CommonMsgInfo info;
     StateInit init;
     Cell body;
-
-    public static void dump(InternalMessage intMsg) {
-//        return fmt.Sprintf("Amount %s TON, Created at: %d, Created lt %d\nBounce: %t, Bounced %t, IHRDisabled %t\nSrcAddr: %s\nDstAddr: %s\nPayload: %s",
-//                m.Amount.TON(), m.CreatedAt, m.CreatedLT, m.Bounce, m.Bounced, m.IHRDisabled, m.SrcAddr, m.DstAddr, m.Body.Dump())
-    }
 
     public Cell toCell() {
         CellBuilder c = CellBuilder.beginCell();
@@ -52,9 +46,9 @@ public class Message {
         return c.endCell();
     }
 
-    public static Message deserialize(CellSlice cs) {
+    public static MessageRelaxed deserialize(CellSlice cs) {
 //        CommonMsgInfo commonMsgInfo = CommonMsgInfo.deserialize(cs);
-        return Message.builder()
+        return MessageRelaxed.builder()
                 .info(CommonMsgInfo.deserialize(cs))
                 .init(cs.loadBit() ?
                         (cs.loadBit() ?

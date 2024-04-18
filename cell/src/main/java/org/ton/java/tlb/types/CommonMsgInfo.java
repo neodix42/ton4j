@@ -1,10 +1,7 @@
 package org.ton.java.tlb.types;
 
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 
 /**
@@ -32,42 +29,21 @@ import org.ton.java.cell.CellSlice;
  * created_at:uint32 = CommonMsgInfo;
  */
 
-@ToString
-@Builder
-@Getter
-@Setter
-public class CommonMsgInfo {
-    String msgType;
-    CommonMsg msg;
+public interface CommonMsgInfo {
 
-    public static CommonMsgInfo deserialize(CellSlice cs) {
-//        if (isNull(cs)) {
-//            return Message.builder().build();
-//        }
+    Cell toCell();
+
+    static CommonMsgInfo deserialize(CellSlice cs) {
         boolean isExternal = cs.preloadBit();
         if (!isExternal) {
-            InternalMessage internalMessage = InternalMessage.deserialize(cs);
-
-            return CommonMsgInfo.builder()
-                    .msgType("INTERNAL")
-                    .msg(internalMessage)
-                    .build();
+            return InternalMessage.deserialize(cs);
         } else {
             boolean isOut = cs.preloadBitAt(2);
             if (isOut) {
-                ExternalMessageOut externalMessageOut = ExternalMessageOut.deserialize(cs);
-                return CommonMsgInfo.builder()
-                        .msgType("EXTERNAL_OUT")
-                        .msg(externalMessageOut)
-                        .build();
+                return ExternalMessageOut.deserialize(cs);
             } else {
-                ExternalMessage externalMessage = ExternalMessage.deserialize(cs);
-                return CommonMsgInfo.builder()
-                        .msgType("EXTERNAL_IN")
-                        .msg(externalMessage)
-                        .build();
+                return ExternalMessage.deserialize(cs);
             }
         }
-        //throw new Error("Unknown msg type ");
     }
 }

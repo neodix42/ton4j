@@ -17,6 +17,7 @@ import org.ton.java.cell.CellSlice;
  reimport:^InMsg = OutMsg;
  */
 public class OutMsgDeqImm implements OutMsg {
+    int magic;
     MsgEnvelope msg;
     InMsg reimport;
 
@@ -30,6 +31,10 @@ public class OutMsgDeqImm implements OutMsg {
     }
 
     public static OutMsgDeqImm deserialize(CellSlice cs) {
-        return null;
+        return OutMsgDeqImm.builder()
+                .magic(cs.loadUint(3).intValue())
+                .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .reimport(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
     }
 }

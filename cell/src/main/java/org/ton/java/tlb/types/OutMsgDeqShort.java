@@ -22,7 +22,7 @@ import java.math.BigInteger;
  import_block_lt:uint64 = OutMsg;
  */
 public class OutMsgDeqShort implements OutMsg {
-
+    int magic;
     BigInteger msgEnvHash;
     long nextWorkchain;
     BigInteger nextAddrPfx;
@@ -40,6 +40,12 @@ public class OutMsgDeqShort implements OutMsg {
     }
 
     public static OutMsgDeqShort deserialize(CellSlice cs) {
-        return null;
+        return OutMsgDeqShort.builder()
+                .magic(cs.loadUint(4).intValue())
+                .msgEnvHash(cs.loadUint(256))
+                .nextWorkchain(cs.loadInt(32).longValue())
+                .nextAddrPfx(cs.loadUint(64))
+                .importBlockLt(cs.loadUint(64))
+                .build();
     }
 }

@@ -17,19 +17,19 @@ import static java.util.Objects.nonNull;
 @Setter
 @ToString
 /**
- * int_msg_info$0
- *   ihr_disabled:Bool
- *   bounce:Bool
- *   bounced:Bool
- *   src:MsgAddressInt
- *   dest:MsgAddressInt
- *   value:CurrencyCollection
- *   ihr_fee:Grams
- *   fwd_fee:Grams
- *   created_lt:uint64
- *   created_at:uint32
+ int_msg_info$0
+ ihr_disabled:Bool
+ bounce:Bool
+ bounced:Bool
+ src:MsgAddress
+ dest:MsgAddressInt
+ value:CurrencyCollection
+ ihr_fee:Grams
+ fwd_fee:Grams
+ created_lt:uint64
+ created_at:uint32 = CommonMsgInfoRelaxed;
  */
-public class InternalMessage implements CommonMsgInfo {
+public class InternalMessageInfoRelaxed implements CommonMsgInfoRelaxed {
     long magic; // must be 0
     boolean iHRDisabled;
     boolean bounce;
@@ -66,11 +66,11 @@ public class InternalMessage implements CommonMsgInfo {
         return result.endCell();
     }
 
-    public static InternalMessage deserialize(CellSlice cs) {
+    public static InternalMessageInfoRelaxed deserialize(CellSlice cs) {
         boolean magicBool = cs.loadBit();
-        assert (!magicBool) : "InternalMessage: magic not equal to 0, found 0x" + magicBool;
+        assert (!magicBool) : "InternalMessageInfoRelaxed: magic not equal to 0, found 0x" + magicBool;
 
-        return InternalMessage.builder()
+        return InternalMessageInfoRelaxed.builder()
                 .magic(0L)
                 .iHRDisabled(cs.loadBit())
                 .bounce(cs.loadBit())

@@ -16,12 +16,12 @@ import java.math.BigInteger;
 @ToString
 /**
  ext_out_msg_info$11
- src:MsgAddressInt
+ src:MsgAddress
  dest:MsgAddressExt
  created_lt:uint64
- created_at:uint32 = CommonMsgInfo;
+ created_at:uint32 = CommonMsgInfoRelaxed;
  */
-public class ExternalMessageOut implements CommonMsgInfo {
+public class ExternalMessageOutInfoRelaxed implements CommonMsgInfoRelaxed {
     long magic;
     MsgAddress srcAddr;
     MsgAddress dstAddr;
@@ -29,7 +29,7 @@ public class ExternalMessageOut implements CommonMsgInfo {
     Long createdAt;
 
     private String getMagic() {
-        return Long.toHexString(magic);
+        return Long.toBinaryString(magic);
     }
 
     public Cell toCell() {
@@ -42,11 +42,11 @@ public class ExternalMessageOut implements CommonMsgInfo {
         return result.endCell();
     }
 
-    public static ExternalMessageOut deserialize(CellSlice cs) {
+    public static ExternalMessageOutInfoRelaxed deserialize(CellSlice cs) {
         long magic = cs.loadUint(2).intValue();
-        assert (magic == 0b11) : "ExternalMessageOut: magic not equal to 0b11, found 0b" + Long.toBinaryString(magic);
-        return ExternalMessageOut.builder()
-                .magic(3L)
+        assert (magic == 0b11) : "ExternalMessageOutInfoRelaxed: magic not equal to 0b11, found 0b" + Long.toBinaryString(magic);
+        return ExternalMessageOutInfoRelaxed.builder()
+                .magic(0b11)
                 .srcAddr(MsgAddress.deserialize(cs))
                 .dstAddr(MsgAddress.deserialize(cs))
                 .createdLt(cs.loadUint(64))

@@ -6,9 +6,9 @@ import org.ton.java.cell.CellSlice;
 public interface BouncePhase {
 //    Object phase; // `tlb:"."`
 
-    public Cell toCell();
+    Cell toCell();
 
-    public static BouncePhase deserialize(CellSlice cs) {
+    static BouncePhase deserialize(CellSlice cs) {
         boolean isOk = cs.preloadBit();
         if (isOk) {
             return BouncePhaseOk.deserialize(cs);

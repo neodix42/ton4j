@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
 @Builder
 @Getter
@@ -16,6 +17,7 @@ import org.ton.java.cell.CellBuilder;
  transaction:^Transaction = OutMsg;
  */
 public class OutMsgExt implements OutMsg {
+    int magic;
     Message msg;
     Transaction transaction;
 
@@ -26,5 +28,13 @@ public class OutMsgExt implements OutMsg {
                 .storeRef(msg.toCell())
                 .storeRef(transaction.toCell())
                 .endCell();
+    }
+
+    public static OutMsgExt deserialize(CellSlice cs) {
+        return OutMsgExt.builder()
+                .magic(cs.loadUint(3).intValue())
+                .msg(Message.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
     }
 }

@@ -19,6 +19,7 @@ import java.math.BigInteger;
  import_block_lt:uint63 = OutMsg;
  */
 public class OutMsgDeq implements OutMsg {
+    int magic;
     MsgEnvelope outMsg;
     BigInteger importBlockLt;
 
@@ -32,6 +33,10 @@ public class OutMsgDeq implements OutMsg {
     }
 
     public static OutMsgDeq deserialize(CellSlice cs) {
-        return null;
+        return OutMsgDeq.builder()
+                .magic(cs.loadUint(4).intValue())
+                .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .importBlockLt(cs.loadUint(63))
+                .build();
     }
 }

@@ -15,12 +15,12 @@ import java.math.BigInteger;
 @Setter
 @ToString
 /**
- * ext_in_msg_info$10
- *   src:MsgAddressExt
- *   dest:MsgAddressInt
- *   import_fee:Grams
+ ext_in_msg_info$10
+ src:MsgAddressExt
+ dest:MsgAddressInt
+ import_fee:Grams = CommonMsgInfo;
  */
-public class ExternalMessage extends CommonMsg {
+public class ExternalMessage implements CommonMsgInfo {
     long magic; //0b10
     MsgAddress srcAddr;
     MsgAddress dstAddr;
@@ -35,8 +35,6 @@ public class ExternalMessage extends CommonMsg {
                 .storeUint(magic, 2)
                 .storeSlice(CellSlice.beginParse(srcAddr.toCell()))
                 .storeSlice(CellSlice.beginParse(dstAddr.toCell()))
-//                .storeAddress(isNull(srcAddr) ? null : Address.of((byte) 0x51, 0, srcAddr.getMsgAddressExt().externalAddress.toByteArray())) // todo review flag
-//                .storeAddress(isNull(dstAddr) ? null : Address.of((byte) 0x11, dstAddr.getMsgAddressInt().getWorkchainId(), dstAddr.getMsgAddressInt().address.toByteArray()))
                 .storeCoins(importFee);
 
         return result.endCell();

@@ -2,6 +2,7 @@ package org.ton.java.smartcontract.integrationtests;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -10,9 +11,14 @@ import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.highload.HighloadWalletV3;
 import org.ton.java.smartcontract.types.HighloadQueryId;
 import org.ton.java.smartcontract.types.HighloadV3Config;
+import org.ton.java.smartcontract.types.HighloadV3InternalMessageBody;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
+import org.ton.java.tlb.types.ActionSendMsg;
+import org.ton.java.tlb.types.InternalMessage;
+import org.ton.java.tlb.types.MessageRelaxed;
+import org.ton.java.tlb.types.OutList;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -58,6 +64,70 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .builder()
                 .amount(BigInteger.valueOf(10000000))
                 .body(null)
+                .createdAt(Instant.now().getEpochSecond() - 10)
+                .destination(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
+                .mode((byte) 3)
+                .queryId(0)
+                .build();
+
+        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
+    }
+
+    @Ignore
+    @Test
+    public void testBulkPayloadTransfer() throws InterruptedException {
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .walletId(42L)
+                .timeout(60 * 60)
+                .wc(0L)
+                .build();
+
+        Wallet wallet = new Wallet(WalletVersion.highloadV3, options);
+        HighloadWalletV3 contract = wallet.create();
+
+        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
+        String bounceableAddress = contract.getAddress().toString(true, true, true);
+
+        log.info("non-bounceable address {}", nonBounceableAddress);
+        log.info("    bounceable address {}", bounceableAddress);
+        log.info("           raw address {}", contract.getAddress().toString(false));
+
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+        Utils.sleep(10, "topping up...");
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        contract.deploy(tonlib, keyPair.getSecretKey());
+
+        Utils.sleep(60, "deploying");
+
+        HighloadV3InternalMessageBody highloadV3InternalMessageBody =
+                HighloadV3InternalMessageBody.builder()
+                        .queryId(BigInteger.ZERO)
+                        .actions(OutList.builder()
+                                .action(ActionSendMsg.builder()
+                                        .mode((byte) 3)
+                                        .outMsgRef(MessageRelaxed.builder()
+                                                .info(InternalMessage.builder()
+                                                        .iHRDisabled(true)
+                                                        .bounce(true)
+                                                        .bounced(false)
+                                                        //.srcAddr(MsgAddress)
+                                                        .build())
+//                                                .init()
+//                                                .body()
+                                                .build())
+                                        .build())
+                                .build())
+                        .build();
+
+        HighloadV3Config config = HighloadV3Config
+                .builder()
+                .amount(BigInteger.valueOf(10000000))
+                .body(highloadV3InternalMessageBody.toCell(2))
                 .createdAt(Instant.now().getEpochSecond() - 10)
                 .destination(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
                 .mode((byte) 3)

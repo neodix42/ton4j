@@ -36,7 +36,7 @@ public class TestTlbMessageReader {
         Cell c = CellBuilder.fromBoc("b5ee9c724101020100860001b36800bf4c6bdca25797e55d700c1a5448e2af5d1ac16f9a9628719a4e1eb2b44d85e33fd104a366f6fb17799871f82e00e4f2eb8ae6aaf6d3e0b3fb346cd0208e23725e14094ba15d20071f12260000446ee17a9b0cc8c028d8c001004d8002b374733831aac3455708e8f1d2c7f129540b982d3a5de8325bf781083a8a3d2a04a7f943813277f3ea");
         Message message = Message.deserialize(CellSlice.beginParse(c));
         log.info("internalMessage {}", message);
-        InternalMessage internalMessage = (InternalMessage) message.getInfo().getMsg();
+        InternalMessage internalMessage = (InternalMessage) message.getInfo();
         assertThat(internalMessage.isIHRDisabled()).isTrue();
         assertThat(internalMessage.getValue().getCoins()).isEqualTo(BigInteger.valueOf(9980893000L));
         assertThat(internalMessage.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
@@ -70,11 +70,6 @@ public class TestTlbMessageReader {
                 .value(CurrencyCollection.builder().coins(Utils.toNano(0.5)).build())
                 .createdAt(5L)
                 .createdLt(BigInteger.TWO)
-//                .stateInit(StateInit.builder()
-//                        .code(CellBuilder.beginCell().endCell())
-//                        .data(CellBuilder.beginCell().endCell())
-//                        .build())
-//                .body(CellBuilder.beginCell().endCell())
                 .build();
 
         InternalMessage loadedInternalMessage = InternalMessage.deserialize(CellSlice.beginParse(internalMessage.toCell()));
@@ -95,8 +90,6 @@ public class TestTlbMessageReader {
                 .value(CurrencyCollection.builder().coins(Utils.toNano(0.5)).build())
                 .createdAt(5L)
                 .createdLt(BigInteger.TWO)
-//                .stateInit(null)
-//                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
                 .build();
 
         InternalMessage loadedMessage = InternalMessage.deserialize(CellSlice.beginParse(internalMessage.toCell()));
@@ -111,8 +104,6 @@ public class TestTlbMessageReader {
                 .srcAddr(MsgAddress.builder().magic(0).build())
                 .dstAddr(MsgAddress.builder().magic(0).build())
                 .importFee(BigInteger.TEN)
-//                .stateInit(null)
-//                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
                 .build();
 
         ExternalMessage loadedMessage = ExternalMessage.deserialize(CellSlice.beginParse(externalMessage.toCell()));
@@ -127,8 +118,6 @@ public class TestTlbMessageReader {
                 .dstAddr(MsgAddress.builder().magic(0).build())
                 .createdLt(BigInteger.TEN)
                 .createdAt(5L)
-//                .stateInit(null)
-//                .body(CellBuilder.beginCell().storeUint(369, 27).endCell())
                 .build();
 
         ExternalMessageOut loadedMessage = ExternalMessageOut.deserialize(CellSlice.beginParse(externalMessageOut.toCell()));
