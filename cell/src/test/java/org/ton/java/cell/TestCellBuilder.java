@@ -20,6 +20,7 @@ public class TestCellBuilder {
     public void testCellBuilderEmpty() {
         Cell c = CellBuilder.beginCell().endCell();
         assertThat(0).isEqualTo(c.bits.getUsedBits());
+        log.info("Hash {}", Utils.bytesToHex(c.getHash()));
         log.info(Utils.bytesToHex(c.toBoc(false)));
         log.info("CellType {}", c.getCellType());
     }

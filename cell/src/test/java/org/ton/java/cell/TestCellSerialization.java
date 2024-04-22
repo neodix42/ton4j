@@ -14,6 +14,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestCellSerialization {
 
     @Test
+    public void testCellSerialization0() {
+        Cell c1 = CellBuilder.beginCell().storeUint(17, 8).endCell();
+        Cell c2 = CellBuilder.beginCell().storeUint(42, 7).storeRef(c1).endCell();
+        log.info(Utils.bytesToHex(c1.hash()));
+        log.info(Utils.bytesToHex(c2.hash()));
+        log.info(Utils.bytesToHex(c2.toBoc()));
+    }
+
+    @Test
     public void testCellSerialization1() {
         Cell c0 = CellBuilder.beginCell().storeUint(17, 8).endCell();
         Cell c2 = CellBuilder.beginCell().storeUint(42, 7).storeRef(c0).endCell();

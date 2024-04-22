@@ -22,7 +22,6 @@ public class CellBuilder extends Cell {
 
 
     public static CellBuilder beginCell() {
-
         return new CellBuilder();
     }
 
@@ -30,7 +29,6 @@ public class CellBuilder extends Cell {
      * Create a cell with custom length of bit.
      */
     public static CellBuilder beginCell(int bitSize) {
-
         return new CellBuilder(bitSize);
     }
 

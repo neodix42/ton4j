@@ -56,6 +56,7 @@ public class Cell {
         this.levelMask = new LevelMask(0);
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
+        calculateHashes();
     }
 
     public Cell(int bitSize) {
@@ -65,6 +66,7 @@ public class Cell {
         this.levelMask = resolveMask();
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
+        calculateHashes();
     }
 
     public Cell(BitString bits, List<Cell> refs) {
@@ -76,6 +78,7 @@ public class Cell {
         this.levelMask = new LevelMask(0);
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
+        calculateHashes();
     }
 
     public Cell(BitString bits, List<Cell> refs, int cellType) {
@@ -87,6 +90,7 @@ public class Cell {
         this.levelMask = new LevelMask(0);
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
+        calculateHashes();
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, LevelMask levelMask) {
@@ -98,6 +102,7 @@ public class Cell {
         this.levelMask = levelMask;
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
+        calculateHashes();
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, CellType cellType) {
@@ -109,6 +114,7 @@ public class Cell {
         this.levelMask = resolveMask();
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
+        calculateHashes();
     }
 
     public Cell(BitString bits, int[] refsIndexes, CellType cellType) {
@@ -118,6 +124,7 @@ public class Cell {
         this.levelMask = new LevelMask(0);
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
+        calculateHashes();
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, CellType cellType) {
@@ -128,6 +135,7 @@ public class Cell {
         this.levelMask = resolveMask();
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
+        calculateHashes();
     }
 
     public static CellType toCellType(int cellType) {
@@ -173,87 +181,84 @@ public class Cell {
     }
 
     public void calculateHashes() {
-        try {
-            int totalHashCount = levelMask.getHashIndex() + 1;
-            int hashCount = totalHashCount;
-            if (type == CellType.PRUNED_BRANCH) {
-                hashCount = 1;
+
+        int totalHashCount = levelMask.getHashIndex() + 1;
+        int hashCount = totalHashCount;
+        if (type == CellType.PRUNED_BRANCH) {
+            hashCount = 1;
+        }
+        int hashIndexOffset = totalHashCount - hashCount;
+        int hashIndex = 0;
+        int level = levelMask.getLevel();
+
+        int off;
+
+        for (int li = 0; li < level + 1; li++) {
+            if (!levelMask.isSignificant(li)) {
+                continue;
             }
-            int hashIndexOffset = totalHashCount - hashCount;
-            int hashIndex = 0;
-            int level = levelMask.getLevel();
+            if (li < hashIndexOffset) {
+                hashIndex++;
+                continue;
+            }
+            byte[] dsc = getDescriptors(levelMask.apply(li).getLevel());
 
-            int off;
-
-            for (int li = 0; li < level + 1; li++) {
-                if (!levelMask.isSignificant(li)) {
-                    continue;
+            byte[] hash = new byte[0];
+            hash = Utils.concatBytes(hash, dsc);
+            System.out.println(Utils.bytesToHex(dsc));
+            System.out.println(Utils.sha256(hash));
+            if (hashIndex == hashIndexOffset) {
+                if ((li != 0) && (type == CellType.PRUNED_BRANCH)) {
+                    throw new Error("neither pruned nor 0");
                 }
-                if (li < hashIndexOffset) {
-                    hashIndex++;
-                    continue;
-                }
-                byte[] dsc = getDescriptors(levelMask.apply(li).getLevel());
-
-                byte[] hash = new byte[0];
-                hash = Utils.concatBytes(hash, dsc);
-                System.out.println(Utils.bytesToHex(dsc));
+                byte[] data = getDataBytes();
+                System.out.println(Utils.bytesToHex(data));
+                hash = Utils.concatBytes(hash, data);
                 System.out.println(Utils.sha256(hash));
-                if (hashIndex == hashIndexOffset) {
-                    if ((li != 0) && (type == CellType.PRUNED_BRANCH)) {
-                        throw new Error("neither pruned nor 0");
-                    }
-                    byte[] data = getDataBytes();
-                    System.out.println(Utils.bytesToHex(data));
-                    hash = Utils.concatBytes(hash, data);
+            } else {
+                if ((li != 0) && (type == CellType.PRUNED_BRANCH)) {
+                    throw new Error("neither pruned nor 0");
+                }
+                off = hashIndex - hashIndexOffset - 1;
+                hash = Utils.concatBytes(hash, Utils.hexToSignedBytes(hashes.get(off)));
+                System.out.println(Utils.sha256(hash));
+            }
+            int depth = 0;
+
+            for (Cell r : refs) {
+                int refDepth;
+                if ((type == CellType.MERKLE_PROOF) || (type == CellType.MERKLE_UPDATE)) {
+                    refDepth = r.getDepth(li + 1);
+                } else {
+                    refDepth = r.getDepth(li);
+                }
+
+                hash = Utils.concatBytes(hash, Utils.intToByteArray(refDepth));
+                System.out.println(Utils.sha256(hash));
+                if (refDepth > depth) {
+                    depth = refDepth;
+                }
+            }
+            if (refs.size() > 0) {
+                depth++;
+                if (depth >= 1024) {
+                    throw new Error("depth is more than max depth (1023)");
+                }
+            }
+
+            for (Cell r : refs) {
+                if ((type == CellType.MERKLE_PROOF) || (type == CellType.MERKLE_UPDATE)) {
+                    hash = Utils.concatBytes(hash, r.getHash(li + 1));
                     System.out.println(Utils.sha256(hash));
                 } else {
-                    if ((li != 0) && (type == CellType.PRUNED_BRANCH)) {
-                        throw new Error("neither pruned nor 0");
-                    }
-                    off = hashIndex - hashIndexOffset - 1;
-                    hash = Utils.concatBytes(hash, Utils.hexToSignedBytes(hashes.get(off)));
+                    hash = Utils.concatBytes(hash, r.getHash(li));
                     System.out.println(Utils.sha256(hash));
                 }
-                int depth = 0;
-
-                for (Cell r : refs) {
-                    int refDepth;
-                    if ((type == CellType.MERKLE_PROOF) || (type == CellType.MERKLE_UPDATE)) {
-                        refDepth = r.getDepth(li + 1);
-                    } else {
-                        refDepth = r.getDepth(li);
-                    }
-
-                    hash = Utils.concatBytes(hash, Utils.intToByteArray(refDepth));
-                    System.out.println(Utils.sha256(hash));
-                    if (refDepth > depth) {
-                        depth = refDepth;
-                    }
-                }
-                if (refs.size() > 0) {
-                    depth++;
-                    if (depth >= 1024) {
-                        throw new Error("depth is more than max depth (1023)");
-                    }
-                }
-
-                for (Cell r : refs) {
-                    if ((type == CellType.MERKLE_PROOF) || (type == CellType.MERKLE_UPDATE)) {
-                        hash = Utils.concatBytes(hash, r.getHash(li + 1));
-                        System.out.println(Utils.sha256(hash));
-                    } else {
-                        hash = Utils.concatBytes(hash, r.getHash(li));
-                        System.out.println(Utils.sha256(hash));
-                    }
-                }
-                off = hashIndex - hashIndexOffset;
-                depths.add(depth);
-                hashes.add(Utils.sha256(hash));
-                hashIndex++;
             }
-        } catch (Exception e) {
-            throw new Error("Can't calculate hashes");
+            off = hashIndex - hashIndexOffset;
+            depths.add(depth);
+            hashes.add(Utils.sha256(hash));
+            hashIndex++;
         }
     }
 
@@ -471,7 +476,7 @@ public class Cell {
     }
 
     private static Boc deserializeBocHeader(byte[] data) {
-        Cell rawCell = CellBuilder.beginCell(data.length * 8).storeBytes(data); // no calculateHashes
+        Cell rawCell = CellBuilder.beginCell(data.length * 8).storeBytes(data);
         CellSlice cs = CellSlice.beginParse(rawCell);
         Boc boc = Boc.builder()
                 .magic(cs.loadUint(32).longValue())
@@ -558,9 +563,7 @@ public class Cell {
     }
 
     public byte[] hash() {
-//        return getHash();
-        byte[] repr = getRepr();
-        return Utils.sha256AsArray(repr);
+        return getHash();
     }
 
     public byte[] getHash() {
@@ -604,9 +607,12 @@ public class Cell {
     }
 
     byte[] getBitsDescriptor() {
-        byte[] d2 = new byte[1];
-        d2[0] = (byte) (Math.ceil(isNull(bits) ? 0 : bits.getUsedBits() / (double) 8) + Math.floor(isNull(bits) ? 0 : bits.getUsedBits() / (double) 8));
-        return d2;
+        int bitsLength = bits.getLength();
+        byte d3 = (byte) (Math.floor((double) bitsLength / 8) * 2);
+        if ((bitsLength % 8) != 0) {
+            d3++;
+        }
+        return new byte[]{d3};
     }
 
     byte[] getDataWithDescriptors() {
@@ -707,66 +713,63 @@ public class Cell {
     }
 
     private List<Cell> flattenIndex(List<Cell> src) {
-        try {
-            List<Cell> pending = src;
-            Map<String, Cell> allCells = new HashMap<>();
-            Map<String, Cell> notPermCells = new HashMap<>();
 
-            Deque<String> sorted = new ArrayDeque<>();
+        List<Cell> pending = src;
+        Map<String, Cell> allCells = new HashMap<>();
+        Map<String, Cell> notPermCells = new HashMap<>();
 
-            while (pending.size() > 0) {
-                List<Cell> cells = new ArrayList<>(pending);
-                pending = new ArrayList<>();
+        Deque<String> sorted = new ArrayDeque<>();
 
-                for (Cell cell : cells) {
-                    String hash = Utils.bytesToHex(cell.hash());
-                    if (allCells.containsKey(hash)) {
-                        continue;
-                    }
-                    notPermCells.put(hash, null);
-                    allCells.put(hash, cell);
+        while (pending.size() > 0) {
+            List<Cell> cells = new ArrayList<>(pending);
+            pending = new ArrayList<>();
 
-                    pending.addAll(cell.refs);
+            for (Cell cell : cells) {
+                String hash = Utils.bytesToHex(cell.hash());
+                if (allCells.containsKey(hash)) {
+                    continue;
                 }
-            }
+                notPermCells.put(hash, null);
+                allCells.put(hash, cell);
 
-            Map<String, Boolean> tempMark = new HashMap<>();
-            while (notPermCells.size() > 0) {
-                for (String key : notPermCells.keySet()) {
-                    visit(key, allCells, notPermCells, tempMark, sorted);
-                    break;
-                }
+                pending.addAll(cell.refs);
             }
-
-            Map<String, Integer> indexes = new HashMap<>();
-
-            Deque<String> tmpSorted = new ArrayDeque<>(sorted);
-            int len = tmpSorted.size();
-            for (int i = 0; i < len; i++) {
-                indexes.put(tmpSorted.pop(), i);
-            }
-            int x = 0;
-            for (String ignored : indexes.keySet()) {
-                x++;
-                if (x > 3) {
-                    break;
-                }
-            }
-
-            List<Cell> result = new ArrayList<>();
-            for (String ent : sorted) {
-                Cell rrr = allCells.get(ent);
-                rrr.index = indexes.get(Utils.bytesToHex(rrr.hash()));
-                for (Cell ref : rrr.refs) {
-                    ref.index = indexes.get(Utils.bytesToHex(ref.hash()));
-                }
-                result.add(rrr);
-            }
-
-            return result;
-        } catch (Exception e) {
-            return null;
         }
+
+        Map<String, Boolean> tempMark = new HashMap<>();
+        while (notPermCells.size() > 0) {
+            for (String key : notPermCells.keySet()) {
+                visit(key, allCells, notPermCells, tempMark, sorted);
+                break;
+            }
+        }
+
+        Map<String, Integer> indexes = new HashMap<>();
+
+        Deque<String> tmpSorted = new ArrayDeque<>(sorted);
+        int len = tmpSorted.size();
+        for (int i = 0; i < len; i++) {
+            indexes.put(tmpSorted.pop(), i);
+        }
+        int x = 0;
+        for (String ignored : indexes.keySet()) {
+            x++;
+            if (x > 3) {
+                break;
+            }
+        }
+
+        List<Cell> result = new ArrayList<>();
+        for (String ent : sorted) {
+            Cell rrr = allCells.get(ent);
+            rrr.index = indexes.get(Utils.bytesToHex(rrr.hash()));
+            for (Cell ref : rrr.refs) {
+                ref.index = indexes.get(Utils.bytesToHex(ref.hash()));
+            }
+            result.add(rrr);
+        }
+
+        return result;
     }
 
     private void visit(String hash, Map<String, Cell> allCells, Map<String, Cell> notPermCells, Map<String, Boolean> tempMark, Deque<String> sorted) {
