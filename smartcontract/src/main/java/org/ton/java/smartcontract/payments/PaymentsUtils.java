@@ -1,10 +1,9 @@
 package org.ton.java.smartcontract.payments;
 
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 
 import java.math.BigInteger;
-
-import static java.util.Objects.nonNull;
 
 public class PaymentsUtils {
     public static final long tag_init = 0x696e6974;
@@ -25,153 +24,127 @@ public class PaymentsUtils {
     public static final long op_finish_uncooperative_close = 625158801; // crc32("finish_uncooperative_close = InternalMsgBody");
     public static final long op_channel_closed = -572749638; // crc32("channel_closed channel_id:uint128 = InternalMsgBody");
 
-    public static void writePublicKey(Cell cell, byte[] publicKey) {
-        if (publicKey.length != 256 / 8) {
-            throw new Error("invalid publicKey length");
-        }
-        cell.bits.writeBytes(publicKey);
-    }
-
-    public static void writeSignature(Cell cell, byte[] signature) {
-        if (signature.length != 512 / 8) {
-            throw new Error("invalid signature length");
-        }
-        cell.bits.writeBytes(signature);
-    }
-
     public static Cell createSignatureCell(byte[] signature) {
-        Cell cell = new Cell();
-        writeSignature(cell, signature);
-        return cell;
-    }
-
-    public static void writeMayBe(Cell cell, Cell ref) {
-        if (nonNull(ref)) {
-            cell.bits.writeBit(true);
-            if (cell.refs.size() >= 4) {
-                throw new Error("refs overflow");
-            }
-            cell.refs.add(ref);
-        } else {
-            cell.bits.writeBit(false);
-        }
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeBytes(signature);
+        return cell.endCell();
     }
 
     public static Cell createTopUpBalance(BigInteger coinsA, BigInteger coinsB) {
-        Cell cell = new Cell();
-        cell.bits.writeUint(op_top_up_balance, 32); // OP
-        cell.bits.writeCoins(coinsA);
-        cell.bits.writeCoins(coinsB);
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(op_top_up_balance, 32); // OP
+        cell.storeCoins(coinsA);
+        cell.storeCoins(coinsB);
+        return cell.endCell();
     }
 
     public static Cell createInitChannelBody(BigInteger channelId, BigInteger balanceA, BigInteger balanceB) {
-        Cell cell = new Cell();
-        cell.bits.writeUint(tag_init, 32); // 0x696e6974
-        cell.bits.writeUint(channelId, 128);
-        cell.bits.writeCoins(balanceA);
-        cell.bits.writeCoins(balanceB);
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(tag_init, 32); // 0x696e6974
+        cell.storeUint(channelId, 128);
+        cell.storeCoins(balanceA);
+        cell.storeCoins(balanceB);
+        return cell.endCell();
     }
 
     public static Cell createCooperativeCloseChannelBody(BigInteger channelId, BigInteger balanceA, BigInteger balanceB, BigInteger seqnoA, BigInteger seqnoB) {
-        Cell cell = new Cell();
-        cell.bits.writeUint(tag_cooperative_close, 32);
-        cell.bits.writeUint(channelId, 128);
-        cell.bits.writeCoins(balanceA);
-        cell.bits.writeCoins(balanceB);
-        cell.bits.writeUint(seqnoA, 64);
-        cell.bits.writeUint(seqnoB, 64);
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(tag_cooperative_close, 32);
+        cell.storeUint(channelId, 128);
+        cell.storeCoins(balanceA);
+        cell.storeCoins(balanceB);
+        cell.storeUint(seqnoA, 64);
+        cell.storeUint(seqnoB, 64);
+        return cell.endCell();
     }
 
     public static Cell createCooperativeCommitBody(BigInteger channelId, BigInteger seqnoA, BigInteger seqnoB) {
-        Cell cell = new Cell();
-        cell.bits.writeUint(tag_cooperative_commit, 32);
-        cell.bits.writeUint(channelId, 128);
-        cell.bits.writeUint(seqnoA, 64);
-        cell.bits.writeUint(seqnoB, 64);
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(tag_cooperative_commit, 32);
+        cell.storeUint(channelId, 128);
+        cell.storeUint(seqnoA, 64);
+        cell.storeUint(seqnoB, 64);
+        return cell.endCell();
     }
 
     public static Cell createConditionalPayment(BigInteger amount, Cell condition) {
-        Cell cell = new Cell();
-        cell.bits.writeCoins(amount);
-        cell.writeCell(condition);
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeCoins(amount);
+        cell.storeCell(condition);
+        return cell.endCell();
     }
 
     public static Cell createSemiChannelBody(BigInteger seqno, BigInteger sentCoins, Cell conditionals) {
-        Cell cell = new Cell();
-        cell.bits.writeUint(seqno, 64); // body start
-        cell.bits.writeCoins(sentCoins);
-        writeMayBe(cell, conditionals);  // HashmapE 32 ConditionalPayment
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(seqno, 64); // body start
+        cell.storeCoins(sentCoins);
+        cell.storeRefMaybe(conditionals);
+        return cell.endCell();
     }
 
     public static Cell createSemiChannelState(BigInteger channelId, Cell semiChannelBody, Cell counterpartySemiChannelBody) {
-        Cell cell = new Cell();
-        cell.bits.writeUint(tag_state, 32);
-        cell.bits.writeUint(channelId, 128);
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(tag_state, 32);
+        cell.storeUint(channelId, 128);
         cell.writeCell(semiChannelBody);
-        writeMayBe(cell, counterpartySemiChannelBody);
-        return cell;
+        cell.storeRefMaybe(counterpartySemiChannelBody);
+        return cell.endCell();
     }
 
     public static Cell createSignedSemiChannelState(byte[] signature, Cell state) {
-        Cell cell = new Cell();
-        writeSignature(cell, signature);
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeBytes(signature);
         cell.writeCell(state);
-        return cell;
+        return cell.endCell();
     }
 
     public static Cell createStartUncooperativeCloseBody(BigInteger channelId, Cell signedSemiChannelStateA, Cell signedSemiChannelStateB) {
-        Cell cell = new Cell();
-        cell.bits.writeUint(tag_start_uncooperative_close, 32);
-        cell.bits.writeUint(channelId, 128);
-        cell.refs.add(signedSemiChannelStateA);
-        cell.refs.add(signedSemiChannelStateB);
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(tag_start_uncooperative_close, 32);
+        cell.storeUint(channelId, 128);
+        cell.storeRef(signedSemiChannelStateA);
+        cell.storeRef(signedSemiChannelStateB);
+        return cell.endCell();
     }
 
     public static Cell createChallengeQuarantinedStateBody(BigInteger channelId, Cell signedSemiChannelStateA, Cell signedSemiChannelStateB) {
-        Cell cell = new Cell();
-        cell.bits.writeUint(tag_challenge_state, 32);
-        cell.bits.writeUint(channelId, 128);
-        cell.refs.add(signedSemiChannelStateA);
-        cell.refs.add(signedSemiChannelStateB);
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(tag_challenge_state, 32);
+        cell.storeUint(channelId, 128);
+        cell.storeRef(signedSemiChannelStateA);
+        cell.storeRef(signedSemiChannelStateB);
+        return cell.endCell();
     }
 
     public static Cell createSettleConditionalsBody(BigInteger channelId, Cell conditionalsToSettle) {
-        Cell cell = new Cell();
-        cell.bits.writeUint(tag_settle_conditionals, 32);
-        cell.bits.writeUint(channelId, 128);
-        writeMayBe(cell, conditionalsToSettle); // HashmapE 32 Cell
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(tag_settle_conditionals, 32);
+        cell.storeUint(channelId, 128);
+        cell.storeRefMaybe(conditionalsToSettle);
+        return cell.endCell();
     }
 
     public static Cell createFinishUncooperativeClose() {
-        Cell cell = new Cell();
-        cell.bits.writeUint(op_finish_uncooperative_close, 32); // OP
-        return cell;
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(op_finish_uncooperative_close, 32); // OP
+        return cell.endCell();
     }
 
     public static Cell createOneSignature(long op, boolean isA, byte[] signature, Cell cell) {
-        Cell c = new Cell();
-        c.bits.writeUint(op, 32); // OP
-        c.bits.writeBit(isA);
-        writeSignature(c, signature);
-        c.writeCell(cell);
-        return c;
+        CellBuilder c = CellBuilder.beginCell();
+        c.storeUint(op, 32); // OP
+        c.storeBit(isA);
+        c.storeBytes(signature);
+        c.storeCell(cell);
+        return c.endCell();
     }
 
     public static Cell createTwoSignature(long op, byte[] signatureA, byte[] signatureB, Cell cell) {
-        Cell c = new Cell();
-        c.bits.writeUint(op, 32); // OP
-        c.refs.add(createSignatureCell(signatureA));
-        c.refs.add(createSignatureCell(signatureB));
-        c.writeCell(cell);
-        return c;
+        CellBuilder c = CellBuilder.beginCell();
+        c.storeUint(op, 32); // OP
+        c.storeRef(createSignatureCell(signatureA));
+        c.storeRef(createSignatureCell(signatureB));
+        c.storeCell(cell);
+        return c.endCell();
     }
 }

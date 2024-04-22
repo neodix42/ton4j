@@ -298,6 +298,10 @@ public class Cell {
         return bits.toHex();
     }
 
+    public int getBitLength() {
+        return bits.toBitString().length();
+    }
+
     public Cell clone() {
         Cell c = new Cell();
         c.bits = this.bits.clone();
@@ -550,10 +554,38 @@ public class Cell {
         return Utils.bytesToHex(toBoc(withCrc));
     }
 
+    /**
+     * BoC to hex
+     *
+     * @return
+     */
     public String toHex() {
         return Utils.bytesToHex(toBoc(true));
     }
 
+    /**
+     * BitString of Cell to hex
+     *
+     * @return
+     */
+    public String bitStringToHex() {
+        return bits.toHex();
+    }
+
+    /**
+     * BitString to string of bits
+     *
+     * @return
+     */
+    public String toBitString() {
+        return bits.toBitString();
+    }
+
+    /**
+     * BoC to Base64 with crc32
+     *
+     * @return
+     */
     public String toBase64() {
         return Utils.bytesToBase64(toBoc(true));
     }

@@ -85,37 +85,37 @@ public class PaymentChannel implements WalletContract {
 
     @Override
     public Cell createDataCell() {
-        Cell cell = new Cell();
-        cell.bits.writeBit(false); // inited
-        cell.bits.writeCoins(BigInteger.ZERO); // balance_A
-        cell.bits.writeCoins(BigInteger.ZERO); // balance_B
-        writePublicKey(cell, getOptions().publicKeyA); // key_A
-        writePublicKey(cell, getOptions().publicKeyB); // key_B
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeBit(false); // inited
+        cell.storeCoins(BigInteger.ZERO); // balance_A
+        cell.storeCoins(BigInteger.ZERO); // balance_B
+        cell.storeBytes(getOptions().publicKeyA);
+        cell.storeBytes(getOptions().publicKeyB);
         cell.bits.writeUint(getOptions().getChannelConfig().getChannelId(), 128); // channel_id
 
-        Cell closingConfig = new Cell();
+        CellBuilder closingConfig = CellBuilder.beginCell();
         if (nonNull(getOptions().getClosingConfig())) {
-            closingConfig.bits.writeUint(getOptions().getClosingConfig().quarantineDuration, 32); // quarantine_duration
-            closingConfig.bits.writeCoins(isNull(getOptions().getClosingConfig().misbehaviorFine) ? BigInteger.ZERO : getOptions().getClosingConfig().misbehaviorFine); // misbehavior_fine
-            closingConfig.bits.writeUint(getOptions().getClosingConfig().conditionalCloseDuration, 32); // conditional_close_duration
+            closingConfig.storeUint(getOptions().getClosingConfig().quarantineDuration, 32); // quarantine_duration
+            closingConfig.storeCoins(isNull(getOptions().getClosingConfig().misbehaviorFine) ? BigInteger.ZERO : getOptions().getClosingConfig().misbehaviorFine); // misbehavior_fine
+            closingConfig.storeUint(getOptions().getClosingConfig().conditionalCloseDuration, 32); // conditional_close_duration
         } else {
-            closingConfig.bits.writeUint(0, 32); // quarantine_duration
-            closingConfig.bits.writeCoins(BigInteger.ZERO); // misbehavior_fine
-            closingConfig.bits.writeUint(0, 32); // conditional_close_duration
+            closingConfig.storeUint(0, 32); // quarantine_duration
+            closingConfig.storeCoins(BigInteger.ZERO); // misbehavior_fine
+            closingConfig.storeUint(0, 32); // conditional_close_duration
         }
-        cell.refs.add(closingConfig);
+        cell.storeRef(closingConfig);
 
-        cell.bits.writeUint(0, 32); // committed_seqno_A
-        cell.bits.writeUint(0, 32); // committed_seqno_B
-        cell.bits.writeBit(false); // quarantine ref
+        cell.storeUint(0, 32); // committed_seqno_A
+        cell.storeUint(0, 32); // committed_seqno_B
+        cell.storeBit(false); // quarantine ref
 
-        Cell paymentConfig = new Cell();
-        paymentConfig.bits.writeCoins(isNull(getOptions().excessFee) ? BigInteger.ZERO : getOptions().excessFee); // excess_fee
-        paymentConfig.bits.writeAddress(getOptions().getChannelConfig().getAddressA()); // addr_A
-        paymentConfig.bits.writeAddress(getOptions().getChannelConfig().getAddressB()); // addr_B
-        cell.refs.add(paymentConfig);
+        CellBuilder paymentConfig = CellBuilder.beginCell();
+        paymentConfig.storeCoins(isNull(getOptions().excessFee) ? BigInteger.ZERO : getOptions().excessFee); // excess_fee
+        paymentConfig.storeAddress(getOptions().getChannelConfig().getAddressA()); // addr_A
+        paymentConfig.storeAddress(getOptions().getChannelConfig().getAddressB()); // addr_B
+        cell.storeRef(paymentConfig);
 
-        return cell;
+        return cell.endCell();
     }
 
     public Signature createOneSignature(long op, Cell cellForSigning) {

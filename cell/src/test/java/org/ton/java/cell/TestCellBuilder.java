@@ -25,37 +25,6 @@ public class TestCellBuilder {
         log.info("CellType {}", c.getCellType());
     }
 
-    @Test
-    public void testCellBuilderSingleBit() {
-        Cell c = CellBuilder.beginCell()
-                .storeBit(true)
-                .endCell();
-
-        Cell r = new Cell();
-        r.bits.writeBit(true);
-        assertThat(r.bits.toBitString()).isEqualTo(c.bits.toBitString());
-    }
-
-    @Test
-    public void testCellBuilderMultipleBits() {
-        Cell c = CellBuilder.beginCell()
-                .storeBit(true)
-                .storeBit(false)
-                .storeBit(false)
-                .storeBit(true)
-                .storeBit(false)
-                .endCell();
-
-        Cell r = new Cell();
-        r.bits.writeBit(true);
-        r.bits.writeBit(false);
-        r.bits.writeBit(false);
-        r.bits.writeBit(true);
-        r.bits.writeBit(false);
-
-        assertThat(r.bits.toBitString()).isEqualTo(c.bits.toBitString());
-    }
-
     @Test(expected = java.lang.Error.class)
     public void testCellTooManyBitsAdded() {
         CellBuilder cellBuilder = CellBuilder.beginCell().storeUint(0, 2000);
@@ -67,40 +36,40 @@ public class TestCellBuilder {
     @Test
     public void testCellBuilderNumber() {
         //uint
-        assertThat(CellBuilder.beginCell().storeUint(42, 7).endCell().bits.toHex()).isEqualTo("55_");
-        assertThat(CellBuilder.beginCell().storeUint(0, 8).endCell().bits.toHex()).isEqualTo("00");
-        assertThat(CellBuilder.beginCell().storeUint(1, 8).endCell().bits.toHex()).isEqualTo("01");
-        assertThat(CellBuilder.beginCell().storeUint(5, 8).endCell().bits.toHex()).isEqualTo("05");
-        assertThat(CellBuilder.beginCell().storeUint(33, 8).endCell().bits.toHex()).isEqualTo("21");
-        assertThat(CellBuilder.beginCell().storeUint(127, 8).endCell().bits.toHex()).isEqualTo("7F");
-        assertThat(CellBuilder.beginCell().storeUint(128, 8).endCell().bits.toHex()).isEqualTo("80");
-        assertThat(CellBuilder.beginCell().storeUint(255, 8).endCell().bits.toHex()).isEqualTo("FF");
-        assertThat(CellBuilder.beginCell().storeUint(256, 9).endCell().bits.toHex()).isEqualTo("804_");
+        assertThat(CellBuilder.beginCell().storeUint(42, 7).endCell().bitStringToHex()).isEqualTo("55_");
+        assertThat(CellBuilder.beginCell().storeUint(0, 8).endCell().bitStringToHex()).isEqualTo("00");
+        assertThat(CellBuilder.beginCell().storeUint(1, 8).endCell().bitStringToHex()).isEqualTo("01");
+        assertThat(CellBuilder.beginCell().storeUint(5, 8).endCell().bitStringToHex()).isEqualTo("05");
+        assertThat(CellBuilder.beginCell().storeUint(33, 8).endCell().bitStringToHex()).isEqualTo("21");
+        assertThat(CellBuilder.beginCell().storeUint(127, 8).endCell().bitStringToHex()).isEqualTo("7F");
+        assertThat(CellBuilder.beginCell().storeUint(128, 8).endCell().bitStringToHex()).isEqualTo("80");
+        assertThat(CellBuilder.beginCell().storeUint(255, 8).endCell().bitStringToHex()).isEqualTo("FF");
+        assertThat(CellBuilder.beginCell().storeUint(256, 9).endCell().bitStringToHex()).isEqualTo("804_");
 
         //int
-        assertThat(CellBuilder.beginCell().storeInt(127, 8).endCell().bits.toHex()).isEqualTo("7F");
-        assertThat(CellBuilder.beginCell().storeInt(0, 8).endCell().bits.toHex()).isEqualTo("00");
-        assertThat(CellBuilder.beginCell().storeInt(-1, 8).endCell().bits.toHex()).isEqualTo("FF");
-        assertThat(CellBuilder.beginCell().storeInt(-5, 8).endCell().bits.toHex()).isEqualTo("FB");
-        assertThat(CellBuilder.beginCell().storeInt(-33, 8).endCell().bits.toHex()).isEqualTo("DF");
-        assertThat(CellBuilder.beginCell().storeInt(-127, 8).endCell().bits.toHex()).isEqualTo("81");
-        assertThat(CellBuilder.beginCell().storeInt(-128, 8).endCell().bits.toHex()).isEqualTo("80");
-        assertThat(CellBuilder.beginCell().storeInt(-129, 9).endCell().bits.toHex()).isEqualTo("BFC_");
-        assertThat(CellBuilder.beginCell().storeInt(17239, 16).endCell().bits.toHex()).isEqualTo("4357");
-        assertThat(CellBuilder.beginCell().storeInt(-17, 11).endCell().bits.toHex()).isEqualTo("FDF_");
-        assertThat(CellBuilder.beginCell().storeInt((short) -17, 11).endCell().bits.toHex()).isEqualTo("FDF_");
-        assertThat(CellBuilder.beginCell().storeInt((byte) -17, 11).endCell().bits.toHex()).isEqualTo("FDF_");
-        assertThat(CellBuilder.beginCell().storeInt(1000000239, 32).endCell().bits.toHex()).isEqualTo("3B9ACAEF");
+        assertThat(CellBuilder.beginCell().storeInt(127, 8).endCell().bitStringToHex()).isEqualTo("7F");
+        assertThat(CellBuilder.beginCell().storeInt(0, 8).endCell().bitStringToHex()).isEqualTo("00");
+        assertThat(CellBuilder.beginCell().storeInt(-1, 8).endCell().bitStringToHex()).isEqualTo("FF");
+        assertThat(CellBuilder.beginCell().storeInt(-5, 8).endCell().bitStringToHex()).isEqualTo("FB");
+        assertThat(CellBuilder.beginCell().storeInt(-33, 8).endCell().bitStringToHex()).isEqualTo("DF");
+        assertThat(CellBuilder.beginCell().storeInt(-127, 8).endCell().bitStringToHex()).isEqualTo("81");
+        assertThat(CellBuilder.beginCell().storeInt(-128, 8).endCell().bitStringToHex()).isEqualTo("80");
+        assertThat(CellBuilder.beginCell().storeInt(-129, 9).endCell().bitStringToHex()).isEqualTo("BFC_");
+        assertThat(CellBuilder.beginCell().storeInt(17239, 16).endCell().bitStringToHex()).isEqualTo("4357");
+        assertThat(CellBuilder.beginCell().storeInt(-17, 11).endCell().bitStringToHex()).isEqualTo("FDF_");
+        assertThat(CellBuilder.beginCell().storeInt((short) -17, 11).endCell().bitStringToHex()).isEqualTo("FDF_");
+        assertThat(CellBuilder.beginCell().storeInt((byte) -17, 11).endCell().bitStringToHex()).isEqualTo("FDF_");
+        assertThat(CellBuilder.beginCell().storeInt(1000000239, 32).endCell().bitStringToHex()).isEqualTo("3B9ACAEF");
 
-        assertThat(CellBuilder.beginCell().storeInt(1000000239L * 1000000239, 91).endCell().bits.toHex()).isEqualTo("00000001BC16E45E4D41643_");
-        assertThat(CellBuilder.beginCell().storeInt(new BigInteger("-1000000000000000000000000239"), 91).endCell().bits.toHex()).isEqualTo("989A386C05EFF862FFFFE23_");
+        assertThat(CellBuilder.beginCell().storeInt(1000000239L * 1000000239, 91).endCell().bitStringToHex()).isEqualTo("00000001BC16E45E4D41643_");
+        assertThat(CellBuilder.beginCell().storeInt(new BigInteger("-1000000000000000000000000239"), 91).endCell().bitStringToHex()).isEqualTo("989A386C05EFF862FFFFE23_");
     }
 
     @Test(expected = java.lang.Error.class)
     public void testCellBuilderFailures() {
-        assertThat(CellBuilder.beginCell().storeUint(256, 8).endCell().bits.toHex()).isEqualTo("804_");
-        assertThat(CellBuilder.beginCell().storeUint(-1, 8).endCell().bits.toHex()).isEqualTo("804_");
-        assertThat(CellBuilder.beginCell().storeUint(-129, 91).endCell().bits.toHex()).isEqualTo("804_");
+        assertThat(CellBuilder.beginCell().storeUint(256, 8).endCell().bitStringToHex()).isEqualTo("804_");
+        assertThat(CellBuilder.beginCell().storeUint(-1, 8).endCell().bitStringToHex()).isEqualTo("804_");
+        assertThat(CellBuilder.beginCell().storeUint(-129, 91).endCell().bitStringToHex()).isEqualTo("804_");
     }
 
     @Test
@@ -111,14 +80,14 @@ public class TestCellBuilder {
                 .storeUint(1, 8)
                 .storeUint(69, 64)
                 .endCell();
-        assertThat(c.bits.toHex()).isEqualTo("000001010000000000000045");
+        assertThat(c.bitStringToHex()).isEqualTo("000001010000000000000045");
     }
 
     @Test
     public void testCellBuilderRefs() {
         Cell c1 = CellBuilder.beginCell().storeUint(0, 8).endCell();
         Cell c2 = CellBuilder.beginCell().storeUint(42, 7).storeInt(10, 5).storeRef(c1).endCell();
-        log.info(c2.bits.toHex());
+        log.info(c2.bitStringToHex());
     }
 
     @Test
@@ -138,14 +107,6 @@ public class TestCellBuilder {
                 .storeRef(c2)
                 .storeRefs(c3, c4)
                 .endCell();
-
-        log.info("c1 {}", c1.bits);
-        log.info("c2 {}", c2.bits);
-        log.info("c2:\n{}", c2.print());
-        log.info("c3 {}", c3.bits);
-        log.info("c4 {}", c4.bits);
-        log.info("c5 {}", c5.bits);
-        log.info("c5:\n{}", c5.print());
 
         assertThat(c5.getUsedRefs()).isEqualTo(3);
 
