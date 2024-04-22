@@ -124,6 +124,10 @@ public class CellSlice {
         return cell;
     }
 
+    public int getRefsCount() {
+        return refs.size();
+    }
+
     public CellSlice skipRefs(int length) {
         if (length > 0) {
             refs.subList(0, length).clear();
@@ -158,7 +162,7 @@ public class CellSlice {
     public TonHashMap loadDict(int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
         TonHashMap x = new TonHashMap(n);
         x.deserialize(this, keyParser, valueParser);
-        // move readRefCursor
+
         if (refs.size() != 0) {
             refs.remove(0);
         }
@@ -175,7 +179,7 @@ public class CellSlice {
     public TonHashMapAug loadDictAug(int n, Function<BitString, Object> keyParser, Function<CellSlice, Object> valueParser, Function<CellSlice, Object> extraParser) {
         TonHashMapAug x = new TonHashMapAug(n);
         x.deserialize(this, keyParser, valueParser, extraParser);
-        // move readRefCursor
+
         if (refs.size() != 0) {
             refs.remove(0);
         }
@@ -267,14 +271,6 @@ public class CellSlice {
         }
     }
 
-//    public TonHashMapE loadDictE(int n, Function<Cell, Object> keyParser, Function<Cell, Object> valueParser) {
-//
-//        TonHashMapE hashMap = new TonHashMapE(n);
-//        Cell c = this.loadRef();
-//        hashMap.loadHashMapX2Y(c, keyParser, valueParser);
-//        return hashMap;
-//    }
-
     public CellSlice skipDictE() {
         boolean isEmpty = loadBit();
         return isEmpty ? skipRefs(1) : this;
@@ -342,10 +338,11 @@ public class CellSlice {
      * @param length in bits
      * @return unsigned byte array
      */
-    public int[] loadBytes(int length) {
+    public byte[] loadBytes(int length) {
         checkBitsOverflow(length);
         BitString bitString = bits.readBits(length);
-        return bitString.toUnsignedByteArray();
+//        return bitString.toUnsignedByteArray();
+        return bitString.toByteArray();
     }
 
     public List<BigInteger> loadList(int elementNum, int elementBitLength) {

@@ -29,7 +29,7 @@ public class ActionReserveCurrency implements OutAction {
                 .endCell();
     }
 
-    static ActionReserveCurrency deserialize(CellSlice cs) {
+    public static ActionReserveCurrency deserialize(CellSlice cs) {
         return ActionReserveCurrency.builder()
                 .magic(cs.loadUint(32).intValue())
                 .mode(cs.loadUint(8).intValue())

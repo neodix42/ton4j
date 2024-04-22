@@ -7,7 +7,6 @@ import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.utils.Utils;
 
 import java.util.Arrays;
 
@@ -91,8 +90,8 @@ public class Text {
             if (i == 0) {
                 firstSize = lengthOfChunk;
             }
-            int[] dataOfChunk = cs.loadBytes(lengthOfChunk * 8);
-            result.append(new String(Utils.unsignedBytesToSigned(dataOfChunk)));
+            byte[] dataOfChunk = cs.loadBytes(lengthOfChunk * 8);
+            result.append(new String(dataOfChunk));
 
             if (i < chunksNum - 1) {
                 cs = CellSlice.beginParse(cs.loadRef());

@@ -39,7 +39,7 @@ public class DbBlockInfo {
     BlockIdExt nextRight;
     BigInteger lt;
     BigInteger ts;
-    int[] state;
+    byte[] state;
     BigInteger masterChainRefSeqNo;
 
     private String getMagic() {
@@ -68,7 +68,7 @@ public class DbBlockInfo {
         dbBlockInfo.setNextRight(flags.testBit(4) ? BlockIdExt.deserialize(cs) : null);
         dbBlockInfo.setLt(flags.testBit(13) ? BigInteger.valueOf(Long.reverseBytes(cs.loadUint(64).longValue())) : null);
         dbBlockInfo.setTs(flags.testBit(14) ? BigInteger.valueOf(Integer.reverseBytes(cs.loadUint(32).intValue())) : null);
-        dbBlockInfo.setState(flags.testBit(17) ? Utils.reverseIntArray(cs.loadBytes(256)) : null);
+        dbBlockInfo.setState(flags.testBit(17) ? Utils.reverseByteArray(cs.loadBytes(256)) : null);
         dbBlockInfo.setMasterChainRefSeqNo(flags.testBit(23) ? BigInteger.valueOf(Integer.reverseBytes(cs.loadUint(32).intValue())) : null);
         return dbBlockInfo;
     }

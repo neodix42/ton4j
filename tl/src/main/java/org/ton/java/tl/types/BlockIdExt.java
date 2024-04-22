@@ -24,8 +24,8 @@ public class BlockIdExt {
     long workchain;
     long shard;
     long seqno;
-    int[] rootHash;
-    int[] fileHash;
+    byte[] rootHash;
+    byte[] fileHash;
 
     private String getRootHash() {
         return Utils.bytesToHex(rootHash);
@@ -41,11 +41,11 @@ public class BlockIdExt {
 
     public static BlockIdExt deserialize(CellSlice cs) {
         BlockIdExt blockIdExt = BlockIdExt.builder()
-                .workchain(Utils.intsToInt(Utils.reverseIntArray(cs.loadBytes(32))))
+                .workchain(Utils.bytesToInt(Utils.reverseByteArray(cs.loadBytes(32))))
                 .shard(Long.reverseBytes(cs.loadUint(64).longValue()))
-                .seqno(Utils.intsToInt(Utils.reverseIntArray(cs.loadBytes(32))))
-                .rootHash(Utils.reverseIntArray(cs.loadBytes(256)))
-                .fileHash(Utils.reverseIntArray(cs.loadBytes(256)))
+                .seqno(Utils.bytesToInt(Utils.reverseByteArray(cs.loadBytes(32))))
+                .rootHash(Utils.reverseByteArray(cs.loadBytes(256)))
+                .fileHash(Utils.reverseByteArray(cs.loadBytes(256)))
                 .build();
         return blockIdExt;
     }

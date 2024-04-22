@@ -47,7 +47,6 @@ public class MessageRelaxed {
     }
 
     public static MessageRelaxed deserialize(CellSlice cs) {
-//        CommonMsgInfo commonMsgInfo = CommonMsgInfo.deserialize(cs);
         return MessageRelaxed.builder()
                 .info(CommonMsgInfo.deserialize(cs))
                 .init(cs.loadBit() ?

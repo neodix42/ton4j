@@ -2,7 +2,6 @@ package org.ton.java.cell;
 
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -223,18 +222,16 @@ public class CellBuilder extends Cell {
         if (data.length < space) {
             space = data.length;
         }
-        BitString bs = new BitString(Utils.signedBytesToUnsigned(data), space * 8);
+        BitString bs = new BitString(data, space * 8);
         CellBuilder c = CellBuilder.beginCell().storeBitString(bs);
 
         byte[] tmp = new byte[data.length - space];
         System.arraycopy(data, space, tmp, 0, data.length - space);
 
-
         if (tmp.length > 0) {
             Cell ref = f(127, tmp);
             c.storeRef(ref);
         }
-
         return c.endCell();
     }
 

@@ -35,7 +35,7 @@ public class MsgAddressExternal implements MsgAddressExt {
                 .endCell();
     }
 
-    static MsgAddressExternal deserialize(CellSlice cs) {
+    public static MsgAddressExternal deserialize(CellSlice cs) {
         int magic = cs.loadUint(2).intValue();
         assert (magic == 0b01) : "MsgAddressExternal: magic not equal to 0b01, found " + magic;
         int len = cs.loadUint(9).intValue();

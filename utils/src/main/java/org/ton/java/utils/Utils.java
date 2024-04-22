@@ -12,6 +12,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -114,6 +115,15 @@ public class Utils {
         return result;
     }
 
+    public static int bytesToIntX(final byte[] b) {
+        int result = 0;
+        for (int i = 0; i < b.length; i++) {
+            result <<= 8;
+            result |= b[i];
+        }
+        return result;
+    }
+
     public static short bytesToShort(final byte[] b) {
         short result = 0;
         for (int i = 0; i < 2; i++) {
@@ -150,8 +160,14 @@ public class Utils {
         return result;
     }
 
-    public static int[] uintToBytes(int l) {
+    public static int[] intToIntArray(int l) {
         return new int[]{l};
+    }
+
+    public static byte[] intToByteArray(int value) {
+        return new byte[]{
+                (byte) (value >>> 8),
+                (byte) value};
     }
 
     // CRC-16/XMODEM
@@ -178,12 +194,6 @@ public class Utils {
 
     public static byte[] getCRC16ChecksumAsBytes(byte[] bytes) {
         return intToByteArray(getCRC16ChecksumAsInt(bytes));
-    }
-
-    public static byte[] intToByteArray(int value) {
-        return new byte[]{
-                (byte) (value >>> 8),
-                (byte) value};
     }
 
     public static String sha256(final String base) {
@@ -216,7 +226,7 @@ public class Utils {
     public static byte[] unsignedBytesToSigned(int[] bytes) {
         byte[] converted = new byte[bytes.length];
         for (int i = 0; i < bytes.length; i++) {
-            converted[i] = (byte) bytes[i];
+            converted[i] = (byte) (bytes[i] & 0xff);
         }
         return converted;
     }
@@ -229,19 +239,21 @@ public class Utils {
         return converted;
     }
 
+    public static byte[] sha256AsArray(byte[] bytes) {
+        try {
+            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return digest.digest(bytes);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     public static String sha256(byte[] bytes) {
         try {
             final MessageDigest digest = MessageDigest.getInstance("SHA-256");
             final byte[] hash = digest.digest(bytes);
-            final StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                final String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1)
-                    hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception ex) {
+            return Utils.bytesToHex(hash);
+        } catch (NoSuchAlgorithmException ex) {
             throw new RuntimeException(ex);
         }
     }
@@ -336,6 +348,10 @@ public class Utils {
         return Utils.signedBytesToUnsigned(Base64.getDecoder().decode(base64.getBytes(StandardCharsets.UTF_8)));
     }
 
+    public static byte[] base64ToSignedBytes(String base64) {
+        return Base64.getDecoder().decode(base64.getBytes(StandardCharsets.UTF_8));
+    }
+
     public static byte[] base64SafeUrlToBytes(String base64) {
         return Base64.getUrlDecoder().decode(base64.getBytes(StandardCharsets.UTF_8));
     }
@@ -380,6 +396,42 @@ public class Utils {
         return new String(Base64.getUrlEncoder().encode(decodedHex));
     }
 
+    public static int[] bitStringToIntArray(String bitString) {
+        if (bitString.length() == 0) {
+            return new int[0];
+        }
+        String bin = bitString;
+        int[] result = new int[(int) Math.ceil(bin.length() / (double) 8)];
+
+        for (int i = 0; i < bin.length(); i++) {
+            if (bin.charAt(i) == '1') {
+                result[(i / 8)] |= 1 << (7 - (i % 8));
+            } else {
+                result[(i / 8)] &= ~(1 << (7 - (i % 8)));
+            }
+        }
+
+        return result;
+    }
+
+    public static byte[] bitStringToByteArray(String bitString) {
+        if (bitString.length() == 0) {
+            return new byte[0];
+        }
+        String bin = bitString;
+        byte[] result = new byte[(byte) Math.ceil(bin.length() / (double) 8)];
+
+        for (int i = 0; i < bin.length(); i++) {
+            if (bin.charAt(i) == '1') {
+                result[(i / 8)] |= 1 << (7 - (i % 8));
+            } else {
+                result[(i / 8)] &= ~(1 << (7 - (i % 8)));
+            }
+        }
+
+        return result;
+    }
+
     public static byte[] concatBytes(byte[] a, byte[] b) {
         byte[] c = new byte[a.length + b.length];
         System.arraycopy(a, 0, c, 0, a.length);
@@ -418,7 +470,20 @@ public class Utils {
         return Integer.valueOf(Utils.bytesToHex(tmp), 16);
     }
 
-    public static int[] dynamicIntBytes(BigInteger val, int sz) {
+//    public static int[] dynamicIntBytes(BigInteger val, int sz) {
+//        byte[] tmp = new byte[8];
+//        byte[] valArray = val.toByteArray(); // test just return val.toByteArray()
+//        Arrays.fill(tmp, 0, 8 - val.toByteArray().length, (byte) 0);
+//        for (int i = 8 - valArray.length, j = 0; i < 8; i++, j++) {
+//            tmp[i] = valArray[j];
+//        }
+////        tmp = val.toByteArray();
+//        byte[] result = new byte[sz];
+//        System.arraycopy(tmp, 8 - sz, result, 0, sz);
+//        return Utils.signedBytesToUnsigned(result);
+//    }
+
+    public static byte[] dynamicIntBytes(BigInteger val, int sz) {
         byte[] tmp = new byte[8];
         byte[] valArray = val.toByteArray(); // test just return val.toByteArray()
         Arrays.fill(tmp, 0, 8 - val.toByteArray().length, (byte) 0);
@@ -428,7 +493,7 @@ public class Utils {
 //        tmp = val.toByteArray();
         byte[] result = new byte[sz];
         System.arraycopy(tmp, 8 - sz, result, 0, sz);
-        return Utils.signedBytesToUnsigned(result);
+        return result;
     }
 
     public static int log2(int val) {

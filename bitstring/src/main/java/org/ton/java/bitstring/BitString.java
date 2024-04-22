@@ -56,7 +56,11 @@ public class BitString implements Bits<Boolean> {
         }
     }
 
-    public BitString(int[] bytes, int size) {
+//    public BitString(byte[] bytes, int size) {
+//        this(Utils.signedBytesToUnsigned(bytes), size); // todo redo below
+//    }
+
+    public BitString(byte[] bytes, int size) {
         if (bytes.length == 0) {
             array = new ArrayDeque<>(0);
             initialLength = 0;
@@ -680,7 +684,7 @@ public class BitString implements Bits<Boolean> {
         array = new BitString(arr).array;
 
         if (!(fulfilledBytes || (length == 0))) {
-            Boolean foundEndBit = false;
+            boolean foundEndBit = false;
             for (byte c = 0; c < 7; c++) {
                 if (array.pollLast()) {
                     foundEndBit = true;
@@ -694,7 +698,7 @@ public class BitString implements Bits<Boolean> {
         }
     }
 
-    public int[] getTopUppedArray() {
+    public byte[] getTopUppedArray() {
         BitString ret = clone();
         int tu = (int) Math.ceil(ret.array.size() / (double) 8) * 8 - ret.array.size();
         if (tu > 0) {
@@ -705,7 +709,6 @@ public class BitString implements Bits<Boolean> {
                 ret.writeBit(false);
             }
         }
-        int[] b = Arrays.copyOfRange(ret.toUnsignedByteArray(), 0, (int) Math.ceil(ret.array.size() / (double) 8));
-        return b;
+        return Arrays.copyOfRange(ret.toByteArray(), 0, (int) Math.ceil(ret.array.size() / (double) 8));
     }
 }

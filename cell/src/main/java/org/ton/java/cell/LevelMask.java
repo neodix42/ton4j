@@ -36,7 +36,7 @@ public class LevelMask {
 
     public static int calculateMinimumBits(int number) {
         if (number == 0) {
-            return 1;
+            return 0;
         }
 
         return (int) Math.ceil(Math.log(number + 1) / Math.log(2));

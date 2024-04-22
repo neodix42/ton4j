@@ -10,7 +10,6 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.net.URLDecoder;
@@ -172,7 +171,7 @@ public class NftUtils {
 
         double royalty = royaltyFactor.divide(royaltyBase).doubleValue();
         TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStack().get(2);
-        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(royaltyAddressCell.getCell().getBytes())));
+        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(royaltyAddressCell.getCell().getBytes()));
 
         return Royalty.builder()
                 .royaltyFactor(royaltyFactor)

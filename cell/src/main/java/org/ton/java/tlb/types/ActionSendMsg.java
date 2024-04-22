@@ -18,22 +18,22 @@ import org.ton.java.cell.CellSlice;
 public class ActionSendMsg implements OutAction {
     long magic;
     int mode;
-    MessageRelaxed outMsgRef;
+    MessageRelaxed outMsg;
 
     @Override
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeUint(0x0ec3c86d, 32)
                 .storeUint(mode, 8)
-                .storeRef(outMsgRef.toCell())
+                .storeRef(outMsg.toCell())
                 .endCell();
     }
 
-    static ActionSendMsg deserialize(CellSlice cs) {
+    public static ActionSendMsg deserialize(CellSlice cs) {
         return ActionSendMsg.builder()
                 .magic(cs.loadUint(32).intValue())
                 .mode(cs.loadUint(8).intValue())
-                .outMsgRef(MessageRelaxed.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .outMsg(MessageRelaxed.deserialize(CellSlice.beginParse(cs.loadRef())))
                 .build();
     }
 }

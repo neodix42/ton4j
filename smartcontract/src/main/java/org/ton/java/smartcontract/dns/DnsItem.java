@@ -13,7 +13,6 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
@@ -88,13 +87,13 @@ public class DnsItem implements Contract {
         BigInteger index = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber();
 
         TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStack().get(2);
-        Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(collectionAddr.getCell().getBytes())));
+        Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(collectionAddr.getCell().getBytes()));
 
         TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStack().get(3);
-        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(ownerAddr.getCell().getBytes()))) : null;
+        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(ownerAddr.getCell().getBytes())) : null;
 
         TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStack().get(4);
-        Cell contentCell = CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(contentC.getCell().getBytes()));
+        Cell contentCell = CellBuilder.fromBoc(contentC.getCell().getBytes());
 
         return ItemData.builder()
                 .isInitialized(isInitialized)
@@ -104,7 +103,6 @@ public class DnsItem implements Contract {
                 .contentCell(contentCell)
                 .build();
     }
-
 
     /**
      * @param queryId         long optional, default 0
@@ -152,7 +150,7 @@ public class DnsItem implements Contract {
         }
 
         TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStack().get(0);
-        return new String(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(domainCell.getCell().getBytes())).bits.toByteArray());
+        return new String(CellBuilder.fromBoc(domainCell.getCell().getBytes()).bits.toByteArray());
     }
 
     public Address getEditor(Tonlib tonlib) {
@@ -164,7 +162,7 @@ public class DnsItem implements Contract {
         }
 
         TvmStackEntryCell editorCell = (TvmStackEntryCell) result.getStack().get(0);
-        return NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(editorCell.getCell().getBytes())));
+        return NftUtils.parseAddress(CellBuilder.fromBoc(editorCell.getCell().getBytes()));
     }
 
     /**
@@ -179,7 +177,7 @@ public class DnsItem implements Contract {
         }
 
         TvmStackEntryCell maxBidAddressCell = (TvmStackEntryCell) result.getStack().get(0);
-        Address maxBidAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(maxBidAddressCell.getCell().getBytes())));
+        Address maxBidAddress = NftUtils.parseAddress(CellBuilder.fromBoc(maxBidAddressCell.getCell().getBytes()));
 
         TvmStackEntryNumber maxBidAmountNumber = (TvmStackEntryNumber) result.getStack().get(1);
         BigInteger maxBidAmount = maxBidAmountNumber.getNumber();

@@ -148,11 +148,10 @@ public class TestCellBuilder {
 
         assertThat(c5.getUsedRefs()).isEqualTo(3);
 
-        int[] serializedCell5 = c5.toBoc(false);
+        byte[] serializedCell5 = c5.toBoc(false);
 
         Cell dc5 = Cell.fromBoc(serializedCell5);
         log.info("c5 deserialized:\n{}", dc5.print());
-
     }
 
     @Test
@@ -174,7 +173,6 @@ public class TestCellBuilder {
         Cell c0 = CellBuilder.beginCell().storeCoins(coins0);
         BigInteger i = CellSlice.beginParse(c0).loadCoins();
         assertThat(i.toString()).isEqualTo("9999999999990");
-
     }
 
     @Test

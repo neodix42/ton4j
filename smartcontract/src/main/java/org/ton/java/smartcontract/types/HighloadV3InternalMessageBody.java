@@ -24,19 +24,19 @@ public class HighloadV3InternalMessageBody {
     BigInteger queryId;
     OutList actions;
 
-    public Cell toCell(int n) {
+    public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeUint(0xae42e5a4, 32)
+                .storeUint(BigInteger.valueOf(0xae42e5a4L), 32)
                 .storeUint(queryId, 64)
-                .storeRef(actions.toCell(n))
+                .storeRef(actions.toCell())
                 .endCell();
     }
 
-    static HighloadV3InternalMessageBody deserialize(CellSlice cs, int n) {
+    public static HighloadV3InternalMessageBody deserialize(CellSlice cs) {
         return HighloadV3InternalMessageBody.builder()
                 .magic(cs.loadUint(32).longValue())
                 .queryId(cs.loadUint(64))
-                .actions(OutList.deserialize(CellSlice.beginParse(cs.loadRef()), n))
+                .actions(OutList.deserialize(CellSlice.beginParse(cs.loadRef())))
                 .build();
     }
 }

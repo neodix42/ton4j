@@ -26,7 +26,7 @@ public class ExternalMessageOutInfoRelaxed implements CommonMsgInfoRelaxed {
     MsgAddress srcAddr;
     MsgAddress dstAddr;
     BigInteger createdLt;
-    Long createdAt;
+    long createdAt;
 
     private String getMagic() {
         return Long.toBinaryString(magic);

@@ -13,7 +13,6 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
@@ -120,7 +119,7 @@ public class PaymentChannel implements WalletContract {
     }
 
     public Signature createOneSignature(long op, Cell cellForSigning) {
-        byte[] signature = new TweetNaclFast.Signature(getOptions().myKeyPair.getPublicKey(), getOptions().myKeyPair.getSecretKey()).detached(Utils.unsignedBytesToSigned(cellForSigning.hash()));
+        byte[] signature = new TweetNaclFast.Signature(getOptions().myKeyPair.getPublicKey(), getOptions().myKeyPair.getSecretKey()).detached(cellForSigning.hash());
 
         Cell cell = PaymentsUtils.createOneSignature(op, getOptions().isA, signature, cellForSigning);
 
@@ -128,7 +127,7 @@ public class PaymentChannel implements WalletContract {
     }
 
     public Signature createTwoSignature(long op, byte[] hisSignature, Cell cellForSigning) {
-        byte[] signature = new TweetNaclFast.Signature(getOptions().myKeyPair.getPublicKey(), getOptions().myKeyPair.getSecretKey()).detached(Utils.unsignedBytesToSigned(cellForSigning.hash()));
+        byte[] signature = new TweetNaclFast.Signature(getOptions().myKeyPair.getPublicKey(), getOptions().myKeyPair.getSecretKey()).detached(cellForSigning.hash());
 
         byte[] signatureA = getOptions().isA ? signature : hisSignature;
         byte[] signatureB = !getOptions().isA ? signature : hisSignature;
@@ -172,7 +171,7 @@ public class PaymentChannel implements WalletContract {
                 createSemiChannelBody(mySeqNo, mySentCoins, null),
                 isNull(hisSeqno) ? null : createSemiChannelBody(hisSeqno, hisSentCoins, null));
 
-        byte[] signature = new TweetNaclFast.Signature(getOptions().myKeyPair.getPublicKey(), getOptions().myKeyPair.getSecretKey()).detached(Utils.unsignedBytesToSigned(state.hash()));
+        byte[] signature = new TweetNaclFast.Signature(getOptions().myKeyPair.getPublicKey(), getOptions().myKeyPair.getSecretKey()).detached(state.hash());
         Cell cell = PaymentsUtils.createSignedSemiChannelState(signature, state);
 
         return Signature.builder()
@@ -212,7 +211,7 @@ public class PaymentChannel implements WalletContract {
                 createSemiChannelBody(mySeqno, mySentCoins, null),
                 isNull(hisSeqno) ? null : createSemiChannelBody(hisSeqno, hisSentCoins, null));
 
-        return Ed25519.verify(getOptions().isA ? getOptions().publicKeyB : getOptions().publicKeyA, Utils.unsignedBytesToSigned(state.hash()), hisSignature);
+        return Ed25519.verify(getOptions().isA ? getOptions().publicKeyB : getOptions().publicKeyA, state.hash(), hisSignature);
     }
 
     public byte[] signClose(ChannelState channelState) {
@@ -223,7 +222,7 @@ public class PaymentChannel implements WalletContract {
     public boolean verifyClose(ChannelState channelState, byte[] hisSignature) {
         Cell cell = PaymentsUtils.createCooperativeCloseChannelBody(getOptions().getChannelConfig().getChannelId(),
                 channelState.getBalanceA(), channelState.getBalanceB(), channelState.getSeqnoA(), channelState.getSeqnoB());
-        return Ed25519.verify(getOptions().isA ? getOptions().publicKeyB : getOptions().publicKeyA, Utils.unsignedBytesToSigned(cell.hash()), hisSignature);
+        return Ed25519.verify(getOptions().isA ? getOptions().publicKeyB : getOptions().publicKeyA, cell.hash(), hisSignature);
     }
 
     public Signature createStartUncooperativeClose(Cell signedSemiChannelStateA, Cell signedSemiChannelStateB) {
@@ -289,7 +288,7 @@ public class PaymentChannel implements WalletContract {
         TvmStackEntryList quarantineList = (TvmStackEntryList) result.getStack().get(6);
         for (Object o : quarantineList.getList().getElements()) {
             TvmStackEntryCell t = (TvmStackEntryCell) o;
-            quarantine = CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(t.getCell().getBytes()));
+            quarantine = CellBuilder.fromBoc(t.getCell().getBytes());
         }
 
         TvmStackEntryTuple trippleTuple = (TvmStackEntryTuple) result.getStack().get(7);
@@ -297,11 +296,11 @@ public class PaymentChannel implements WalletContract {
 
         TvmStackEntryCell addressACell = (TvmStackEntryCell) trippleTuple.getTuple().getElements().get(1);
 
-        Address addressA = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(addressACell.getCell().getBytes())));
+        Address addressA = NftUtils.parseAddress(CellBuilder.fromBoc(addressACell.getCell().getBytes()));
 
         TvmStackEntryCell AddressBCell = (TvmStackEntryCell) trippleTuple.getTuple().getElements().get(2);
 
-        Address addressB = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(AddressBCell.getCell().getBytes())));
+        Address addressB = NftUtils.parseAddress(CellBuilder.fromBoc(AddressBCell.getCell().getBytes()));
 
         return ChannelData.builder()
                 .state(stateNumber.getNumber().longValue())

@@ -26,7 +26,7 @@ public class ExternalMessageOut implements CommonMsgInfo {
     MsgAddressInt srcAddr;
     MsgAddressExt dstAddr;
     BigInteger createdLt;
-    Long createdAt;
+    long createdAt;
 
     private String getMagic() {
         return Long.toHexString(magic);

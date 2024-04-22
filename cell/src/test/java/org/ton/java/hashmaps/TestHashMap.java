@@ -139,7 +139,7 @@ public class TestHashMap {
     public void testHashMapDeserializationWithMixedEmptyEdges() {
         String BOC_NETWORK_CONFIG = "te6cckEBEwEAVwACASABAgIC2QMEAgm3///wYBESAgEgBQYCAWIODwIBIAcIAgHODQ0CAdQNDQIBIAkKAgEgCxACASAQDAABWAIBIA0NAAEgAgEgEBAAAdQAAUgAAfwAAdwXk+eF";
         int[] KEYS_NETWORK_CONFIG = new int[]{0, 1, 9, 10, 12, 14, 15, 16, 17, 32, 34, 36, -1001, -1000};
-        Cell cell = Cell.fromBoc(Utils.base64ToUnsignedBytes(BOC_NETWORK_CONFIG));
+        Cell cell = Cell.fromBoc(Utils.base64ToSignedBytes(BOC_NETWORK_CONFIG));
         log.info("cell:\n{}", cell.print());
 
         CellSlice cs = CellSlice.beginParse(cell);

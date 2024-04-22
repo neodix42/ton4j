@@ -12,7 +12,6 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
@@ -107,13 +106,13 @@ public class JettonWallet implements Contract {
         BigInteger balance = balanceNumber.getNumber();
 
         TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStack().get(1);
-        Address ownerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(ownerAddr.getCell().getBytes())));
+        Address ownerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(ownerAddr.getCell().getBytes()));
 
         TvmStackEntryCell jettonMinterAddr = (TvmStackEntryCell) result.getStack().get(2);
-        Address jettonMinterAddress = NftUtils.parseAddress(CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(jettonMinterAddr.getCell().getBytes())));
+        Address jettonMinterAddress = NftUtils.parseAddress(CellBuilder.fromBoc(jettonMinterAddr.getCell().getBytes()));
 
         TvmStackEntryCell jettonWallet = (TvmStackEntryCell) result.getStack().get(3);
-        Cell jettonWalletCode = CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(jettonWallet.getCell().getBytes()));
+        Cell jettonWalletCode = CellBuilder.fromBoc(jettonWallet.getCell().getBytes());
         return JettonWalletData.builder()
                 .balance(balance)
                 .ownerAddress(ownerAddress)

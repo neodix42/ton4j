@@ -47,7 +47,7 @@ public class Boc {
     int totalCellsSize;
     List<BigInteger> rootList;
     List<BigInteger> index;
-    int[] cellData;
+    byte[] cellData;
     long crc32c;
 
     public Cell toCell() {
@@ -76,6 +76,10 @@ public class Boc {
         }
 
         return cell.endCell();
+    }
+
+    static Cell deserialize() {
+        return null; // todo
     }
 }
 

@@ -269,7 +269,7 @@ public class Tonlib {
                 do {
                     if (nonNull(response) && !response.contains("syncStateInProgress")) {
 
-                        if (++retry > 10) {
+                        if (++retry > receiveRetryTimes) {
                             throw new RuntimeException("Error in tonlib.syncAndRead(), " + receiveRetryTimes + " times was not able to retrieve result from lite-server. Last response: " + response);
                         }
 
@@ -732,7 +732,7 @@ public class Tonlib {
 
             String result = syncAndRead(gson.toJson(configParamQuery));
             ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
-            return CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(ci.getConfig().getBytes()));
+            return CellBuilder.fromBoc(ci.getConfig().getBytes());
         }
     }
 
@@ -746,7 +746,7 @@ public class Tonlib {
             String result = syncAndRead(gson.toJson(configParamQuery));
             System.out.println(result);
             ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
-            return CellBuilder.fromBoc(Utils.base64ToUnsignedBytes(ci.getConfig().getBytes()));
+            return CellBuilder.fromBoc(ci.getConfig().getBytes());
         }
     }
 

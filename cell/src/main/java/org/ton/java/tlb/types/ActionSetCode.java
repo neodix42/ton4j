@@ -27,7 +27,7 @@ public class ActionSetCode implements OutAction {
                 .endCell();
     }
 
-    static ActionSetCode deserialize(CellSlice cs) {
+    public static ActionSetCode deserialize(CellSlice cs) {
         return ActionSetCode.builder()
                 .magic(cs.loadUint(32).intValue())
                 .newCode(cs.sliceToCell())

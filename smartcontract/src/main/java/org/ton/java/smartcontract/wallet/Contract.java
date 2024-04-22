@@ -49,7 +49,7 @@ public interface Contract {
         Cell dataCell = createDataCell();
         Cell stateInit = createStateInit(codeCell, dataCell);
 
-        int[] stateInitHash = stateInit.hash();
+        byte[] stateInitHash = stateInit.hash();
 
         Address address = Address.of(getOptions().wc + ":" + Utils.bytesToHex(stateInitHash));
         return new StateInit(stateInit, address, codeCell, dataCell);
@@ -112,10 +112,13 @@ public interface Contract {
     // currencies$_ grams:Grams other:ExtraCurrencyCollection
     // = CurrencyCollection;
 
-    //int_msg_info$0 ihr_disabled:Bool bounce:Bool
-    //src:MsgAddressInt dest:MsgAddressInt
-    //value:CurrencyCollection ihr_fee:Grams fwd_fee:Grams
-    //created_lt:uint64 created_at:uint32 = CommonMsgInfo;
+    // int_msg_info$0
+    // ihr_disabled:Bool
+    // bounce:Bool
+    // src:MsgAddressInt
+    // dest:MsgAddressInt
+    // value:CurrencyCollection ihr_fee:Grams fwd_fee:Grams
+    // created_lt:uint64 created_at:uint32 = CommonMsgInfo;
 
     /**
      * @param dest               Address

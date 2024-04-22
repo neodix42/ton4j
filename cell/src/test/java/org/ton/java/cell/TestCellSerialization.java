@@ -80,6 +80,7 @@ public class TestCellSerialization {
     @Test
     public void testCellSerialization3() {
         Cell c1 = new Cell();
+        c1.calculateHashes();
 
         long l1 = (long) Math.pow(2, 25);
         c1.bits.writeUint(l1, 26);
@@ -87,7 +88,13 @@ public class TestCellSerialization {
         log.info("c1 hex        {}", c1.bits.toHex());
         assertThat(c1.bits.toHex()).isEqualTo("8000002_");
 
-        int[] serializedCell1 = c1.toBoc(true);
+        log.info("hashes " + c1.hashes.size());
+        log.info("hashes(1) " + c1.hashes.get(0));
+        log.info("depth " + c1.depths.size());
+        log.info("hash old " + Utils.bytesToHex(c1.hash()));
+        log.info("hash new " + Utils.bytesToHex(c1.getHash()));
+
+        byte[] serializedCell1 = c1.toBoc(true);
         Cell dc1 = Cell.fromBoc(serializedCell1);
         log.info("dc1 bitString {}", dc1.bits.toBitString());
         log.info("dc1 hex       {}", dc1.bits.toHex());
@@ -135,7 +142,7 @@ public class TestCellSerialization {
         log.info("c1 hex: {}", Utils.bytesToHex(c1.toBoc(true)));
         assertThat(Utils.bytesToHex(c1.toBoc(true))).isEqualTo("b5ee9c72410105010045000207800000200201000b4000000000080109800000000203010b8000000000200400438004b1ca92c714d3015cba78ec7055fa7e9e65c68905b5f86ea3c66b0b1391bc01b0b8a46275");
 
-        int[] serializedCell1 = c1.toBoc(true);
+        byte[] serializedCell1 = c1.toBoc(true);
         log.info("c1 hex {}", Utils.bytesToHex(serializedCell1));
         Cell dc1 = Cell.fromBoc(serializedCell1);
         log.info("c1 deserialized");
@@ -163,7 +170,7 @@ public class TestCellSerialization {
     public void testBocDeserializationNew() {
         Cell c2 = new Cell();
         c2.bits.writeUint(42, 7);
-        int[] serializedCell2 = c2.toBoc(true);
+        byte[] serializedCell2 = c2.toBoc(true);
 
         log.info(c2.print());
         log.info(Utils.bytesToHex(serializedCell2));
@@ -184,7 +191,7 @@ public class TestCellSerialization {
     public void testCellUintsOld() {
         Cell c2 = new Cell();
         c2.bits.writeUint(42, 7);
-        int[] serializedCell2 = c2.toBoc(true);
+        byte[] serializedCell2 = c2.toBoc(true);
 
         log.info(c2.print());
         log.info(Utils.bytesToHex(serializedCell2));
@@ -205,8 +212,7 @@ public class TestCellSerialization {
     public void testCellSerializationNew() {
         Cell c2 = CellBuilder.beginCell().storeUint(42, 7).endCell();
         log.info("c2 {}", c2.print());
-        int[] boc = c2.toBoc(true);
-//        int[] boc = c2.toBoc(true);
+        byte[] boc = c2.toBoc(true);
         log.info("boc {}", boc);
 
         Cell c = Cell.fromBoc(boc);

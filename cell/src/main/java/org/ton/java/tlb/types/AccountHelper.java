@@ -40,7 +40,7 @@ public class AccountHelper {
         }
 
         CellSlice cs = CellSlice.beginParse(code);
-        int[] hdr = cs.loadBytes(56);
+        byte[] hdr = cs.loadBytes(56);
 
         if (!Utils.bytesToHex(hdr).toLowerCase().contains("ff00f4a413f4bc")) {
             return false;

@@ -40,7 +40,7 @@ public class InternalMessage implements CommonMsgInfo {
     BigInteger iHRFee;
     BigInteger fwdFee;
     BigInteger createdLt;
-    Long createdAt;
+    long createdAt;
 
     private String getMagic() {
         return Long.toHexString(magic);

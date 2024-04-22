@@ -14,6 +14,9 @@ public class CommonTest {
 
     @BeforeClass
     public static void setUpBeforeClass() {
-        tonlib = Tonlib.builder().testnet(true).build();
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .build();
     }
 }

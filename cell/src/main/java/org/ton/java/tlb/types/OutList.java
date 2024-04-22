@@ -8,6 +8,9 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Builder
 @Getter
 @Setter
@@ -17,28 +20,29 @@ import org.ton.java.cell.CellSlice;
  * out_list$_ {n:#} prev:^(OutList n) action:OutAction = OutList (n + 1);
  */
 public class OutList {
-    OutList prev;
-    OutAction action;
+    List<OutAction> actions;
 
-    public Cell toCell(int n) {
-        if (n == 0) {
-            return CellBuilder.beginCell().endCell();
-        } else {
-            return CellBuilder.beginCell()
-                    .storeRef(prev.toCell(n - 1)) // todo ?
-                    .storeCell(action.toCell())
-                    .endCell();
+    public Cell toCell() {
+        Cell list = CellBuilder.beginCell();
+        int i = 0;
+        for (OutAction action : actions) {
+            Cell outMsg = action.toCell();
+            list = CellBuilder.beginCell().storeRef(list).storeCell(outMsg).endCell();
         }
+        return list;
     }
 
-    public static OutList deserialize(CellSlice cs, int n) {
-        if (n == 0) {
-            return OutList.builder().build();
-        } else {
-            return OutList.builder()
-                    .prev(OutList.deserialize(CellSlice.beginParse(cs.loadRef()), n))
-                    .action(OutAction.deserialize(cs))
-                    .build();
+    public static OutList deserialize(CellSlice cs) {
+        List<OutAction> actions = new ArrayList<>();
+        while (cs.getRefsCount() != 0) {
+            Cell t = cs.loadRef();
+            OutAction action = OutAction.deserialize(CellSlice.beginParse(cs));
+            actions.add(action);
+            cs = CellSlice.beginParse(t);
         }
+
+        return OutList.builder()
+                .actions(actions)
+                .build();
     }
 }

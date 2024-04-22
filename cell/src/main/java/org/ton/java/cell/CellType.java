@@ -2,7 +2,7 @@ package org.ton.java.cell;
 
 public enum CellType {
 
-    ORDINARY(0x00),
+    ORDINARY(-0x01),
     PRUNED_BRANCH(0x01),
     LIBRARY(0x02),
     MERKLE_PROOF(0x03),
@@ -17,5 +17,9 @@ public enum CellType {
 
     public int getValue() {
         return value;
+    }
+
+    public int getIndex() {
+        return ordinal();
     }
 }

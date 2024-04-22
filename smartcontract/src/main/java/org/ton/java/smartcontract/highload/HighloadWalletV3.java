@@ -131,6 +131,7 @@ public class HighloadWalletV3 implements WalletContract {
 
     public Cell createSendTonCoinsMessage(byte[] secretKey, HighloadV3Config highloadConfig) {
         Cell signingMessageAll = createSigningMessageInternal(highloadConfig);
+        System.out.println("sending external...");
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, highloadConfig.getQueryId() == 0 ? 0 : 1);
         return msg.message;
     }
