@@ -112,7 +112,7 @@ public class TestCellBuilder {
 
         byte[] serializedCell5 = c5.toBoc(false);
 
-        Cell dc5 = Cell.fromBoc(serializedCell5);
+        Cell dc5 = CellBuilder.beginCell().fromBoc(serializedCell5).endCell();
         log.info("c5 deserialized:\n{}", dc5.print());
     }
 
@@ -121,18 +121,18 @@ public class TestCellBuilder {
 
         assertThrows(Error.class, () -> {
             BigInteger coins0 = Utils.toNano(9999.99999999999);
-            Cell c0 = CellBuilder.beginCell().storeCoins(coins0);
+            Cell c0 = CellBuilder.beginCell().storeCoins(coins0).endCell();
             BigInteger i = CellSlice.beginParse(c0).loadCoins();
             assertThat(i.toString()).isEqualTo("9999.99999999999");
 
             BigInteger coins1 = new BigInteger("9999999999999999999999999999999999999999999999999999999999");
-            Cell c1 = CellBuilder.beginCell().storeCoins(coins1);
+            Cell c1 = CellBuilder.beginCell().storeCoins(coins1).endCell();
             BigInteger i1 = CellSlice.beginParse(c1).loadCoins();
             assertThat(i1.toString()).isEqualTo("9999999999999999999999999999999999999999999999999999999999");
         });
 
         BigInteger coins0 = Utils.toNano(9999.99999999);
-        Cell c0 = CellBuilder.beginCell().storeCoins(coins0);
+        Cell c0 = CellBuilder.beginCell().storeCoins(coins0).endCell();
         BigInteger i = CellSlice.beginParse(c0).loadCoins();
         assertThat(i.toString()).isEqualTo("9999999999990");
     }
@@ -145,8 +145,8 @@ public class TestCellBuilder {
         x.elements.put(300L, (byte) 3);
         x.elements.put(400L, (byte) 4);
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 9).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3)
+                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
         Cell cellDict = CellBuilder.beginCell().storeDict(dict).endCell();
         assertThat(cellDict).isNotNull();

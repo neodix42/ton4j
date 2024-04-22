@@ -39,8 +39,8 @@ public class ShardStateInfo {
                 .storeCell(totalBalance.toCell())
                 .storeCell(totalValidatorFees.toCell())
                 .storeDict(libraries.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
-                        v -> CellBuilder.beginCell().storeCell(((LibDescr) v).toCell())))
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                        v -> CellBuilder.beginCell().storeCell(((LibDescr) v).toCell()).endCell()))
                 .storeCellMaybe(masterRef.toCell())
                 .endCell();
     }

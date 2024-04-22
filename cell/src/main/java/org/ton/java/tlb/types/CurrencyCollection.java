@@ -33,8 +33,8 @@ public class CurrencyCollection {
             dict = CellBuilder.beginCell().storeBit(false).endCell();
         } else {
             dict = extraCurrencies.serialize(
-                    k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                    v -> CellBuilder.beginCell().storeVarUint((byte) v, 5)
+                    k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                    v -> CellBuilder.beginCell().storeVarUint((byte) v, 5).endCell()
             );
         }
         return CellBuilder.beginCell()

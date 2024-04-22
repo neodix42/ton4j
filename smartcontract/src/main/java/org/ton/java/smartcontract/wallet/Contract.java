@@ -232,7 +232,7 @@ public interface Contract {
         message.storeAddress(src);
         message.storeAddress(dest);
         message.storeCoins(importFee);
-        return message;
+        return message.endCell();
     }
 
     /**
@@ -276,14 +276,14 @@ public interface Contract {
     static Cell createCommonMsgInfo(Cell header, Cell stateInit, Cell body) {
         CellBuilder commonMsgInfo = CellBuilder.beginCell();
 
-        commonMsgInfo.writeCell(header);
+        commonMsgInfo.storeCell(header);
 
         if (nonNull(stateInit)) {
             commonMsgInfo.storeBit(true);
             //-1:  need at least one bit for body
             if (commonMsgInfo.getFreeBits() - 1 >= stateInit.bits.getUsedBits()) {
                 commonMsgInfo.storeBit(false);
-                commonMsgInfo.writeCell(stateInit);
+                commonMsgInfo.storeCell(stateInit);
             } else {
                 commonMsgInfo.storeBit(true);
                 commonMsgInfo.storeRef(stateInit);
@@ -295,7 +295,7 @@ public interface Contract {
         if (nonNull(body)) {
             if ((commonMsgInfo.getFreeBits() >= body.bits.getUsedBits()) && commonMsgInfo.getFreeRefs() >= body.getUsedRefs()) {
                 commonMsgInfo.storeBit(false);
-                commonMsgInfo.writeCell(body);
+                commonMsgInfo.storeCell(body);
             } else {
                 commonMsgInfo.storeBit(true);
                 commonMsgInfo.storeRef(body);

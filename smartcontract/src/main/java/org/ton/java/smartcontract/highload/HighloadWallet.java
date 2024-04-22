@@ -34,7 +34,7 @@ public class HighloadWallet implements WalletContract {
      */
     public HighloadWallet(Options options) {
         this.options = options;
-        options.code = Cell.fromBoc(WalletCodes.highload.getValue());
+        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.highload.getValue()).endCell();
     }
 
     @Override
@@ -144,7 +144,7 @@ public class HighloadWallet implements WalletContract {
         }
 
         Cell cellDict = dictDestinations.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
                 v -> (Cell) v
         );
 

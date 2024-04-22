@@ -43,7 +43,7 @@ public class NftSale implements Contract {
         }
 
         if (isNull(options.code)) {
-            options.code = Cell.fromBoc(NFT_SALE_HEX_CODE);
+            options.code = CellBuilder.beginCell().fromBoc(NFT_SALE_HEX_CODE).endCell();
         }
     }
 
@@ -79,7 +79,7 @@ public class NftSale implements Contract {
         feesCell.storeCoins(options.marketplaceFee);
         feesCell.storeAddress(options.royaltyAddress);
         feesCell.storeCoins(options.royaltyAmount);
-        cell.storeRef(feesCell);
+        cell.storeRef(feesCell.endCell());
 
         return cell.endCell();
     }
@@ -99,15 +99,15 @@ public class NftSale implements Contract {
         }
 
         TvmStackEntryCell marketplaceAddressCell = (TvmStackEntryCell) result.getStack().get(0);
-        Address marketplaceAddress = NftUtils.parseAddress(CellBuilder.fromBoc(marketplaceAddressCell.getCell().getBytes()));
+        Address marketplaceAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(marketplaceAddressCell.getCell().getBytes()).endCell());
 
         TvmStackEntryCell nftAddressCell = (TvmStackEntryCell) result.getStack().get(1);
-        Address nftAddress = NftUtils.parseAddress(CellBuilder.fromBoc(nftAddressCell.getCell().getBytes()));
+        Address nftAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(nftAddressCell.getCell().getBytes()).endCell());
 
         TvmStackEntryCell nftOwnerAddressCell = (TvmStackEntryCell) result.getStack().get(2);
         Address nftOwnerAddress = null;
         try {
-            nftOwnerAddress = NftUtils.parseAddress(CellBuilder.fromBoc(nftOwnerAddressCell.getCell().getBytes()));
+            nftOwnerAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(nftOwnerAddressCell.getCell().getBytes()).endCell());
         } catch (Exception e) {
             //todo
         }
@@ -119,7 +119,7 @@ public class NftSale implements Contract {
         BigInteger marketplaceFee = marketplaceFeeNumber.getNumber();
 
         TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStack().get(5);
-        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(royaltyAddressCell.getCell().getBytes()));
+        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(royaltyAddressCell.getCell().getBytes()).endCell());
 
         TvmStackEntryNumber royaltyAmountNumber = (TvmStackEntryNumber) result.getStack().get(6);
         BigInteger royaltyAmount = royaltyAmountNumber.getNumber();

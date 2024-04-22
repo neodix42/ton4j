@@ -26,7 +26,7 @@ public class WalletV1ContractR3 implements WalletContract {
      */
     public WalletV1ContractR3(Options options) {
         this.options = options;
-        options.code = Cell.fromBoc(WalletCodes.V1R3.getValue());
+        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.V1R3.getValue()).endCell();
     }
 
     @Override

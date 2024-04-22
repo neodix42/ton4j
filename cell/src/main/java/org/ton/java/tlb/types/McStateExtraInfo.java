@@ -40,7 +40,7 @@ public class McStateExtraInfo {
                 .storeUint(flags, 16)
                 .storeCell(validatorInfo.toCell())
                 .storeDict(prevBlocks.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
                         v -> CellBuilder.beginCell().storeCell(((KeyExtBlkRef) v).toCell()),
                         e -> CellBuilder.beginCell().storeCell(((KeyMaxLt) e).toCell()),
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1)))

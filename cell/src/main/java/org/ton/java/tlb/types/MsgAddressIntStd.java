@@ -39,12 +39,11 @@ public class MsgAddressIntStd implements MsgAddressInt {
             result.storeBit(false);
         } else {
             result.storeBit(true);
-            result.writeCell(anycast.toCell());
+            result.storeCell(anycast.toCell());
         }
         result.storeInt(workchainId, 8)
-                .storeUint(address, 256)
-                .endCell();
-        return result;
+                .storeUint(address, 256);
+        return result.endCell();
     }
 
     public static MsgAddressIntStd deserialize(CellSlice cs) {

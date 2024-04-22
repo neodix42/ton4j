@@ -147,7 +147,7 @@ public class DnsUtils {
         Object r = result.getStack().get(1);
         if (r instanceof TvmStackEntryCell) {
             TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStack().get(1);
-            cell = CellBuilder.fromBoc(cellResult.getCell().getBytes());
+            cell = CellBuilder.beginCell().fromBoc(cellResult.getCell().getBytes()).endCell();
         }
 
         if ((nonNull(cell)) && (isNull(cell.bits))) {

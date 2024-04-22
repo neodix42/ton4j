@@ -30,7 +30,7 @@ public class AccountBlock {
 
     public Cell toCell() {
         Cell dictCell = transactions.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 64).bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, 64).endCell().bits,
                 v -> CellBuilder.beginCell().storeRef(((Transaction) v).toCell()),
                 e -> CellBuilder.beginCell().storeCell(((CurrencyCollection) e).toCell()),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

@@ -33,7 +33,7 @@ public interface WalletContract extends Contract {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(BigInteger.ZERO, 32); // seqno
         cell.storeBytes(getOptions().publicKey);
-        return cell;
+        return cell.endCell();
     }
 
     /**
@@ -76,7 +76,7 @@ public interface WalletContract extends Contract {
 
         CellBuilder body = CellBuilder.beginCell();
         body.storeBytes(signature);
-        body.writeCell(signingMessage);
+        body.storeCell(signingMessage);
 
         Cell header = Contract.createExternalMessageHeader(stateInit.address);
 
@@ -140,7 +140,7 @@ public interface WalletContract extends Contract {
         CellBuilder msg = CellBuilder.beginCell();
 
         msg.storeBytes(signature);
-        msg.writeCell(signingMessage);
+        msg.storeCell(signingMessage);
 
         return msg.endCell();
     }
@@ -557,7 +557,7 @@ public interface WalletContract extends Contract {
             payloadCell = null;
         }
 
-        return createTransferMessage(secretKey, address, amount, seqno, payloadCell, sendMode, stateInit, dummySignature);
+        return createTransferMessage(secretKey, address, amount, seqno, payloadCell.endCell(), sendMode, stateInit, dummySignature);
     }
 
     default ExternalMessage createTransferMessage(

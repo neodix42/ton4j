@@ -21,7 +21,7 @@ public class TestPfxHashMap {
     public void testPfxHashMapDeserializationFromBoc() {
         String t = "B5EE9C7241010501007A00020374C001020045A0E034CD6A3000596F07C3F0AB332935D3E3FC98F1E78F6AE1FC710EA4D98732772F1002057FBFB003040043BFB333333333333333333333333333333333333333333333333333333333333333400043BF955555555555555555555555555555555555555555555555555555555555555540DE161D24";
 
-        Cell cell = Cell.fromBoc(t);
+        Cell cell = CellBuilder.beginCell().fromBoc(t).endCell();
 
         CellSlice cs = CellSlice.beginParse(cell);
         TonPfxHashMap dict = cs.loadDictPfx(267,
@@ -38,8 +38,8 @@ public class TestPfxHashMap {
     public void testEmptyPfxHashMapSerialization() {
         TonPfxHashMap x = new TonPfxHashMap(9);
         assertThrows(Error.class, () -> x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 9).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3)
+                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         ));
 
         log.info("pfx-hashmap dict {}", x);
@@ -58,8 +58,8 @@ public class TestPfxHashMap {
         log.info("pfx-hashmap dict {}", x);
 
         Cell cell = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3)
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
         log.info("serialized cell {}", cell.print());

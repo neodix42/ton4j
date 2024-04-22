@@ -171,7 +171,7 @@ public class NftUtils {
 
         double royalty = royaltyFactor.divide(royaltyBase).doubleValue();
         TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStack().get(2);
-        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.fromBoc(royaltyAddressCell.getCell().getBytes()));
+        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(royaltyAddressCell.getCell().getBytes()).endCell());
 
         return Royalty.builder()
                 .royaltyFactor(royaltyFactor)

@@ -24,15 +24,15 @@ public class OutMsgQueueInfo {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeDict(outMsgQueue.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 352).bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 352).endCell().bits,
                         v -> CellBuilder.beginCell().storeCell(((EnqueuedMsg) v).toCell()),
-                        e -> CellBuilder.beginCell().storeUint((Long) e, 64).bits,
+                        e -> CellBuilder.beginCell().storeUint((Long) e, 64).endCell().bits,
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1))) // todo
                 .storeDict(processedInfo.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 96).bits,
-                        v -> CellBuilder.beginCell().storeCell(((ProcessedUpto) v).toCell())))
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 96).endCell().bits,
+                        v -> CellBuilder.beginCell().storeCell(((ProcessedUpto) v).toCell()).endCell()))
                 .storeDict(ihrPendingInfo.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 320).bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 320).endCell().bits,
                         v -> CellBuilder.beginCell().storeUint((Long) v, 64).endCell()))
                 .endCell();
     }

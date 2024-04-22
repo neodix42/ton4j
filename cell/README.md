@@ -68,7 +68,7 @@ x{8004B1CA92C714D3015CBA78EC7055FA7E9E65C68905B5F86EA3C66B0B1391BC01A908A98989F_
 
 ```java
 byte[] serializedCell5 = c5.toBocNew();
-Cell dc5 = Cell.fromBoc(serializedCell5);
+Cell dc5 = CellBuilder.beginCell().fromBoc(serializedCell5);
 log.info("c5 deserialized:\n{}", dc5.print());
 
 // output
@@ -99,7 +99,7 @@ Cell serializedStorageInfo = storageInfo.toCell();
 ## TLB Deserialization
 
 ```java
-Cell c = Cell.fromBoc("b5ee9c72410106010054000211b8e48dfb4a0eebb0040105022581fa7454b05a2ea2ac0fd3a2a5d348d2954008020202012004030015bfffffffbcbd0efda563d00015be000003bcb355ab466ad0001d43b9aca00250775d8011954fc40008b63e6951");
+Cell c = CellBuilder.beginCell().fromBoc("b5ee9c72410106010054000211b8e48dfb4a0eebb0040105022581fa7454b05a2ea2ac0fd3a2a5d348d2954008020202012004030015bfffffffbcbd0efda563d00015be000003bcb355ab466ad0001d43b9aca00250775d8011954fc40008b63e6951");
 log.info("CellType {}", c.getCellType());
 ValueFlow valueFlow = ValueFlow.deserialize(CellSlice.beginParse(c));
 log.info("valueFlow {}", valueFlow);

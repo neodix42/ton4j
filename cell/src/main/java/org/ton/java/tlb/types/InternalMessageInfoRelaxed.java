@@ -56,8 +56,8 @@ public class InternalMessageInfoRelaxed implements CommonMsgInfoRelaxed {
                 .storeSlice(CellSlice.beginParse(dstAddr.toCell())) //MsgAddressInt
                 .storeCoins(value.getCoins())
                 .storeDict(nonNull(value.getExtraCurrencies()) ? value.getExtraCurrencies().serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                        v -> CellBuilder.beginCell().storeUint((byte) v, 32)) :
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                        v -> CellBuilder.beginCell().storeUint((byte) v, 32).endCell()) :
                         CellBuilder.beginCell().storeBit(false).endCell())
                 .storeCoins(iHRFee)
                 .storeCoins(fwdFee)

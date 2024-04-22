@@ -45,8 +45,8 @@ public class McStateExtra {
                 .storeUint(0xcc26, 16)
 //                .storeDict(shardHashes.toCell())
                 .storeDict(shardHashes.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                        v -> CellBuilder.beginCell().storeRef((Cell) v) // todo ShardDescr
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                        v -> CellBuilder.beginCell().storeRef((Cell) v).endCell() // todo ShardDescr
                 ))
                 .storeCell(configParams.toCell())
                 .storeRef(info.toCell())

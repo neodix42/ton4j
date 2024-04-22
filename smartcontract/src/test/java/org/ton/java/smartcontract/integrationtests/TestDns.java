@@ -119,7 +119,7 @@ public class TestDns extends CommonTest {
         Options optionsDnsCollection = Options.builder()
                 .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/dns-collection-2.json"))
                 .dnsItemCodeHex(dnsItemCodeHex)
-                .code(Cell.fromBoc(dnsCollectionCodeHex))
+                .code(CellBuilder.beginCell().fromBoc(dnsCollectionCodeHex))
                 .build();
 
         Wallet dnsCollectionWallet = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection);

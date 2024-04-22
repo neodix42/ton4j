@@ -113,7 +113,7 @@ public class TestTxEmulator {
 //                                                                .tick(false)
 //                                                                .tock(true)
 //                                                                .build())
-                                                        .code(Cell.fromBoc("b5ee9c7241010101004e000098ff0020dd2082014c97ba9730ed44d0d70b1fe0a4f260810200d71820d70b1fed44d0d31fd3ffd15112baf2a122f901541044f910f2a2f80001d31f31d307d4d101fb00a4c8cb1fcbffc9ed5470102286"))
+                                                        .code(CellBuilder.beginCell().fromBoc("b5ee9c7241010101004e000098ff0020dd2082014c97ba9730ed44d0d70b1fe0a4f260810200d71820d70b1fed44d0d31fd3ffd15112baf2a122f901541044f910f2a2f80001d31f31d307d4d101fb00a4c8cb1fcbffc9ed5470102286").endCell())
 //                                                        .data(CellBuilder.beginCell().storeBit(true).endCell())
                                                         .build())
                                                 .build())
@@ -148,8 +148,8 @@ public class TestTxEmulator {
         }
 
         Cell dictLibs = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
-                v -> CellBuilder.beginCell().storeRef((Cell) v)
+                k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                v -> CellBuilder.beginCell().storeRef((Cell) v).endCell()
         );
         return dictLibs;
     }

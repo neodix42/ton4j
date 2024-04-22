@@ -22,8 +22,8 @@ public class ConfigParams {
         return CellBuilder.beginCell()
                 .storeAddress(configAddr)
                 .storeDict(config.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                        v -> CellBuilder.beginCell().storeRef((Cell) v))
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                        v -> CellBuilder.beginCell().storeRef((Cell) v).endCell())
                 )
                 .endCell();
     }

@@ -20,8 +20,8 @@ public class ShardHashes {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeDict(shardHashes.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).bits,
-                        v -> CellBuilder.beginCell().storeCell(((BinTree) v).toCell())
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                        v -> CellBuilder.beginCell().storeCell(((BinTree) v).toCell()).endCell()
                 )).endCell();
     }
 

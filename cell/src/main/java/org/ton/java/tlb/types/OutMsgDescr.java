@@ -23,7 +23,7 @@ public class OutMsgDescr {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeDict(outMsg.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
                         v -> CellBuilder.beginCell().storeCell(((OutMsg) v).toCell()),
                         e -> CellBuilder.beginCell().storeCell(((CurrencyCollection) e).toCell()),
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

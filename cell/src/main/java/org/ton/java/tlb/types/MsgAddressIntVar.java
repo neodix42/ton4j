@@ -42,13 +42,12 @@ public class MsgAddressIntVar implements MsgAddressInt {
             result.storeBit(false);
         } else {
             result.storeBit(true);
-            result.writeCell(anycast.toCell());
+            result.storeCell(anycast.toCell());
         }
         result.storeUint(addrLen, 9)
                 .storeUint(workchainId, 32)
-                .storeUint(address, addrLen)
-                .endCell();
-        return result;
+                .storeUint(address, addrLen);
+        return result.endCell();
     }
 
     public static MsgAddressIntVar deserialize(CellSlice cs) {

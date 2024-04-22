@@ -248,7 +248,7 @@ public class TestTonlibJson {
                 String msgBodyText;
                 if (nonNull(tx.getIn_msg().getMsg_data().getBody())) {
 
-                    Cell c = Cell.fromBoc(Utils.base64ToSignedBytes(tx.getIn_msg().getMsg_data().getBody()));
+                    Cell c = CellBuilder.beginCell().fromBoc(Utils.base64ToSignedBytes(tx.getIn_msg().getMsg_data().getBody()));
                     msgBodyText = c.print();
                 } else {
                     msgBodyText = Utils.base64ToString(tx.getIn_msg().getMsg_data().getText());
@@ -259,7 +259,7 @@ public class TestTonlibJson {
                 for (RawMessage msg : tx.getOut_msgs()) {
                     String msgBodyText;
                     if (nonNull(msg.getMsg_data().getBody())) {
-                        Cell c = Cell.fromBoc(Utils.base64ToSignedBytes(msg.getMsg_data().getBody()));
+                        Cell c = CellBuilder.beginCell().fromBoc(Utils.base64ToSignedBytes(msg.getMsg_data().getBody()));
                         msgBodyText = c.print();
                     } else {
 //                        msgBodyText = Utils.base64ToString(msg.getMessage());

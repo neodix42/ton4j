@@ -37,7 +37,7 @@ public class NftItem implements Contract {
         }
 
         if (isNull(options.code)) {
-            options.code = Cell.fromBoc(WalletCodes.nftItem.getValue());
+            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
         }
     }
 
@@ -87,13 +87,13 @@ public class NftItem implements Contract {
         BigInteger index = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber();
 
         TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStack().get(2);
-        Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(collectionAddr.getCell().getBytes()));
+        Address collectionAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(collectionAddr.getCell().getBytes()).endCell());
 
         TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStack().get(3);
-        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(ownerAddr.getCell().getBytes())) : null;
+        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(ownerAddr.getCell().getBytes()).endCell()) : null;
 
         TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStack().get(4);
-        Cell cell = CellBuilder.fromBoc(contentCell.getCell().getBytes());
+        Cell cell = CellBuilder.beginCell().fromBoc(contentCell.getCell().getBytes()).endCell();
 
         String contentUri = null;
         try {
@@ -132,7 +132,7 @@ public class NftItem implements Contract {
         cell.storeBit(false); // forward_payload in this slice, not separate cell
 
         if (nonNull(forwardPayload)) {
-            cell.bits.writeBytes(forwardPayload);
+            cell.storeBytes(forwardPayload);
         }
         return cell.endCell();
     }

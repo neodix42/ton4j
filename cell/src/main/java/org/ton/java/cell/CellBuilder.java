@@ -2,6 +2,7 @@ package org.ton.java.cell;
 
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -10,16 +11,18 @@ import java.util.List;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class CellBuilder extends Cell {
+public class CellBuilder {
+
+    Cell cell;
 
     private CellBuilder() {
-        super();
+        cell = new Cell();
+//        super();
     }
 
     private CellBuilder(int bitSize) {
-        super(bitSize);
+        cell = new Cell(bitSize);
     }
-
 
     public static CellBuilder beginCell() {
         return new CellBuilder();
@@ -36,26 +39,27 @@ public class CellBuilder extends Cell {
      * Converts a builder into an ordinary cell.
      */
     public Cell endCell() {
-        return this;
+//        cell.calculateHashes();
+        return cell;
     }
 
     public CellBuilder storeBit(Boolean bit) {
         checkBitsOverflow(1);
-        bits.writeBit(bit);
+        cell.bits.writeBit(bit);
         return this;
     }
 
     public CellBuilder storeBits(List<Boolean> arrayBits) {
         checkBitsOverflow(arrayBits.size());
         for (Boolean bit : arrayBits) {
-            bits.writeBit(bit);
+            cell.bits.writeBit(bit);
         }
         return this;
     }
 
     public CellBuilder storeBits(Boolean[] arrayBits) {
         checkBitsOverflow(arrayBits.length);
-        bits.writeBitArray(arrayBits);
+        cell.bits.writeBitArray(arrayBits);
         return this;
     }
 
@@ -102,41 +106,41 @@ public class CellBuilder extends Cell {
     public CellBuilder storeUint(BigInteger number, int bitLength) {
         checkBitsOverflow(bitLength);
         checkSign(number);
-        bits.writeUint(isNull(number) ? BigInteger.ZERO : number, bitLength);
+        cell.bits.writeUint(isNull(number) ? BigInteger.ZERO : number, bitLength);
         return this;
     }
 
     public CellBuilder storeUintMaybe(BigInteger number, int bitLength) {
         if (isNull(number)) {
-            bits.writeBit(false);
+            cell.bits.writeBit(false);
         } else {
-            bits.writeBit(true);
+            cell.bits.writeBit(true);
             checkBitsOverflow(bitLength);
             checkSign(number);
-            bits.writeUint(number, bitLength);
+            cell.bits.writeUint(number, bitLength);
         }
         return this;
     }
 
     public CellBuilder storeVarUint(BigInteger number, int bitLength) {
         checkSign(number);
-        bits.writeVarUint(number, bitLength);
+        cell.bits.writeVarUint(number, bitLength);
         return this;
     }
 
     public CellBuilder storeVarUint(Byte number, int bitLength) {
         checkSign(BigInteger.valueOf(number));
-        bits.writeVarUint(BigInteger.valueOf(number), bitLength);
+        cell.bits.writeVarUint(BigInteger.valueOf(number), bitLength);
         return this;
     }
 
     public CellBuilder storeVarUintMaybe(BigInteger number, int bitLength) {
         if (isNull(number)) {
-            bits.writeBit(false);
+            cell.bits.writeBit(false);
         } else {
-            bits.writeBit(true);
+            cell.bits.writeBit(true);
             checkSign(number);
-            bits.writeVarUint(number, bitLength);
+            cell.bits.writeVarUint(number, bitLength);
         }
         return this;
     }
@@ -176,7 +180,7 @@ public class CellBuilder extends Cell {
     public CellBuilder storeInt(BigInteger number, int bitLength) {
         BigInteger sint = BigInteger.ONE.shiftLeft(bitLength - 1);
         if ((number.compareTo(sint.negate()) >= 0) && (number.compareTo(sint) < 0)) {
-            bits.writeInt(number, bitLength);
+            cell.bits.writeInt(number, bitLength);
             return this;
         } else {
             throw new Error("Can't store an Int, because its value allocates more space than provided.");
@@ -185,28 +189,28 @@ public class CellBuilder extends Cell {
 
     public CellBuilder storeIntMaybe(BigInteger number, int bitLength) {
         if (isNull(number)) {
-            bits.writeBit(false);
+            cell.bits.writeBit(false);
         } else {
-            bits.writeBit(true);
-            bits.writeInt(number, bitLength);
+            cell.bits.writeBit(true);
+            cell.bits.writeInt(number, bitLength);
         }
         return this;
     }
 
     public CellBuilder storeBitString(BitString bitString) {
         checkBitsOverflow(bitString.getUsedBits());
-        bits.writeBitString(bitString);
+        cell.bits.writeBitString(bitString);
         return this;
     }
 
     public CellBuilder storeBitStringUnsafe(BitString bitString) {
-        bits.writeBitString(bitString);
+        cell.bits.writeBitString(bitString);
         return this;
     }
 
     public CellBuilder storeString(String str) {
         checkBitsOverflow(str.length() * 8);
-        bits.writeString(str);
+        cell.bits.writeString(str);
         return this;
     }
 
@@ -235,26 +239,26 @@ public class CellBuilder extends Cell {
 
     public CellBuilder storeAddress(Address address) {
         checkBitsOverflow(267);
-        bits.writeAddress(address);
+        cell.bits.writeAddress(address);
         return this;
     }
 
     public CellBuilder storeBytes(byte[] number) {
         checkBitsOverflow(number.length * 8);
-        bits.writeBytes(number);
+        cell.bits.writeBytes(number);
         return this;
     }
 
     public CellBuilder storeBytes(int[] number) {
         checkBitsOverflow(number.length * 8);
-        bits.writeBytes(number);
+        cell.bits.writeBytes(number);
         return this;
     }
 
     public CellBuilder storeBytes(List<Byte> bytes) {
         checkBitsOverflow(bytes.size() * 8);
         for (Byte b : bytes) {
-            bits.writeUint8(b);
+            cell.bits.writeUint8(b);
         }
         return this;
     }
@@ -262,49 +266,49 @@ public class CellBuilder extends Cell {
     public CellBuilder storeList(List<BigInteger> bytes, int bitLength) {
         checkBitsOverflow(bitLength);
         for (BigInteger b : bytes) {
-            bits.writeUint(b, bitLength);
+            cell.bits.writeUint(b, bitLength);
         }
         return this;
     }
 
     public CellBuilder storeBytes(byte[] number, int bitLength) {
         checkBitsOverflow(bitLength);
-        bits.writeBytes(number);
+        cell.bits.writeBytes(number);
         return this;
     }
 
     public CellBuilder storeBytes(int[] number, int bitLength) {
         checkBitsOverflow(bitLength);
-        bits.writeBytes(number);
+        cell.bits.writeBytes(number);
         return this;
     }
 
     public CellBuilder storeRef(Cell c) {
         checkRefsOverflow(1);
-        refs.add(c);
+        cell.refs.add(c);
         return this;
     }
 
     public CellBuilder storeRefMaybe(Cell c) {
         if (isNull(c)) {
-            bits.writeBit(false);
+            cell.bits.writeBit(false);
         } else {
-            bits.writeBit(true);
+            cell.bits.writeBit(true);
             checkRefsOverflow(1);
-            refs.add(c);
+            cell.refs.add(c);
         }
         return this;
     }
 
     public CellBuilder storeRefs(List<Cell> cells) {
         checkRefsOverflow(cells.size());
-        refs.addAll(cells);
+        cell.refs.addAll(cells);
         return this;
     }
 
     public CellBuilder storeRefs(Cell... cells) {
         checkRefsOverflow(cells.length);
-        refs.addAll(Arrays.asList(cells));
+        cell.refs.addAll(Arrays.asList(cells));
         return this;
     }
 
@@ -314,7 +318,7 @@ public class CellBuilder extends Cell {
 
         storeBitString(cellSlice.bits);
 
-        refs.addAll(cellSlice.refs);
+        cell.refs.addAll(cellSlice.refs);
         return this;
     }
 
@@ -328,26 +332,27 @@ public class CellBuilder extends Cell {
             storeBit(true);
             storeBitString(cellSlice.bits);
 
-            refs.addAll(cellSlice.refs);
+            cell.refs.addAll(cellSlice.refs);
         }
         return this;
     }
 
     public CellBuilder storeCell(Cell cell) {
-        checkBitsOverflow(cell.bits.getUsedBits());
-        checkRefsOverflow(cell.refs.size());
+        Cell c = cell.clone();
+        checkBitsOverflow(c.bits.getUsedBits());
+        checkRefsOverflow(c.refs.size());
 
-        storeBitString(cell.bits);
+        storeBitString(c.bits);
 
-        refs.addAll(cell.refs);
+        cell.refs.addAll(c.refs);
         return this;
     }
 
     public CellBuilder storeCellMaybe(Cell cell) {
         if (isNull(cell)) {
-            bits.writeBit(false);
+            cell.bits.writeBit(false);
         } else {
-            bits.writeBit(true);
+            cell.bits.writeBit(true);
             storeCell(cell);
         }
         return this;
@@ -366,7 +371,7 @@ public class CellBuilder extends Cell {
      * @return CellBuilder
      */
     public CellBuilder storeCoins(BigInteger coins) {
-        bits.writeCoins(isNull(coins) ? BigInteger.ZERO : coins);
+        cell.bits.writeCoins(isNull(coins) ? BigInteger.ZERO : coins);
         return this;
     }
 
@@ -378,25 +383,29 @@ public class CellBuilder extends Cell {
      */
     public CellBuilder storeCoinsMaybe(BigInteger coins) {
         if (isNull(coins)) {
-            bits.writeBit(false);
+            cell.bits.writeBit(false);
         } else {
-            bits.writeBit(true);
-            bits.writeCoins(coins);
+            cell.bits.writeBit(true);
+            cell.bits.writeCoins(coins);
         }
         return this;
     }
 
     public int getUsedBits() {
-        return bits.getUsedBits();
+        return cell.bits.getUsedBits();
     }
 
     public int getFreeBits() {
-        return bits.getFreeBits();
+        return cell.bits.getFreeBits();
+    }
+
+    public int getFreeRefs() {
+        return cell.getFreeRefs();
     }
 
     void checkBitsOverflow(int length) {
-        if (length > bits.getFreeBits()) {
-            throw new Error("Bits overflow. Can't add " + length + " bits. " + bits.getFreeBits() + " bits left.");
+        if (length > cell.bits.getFreeBits()) {
+            throw new Error("Bits overflow. Can't add " + length + " cell.bits. " + cell.bits.getFreeBits() + " bits left.");
         }
     }
 
@@ -407,8 +416,22 @@ public class CellBuilder extends Cell {
     }
 
     void checkRefsOverflow(int count) {
-        if (count > (4 - refs.size())) {
-            throw new Error("Refs overflow. Can't add " + count + " refs. " + (4 - refs.size()) + " refs left.");
+        if (count > (4 - cell.refs.size())) {
+            throw new Error("Refs overflow. Can't add " + count + " cell.refs. " + (4 - cell.refs.size()) + " refs left.");
         }
+    }
+
+    public int[] toUnsignedByteArray() {
+        return cell.bits.toUnsignedByteArray();
+    }
+
+    public CellBuilder fromBoc(String data) {
+        cell = Cell.fromBocMultiRoot(Utils.hexToSignedBytes(data)).get(0);
+        return this;
+    }
+
+    public CellBuilder fromBoc(byte[] data) {
+        cell = Cell.fromBocMultiRoot(data).get(0);
+        return this;
     }
 }

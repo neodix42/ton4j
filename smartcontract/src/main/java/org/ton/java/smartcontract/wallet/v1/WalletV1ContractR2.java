@@ -1,7 +1,6 @@
 package org.ton.java.smartcontract.wallet.v1;
 
 import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.WalletCodes;
@@ -24,7 +23,7 @@ public class WalletV1ContractR2 implements WalletContract {
      */
     public WalletV1ContractR2(Options options) {
         this.options = options;
-        options.code = Cell.fromBoc(WalletCodes.V1R2.getValue());
+        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.V1R2.getValue()).endCell();
     }
 
     @Override

@@ -32,8 +32,8 @@ public class JettonBridgeParamsV2 implements JettonBridgeParams {
                 .storeAddress(bridgeAddress)
                 .storeAddress(oracleAddress)
                 .storeDict(oracles.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
-                        v -> CellBuilder.beginCell().storeUint((BigInteger) v, 256)))
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                        v -> CellBuilder.beginCell().storeUint((BigInteger) v, 256).endCell()))
                 .storeUint(stateFlags, 8)
                 .storeRef(prices.toCell())
                 .storeUint(externalChainAddress, 256)

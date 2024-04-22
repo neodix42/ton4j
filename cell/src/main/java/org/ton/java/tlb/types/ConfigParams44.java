@@ -23,7 +23,7 @@ public class ConfigParams44 {
         return CellBuilder.beginCell()
                 .storeUint(0x00, 8)
                 .storeDict(suspendedAddressList.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 288).bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 288).endCell().bits,
                         v -> CellBuilder.beginCell().endCell()))
                 .storeUint(suspendedUntil, 32)
                 .endCell();

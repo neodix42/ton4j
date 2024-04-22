@@ -46,7 +46,7 @@ for (SmcLibraryEntry l : result.getResult()) {
 }
 
 Cell dictLibs = x.serialize(
-  k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
+  k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
   v -> CellBuilder.beginCell().storeRef((Cell) v)
 );
 

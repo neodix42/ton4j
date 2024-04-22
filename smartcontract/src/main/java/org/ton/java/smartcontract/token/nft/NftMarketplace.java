@@ -34,7 +34,7 @@ public class NftMarketplace implements Contract {
         }
 
         if (isNull(options.code)) {
-            options.code = Cell.fromBoc(NFT_MARKETPLACE_CODE_HEX);
+            options.code = CellBuilder.beginCell().fromBoc(NFT_MARKETPLACE_CODE_HEX).endCell();
         }
     }
 

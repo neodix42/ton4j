@@ -110,7 +110,7 @@ public class BlockInfo {
             result.storeRef(prefVertRef.toCell(afterMerge));
         }
 
-        return result;
+        return result.endCell();
     }
 
     public static BlockInfo deserialize(CellSlice cs) {

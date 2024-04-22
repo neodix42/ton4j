@@ -46,7 +46,7 @@ public class LockupWalletV1 implements WalletContract {
      */
     public LockupWalletV1(Options options) {
         this.options = options;
-        options.code = Cell.fromBoc(LOCKUP_R1_CODE_HEX);
+        options.code = CellBuilder.beginCell().fromBoc(LOCKUP_R1_CODE_HEX).endCell();
         if (isNull(options.walletId)) {
             options.walletId = 698983191 + options.wc;
         }
@@ -128,8 +128,8 @@ public class LockupWalletV1 implements WalletContract {
         }
 
         Cell cellDict = dictAllowedDestinations.serialize(
-                k -> CellBuilder.beginCell().storeAddress((Address) k).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 8)
+                k -> CellBuilder.beginCell().storeAddress((Address) k).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
         cell.storeDict(cellDict);
 

@@ -38,7 +38,7 @@ public class DnsItem implements Contract {
             options.wc = nonNull(this.address) ? this.address.wc : 0;
         }
         if (isNull(options.code)) {
-            options.code = Cell.fromBoc(WalletCodes.nftItem.getValue());
+            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
         }
     }
 
@@ -87,13 +87,13 @@ public class DnsItem implements Contract {
         BigInteger index = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber();
 
         TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStack().get(2);
-        Address collectionAddress = NftUtils.parseAddress(CellBuilder.fromBoc(collectionAddr.getCell().getBytes()));
+        Address collectionAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(collectionAddr.getCell().getBytes()).endCell());
 
         TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStack().get(3);
-        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.fromBoc(ownerAddr.getCell().getBytes())) : null;
+        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(ownerAddr.getCell().getBytes()).endCell()) : null;
 
         TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStack().get(4);
-        Cell contentCell = CellBuilder.fromBoc(contentC.getCell().getBytes());
+        Cell contentCell = CellBuilder.beginCell().fromBoc(contentC.getCell().getBytes()).endCell();
 
         return ItemData.builder()
                 .isInitialized(isInitialized)
@@ -122,7 +122,7 @@ public class DnsItem implements Contract {
         cell.storeBit(false); // forward_payload in this slice, not separate cell
 
         if (nonNull(forwardPayload)) {
-            cell.bits.writeBytes(forwardPayload);
+            cell.storeBytes(forwardPayload);
         }
         return cell.endCell();
     }
@@ -150,7 +150,7 @@ public class DnsItem implements Contract {
         }
 
         TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStack().get(0);
-        return new String(CellBuilder.fromBoc(domainCell.getCell().getBytes()).bits.toByteArray());
+        return new String(CellBuilder.beginCell().fromBoc(domainCell.getCell().getBytes()).endCell().bits.toByteArray());
     }
 
     public Address getEditor(Tonlib tonlib) {
@@ -162,7 +162,7 @@ public class DnsItem implements Contract {
         }
 
         TvmStackEntryCell editorCell = (TvmStackEntryCell) result.getStack().get(0);
-        return NftUtils.parseAddress(CellBuilder.fromBoc(editorCell.getCell().getBytes()));
+        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(editorCell.getCell().getBytes()).endCell());
     }
 
     /**
@@ -177,7 +177,7 @@ public class DnsItem implements Contract {
         }
 
         TvmStackEntryCell maxBidAddressCell = (TvmStackEntryCell) result.getStack().get(0);
-        Address maxBidAddress = NftUtils.parseAddress(CellBuilder.fromBoc(maxBidAddressCell.getCell().getBytes()));
+        Address maxBidAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(maxBidAddressCell.getCell().getBytes()).endCell());
 
         TvmStackEntryNumber maxBidAmountNumber = (TvmStackEntryNumber) result.getStack().get(1);
         BigInteger maxBidAmount = maxBidAmountNumber.getNumber();

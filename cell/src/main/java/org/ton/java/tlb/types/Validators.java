@@ -42,8 +42,8 @@ public class Validators implements ValidatorSet {
                 .storeUint(total, 16)
                 .storeUint(main, 16)
                 .storeDict(list.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 16).bits,
-                        v -> CellBuilder.beginCell().storeCell(((ValidatorDescr) v).toCell())
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 16).endCell().bits,
+                        v -> CellBuilder.beginCell().storeCell(((ValidatorDescr) v).toCell()).endCell()
                 ))
                 .endCell();
     }

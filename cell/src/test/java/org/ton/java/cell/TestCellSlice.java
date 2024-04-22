@@ -69,7 +69,7 @@ public class TestCellSlice {
 
         for (int i = 3; i <= 18; i++) {
             CellBuilder cell = CellBuilder.beginCell().storeVarUint(BigInteger.valueOf(777), i);
-            BigInteger loadedValue = CellSlice.beginParse(cell).loadVarUInteger(BigInteger.valueOf(i));
+            BigInteger loadedValue = CellSlice.beginParse(cell.endCell()).loadVarUInteger(BigInteger.valueOf(i));
             log.info("loaded {}", loadedValue);
             if (loadedValue.intValue() != 777) {
                 assertFalse(true);
@@ -79,21 +79,20 @@ public class TestCellSlice {
 
     @Test
     public void testBitStringVarUint2() {
-
         CellBuilder cell1 = CellBuilder.beginCell().storeVarUint(BigInteger.valueOf(10), 10);
-        BigInteger loadedValue1 = CellSlice.beginParse(cell1).loadVarUInteger(BigInteger.valueOf(10));
+        BigInteger loadedValue1 = CellSlice.beginParse(cell1.endCell()).loadVarUInteger(BigInteger.valueOf(10));
         assertThat(loadedValue1).isEqualTo(BigInteger.valueOf(10));
     }
 
     @Test
     public void testCellSliceUintsFromBoc() {
-        Cell c1 = Cell.fromBoc("b5ee9c72410101010003000001558501ef11");
+        Cell c1 = CellBuilder.beginCell().fromBoc("b5ee9c72410101010003000001558501ef11").endCell();
         CellSlice cs = CellSlice.beginParse(c1);
         BigInteger i = cs.loadUint(7);
         assertThat(i.longValue()).isEqualTo(42);
         cs.endParse();
 
-        Cell c2 = Cell.fromBoc("B5EE9C7241010101002200003F000000000000000000000000000000000000000000000000000000000000009352A2F27C");
+        Cell c2 = CellBuilder.beginCell().fromBoc("B5EE9C7241010101002200003F000000000000000000000000000000000000000000000000000000000000009352A2F27C").endCell();
         CellSlice cs2 = CellSlice.beginParse(c2);
         BigInteger j = cs2.loadUint(255);
         assertThat(j.longValue()).isEqualTo(73);
@@ -241,8 +240,8 @@ public class TestCellSlice {
         x.elements.put(200L, (byte) 2);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3)
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
         Cell cellDict = CellBuilder.beginCell()
@@ -275,8 +274,8 @@ public class TestCellSlice {
         x.elements.put(200L, (byte) 2);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3)
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
         Cell cellDict = CellBuilder.beginCell()
@@ -305,8 +304,8 @@ public class TestCellSlice {
         TonHashMap x = new TonHashMap(9);
 
         assertThrows(Error.class, () -> x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 9).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3)
+                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         ));
     }
 
@@ -319,8 +318,8 @@ public class TestCellSlice {
         x.elements.put(200L, (byte) 2);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3)
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
         log.info("cell dict bits length: {}", dict.bits.getUsedBits());
@@ -368,8 +367,8 @@ public class TestCellSlice {
         x.elements.put(200L, (byte) 4);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3)
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
         log.info("cell dict bits length: {}", dict.bits.getUsedBits());
@@ -424,8 +423,8 @@ public class TestCellSlice {
         x.elements.put(600L, (byte) 6);
 
         Cell dictX = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 8)
+                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
 
         log.info("cell dict X bits length: {}, refs.size {}", dictX.bits.getUsedBits(), dictX.refs.size());
@@ -438,8 +437,8 @@ public class TestCellSlice {
         y.elements.put(30000L, (byte) 99);
 
         Cell dictY = y.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeY).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 8)
+                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeY).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
 
         log.info("cell dict Y bits length: {}, refs.size {}", dictX.bits.getUsedBits(), dictY.refs.size());
@@ -513,8 +512,8 @@ public class TestCellSlice {
         dict.elements.put(300L, (byte) 3);
 
         Cell dictCell = dict.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 8)
+                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
 
         Cell c0 = CellBuilder.beginCell()
@@ -600,8 +599,8 @@ public class TestCellSlice {
         dict.elements.put(300L, (byte) 3);
 
         Cell dictCell = dict.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 8)
+                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
 
         Cell c0 = CellBuilder.beginCell()
@@ -749,8 +748,8 @@ public class TestCellSlice {
         x.elements.put(100L, (byte) 1);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3)
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
         log.info("cell dict bits length: {}", dict.bits.getUsedBits());

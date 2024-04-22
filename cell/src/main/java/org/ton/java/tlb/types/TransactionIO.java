@@ -26,8 +26,8 @@ public class TransactionIO {
     public Cell toCell() {
 
         Cell dictCell = out.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 15).bits,
-                v -> CellBuilder.beginCell().storeRef((Cell) v)
+                k -> CellBuilder.beginCell().storeUint((Long) k, 15).endCell().bits,
+                v -> CellBuilder.beginCell().storeRef((Cell) v).endCell()
         );
         return CellBuilder.beginCell()
                 .storeRefMaybe(in.toCell())

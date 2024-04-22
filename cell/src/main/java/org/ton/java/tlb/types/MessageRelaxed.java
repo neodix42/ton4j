@@ -55,7 +55,7 @@ public class MessageRelaxed {
                                 : StateInit.deserialize(cs))
                         : StateInit.builder().build())
                 .body(cs.loadBit() ?
-                        cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits())))
+                        cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits())).endCell())
                 .build();
     }
 }

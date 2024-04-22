@@ -25,8 +25,8 @@ public class BlockCreateStatsOrdinary implements BlockCreateStats {
         return CellBuilder.beginCell()
                 .storeUint(0x17, 8)
                 .storeDict(list.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
-                        v -> CellBuilder.beginCell().storeCell(((CreatorStats) v).toCell())
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                        v -> CellBuilder.beginCell().storeCell(((CreatorStats) v).toCell()).endCell()
                 )).endCell();
     }
 

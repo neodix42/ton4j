@@ -23,7 +23,7 @@ public class InMsgDescr {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeDict(inMsg.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
                         v -> CellBuilder.beginCell().storeCell(((InMsg) v).toCell()),
                         e -> CellBuilder.beginCell().storeCell(((ImportFees) e).toCell()),
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
@@ -34,8 +34,8 @@ public class InMsgDescr {
         return InMsgDescr.builder()
                 .inMsg(cs.loadDictAugE(256,
                         k -> k.readInt(256),
-                        v -> InMsg.deserialize(v),
-                        e -> ImportFees.deserialize(e)))
+                        InMsg::deserialize,
+                        ImportFees::deserialize))
                 .build();
     }
 

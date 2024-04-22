@@ -29,8 +29,8 @@ public class BlockSignaturesPure {
                 .storeUint(sigCount, 32)
                 .storeUint(sigWeight, 64)
                 .storeDict(signatures.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 16).bits,
-                        v -> CellBuilder.beginCell().storeCell(((CryptoSignaturePair) v).toCell())
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 16).endCell().bits,
+                        v -> CellBuilder.beginCell().storeCell(((CryptoSignaturePair) v).toCell()).endCell()
                 ))
                 .endCell();
     }

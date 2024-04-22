@@ -34,7 +34,7 @@ public class MultisigWallet implements WalletContract {
      */
     public MultisigWallet(Options options) {
         this.options = options;
-        options.code = Cell.fromBoc(WalletCodes.multisig.getValue());
+        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.multisig.getValue()).endCell();
     }
 
     @Override
@@ -88,7 +88,7 @@ public class MultisigWallet implements WalletContract {
     private Cell createSigningMessageInternal(int pubkeyIndex, Cell order) {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(pubkeyIndex, 8); // root-id - pk-index for owner_infos dict
-        message.writeCell(order);
+        message.storeCell(order);
         return message.endCell();
     }
 
@@ -105,7 +105,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStack().get(0);
-        Cell cell = CellBuilder.fromBoc(cellResult.getCell().getBytes());
+        Cell cell = CellBuilder.beginCell().fromBoc(cellResult.getCell().getBytes()).endCell();
 
         CellSlice cs = CellSlice.beginParse(cell);
         TonHashMap loadedDict = cs.loadDict(8,
@@ -156,7 +156,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStack().get(0);
-        return CellBuilder.fromBoc(domainCell.getCell().getBytes());
+        return CellBuilder.beginCell().fromBoc(domainCell.getCell().getBytes()).endCell();
     }
 
     /**
@@ -207,7 +207,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         Cell cellDict = dictDestinations.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
                 v -> (Cell) v
         );
 
@@ -226,7 +226,7 @@ public class MultisigWallet implements WalletContract {
             queryCell.storeUint(query.getCreatorI(), 8);
             queryCell.storeUint(query.getCnt(), 8);
             queryCell.storeUint(query.getCntBits(), n);
-            queryCell.writeCell(query.getMsg());
+            queryCell.storeCell(query.getMsg());
 
             dictDestinations.elements.put(
                     query.getQueryId(), // key - query-id
@@ -235,7 +235,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         Cell cellDict = dictDestinations.serialize(
-                k -> CellBuilder.beginCell().storeUint((BigInteger) k, dictKeySize).bits,
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, dictKeySize).endCell().bits,
                 v -> (Cell) v
         );
 
@@ -261,7 +261,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         Cell cellDict = dictSignatures.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
                 v -> (Cell) v
         );
 
@@ -286,7 +286,7 @@ public class MultisigWallet implements WalletContract {
             c.storeBit(true);
             c.storeRef(serializeSignatures(++i, signatures));
         }
-        return c;
+        return c.endCell();
     }
 
     public static Cell createQuery(TweetNaclFast.Signature.KeyPair keyPair, List<MultisigSignature> signatures, Cell order) {
@@ -302,17 +302,17 @@ public class MultisigWallet implements WalletContract {
         CellSlice cs = CellSlice.beginParse(order);
         cs.skipBit(); // remove no-signatures flag
         CellBuilder o = CellBuilder.beginCell();
-        o.writeCell(cs.sliceToCell());
+        o.storeCell(cs.sliceToCell());
 
-        rootCell.writeCell(o);
+        rootCell.storeCell(o.endCell());
 
         byte[] rootSignature = signCell(keyPair, rootCell.endCell());
 
         CellBuilder query = CellBuilder.beginCell();
         query.storeBytes(rootSignature);
-        query.writeCell(rootCell);
+        query.storeCell(rootCell.endCell());
 
-        return query;
+        return query.endCell();
     }
 
     /**
@@ -356,7 +356,7 @@ public class MultisigWallet implements WalletContract {
         order.storeUint(queryId, 64);
 
         for (Cell msg : internalMsgs) {
-            order.writeCell(msg);
+            order.storeCell(msg);
         }
         return order.endCell();
     }
@@ -370,7 +370,7 @@ public class MultisigWallet implements WalletContract {
         order.storeUint(queryId, 64);
 
         for (Cell msg : internalMsgs) {
-            order.writeCell(msg);
+            order.storeCell(msg);
         }
         return order.endCell();
     }
@@ -384,9 +384,9 @@ public class MultisigWallet implements WalletContract {
         CellSlice cs = CellSlice.beginParse(order);
         cs.skipBit(); // remove no-signatures flag
         CellBuilder o = CellBuilder.beginCell();
-        o.writeCell(cs.sliceToCell());
+        o.storeCell(cs.sliceToCell());
 
-        signedOrder.writeCell(o.endCell());
+        signedOrder.storeCell(o.endCell());
         return signedOrder.endCell();
     }
 
@@ -415,9 +415,9 @@ public class MultisigWallet implements WalletContract {
         CellSlice cs = CellSlice.beginParse(order);
         cs.skipBit(); // remove no-signatures flag
         CellBuilder o = CellBuilder.beginCell();
-        o.writeCell(cs.sliceToCell());
+        o.storeCell(cs.sliceToCell());
 
-        byte[] signature = signCell(keyPair, o);
+        byte[] signature = signCell(keyPair, o.endCell());
 
         System.out.println("sig " + Utils.bytesToHex(signature));
 
@@ -436,7 +436,7 @@ public class MultisigWallet implements WalletContract {
             c.storeBit(false); // no more references, only one signature added
 
             signedOrder.storeRef(c.endCell());
-            signedOrder.writeCell(o);
+            signedOrder.storeCell(o.endCell());
             return signedOrder.endCell();
         } else { // order contains some signatures
             Cell otherSignatures = cs.loadRef();
@@ -451,7 +451,7 @@ public class MultisigWallet implements WalletContract {
             c.storeRef(otherSignatures);
 
             signedOrder.storeRef(c.endCell());
-            signedOrder.writeCell(o);
+            signedOrder.storeCell(o.endCell());
             return signedOrder.endCell();
         }
 
@@ -484,9 +484,9 @@ public class MultisigWallet implements WalletContract {
         CellSlice cs = CellSlice.beginParse(order);
         cs.skipBit(); // remove no-signatures flag
         CellBuilder o = CellBuilder.beginCell();
-        o.writeCell(cs.sliceToCell());
+        o.storeCell(cs.sliceToCell());
 
-        return signCell(keyPair, o);
+        return signCell(keyPair, o.endCell());
     }
 
     public Pair<Long, Long> getNandK(Tonlib tonlib) {
@@ -524,7 +524,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
-        Cell cellDict = CellBuilder.fromBoc(entryCell.getCell().getBytes());
+        Cell cellDict = CellBuilder.beginCell().fromBoc(entryCell.getCell().getBytes()).endCell();
 
         CellSlice cs = CellSlice.beginParse(cellDict);
 
@@ -568,7 +568,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
-        Cell cellDict = CellBuilder.fromBoc(entryCell.getCell().getBytes());
+        Cell cellDict = CellBuilder.beginCell().fromBoc(entryCell.getCell().getBytes()).endCell();
 
         CellSlice cs = CellSlice.beginParse(cellDict);
 
@@ -611,7 +611,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
-        Cell cellDict = CellBuilder.fromBoc(entryCell.getCell().getBytes());
+        Cell cellDict = CellBuilder.beginCell().fromBoc(entryCell.getCell().getBytes()).endCell();
 
         CellSlice cs = CellSlice.beginParse(cellDict);
 
@@ -694,7 +694,7 @@ public class MultisigWallet implements WalletContract {
 
         TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
 
-        return CellBuilder.fromBoc(entryCell.getCell().getBytes());
+        return CellBuilder.beginCell().fromBoc(entryCell.getCell().getBytes()).endCell();
     }
 
     /**

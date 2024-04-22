@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.utils.Utils;
 
 import java.io.Serializable;
@@ -41,12 +42,12 @@ public class ParseRunResult implements Serializable {
                 return TvmStackEntryNumber.builder().number(TvmNumber.builder().number(element).build()).build();
             } else if (elementType.contains("cell")) {
                 byte[] e = Utils.hexToSignedBytes(element);
-                Cell cell = Cell.fromBoc(e);
+                Cell cell = CellBuilder.beginCell().fromBoc(e).endCell();
                 String cellBase64 = bytesToBase64(cell.toBoc(false));
                 return TvmStackEntryCell.builder().cell(TvmCell.builder().bytes(cellBase64).build()).build();
             } else if (elementType.contains("slice")) {
                 byte[] e = Utils.hexToSignedBytes(element);
-                Cell cell = Cell.fromBoc(e);
+                Cell cell = CellBuilder.beginCell().fromBoc(e).endCell();
                 String cellBase64 = bytesToBase64(cell.toBoc(false));
                 return TvmStackEntrySlice.builder().slice(TvmSlice.builder().bytes(cellBase64).build()).build();
             } else if (elementType.contains("dict")) {

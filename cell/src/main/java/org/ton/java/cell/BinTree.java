@@ -31,7 +31,8 @@ public class BinTree {
             cb.storeBit(true);
             cb.storeRef(CellBuilder.beginCell()
                     .storeBit(false)
-                    .storeCell(isNull(left) ? cells.pop().toCell() : left));
+                    .storeCell(isNull(left) ? cells.pop().toCell() : left)
+                    .endCell());
             if (cells.size() != 0) {
                 cb.storeRef(addToBinTree(cells, cells.pop().toCell()));
             }

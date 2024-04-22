@@ -32,7 +32,7 @@ public class HighloadWalletV3 implements WalletContract {
      */
     public HighloadWalletV3(Options options) {
         this.options = options;
-        options.code = Cell.fromBoc(WalletCodes.highloadV3.getValue());
+        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.highloadV3.getValue()).endCell();
     }
 
     @Override

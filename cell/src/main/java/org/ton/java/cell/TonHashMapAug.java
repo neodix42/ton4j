@@ -199,7 +199,7 @@ public class TonHashMapAug {
             serialize_edge((List<Object>) se.get(2), leftCell, forkExtra);
             Cell rightCell = new Cell();
             serialize_edge((List<Object>) se.get(3), rightCell, forkExtra);
-            builder.writeCell((Cell) forkExtra.apply(leftCell, rightCell));
+            builder.writeCell(((CellBuilder) forkExtra.apply(leftCell, rightCell)).endCell());
             builder.refs.add(leftCell);
             builder.refs.add(rightCell);
         }
@@ -236,7 +236,7 @@ public class TonHashMapAug {
         }
 
         List<Object> s = flatten(splitTree(se), keySize);
-        Cell b = new Cell();
+        Cell b = CellBuilder.beginCell().endCell();
         serialize_edge(s, b, forkExtra);
 
         return b;
@@ -262,7 +262,6 @@ public class TonHashMapAug {
     }
 
     private BitString deserializeLabelLong(CellSlice edge, int m) {
-//        BigInteger length = edge.loadUint((int) Math.ceil(log2((m + 1))));
         BigInteger length = edge.loadUint(BigInteger.valueOf(m).bitLength());
         return edge.loadBits(length.intValue());
     }

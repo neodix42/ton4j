@@ -86,7 +86,7 @@ public class PaymentsUtils {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(tag_state, 32);
         cell.storeUint(channelId, 128);
-        cell.writeCell(semiChannelBody);
+        cell.storeCell(semiChannelBody);
         cell.storeRefMaybe(counterpartySemiChannelBody);
         return cell.endCell();
     }
@@ -94,7 +94,7 @@ public class PaymentsUtils {
     public static Cell createSignedSemiChannelState(byte[] signature, Cell state) {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeBytes(signature);
-        cell.writeCell(state);
+        cell.storeCell(state);
         return cell.endCell();
     }
 

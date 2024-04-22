@@ -480,7 +480,7 @@ public class Cell {
     }
 
     private static Boc deserializeBocHeader(byte[] data) {
-        Cell rawCell = CellBuilder.beginCell(data.length * 8).storeBytes(data);
+        Cell rawCell = CellBuilder.beginCell(data.length * 8).storeBytes(data).endCell();
         CellSlice cs = CellSlice.beginParse(rawCell);
         Boc boc = Boc.builder()
                 .magic(cs.loadUint(32).longValue())

@@ -23,7 +23,7 @@ public class OutList {
     List<OutAction> actions;
 
     public Cell toCell() {
-        Cell list = CellBuilder.beginCell();
+        Cell list = CellBuilder.beginCell().endCell();
         int i = 0;
         for (OutAction action : actions) {
             Cell outMsg = action.toCell();
@@ -40,7 +40,6 @@ public class OutList {
             actions.add(action);
             cs = CellSlice.beginParse(t);
         }
-
         return OutList.builder()
                 .actions(actions)
                 .build();

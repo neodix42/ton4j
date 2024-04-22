@@ -62,7 +62,7 @@ public class PaymentChannel implements WalletContract {
         }
 
         if (isNull(options.code)) {
-            options.code = Cell.fromBoc(WalletCodes.payments.getValue());
+            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.payments.getValue()).endCell();
         }
     }
 
@@ -91,7 +91,7 @@ public class PaymentChannel implements WalletContract {
         cell.storeCoins(BigInteger.ZERO); // balance_B
         cell.storeBytes(getOptions().publicKeyA);
         cell.storeBytes(getOptions().publicKeyB);
-        cell.bits.writeUint(getOptions().getChannelConfig().getChannelId(), 128); // channel_id
+        cell.storeUint(getOptions().getChannelConfig().getChannelId(), 128); // channel_id
 
         CellBuilder closingConfig = CellBuilder.beginCell();
         if (nonNull(getOptions().getClosingConfig())) {
@@ -103,7 +103,7 @@ public class PaymentChannel implements WalletContract {
             closingConfig.storeCoins(BigInteger.ZERO); // misbehavior_fine
             closingConfig.storeUint(0, 32); // conditional_close_duration
         }
-        cell.storeRef(closingConfig);
+        cell.storeRef(closingConfig.endCell());
 
         cell.storeUint(0, 32); // committed_seqno_A
         cell.storeUint(0, 32); // committed_seqno_B
@@ -113,7 +113,7 @@ public class PaymentChannel implements WalletContract {
         paymentConfig.storeCoins(isNull(getOptions().excessFee) ? BigInteger.ZERO : getOptions().excessFee); // excess_fee
         paymentConfig.storeAddress(getOptions().getChannelConfig().getAddressA()); // addr_A
         paymentConfig.storeAddress(getOptions().getChannelConfig().getAddressB()); // addr_B
-        cell.storeRef(paymentConfig);
+        cell.storeRef(paymentConfig.endCell());
 
         return cell.endCell();
     }
@@ -288,7 +288,7 @@ public class PaymentChannel implements WalletContract {
         TvmStackEntryList quarantineList = (TvmStackEntryList) result.getStack().get(6);
         for (Object o : quarantineList.getList().getElements()) {
             TvmStackEntryCell t = (TvmStackEntryCell) o;
-            quarantine = CellBuilder.fromBoc(t.getCell().getBytes());
+            quarantine = CellBuilder.beginCell().fromBoc(t.getCell().getBytes()).endCell();
         }
 
         TvmStackEntryTuple trippleTuple = (TvmStackEntryTuple) result.getStack().get(7);
@@ -296,11 +296,11 @@ public class PaymentChannel implements WalletContract {
 
         TvmStackEntryCell addressACell = (TvmStackEntryCell) trippleTuple.getTuple().getElements().get(1);
 
-        Address addressA = NftUtils.parseAddress(CellBuilder.fromBoc(addressACell.getCell().getBytes()));
+        Address addressA = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(addressACell.getCell().getBytes()).endCell());
 
         TvmStackEntryCell AddressBCell = (TvmStackEntryCell) trippleTuple.getTuple().getElements().get(2);
 
-        Address addressB = NftUtils.parseAddress(CellBuilder.fromBoc(AddressBCell.getCell().getBytes()));
+        Address addressB = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(AddressBCell.getCell().getBytes()).endCell());
 
         return ChannelData.builder()
                 .state(stateNumber.getNumber().longValue())
