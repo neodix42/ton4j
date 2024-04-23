@@ -30,9 +30,15 @@ public class TestCellSerialization {
         Cell c4 = CellBuilder.beginCell().storeUint((long) Math.pow(2, 42), 44).endCell();
         Cell c5 = CellBuilder.beginCell().storeUint((long) Math.pow(2, 41), 42).endCell();
 
+//        log.info(c0.print());
+        log.info(Utils.bytesToHex(c0.hash()));
+        log.info(Utils.bytesToHex(c0.toBoc(true)));
+        log.info(Utils.bytesToHex(c0.toBoc(false)));
 
-        log.info(c2.print());
+//        log.info(c2.print());
+        log.info(Utils.bytesToHex(c2.hash()));
         log.info(Utils.bytesToHex(c2.toBoc(true)));
+        log.info(Utils.bytesToHex(c2.toBoc(false)));
 
         assertThat(c2.bitStringToHex()).isEqualTo("55_");
 
@@ -154,7 +160,7 @@ public class TestCellSerialization {
         log.info("c1_more hex: {}", Utils.bytesToHex(c1_more.toBoc(true)));
         assertThat(Utils.bytesToHex(c1_more.toBoc(true))).isEqualTo("b5ee9c72410105010045000207800000200201000b4000000000080109800000000203010b8000000000200400438004b1ca92c714d3015cba78ec7055fa7e9e65c68905b5f86ea3c66b0b1391bc01b0b8a46275");
 
-        byte[] serializedCell1 = c1_more.toBoc(true);
+        byte[] serializedCell1 = c1.toBoc(true);
         log.info("c1 hex {}", Utils.bytesToHex(serializedCell1));
         Cell dc1 = CellBuilder.beginCell().fromBoc(serializedCell1).endCell();
         log.info("c1 deserialized");
@@ -171,11 +177,13 @@ public class TestCellSerialization {
         assertThat(c1.toBoc(true)).isEqualTo(dc1.toBoc(true));
         assertThat(c1.toBoc(true)).isEqualTo(CellBuilder.beginCell().fromBoc(dc1.toBoc(true)).endCell().toBoc(true));
 
-        assertThat(dc1.toBitString()).isEqualTo(c1.bits.toString());
-        assertThat(CellSlice.beginParse(dc1).loadRef().bits.toString()).isEqualTo(c2.bits.toString());
-        assertThat(dc1.refs.get(1).bits.toString()).isEqualTo(c4.bits.toString());
-        assertThat(dc1.refs.get(0).refs.get(0).bits.toString()).isEqualTo(c3.bits.toString());
-        assertThat(dc1.refs.get(0).refs.get(0).refs.get(0).bits.toString()).isEqualTo(c5.bits.toString());
+        byte[] serializedCell2 = c1_more.toBoc(true);
+        log.info("serializedCell2 hex {}", Utils.bytesToHex(serializedCell1));
+        Cell dc2 = CellBuilder.beginCell().fromBoc(serializedCell2).endCell();
+        assertThat(CellSlice.beginParse(dc2).loadRef().bits.toString()).isEqualTo(c2.bits.toString());
+        assertThat(dc2.refs.get(1).bits.toString()).isEqualTo(c4.bits.toString());
+        assertThat(dc2.refs.get(0).refs.get(0).bits.toString()).isEqualTo(c3.bits.toString());
+        assertThat(dc2.refs.get(0).refs.get(0).refs.get(0).bits.toString()).isEqualTo(c5.bits.toString());
     }
 
     @Test

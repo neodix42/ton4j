@@ -56,7 +56,7 @@ public class Cell {
         this.levelMask = new LevelMask(0);
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
-        calculateHashes();
+//        calculateHashes();
     }
 
     public Cell(int bitSize) {
@@ -66,7 +66,7 @@ public class Cell {
         this.levelMask = resolveMask();
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
-        calculateHashes();
+//        calculateHashes();
     }
 
     public Cell(BitString bits, List<Cell> refs) {
@@ -78,7 +78,7 @@ public class Cell {
         this.levelMask = new LevelMask(0);
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
-        calculateHashes();
+//        calculateHashes();
     }
 
     public Cell(BitString bits, List<Cell> refs, int cellType) {
@@ -90,7 +90,7 @@ public class Cell {
         this.levelMask = new LevelMask(0);
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
-        calculateHashes();
+//        calculateHashes();
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, LevelMask levelMask) {
@@ -102,7 +102,7 @@ public class Cell {
         this.levelMask = levelMask;
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
-        calculateHashes();
+//        calculateHashes();
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, CellType cellType) {
@@ -114,7 +114,7 @@ public class Cell {
         this.levelMask = resolveMask();
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
-        calculateHashes();
+//        calculateHashes();
     }
 
     public Cell(BitString bits, int[] refsIndexes, CellType cellType) {
@@ -124,7 +124,7 @@ public class Cell {
         this.levelMask = new LevelMask(0);
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
-        calculateHashes();
+//        calculateHashes();
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, CellType cellType) {
@@ -135,7 +135,7 @@ public class Cell {
         this.levelMask = resolveMask();
         descriptors = getDescriptors(levelMask.getMask());
         dataBytes = getDataBytes();
-        calculateHashes();
+//        calculateHashes();
     }
 
     public static CellType toCellType(int cellType) {
@@ -311,6 +311,10 @@ public class Cell {
         c.special = this.special;
         c.type = this.type;
         c.levelMask = this.levelMask.clone();
+        c.hashes = new ArrayList<>(this.hashes);
+        c.depths = new ArrayList<>(this.depths);
+        c.dataBytes = this.dataBytes;
+        //c.calculateHashes();
         return c;
     }
 
@@ -362,12 +366,10 @@ public class Cell {
             BitString bss = new BitString(ba.length);
             bss.writeBitArray(ba);
 
-            BitString f = new BitString(bss.getBitString().length());
-            f.writeBitString(bss);
+//            BitString f = new BitString(bss.getBitString().length());
+//            f.writeBitString(bss);
 
-            Cell c = new Cell();
-            c.bits = f;
-            return c;
+            return CellBuilder.beginCell().storeBitString(bss).endCell();
         } catch (Exception e) {
             throw new Error("Cannot convert hex BitString to Cell. Error " + e.getMessage());
         }
@@ -614,24 +616,6 @@ public class Cell {
         return Utils.hexToSignedBytes(hashes.get(hashIndex));
     }
 
-    byte[] getRepr() {
-        byte[] reprArray = new byte[0];
-
-        reprArray = Utils.concatBytes(reprArray, getDataWithDescriptors());
-
-        for (Cell cell : refs) {
-            reprArray = Utils.concatBytes(reprArray, cell.getMaxDepthAsArray());
-        }
-
-        for (Cell cell : refs) {
-            reprArray = Utils.concatBytes(reprArray, cell.hash());
-        }
-
-        byte[] x = new byte[0];
-        x = Utils.concatBytes(x, reprArray);
-        return x;
-    }
-
     byte[] getRefsDescriptor(int lvl) {
         byte[] d1 = new byte[1];
         d1[0] = (byte) (isNull(refs) ? 0 : refs.size() + ((special ? 1 : 0) * 8) + lvl * 32);
@@ -645,13 +629,6 @@ public class Cell {
             d3++;
         }
         return new byte[]{d3};
-    }
-
-    byte[] getDataWithDescriptors() {
-        byte[] d1 = getRefsDescriptor(levelMask.getMask());
-        byte[] d2 = getBitsDescriptor();
-        byte[] tuBits = bits.getTopUppedArray();
-        return Utils.concatBytes(Utils.concatBytes(d1, d2), tuBits);
     }
 
     int getMaxLevel() {
@@ -711,7 +688,7 @@ public class Cell {
 
     public byte[] toBoc(boolean hasCrc32c, boolean hasIdx, boolean hasCacheBits) {
         // recursively go through cells, build hash index and store unique in slice
-        List<Cell> orderCells = flattenIndex(List.of(this));
+        List<Cell> orderCells = flattenIndex(List.of(this.clone()));
 
         int cellSizeBits = Utils.log2(orderCells.size() + 1);
         int cellSizeBytes = (int) Math.ceil((double) cellSizeBits / 8);
@@ -719,7 +696,6 @@ public class Cell {
         byte[] payload = new byte[0];
         for (Cell orderCell : orderCells) {
             payload = Utils.concatBytes(payload, orderCell.serialize(cellSizeBytes));
-//            payload.addAll(orderCell.serialize(cellSizeBytes));
         }
         // bytes needed to store len of payload
         int sizeBits = Utils.log2(payload.length + 1);
@@ -877,7 +853,6 @@ public class Cell {
             if ((s.length() % 8) > 0) {
                 s = s + StringUtils.repeat("0", 8 - (s.length() % 8));
             }
-            //s = StringUtils.rightPad(s, 8 - (s.length() % 8), "0");
             return Utils.bitStringToByteArray(s);
         } else {
             return bits.toByteArray();

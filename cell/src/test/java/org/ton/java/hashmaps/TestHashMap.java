@@ -32,8 +32,7 @@ public class TestHashMap {
         CellSlice cs = CellSlice.beginParse(cell);
         TonHashMap x = cs.loadDict(64,
                 k -> k.readUint(64),
-                v -> CellSlice.beginParse(v).loadUint(8)
-        );
+                v -> CellSlice.beginParse(v).loadUint(8));
         log.info("Deserialized hashmap from cell {}", x);
 
         int i = 0;

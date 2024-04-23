@@ -38,24 +38,24 @@ public class Utils {
     /**
      * uses POLY 0x1EDC6F41
      */
-    public static Long getCRC32ChecksumAsLong(int[] bytes) {
+    public static Long getCRC32ChecksumAsLong(byte[] bytes) {
         Checksum crc32c = new CRC32C();
-        crc32c.update(Utils.unsignedBytesToSigned(bytes), 0, bytes.length);
+        crc32c.update(bytes, 0, bytes.length);
         return crc32c.getValue();
     }
 
-    public static String getCRC32ChecksumAsHex(int[] bytes) {
+    public static String getCRC32ChecksumAsHex(byte[] bytes) {
         return Long.toHexString(getCRC32ChecksumAsLong(bytes));
     }
 
-    public static int[] getCRC32ChecksumAsBytes(int[] bytes) {
+    public static byte[] getCRC32ChecksumAsBytes(byte[] bytes) {
         return long4BytesToBytes(getCRC32ChecksumAsLong(bytes));
     }
 
-    public static int[] getCRC32ChecksumAsBytesReversed(int[] bytes) {
-        int[] b = long4BytesToBytes(getCRC32ChecksumAsLong(bytes));
+    public static byte[] getCRC32ChecksumAsBytesReversed(byte[] bytes) {
+        byte[] b = long4BytesToBytes(getCRC32ChecksumAsLong(bytes));
 
-        int[] reversed = new int[4];
+        byte[] reversed = new byte[4];
         reversed[0] = b[3];
         reversed[1] = b[2];
         reversed[2] = b[1];
@@ -70,10 +70,10 @@ public class Utils {
      * @param l value
      * @return array of unsigned bytes
      */
-    public static int[] long4BytesToBytes(long l) {
-        int[] result = new int[4];
+    public static byte[] long4BytesToBytes(long l) {
+        byte[] result = new byte[4];
         for (int i = 3; i >= 0; i--) {
-            result[i] = (int) l & 0xFF;
+            result[i] = (byte) (l & 0xFF);
             l >>= 8;
         }
         return result;

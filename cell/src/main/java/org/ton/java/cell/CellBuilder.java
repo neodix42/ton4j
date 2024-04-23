@@ -5,7 +5,6 @@ import org.ton.java.bitstring.BitString;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Objects.isNull;
@@ -39,7 +38,7 @@ public class CellBuilder {
      * Converts a builder into an ordinary cell.
      */
     public Cell endCell() {
-//        cell.calculateHashes();
+        cell.calculateHashes();
         return cell;
     }
 
@@ -198,13 +197,15 @@ public class CellBuilder {
     }
 
     public CellBuilder storeBitString(BitString bitString) {
-        checkBitsOverflow(bitString.getUsedBits());
-        cell.bits.writeBitString(bitString);
+        BitString bs = bitString.clone();
+        checkBitsOverflow(bs.getUsedBits());
+        cell.bits.writeBitString(bs);
         return this;
     }
 
     public CellBuilder storeBitStringUnsafe(BitString bitString) {
-        cell.bits.writeBitString(bitString);
+        BitString bs = bitString.clone();
+        cell.bits.writeBitString(bs);
         return this;
     }
 
@@ -302,13 +303,17 @@ public class CellBuilder {
 
     public CellBuilder storeRefs(List<Cell> cells) {
         checkRefsOverflow(cells.size());
-        cell.refs.addAll(cells);
+        for (Cell c : cells) {
+            cell.refs.add(c);
+        }
         return this;
     }
 
     public CellBuilder storeRefs(Cell... cells) {
         checkRefsOverflow(cells.length);
-        cell.refs.addAll(Arrays.asList(cells));
+        for (Cell c : cells) {
+            cell.refs.add(c);
+        }
         return this;
     }
 
@@ -318,24 +323,16 @@ public class CellBuilder {
 
         storeBitString(cellSlice.bits);
 
-        cell.refs.addAll(cellSlice.refs);
-        return this;
-    }
-
-    public CellBuilder storeSliceMaybe(CellSlice cellSlice) {
-
-        if (isNull(cellSlice)) {
-            storeBit(false);
-        } else {
-            checkBitsOverflow(cellSlice.bits.getUsedBits());
-            checkRefsOverflow(cellSlice.refs.size());
-            storeBit(true);
-            storeBitString(cellSlice.bits);
-
-            cell.refs.addAll(cellSlice.refs);
+        for (Cell c : cellSlice.refs) {
+            cell.refs.add(c.clone());
         }
         return this;
     }
+//    Cell cc = c.clone();
+//    checkBitsOverflow(cc.bits.getUsedBits());
+//    checkRefsOverflow(cc.refs.size());
+//    storeBitString(cc.bits);
+//    cell.refs.addAll(cc.refs);
 
     public CellBuilder storeCell(Cell cell) {
         Cell c = cell.clone();
@@ -348,16 +345,16 @@ public class CellBuilder {
         return this;
     }
 
-    public CellBuilder storeCellMaybe(Cell cell) {
+    public CellBuilder storeCellMaybe(Cell c) {
         if (isNull(cell)) {
             cell.bits.writeBit(false);
         } else {
+            Cell cc = c.clone();
             cell.bits.writeBit(true);
-            storeCell(cell);
+            storeCell(cc);
         }
         return this;
     }
-
 
     public CellBuilder storeDict(Cell dict) {
         storeSlice(CellSlice.beginParse(dict));
@@ -425,6 +422,10 @@ public class CellBuilder {
         return cell.bits.toUnsignedByteArray();
     }
 
+    public byte[] toSignedByteArray() {
+        return cell.bits.toSignedByteArray();
+    }
+
     public CellBuilder fromBoc(String data) {
         cell = Cell.fromBocMultiRoot(Utils.hexToSignedBytes(data)).get(0);
         return this;
@@ -432,6 +433,11 @@ public class CellBuilder {
 
     public CellBuilder fromBoc(byte[] data) {
         cell = Cell.fromBocMultiRoot(data).get(0);
+        return this;
+    }
+
+    public CellBuilder fromBoc(int[] data) {
+        cell = Cell.fromBocMultiRoot(Utils.unsignedBytesToSigned(data)).get(0);
         return this;
     }
 }

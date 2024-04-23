@@ -114,7 +114,7 @@ public class TestTl {
 
             int[] boc = r.readBytes(bocSize);
             log.info("boc: {}", Utils.bytesToHex(boc));
-            Cell c = CellBuilder.fromBoc(boc);
+            Cell c = CellBuilder.beginCell().fromBoc(boc).endCell();
             if (c.bits.preReadUint(8).longValue() == 0xc3) {
                 //c.bits.readUint(8);
                 BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c)); // block tlb magic 11ef55aa

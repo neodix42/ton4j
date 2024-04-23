@@ -259,8 +259,8 @@ public class Tonlib {
     }
 
     private String syncAndRead(String query) {
+        String response = null;
         try {
-            String response = null;
             tonlibJson.tonlib_client_json_send(tonlib, query);
             TimeUnit.MILLISECONDS.sleep(200);
             response = receive();
@@ -304,8 +304,8 @@ public class Tonlib {
             return response;
 
         } catch (Exception e) {
-            log.info("Cannot sync with blockchain. Error: " + e.getMessage());
-            return null;
+            log.info(e.getMessage());
+            return response;
         }
     }
 

@@ -35,7 +35,7 @@ public class TonHashMapE extends TonHashMap {
             return CellBuilder.beginCell().storeBit(false).endCell();
         } else {
             List<Object> s = flatten(splitTree(se), keySize);
-            Cell b = new Cell();
+            Cell b = CellBuilder.beginCell().endCell();
             serialize_edge(s, b);
 
             return CellBuilder.beginCell()

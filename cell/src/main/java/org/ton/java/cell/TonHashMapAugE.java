@@ -54,7 +54,7 @@ public class TonHashMapAugE extends TonHashMapAug {
             return CellBuilder.beginCell().storeBit(false).endCell();
         } else {
             List<Object> s = flatten(splitTree(se), keySize);
-            Cell b = new Cell();
+            Cell b = CellBuilder.beginCell().endCell();
             serialize_edge(s, b, forkExtra);
 
             return CellBuilder.beginCell()

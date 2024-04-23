@@ -184,34 +184,6 @@ public class TestBitString {
     }
 
     @Test
-    public void testBitStringGetTopUppedArray() {
-        BitString bitString0 = new BitString(8);
-        bitString0.writeUint(BigInteger.valueOf(200), 8);
-        byte[] b0 = bitString0.getTopUppedArray();
-        int[] result0 = {200}; // (-56 & 0xff) = 200
-        assertThat(b0).isEqualTo(result0);
-
-        BitString bitString1 = new BitString(32);
-        bitString1.writeUint(BigInteger.valueOf(200), 32);
-        byte[] b1 = bitString1.getTopUppedArray();
-        int[] result1 = {0, 0, 0, 200};
-        assertThat(b1).isEqualTo(result1);
-
-        BitString bitString2 = new BitString(32);
-        bitString2.writeCoins(BigInteger.TEN);
-        byte[] b2 = bitString2.getTopUppedArray();
-        int[] result2 = {16, 168};
-        assertThat(b2).isEqualTo(result2);
-
-        BitString bitString3 = new BitString(1023);
-        bitString3.writeCoins(BigInteger.TEN);
-        bitString3.writeUint(333L, 64);
-        byte[] b3 = bitString3.getTopUppedArray();
-        int[] result3 = {16, 160, 0, 0, 0, 0, 0, 0, 20, 216};
-        assertThat(b3).isEqualTo(result3);
-    }
-
-    @Test
     public void testBitStringSetTopUppedArray() {
         BitString bitString0 = new BitString(8);
         bitString0.writeUint(BigInteger.valueOf(200), 8);

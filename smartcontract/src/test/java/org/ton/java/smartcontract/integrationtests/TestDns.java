@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.GenerateWallet;
 import org.ton.java.smartcontract.TestWallet;
@@ -119,7 +118,7 @@ public class TestDns extends CommonTest {
         Options optionsDnsCollection = Options.builder()
                 .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/dns-collection-2.json"))
                 .dnsItemCodeHex(dnsItemCodeHex)
-                .code(CellBuilder.beginCell().fromBoc(dnsCollectionCodeHex))
+                .code(CellBuilder.beginCell().fromBoc(dnsCollectionCodeHex).endCell())
                 .build();
 
         Wallet dnsCollectionWallet = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection);

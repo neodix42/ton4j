@@ -582,6 +582,19 @@ public class BitString implements Bits<Boolean> {
         return result;
     }
 
+    public byte[] toSignedByteArray() {
+        if (array.size() == 0) {
+            return new byte[0];
+        }
+        String bin = getBitString();
+        byte[] result = new byte[(int) Math.ceil(bin.length() / (double) 8)];
+        int j = 0;
+        for (String str : bin.split("(?<=\\G.{8})")) {
+            result[j++] = (byte) (Integer.parseInt(str, 2) & 0xFF);
+        }
+        return result;
+    }
+
     public List<BigInteger> toByteList() {
         if (array.size() == 0) {
             return new ArrayList<>();
@@ -696,19 +709,5 @@ public class BitString implements Bits<Boolean> {
                 throw new Error("Incorrect TopUppedArray");
             }
         }
-    }
-
-    public byte[] getTopUppedArray() {
-        BitString ret = clone();
-        int tu = (int) Math.ceil(ret.array.size() / (double) 8) * 8 - ret.array.size();
-        if (tu > 0) {
-            tu = tu - 1;
-            ret.writeBit(true);
-            while (tu > 0) {
-                tu = tu - 1;
-                ret.writeBit(false);
-            }
-        }
-        return Arrays.copyOfRange(ret.toByteArray(), 0, (int) Math.ceil(ret.array.size() / (double) 8));
     }
 }

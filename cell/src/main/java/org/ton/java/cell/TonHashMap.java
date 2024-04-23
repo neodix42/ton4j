@@ -213,19 +213,15 @@ public class TonHashMap {
         }
         if (se.size() == 3) { // contains leaf
             Node node = (Node) se.get(2);
-
-//            BitString bs = node.key.readBits(node.key.writeCursor - node.key.readCursor); was
             BitString bs = node.key.readBits(node.key.getUsedBits());
-
             se.set(0, bs.toBitString());
-
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
             builder.writeCell(node.value);
         } else { // contains fork
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            Cell leftCell = new Cell();
+            Cell leftCell = CellBuilder.beginCell().endCell();
             serialize_edge((List<Object>) se.get(2), leftCell);
-            Cell rightCell = new Cell();
+            Cell rightCell = CellBuilder.beginCell().endCell();
             serialize_edge((List<Object>) se.get(3), rightCell);
             builder.refs.add(leftCell);
             builder.refs.add(rightCell);
@@ -245,7 +241,7 @@ public class TonHashMap {
         }
 
         List<Object> s = flatten(splitTree(se), keySize);
-        Cell b = new Cell();
+        Cell b = CellBuilder.beginCell().endCell();
         serialize_edge(s, b);
 
         return b;

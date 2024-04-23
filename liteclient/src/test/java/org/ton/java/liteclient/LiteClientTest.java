@@ -46,10 +46,7 @@ public class LiteClientTest {
 
     @Test
     public void testLastExecuted() {
-        //given
-        String stdout = liteClient.executeLast();
-        // then
-        assertThat(stdout).isNotNull().contains("last masterchain block is").contains("server time is");
+        assertThat(liteClient.executeLast()).isNotNull().contains("last masterchain block is").contains("server time is");
     }
 
     @Test

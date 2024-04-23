@@ -17,6 +17,11 @@ import static org.junit.Assert.assertThrows;
 public class TestCellBuilder {
 
     @Test
+    public void testCell() {
+        Cell c = new Cell();
+    }
+
+    @Test
     public void testCellBuilderEmpty() {
         Cell c = CellBuilder.beginCell().endCell();
         assertThat(0).isEqualTo(c.bits.getUsedBits());

@@ -13,6 +13,7 @@ import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.AccountAddressOnly;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.utils.Utils;
 
@@ -27,11 +28,11 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @RunWith(JUnit4.class)
 public class TestFaucet {
 
-    public static String PUBLIC_KEY = "82ce5343d552c34c24f79856db990865973478ff39df49fa3108f9739fcb0640";
-    public static String SECRET_KEY = "52728a26cb50c0ffd036e1d61cadaf62fd11a7e354b05cb97d6519ae45817e2082ce5343d552c34c24f79856db990865973478ff39df49fa3108f9739fcb0640";
-    public static String FAUCET_ADDRESS_RAW = "0:1a1875077e4a56146b38dbc1139b29b8bdbbd1371080d68e2c4e4c2a8a02a381";
-    public static String NON_BOUNCEABLE = "0QAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgRnw";
-    public static String BOUNCEABLE = "kQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgUQ1";
+    public static String PUBLIC_KEY = "8010a5e0aeb4b4920dd813faec447ba2e963c2338096e74bfe134e523d1e73ac";
+    public static String SECRET_KEY = "a4181e01c8ba9b3a634e5d7a57d8b4bf5f18a9f165dd8305a08dac01fa3054b88010a5e0aeb4b4920dd813faec447ba2e963c2338096e74bfe134e523d1e73ac";
+    public static String FAUCET_ADDRESS_RAW = "0:96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7";
+    public static String NON_BOUNCEABLE = "0QCWopbSJPKFxnvuk8MPijCRV_Dao13FuH5BC3hjCgnPxy2l";
+    public static String BOUNCEABLE = "kQCWopbSJPKFxnvuk8MPijCRV_Dao13FuH5BC3hjCgnPx3Bg";
 
     public static BigInteger topUpContract(Tonlib tonlib, Address destinationAddress, BigInteger amount) throws InterruptedException {
         byte[] secretKey = Utils.hexToSignedBytes(SECRET_KEY);
@@ -133,7 +134,8 @@ public class TestFaucet {
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
                 .build();
-        tonlib.sendRawMessage(msg.message.toBase64());
+        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.message.toBase64());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
     @Test

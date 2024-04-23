@@ -29,7 +29,7 @@ public class DnsRoot implements Contract {
         }
 
         if (isNull(options.code)) {
-            this.options.code = CellBuilder.beginCell().fromBoc(DNS_ROOT_CODE_HEX);
+            this.options.code = CellBuilder.beginCell().fromBoc(DNS_ROOT_CODE_HEX).endCell();
         }
     }
 

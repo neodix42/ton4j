@@ -195,9 +195,9 @@ public class TonHashMapAug {
             builder.writeCell(node.value);
         } else { // contains fork
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            Cell leftCell = new Cell();
+            Cell leftCell = CellBuilder.beginCell().endCell();
             serialize_edge((List<Object>) se.get(2), leftCell, forkExtra);
-            Cell rightCell = new Cell();
+            Cell rightCell = CellBuilder.beginCell().endCell();
             serialize_edge((List<Object>) se.get(3), rightCell, forkExtra);
             builder.writeCell(((CellBuilder) forkExtra.apply(leftCell, rightCell)).endCell());
             builder.refs.add(leftCell);

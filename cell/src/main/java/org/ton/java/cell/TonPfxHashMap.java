@@ -55,7 +55,6 @@ public class TonPfxHashMap extends TonHashMap {
      */
     void deserialize(CellSlice c, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
         List<Node> nodes = deserializeEdge(c, keySize, new BitString(keySize));
-
         for (Node node : nodes) {
             elements.put(keyParser.apply(node.key), valueParser.apply(node.value));
         }
@@ -76,21 +75,17 @@ public class TonPfxHashMap extends TonHashMap {
 
         if (se.size() == 3) { // contains leaf
             Node node = (Node) se.get(2);
-
-//            BitString bs = node.key.readBits(node.key.writeCursor - node.key.readCursor); was
             BitString bs = node.key.readBits(node.key.getUsedBits());
-
             se.set(0, bs.toBitString());
-
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
             builder.bits.writeBit(false); //pfx feature
             builder.writeCell(node.value);
         } else { // contains fork
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
             builder.bits.writeBit(true); //pfx feature
-            Cell leftCell = new Cell();
+            Cell leftCell = CellBuilder.beginCell().endCell();
             serialize_edge((List<Object>) se.get(2), leftCell);
-            Cell rightCell = new Cell();
+            Cell rightCell = CellBuilder.beginCell().endCell();
             serialize_edge((List<Object>) se.get(3), rightCell);
             builder.refs.add(leftCell);
             builder.refs.add(rightCell);
@@ -110,7 +105,7 @@ public class TonPfxHashMap extends TonHashMap {
         }
 
         List<Object> s = flatten(splitTree(se), keySize);
-        Cell b = new Cell();
+        Cell b = CellBuilder.beginCell().endCell();
         serialize_edge(s, b);
 
         return b;

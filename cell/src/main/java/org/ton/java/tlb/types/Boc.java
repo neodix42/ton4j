@@ -68,9 +68,8 @@ public class Boc {
                 .storeBytes(cellData, totalCellsSize * 8);
 
         if (hasCrc32c) {
-            int[] checksum = new int[4];
-            int[] cellAsByteArray = cell.toUnsignedByteArray();
-            checksum = Utils.getCRC32ChecksumAsBytesReversed(cellAsByteArray);
+            byte[] cellAsByteArray = cell.toSignedByteArray();
+            byte[] checksum = Utils.getCRC32ChecksumAsBytesReversed(cellAsByteArray);
 
             cell.storeBytes(checksum, hasCrc32c ? 32 : 0);
         }

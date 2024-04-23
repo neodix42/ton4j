@@ -49,47 +49,54 @@ public class TestUtils {
 
     @Test
     public void testCrc32cAsBytes2() {
-        int[] boc = Utils.hexToUnsignedBytes("b5ee9c724101010100620000c0ff0020dd2082014c97ba9730ed44d0d70b1fe0a4f2608308d71820d31fd31fd31ff82313bbf263ed44d0d31fd31fd3ffd15132baf2a15144baf2a204f901541055f910f2a3f8009320d74a96d307d402fb00e8d101a4c8cb1fcb1fcbffc9ed54");
-        int[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(boc);
+        byte[] boc = Utils.hexToSignedBytes("b5ee9c724101010100620000c0ff0020dd2082014c97ba9730ed44d0d70b1fe0a4f2608308d71820d31fd31fd31ff82313bbf263ed44d0d31fd31fd3ffd15132baf2a15144baf2a204f901541055f910f2a3f8009320d74a96d307d402fb00e8d101a4c8cb1fcb1fcbffc9ed54");
+        byte[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(boc);
         String hexCrc32 = Utils.bytesToHex(crc32);
         assertThat(hexCrc32).isEqualTo("3fbe6ee0"); //ok with online, but reversed
     }
 
     @Test
     public void testCrc32cAsBytes3() {
-        int[] boc = Utils.hexToUnsignedBytes("B5EE9C72410203010001000002DF880059EAB2A7D25DF7D5B56F74E4B87F2741647F0859774E5AF71CDEA214E1C845C6119529DEF4481C60CD81087FC7B058797AFDCEBCC1BE127EE2C4707C1E1C0F3D12F955EC3DE1C63E714876A931F6C6F13E6980284238AA9F94B0EC5859B37C4DE1E5353462FFFFFFFFE000000010010200C0FF0020DD2082014C97BA9730ED44D0D70B1FE0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED5400500000000029A9A31782A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
-        int[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(boc);
+        byte[] boc = Utils.hexToSignedBytes("B5EE9C72410203010001000002DF880059EAB2A7D25DF7D5B56F74E4B87F2741647F0859774E5AF71CDEA214E1C845C6119529DEF4481C60CD81087FC7B058797AFDCEBCC1BE127EE2C4707C1E1C0F3D12F955EC3DE1C63E714876A931F6C6F13E6980284238AA9F94B0EC5859B37C4DE1E5353462FFFFFFFFE000000010010200C0FF0020DD2082014C97BA9730ED44D0D70B1FE0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED5400500000000029A9A31782A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
+        byte[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(boc);
         String hexCrc32 = Utils.bytesToHex(crc32);
         assertThat(hexCrc32).isEqualTo("56ad484d"); //ok with online, but reversed
     }
 
     @Test
     public void testCrc32cAsHexReversed() {
-        int[] a = Utils.signedBytesToUnsigned("ABC".getBytes());
-        int[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(a);
+        byte[] crc32 = Utils.getCRC32ChecksumAsBytesReversed("ABC".getBytes());
         String hexCrc32 = Utils.bytesToHex(crc32);
         assertThat(hexCrc32).isEqualTo("7fa93988");
     }
 
     @Test
     public void testCrc32AsHex() {
-        int[] a = Utils.signedBytesToUnsigned("ABC".getBytes());
-        String crc32 = Utils.getCRC32ChecksumAsHex(a);
+        String crc32 = Utils.getCRC32ChecksumAsHex("ABC".getBytes());
         assertThat(crc32).isEqualTo("8839a97f");
     }
 
     @Test
     public void testCrc32AsLong() {
-        int[] a = Utils.signedBytesToUnsigned("ABC".getBytes());
-        Long crc32 = Utils.getCRC32ChecksumAsLong(a);
+        Long crc32 = Utils.getCRC32ChecksumAsLong("ABC".getBytes());
         assertThat(crc32).isEqualTo(2285480319L);
     }
 
     @Test
-    public void testCrc32AsBytes() {
-        int[] a = Utils.signedBytesToUnsigned("ABC".getBytes());
-        int[] crc32 = Utils.getCRC32ChecksumAsBytes(a);
+    public void testCrc32AsUnsignedBytes() {
+        byte[] crc32 = Utils.getCRC32ChecksumAsBytes("ABC".getBytes());
+        int[] crc32int = Utils.signedBytesToUnsigned(crc32);
         int[] result = {136, 57, 169, 127};
+        assertThat(crc32int[0]).isEqualTo(result[0]);
+        assertThat(crc32int[1]).isEqualTo(result[1]);
+        assertThat(crc32int[2]).isEqualTo(result[2]);
+        assertThat(crc32int[3]).isEqualTo(result[3]);
+    }
+
+    @Test
+    public void testCrc32AsSignedBytes() {
+        byte[] crc32 = Utils.getCRC32ChecksumAsBytes("ABC".getBytes());
+        byte[] result = {-120, 57, -87, 127};
         assertThat(crc32[0]).isEqualTo(result[0]);
         assertThat(crc32[1]).isEqualTo(result[1]);
         assertThat(crc32[2]).isEqualTo(result[2]);

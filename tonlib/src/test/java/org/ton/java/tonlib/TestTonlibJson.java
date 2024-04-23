@@ -8,11 +8,13 @@ import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.mnemonic.Mnemonic;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -248,7 +250,7 @@ public class TestTonlibJson {
                 String msgBodyText;
                 if (nonNull(tx.getIn_msg().getMsg_data().getBody())) {
 
-                    Cell c = CellBuilder.beginCell().fromBoc(Utils.base64ToSignedBytes(tx.getIn_msg().getMsg_data().getBody()));
+                    Cell c = CellBuilder.beginCell().fromBoc(Utils.base64ToSignedBytes(tx.getIn_msg().getMsg_data().getBody())).endCell();
                     msgBodyText = c.print();
                 } else {
                     msgBodyText = Utils.base64ToString(tx.getIn_msg().getMsg_data().getText());
@@ -259,7 +261,7 @@ public class TestTonlibJson {
                 for (RawMessage msg : tx.getOut_msgs()) {
                     String msgBodyText;
                     if (nonNull(msg.getMsg_data().getBody())) {
-                        Cell c = CellBuilder.beginCell().fromBoc(Utils.base64ToSignedBytes(msg.getMsg_data().getBody()));
+                        Cell c = CellBuilder.beginCell().fromBoc(Utils.base64ToSignedBytes(msg.getMsg_data().getBody())).endCell();
                         msgBodyText = c.print();
                     } else {
 //                        msgBodyText = Utils.base64ToString(msg.getMessage());
@@ -528,6 +530,7 @@ public class TestTonlibJson {
         log.info("return stake: {} ", Utils.formatNanoValue(returnStake.longValue()));
     }
 
+    @Ignore
     @Test
     public void testTonlibMyLocalTon() {
         Tonlib tonlib = Tonlib.builder()

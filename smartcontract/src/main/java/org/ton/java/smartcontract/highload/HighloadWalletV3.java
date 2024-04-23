@@ -170,7 +170,7 @@ public class HighloadWalletV3 implements WalletContract {
     }
 
     public static Cell createInternalTransferBody(HighloadV3BatchItem[] items, long queryId) {
-        Cell prev = new Cell();
+        Cell prev = CellBuilder.beginCell().endCell();
         for (int i = items.length - 1; i >= 0; i--) {
             CellBuilder cb = CellBuilder.beginCell();
             cb.storeRef(prev);
