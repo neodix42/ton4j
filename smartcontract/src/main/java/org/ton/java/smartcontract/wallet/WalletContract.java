@@ -37,8 +37,8 @@ public interface WalletContract extends Contract {
      * @param seqno long
      * @return Cell
      */
-    default Cell createSigningMessage(long seqno) {
-        return CellBuilder.beginCell().storeUint(BigInteger.valueOf(seqno), 32).endCell();
+    default CellBuilder createSigningMessage(long seqno) {
+        return CellBuilder.beginCell().storeUint(BigInteger.valueOf(seqno), 32);
     }
 
     /**
@@ -68,7 +68,7 @@ public interface WalletContract extends Contract {
 
         StateInit stateInit = createStateInit();
 
-        Cell signingMessage = createSigningMessage(0);
+        Cell signingMessage = createSigningMessage(0).endCell();
         byte[] signature = new TweetNaclFast.Signature(getOptions().publicKey, secretKey).detached(signingMessage.hash());
 
         Cell body = CellBuilder.beginCell()
@@ -234,9 +234,10 @@ public interface WalletContract extends Contract {
 
         Cell orderHeader = Contract.createInternalMessageHeader(address, amount);
         Cell order = Contract.createCommonMsgInfo(orderHeader, stateInit, payload);
-        Cell signingMessage = createSigningMessage(seqno);
-        signingMessage.bits.writeUint8(sendMode & 0xff);
-        signingMessage.refs.add(order);
+        Cell signingMessage = createSigningMessage(seqno)
+                .storeUint(sendMode & 0xff, 8)
+                .storeRef(order)
+                .endCell();
 
         return createExternalMessage(signingMessage, secretKey, seqno, dummySignature);
     }

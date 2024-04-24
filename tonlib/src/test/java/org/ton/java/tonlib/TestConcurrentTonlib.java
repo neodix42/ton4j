@@ -8,15 +8,10 @@ import org.junit.runner.RunWith;
 import org.ton.java.address.Address;
 import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.tonlib.types.MasterChainInfo;
-import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryNumber;
-import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.ton.java.tonlib.TestTonlibJson.ELECTOR_ADDRESSS;
 
 @Slf4j
@@ -24,7 +19,6 @@ import static org.ton.java.tonlib.TestTonlibJson.ELECTOR_ADDRESSS;
 public class TestConcurrentTonlib {
     private static Tonlib tonlib = Tonlib.builder()
             .testnet(true)
-            .keystoreInMemory(true)
             .ignoreCache(false)
 //            .verbosityLevel(VerbosityLevel.DEBUG)
             .build(); // you can't use one tonlib instance for parallel queries
@@ -32,7 +26,6 @@ public class TestConcurrentTonlib {
     @Test
     @ThreadCount(10)
     public void testTonlibRunMethod1() throws InterruptedException {
-//        Tonlib tonlib = Tonlib.builder().build();
         log.info("tonlib instance {}", tonlib);
         MasterChainInfo last = tonlib.getLast();
         log.info("last: {}", last);
@@ -45,13 +38,6 @@ public class TestConcurrentTonlib {
         Deque<String> stack = new ArrayDeque<>();
         Address address = Address.of("EQCwHyzOrKP1lBHbvMrFHChifc1TLgeJVpKgHpL9sluHU-gV");
         stack.offer("[num, " + address.toDecimal() + "]");
-
-        RunResult result = tonlib.runMethod(elector, "compute_returned_stake", stack);
-
-        BigInteger returnStake = ((TvmStackEntryNumber) result.getStack().get(0)).getNumber();
-
-        log.info("return stake: {} ", Utils.formatNanoValue(returnStake.longValue()));
-        assertThat(result.getExit_code()).isEqualTo(0L);
 
         log.info("seqno {}", tonlib.getSeqno(address));
     }

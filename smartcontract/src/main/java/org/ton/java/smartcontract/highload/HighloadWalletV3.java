@@ -81,14 +81,14 @@ public class HighloadWalletV3 implements WalletContract {
     }
 
     @Override
-    public Cell createSigningMessage(long seqno) {
+    public CellBuilder createSigningMessage(long seqno) {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
 
         message.storeUint(getOptions().getHighloadQueryId(), 64);
         message.storeBit(false);
 
-        return message.endCell();
+        return message;
     }
 
     /**

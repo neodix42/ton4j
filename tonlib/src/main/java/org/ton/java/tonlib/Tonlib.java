@@ -277,7 +277,6 @@ public class Tonlib {
                     }
                     TimeUnit.MILLISECONDS.sleep(200);
                     response = receive();
-//                System.out.println("response: " + response);
 
                     UpdateSyncState sync = gson.fromJson(response, UpdateSyncState.class);
                     if (nonNull(sync) && nonNull(sync.getSync_state()) && sync.getType().equals("updateSyncState") && !response.contains("syncStateDone")) {

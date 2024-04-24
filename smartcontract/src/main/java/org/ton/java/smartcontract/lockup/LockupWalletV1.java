@@ -75,7 +75,7 @@ public class LockupWalletV1 implements WalletContract {
      * @return Cell
      */
     @Override
-    public Cell createSigningMessage(long seqno) {
+    public CellBuilder createSigningMessage(long seqno) {
         CellBuilder message = CellBuilder.beginCell();
 
         message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
@@ -92,7 +92,7 @@ public class LockupWalletV1 implements WalletContract {
 
         message.storeUint(BigInteger.valueOf(seqno), 32);
 
-        return message.endCell();
+        return message;
     }
 
     /**

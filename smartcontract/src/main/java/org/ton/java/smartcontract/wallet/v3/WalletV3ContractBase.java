@@ -35,7 +35,7 @@ public class WalletV3ContractBase implements WalletContract {
      * @return Cell
      */
     @Override
-    public Cell createSigningMessage(long seqno) {
+    public CellBuilder createSigningMessage(long seqno) {
 
         CellBuilder message = CellBuilder.beginCell();
 
@@ -52,7 +52,7 @@ public class WalletV3ContractBase implements WalletContract {
         }
 
         message.storeUint(BigInteger.valueOf(seqno), 32);
-        return message.endCell();
+        return message;
     }
 
     @Override

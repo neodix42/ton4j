@@ -62,7 +62,7 @@ public class WalletV4ContractR2 implements WalletContract {
     }
 
     @Override
-    public Cell createSigningMessage(long seqno) {
+    public CellBuilder createSigningMessage(long seqno) {
         return createSigningMessage(seqno, false);
     }
 
@@ -72,7 +72,7 @@ public class WalletV4ContractR2 implements WalletContract {
      * @return Cell
      */
 
-    public Cell createSigningMessage(long seqno, boolean withoutOp) {
+    public CellBuilder createSigningMessage(long seqno, boolean withoutOp) {
 
         CellBuilder message = CellBuilder.beginCell();
 
@@ -94,7 +94,7 @@ public class WalletV4ContractR2 implements WalletContract {
             message.storeUint(BigInteger.ZERO, 8); // op
         }
 
-        return message.endCell();
+        return message;
     }
 
     /**
@@ -105,12 +105,13 @@ public class WalletV4ContractR2 implements WalletContract {
      */
     public void deployAndInstallPlugin(Tonlib tonlib, NewPlugin params) {
 
-        Cell signingMessage = createSigningMessage(params.seqno, true);
-        signingMessage.bits.writeUint(BigInteger.ONE, 8); // op
-        signingMessage.bits.writeInt(BigInteger.valueOf(params.pluginWc), 8);
-        signingMessage.bits.writeCoins(params.amount); // plugin balance
-        signingMessage.refs.add(params.stateInit);
-        signingMessage.refs.add(params.body);
+        Cell signingMessage = createSigningMessage(params.seqno, true)
+                .storeUint(BigInteger.ONE, 8) // op
+                .storeUint(BigInteger.valueOf(params.pluginWc), 8)
+                .storeCoins(params.amount) // plugin balance
+                .storeRef(params.stateInit)
+                .storeRef(params.body)
+                .endCell();
         ExternalMessage extMsg = createExternalMessage(signingMessage, params.secretKey, params.seqno, false);
 
         tonlib.sendRawMessage(extMsg.message.toBase64());
@@ -152,12 +153,13 @@ public class WalletV4ContractR2 implements WalletContract {
      */
     ExternalMessage setPlugin(DeployedPlugin params, boolean isInstall) {
 
-        Cell signingMessage = createSigningMessage(params.seqno, true);
-        signingMessage.bits.writeUint(isInstall ? BigInteger.TWO : BigInteger.valueOf(3), 8); // op
-        signingMessage.bits.writeInt(BigInteger.valueOf(params.pluginAddress.wc), 8);
-        signingMessage.bits.writeBytes(params.pluginAddress.hashPart);
-        signingMessage.bits.writeCoins(BigInteger.valueOf(params.amount.longValue()));
-        signingMessage.bits.writeUint(BigInteger.valueOf(params.queryId), 64);
+        Cell signingMessage = createSigningMessage(params.seqno, true)
+                .storeUint(isInstall ? BigInteger.TWO : BigInteger.valueOf(3), 8) // op
+                .storeUint(BigInteger.valueOf(params.pluginAddress.wc), 8)
+                .storeBytes(params.pluginAddress.hashPart)
+                .storeCoins(BigInteger.valueOf(params.amount.longValue()))
+                .storeUint(BigInteger.valueOf(params.queryId), 64)
+                .endCell();
 
         return this.createExternalMessage(signingMessage, params.secretKey, params.seqno, false);
     }

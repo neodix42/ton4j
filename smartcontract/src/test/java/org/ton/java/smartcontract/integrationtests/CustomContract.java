@@ -50,11 +50,11 @@ public class CustomContract implements WalletContract {
     }
 
     @Override
-    public Cell createSigningMessage(long seqno) {
+    public CellBuilder createSigningMessage(long seqno) {
         return createSigningMessage(seqno, 4L);
     }
 
-    public Cell createSigningMessage(long seqno, long extraField) {
+    public CellBuilder createSigningMessage(long seqno, long extraField) {
         System.out.println("CustomContract createSigningMessage");
 
         CellBuilder message = CellBuilder.beginCell();
@@ -72,7 +72,7 @@ public class CustomContract implements WalletContract {
         }
 
         message.storeUint(BigInteger.valueOf(extraField), 64); // extraField
-        return message.endCell();
+        return message;
     }
 
 }

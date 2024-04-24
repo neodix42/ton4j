@@ -35,7 +35,7 @@ public class WalletV2ContractBase implements WalletContract {
      * @return Cell
      */
     @Override
-    public Cell createSigningMessage(long seqno) {
+    public CellBuilder createSigningMessage(long seqno) {
 
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(seqno), 32);
@@ -48,7 +48,7 @@ public class WalletV2ContractBase implements WalletContract {
             long timestamp = (long) Math.floor(date.getTime() / 1e3);
             message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
         }
-        return message.endCell();
+        return message;
     }
 
     @Override
@@ -203,11 +203,12 @@ public class WalletV2ContractBase implements WalletContract {
         Cell orderHeader2 = Contract.createInternalMessageHeader(destinationAddress2, amount);
         Cell order2 = Contract.createCommonMsgInfo(orderHeader2, null, body);
 
-        Cell signingMessageAll = createSigningMessage(seqno);
-        signingMessageAll.bits.writeUint8(3 & 0xff);
-        signingMessageAll.bits.writeUint8(3 & 0xff);
-        signingMessageAll.refs.add(order1);
-        signingMessageAll.refs.add(order2);
+        Cell signingMessageAll = createSigningMessage(seqno)
+                .storeUint(3 & 0xff, 8)
+                .storeUint(3 & 0xff, 8)
+                .storeRef(order1)
+                .storeRef(order2)
+                .endCell();
 
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno);
         return tonlib.sendRawMessage(msg.message.toBase64());
@@ -239,14 +240,14 @@ public class WalletV2ContractBase implements WalletContract {
         Cell orderHeader3 = Contract.createInternalMessageHeader(destinationAddress3, amount);
         Cell order3 = Contract.createCommonMsgInfo(orderHeader3, null, body);
 
-        Cell signingMessageAll = createSigningMessage(seqno);
-        signingMessageAll.bits.writeUint8(3 & 0xff);
-        signingMessageAll.bits.writeUint8(3 & 0xff);
-        signingMessageAll.bits.writeUint8(3 & 0xff);
-
-        signingMessageAll.refs.add(order1);
-        signingMessageAll.refs.add(order2);
-        signingMessageAll.refs.add(order3);
+        Cell signingMessageAll = createSigningMessage(seqno)
+                .storeUint(3 & 0xff, 8)
+                .storeUint(3 & 0xff, 8)
+                .storeUint(3 & 0xff, 8)
+                .storeRef(order1)
+                .storeRef(order2)
+                .storeRef(order3)
+                .endCell();
 
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno);
         return tonlib.sendRawMessage(msg.message.toBase64());
@@ -271,16 +272,16 @@ public class WalletV2ContractBase implements WalletContract {
         Cell orderHeader4 = Contract.createInternalMessageHeader(destinationAddress4, amount);
         Cell order4 = Contract.createCommonMsgInfo(orderHeader4, null, body);
 
-        Cell signingMessageAll = createSigningMessage(seqno);
-        signingMessageAll.bits.writeUint8(3 & 0xff);
-        signingMessageAll.bits.writeUint8(3 & 0xff);
-        signingMessageAll.bits.writeUint8(3 & 0xff);
-        signingMessageAll.bits.writeUint8(3 & 0xff);
-
-        signingMessageAll.refs.add(order1);
-        signingMessageAll.refs.add(order2);
-        signingMessageAll.refs.add(order3);
-        signingMessageAll.refs.add(order4);
+        Cell signingMessageAll = createSigningMessage(seqno)
+                .storeUint(3 & 0xff, 8)
+                .storeUint(3 & 0xff, 8)
+                .storeUint(3 & 0xff, 8)
+                .storeUint(3 & 0xff, 8)
+                .storeRef(order1)
+                .storeRef(order2)
+                .storeRef(order3)
+                .storeRef(order4)
+                .endCell();
 
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno);
         return tonlib.sendRawMessage(msg.message.toBase64());
