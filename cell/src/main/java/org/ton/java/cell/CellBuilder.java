@@ -197,15 +197,13 @@ public class CellBuilder {
     }
 
     public CellBuilder storeBitString(BitString bitString) {
-        BitString bs = bitString.clone();
-        checkBitsOverflow(bs.getUsedBits());
-        cell.bits.writeBitString(bs);
+        checkBitsOverflow(bitString.getUsedBits());
+        cell.bits.writeBitString(bitString.clone());
         return this;
     }
 
     public CellBuilder storeBitStringUnsafe(BitString bitString) {
-        BitString bs = bitString.clone();
-        cell.bits.writeBitString(bs);
+        cell.bits.writeBitString(bitString.clone());
         return this;
     }
 
@@ -286,7 +284,7 @@ public class CellBuilder {
 
     public CellBuilder storeRef(Cell c) {
         checkRefsOverflow(1);
-        cell.refs.add(c);
+        cell.refs.add(c.clone());
         return this;
     }
 
@@ -296,7 +294,7 @@ public class CellBuilder {
         } else {
             cell.bits.writeBit(true);
             checkRefsOverflow(1);
-            cell.refs.add(c);
+            cell.refs.add(c.clone());
         }
         return this;
     }
@@ -304,7 +302,7 @@ public class CellBuilder {
     public CellBuilder storeRefs(List<Cell> cells) {
         checkRefsOverflow(cells.size());
         for (Cell c : cells) {
-            cell.refs.add(c);
+            cell.refs.add(c.clone());
         }
         return this;
     }
@@ -312,7 +310,7 @@ public class CellBuilder {
     public CellBuilder storeRefs(Cell... cells) {
         checkRefsOverflow(cells.length);
         for (Cell c : cells) {
-            cell.refs.add(c);
+            cell.refs.add(c.clone());
         }
         return this;
     }
@@ -322,7 +320,6 @@ public class CellBuilder {
         checkRefsOverflow(cellSlice.refs.size());
 
         storeBitString(cellSlice.bits);
-
         for (Cell c : cellSlice.refs) {
             cell.refs.add(c.clone());
         }
@@ -334,24 +331,26 @@ public class CellBuilder {
 //    storeBitString(cc.bits);
 //    cell.refs.addAll(cc.refs);
 
-    public CellBuilder storeCell(Cell cell) {
-        Cell c = cell.clone();
+    public CellBuilder storeCell(Cell c) {
         checkBitsOverflow(c.bits.getUsedBits());
         checkRefsOverflow(c.refs.size());
 
         storeBitString(c.bits);
-
-        cell.refs.addAll(c.refs);
+        for (Cell cc : c.refs) {
+            cell.refs.add(cc.clone());
+        }
+        //cell.depths.addAll(c.depths);
+        //cell.hashes.addAll(c.hashes);
+//        cell.calculateHashes();
         return this;
     }
 
     public CellBuilder storeCellMaybe(Cell c) {
-        if (isNull(cell)) {
+        if (isNull(c)) {
             cell.bits.writeBit(false);
         } else {
-            Cell cc = c.clone();
             cell.bits.writeBit(true);
-            storeCell(cc);
+            storeCell(c.clone());
         }
         return this;
     }

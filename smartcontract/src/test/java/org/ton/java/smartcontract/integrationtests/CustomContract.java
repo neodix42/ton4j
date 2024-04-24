@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract.unittests;
+package org.ton.java.smartcontract.integrationtests;
 
 
 import org.ton.java.address.Address;

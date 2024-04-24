@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract.unittests;
+package org.ton.java.smartcontract.integrationtests;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
@@ -6,9 +6,17 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
+import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.InitExternalMessage;
 import org.ton.java.smartcontract.wallet.Options;
+import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.RunResult;
+import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
+
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -38,9 +46,13 @@ public class TestCustomContract {
 
         // put a breakpoint and send toincoins to non-bouncelable wallet address, only then deploy smart contract using Tonlib
 
-/* proceed manually
-        Tonlib tonlib = Tonlib.builder().build();
-        String base64boc = Utils.bytesToBase64(msg.message.toBocNew());
+// proceed manually
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+        String base64boc = Utils.bytesToBase64(msg.message.toBoc());
         log.info(base64boc);
         ExtMessageInfo resultRawMsg = tonlib.sendRawMessage(base64boc); // deploy
         log.info("body_hash {}, error {}", resultRawMsg.getBody_hash(), resultRawMsg.getError().getCode());
@@ -63,11 +75,14 @@ public class TestCustomContract {
         log.info("extra_field: {}", extra_field.getNumber());
 
         Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
-        BigInteger amount = Utils.toNano(2); //2 Toncoins or 2bln nano-toncoins
-        long seqNumber = 1;
-        ExternalMessage extMsg = customContract.createTransferMessage(keyPair.getSecretKey(), destinationAddress, amount, seqNumber);
-        String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBocNew());
-        tonlib.sendRawMessage(base64bocExtMsg);
- */
+
+        ExternalMessage extMsg = customContract.createTransferMessage(keyPair.getSecretKey(),
+                destinationAddress,
+                Utils.toNano(0.5),
+                1);
+        String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBoc());
+        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(base64bocExtMsg);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
     }
 }

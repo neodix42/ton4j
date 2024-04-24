@@ -33,20 +33,17 @@ public class Cell {
     public List<Cell> refs = new ArrayList<>();
 
     public CellType type;
-    //    private int cellType;
     private int[] refsIndexes;
 
-
     public int index;
-
     public boolean special;
     public LevelMask levelMask;
 
     public List<String> hashes = new ArrayList<>(); // todo private
     public List<Integer> depths = new ArrayList<>(); // todo private
 
-    private byte[] descriptors;
-    private byte[] dataBytes;
+//    private byte[] descriptors;
+//    private byte[] dataBytes;
 
 
     public Cell() {
@@ -54,8 +51,8 @@ public class Cell {
         this.special = false;
         this.type = ORDINARY;
         this.levelMask = new LevelMask(0);
-        descriptors = getDescriptors(levelMask.getMask());
-        dataBytes = getDataBytes();
+//        descriptors = getDescriptors(levelMask.getMask());
+//        dataBytes = getDataBytes();
 //        calculateHashes();
     }
 
@@ -64,8 +61,8 @@ public class Cell {
         this.special = false;
         this.type = ORDINARY;
         this.levelMask = resolveMask();
-        descriptors = getDescriptors(levelMask.getMask());
-        dataBytes = getDataBytes();
+//        descriptors = getDescriptors(levelMask.getMask());
+//        dataBytes = getDataBytes();
 //        calculateHashes();
     }
 
@@ -76,8 +73,8 @@ public class Cell {
         this.special = false;
         this.type = ORDINARY;
         this.levelMask = new LevelMask(0);
-        descriptors = getDescriptors(levelMask.getMask());
-        dataBytes = getDataBytes();
+//        descriptors = getDescriptors(levelMask.getMask());
+//        dataBytes = getDataBytes();
 //        calculateHashes();
     }
 
@@ -88,8 +85,8 @@ public class Cell {
         this.special = false;
         this.type = toCellType(cellType);
         this.levelMask = new LevelMask(0);
-        descriptors = getDescriptors(levelMask.getMask());
-        dataBytes = getDataBytes();
+//        descriptors = getDescriptors(levelMask.getMask());
+//        dataBytes = getDataBytes();
 //        calculateHashes();
     }
 
@@ -100,8 +97,8 @@ public class Cell {
         this.special = special;
         this.type = ORDINARY;
         this.levelMask = levelMask;
-        descriptors = getDescriptors(levelMask.getMask());
-        dataBytes = getDataBytes();
+//        descriptors = getDescriptors(levelMask.getMask());
+//        dataBytes = getDataBytes();
 //        calculateHashes();
     }
 
@@ -112,8 +109,8 @@ public class Cell {
         this.special = special;
         this.type = cellType;
         this.levelMask = resolveMask();
-        descriptors = getDescriptors(levelMask.getMask());
-        dataBytes = getDataBytes();
+//        descriptors = getDescriptors(levelMask.getMask());
+//        dataBytes = getDataBytes();
 //        calculateHashes();
     }
 
@@ -122,8 +119,8 @@ public class Cell {
         this.refsIndexes = refsIndexes;
         this.type = cellType;
         this.levelMask = new LevelMask(0);
-        descriptors = getDescriptors(levelMask.getMask());
-        dataBytes = getDataBytes();
+//        descriptors = getDescriptors(levelMask.getMask());
+//        dataBytes = getDataBytes();
 //        calculateHashes();
     }
 
@@ -133,8 +130,8 @@ public class Cell {
         this.refs = new ArrayList<>(refs);
         this.type = cellType;
         this.levelMask = resolveMask();
-        descriptors = getDescriptors(levelMask.getMask());
-        dataBytes = getDataBytes();
+//        descriptors = getDescriptors(levelMask.getMask());
+//        dataBytes = getDataBytes();
 //        calculateHashes();
     }
 
@@ -313,7 +310,7 @@ public class Cell {
         c.levelMask = this.levelMask.clone();
         c.hashes = new ArrayList<>(this.hashes);
         c.depths = new ArrayList<>(this.depths);
-        c.dataBytes = this.dataBytes;
+//        c.dataBytes = Arrays.copyOf(this.dataBytes, this.dataBytes.length);
         //c.calculateHashes();
         return c;
     }
@@ -565,29 +562,14 @@ public class Cell {
         return Utils.bytesToHex(toBoc(true));
     }
 
-    /**
-     * BitString of Cell to hex
-     *
-     * @return
-     */
     public String bitStringToHex() {
         return bits.toHex();
     }
 
-    /**
-     * BitString to string of bits
-     *
-     * @return
-     */
     public String toBitString() {
         return bits.toBitString();
     }
 
-    /**
-     * BoC to Base64 with crc32
-     *
-     * @return
-     */
     public String toBase64() {
         return Utils.bytesToBase64(toBoc(true));
     }
@@ -609,7 +591,7 @@ public class Cell {
         if (type == CellType.PRUNED_BRANCH) {
             int prunedHashIndex = levelMask.getHashIndex();
             if (hashIndex != prunedHashIndex) {
-                return Arrays.copyOfRange(dataBytes, 2 + (hashIndex * 32), 2 + ((hashIndex + 1) * 32));
+                return Arrays.copyOfRange(getDataBytes(), 2 + (hashIndex * 32), 2 + ((hashIndex + 1) * 32));
             }
             hashIndex = 0;
         }
@@ -640,27 +622,6 @@ public class Cell {
             }
         }
         return maxLevel;
-    }
-
-    byte[] getMaxDepthAsArray() {
-        int maxDepth = getMaxDepth();
-        byte[] d = new byte[2];
-        d[1] = (byte) (maxDepth % 256);
-        d[0] = (byte) Math.floor(maxDepth / (double) 256);
-        return d;
-    }
-
-    int getMaxDepth() {
-        int maxDepth = 0;
-        if (!refs.isEmpty()) {
-            for (Cell i : refs) {
-                if (i.getMaxDepth() > maxDepth) {
-                    maxDepth = i.getMaxDepth();
-                }
-            }
-            maxDepth = maxDepth + 1;
-        }
-        return maxDepth;
     }
 
     /*

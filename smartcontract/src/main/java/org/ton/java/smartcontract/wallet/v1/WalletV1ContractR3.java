@@ -99,7 +99,15 @@ public class WalletV1ContractR3 implements WalletContract {
      */
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, String comment) {
         long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
+
+        ExternalMessage msg = createTransferMessage(secretKey,
+                destinationAddress,
+                amount,
+                seqno,
+                CellBuilder.beginCell()
+                        .storeUint(0, 32)
+                        .storeString(comment)
+                        .endCell());
         return tonlib.sendRawMessage(msg.message.toBase64());
     }
 

@@ -82,7 +82,7 @@ public class TestWalletsV2 {
         ExternalMessage msg = contract.createTransferMessage(
                 keyPair.getSecretKey(),
                 "0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd",
-                Utils.toNano(1), // gram
+                Utils.toNano(1),
                 1L);
         Address address = msg.address;
 

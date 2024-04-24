@@ -28,11 +28,11 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @RunWith(JUnit4.class)
 public class TestFaucet {
 
-    public static String PUBLIC_KEY = "8010a5e0aeb4b4920dd813faec447ba2e963c2338096e74bfe134e523d1e73ac";
-    public static String SECRET_KEY = "a4181e01c8ba9b3a634e5d7a57d8b4bf5f18a9f165dd8305a08dac01fa3054b88010a5e0aeb4b4920dd813faec447ba2e963c2338096e74bfe134e523d1e73ac";
-    public static String FAUCET_ADDRESS_RAW = "0:96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7";
-    public static String NON_BOUNCEABLE = "0QCWopbSJPKFxnvuk8MPijCRV_Dao13FuH5BC3hjCgnPxy2l";
-    public static String BOUNCEABLE = "kQCWopbSJPKFxnvuk8MPijCRV_Dao13FuH5BC3hjCgnPx3Bg";
+    public static String PUBLIC_KEY = "c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
+    public static String SECRET_KEY = "46aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
+    public static String FAUCET_ADDRESS_RAW = "0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4";
+    public static String NON_BOUNCEABLE = "0QC1Kha6NzVQHfGZl1UOftTEF1TuUB3tioQQiM5CeLZt5FIA";
+    public static String BOUNCEABLE = "kQC1Kha6NzVQHfGZl1UOftTEF1TuUB3tioQQiM5CeLZt5A_F";
 
     public static BigInteger topUpContract(Tonlib tonlib, Address destinationAddress, BigInteger amount) throws InterruptedException {
         byte[] secretKey = Utils.hexToSignedBytes(SECRET_KEY);
@@ -87,6 +87,7 @@ public class TestFaucet {
     public void testFaucetBalance() {
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
+                .ignoreCache(false)
                 .build();
         FullAccountState state = tonlib.getAccountState(AccountAddressOnly.builder().account_address(FAUCET_ADDRESS_RAW).build());
         log.info("account {}", state);
@@ -109,7 +110,7 @@ public class TestFaucet {
         log.info("Public key {}", Utils.bytesToHex(keyPair.getPublicKey()));
         log.info("Non-bounceable address (for init): {}", contract.getAddress().toString(true, true, false, true));
         log.info("Bounceable address (for later access): {}", contract.getAddress().toString(true, true, true, true));
-        log.info("Unfriendly address: {}", contract.getAddress().toString(false));
+        log.info("Raw address: {}", contract.getAddress().toString(false));
     }
 
     /**
@@ -128,11 +129,17 @@ public class TestFaucet {
 
         Wallet wallet = new Wallet(WalletVersion.V1R3, options);
         WalletV1ContractR3 contract = wallet.create();
+        log.info("Private key {}", Utils.bytesToHex(keyPair.getSecretKey()));
+        log.info("Public key {}", Utils.bytesToHex(keyPair.getPublicKey()));
+        log.info("Non-bounceable address (for init): {}", contract.getAddress().toString(true, true, false, true));
+        log.info("Bounceable address (for later access): {}", contract.getAddress().toString(true, true, true, true));
+        log.info("Raw address: {}", contract.getAddress().toString(false));
         InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
 
         log.info("deploying faucet contract to address {}", contract.getAddress().toString(false));
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
+                .ignoreCache(false)
                 .build();
         ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.message.toBase64());
         assertThat(extMessageInfo.getError().getCode()).isZero();
@@ -142,7 +149,8 @@ public class TestFaucet {
     public void topUpAnyContract() throws InterruptedException {
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
+                .ignoreCache(false)
                 .build();
-        TestFaucet.topUpContract(tonlib, Address.of("0QB0gEuvySej-7ZZBAdaBSydBB_oVYUUnp9Ciwm05kJsNKau"), Utils.toNano(5));
+        TestFaucet.topUpContract(tonlib, Address.of("0QB0gEuvySej-7ZZBAdaBSydBB_oVYUUnp9Ciwm05kJsNKau"), Utils.toNano(1));
     }
 }

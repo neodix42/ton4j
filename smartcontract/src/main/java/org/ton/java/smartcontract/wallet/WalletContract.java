@@ -15,9 +15,6 @@ import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
 
-/**
- * Abstract standard wallet class
- */
 public interface WalletContract extends Contract {
 
     String getName();
@@ -74,18 +71,19 @@ public interface WalletContract extends Contract {
         Cell signingMessage = createSigningMessage(0);
         byte[] signature = new TweetNaclFast.Signature(getOptions().publicKey, secretKey).detached(signingMessage.hash());
 
-        CellBuilder body = CellBuilder.beginCell();
-        body.storeBytes(signature);
-        body.storeCell(signingMessage);
+        Cell body = CellBuilder.beginCell()
+                .storeBytes(signature)
+                .storeCell(signingMessage)
+                .endCell();
 
         Cell header = Contract.createExternalMessageHeader(stateInit.address);
 
-        Cell externalMessage = Contract.createCommonMsgInfo(header, stateInit.stateInit, body.endCell());
+        Cell externalMessage = Contract.createCommonMsgInfo(header, stateInit.stateInit, body);
 
         return new InitExternalMessage(
                 stateInit.address,
                 externalMessage,
-                body.endCell(),
+                body,
                 signingMessage,
                 stateInit.stateInit,
                 stateInit.code,

@@ -228,7 +228,7 @@ public interface Contract {
      */
     static Cell createExternalMessageHeader(Address dest, Address src, BigInteger importFee) {
         CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(BigInteger.TWO, 2); //bit $10
+        message.storeUint(0b10, 2);
         message.storeAddress(src);
         message.storeAddress(dest);
         message.storeCoins(importFee);
