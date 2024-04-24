@@ -103,7 +103,7 @@ public class WalletV4ContractR2 implements WalletContract {
      *
      * @param params NewPlugin
      */
-    public void deployAndInstallPlugin(Tonlib tonlib, NewPlugin params) {
+    public ExtMessageInfo deployAndInstallPlugin(Tonlib tonlib, NewPlugin params) {
 
         Cell signingMessage = createSigningMessage(params.seqno, true)
                 .storeUint(BigInteger.ONE, 8) // op
@@ -114,7 +114,7 @@ public class WalletV4ContractR2 implements WalletContract {
                 .endCell();
         ExternalMessage extMsg = createExternalMessage(signingMessage, params.secretKey, params.seqno, false);
 
-        tonlib.sendRawMessage(extMsg.message.toBase64());
+        return tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     public Cell createPluginStateInit() {

@@ -11,6 +11,7 @@ import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v2.WalletV2ContractR1;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -41,7 +42,8 @@ public class TestWalletV2R1DeployTransferShort extends CommonTest {
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        contract.deploy(tonlib, keyPair.getSecretKey());
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(25);
 

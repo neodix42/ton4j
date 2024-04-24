@@ -359,7 +359,7 @@ public class Cell {
         }
         int bitsDescriptor = data[1] & 0xFF;
         boolean isAugmented = (bitsDescriptor & 1) != 0;
-        int dataSize = (bitsDescriptor & 1) + (bitsDescriptor >> 1); // todo review !
+        int dataSize = (bitsDescriptor & 1) + (bitsDescriptor >> 1);
         int hashesSize = (level + 1) * (hasHashes ? 32 : 0);
         int depthSize = (level + 1) * (hasHashes ? 2 : 0);
         int i = 2;
@@ -404,7 +404,6 @@ public class Cell {
 
         Cell c = new Cell(bits, cellRefsIndex, toCellType(cellType));
         return Pair.of(c, i);
-
     }
 
     static List<Cell> fromBocMultiRoot(byte[] data) {
@@ -447,25 +446,7 @@ public class Cell {
     private static Boc deserializeBocHeader(byte[] data) {
         Cell rawCell = CellBuilder.beginCell(data.length * 8).storeBytes(data).endCell();
         CellSlice cs = CellSlice.beginParse(rawCell);
-        Boc boc = Boc.builder()
-                .magic(cs.loadUint(32).longValue())
-                .build();
-        boc.setHasIdx(cs.loadBit());
-        boc.setHasCrc32c(cs.loadBit());
-        boc.setHasCacheBits(cs.loadBit());
-        boc.setFlags(cs.loadUint(2).intValue());
-        boc.setSize(cs.loadUint(3).intValue());
-        boc.setOffBytes(cs.loadUint(8).intValue());
-        boc.setCells(cs.loadUint(boc.getSize() * 8).intValue());
-        boc.setRoots(cs.loadUint(boc.getSize() * 8).intValue());
-        boc.setAbsent(cs.loadUint(boc.getSize() * 8).intValue());
-        boc.setTotalCellsSize(cs.loadUint(boc.getOffBytes() * 8).intValue());
-        boc.setRootList(cs.loadList(boc.getRoots(), boc.getSize() * 8));
-        boc.setIndex(boc.isHasIdx() ? cs.loadList(boc.getCells(), boc.getOffBytes() * 8) : null);
-        boc.setCellData(cs.loadBytes(boc.getTotalCellsSize() * 8));
-        boc.setCrc32c(boc.isHasCrc32c() ? cs.loadUint(32).longValue() : 0);
-
-        return boc;
+        return Boc.deserialize(cs);
     }
 
     /**
@@ -590,39 +571,25 @@ public class Cell {
         return maxLevel;
     }
 
-    /*
-        serialized_boc#b5ee9c72 has_idx:(## 1) has_crc32c:(## 1)
-          has_cache_bits:(## 1) flags:(## 2) { flags = 0 }
-          size:(## 3) { size <= 4 }
-          off_bytes:(## 8) { off_bytes <= 8 }
-          cells:(##(size * 8))
-          roots:(##(size * 8)) { roots >= 1 }
-          absent:(##(size * 8)) { roots + absent <= cells }
-          tot_cells_size:(##(off_bytes * 8))
-          root_list:(roots * ##(size * 8))
-          index:has_idx?(cells * ##(off_bytes * 8))
-          cell_data:(tot_cells_size * [ uint8 ])
-          crc32c:has_crc32c?uint32
-         = BagOfCells;
-    */
     public byte[] toBoc() {
-        return toBoc(true, false, false);
+        return toBoc(true, false, false, false, false);
     }
 
     public byte[] toBoc(boolean withCRC) {
-        return toBoc(withCRC, false, false);
+        return toBoc(withCRC, false, false, false, false);
     }
 
-    public byte[] toBoc(boolean hasCrc32c, boolean hasIdx, boolean hasCacheBits) {
-        // recursively go through cells, build hash index and store unique in slice
-        List<Cell> orderCells = flattenIndex(List.of(this.clone()));
+    public byte[] toBoc(boolean hasCrc32c, boolean hasIdx, boolean hasCacheBits, boolean hasTopHash, boolean hasIntHashes) {
 
-        int cellSizeBits = Utils.log2(orderCells.size() + 1);
+        // recursively go through cells, build hash index and store unique in slice
+        List<Cell> sortedCells = flattenIndex(List.of(this), hasTopHash, hasIntHashes);
+
+        int cellSizeBits = Utils.log2(sortedCells.size() + 1);
         int cellSizeBytes = (int) Math.ceil((double) cellSizeBits / 8);
 
         byte[] payload = new byte[0];
-        for (Cell orderCell : orderCells) {
-            payload = Utils.concatBytes(payload, orderCell.serialize(cellSizeBytes));
+        for (Cell c : sortedCells) {
+            payload = Utils.concatBytes(payload, c.serialize(cellSizeBytes));
         }
         // bytes needed to store len of payload
         int sizeBits = Utils.log2(payload.length + 1);
@@ -632,10 +599,11 @@ public class Cell {
                 .hasIdx(hasIdx)
                 .hasCrc32c(hasCrc32c)
                 .hasCacheBits(hasCacheBits)
-                .flags(0)
+                .hasTopHash(hasTopHash)
+                .hasIntHashes(hasIntHashes)
                 .size(cellSizeBytes)
                 .offBytes(sizeBytes)
-                .cells(orderCells.size())
+                .cells(sortedCells.size())
                 .roots(1)
                 .absent(0)
                 .totalCellsSize(payload.length)
@@ -644,10 +612,10 @@ public class Cell {
                 .cellData(payload)
                 .build();
 
-        return boc.toCell().bits.toByteArray();
+        return boc.toCell().getBits().toByteArray();
     }
 
-    private List<Cell> flattenIndex(List<Cell> src) {
+    private List<Cell> flattenIndex(List<Cell> src, boolean hasTopHash, boolean hasIntHashes) {
 
         List<Cell> pending = src;
         Map<String, Cell> allCells = new HashMap<>();
@@ -729,29 +697,21 @@ public class Cell {
     }
 
     private byte[] serialize(int refIndexSzBytes) {
-        byte[] body = Utils.unsignedBytesToSigned(CellSlice.beginParse(this).loadSlice(this.bits.getLength()));
-        byte[] data;
+        byte[] body = Utils.unsignedBytesToSigned(CellSlice.beginParse(this)
+                .loadSlice(this.bits.getLength()));
         byte[] descriptors = getDescriptors(levelMask.getMask());
-        data = Utils.concatBytes(descriptors, body);
-//        data.add(descriptors[0]);
-//        data.add(descriptors[1]);
-//
-//        data.addAll(Arrays.stream(body).boxed().toList());
+        byte[] data = Utils.concatBytes(descriptors, body);
 
         int unusedBits = 8 - (bits.getLength() % 8);
 
         if (unusedBits != 8) {
-//            data.set(2 + body.length - 1, data.get(2 + body.length - 1) + (1 << (unusedBits - 1)));
             data[2 + body.length - 1] = (byte) (data[2 + body.length - 1] + (1 << (unusedBits - 1)));
         }
 
         for (Cell ref : refs) {
-            //data.addAll(Arrays.stream(Utils.dynamicIntBytes(BigInteger.valueOf(ref.index), refIndexSzBytes)).boxed().toList());
             data = Utils.concatBytes(data, Utils.dynamicIntBytes(BigInteger.valueOf(ref.index), refIndexSzBytes));
-
+            //data = Utils.concatBytes(data,refsIndexes);
         }
-
-//        return Arrays.stream(data).boxed().toList();
         return data;
     }
 
@@ -765,9 +725,9 @@ public class Cell {
             int prunedHashIndex = levelMask.getHashIndex();
             if (hashIndex != prunedHashIndex) {
                 int off = 2 + 32 * prunedHashIndex + hashIndex * 2;
-                int[] dst = new int[2];
+                byte[] dst = new byte[2];
                 System.arraycopy(getDataBytes(), off, dst, 0, 2); // review
-                return Utils.intsToInt(dst);
+                return Utils.bytesToIntX(dst);
             }
         }
         return depths.get(hashIndex);

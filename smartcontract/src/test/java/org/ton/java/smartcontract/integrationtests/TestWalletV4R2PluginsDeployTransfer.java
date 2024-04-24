@@ -15,6 +15,7 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.java.smartcontract.wallet.v4.WalletV4ContractR2;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.utils.Utils;
@@ -122,7 +123,8 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
                 .body(contract.createPluginBody())
                 .build();
 
-        contract.deployAndInstallPlugin(tonlib, plugin);
+        ExtMessageInfo extMessageInfo = contract.deployAndInstallPlugin(tonlib, plugin);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(45);
 

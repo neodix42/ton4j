@@ -13,6 +13,7 @@ import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import java.io.IOException;
@@ -72,7 +73,8 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         Utils.sleep(5);
 
-        contract.deploy(tonlib, keyPair.getSecretKey());
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(60, "deploying");
 
@@ -181,7 +183,8 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         Utils.sleep(5);
 
-        contract.deploy(tonlib, sigKeyPair.getSecretKey());
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, sigKeyPair.getSecretKey());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
 

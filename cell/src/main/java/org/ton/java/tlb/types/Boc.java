@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -38,7 +39,8 @@ public class Boc {
     boolean hasIdx;
     boolean hasCrc32c;
     boolean hasCacheBits;
-    int flags;
+    boolean hasTopHash;
+    boolean hasIntHashes;
     int size;
     int offBytes;
     int cells;
@@ -56,7 +58,8 @@ public class Boc {
                 .storeBit(hasIdx)
                 .storeBit(hasCrc32c)
                 .storeBit(hasCacheBits)
-                .storeUint(flags, 2)
+                .storeBit(hasTopHash)
+                .storeBit(hasIntHashes)
                 .storeUint(size, 3)
                 .storeUint(offBytes, 8)
                 .storeUint(cells, size * 8)
@@ -77,8 +80,24 @@ public class Boc {
         return cell.endCell();
     }
 
-    static Cell deserialize() {
-        return null; // todo
+    public static Boc deserialize(CellSlice cs) {
+        Boc boc = Boc.builder().magic(cs.loadUint(32).longValue()).build();
+        boc.setHasIdx(cs.loadBit());
+        boc.setHasCrc32c(cs.loadBit());
+        boc.setHasCacheBits(cs.loadBit());
+        boc.setHasTopHash(cs.loadBit());
+        boc.setHasIntHashes(cs.loadBit());
+        boc.setSize(cs.loadUint(3).intValue());
+        boc.setOffBytes(cs.loadUint(8).intValue());
+        boc.setCells(cs.loadUint(boc.getSize() * 8).intValue());
+        boc.setRoots(cs.loadUint(boc.getSize() * 8).intValue());
+        boc.setAbsent(cs.loadUint(boc.getSize() * 8).intValue());
+        boc.setTotalCellsSize(cs.loadUint(boc.getOffBytes() * 8).intValue());
+        boc.setRootList(cs.loadList(boc.getRoots(), boc.getSize() * 8));
+        boc.setIndex(boc.isHasIdx() ? cs.loadList(boc.getCells(), boc.getOffBytes() * 8) : null);
+        boc.setCellData(cs.loadBytes(boc.getTotalCellsSize() * 8));
+        boc.setCrc32c(boc.isHasCrc32c() ? cs.loadUint(32).longValue() : 0);
+        return boc;
     }
 }
 

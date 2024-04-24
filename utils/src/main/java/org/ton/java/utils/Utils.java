@@ -106,20 +106,11 @@ public class Utils {
         return result;
     }
 
-    public static int bytesToIntX(final int[] b) {
-        int result = 0;
-        for (int i = 0; i < b.length; i++) {
-            result <<= 8;
-            result |= b[i];
-        }
-        return result;
-    }
-
     public static int bytesToIntX(final byte[] b) {
         int result = 0;
-        for (int i = 0; i < b.length; i++) {
+        for (byte value : b) {
             result <<= 8;
-            result |= b[i];
+            result |= value;
         }
         return result;
     }

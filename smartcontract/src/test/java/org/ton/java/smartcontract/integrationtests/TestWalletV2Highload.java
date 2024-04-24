@@ -14,6 +14,7 @@ import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR2;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -55,7 +56,8 @@ public class TestWalletV2Highload extends CommonTest {
         Utils.sleep(10, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        contract.deploy(tonlib, keyPair.getSecretKey());
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(60, "deploying");
 
@@ -147,7 +149,8 @@ public class TestWalletV2Highload extends CommonTest {
         Utils.sleep(20, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        contract.deploy(tonlib, keyPair.getSecretKey());
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(45, "deploying");
 
