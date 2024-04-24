@@ -29,7 +29,7 @@ public class Cell {
     public static final int MERKLE_UPDATE_CELL_TYPE = 0x04;
     public static final int UNKNOWN_CELL_TYPE = 0xFF;
 
-    public BitString bits;
+    BitString bits;
     public List<Cell> refs = new ArrayList<>();
 
     public CellType type;
@@ -45,6 +45,10 @@ public class Cell {
 //    private byte[] descriptors;
 //    private byte[] dataBytes;
 
+
+    public BitString getBits() {
+        return bits;
+    }
 
     public Cell() {
         this.bits = new BitString();
@@ -465,7 +469,7 @@ public class Cell {
                 refs.add(cells[r]);
             }
 
-            cells[ci] = new Cell(cells[ci].bits, refs, cells[ci].type.getValue());
+            cells[ci] = new Cell(cells[ci].getBits(), refs, cells[ci].type.getValue());
             cells[ci].calculateHashes();
         }
 

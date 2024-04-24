@@ -31,7 +31,7 @@ public class LibDescr {
                 .storeUint(0, 2)
                 .storeRef(lib)
                 .storeDict(publishers.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeBit(true).endCell()))
                 .endCell();
     }

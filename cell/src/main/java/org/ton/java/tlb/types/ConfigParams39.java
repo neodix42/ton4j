@@ -31,7 +31,7 @@ public class ConfigParams39 {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeDict(validatorSignedTemp.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeCell(((ValidatorSignedTempKey) v).toCell()).endCell()
                 ))
                 .endCell();

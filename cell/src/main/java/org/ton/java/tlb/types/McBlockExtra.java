@@ -44,11 +44,11 @@ public class McBlockExtra {
 //                .storeCell(shardHashes.toCell())
 //                .storeCell(shardFees.toCell())
                 .storeDict(shardHashes.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeRef((Cell) v).endCell() // todo ShardDescr
                 ))
                 .storeDict(shardFees.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 96).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 96).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeCell((Cell) v), // todo ShardFeeCreated
                         e -> CellBuilder.beginCell().storeCell((Cell) e), // todo ShardFeeCreated
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

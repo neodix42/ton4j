@@ -28,7 +28,7 @@ public class ConfigParams7 {
             dict = CellBuilder.beginCell().storeBit(false).endCell();
         } else {
             dict = extraCurrencies.serialize( // dict:(HashmapE 32 (VarUInteger 32))
-                    k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                    k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
                     v -> CellBuilder.beginCell().storeVarUint((byte) v, 5).endCell()
             );
         }

@@ -44,7 +44,7 @@ public class TestHashMap {
 
         // serialization
         Cell cellSerialized = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 64).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 64).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((BigInteger) v, 8).endCell()
         );
 
@@ -64,7 +64,7 @@ public class TestHashMap {
         x.elements.put(400L, (byte) 4);
 
         Cell cell = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -90,7 +90,7 @@ public class TestHashMap {
         x.elements.put(100L, (byte) 1);
 
         Cell cellX = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -101,7 +101,7 @@ public class TestHashMap {
     public void testEmptyHashMapSerialization() {
         TonHashMap x = new TonHashMap(9);
         assertThrows(Error.class, () -> x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         ));
         log.info("Deserialized hashmap from cell {}", x);
@@ -127,7 +127,7 @@ public class TestHashMap {
 
         // serialize
         dex.serialize(
-                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 16).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 16).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((BigInteger) v, 16).endCell()
         );
 
@@ -153,7 +153,7 @@ public class TestHashMap {
         // traverse deserialized hashmap
         log.info("Deserialized hashmap from cell");
         for (Map.Entry<Object, Object> entry : dex.elements.entrySet()) {
-            log.info("key {}, value {}", entry.getKey(), ((Cell) entry.getValue()).bits.toBitString());
+            log.info("key {}, value {}", entry.getKey(), ((Cell) entry.getValue()).getBits().toBitString());
 //            assertThat((BigInteger) entry.getKey()).isEqualTo(KEYS_NETWORK_CONFIG[i++]);
 //            assertThat(((Cell) entry.getValue()).bits.toBitString().length()).isZero();
         }

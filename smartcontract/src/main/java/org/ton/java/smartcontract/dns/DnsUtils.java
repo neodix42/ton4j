@@ -3,6 +3,7 @@ package org.ton.java.smartcontract.dns;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.AdnlAddress;
 import org.ton.java.tonlib.Tonlib;
@@ -80,11 +81,14 @@ public class DnsUtils {
      * @return Address|null
      */
     private static Address parseSmartContractAddressImpl(Cell cell, int prefix0, int prefix1) {
-        if ((cell.bits.toByteArray()[0] & 0xFF) != prefix0 || (cell.bits.toByteArray()[1] & 0xFF) != prefix1) {
+        if ((cell.getBits().toByteArray()[0] & 0xFF) != prefix0 || (cell.getBits().toByteArray()[1] & 0xFF) != prefix1) {
             throw new Error("Invalid dns record value prefix");
         }
-        cell.bits = cell.bits.cloneFrom(2 * 8);
-        return NftUtils.parseAddress(cell);
+
+        //cell.bits = cell.getBits().cloneFrom(2 * 8);
+        Cell c = CellSlice.beginParse(cell).skipBits(16).sliceToCell();
+
+        return NftUtils.parseAddress(c); //todo parseSmartContractAddressImpl
     }
 
     /**
@@ -108,10 +112,10 @@ public class DnsUtils {
      * @return AdnlAddress
      */
     static AdnlAddress parseAdnlAddressRecord(Cell cell) {
-        if ((cell.bits.toByteArray()[0] & 0xFF) != 0xad || (cell.bits.toByteArray()[1] & 0xFF) != 0x01) { // todo
+        if ((cell.getBits().toByteArray()[0] & 0xFF) != 0xad || (cell.getBits().toByteArray()[1] & 0xFF) != 0x01) { // todo
             throw new Error("Invalid dns record value prefix");
         }
-        byte[] bytes = Arrays.copyOfRange(cell.bits.toByteArray(), 2, 2 + 32);// cell.bits.array.slice(2, 2 + 32); // skip prefix - first 16 bits
+        byte[] bytes = Arrays.copyOfRange(cell.getBits().toByteArray(), 2, 2 + 32);// cell.bits.array.slice(2, 2 + 32); // skip prefix - first 16 bits
         return new AdnlAddress(bytes);
     }
 
@@ -150,7 +154,7 @@ public class DnsUtils {
             cell = CellBuilder.beginCell().fromBoc(cellResult.getCell().getBytes()).endCell();
         }
 
-        if ((nonNull(cell)) && (isNull(cell.bits))) {
+        if ((nonNull(cell)) && (isNull(cell.getBits()))) {
             throw new Error("Invalid dnsresolve response");
         }
 

@@ -20,7 +20,7 @@ public class ConfigParams12 {
 
         return CellBuilder.beginCell()
                 .storeDict(workchains.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeCell(((WorkchainDescr) v).toCell()).endCell()
                 ))
                 .endCell();

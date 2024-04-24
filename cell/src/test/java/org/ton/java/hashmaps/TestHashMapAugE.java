@@ -31,7 +31,7 @@ public class TestHashMapAugE {
 
 
         Cell cell = hashmapAugE.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((Long) v, 32).endCell(),
                 e -> CellBuilder.beginCell().storeUint((Long) e, 32).endCell(),
                 (fv, fe) -> CellBuilder.beginCell().storeUint(

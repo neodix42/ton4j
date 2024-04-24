@@ -28,7 +28,7 @@ public class OracleBridgeParams {
                 .storeAddress(bridgeAddress)
                 .storeAddress(oracleMultiSigAddress)
                 .storeDict(oracles.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeUint((BigInteger) v, 256).endCell()))
                 .storeUint(externalChainAddress, 256)
                 .endCell();

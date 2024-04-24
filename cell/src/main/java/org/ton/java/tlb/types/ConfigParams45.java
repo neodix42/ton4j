@@ -23,7 +23,7 @@ public class ConfigParams45 {
         return CellBuilder.beginCell()
                 .storeUint(0xc0, 8)
                 .storeDict(precompiledContractsList.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeCell(((PrecompiledSmc) v).toCell()).endCell()))
                 .storeUint(suspendedUntil, 32)
                 .endCell();

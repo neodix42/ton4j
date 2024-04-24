@@ -207,7 +207,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         Cell cellDict = dictDestinations.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> (Cell) v
         );
 
@@ -235,7 +235,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         Cell cellDict = dictDestinations.serialize(
-                k -> CellBuilder.beginCell().storeUint((BigInteger) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, dictKeySize).endCell().getBits(),
                 v -> (Cell) v
         );
 
@@ -261,7 +261,7 @@ public class MultisigWallet implements WalletContract {
         }
 
         Cell cellDict = dictSignatures.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> (Cell) v
         );
 

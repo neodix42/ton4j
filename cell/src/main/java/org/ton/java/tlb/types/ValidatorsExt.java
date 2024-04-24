@@ -43,7 +43,7 @@ public class ValidatorsExt implements ValidatorSet {
                 .storeUint(main, 16)
                 .storeUint(totalWeight, 64)
                 .storeDict(list.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 16).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 16).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeCell(((ValidatorDescr) v).toCell()).endCell()
                 ))
                 .endCell();

@@ -39,7 +39,7 @@ public class CellSlice {
     }
 
     public static CellSlice beginParse(Cell cell) {
-        return new CellSlice(cell.bits, cell.refs, cell.type);
+        return new CellSlice(cell.getBits(), cell.refs, cell.type);
     }
 
     public static CellSlice beginParse(Object cell) {

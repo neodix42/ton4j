@@ -150,7 +150,7 @@ public class TestCellBuilder {
         x.elements.put(300L, (byte) 3);
         x.elements.put(400L, (byte) 4);
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
         Cell cellDict = CellBuilder.beginCell().storeDict(dict).endCell();

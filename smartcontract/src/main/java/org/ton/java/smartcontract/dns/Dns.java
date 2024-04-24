@@ -19,7 +19,7 @@ public class Dns {
 
     public Address getRootDnsAddress() {
         Cell cell = tonlib.getConfigParam(tonlib.getLast().getLast(), 4);
-        byte[] byteArray = cell.bits.toByteArray();
+        byte[] byteArray = cell.getBits().toByteArray();
         if (byteArray.length != 256 / 8) {
             throw new Error("Invalid ConfigParam 4 length " + byteArray.length);
         }

@@ -128,7 +128,7 @@ public class LockupWalletV1 implements WalletContract {
         }
 
         Cell cellDict = dictAllowedDestinations.serialize(
-                k -> CellBuilder.beginCell().storeAddress((Address) k).endCell().bits,
+                k -> CellBuilder.beginCell().storeAddress((Address) k).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
         cell.storeDict(cellDict);

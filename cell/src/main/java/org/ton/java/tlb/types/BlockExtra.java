@@ -51,7 +51,7 @@ public class BlockExtra {
                 .storeRef(inMsgDesc.toCell())
                 .storeRef(outMsgDesc.toCell())
                 .storeRef(shardAccountBlocks.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeCell(((AccountBlock) v).toCell()),
                         e -> CellBuilder.beginCell().storeCell(((CurrencyCollection) e).toCell()),
                         (fk, fv) -> CellBuilder.beginCell().storeUint(((Long) fk) + ((Long) fv), 32)

@@ -144,7 +144,7 @@ public class HighloadWallet implements WalletContract {
         }
 
         Cell cellDict = dictDestinations.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> (Cell) v
         );
 

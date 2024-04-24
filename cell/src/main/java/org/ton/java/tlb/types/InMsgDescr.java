@@ -23,7 +23,7 @@ public class InMsgDescr {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeDict(inMsg.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeCell(((InMsg) v).toCell()),
                         e -> CellBuilder.beginCell().storeCell(((ImportFees) e).toCell()),
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

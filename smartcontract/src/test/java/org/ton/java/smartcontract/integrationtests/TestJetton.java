@@ -33,7 +33,7 @@ public class TestJetton {
 
     @BeforeClass
     public static void setUpBeforeClass() throws InterruptedException {
-        tonlib = Tonlib.builder().testnet(true).build();
+        tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
         adminWallet = GenerateWallet.random(tonlib, 7);
         wallet2 = GenerateWallet.random(tonlib, 1);
 

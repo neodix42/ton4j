@@ -1,10 +1,10 @@
 package org.ton.java.smartcontract.token.nft;
 
-import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.smartcontract.types.Royalty;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
@@ -63,14 +63,14 @@ public class NftUtils {
      * @return String
      */
     public static String parseOffchainUriCell(Cell cell) {
-        if ((cell.bits.toByteArray()[0] & 0xFF) != OFFCHAIN_CONTENT_PREFIX) {
+        if ((cell.getBits().toByteArray()[0] & 0xFF) != OFFCHAIN_CONTENT_PREFIX) {
             throw new Error("no OFFCHAIN_CONTENT_PREFIX");
         }
 
         int length = 0;
         Cell c = cell;
         while (nonNull(c)) {
-            length += c.bits.toByteArray().length;
+            length += c.getBits().toByteArray().length;
             if (c.getUsedRefs() != 0) {
                 c = c.refs.get(0);
             } else {
@@ -82,17 +82,15 @@ public class NftUtils {
         length = 0;
         c = cell;
         while (nonNull(c)) {
-            bytes = Arrays.copyOfRange(c.bits.toByteArray(), 0, length);
-//            bytes.set(c.bits.array, length);
-            length += c.bits.toByteArray().length;
+            bytes = Arrays.copyOfRange(c.getBits().toByteArray(), 0, length);
+            length += c.getBits().toByteArray().length;
             if (c.getUsedRefs() != 0) {
                 c = c.refs.get(0);
             } else {
-                bytes = Arrays.copyOfRange(c.bits.toByteArray(), 0, length);
+                bytes = Arrays.copyOfRange(c.getBits().toByteArray(), 0, length);
                 c = null;
             }
         }
-//        return parseUri( bytes.slice(1)); // slice OFFCHAIN_CONTENT_PREFIX
         return parseUri(Arrays.copyOfRange(bytes, 1, bytes.length)); // slice OFFCHAIN_CONTENT_PREFIX
     }
 
@@ -136,23 +134,25 @@ public class NftUtils {
      * @return Address|null
      */
     public static Address parseAddress(Cell cell) {
-        String result;
 
-        try {
-            BigInteger n = readIntFromBitString(cell.bits, 3, 8);
-            if (n.compareTo(BigInteger.valueOf(127L)) > 0) {
-                n = n.subtract(BigInteger.valueOf(256L));
-            }
-            BigInteger hashPart = readIntFromBitString(cell.bits, 3 + 8, 256);
-            if ((n.toString(10) + ":" + hashPart.toString(16)).equals("0:0")) {
-                return null;
-            }
-
-            result = n.toString(10) + ":" + StringUtils.leftPad(hashPart.toString(16), 64, '0');
-        } catch (Exception e) {
-            return null;
-        }
-        return Address.of(result);
+        return CellSlice.beginParse(cell).loadAddress();
+//        String result; todo wtf?
+//
+//        try {
+//            BigInteger n = readIntFromBitString(cell.getBits(), 3, 8);
+//            if (n.compareTo(BigInteger.valueOf(127L)) > 0) {
+//                n = n.subtract(BigInteger.valueOf(256L));
+//            }
+//            BigInteger hashPart = readIntFromBitString(cell.getBits(), 3 + 8, 256);
+//            if ((n.toString(10) + ":" + hashPart.toString(16)).equals("0:0")) {
+//                return null;
+//            }
+//
+//            result = n.toString(10) + ":" + StringUtils.leftPad(hashPart.toString(16), 64, '0');
+//        } catch (Exception e) {
+//            return null;
+//        }
+//        return Address.of(result);
     }
 
     /**

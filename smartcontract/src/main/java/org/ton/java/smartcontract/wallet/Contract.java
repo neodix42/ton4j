@@ -281,7 +281,7 @@ public interface Contract {
         if (nonNull(stateInit)) {
             commonMsgInfo.storeBit(true);
             //-1:  need at least one bit for body
-            if (commonMsgInfo.getFreeBits() - 1 >= stateInit.bits.getUsedBits()) {
+            if (commonMsgInfo.getFreeBits() - 1 >= stateInit.getBits().getUsedBits()) {
                 commonMsgInfo.storeBit(false);
                 commonMsgInfo.storeCell(stateInit);
             } else {
@@ -293,7 +293,7 @@ public interface Contract {
         }
 
         if (nonNull(body)) {
-            if ((commonMsgInfo.getFreeBits() >= body.bits.getUsedBits()) && commonMsgInfo.getFreeRefs() >= body.getUsedRefs()) {
+            if ((commonMsgInfo.getFreeBits() >= body.getBits().getUsedBits()) && commonMsgInfo.getFreeRefs() >= body.getUsedRefs()) {
                 commonMsgInfo.storeBit(false);
                 commonMsgInfo.storeCell(body);
             } else {

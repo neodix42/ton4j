@@ -150,7 +150,7 @@ public class DnsItem implements Contract {
         }
 
         TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStack().get(0);
-        return new String(CellBuilder.beginCell().fromBoc(domainCell.getCell().getBytes()).endCell().bits.toByteArray());
+        return new String(CellBuilder.beginCell().fromBoc(domainCell.getCell().getBytes()).endCell().getBits().toByteArray());
     }
 
     public Address getEditor(Tonlib tonlib) {

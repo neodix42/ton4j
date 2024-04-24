@@ -39,6 +39,7 @@ public class TestDns extends CommonTest {
 
     static Tonlib tonlib = Tonlib.builder()
             .testnet(true)
+            .ignoreCache(false)
             .build();
 
 

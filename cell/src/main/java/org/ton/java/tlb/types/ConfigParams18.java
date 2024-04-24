@@ -21,7 +21,7 @@ public class ConfigParams18 {
         Cell dict;
 
         dict = storagePrices.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((StoragePrices) v).toCell()).endCell()
         );
         return CellBuilder.beginCell()

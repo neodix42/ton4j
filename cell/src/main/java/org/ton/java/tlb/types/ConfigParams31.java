@@ -19,7 +19,7 @@ public class ConfigParams31 {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeDict(fundamentalSmcAddr.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()
                 ))
                 .endCell();

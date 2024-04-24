@@ -25,7 +25,7 @@ public class OldMcBlocksInfo {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeDict(list.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeCell(((KeyExtBlkRef) v).toCell()),
                         e -> CellBuilder.beginCell().storeCell(((KeyMaxLt) e).toCell()),
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

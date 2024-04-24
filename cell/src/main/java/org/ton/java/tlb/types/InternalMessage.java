@@ -56,7 +56,7 @@ public class InternalMessage implements CommonMsgInfo {
                 .storeCell(dstAddr.toCell())
                 .storeCoins(value.getCoins())
                 .storeDict(nonNull(value.getExtraCurrencies()) ? value.getExtraCurrencies().serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeUint((byte) v, 32).endCell()) :
                         CellBuilder.beginCell().storeBit(false).endCell())
                 .storeCoins(iHRFee)

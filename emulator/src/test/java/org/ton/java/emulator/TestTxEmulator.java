@@ -148,7 +148,7 @@ public class TestTxEmulator {
         }
 
         Cell dictLibs = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeRef((Cell) v).endCell()
         );
         return dictLibs;

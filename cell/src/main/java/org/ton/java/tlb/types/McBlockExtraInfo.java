@@ -28,7 +28,7 @@ public class McBlockExtraInfo {
     public Cell toCell() {
         CellBuilder cell = CellBuilder.beginCell()
                 .storeDict(prevBlkSignatures.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 16).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 16).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeCell((Cell) v).endCell() // todo CryptoSignaturePair
                 ));
         if (isNull(recoverCreateMsg)) {

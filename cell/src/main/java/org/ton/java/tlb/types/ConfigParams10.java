@@ -21,7 +21,7 @@ public class ConfigParams10 {
         Cell dict;
 
         dict = criticalParams.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()
         );
         return CellBuilder.beginCell()

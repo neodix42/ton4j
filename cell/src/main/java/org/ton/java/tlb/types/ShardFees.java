@@ -23,7 +23,7 @@ public class ShardFees {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeDict(shardFees.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 96).endCell().bits,
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 96).endCell().getBits(),
                         v -> CellBuilder.beginCell().storeCell(((ShardFeeCreated) v).toCell()).endCell(),
                         e -> CellBuilder.beginCell().storeCell(((ShardFeeCreated) e).toCell()),
                         (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

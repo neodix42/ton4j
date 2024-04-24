@@ -265,12 +265,13 @@ public class Tonlib {
             TimeUnit.MILLISECONDS.sleep(200);
             response = receive();
             int retry = 0;
+            outterloop:
             do {
                 do {
                     if (nonNull(response) && !response.contains("syncStateInProgress")) {
 
                         if (++retry > receiveRetryTimes) {
-                            throw new RuntimeException("Error in tonlib.syncAndRead(), " + receiveRetryTimes + " times was not able to retrieve result from lite-server. Last response: " + response);
+                            break outterloop;
                         }
 
                         tonlibJson.tonlib_client_json_send(tonlib, query);

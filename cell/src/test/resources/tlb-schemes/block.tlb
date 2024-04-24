@@ -736,6 +736,11 @@ gas_prices_ext#de gas_price:uint64 gas_limit:uint64 special_gas_limit:uint64 gas
   block_gas_limit:uint64 freeze_due_limit:uint64 delete_due_limit:uint64 
   = GasLimitsPrices;
 
+// same fields as gas_prices_ext; behavior differs
+gas_prices_v3#df gas_price:uint64 gas_limit:uint64 special_gas_limit:uint64 gas_credit:uint64
+  block_gas_limit:uint64 freeze_due_limit:uint64 delete_due_limit:uint64
+  = GasLimitsPrices;
+
 gas_flat_pfx#d1 flat_gas_limit:uint64 flat_gas_price:uint64 other:GasLimitsPrices
   = GasLimitsPrices;
 
@@ -748,7 +753,7 @@ param_limits#c3 underload:# soft_limit:# { underload <= soft_limit }
 block_limits#5d bytes:ParamLimits gas:ParamLimits lt_delta:ParamLimits
   = BlockLimits;
   
-config_mc_block_limits#_ BlockLimits = ConfigParam 22;
+config_mc_block_limits#_ BlockfLimits = ConfigParam 22;
 config_block_limits#_ BlockLimits = ConfigParam 23;
 
 // msg_fwd_fees = (lump_price + ceil((bit_price * msg.bits + cell_price * msg.cells)/2^16)) nanograms

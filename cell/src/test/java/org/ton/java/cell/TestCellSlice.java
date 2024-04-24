@@ -240,7 +240,7 @@ public class TestCellSlice {
         x.elements.put(200L, (byte) 2);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -274,7 +274,7 @@ public class TestCellSlice {
         x.elements.put(200L, (byte) 2);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -304,7 +304,7 @@ public class TestCellSlice {
         TonHashMap x = new TonHashMap(9);
 
         assertThrows(Error.class, () -> x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         ));
     }
@@ -318,7 +318,7 @@ public class TestCellSlice {
         x.elements.put(200L, (byte) 2);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -367,7 +367,7 @@ public class TestCellSlice {
         x.elements.put(200L, (byte) 4);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -423,7 +423,7 @@ public class TestCellSlice {
         x.elements.put(600L, (byte) 6);
 
         Cell dictX = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
 
@@ -437,7 +437,7 @@ public class TestCellSlice {
         y.elements.put(30000L, (byte) 99);
 
         Cell dictY = y.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeY).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeY).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
 
@@ -512,7 +512,7 @@ public class TestCellSlice {
         dict.elements.put(300L, (byte) 3);
 
         Cell dictCell = dict.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
 
@@ -599,7 +599,7 @@ public class TestCellSlice {
         dict.elements.put(300L, (byte) 3);
 
         Cell dictCell = dict.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
 
@@ -748,7 +748,7 @@ public class TestCellSlice {
         x.elements.put(100L, (byte) 1);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 

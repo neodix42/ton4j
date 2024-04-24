@@ -24,7 +24,7 @@ public class TestHashMapE {
         TonHashMapE x = new TonHashMapE(dictKeySize);
 
         Cell cell = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
         log.info("cell {}", cell.print());
@@ -37,7 +37,7 @@ public class TestHashMapE {
         TonHashMapE x = new TonHashMapE(dictKeySize);
 
         Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
         log.info("dict {}", dict.print());
@@ -67,7 +67,7 @@ public class TestHashMapE {
         x.elements.put(100L, (byte) 1);
 
         Cell cellX = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -93,7 +93,7 @@ public class TestHashMapE {
 
         // serialize
         loadedDict.serialize(
-                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 16).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 16).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((BigInteger) v, 16).endCell()
         );
     }
@@ -108,7 +108,7 @@ public class TestHashMapE {
         x.elements.put(300L, CellBuilder.beginCell().storeUint(7, 5).endCell());
 
         Cell cellX = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictXKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictXKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeSlice(CellSlice.beginParse((Cell) v)).endCell()
         );
 
@@ -126,7 +126,7 @@ public class TestHashMapE {
         x.elements.put(300L, (byte) 3);
 
         Cell cellX = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictXKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictXKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -143,7 +143,7 @@ public class TestHashMapE {
         log.info("hashmap y {}", y);
 
         Cell cellY = y.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictYKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictYKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 8).endCell()
         );
         log.info("serialized cellY:\n{}", cellY.print());
@@ -211,7 +211,7 @@ public class TestHashMapE {
         log.info("hashmap e {}", x);
 
         Cell cellX = x.serialize(
-                k -> CellBuilder.beginCell().storeString((String) k).endCell().bits,
+                k -> CellBuilder.beginCell().storeString((String) k).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -260,7 +260,7 @@ public class TestHashMapE {
         log.info("hashmap x {}", x);
 
         Cell cellX = x.serialize(
-                k -> CellBuilder.beginCell().storeBytes((byte[]) k).endCell().bits,
+                k -> CellBuilder.beginCell().storeBytes((byte[]) k).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -312,7 +312,7 @@ public class TestHashMapE {
         log.info("hashmap x {}", x);
 
         Cell cellX = x.serialize(
-                k -> CellBuilder.beginCell().storeBitString((BitString) k).endCell().bits,
+                k -> CellBuilder.beginCell().storeBitString((BitString) k).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
@@ -362,7 +362,7 @@ public class TestHashMapE {
         log.info("hashmap x {}", x);
 
         Cell cellX = x.serialize(
-                k -> CellBuilder.beginCell().storeAddress((Address) k).endCell().bits,
+                k -> CellBuilder.beginCell().storeAddress((Address) k).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 

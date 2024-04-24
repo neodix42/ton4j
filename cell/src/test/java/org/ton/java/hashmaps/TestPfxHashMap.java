@@ -38,7 +38,7 @@ public class TestPfxHashMap {
     public void testEmptyPfxHashMapSerialization() {
         TonPfxHashMap x = new TonPfxHashMap(9);
         assertThrows(Error.class, () -> x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         ));
 
@@ -58,7 +58,7 @@ public class TestPfxHashMap {
         log.info("pfx-hashmap dict {}", x);
 
         Cell cell = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().bits,
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 

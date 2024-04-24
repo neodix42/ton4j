@@ -151,6 +151,6 @@ public class TestFaucet {
                 .testnet(true)
                 .ignoreCache(false)
                 .build();
-        TestFaucet.topUpContract(tonlib, Address.of("0QB0gEuvySej-7ZZBAdaBSydBB_oVYUUnp9Ciwm05kJsNKau"), Utils.toNano(1));
+        TestFaucet.topUpContract(tonlib, Address.of("0QB0gEuvySej-7ZZBAdaBSydBB_oVYUUnp9Ciwm05kJsNKau"), Utils.toNano(0.1));
     }
 }
