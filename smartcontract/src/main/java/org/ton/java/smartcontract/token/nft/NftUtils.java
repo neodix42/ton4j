@@ -17,8 +17,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import static java.util.Objects.nonNull;
-
 public class NftUtils {
 
 
@@ -68,29 +66,22 @@ public class NftUtils {
         }
 
         int length = 0;
-        Cell c = cell;
-        while (nonNull(c)) {
-            length += c.getBits().toByteArray().length;
-            if (c.getUsedRefs() != 0) {
-                c = c.refs.get(0);
-            } else {
-                c = null;
-            }
+        CellSlice cs = CellSlice.beginParse(cell);
+        while (cs.getRefsCount() != 0) {
+            length += cs.loadBytes().length;
+            cs.loadRef();
         }
 
         byte[] bytes = new byte[length];
         length = 0;
-        c = cell;
-        while (nonNull(c)) {
-            bytes = Arrays.copyOfRange(c.getBits().toByteArray(), 0, length);
-            length += c.getBits().toByteArray().length;
-            if (c.getUsedRefs() != 0) {
-                c = c.refs.get(0);
-            } else {
-                bytes = Arrays.copyOfRange(c.getBits().toByteArray(), 0, length);
-                c = null;
-            }
+        cs = CellSlice.beginParse(cell);
+        while (cs.getRefsCount() != 0) {
+            bytes = Arrays.copyOfRange(cs.loadSignedBytes(), 0, length);
+            length += cs.loadBytes().length;
+            cs.loadRef();
         }
+
+        bytes = Arrays.copyOfRange(cs.loadSignedBytes(), 0, length);
         return parseUri(Arrays.copyOfRange(bytes, 1, bytes.length)); // slice OFFCHAIN_CONTENT_PREFIX
     }
 

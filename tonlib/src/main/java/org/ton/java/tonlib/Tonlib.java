@@ -271,10 +271,19 @@ public class Tonlib {
                     if (nonNull(response) && !response.contains("syncStateInProgress")) {
 
                         if (++retry > receiveRetryTimes) {
+//                            System.out.println("Last response: " + response);
                             break outterloop;
                         }
 
                         tonlibJson.tonlib_client_json_send(tonlib, query);
+                    }
+
+                    if (response.contains("\"@type\":\"ok\"")) {
+                        break outterloop;
+                    }
+
+                    if (response.contains(" : duplicate message\"")) {
+                        break outterloop;
                     }
                     TimeUnit.MILLISECONDS.sleep(200);
                     response = receive();
@@ -330,10 +339,6 @@ public class Tonlib {
                     .lt(lt)
                     .utime(utime)
                     .build();
-
-//            String blockQuery = gson.toJson(lookupBlockQuery);
-//            send();
-//            String result = receive();
 
             String result = syncAndRead(gson.toJson(lookupBlockQuery));
             return gson.fromJson(result, BlockIdExt.class);

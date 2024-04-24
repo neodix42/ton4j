@@ -30,7 +30,7 @@ public class Cell {
     public static final int UNKNOWN_CELL_TYPE = 0xFF;
 
     BitString bits;
-    public List<Cell> refs = new ArrayList<>();
+    List<Cell> refs = new ArrayList<>();
 
     public CellType type;
     private int[] refsIndexes;
@@ -42,12 +42,12 @@ public class Cell {
     public List<String> hashes = new ArrayList<>(); // todo private
     public List<Integer> depths = new ArrayList<>(); // todo private
 
-//    private byte[] descriptors;
-//    private byte[] dataBytes;
-
-
     public BitString getBits() {
         return bits;
+    }
+
+    public List<Cell> getRefs() {
+        return new ArrayList<>(refs);
     }
 
     public Cell() {
@@ -55,9 +55,6 @@ public class Cell {
         this.special = false;
         this.type = ORDINARY;
         this.levelMask = new LevelMask(0);
-//        descriptors = getDescriptors(levelMask.getMask());
-//        dataBytes = getDataBytes();
-//        calculateHashes();
     }
 
     public Cell(int bitSize) {
@@ -65,9 +62,6 @@ public class Cell {
         this.special = false;
         this.type = ORDINARY;
         this.levelMask = resolveMask();
-//        descriptors = getDescriptors(levelMask.getMask());
-//        dataBytes = getDataBytes();
-//        calculateHashes();
     }
 
     public Cell(BitString bits, List<Cell> refs) {
@@ -77,9 +71,6 @@ public class Cell {
         this.special = false;
         this.type = ORDINARY;
         this.levelMask = new LevelMask(0);
-//        descriptors = getDescriptors(levelMask.getMask());
-//        dataBytes = getDataBytes();
-//        calculateHashes();
     }
 
     public Cell(BitString bits, List<Cell> refs, int cellType) {
@@ -89,9 +80,6 @@ public class Cell {
         this.special = false;
         this.type = toCellType(cellType);
         this.levelMask = new LevelMask(0);
-//        descriptors = getDescriptors(levelMask.getMask());
-//        dataBytes = getDataBytes();
-//        calculateHashes();
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, LevelMask levelMask) {
@@ -101,9 +89,6 @@ public class Cell {
         this.special = special;
         this.type = ORDINARY;
         this.levelMask = levelMask;
-//        descriptors = getDescriptors(levelMask.getMask());
-//        dataBytes = getDataBytes();
-//        calculateHashes();
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, CellType cellType) {
@@ -113,9 +98,6 @@ public class Cell {
         this.special = special;
         this.type = cellType;
         this.levelMask = resolveMask();
-//        descriptors = getDescriptors(levelMask.getMask());
-//        dataBytes = getDataBytes();
-//        calculateHashes();
     }
 
     public Cell(BitString bits, int[] refsIndexes, CellType cellType) {
@@ -123,9 +105,6 @@ public class Cell {
         this.refsIndexes = refsIndexes;
         this.type = cellType;
         this.levelMask = new LevelMask(0);
-//        descriptors = getDescriptors(levelMask.getMask());
-//        dataBytes = getDataBytes();
-//        calculateHashes();
     }
 
     public Cell(BitString bits, int bitSize, List<Cell> refs, CellType cellType) {
@@ -134,9 +113,6 @@ public class Cell {
         this.refs = new ArrayList<>(refs);
         this.type = cellType;
         this.levelMask = resolveMask();
-//        descriptors = getDescriptors(levelMask.getMask());
-//        dataBytes = getDataBytes();
-//        calculateHashes();
     }
 
     public static CellType toCellType(int cellType) {
@@ -206,23 +182,18 @@ public class Cell {
 
             byte[] hash = new byte[0];
             hash = Utils.concatBytes(hash, dsc);
-            System.out.println(Utils.bytesToHex(dsc));
-            System.out.println(Utils.sha256(hash));
             if (hashIndex == hashIndexOffset) {
                 if ((li != 0) && (type == CellType.PRUNED_BRANCH)) {
                     throw new Error("neither pruned nor 0");
                 }
                 byte[] data = getDataBytes();
-                System.out.println(Utils.bytesToHex(data));
                 hash = Utils.concatBytes(hash, data);
-                System.out.println(Utils.sha256(hash));
             } else {
                 if ((li != 0) && (type == CellType.PRUNED_BRANCH)) {
                     throw new Error("neither pruned nor 0");
                 }
                 off = hashIndex - hashIndexOffset - 1;
                 hash = Utils.concatBytes(hash, Utils.hexToSignedBytes(hashes.get(off)));
-                System.out.println(Utils.sha256(hash));
             }
             int depth = 0;
 
@@ -235,7 +206,6 @@ public class Cell {
                 }
 
                 hash = Utils.concatBytes(hash, Utils.intToByteArray(refDepth));
-                System.out.println(Utils.sha256(hash));
                 if (refDepth > depth) {
                     depth = refDepth;
                 }
@@ -250,13 +220,10 @@ public class Cell {
             for (Cell r : refs) {
                 if ((type == CellType.MERKLE_PROOF) || (type == CellType.MERKLE_UPDATE)) {
                     hash = Utils.concatBytes(hash, r.getHash(li + 1));
-                    System.out.println(Utils.sha256(hash));
                 } else {
                     hash = Utils.concatBytes(hash, r.getHash(li));
-                    System.out.println(Utils.sha256(hash));
                 }
             }
-            off = hashIndex - hashIndexOffset;
             depths.add(depth);
             hashes.add(Utils.sha256(hash));
             hashIndex++;
@@ -454,10 +421,7 @@ public class Cell {
             cells[x] = ci.getLeft();
         }
 
-        System.out.println("size " + cells.length);
-
         for (int ci = boc.getCells() - 1; ci >= 0; ci--) {
-            System.out.println("ci  " + ci + ", " + cells[ci].bits.toBitString());
             Cell c = cells[ci];
             List<Cell> refs = new ArrayList<>();
 
@@ -473,12 +437,10 @@ public class Cell {
             cells[ci].calculateHashes();
         }
 
-        System.out.println("size " + cells.length);
         List<Cell> rootCells = new ArrayList<>();
         for (int ri = 0; ri < boc.getRootList().size(); ri++) {
             rootCells.add(cells[ri]);
         }
-        System.out.println("rootCells " + rootCells.size());
         return rootCells;
     }
 

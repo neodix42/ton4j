@@ -133,7 +133,7 @@ public class WalletV1ContractR1 implements WalletContract {
         return tonlib.sendRawMessage(msg.message.toBase64());
     }
 
-    public void deploy(Tonlib tonlib, byte[] secretKey) {
-        tonlib.sendRawMessage(Utils.bytesToBase64(createInitExternalMessage(secretKey).message.toBoc()));
+    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey) {
+        return tonlib.sendRawMessage(Utils.bytesToBase64(createInitExternalMessage(secretKey).message.toBoc()));
     }
 }

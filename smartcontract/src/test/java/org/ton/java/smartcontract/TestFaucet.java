@@ -65,7 +65,11 @@ public class TestFaucet {
             }
         } while (isNull(faucetBalance));
 
-        faucet.sendTonCoins(tonlib, keyPair.getSecretKey(), destinationAddress, amount, "top-up from ton4j");
+        ExtMessageInfo extMessageInfo = faucet.sendTonCoins(tonlib, keyPair.getSecretKey(), destinationAddress, amount, "top-up from ton4j");
+
+        if (extMessageInfo.getError().getCode() != 0) {
+            throw new Error(extMessageInfo.getError().getMessage());
+        }
 
         BigInteger newBalance = BigInteger.ZERO;
         i = 0;
@@ -151,6 +155,7 @@ public class TestFaucet {
                 .testnet(true)
                 .ignoreCache(false)
                 .build();
-        TestFaucet.topUpContract(tonlib, Address.of("0QB0gEuvySej-7ZZBAdaBSydBB_oVYUUnp9Ciwm05kJsNKau"), Utils.toNano(0.1));
+        BigInteger newBalance = TestFaucet.topUpContract(tonlib, Address.of("0QB0gEuvySej-7ZZBAdaBSydBB_oVYUUnp9Ciwm05kJsNKau"), Utils.toNano(0.1));
+        log.info("new balance " + Utils.formatNanoValue(newBalance));
     }
 }

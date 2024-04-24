@@ -9,10 +9,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryCell;
-import org.ton.java.tonlib.types.TvmStackEntryList;
-import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -321,8 +318,8 @@ public class MultisigWallet implements WalletContract {
      * @param tonlib    Tonlib
      * @param secretKey secret key
      */
-    public void deploy(Tonlib tonlib, byte[] secretKey) {
-        tonlib.sendRawMessage(createInitExternalMessageWithoutBody(secretKey).message.toBase64());
+    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey) {
+        return tonlib.sendRawMessage(createInitExternalMessageWithoutBody(secretKey).message.toBase64());
     }
 
     /**
@@ -401,8 +398,8 @@ public class MultisigWallet implements WalletContract {
                 if (sig == signature) {
                     throw new Error("Your signature is already presented");
                 }
-                if (ref.refs.size() != 0) {
-                    ref = ref.refs.get(0);
+                if (ref.getUsedRefs() != 0) {
+                    ref = ref.getRefs().get(0);
                 } else {
                     ref = null;
                 }
@@ -454,25 +451,6 @@ public class MultisigWallet implements WalletContract {
             signedOrder.storeCell(o.endCell());
             return signedOrder.endCell();
         }
-
-//        CellBuilder signedOrder = CellBuilder.beginCell();
-//        signedOrder.storeBit(true); // contains signatures
-//
-//        CellBuilder c = CellBuilder.beginCell();
-//        c.storeBytes(signature);
-//        c.storeUint(pubkeyIndex, 8);
-//        c.storeBit(false);
-//
-//        signedOrder.storeRef(c.endCell());
-//        signedOrder.writeCell(o);
-
-//        CellSlice cs = CellSlice.beginParse(order);
-//        cs.skipBit(); // remove no-signatures flag
-//        CellBuilder o = CellBuilder.beginCell();
-//        o.writeCell(cs.sliceToCell());
-//        signedOrder.writeCell(o.endCell());
-
-//        return null;
     }
 
 

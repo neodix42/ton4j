@@ -326,14 +326,6 @@ public class CellSlice {
         return this;
     }
 
-    public CellSlice skipUint(int length) {
-        return skipBits(length);
-    }
-
-    public CellSlice skipInt(int length) {
-        return skipBits(length);
-    }
-
     /**
      * @param length in bits
      * @return unsigned byte array
@@ -341,7 +333,6 @@ public class CellSlice {
     public byte[] loadBytes(int length) {
         checkBitsOverflow(length);
         BitString bitString = bits.readBits(length);
-//        return bitString.toUnsignedByteArray();
         return bitString.toByteArray();
     }
 
@@ -363,6 +354,11 @@ public class CellSlice {
     public int[] loadBytes() {
         BitString bitString = bits.readBits();
         return bitString.toUnsignedByteArray();
+    }
+
+    public byte[] loadSignedBytes() {
+        BitString bitString = bits.readBits();
+        return bitString.toSignedByteArray();
     }
 
     public int[] loadSlice(int length) {

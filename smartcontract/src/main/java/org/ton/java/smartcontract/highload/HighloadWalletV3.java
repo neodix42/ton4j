@@ -145,8 +145,8 @@ public class HighloadWalletV3 implements WalletContract {
         return tonlib.sendRawMessage(createSendTonCoinsMessage(secretKey, highloadConfig).toBase64());
     }
 
-    public void deploy(Tonlib tonlib, byte[] secretKey) {
-        tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
+    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey) {
+        return tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
     }
 
     public static Cell createTextMessageBody(String text) {

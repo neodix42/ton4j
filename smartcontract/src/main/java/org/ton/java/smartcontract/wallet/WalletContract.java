@@ -166,7 +166,6 @@ public interface WalletContract extends Contract {
         } else {
             signature = Utils.signData(getOptions().publicKey, secretKey, signingMessage.hash());
         }
-        System.out.println("signed");
         Cell body = createSignedMessage(signature, signingMessage);
 
         Cell stateInit = null;

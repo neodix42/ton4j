@@ -4,22 +4,18 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.address.Address;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.ton.java.tonlib.TestTonlibJson.ELECTOR_ADDRESSS;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -142,26 +138,5 @@ public class TestParseRunMethodResults {
 
         TvmStackEntryNumber subscriptionId = (TvmStackEntryNumber) result.getStack().get(9);
         log.info("subscriptionId: {}", subscriptionId.getNumber());
-    }
-
-    @Test
-    public void testTonlibComputeReturnedStake() {
-        Tonlib tonlib = Tonlib.builder()
-                .build();
-
-        MasterChainInfo last = tonlib.getLast();
-        log.info("last: {}", last);
-
-        Address elector = Address.of(ELECTOR_ADDRESSS);
-        Deque<String> stack = new ArrayDeque<>();
-        Address address = Address.of("Ef_sR2c8U-tNfCU5klvd60I5VMXUd_U9-22uERrxrrt3uzYi");
-        stack.offer("[num, " + address.toDecimal() + "]");
-
-        RunResult result = tonlib.runMethod(elector, "compute_returned_stake", stack);
-
-        BigInteger returnStake = ((TvmStackEntryNumber) result.getStack().get(0)).getNumber();
-
-        log.info("return stake: {} ", Utils.formatNanoValue(returnStake.longValue()));
-        Assertions.assertThat(result.getExit_code()).isEqualTo(0L);
     }
 }

@@ -115,7 +115,7 @@ public class TestTl {
             int[] boc = r.readBytes(bocSize);
             log.info("boc: {}", Utils.bytesToHex(boc));
             Cell c = CellBuilder.beginCell().fromBoc(boc).endCell();
-            if (c.bits.preReadUint(8).longValue() == 0xc3) {
+            if (c.getBits().preReadUint(8).longValue() == 0xc3) {
                 //c.bits.readUint(8);
                 BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c)); // block tlb magic 11ef55aa
                 log.info("skip proof block: {}", blockProof);
@@ -136,13 +136,13 @@ public class TestTl {
 
     private Cell getFirstCellWithBlock(Cell c) {
 
-        long blockMagic = c.bits.preReadUint(32).longValue();
+        long blockMagic = c.getBits().preReadUint(32).longValue();
         if (blockMagic == 0x11ef55aa) {
             return c;
         }
 
         int i = 0;
-        for (Cell ref : c.refs) {
+        for (Cell ref : c.getRefs()) {
             return getFirstCellWithBlock(ref);
         }
 

@@ -12,6 +12,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
@@ -226,7 +227,7 @@ public class JettonMinter implements Contract {
         return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(addr.getCell().getBytes()).endCell());
     }
 
-    public void deploy(Tonlib tonlib, WalletContract adminWallet, BigInteger walletMsgValue, TweetNaclFast.Signature.KeyPair keyPair) {
+    public ExtMessageInfo deploy(Tonlib tonlib, WalletContract adminWallet, BigInteger walletMsgValue, TweetNaclFast.Signature.KeyPair keyPair) {
         long seqno = adminWallet.getSeqno(tonlib);
 
         ExternalMessage extMsg = adminWallet.createTransferMessage(
@@ -238,7 +239,7 @@ public class JettonMinter implements Contract {
                 (byte) 3, //send mode
                 this.createStateInit().stateInit);
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
     }
 
     public void mint(Tonlib tonlib, WalletContract adminWallet, Address destination, BigInteger walletMsgValue, BigInteger mintMsgValue, BigInteger jettonToMintAmount, TweetNaclFast.Signature.KeyPair keyPair) {

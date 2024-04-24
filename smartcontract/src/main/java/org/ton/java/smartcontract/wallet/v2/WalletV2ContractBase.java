@@ -64,8 +64,8 @@ public class WalletV2ContractBase implements WalletContract {
         return address;
     }
 
-    public void deploy(Tonlib tonlib, byte[] secretKey) {
-        tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
+    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey) {
+        return tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
     }
 
     /**

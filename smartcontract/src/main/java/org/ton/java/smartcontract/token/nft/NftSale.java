@@ -10,6 +10,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
@@ -154,7 +155,7 @@ public class NftSale implements Contract {
     /**
      * Deploys nft-sale smc to marketplaceAddress
      */
-    public void deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address marketplaceAddress, TweetNaclFast.Signature.KeyPair keyPair) {
+    public ExtMessageInfo deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address marketplaceAddress, TweetNaclFast.Signature.KeyPair keyPair) {
 
         long seqno = wallet.getSeqno(tonlib);
 
@@ -177,7 +178,7 @@ public class NftSale implements Contract {
                 body.endCell()
         );
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
     }
 
     public void cancel(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address saleAddress, long queryId, TweetNaclFast.Signature.KeyPair keyPair) {

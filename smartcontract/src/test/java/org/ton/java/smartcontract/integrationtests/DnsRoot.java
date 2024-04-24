@@ -9,6 +9,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import static java.util.Objects.isNull;
@@ -66,7 +67,7 @@ public class DnsRoot implements Contract {
         return cell.endCell();
     }
 
-    public void deploy(Tonlib tonlib, WalletContract wallet, TweetNaclFast.Signature.KeyPair keyPair) {
+    public ExtMessageInfo deploy(Tonlib tonlib, WalletContract wallet, TweetNaclFast.Signature.KeyPair keyPair) {
         long seqno = wallet.getSeqno(tonlib);
 
         ExternalMessage extMsg = wallet.createTransferMessage(
@@ -79,6 +80,6 @@ public class DnsRoot implements Contract {
                 this.createStateInit().stateInit
         );
 
-        tonlib.sendRawMessage(extMsg.message.toBase64());
+        return tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 }

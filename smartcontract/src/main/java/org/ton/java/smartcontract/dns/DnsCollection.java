@@ -13,6 +13,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
@@ -154,7 +155,7 @@ public class DnsCollection implements Contract {
         return DnsUtils.dnsResolve(tonlib, myAddress, domain, category, oneStep);
     }
 
-    public void deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, TweetNaclFast.Signature.KeyPair keyPair) {
+    public ExtMessageInfo deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, TweetNaclFast.Signature.KeyPair keyPair) {
 
         long seqno = wallet.getSeqno(tonlib);
 
@@ -172,6 +173,6 @@ public class DnsCollection implements Contract {
                 this.createStateInit().stateInit
         );
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
     }
 }

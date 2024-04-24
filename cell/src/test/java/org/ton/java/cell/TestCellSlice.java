@@ -724,14 +724,14 @@ public class TestCellSlice {
         CellSlice cs0 = CellSlice.beginParse(c0);
 
         assertThat(cs0.preloadUint(8)).isEqualTo(10);
-        cs0.skipUint(8);
+        cs0.skipBits(8);
         assertThat(cs0.preloadCoins()).isEqualTo(new BigInteger("12345"));
         assertThat(cs0.preloadCoins()).isEqualTo(new BigInteger("12345"));
         cs0.skipCoins();
 //        assertThrows(Error.class, cs0::preloadCoins);
         assertThat(cs0.preloadInt(8)).isEqualTo(-20);
         //assertThat(cs0.loadInt(8)).isEqualTo(-20);
-        cs0.skipInt(8); // or simply skipBits(8)
+        cs0.skipBits(8); // or simply skipBits(8)
         assertThat(cs0.preloadInt(8)).isEqualTo(-30);
         assertThat(cs0.loadInt(8)).isEqualTo(-30);
     }
