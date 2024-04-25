@@ -15,11 +15,14 @@ public class TestCellSerialization {
 
     @Test
     public void testCellSerialization0() {
-        Cell c1 = CellBuilder.beginCell().storeUint(17, 8).endCell();
-        Cell c2 = CellBuilder.beginCell().storeUint(42, 7).storeRef(c1).endCell();
-        log.info(Utils.bytesToHex(c1.hash()));
-        log.info(Utils.bytesToHex(c2.hash()));
-        log.info(Utils.bytesToHex(c2.toBoc()));
+        Cell c1 = CellBuilder.beginCell().storeUint(42, 7).endCell();
+        Cell c2 = CellBuilder.beginCell().storeUint(12, 8).storeRef(c1).endCell();
+//        log.info(Utils.bytesToHex(c1.hash()));
+//        log.info(Utils.bytesToHex(c2.hash()));
+//        log.info(Utils.bytesToHex(c2.hash()));
+//        log.info(Utils.bytesToHex(c2.toBoc()));
+//        log.info(Utils.bytesToHex(c2.toBoc(false)));
+        log.info(Utils.bytesToHex(c2.toBoc(true, true)));
     }
 
     @Test
@@ -61,7 +64,7 @@ public class TestCellSerialization {
         log.info("================= {}", c1.hash());
         log.info("================= {}", c1.print());
         log.info("================= {}", Utils.bytesToHex(c1.toBoc(true)));
-        assertThat(Utils.bytesToHex(c1.toBoc(true))).isEqualTo("b5ee9c724101060100400004020004030201000b800000000020000b400000000008003f0000000000000000000000000000000000000000000000000000000000000093010155050002113edf05ed");
+        assertThat(Utils.bytesToHex(c1.toBoc(true))).isEqualTo("b5ee9c72410106010040000402000103040501015502000211003f0000000000000000000000000000000000000000000000000000000000000093000b400000000008000b800000000020b067021a");
     }
 
     @Test
@@ -158,7 +161,7 @@ public class TestCellSerialization {
         log.info("c5 " + c5.toHex());
 
         log.info("c1_more hex: {}", Utils.bytesToHex(c1_more.toBoc(true)));
-        assertThat(Utils.bytesToHex(c1_more.toBoc(true))).isEqualTo("b5ee9c72410105010045000207800000200201000b4000000000080109800000000203010b8000000000200400438004b1ca92c714d3015cba78ec7055fa7e9e65c68905b5f86ea3c66b0b1391bc01b0b8a46275");
+        assertThat(Utils.bytesToHex(c1_more.toBoc(true))).isEqualTo("b5ee9c724101050100450002078000002001040109800000000202010b8000000000200300438004b1ca92c714d3015cba78ec7055fa7e9e65c68905b5f86ea3c66b0b1391bc01b0000b400000000008c0d04793");
 
         byte[] serializedCell1 = c1.toBoc(true);
         log.info("c1 hex {}", Utils.bytesToHex(serializedCell1));

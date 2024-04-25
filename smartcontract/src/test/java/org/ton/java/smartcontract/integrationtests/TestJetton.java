@@ -16,10 +16,13 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -53,7 +56,7 @@ public class TestJetton {
 
         // sequential calls to mint() sum up to totalSupply;
         minter.mint(tonlib, adminWallet.getWallet(), adminWallet.getWallet().getAddress(), Utils.toNano(0.05), Utils.toNano(0.04), Utils.toNano(100500), adminWallet.getKeyPair());
-        Utils.sleep(20, "minting...");
+        Utils.sleep(30, "minting...");
         log.info("jetton total supply {}", minter.getTotalSupply(tonlib));
 
         //owner of adminWallet holds his jettons on jettonWallet
@@ -63,28 +66,28 @@ public class TestJetton {
         JettonWallet adminJettonWallet = getJettonWalletInfo(adminJettonWalletAddress);
 
         editMinterContent(adminWallet.getWallet(), minter, "http://localhost/nft-marketplace/my_collection.1", adminWallet.getKeyPair());
-        Utils.sleep(20);
+        Utils.sleep(30);
         getMinterInfo(minter);
 
         log.info("newAdmin {}", Address.of(NEW_ADMIN2).toString(false));
         changeMinterAdmin(adminWallet.getWallet(), minter, Address.of(NEW_ADMIN2), adminWallet.getKeyPair());
-        Utils.sleep(20);
+        Utils.sleep(30);
         getMinterInfo(minter);
 
-        Utils.sleep(15);
+        Utils.sleep(30);
         FullAccountState wallet2State = tonlib.getAccountState(Address.of(wallet2.getWallet().getAddress()));
 
         log.info("wallet 2 balance " + wallet2State.getBalance());
         //transfer from admin to WALLET2_ADDRESS by sending transfer request to admin's jetton wallet
         transfer(adminWallet.getWallet(), adminJettonWallet.getAddress(), Address.of(wallet2.getWallet().getAddress()), Utils.toNano(555), adminWallet.getKeyPair());
-        Utils.sleep(20);
+        Utils.sleep(30);
         log.info("changed admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance(tonlib)));
 
         //wallet 2 after received jettons, has JettonWallet assigned
         getJettonWalletInfo(minter.getJettonWalletAddress(tonlib, wallet2.getWallet().getAddress()));
 
         burn(adminWallet.getWallet(), adminJettonWallet.getAddress(), Utils.toNano(444), adminWallet.getWallet().getAddress(), adminWallet.getKeyPair());
-        Utils.sleep(20);
+        Utils.sleep(30);
         log.info("changed admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance(tonlib)));
     }
 
@@ -92,15 +95,17 @@ public class TestJetton {
 
         Options options = Options.builder()
                 .adminAddress(adminWallet.getWallet().getAddress())
-                .jettonContentUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/neo-jetton.json")
+                .jettonContentUri("https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json")
                 .jettonWalletCodeHex(WalletCodes.jettonWallet.getValue())
                 .build();
 
         Wallet jettonMinter = new Wallet(WalletVersion.jettonMinter, options);
         JettonMinter minter = jettonMinter.create();
         log.info("jetton minter address {} {}", minter.getAddress().toString(true, true, true), minter.getAddress().toString(false));
-        minter.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.05), adminWallet.getKeyPair());
-        Utils.sleep(25);
+        ExtMessageInfo extMessageInfo = minter.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.05), adminWallet.getKeyPair());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        Utils.sleep(40);
         return minter;
     }
 

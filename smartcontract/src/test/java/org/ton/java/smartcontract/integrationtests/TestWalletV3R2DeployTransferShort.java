@@ -2,6 +2,7 @@ package org.ton.java.smartcontract.integrationtests;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -11,6 +12,7 @@ import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR2;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -65,17 +67,21 @@ public class TestWalletV3R2DeployTransferShort extends CommonTest {
         BigInteger balance2 = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress2), Utils.toNano(1));
         log.info("walletId {} new wallet {} balance: {}", contract2.getWalletId(), contract2.getName(), Utils.formatNanoValue(balance2));
 
-        contract1.deploy(tonlib, keyPair.getSecretKey());
+        ExtMessageInfo extMessageInfo = contract1.deploy(tonlib, keyPair.getSecretKey());
+        AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        contract2.deploy(tonlib, keyPair.getSecretKey());
+        extMessageInfo = contract2.deploy(tonlib, keyPair.getSecretKey());
+        AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30);
 
         // transfer coins from new wallet (back to faucet)
-        contract1.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testWalletV3R2-42");
+        extMessageInfo = contract1.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testWalletV3R2-42");
+        AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30);
 
-        contract2.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testWalletV3R2-98");
+        extMessageInfo = contract2.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testWalletV3R2-98");
+        AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30);
 
         balance1 = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress1)).getBalance());

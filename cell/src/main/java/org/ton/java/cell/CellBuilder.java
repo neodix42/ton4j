@@ -39,6 +39,7 @@ public class CellBuilder {
      */
     public Cell endCell() {
         cell.calculateHashes();
+        cell.hash = Utils.bytesToHex(cell.getHash());
         return cell;
     }
 

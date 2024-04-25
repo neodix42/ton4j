@@ -12,6 +12,9 @@ import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
+import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -23,6 +26,13 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public class TestWalletV3R1DeployTransfer extends CommonTest {
     @Test
     public void testWalletV3R1() throws InterruptedException {
+
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -57,14 +67,16 @@ public class TestWalletV3R1DeployTransfer extends CommonTest {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
-        tonlib.sendRawMessage(msg.message.toBase64());
+        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.message.toBase64());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(25);
+        Utils.sleep(30);
 
         // try to transfer coins from new wallet (back to faucet)
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testWalletV3R1");
+        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testWalletV3R1");
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(20);
+        Utils.sleep(30);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));

@@ -66,9 +66,13 @@ public class Boc {
                 .storeUint(roots, size * 8)
                 .storeUint(absent, size * 8)
                 .storeUint(totalCellsSize, offBytes * 8)
-                .storeList(rootList, size * 8)
-                .storeList(index, hasIdx ? cells * offBytes * 8 : 0)
-                .storeBytes(cellData, totalCellsSize * 8);
+                .storeList(rootList, size * 8);
+
+        if (hasIdx) {
+            cell.storeList(index, hasIdx ? offBytes * 8 : 0);
+        }
+
+        cell.storeBytes(cellData, totalCellsSize * 8);
 
         if (hasCrc32c) {
             byte[] cellAsByteArray = cell.toSignedByteArray();

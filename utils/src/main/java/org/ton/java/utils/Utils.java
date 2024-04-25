@@ -409,11 +409,10 @@ public class Utils {
         if (bitString.length() == 0) {
             return new byte[0];
         }
-        String bin = bitString;
-        byte[] result = new byte[(byte) Math.ceil(bin.length() / (double) 8)];
+        byte[] result = new byte[(byte) Math.ceil(bitString.length() / (double) 8)];
 
-        for (int i = 0; i < bin.length(); i++) {
-            if (bin.charAt(i) == '1') {
+        for (int i = 0; i < bitString.length(); i++) {
+            if (bitString.charAt(i) == '1') {
                 result[(i / 8)] |= 1 << (7 - (i % 8));
             } else {
                 result[(i / 8)] &= ~(1 << (7 - (i % 8)));

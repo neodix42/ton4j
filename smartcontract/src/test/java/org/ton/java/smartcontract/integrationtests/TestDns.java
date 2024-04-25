@@ -88,7 +88,7 @@ public class TestDns extends CommonTest {
 
         dnsRoot.deploy(tonlib, adminWallet.getWallet(), adminWallet.getKeyPair());
 
-        Utils.sleep(20);
+        Utils.sleep(30);
 
         RawAccountState state;
         int i = 0;
@@ -127,7 +127,7 @@ public class TestDns extends CommonTest {
         log.info("DNS collection address {}", dnsCollection.getAddress().toString(true, true, true));
 
         dnsCollection.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.5), adminWallet.getKeyPair());
-        Utils.sleep(25, "deploying dnsCollection");
+        Utils.sleep(30, "deploying dnsCollection");
 
         getDnsCollectionInfo(dnsCollection);
 
@@ -136,7 +136,7 @@ public class TestDns extends CommonTest {
         String dnsItem1DomainName = "alice-alice-alice-9"; // do not add .ton, it will fail with error code 203
         // create and deploy DNS Item
         deployDnsItem(tonlib, adminWallet.getWallet(), Utils.toNano(10), dnsCollection.getAddress(), dnsItem1DomainName, adminWallet.getKeyPair());
-        Utils.sleep(15, "deploying DNS item " + dnsItem1DomainName);
+        Utils.sleep(30, "deploying DNS item " + dnsItem1DomainName);
 
         Address dnsItem1Address = dnsCollection.getNftItemAddressByDomain(tonlib, dnsItem1DomainName);
         DnsItem dnsItem1 = new DnsItem(Options.builder().address(dnsItem1Address).build());
@@ -146,7 +146,7 @@ public class TestDns extends CommonTest {
 
         //make a bid
         buyerWallet.getWallet().sendTonCoins(tonlib, buyerWallet.getKeyPair().getSecretKey(), dnsItem1Address, Utils.toNano(13));
-        Utils.sleep(25, "bidding for DNS item " + dnsItem1DomainName);
+        Utils.sleep(30, "bidding for DNS item " + dnsItem1DomainName);
 
         Address dnsItem1Editor = dnsItem1.getEditor(tonlib);
         log.info("dnsItem1 editor {}", nonNull(dnsItem1Editor) ? dnsItem1Editor.toString(true, true, true) : null);
@@ -157,26 +157,26 @@ public class TestDns extends CommonTest {
 
         // claim your domain by doing any action with it
         getStaticData(adminWallet, dnsItem1);
-        Utils.sleep(10, "Claim DNS item " + dnsItem1DomainName);
+        Utils.sleep(30, "Claim DNS item " + dnsItem1DomainName);
         //or assign your wallet to it, so it could resolove your wallet address to your-domain.ton
         changeDnsRecord(buyerWallet, dnsItem1, buyerWallet.getWallet().getAddress());
-        Utils.sleep(10, "Claim DNS item " + dnsItem1DomainName);
+        Utils.sleep(30, "Claim DNS item " + dnsItem1DomainName);
 
         getDnsItemInfo(dnsCollection, dnsItem1);
         dnsItem1Editor = dnsItem1.getEditor(tonlib);
         log.info("dnsItem1 editor {}", nonNull(dnsItem1Editor) ? dnsItem1Editor.toString(true, true, true) : null);
 
         governDnsItem(buyerWallet, dnsItem1);
-        Utils.sleep(20, "govern dns item");
+        Utils.sleep(30, "govern dns item");
 
         transferDnsItem(buyerWallet, dnsItem1, "EQBCMRzsJBTMDqF5JW8Mbq9Ap7b88qKxkwktlZEChtLbiFIH");
-        Utils.sleep(20, "transferring domain to other user");
+        Utils.sleep(30, "transferring domain to other user");
 
         // release of domain is possible if either one year has passed and auction has ended;
         // also msg_value >= min_price and obviously only the owner can release domain name;
         // once it is released the owner changed to null and auction starts again
         releaseDnsItem(buyerWallet, dnsItem1, Utils.toNano(15)); // will fail with error code 414
-        Utils.sleep(20);
+        Utils.sleep(30);
 
         getDnsItemInfo(dnsCollection, dnsItem1);
     }
@@ -203,7 +203,7 @@ public class TestDns extends CommonTest {
         String dnsItem1DomainName = "alice-alice-alice-12";
         // create and deploy DNS Item
         deployDnsItem(tonlib, adminWallet.getWallet(), Utils.toNano(10), dnsCollection.getAddress(), dnsItem1DomainName, adminWallet.getKeyPair());
-        Utils.sleep(25, "deploying DNS item " + dnsItem1DomainName);
+        Utils.sleep(30, "deploying DNS item " + dnsItem1DomainName);
 
         Address dnsItem1Address = dnsCollection.getNftItemAddressByDomain(tonlib, dnsItem1DomainName);
         DnsItem dnsItem1 = new DnsItem(Options.builder().address(dnsItem1Address).build());

@@ -35,6 +35,8 @@ public class Cell {
     public CellType type;
     private int[] refsIndexes;
 
+    String hash;
+
     public int index;
     public boolean special;
     public LevelMask levelMask;
@@ -48,6 +50,20 @@ public class Cell {
 
     public List<Cell> getRefs() {
         return new ArrayList<>(refs);
+    }
+
+    @Override
+    public int hashCode() {
+        return new BigInteger(this.getHash()).intValue();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Cell) {
+            return Arrays.equals(this.getHash(), ((Cell) o).getHash());
+        } else {
+            return false;
+        }
     }
 
     public Cell() {
@@ -143,7 +159,7 @@ public class Cell {
             BitString bs = bits.clone();
             bs.readUint8();
 
-            return new LevelMask(bs.readUint8().intValue()); // todo test
+            return new LevelMask(bs.readUint8().intValue());
         } else if (this.type == CellType.MERKLE_PROOF) {
             // merkle proof cell has exactly one ref
             return new LevelMask(refs.get(0).levelMask.getMask() >> 1);
@@ -527,6 +543,12 @@ public class Cell {
 
     public byte[] hash() {
         return getHash();
+//        if (hash.length != 0) {
+//            hash = getHash();
+//            return hash;
+//        } else {
+//            return hash;
+//        }
     }
 
     public byte[] getHash() {
@@ -579,21 +601,61 @@ public class Cell {
         return toBoc(withCRC, false, false, false, false);
     }
 
+    public byte[] toBoc(boolean withCRC, boolean withIdx) {
+        return toBoc(withCRC, withIdx, false, false, false);
+    }
+
+    // taken from pytoniq - beautiful!
+    private Map<Cell, Integer> order(Map<Cell, Integer> result) {
+        if (result.containsKey(this)) {
+            result.remove(this);
+        }
+        result.put(this, null);
+        for (Cell ref : this.refs) {
+            ref.order(result);
+        }
+        return result;
+    }
+
+    private byte[] serialize(Map<Cell, Integer> indexes, int byteLen) {
+        byte[] descriptors = getDescriptors(levelMask.getMask());
+        byte[] body = getDataBytes();
+
+        byte[] result = Utils.concatBytes(descriptors, body);
+        for (Cell ref : this.refs) {
+            result = Utils.concatBytes(result, Utils.dynamicIntBytes(BigInteger.valueOf(indexes.get(ref)), byteLen));
+        }
+        return result;
+    }
+
     public byte[] toBoc(boolean hasCrc32c, boolean hasIdx, boolean hasCacheBits, boolean hasTopHash, boolean hasIntHashes) {
-
+        Map<Cell, Integer> indexed = new LinkedHashMap<>();
+        this.order(indexed);
         // recursively go through cells, build hash index and store unique in slice
-        List<Cell> sortedCells = flattenIndex(List.of(this), hasTopHash, hasIntHashes);
+        int i = 0;
+        for (Map.Entry<Cell, Integer> entry : indexed.entrySet()) {
+            entry.setValue(i++);
+        }
 
-        int cellSizeBits = Utils.log2(sortedCells.size() + 1);
-        int cellSizeBytes = (int) Math.ceil((double) cellSizeBits / 8);
+        BigInteger cellsNum = BigInteger.valueOf(indexed.size());
+        int cellsLen = (int) Math.floor((double) (cellsNum.bitLength() + 7) / 8);
 
         byte[] payload = new byte[0];
-        for (Cell c : sortedCells) {
-            payload = Utils.concatBytes(payload, c.serialize(cellSizeBytes));
+        List<BigInteger> serializedCellLen = new ArrayList<>();
+        for (Map.Entry<Cell, Integer> entry : indexed.entrySet()) {
+            byte[] serializeResult = entry.getKey().serialize(indexed, cellsLen);
+            payload = Utils.concatBytes(payload, serializeResult);
+            serializedCellLen.add(BigInteger.valueOf(serializeResult.length));
         }
+
+//        System.out.println(Utils.bytesToHex(payload));
         // bytes needed to store len of payload
         int sizeBits = Utils.log2(payload.length + 1);
         int sizeBytes = (int) Math.ceil((double) sizeBits / 8);
+
+        int numberOfRoots = 1;
+        int absent = 0;
+        BigInteger rootIndex = BigInteger.ZERO;
 
         Boc boc = Boc.builder()
                 .hasIdx(hasIdx)
@@ -601,14 +663,14 @@ public class Cell {
                 .hasCacheBits(hasCacheBits)
                 .hasTopHash(hasTopHash)
                 .hasIntHashes(hasIntHashes)
-                .size(cellSizeBytes)
+                .size(cellsLen)
                 .offBytes(sizeBytes)
-                .cells(sortedCells.size())
-                .roots(1)
-                .absent(0)
+                .cells(indexed.size())
+                .roots(numberOfRoots)
+                .absent(absent)
                 .totalCellsSize(payload.length)
-                .rootList(List.of(BigInteger.ZERO))
-                .index(List.of(BigInteger.ZERO)) // len in bytes of all cells, todo
+                .rootList(List.of(rootIndex))
+                .index(serializedCellLen)
                 .cellData(payload)
                 .build();
 
@@ -697,8 +759,8 @@ public class Cell {
     }
 
     private byte[] serialize(int refIndexSzBytes) {
-        byte[] body = Utils.unsignedBytesToSigned(CellSlice.beginParse(this)
-                .loadSlice(this.bits.getLength()));
+        byte[] body = Utils.unsignedBytesToSigned(CellSlice.beginParse(this).loadSlice(this.bits.getLength()));
+//        byte[] body1 = getDataBytes();
         byte[] descriptors = getDescriptors(levelMask.getMask());
         byte[] data = Utils.concatBytes(descriptors, body);
 
@@ -710,7 +772,7 @@ public class Cell {
 
         for (Cell ref : refs) {
             data = Utils.concatBytes(data, Utils.dynamicIntBytes(BigInteger.valueOf(ref.index), refIndexSzBytes));
-            //data = Utils.concatBytes(data,refsIndexes);
+//            data = Utils.concatBytes(data, sortedCells);
         }
         return data;
     }

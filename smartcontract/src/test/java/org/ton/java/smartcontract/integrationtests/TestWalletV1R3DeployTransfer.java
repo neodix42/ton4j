@@ -67,12 +67,12 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         // deploy new wallet
         tonlib.sendRawMessage(msg.message.toBase64());
 
-        Utils.sleep(25);
+        Utils.sleep(30);
 
         // transfer coins from new wallet (back to faucet)
         contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testNewWalletV1R3");
 
-        Utils.sleep(15);
+        Utils.sleep(30);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));

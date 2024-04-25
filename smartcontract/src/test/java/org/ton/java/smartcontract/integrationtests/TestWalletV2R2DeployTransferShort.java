@@ -47,7 +47,8 @@ public class TestWalletV2R2DeployTransferShort extends CommonTest {
         Utils.sleep(30);
 
         // transfer coins from new wallet (back to faucet)
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.1));
+        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.1));
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "sending to one destination");
 
         //multi send

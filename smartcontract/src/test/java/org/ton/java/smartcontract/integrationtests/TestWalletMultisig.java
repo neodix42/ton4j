@@ -15,7 +15,6 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -107,7 +106,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-        Utils.sleep(10, "topping up...");
+        Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
@@ -158,7 +157,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // submitter keypair must come from User3 or User4, otherwise you get error 34
         contract.sendOrder(tonlib, keyPair5, pubkey5Index, signedOrder);
-        Utils.sleep(20, "processing 1st query");
+        Utils.sleep(30, "processing 1st query");
 
         Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId);
         log.info("get_query_state (query {}): status {}, mask {}", queryId, queryState.getLeft(), queryState.getRight());
@@ -238,7 +237,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // top up new wallet using test-faucet-wallet        
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-        Utils.sleep(10, "topping up...");
+        Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
@@ -267,7 +266,7 @@ public class TestWalletMultisig extends CommonTest {
         byte[] orderSignatureUser5 = MultisigWallet.signOrder(keyPair5, order);
 
         contract.sendOrder(tonlib, ownerKeyPair, rootIndex, order);
-        Utils.sleep(20, "processing 1st query");
+        Utils.sleep(30, "processing 1st query");
 
         Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId);
         log.info("get_query_state (query {}): status {}, mask {}", queryId, queryState.getLeft(), queryState.getRight());
@@ -357,7 +356,7 @@ public class TestWalletMultisig extends CommonTest {
         tonlib = Tonlib.builder()
                 .testnet(true)
                 .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
+//                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
@@ -404,7 +403,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
-        Utils.sleep(15, "topping up...");
+        Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
@@ -482,7 +481,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-        Utils.sleep(10, "topping up...");
+        Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair3.getSecretKey());
@@ -501,7 +500,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // send order-1 signed by 3rd owner (root index 2)
         contract.sendOrder(tonlib, keyPair3, 2, order1); // root index 2
-        Utils.sleep(15, "processing 1st query");
+        Utils.sleep(30, "processing 1st query");
 
         Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId1);
         log.info("get_query_state (query {}): status {}, mask {}", queryId1.toString(10), queryState.getLeft(), queryState.getRight());
@@ -511,14 +510,14 @@ public class TestWalletMultisig extends CommonTest {
 
         // send order-2 signed by 2nd owner (root index 1)
         contract.sendOrder(tonlib, keyPair2, 1, order2);
-        Utils.sleep(15, "processing 2nd query");
+        Utils.sleep(30, "processing 2nd query");
 
         queryState = contract.getQueryState(tonlib, queryId2);
         log.info("get_query_state (query {}): status {}, mask {}", queryId2, queryState.getLeft(), queryState.getRight());
 
         // send order-2 signed by 3rd owner (root index 2)
         contract.sendOrder(tonlib, keyPair3, 2, order2);
-        Utils.sleep(15, "processing 3rd query");
+        Utils.sleep(30, "processing 3rd query");
 
         queryState = contract.getQueryState(tonlib, queryId2);
         log.info("get_query_state (query {}): status {}, mask {}", queryId2, queryState.getLeft(), queryState.getRight());
@@ -575,7 +574,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
-        Utils.sleep(10, "topping up...");
+        Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
@@ -593,7 +592,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // send order-1 signed by 1st owner (root index 0)
         contract.sendOrder(tonlib, ownerKeyPair.getSecretKey(), 0, order); // root index 0
-        Utils.sleep(20, "processing 1st query");
+        Utils.sleep(30, "processing 1st query");
 
         showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, 0), "MessagesUnsignedByIndex-" + 0);
         showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, 0), "MessagesSignedByIndex-" + 0);
@@ -603,7 +602,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // send order-1 signed by 2nd owner (root index 1)
         contract.sendOrder(tonlib, keyPair2.getSecretKey(), 1, order); // root index 1
-        Utils.sleep(15, "processing 2st query");
+        Utils.sleep(30, "processing 2st query");
 
         queryState = contract.getQueryState(tonlib, queryId);
         log.info("get_query_state (query {}): status {}, mask {}", queryId, queryState.getLeft(), queryState.getRight());
@@ -696,7 +695,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
-        Utils.sleep(10, "topping up...");
+        Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
@@ -719,7 +718,7 @@ public class TestWalletMultisig extends CommonTest {
 
         contract.sendOrder(tonlib, keyPair3.getSecretKey(), pubkey3Index, order1);
 
-        Utils.sleep(20, "processing query");
+        Utils.sleep(30, "processing query");
 
         queryState = contract.getQueryState(tonlib, queryId1);
         log.info("get_query_state (query-1 {}): status {}, mask {}", queryId1, queryState.getLeft(), queryState.getRight());
@@ -781,7 +780,7 @@ public class TestWalletMultisig extends CommonTest {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
-        Utils.sleep(10, "topping up...");
+        Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());

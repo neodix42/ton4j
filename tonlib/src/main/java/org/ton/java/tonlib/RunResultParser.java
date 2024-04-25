@@ -111,7 +111,15 @@ public class RunResultParser {
     }
 
     public RunResult parse(String runMethodResult) {
-        return customGson.fromJson(runMethodResult, RunResult.class);
+        RunResult result;
+        try {
+            result = customGson.fromJson(runMethodResult, RunResult.class);
+        } catch (Throwable e) {
+            result = RunResult.builder()
+                    .exit_code(-1)
+                    .build();
+        }
+        return result;
     }
 
     private Object deserializeByType(String type, JsonElement jsonElement, JsonDeserializationContext context) {

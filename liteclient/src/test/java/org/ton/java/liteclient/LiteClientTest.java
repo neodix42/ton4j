@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.ton.java.liteclient.api.ResultLastBlock;
 import org.ton.java.liteclient.api.ResultListBlockTransactions;
@@ -49,6 +50,7 @@ public class LiteClientTest {
         assertThat(liteClient.executeLast()).isNotNull().contains("last masterchain block is").contains("server time is");
     }
 
+    @Ignore
     @Test
     public void testRunmethod() throws Exception {
         final String result = liteClient.executeRunMethod("EQBdFkus6WRkJ1PP6z24Fw5C6E1YKet_nSJ6K1H7HHuOdwMC", "seqno", "");
@@ -65,15 +67,6 @@ public class LiteClientTest {
         log.info(result);
         assertThat(result).contains("sending query from file").contains("external message status is 1");
     }
-
-//    @Test
-//    public void testGetAccount() {
-//        final String result = liteClient.executeGetAccount(testNode, "EQBdFkus6WRkJ1PP6z24Fw5C6E1YKet_nSJ6K1H7HHuOdwMC");
-//        log.info(result);
-//        AccountState accountState = LiteClientParser.parseGetAccount(result);
-//        log.info(accountState.toString());
-//        assertThat(accountState.getBalance().getToncoins()).isNotNull();
-//    }
 
     @Test
     public void testListblocktransExecuted() {

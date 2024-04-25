@@ -1,7 +1,7 @@
 {
   "name": "Neo TON #1",
   "description": "Legend of the legends",
-  "image": "https://github.com/neodiX42/ton4j/raw/dns-smc/1-media/nft-item-1.png",
+  "image": "https://github.com/neodiX42/ton4j/raw/main/1-media/nft-item-1.png",
   "attributes": [
     {
       "trait_type": "Type",

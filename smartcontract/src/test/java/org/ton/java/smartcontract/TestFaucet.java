@@ -74,8 +74,8 @@ public class TestFaucet {
         BigInteger newBalance = BigInteger.ZERO;
         i = 0;
         do {
-            log.info("topping up wallet {}", destinationAddress.toString(true, true, true));
-            TimeUnit.SECONDS.sleep(5);
+            log.info("checking wallet balance: {}", destinationAddress.toString(true, true, true));
+            TimeUnit.SECONDS.sleep(8);
             if (nonNull(tonlib.getAccountState(destinationAddress).getBalance())) {
                 newBalance = new BigInteger(tonlib.getAccountState(destinationAddress).getBalance());
             }
@@ -155,7 +155,7 @@ public class TestFaucet {
                 .testnet(true)
                 .ignoreCache(false)
                 .build();
-        BigInteger newBalance = TestFaucet.topUpContract(tonlib, Address.of("0QB0gEuvySej-7ZZBAdaBSydBB_oVYUUnp9Ciwm05kJsNKau"), Utils.toNano(0.1));
+        BigInteger newBalance = TestFaucet.topUpContract(tonlib, Address.of("Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq"), Utils.toNano(1));
         log.info("new balance " + Utils.formatNanoValue(newBalance));
     }
 }

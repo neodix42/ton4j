@@ -119,9 +119,9 @@ public class TestPayments extends CommonTest {
         // Now each parties must send their initial balance from the wallet to the channel contract.
 
         fromWalletA.topUp(channelInitState.getBalanceA(), BigInteger.ZERO, channelInitState.getBalanceA().add(Utils.toNano(0.05))).send(); // +0.05 TON to network fees
-        Utils.sleep(25, "topping up from wallet A...");
+        Utils.sleep(30, "topping up from wallet A...");
         fromWalletB.topUp(BigInteger.ZERO, channelInitState.getBalanceB(), channelInitState.getBalanceB().add(Utils.toNano(0.05))).send(); // +0.05 TON to network fees
-        Utils.sleep(25, "topping up from wallet B...");
+        Utils.sleep(30, "topping up from wallet B...");
 
         log.info("channel A state {}", channelA.getChannelState(tonlib));
 
@@ -134,7 +134,7 @@ public class TestPayments extends CommonTest {
         // After everyone has done top-up, we can initialize the channel from any wallet
 
         fromWalletA.init(channelInitState.getBalanceA(), channelInitState.getBalanceB(), Utils.toNano(0.05)).send();
-        Utils.sleep(25, "initializing channel...");
+        Utils.sleep(30, "initializing channel...");
         // to check, call the get method - `state` should change to `TonWeb.payments.PaymentChannel.STATE_OPEN`
 
         log.info("channel A state {}", channelA.getChannelState(tonlib));

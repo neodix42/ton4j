@@ -268,7 +268,7 @@ public class Tonlib {
             outterloop:
             do {
                 do {
-                    if (nonNull(response) && !response.contains("syncStateInProgress")) {
+                    if (nonNull(response) && !response.contains("syncStateInProgress") && !response.contains("\"@type\":\"ok\"")) {
 
                         if (++retry > receiveRetryTimes) {
 //                            System.out.println("Last response: " + response);
@@ -279,7 +279,11 @@ public class Tonlib {
                     }
 
                     if (response.contains("\"@type\":\"ok\"")) {
-                        break outterloop;
+                        String queryExtraId = StringUtils.substringBetween(query, "@extra\":\"", "\"}");
+                        String responseExtraId = StringUtils.substringBetween(response, "@extra\":\"", "\"}");
+                        if (queryExtraId.equals(responseExtraId)) {
+                            break outterloop;
+                        }
                     }
 
                     if (response.contains(" : duplicate message\"")) {
@@ -842,7 +846,7 @@ public class Tonlib {
     public long getSeqno(Address address) {
         RunResult result = runMethod(address, "seqno");
         if (result.getExit_code() != 0) {
-            throw new Error("method seqno returned an exit code " + result.getExit_code());
+            throw new Error("can't get/parse result by executing seqno method, exit code " + result.getExit_code());
         }
 
         TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);

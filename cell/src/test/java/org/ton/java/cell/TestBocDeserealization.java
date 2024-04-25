@@ -82,17 +82,20 @@ public class TestBocDeserealization {
     @Test
     public void testShouldDeserializeSerializeDeserializeBocFromHex() {
         Cell c1 = CellBuilder.beginCell().fromBoc(BOC_FIFT_HEX_LARGE2).endCell();
-        log.info("CellType {}", c1.getCellType());
+        log.info("CellType c1 {}", c1.getCellType());
+        log.info("Hex c1 {}", Utils.bytesToHex(c1.toBoc(true, true)));
         assertThat(Utils.bytesToHex(c1.hash())).isEqualTo(BOC_FIFT_LARGE_HASH);
         assertThat(Utils.bytesToHex(c1.getHash())).isEqualTo(BOC_FIFT_LARGE_HASH);
 
         Cell c2 = CellBuilder.beginCell().fromBoc(BOC_FIFT_HEX_WITH_DUPS).endCell();
-        log.info("CellType {}", c2.getCellType());
+        log.info("CellType c2 {}", c2.getCellType());
+        log.info("Hex c2 {}", Utils.bytesToHex(c2.toBoc(true, true)));
         assertThat(Utils.bytesToHex(c2.hash())).isEqualTo(BOC_FIFT_WITH_DUPS_HASH);
         assertThat(Utils.bytesToHex(c2.getHash())).isEqualTo(BOC_FIFT_WITH_DUPS_HASH);
 
         Cell c3 = CellBuilder.beginCell().fromBoc(BOC_FIFT_HEX_DEEP_DUPLICATED_HASHMAP).endCell();
-        log.info("CellType {}", c3.getCellType());
+        log.info("CellType c3 {}", c3.getCellType());
+        log.info("Hex c3 {}", Utils.bytesToHex(c3.toBoc(true, true)));
         assertThat(Utils.bytesToHex(c3.hash())).isEqualTo(BOC_FIFT_DEEP_DUPLICATED_HASHMAP_HASH);
         assertThat(Utils.bytesToHex(c3.getHash())).isEqualTo(BOC_FIFT_DEEP_DUPLICATED_HASHMAP_HASH);
 
