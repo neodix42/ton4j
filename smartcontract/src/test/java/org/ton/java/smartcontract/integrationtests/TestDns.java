@@ -20,6 +20,7 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RawAccountState;
 import org.ton.java.utils.Utils;
 
@@ -86,7 +87,8 @@ public class TestDns extends CommonTest {
         DnsRoot dnsRoot = new DnsRoot();
         log.info("new root DNS address {}", dnsRoot.getAddress().toString(true, true, true));
 
-        dnsRoot.deploy(tonlib, adminWallet.getWallet(), adminWallet.getKeyPair());
+        ExtMessageInfo extMessageInfo = dnsRoot.deploy(tonlib, adminWallet.getWallet(), adminWallet.getKeyPair());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30);
 
@@ -117,7 +119,7 @@ public class TestDns extends CommonTest {
 
 
         Options optionsDnsCollection = Options.builder()
-                .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/dns-collection-2.json"))
+                .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/dns-collection-2.json"))
                 .dnsItemCodeHex(dnsItemCodeHex)
                 .code(CellBuilder.beginCell().fromBoc(dnsCollectionCodeHex).endCell())
                 .build();
@@ -191,7 +193,7 @@ public class TestDns extends CommonTest {
 
         Options optionsDnsCollection = Options.builder()
                 .address(Address.of("EQDjPtM6QusgMgWfl9kMcG-EALslbTITnKcH8VZK1pnH3UZA"))
-                .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/dns-collection.json"))
+                .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/dns-collection.json"))
                 .build();
 
         Wallet dnsCollectionWallet = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection);

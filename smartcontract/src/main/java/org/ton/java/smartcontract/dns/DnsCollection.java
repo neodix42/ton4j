@@ -99,7 +99,7 @@ public class DnsCollection implements Contract {
         long nextItemIndex = nextItemIndexResult.getNumber().longValue();
 
         TvmStackEntryCell collectionContentResult = (TvmStackEntryCell) result.getStack().get(1); // cell or slice
-        Cell collectionContent = CellBuilder.beginCell().fromBoc(collectionContentResult.getCell().getBytes()).endCell();
+        Cell collectionContent = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(collectionContentResult.getCell().getBytes())).endCell();
         String collectionContentUri = NftUtils.parseOffchainUriCell(collectionContent);
 
         return CollectionData.builder()
@@ -134,7 +134,7 @@ public class DnsCollection implements Contract {
         }
 
         TvmStackEntryCell addr = (TvmStackEntryCell) result.getStack().get(0);
-        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(addr.getCell().getBytes()).endCell());
+        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(addr.getCell().getBytes())).endCell());
     }
 
     public Address getNftItemAddressByDomain(Tonlib tonlib, String domain) {

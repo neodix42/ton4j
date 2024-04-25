@@ -12,10 +12,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryCell;
-import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -167,11 +164,11 @@ public class JettonMinter implements Contract {
 
         boolean isMutable = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber().longValue() == -1;
 
-        TvmStackEntryCell adminAddr = (TvmStackEntryCell) result.getStack().get(2);
-        Address adminAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(adminAddr.getCell().getBytes()).endCell());
+        TvmStackEntrySlice adminAddr = (TvmStackEntrySlice) result.getStack().get(2);
+        Address adminAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(adminAddr.getSlice().getBytes())).endCell());
 
         TvmStackEntryCell jettonContent = (TvmStackEntryCell) result.getStack().get(3);
-        Cell jettonContentCell = CellBuilder.beginCell().fromBoc(jettonContent.getCell().getBytes()).endCell();
+        Cell jettonContentCell = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(jettonContent.getCell().getBytes())).endCell();
         String jettonContentUri = null;
         try {
             jettonContentUri = NftUtils.parseOffchainUriCell(jettonContentCell);
@@ -180,7 +177,7 @@ public class JettonMinter implements Contract {
         }
 
         TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStack().get(4);
-        Cell jettonWalletCode = CellBuilder.beginCell().fromBoc(contentC.getCell().getBytes()).endCell();
+        Cell jettonWalletCode = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentC.getCell().getBytes())).endCell();
 
         return JettonMinterData.builder()
                 .totalSupply(totalSupply)
@@ -224,8 +221,8 @@ public class JettonMinter implements Contract {
             throw new Error("method get_wallet_address, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell addr = (TvmStackEntryCell) result.getStack().get(0);
-        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(addr.getCell().getBytes()).endCell());
+        TvmStackEntrySlice addr = (TvmStackEntrySlice) result.getStack().get(0);
+        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(addr.getSlice().getBytes())).endCell());
     }
 
     public ExtMessageInfo deploy(Tonlib tonlib, WalletContract adminWallet, BigInteger walletMsgValue, TweetNaclFast.Signature.KeyPair keyPair) {

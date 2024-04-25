@@ -151,7 +151,7 @@ public class DnsUtils {
         Object r = result.getStack().get(1);
         if (r instanceof TvmStackEntryCell) {
             TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStack().get(1);
-            cell = CellBuilder.beginCell().fromBoc(cellResult.getCell().getBytes()).endCell();
+            cell = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(cellResult.getCell().getBytes())).endCell();
         }
 
         if ((nonNull(cell)) && (isNull(cell.getBits()))) {
@@ -190,10 +190,7 @@ public class DnsUtils {
                         return null;
                     }
                 } else {
-//                    dnsResolveImpl(tonlib, nextAddress.toString(), rawDomainBytes.slice(resultLen / 8), category, false);
                     return dnsResolveImpl(tonlib, nextAddress, Arrays.copyOfRange(rawDomainBytes, resultLen / 8, rawDomainBytes.length), category, false);
-                    // rawDomainBytes.slice(resultLen / 8), category, false);
-//                    return dnsResolveImpl(tonlib, nextAddress, Arrays.copyOfRange(rawDomainBytes, 0, resultLen / 8), category, false);// rawDomainBytes.slice(resultLen / 8), category, false);
                 }
             }
         }

@@ -85,7 +85,9 @@ public class Boc {
     }
 
     public static Boc deserialize(CellSlice cs) {
-        Boc boc = Boc.builder().magic(cs.loadUint(32).longValue()).build();
+        int magic = cs.loadUint(32).intValue();
+        assert (magic == 0xb5ee9c72) : "Boc: magic not equal to 0xb5ee9c72, found 0x" + Integer.toHexString(magic);
+        Boc boc = Boc.builder().magic(magic).build();
         boc.setHasIdx(cs.loadBit());
         boc.setHasCrc32c(cs.loadBit());
         boc.setHasCacheBits(cs.loadBit());

@@ -93,7 +93,7 @@ public class NftUtils {
      *
      * @param name        String name of Jetton
      * @param description String description of Jetton
-     * @return cell Cell
+     * @return Cell
      */
     public static Cell createOnchainDataCell(String name, String description) { // https://github.com/ton-blockchain/TIPs/issues/64
         CellBuilder cell = CellBuilder.beginCell();
@@ -127,23 +127,6 @@ public class NftUtils {
     public static Address parseAddress(Cell cell) {
 
         return CellSlice.beginParse(cell).loadAddress();
-//        String result; todo wtf?
-//
-//        try {
-//            BigInteger n = readIntFromBitString(cell.getBits(), 3, 8);
-//            if (n.compareTo(BigInteger.valueOf(127L)) > 0) {
-//                n = n.subtract(BigInteger.valueOf(256L));
-//            }
-//            BigInteger hashPart = readIntFromBitString(cell.getBits(), 3 + 8, 256);
-//            if ((n.toString(10) + ":" + hashPart.toString(16)).equals("0:0")) {
-//                return null;
-//            }
-//
-//            result = n.toString(10) + ":" + StringUtils.leftPad(hashPart.toString(16), 64, '0');
-//        } catch (Exception e) {
-//            return null;
-//        }
-//        return Address.of(result);
     }
 
     /**

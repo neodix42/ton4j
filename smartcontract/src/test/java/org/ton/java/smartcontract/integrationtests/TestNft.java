@@ -53,8 +53,8 @@ public class TestNft extends CommonTest {
                 .adminAddress(adminWallet.getWallet().getAddress())
                 .royalty(0.13)
                 .royaltyAddress(adminWallet.getWallet().getAddress())
-                .collectionContentUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/nft-collection.json")
-                .collectionContentBaseUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/")
+                .collectionContentUri("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/nft-collection.json")
+                .collectionContentBaseUri("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/")
                 .nftItemCodeHex(WalletCodes.nftItem.getValue())
                 .build();
 

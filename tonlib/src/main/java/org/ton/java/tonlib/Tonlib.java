@@ -741,7 +741,8 @@ public class Tonlib {
 
             String result = syncAndRead(gson.toJson(configParamQuery));
             ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
-            return CellBuilder.beginCell().fromBoc(ci.getConfig().getBytes()).endCell();
+            System.out.println(Utils.bytesToHex(Utils.base64ToBytes(ci.getConfig().getBytes())));
+            return CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes())).endCell();
         }
     }
 
@@ -755,7 +756,7 @@ public class Tonlib {
             String result = syncAndRead(gson.toJson(configParamQuery));
             System.out.println(result);
             ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
-            return CellBuilder.beginCell().fromBoc(ci.getConfig().getBytes()).endCell();
+            return CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes())).endCell();
         }
     }
 
