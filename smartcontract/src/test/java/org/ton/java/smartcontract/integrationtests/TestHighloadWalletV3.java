@@ -101,12 +101,12 @@ public class TestHighloadWalletV3 extends CommonTest {
         Cell cell = internalMsg.toCell();
         HighloadV3Config config = HighloadV3Config
                 .builder()
-                .amount(Utils.toNano(0.01))
+//                .amount(Utils.toNano(0.01))
                 .body(cell)
-                .createdAt(Instant.now().getEpochSecond() - 10)
-                .destination(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
-                .mode((byte) 3)
-                .queryId(0)
+//                .createdAt(Instant.now().getEpochSecond() - 10)
+//                .destination(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
+//                .mode((byte) 3)
+                .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
                 .build();
 
         extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);

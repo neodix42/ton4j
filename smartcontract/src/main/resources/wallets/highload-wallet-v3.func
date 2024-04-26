@@ -35,7 +35,7 @@ const int op::internal_transfer = 0xae42e5a4;
 const int error::invalid_signature = 33;
 const int error::invalid_subwallet_id = 34;
 const int error::invalid_created_at = 35;
-const int error::c
+const int error::already_executed = 36;
 const int error::invalid_message_to_send = 37;
 const int error::invalid_timeout = 38;
 
