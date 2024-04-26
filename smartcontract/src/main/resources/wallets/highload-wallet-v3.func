@@ -1,6 +1,10 @@
 { - TL-B scheme
-storage$_ public_key:bits256 subwallet_id:uint32 old_queries:(HashmapE 14 ^Cell)
-          queries:(HashmapE 14 ^Cell) last_clean_time:uint64 timeout:uint22
+storage$_ public_key:bits256
+          subwallet_id:uint32
+          old_queries:(HashmapE 14 ^Cell)
+          queries:(HashmapE 14 ^Cell)
+          last_clean_time:uint64
+          timeout:uint22
           = Storage;
 
 _ shift:uint13 bit_number:(## 10) { bit_number >= 0 } { bit_number < 1023 } = QueryId;
@@ -31,7 +35,7 @@ const int op::internal_transfer = 0xae42e5a4;
 const int error::invalid_signature = 33;
 const int error::invalid_subwallet_id = 34;
 const int error::invalid_created_at = 35;
-const int error::already_executed = 36;
+const int error::c
 const int error::invalid_message_to_send = 37;
 const int error::invalid_timeout = 38;
 

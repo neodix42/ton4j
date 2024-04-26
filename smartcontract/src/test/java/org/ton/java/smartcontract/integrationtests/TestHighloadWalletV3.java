@@ -69,17 +69,40 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         long createdAt = Instant.now().getEpochSecond() - 60 * 5;
-        Cell cell = create3Messages(contract, createdAt);
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), cell);
+        Address ownAddress = contract.getAddress();
+        Address destAddress = Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G");
+
+        CommonMsgInfo internalMsg = InternalMessage.builder()
+                .iHRDisabled(true)
+                .bounce(true)
+                .bounced(false)
+                .srcAddr(MsgAddressIntStd.builder()
+                        .workchainId(ownAddress.wc)
+                        .address(ownAddress.toBigInteger())
+                        .build())
+                .dstAddr(MsgAddressIntStd.builder()
+                        .workchainId(destAddress.wc)
+                        .address(destAddress.toBigInteger())
+                        .build())
+                .value(CurrencyCollection.builder().coins(Utils.toNano(0.1)).build())
+                .iHRFee(BigInteger.ZERO)
+                .fwdFee(BigInteger.ZERO)
+                .createdAt(createdAt)
+                .createdLt(BigInteger.ZERO)
+                .build();
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), internalMsg.toCell());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(60, "deploying");
+        Utils.sleep(30, "deploying");
 
+//        Cell cell = create3Messages(contract, createdAt);
+        Cell cell = internalMsg.toCell();
         HighloadV3Config config = HighloadV3Config
                 .builder()
                 .amount(Utils.toNano(0.01))
-                .body(null)
+                .body(cell)
                 .createdAt(Instant.now().getEpochSecond() - 10)
                 .destination(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
                 .mode((byte) 3)
@@ -119,7 +142,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), null);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(60, "deploying");
+        Utils.sleep(30, "deploying");
 
         BigInteger amountToSendTotal = Utils.toNano(0.01 + 0.02 + 0.03);
         long createdAt = Instant.now().getEpochSecond() - 60 * 5;
