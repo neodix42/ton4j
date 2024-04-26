@@ -21,7 +21,7 @@ import static java.util.Objects.isNull;
  body:(Either X ^X) = MessageRelaxed X;
  */
 public class MessageRelaxed {
-    CommonMsgInfo info;
+    CommonMsgInfoRelaxed info;
     StateInit init;
     Cell body;
 
@@ -48,7 +48,7 @@ public class MessageRelaxed {
 
     public static MessageRelaxed deserialize(CellSlice cs) {
         return MessageRelaxed.builder()
-                .info(CommonMsgInfo.deserialize(cs))
+                .info(CommonMsgInfoRelaxed.deserialize(cs))
                 .init(cs.loadBit() ?
                         (cs.loadBit() ?
                                 StateInit.deserialize(CellSlice.beginParse(cs.loadRef()))

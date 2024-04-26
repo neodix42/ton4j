@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.highload.HighloadWalletV3;
@@ -73,14 +74,11 @@ public class TestHighloadWalletV3 extends CommonTest {
         Address ownAddress = contract.getAddress();
         Address destAddress = Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G");
 
-        CommonMsgInfo internalMsg = InternalMessage.builder() // int_msg_info$0
+        CommonMsgInfoRelaxed internalMsg = InternalMessageInfoRelaxed.builder() // int_msg_info$0
                 .iHRDisabled(true)
                 .bounce(true)
                 .bounced(false)
-                .srcAddr(MsgAddressIntStd.builder()
-                        .workchainId(ownAddress.wc)
-                        .address(ownAddress.toBigInteger())
-                        .build())
+                .srcAddr(MsgAddressExtNone.builder().build())
                 .dstAddr(MsgAddressIntStd.builder()
                         .workchainId(destAddress.wc)
                         .address(destAddress.toBigInteger())
@@ -88,22 +86,38 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .value(CurrencyCollection.builder().coins(Utils.toNano(0.1)).build())
                 .iHRFee(BigInteger.ZERO)
                 .fwdFee(BigInteger.ZERO)
-                .createdAt(createdAt)
                 .createdLt(BigInteger.ZERO)
+                .createdAt(createdAt)
                 .build();
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), internalMsg.toCell());
+        Cell innerMsg = internalMsg.toCell();
+        byte[] signature = new TweetNaclFast.Signature(options.publicKey, keyPair.getSecretKey()).detached(innerMsg.hash());
+
+
+        Cell externalMessageBody = CellBuilder.beginCell()
+                .storeBytes(signature)
+                .storeRef(innerMsg)
+                .endCell();
+
+        MessageRelaxed message_to_send = MessageRelaxed.builder()
+                .info(internalMsg)
+                .init(null)
+                .body(externalMessageBody)
+                .build();
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), message_to_send.toCell());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
 
 //        Cell cell = create3Messages(contract, createdAt);
-        Cell cell = internalMsg.toCell();
+
+        Cell cell = message_to_send.toCell();
         HighloadV3Config config = HighloadV3Config
                 .builder()
 //                .amount(Utils.toNano(0.01))
                 .body(cell)
-//                .createdAt(Instant.now().getEpochSecond() - 10)
+                .createdAt(Instant.now().getEpochSecond() - 10)
 //                .destination(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
 //                .mode((byte) 3)
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
@@ -201,7 +215,7 @@ public class TestHighloadWalletV3 extends CommonTest {
             OutAction outAction = ActionSendMsg.builder()
                     .mode((byte) 3)
                     .outMsg(MessageRelaxed.builder()
-                            .info(InternalMessage.builder()
+                            .info(InternalMessageInfoRelaxed.builder()
                                     .iHRDisabled(true)
                                     .bounce(true)
                                     .bounced(false)
@@ -262,7 +276,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         OutAction outAction = ActionSendMsg.builder()
                 .mode((byte) 3)
                 .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessage.builder()
+                        .info(InternalMessageInfoRelaxed.builder()
                                 .iHRDisabled(true)
                                 .bounce(true)
                                 .bounced(false)
@@ -331,7 +345,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         OutAction outAction1 = ActionSendMsg.builder()
                 .mode((byte) 3)
                 .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessage.builder()
+                        .info(InternalMessageInfoRelaxed.builder()
                                 .iHRDisabled(true)
                                 .bounce(true)
                                 .bounced(false)
@@ -354,7 +368,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         OutAction outAction2 = ActionSendMsg.builder()
                 .mode((byte) 3)
                 .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessage.builder()
+                        .info(InternalMessageInfoRelaxed.builder()
                                 .iHRDisabled(true)
                                 .bounce(true)
                                 .bounced(false)
@@ -377,7 +391,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         OutAction outAction3 = ActionSendMsg.builder()
                 .mode((byte) 3)
                 .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessage.builder()
+                        .info(InternalMessageInfoRelaxed.builder()
                                 .iHRDisabled(true)
                                 .bounce(true)
                                 .bounced(false)

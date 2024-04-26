@@ -4,6 +4,7 @@ import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.HighloadV3BatchItem;
 import org.ton.java.smartcontract.types.HighloadV3Config;
@@ -16,6 +17,7 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -136,24 +138,42 @@ public class HighloadWalletV3 implements WalletContract {
     }
 
     /**
+     * _ {n:#}  subwallet_id:uint32
+     * message_to_send:^Cell
+     * send_mode:uint8
+     * query_id:QueryId
+     * created_at:uint64
+     * timeout:uint22 = MsgInner;
+     *
+     * @return Cell
+     */
+    public Cell createMessageInner(Cell msgToSend, int queryId) {
+        CellBuilder message = CellBuilder.beginCell();
+        message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
+        message.storeRef(msgToSend); // message_to_send
+        message.storeUint(3, 8); // send mode
+        message.storeUint(queryId, 23); // query id
+        message.storeUint(Instant.now().getEpochSecond() - 10, 64); // created at
+        message.storeUint(60 * 60, 22); // timeout
+        return message.endCell();
+    }
+
+    /**
      * @param tonlib         Tonlib
      * @param secretKey      byte[]
      * @param highloadConfig HighloadV3Config
      */
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, HighloadV3Config highloadConfig) {
 
-        Address destAddress = getAddress();
+        Address ownAddress = getAddress();
 
         CommonMsgInfo externalMessageInfo = ExternalMessageInfo.builder()
                 .srcAddr(MsgAddressExtNone.builder().build())
                 .dstAddr(MsgAddressIntStd.builder()
-                        .workchainId(destAddress.wc)
-                        .address(destAddress.toBigInteger())
+                        .workchainId(ownAddress.wc)
+                        .address(ownAddress.toBigInteger())
                         .build())
-                .importFee(BigInteger.ZERO)
                 .build();
-
-//        Cell signingMessage = createSigningMessage(0).endCell();
 
         Cell innerMsg = createMessageInner(highloadConfig.getBody(), highloadConfig.getQueryId());
         byte[] signature = new TweetNaclFast.Signature(getOptions().publicKey, secretKey).detached(innerMsg.hash());
@@ -173,28 +193,6 @@ public class HighloadWalletV3 implements WalletContract {
 //        return tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
 //        return tonlib.sendRawMessage(createSendTonCoinsMessage(secretKey, highloadConfig).toBase64());
-    }
-
-    /**
-     * _ {n:#}  subwallet_id:uint32
-     * message_to_send:^Cell
-     * send_mode:uint8
-     * query_id:QueryId
-     * created_at:uint64
-     * timeout:uint22 = MsgInner;
-     *
-     * @return Cell
-     */
-    public Cell createMessageInner(Cell msgToSend, int queryId) {
-        CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
-        message.storeRef(msgToSend); // message_to_send
-        message.storeUint(3, 8); // send mode
-        message.storeUint(queryId, 23); // query id
-        message.storeUint(Instant.now().getEpochSecond() - 10, 64); //created at
-        message.storeUint(60 * 60, 22); // timeout
-
-        return message.endCell();
     }
 
     public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey, Cell msgToSend) {
