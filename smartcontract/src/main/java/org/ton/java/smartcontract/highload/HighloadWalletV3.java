@@ -188,7 +188,7 @@ public class HighloadWalletV3 implements WalletContract {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
         message.storeRef(msgToSend); // message_to_send
-        message.storeUint(3, 8); //mode
+        message.storeUint(3, 8); // send mode
         message.storeUint(getOptions().getHighloadQueryId(), 23); // query id
         message.storeUint(Instant.now().getEpochSecond() - 10, 64); //created at
         message.storeUint(60 * 60, 22); // timeout
@@ -212,7 +212,6 @@ public class HighloadWalletV3 implements WalletContract {
                 .importFee(BigInteger.ZERO)
                 .build();
 
-//        Cell signingMessage = createSigningMessage(0).endCell();
         Cell innerMsg = createMessageInner(msgToSend);
         byte[] signature = new TweetNaclFast.Signature(getOptions().publicKey, secretKey).detached(innerMsg.hash());
 

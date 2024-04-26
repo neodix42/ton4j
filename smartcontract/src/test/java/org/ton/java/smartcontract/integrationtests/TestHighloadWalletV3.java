@@ -73,7 +73,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         Address ownAddress = contract.getAddress();
         Address destAddress = Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G");
 
-        CommonMsgInfo internalMsg = InternalMessage.builder()
+        CommonMsgInfo internalMsg = InternalMessage.builder() // int_msg_info$0
                 .iHRDisabled(true)
                 .bounce(true)
                 .bounced(false)
