@@ -4,7 +4,6 @@ import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
 import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.HighloadV3BatchItem;
 import org.ton.java.smartcontract.types.HighloadV3Config;
@@ -17,10 +16,8 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.time.Instant;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -147,13 +144,13 @@ public class HighloadWalletV3 implements WalletContract {
      *
      * @return Cell
      */
-    public Cell createMessageInner(Cell msgToSend, int queryId) {
+    public Cell createMessageInner(Cell msgToSend, int queryId, long createdAt) {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
         message.storeRef(msgToSend); // message_to_send
         message.storeUint(3, 8); // send mode
         message.storeUint(queryId, 23); // query id
-        message.storeUint(Instant.now().getEpochSecond() - 10, 64); // created at
+        message.storeUint(createdAt, 64); // created at
         message.storeUint(60 * 60, 22); // timeout
         return message.endCell();
     }
@@ -175,7 +172,7 @@ public class HighloadWalletV3 implements WalletContract {
                         .build())
                 .build();
 
-        Cell innerMsg = createMessageInner(highloadConfig.getBody(), highloadConfig.getQueryId());
+        Cell innerMsg = createMessageInner(highloadConfig.getBody(), highloadConfig.getQueryId(), highloadConfig.getCreatedAt());
         byte[] signature = new TweetNaclFast.Signature(getOptions().publicKey, secretKey).detached(innerMsg.hash());
 
 
@@ -190,12 +187,10 @@ public class HighloadWalletV3 implements WalletContract {
                 .body(externalMessageBody)
                 .build();
 
-//        return tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-//        return tonlib.sendRawMessage(createSendTonCoinsMessage(secretKey, highloadConfig).toBase64());
     }
 
-    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey, Cell msgToSend) {
+    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey, Cell msgToSend, long createdAt) {
         StateInit stateInit = StateInit.builder()
                 .code(getOptions().code)
                 .data(createDataCell())
@@ -211,7 +206,7 @@ public class HighloadWalletV3 implements WalletContract {
                 .importFee(BigInteger.ZERO)
                 .build();
 
-        Cell innerMsg = createMessageInner(msgToSend, 0);
+        Cell innerMsg = createMessageInner(msgToSend, 0, createdAt);
         byte[] signature = new TweetNaclFast.Signature(getOptions().publicKey, secretKey).detached(innerMsg.hash());
 
         Cell externalMessageBody = CellBuilder.beginCell()
@@ -225,7 +220,35 @@ public class HighloadWalletV3 implements WalletContract {
                 .body(externalMessageBody)
                 .build();
 
-//        return tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    }
+
+    public ExtMessageInfo send(Tonlib tonlib, byte[] secretKey, Cell msgToSend, long createdAt) {
+
+        Address ownAddress = getAddress();
+
+        CommonMsgInfo externalMessageInfo = ExternalMessageInfo.builder()
+                .srcAddr(MsgAddressExtNone.builder().build())
+                .dstAddr(MsgAddressIntStd.builder()
+                        .workchainId(ownAddress.wc)
+                        .address(ownAddress.toBigInteger())
+                        .build())
+                .importFee(BigInteger.ZERO)
+                .build();
+
+        Cell innerMsg = createMessageInner(msgToSend, 1, createdAt);
+        byte[] signature = new TweetNaclFast.Signature(getOptions().publicKey, secretKey).detached(innerMsg.hash());
+
+        Cell externalMessageBody = CellBuilder.beginCell()
+                .storeBytes(signature)
+                .storeRef(innerMsg)
+                .endCell();
+
+        Message externalMessage = Message.builder()
+                .info(externalMessageInfo)
+                .body(externalMessageBody)
+                .build();
+
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 

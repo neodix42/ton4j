@@ -175,6 +175,11 @@ public class TestWalletV2Highload extends CommonTest {
     }
 
     private List<Destination> generateTargetsWithSameAmountAndSendMode(int count, byte[] publicKey) {
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
 
         List<Destination> result = new ArrayList<>();
 

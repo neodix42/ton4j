@@ -63,12 +63,10 @@ public class HighloadWallet implements WalletContract {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-
         cell.storeUint(BigInteger.valueOf(getOptions().walletId), 32); // sub-wallet id
         cell.storeUint(BigInteger.ZERO, 64); // last_cleaned
         cell.storeBytes(getOptions().getPublicKey()); // 256 bits
         cell.storeBit(false); // initial storage has old_queries dict empty
-
         return cell.endCell();
     }
 
@@ -76,27 +74,21 @@ public class HighloadWallet implements WalletContract {
     public CellBuilder createSigningMessage(long seqno) {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
-
         message.storeUint(getOptions().getHighloadQueryId(), 64);
         message.storeBit(false);
-
         return message;
     }
 
     public Cell createSigningMessageInternal(HighloadConfig highloadConfig) {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
-
         message.storeUint(highloadConfig.getQueryId(), 64);
-
         message.storeBit(true);
         message.storeRef(createDict(highloadConfig));
-
         return message.endCell();
     }
 
     public String getPublicKey(Tonlib tonlib) {
-
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_public_key");
 

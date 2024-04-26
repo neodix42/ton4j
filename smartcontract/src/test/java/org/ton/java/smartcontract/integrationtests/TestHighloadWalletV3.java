@@ -8,7 +8,6 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.highload.HighloadWalletV3;
 import org.ton.java.smartcontract.types.HighloadQueryId;
@@ -71,64 +70,37 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         long createdAt = Instant.now().getEpochSecond() - 60 * 5;
 
-        Address ownAddress = contract.getAddress();
         Address destAddress = Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G");
 
-        CommonMsgInfoRelaxed internalMsg = InternalMessageInfoRelaxed.builder() // int_msg_info$0
-                .iHRDisabled(true)
-                .bounce(true)
-                .bounced(false)
-                .srcAddr(MsgAddressExtNone.builder().build())
-                .dstAddr(MsgAddressIntStd.builder()
-                        .workchainId(destAddress.wc)
-                        .address(destAddress.toBigInteger())
-                        .build())
-                .value(CurrencyCollection.builder().coins(Utils.toNano(0.1)).build())
-                .iHRFee(BigInteger.ZERO)
-                .fwdFee(BigInteger.ZERO)
-                .createdLt(BigInteger.ZERO)
-                .createdAt(createdAt)
-                .build();
+        Cell messageToSendForDeploy = createMessageToSendForDeploy(destAddress, 0, createdAt, keyPair);
 
-        Cell innerMsg = internalMsg.toCell();
-        byte[] signature = new TweetNaclFast.Signature(options.publicKey, keyPair.getSecretKey()).detached(innerMsg.hash());
-
-
-        Cell externalMessageBody = CellBuilder.beginCell()
-                .storeBytes(signature)
-                .storeRef(innerMsg)
-                .endCell();
-
-        MessageRelaxed message_to_send = MessageRelaxed.builder()
-                .info(internalMsg)
-                .init(null)
-                .body(externalMessageBody)
-                .build();
-
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), message_to_send.toCell());
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), messageToSendForDeploy, createdAt);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
 
-//        Cell cell = create3Messages(contract, createdAt);
+        Cell cell = createMessageToSend(destAddress, 0.1, createdAt, keyPair);
 
-        Cell cell = message_to_send.toCell();
         HighloadV3Config config = HighloadV3Config
                 .builder()
-//                .amount(Utils.toNano(0.01))
                 .body(cell)
-                .createdAt(Instant.now().getEpochSecond() - 10)
-//                .destination(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
-//                .mode((byte) 3)
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+                .createdAt(createdAt)
                 .build();
 
         extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
+        log.info("sent single message");
     }
 
     @Test
-    public void testBulkPayloadTransfer3DifferentRecipients() throws InterruptedException {
+    public void testBulkPayloadTransfer3DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -153,30 +125,36 @@ public class TestHighloadWalletV3 extends CommonTest {
         Utils.sleep(10, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), null);
+        long createdAt = Instant.now().getEpochSecond() - 60 * 5;
+        Address destAddress = Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G");
+
+        Cell messageToSendForDeploy = createMessageToSendForDeploy(destAddress, 0, createdAt, keyPair);
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), messageToSendForDeploy, createdAt);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
 
-        BigInteger amountToSendTotal = Utils.toNano(0.01 + 0.02 + 0.03);
-        long createdAt = Instant.now().getEpochSecond() - 60 * 5;
-        Cell cell = create3Messages(contract, createdAt);
+        int numberOfRecipients = 3;
+        BigInteger amountToSendTotal = Utils.toNano(0.01 * numberOfRecipients);
 
-        HighloadV3Config config = HighloadV3Config
-                .builder()
-                .amount(amountToSendTotal)
-                .body(cell)
-                .createdAt(createdAt)
-                .destination(contract.getAddress()) // to this contract
-                .mode((byte) 3)
-                .queryId(0)
-                .build();
+        Cell threeMessages = createNMessages(numberOfRecipients, contract, createdAt);
 
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
+        Cell extMsgWith3Mgs = createMessageBulkToSend(contract.getAddress(), amountToSendTotal, threeMessages, createdAt, keyPair, contract);
+
+        extMessageInfo = contract.send(tonlib, keyPair.getSecretKey(), extMsgWith3Mgs, createdAt);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        log.info("sent {} messages", numberOfRecipients);
     }
 
     @Test
-    public void testBulkPayloadTransfer1000Recipients() throws InterruptedException, NoSuchAlgorithmException {
+    public void testBulkPayloadTransfer200DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -197,19 +175,59 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("           raw address {}", contract.getAddress().toString(false));
 
         // top up new wallet using test-faucet-wallet
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(11));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
         Utils.sleep(10, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), null);
+        long createdAt = Instant.now().getEpochSecond() - 60 * 5;
+        Address destAddress = Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G");
+
+        Cell messageToSendForDeploy = createMessageToSendForDeploy(destAddress, 0, createdAt, keyPair);
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), messageToSendForDeploy, createdAt);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
 
+        int numberOfRecipients = 200;
+        BigInteger amountToSendTotal = Utils.toNano(0.01 * numberOfRecipients);
 
-        long createdAt = Instant.now().getEpochSecond() - 60 * 5;
+        Cell threeMessages = createNMessages(numberOfRecipients, contract, createdAt);
+
+        Cell extMsgWith3Mgs = createMessageBulkToSend(contract.getAddress(), amountToSendTotal, threeMessages, createdAt, keyPair, contract);
+
+        extMessageInfo = contract.send(tonlib, keyPair.getSecretKey(), extMsgWith3Mgs, createdAt);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        log.info("sent {} messages", numberOfRecipients);
+    }
+
+    @Test
+    public void testHighloadQueryId() {
+        HighloadQueryId qid = new HighloadQueryId();
+        assertThat(qid.getQueryId()).isEqualTo(0);
+        qid = qid.getNext();
+        assertThat(qid.getQueryId()).isEqualTo(1);
+        for (int i = 0; i < 1022; i++) {
+            qid = qid.getNext();
+        }
+        assertThat(qid.getQueryId()).isEqualTo(1024);
+        assertThat(qid.toSeqno()).isEqualTo(1023);
+
+        qid = HighloadQueryId.fromShiftAndBitNumber(8191, 1020);
+        assertThat(qid.hasNext()).isTrue();
+        qid = qid.getNext();
+        assertThat(qid.hasNext()).isFalse();
+
+        int nqid = qid.getQueryId();
+        qid = HighloadQueryId.fromSeqno(qid.toSeqno());
+        assertThat(nqid).isEqualTo(qid.getQueryId());
+        qid = HighloadQueryId.fromQueryId(qid.getQueryId());
+        assertThat(nqid).isEqualTo(qid.getQueryId());
+    }
+
+    Cell createNMessages(int numRecipients, HighloadWalletV3 contract, long createdAt) throws NoSuchAlgorithmException {
         List<OutAction> outActions = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < numRecipients; i++) {
             Address destinationAddress = Address.of("0:" + Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8))));
             log.info("dest {} is {}", i, destinationAddress.toString(true));
             OutAction outAction = ActionSendMsg.builder()
@@ -237,188 +255,86 @@ public class TestHighloadWalletV3 extends CommonTest {
             outActions.add(outAction);
         }
 
-        BigInteger amountToSendTotal = Utils.toNano(0.01 * 1000);
+        return HighloadV3InternalMessageBody.builder()
+                .queryId(BigInteger.ZERO)
+                .actions(OutList.builder()
+                        .actions(outActions)
+                        .build())
+                .build().toCell();
+    }
 
+    private Cell createMessageToSendForDeploy(Address destAddress, double amount, long createdAt, TweetNaclFast.Signature.KeyPair keyPair) {
 
-        HighloadV3InternalMessageBody highloadV3InternalMessageBody =
-                HighloadV3InternalMessageBody.builder()
-                        .queryId(BigInteger.ZERO)
-                        .actions(OutList.builder()
-                                .actions(outActions)
-                                .build())
-                        .build();
-
-        log.info("highloadV3InternalMessageBody: {}", highloadV3InternalMessageBody);
-
-        HighloadV3Config config = HighloadV3Config
-                .builder()
-                .amount(amountToSendTotal)
-                .body(highloadV3InternalMessageBody.toCell())
+        CommonMsgInfoRelaxed msgToSend = InternalMessageInfoRelaxed.builder() // int_msg_info$0
+                .iHRDisabled(true)
+                .bounce(true)
+                .bounced(false)
+                .srcAddr(MsgAddressExtNone.builder().build())
+                .dstAddr(MsgAddressIntStd.builder()
+                        .workchainId(destAddress.wc)
+                        .address(destAddress.toBigInteger())
+                        .build())
+                .value(CurrencyCollection.builder().coins(Utils.toNano(amount)).build())
                 .createdAt(createdAt)
-                .destination(contract.getAddress()) // to this contract
-                .mode((byte) 3)
-                .queryId(0)
                 .build();
 
-        log.info("\nbulk sending... ");
-
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
+        return MessageRelaxed.builder()
+                .info(msgToSend)
+                .init(null)
+                .body(null)
+                .build().toCell();
     }
 
-    @Test
-    public void testHighloadV3MessageBody() {
-        Address destinationAddress = Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G");
-        int numberOfTargetRecipients = 3;
-        BigInteger amountToSendPerMsg = Utils.toNano(0.01);
-        BigInteger amountToSendTotal = amountToSendPerMsg.multiply(BigInteger.valueOf(numberOfTargetRecipients));
-        long createdAt = Instant.now().getEpochSecond() - 10;
+    private Cell createMessageToSend(Address destAddress, double amount, long createdAt, TweetNaclFast.Signature.KeyPair keyPair) {
 
-        OutAction outAction = ActionSendMsg.builder()
-                .mode((byte) 3)
-                .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessageInfoRelaxed.builder()
-                                .iHRDisabled(true)
-                                .bounce(true)
-                                .bounced(false)
-                                .srcAddr(MsgAddressIntStd.builder()
-                                        .workchainId((byte) -1)
-                                        .address(BigInteger.TWO)
-                                        .build())
-                                .dstAddr(MsgAddressIntStd.builder()
-                                        .workchainId(destinationAddress.wc)
-                                        .address(destinationAddress.toBigInteger())
-                                        .build())
-                                .value(CurrencyCollection.builder()
-                                        .coins(amountToSendPerMsg)
-                                        .build())
-                                .createdAt(createdAt)
-                                .build())
+        CommonMsgInfoRelaxed internalMsg = InternalMessageInfoRelaxed.builder() // int_msg_info$0
+                .iHRDisabled(true)
+                .bounce(true)
+                .bounced(false)
+                .srcAddr(MsgAddressExtNone.builder().build())
+                .dstAddr(MsgAddressIntStd.builder()
+                        .workchainId(destAddress.wc)
+                        .address(destAddress.toBigInteger())
                         .build())
+                .value(CurrencyCollection.builder().coins(Utils.toNano(amount)).build())
+                .createdAt(createdAt)
                 .build();
 
-        HighloadV3InternalMessageBody highloadV3InternalMessageBody =
-                HighloadV3InternalMessageBody.builder()
-                        .queryId(BigInteger.ZERO)
-                        .actions(OutList.builder()
-                                .actions(List.of(outAction, outAction, outAction))
-                                .build())
-                        .build();
+        Cell innerMsg = internalMsg.toCell();
+        byte[] signature = new TweetNaclFast.Signature(keyPair.getPublicKey(), keyPair.getSecretKey()).detached(innerMsg.hash());
 
-        Cell cell1 = highloadV3InternalMessageBody.toCell();
-        log.info("cell {}", cell1.print());
-        HighloadV3InternalMessageBody deserialized = HighloadV3InternalMessageBody.deserialize(CellSlice.beginParse(cell1));
-        log.info("deserialized {}", deserialized);
-        Cell cell2 = highloadV3InternalMessageBody.toCell();
-        log.info("cell {}", cell2.print());
-        assertThat(cell1.print()).isEqualTo(cell2.print());
+        Cell externalMessageBody = CellBuilder.beginCell()
+                .storeBytes(signature)
+                .storeRef(innerMsg)
+                .endCell();
+
+        return MessageRelaxed.builder()
+                .info(internalMsg)
+                .init(null)
+                .body(externalMessageBody)
+                .build().toCell();
     }
 
-    @Test
-    public void testHighloadQueryId() {
-        HighloadQueryId qid = new HighloadQueryId();
-        assertThat(qid.getQueryId()).isEqualTo(0);
-        qid = qid.getNext();
-        assertThat(qid.getQueryId()).isEqualTo(1);
-        for (int i = 0; i < 1022; i++) {
-            qid = qid.getNext();
-        }
-        assertThat(qid.getQueryId()).isEqualTo(1024);
-        assertThat(qid.toSeqno()).isEqualTo(1023);
+    private Cell createMessageBulkToSend(Address ownAddress, BigInteger totalAmount, Cell bulkMessages, long createdAt, TweetNaclFast.Signature.KeyPair keyPair, HighloadWalletV3 contract) {
 
-        qid = HighloadQueryId.fromShiftAndBitNumber(8191, 1020);
-        assertThat(qid.hasNext()).isTrue();
-        qid = qid.getNext();
-        assertThat(qid.hasNext()).isFalse();
-
-        int nqid = qid.getQueryId();
-        qid = HighloadQueryId.fromSeqno(qid.toSeqno());
-        assertThat(nqid).isEqualTo(qid.getQueryId());
-        qid = HighloadQueryId.fromQueryId(qid.getQueryId());
-        assertThat(nqid).isEqualTo(qid.getQueryId());
-    }
-
-    private Cell create3Messages(HighloadWalletV3 contract, long createdAt) {
-        Address destinationAddress1 = Address.of("EQAI26OclRjgcBsTNtpMxjxJPsjICEXML83p1PEobtB7QlWc");
-        Address destinationAddress2 = Address.of("EQAT9oH1KUBOvPs2tIg8hWa-_dnEOZxkLD7PACj0RyP4WfF0");
-        Address destinationAddress3 = Address.of("EQBjX1ny_NMJWKonBnszL708F0T2hls99vqEbYr_oD8cHlfv");
-
-        OutAction outAction1 = ActionSendMsg.builder()
-                .mode((byte) 3)
-                .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessageInfoRelaxed.builder()
-                                .iHRDisabled(true)
-                                .bounce(true)
-                                .bounced(false)
-                                .srcAddr(MsgAddressIntStd.builder()
-                                        .workchainId(contract.getAddress().wc)
-                                        .address(contract.getAddress().toBigInteger())
-                                        .build())
-                                .dstAddr(MsgAddressIntStd.builder()
-                                        .workchainId(destinationAddress1.wc)
-                                        .address(destinationAddress1.toBigInteger())
-                                        .build())
-                                .value(CurrencyCollection.builder()
-                                        .coins(Utils.toNano(0.01))
-                                        .build())
-                                .createdAt(createdAt)
-                                .build())
+        CommonMsgInfoRelaxed internalMsg = InternalMessageInfoRelaxed.builder() // int_msg_info$0
+                .iHRDisabled(true)
+                .bounce(true)
+                .bounced(false)
+                .srcAddr(MsgAddressExtNone.builder().build())
+                .dstAddr(MsgAddressIntStd.builder()
+                        .workchainId(ownAddress.wc)
+                        .address(ownAddress.toBigInteger())
                         .build())
+                .value(CurrencyCollection.builder().coins(totalAmount).build())
+                .createdAt(createdAt)
                 .build();
 
-        OutAction outAction2 = ActionSendMsg.builder()
-                .mode((byte) 3)
-                .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessageInfoRelaxed.builder()
-                                .iHRDisabled(true)
-                                .bounce(true)
-                                .bounced(false)
-                                .srcAddr(MsgAddressIntStd.builder()
-                                        .workchainId(contract.getAddress().wc)
-                                        .address(contract.getAddress().toBigInteger())
-                                        .build())
-                                .dstAddr(MsgAddressIntStd.builder()
-                                        .workchainId(destinationAddress2.wc)
-                                        .address(destinationAddress2.toBigInteger())
-                                        .build())
-                                .value(CurrencyCollection.builder()
-                                        .coins(Utils.toNano(0.02))
-                                        .build())
-                                .createdAt(createdAt)
-                                .build())
-                        .build())
-                .build();
-
-        OutAction outAction3 = ActionSendMsg.builder()
-                .mode((byte) 3)
-                .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessageInfoRelaxed.builder()
-                                .iHRDisabled(true)
-                                .bounce(true)
-                                .bounced(false)
-                                .srcAddr(MsgAddressIntStd.builder()
-                                        .workchainId(contract.getAddress().wc)
-                                        .address(contract.getAddress().toBigInteger())
-                                        .build())
-                                .dstAddr(MsgAddressIntStd.builder()
-                                        .workchainId(destinationAddress3.wc)
-                                        .address(destinationAddress3.toBigInteger())
-                                        .build())
-                                .value(CurrencyCollection.builder()
-                                        .coins(Utils.toNano(0.03))
-                                        .build())
-                                .createdAt(createdAt)
-                                .build())
-                        .build())
-                .build();
-
-        HighloadV3InternalMessageBody highloadV3InternalMessageBody =
-                HighloadV3InternalMessageBody.builder()
-                        .queryId(BigInteger.ZERO)
-                        .actions(OutList.builder()
-                                .actions(List.of(outAction1, outAction2, outAction3))
-                                .build())
-                        .build();
-
-        return highloadV3InternalMessageBody.toCell();
+        Cell messageRelaxed = MessageRelaxed.builder()
+                .info(internalMsg)
+                .init(null)
+                .body(bulkMessages)
+                .build().toCell();
+        return messageRelaxed;
     }
 }
