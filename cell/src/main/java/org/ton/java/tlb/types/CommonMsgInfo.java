@@ -40,9 +40,9 @@ public interface CommonMsgInfo {
         } else {
             boolean isOut = cs.preloadBitAt(2);
             if (isOut) {
-                return ExternalMessageOut.deserialize(cs);
+                return ExternalMessageOutInfo.deserialize(cs);
             } else {
-                return ExternalMessage.deserialize(cs);
+                return ExternalMessageInfo.deserialize(cs);
             }
         }
     }

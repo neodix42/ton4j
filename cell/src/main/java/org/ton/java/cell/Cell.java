@@ -411,6 +411,7 @@ public class Cell {
             }
             cellType = bits.preReadUint(8).intValue();
         }
+
         int[] cellRefsIndex = new int[totalRefs];
 
         for (int j = 0; j < totalRefs; j++) {
@@ -441,7 +442,7 @@ public class Cell {
             List<Cell> refs = new ArrayList<>();
 
             for (int ri = 0; ri < c.refsIndexes.length; ri++) {
-                int r = (c.refsIndexes[ri] < 0) ? c.refsIndexes[ri] & 0xFF : c.refsIndexes[ri];
+                int r = c.refsIndexes[ri];
                 if (r < ci) {
                     throw new Error("Topological order is broken");
                 }
@@ -543,12 +544,6 @@ public class Cell {
 
     public byte[] hash() {
         return getHash();
-//        if (hash.length != 0) {
-//            hash = getHash();
-//            return hash;
-//        } else {
-//            return hash;
-//        }
     }
 
     public byte[] getHash() {

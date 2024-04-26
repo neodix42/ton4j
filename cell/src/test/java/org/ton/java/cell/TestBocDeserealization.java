@@ -2,10 +2,15 @@ package org.ton.java.cell;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.utils.Utils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,12 +50,14 @@ public class TestBocDeserealization {
     }
 
     @Test
-    public void testBocDeserializationBackAndForth() {
-        Cell cell = CellBuilder.beginCell().fromBoc("B5EE9C7241010301002A000202000102000155003F0000000000000000000000000000000000000000000000000000000000000093355B1411").endCell();
+    public void testBocDeserializationAllConfig() throws IOException {
+        String newBlockOutput = IOUtils.toString(Objects.requireNonNull(getClass().getResourceAsStream("/allconfig-boc-as-hex.txt")), StandardCharsets.UTF_8);
+        Cell cell = CellBuilder.beginCell().fromBoc(newBlockOutput).endCell();
         log.info("CellType {}", cell.getCellType());
         log.info(cell.print());
         log.info(Utils.bytesToHex(cell.toBoc(true)));
     }
+
 
     @Test
     public void testBocIssue74() {

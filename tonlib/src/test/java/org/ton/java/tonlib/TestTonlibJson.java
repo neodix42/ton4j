@@ -495,7 +495,6 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibGetConfigAll() {
-        MasterChainInfo mc = tonlib.getLast();
         Cell c = tonlib.getConfigAll(128);
         log.info(c.print());
     }

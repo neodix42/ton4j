@@ -110,7 +110,7 @@ public class Utils {
         int result = 0;
         for (byte value : b) {
             result <<= 8;
-            result |= value;
+            result |= value & 0XFF;
         }
         return result;
     }

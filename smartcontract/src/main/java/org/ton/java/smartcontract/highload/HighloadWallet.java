@@ -58,7 +58,7 @@ public class HighloadWallet implements WalletContract {
     /**
      * initial contract storage
      *
-     * @return cell Cell
+     * @return Cell
      */
     @Override
     public Cell createDataCell() {
@@ -131,7 +131,11 @@ public class HighloadWallet implements WalletContract {
             Cell orderHeader = Contract.createInternalMessageHeader(destination.getAddress(), destination.getAmount());
             Cell order;
             if (nonNull(destination.getComment())) {
-                order = Contract.createCommonMsgInfo(orderHeader, null, CellBuilder.beginCell().storeUint(0, 32).storeString(destination.getComment()).endCell());
+                order = Contract.createCommonMsgInfo(orderHeader, null,
+                        CellBuilder.beginCell()
+                                .storeUint(0, 32)
+                                .storeString(destination.getComment())
+                                .endCell());
             } else {
                 order = Contract.createCommonMsgInfo(orderHeader);
             }

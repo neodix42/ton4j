@@ -265,6 +265,10 @@ public interface Contract {
 
     //tblkch.pdf, page 57
 
+//    message$_ {X:Type} info:CommonMsgInfo
+//    init:(Maybe (Either StateInit ^StateInit))
+//    body:(Either X ^X) = Message X;
+
     /**
      * Create CommonMsgInfo contains header, stateInit, body
      *

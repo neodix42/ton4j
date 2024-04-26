@@ -21,7 +21,7 @@ import java.math.BigInteger;
  created_lt:uint64
  created_at:uint32 = CommonMsgInfo;
  */
-public class ExternalMessageOut implements CommonMsgInfo {
+public class ExternalMessageOutInfo implements CommonMsgInfo {
     long magic;
     MsgAddressInt srcAddr;
     MsgAddressExt dstAddr;
@@ -42,10 +42,10 @@ public class ExternalMessageOut implements CommonMsgInfo {
         return result.endCell();
     }
 
-    public static ExternalMessageOut deserialize(CellSlice cs) {
+    public static ExternalMessageOutInfo deserialize(CellSlice cs) {
         long magic = cs.loadUint(2).intValue();
         assert (magic == 0b11) : "ExternalMessageOut: magic not equal to 0b11, found 0b" + Long.toBinaryString(magic);
-        return ExternalMessageOut.builder()
+        return ExternalMessageOutInfo.builder()
                 .magic(magic)
                 .srcAddr(MsgAddressInt.deserialize(cs))
                 .dstAddr(MsgAddressExt.deserialize(cs))

@@ -14,7 +14,9 @@ import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR2;
+import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -31,6 +33,12 @@ public class TestWalletV2Highload extends CommonTest {
 
     @Test
     public void testWalletV2HighloadSendTo10() throws InterruptedException {
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -53,13 +61,13 @@ public class TestWalletV2Highload extends CommonTest {
 
         // top up new wallet using test-faucet-wallet        
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
-        Utils.sleep(10, "topping up...");
+        Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(60, "deploying");
+        Utils.sleep(30, "deploying");
 
         HighloadConfig highloadConfig = HighloadConfig.builder()
                 .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
@@ -113,9 +121,10 @@ public class TestWalletV2Highload extends CommonTest {
                 .build();
 
         // transfer coins to multiple destination as specified in options
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), highloadConfig);
+        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), highloadConfig);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(90, "sending to multiple destinations");
+        Utils.sleep(90, "sending to 10 destinations");
 
         balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
@@ -146,7 +155,7 @@ public class TestWalletV2Highload extends CommonTest {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(15));
-        Utils.sleep(20, "topping up...");
+        Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
@@ -154,7 +163,6 @@ public class TestWalletV2Highload extends CommonTest {
 
         Utils.sleep(45, "deploying");
 
-        // Sends to up to 84 destinations
         List<Destination> destinations = generateTargetsWithSameAmountAndSendMode(200, keyPair.getPublicKey());
 
         HighloadConfig highloadConfig = HighloadConfig.builder()
@@ -162,7 +170,8 @@ public class TestWalletV2Highload extends CommonTest {
                 .destinations(destinations)
                 .build();
 
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), highloadConfig);
+        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), highloadConfig);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
     private List<Destination> generateTargetsWithSameAmountAndSendMode(int count, byte[] publicKey) {

@@ -17,7 +17,9 @@ import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.tlb.types.*;
+import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -37,6 +39,11 @@ public class TestHighloadWalletV3 extends CommonTest {
 
     @Test
     public void testSinglePayloadTransfer() throws InterruptedException {
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -58,10 +65,13 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         // top up new wallet using test-faucet-wallet        
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
-        Utils.sleep(10, "topping up...");
+        Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        long createdAt = Instant.now().getEpochSecond() - 60 * 5;
+        Cell cell = create3Messages(contract, createdAt);
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), cell);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(60, "deploying");
@@ -76,7 +86,8 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .queryId(0)
                 .build();
 
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
+        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
     @Test
@@ -105,99 +116,19 @@ public class TestHighloadWalletV3 extends CommonTest {
         Utils.sleep(10, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), null);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(60, "deploying");
 
-        Address destinationAddress1 = Address.of("EQAI26OclRjgcBsTNtpMxjxJPsjICEXML83p1PEobtB7QlWc");
-        Address destinationAddress2 = Address.of("EQAT9oH1KUBOvPs2tIg8hWa-_dnEOZxkLD7PACj0RyP4WfF0");
-        Address destinationAddress3 = Address.of("EQBjX1ny_NMJWKonBnszL708F0T2hls99vqEbYr_oD8cHlfv");
-
         BigInteger amountToSendTotal = Utils.toNano(0.01 + 0.02 + 0.03);
         long createdAt = Instant.now().getEpochSecond() - 60 * 5;
-
-        OutAction outAction1 = ActionSendMsg.builder()
-                .mode((byte) 3)
-                .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessage.builder()
-                                .iHRDisabled(true)
-                                .bounce(true)
-                                .bounced(false)
-                                .srcAddr(MsgAddressIntStd.builder()
-                                        .workchainId(contract.getAddress().wc)
-                                        .address(contract.getAddress().toBigInteger())
-                                        .build())
-                                .dstAddr(MsgAddressIntStd.builder()
-                                        .workchainId(destinationAddress1.wc)
-                                        .address(destinationAddress1.toBigInteger())
-                                        .build())
-                                .value(CurrencyCollection.builder()
-                                        .coins(Utils.toNano(0.01))
-                                        .build())
-                                .createdAt(createdAt)
-                                .build())
-                        .build())
-                .build();
-
-        OutAction outAction2 = ActionSendMsg.builder()
-                .mode((byte) 3)
-                .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessage.builder()
-                                .iHRDisabled(true)
-                                .bounce(true)
-                                .bounced(false)
-                                .srcAddr(MsgAddressIntStd.builder()
-                                        .workchainId(contract.getAddress().wc)
-                                        .address(contract.getAddress().toBigInteger())
-                                        .build())
-                                .dstAddr(MsgAddressIntStd.builder()
-                                        .workchainId(destinationAddress2.wc)
-                                        .address(destinationAddress2.toBigInteger())
-                                        .build())
-                                .value(CurrencyCollection.builder()
-                                        .coins(Utils.toNano(0.02))
-                                        .build())
-                                .createdAt(createdAt)
-                                .build())
-                        .build())
-                .build();
-
-        OutAction outAction3 = ActionSendMsg.builder()
-                .mode((byte) 3)
-                .outMsg(MessageRelaxed.builder()
-                        .info(InternalMessage.builder()
-                                .iHRDisabled(true)
-                                .bounce(true)
-                                .bounced(false)
-                                .srcAddr(MsgAddressIntStd.builder()
-                                        .workchainId(contract.getAddress().wc)
-                                        .address(contract.getAddress().toBigInteger())
-                                        .build())
-                                .dstAddr(MsgAddressIntStd.builder()
-                                        .workchainId(destinationAddress3.wc)
-                                        .address(destinationAddress3.toBigInteger())
-                                        .build())
-                                .value(CurrencyCollection.builder()
-                                        .coins(Utils.toNano(0.03))
-                                        .build())
-                                .createdAt(createdAt)
-                                .build())
-                        .build())
-                .build();
-
-        HighloadV3InternalMessageBody highloadV3InternalMessageBody =
-                HighloadV3InternalMessageBody.builder()
-                        .queryId(BigInteger.ZERO)
-                        .actions(OutList.builder()
-                                .actions(List.of(outAction1, outAction2, outAction3))
-                                .build())
-                        .build();
+        Cell cell = create3Messages(contract, createdAt);
 
         HighloadV3Config config = HighloadV3Config
                 .builder()
                 .amount(amountToSendTotal)
-                .body(highloadV3InternalMessageBody.toCell())
+                .body(cell)
                 .createdAt(createdAt)
                 .destination(contract.getAddress()) // to this contract
                 .mode((byte) 3)
@@ -233,7 +164,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         Utils.sleep(10, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), null);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
@@ -367,5 +298,90 @@ public class TestHighloadWalletV3 extends CommonTest {
         assertThat(nqid).isEqualTo(qid.getQueryId());
         qid = HighloadQueryId.fromQueryId(qid.getQueryId());
         assertThat(nqid).isEqualTo(qid.getQueryId());
+    }
+
+    private Cell create3Messages(HighloadWalletV3 contract, long createdAt) {
+        Address destinationAddress1 = Address.of("EQAI26OclRjgcBsTNtpMxjxJPsjICEXML83p1PEobtB7QlWc");
+        Address destinationAddress2 = Address.of("EQAT9oH1KUBOvPs2tIg8hWa-_dnEOZxkLD7PACj0RyP4WfF0");
+        Address destinationAddress3 = Address.of("EQBjX1ny_NMJWKonBnszL708F0T2hls99vqEbYr_oD8cHlfv");
+
+        OutAction outAction1 = ActionSendMsg.builder()
+                .mode((byte) 3)
+                .outMsg(MessageRelaxed.builder()
+                        .info(InternalMessage.builder()
+                                .iHRDisabled(true)
+                                .bounce(true)
+                                .bounced(false)
+                                .srcAddr(MsgAddressIntStd.builder()
+                                        .workchainId(contract.getAddress().wc)
+                                        .address(contract.getAddress().toBigInteger())
+                                        .build())
+                                .dstAddr(MsgAddressIntStd.builder()
+                                        .workchainId(destinationAddress1.wc)
+                                        .address(destinationAddress1.toBigInteger())
+                                        .build())
+                                .value(CurrencyCollection.builder()
+                                        .coins(Utils.toNano(0.01))
+                                        .build())
+                                .createdAt(createdAt)
+                                .build())
+                        .build())
+                .build();
+
+        OutAction outAction2 = ActionSendMsg.builder()
+                .mode((byte) 3)
+                .outMsg(MessageRelaxed.builder()
+                        .info(InternalMessage.builder()
+                                .iHRDisabled(true)
+                                .bounce(true)
+                                .bounced(false)
+                                .srcAddr(MsgAddressIntStd.builder()
+                                        .workchainId(contract.getAddress().wc)
+                                        .address(contract.getAddress().toBigInteger())
+                                        .build())
+                                .dstAddr(MsgAddressIntStd.builder()
+                                        .workchainId(destinationAddress2.wc)
+                                        .address(destinationAddress2.toBigInteger())
+                                        .build())
+                                .value(CurrencyCollection.builder()
+                                        .coins(Utils.toNano(0.02))
+                                        .build())
+                                .createdAt(createdAt)
+                                .build())
+                        .build())
+                .build();
+
+        OutAction outAction3 = ActionSendMsg.builder()
+                .mode((byte) 3)
+                .outMsg(MessageRelaxed.builder()
+                        .info(InternalMessage.builder()
+                                .iHRDisabled(true)
+                                .bounce(true)
+                                .bounced(false)
+                                .srcAddr(MsgAddressIntStd.builder()
+                                        .workchainId(contract.getAddress().wc)
+                                        .address(contract.getAddress().toBigInteger())
+                                        .build())
+                                .dstAddr(MsgAddressIntStd.builder()
+                                        .workchainId(destinationAddress3.wc)
+                                        .address(destinationAddress3.toBigInteger())
+                                        .build())
+                                .value(CurrencyCollection.builder()
+                                        .coins(Utils.toNano(0.03))
+                                        .build())
+                                .createdAt(createdAt)
+                                .build())
+                        .build())
+                .build();
+
+        HighloadV3InternalMessageBody highloadV3InternalMessageBody =
+                HighloadV3InternalMessageBody.builder()
+                        .queryId(BigInteger.ZERO)
+                        .actions(OutList.builder()
+                                .actions(List.of(outAction1, outAction2, outAction3))
+                                .build())
+                        .build();
+
+        return highloadV3InternalMessageBody.toCell();
     }
 }

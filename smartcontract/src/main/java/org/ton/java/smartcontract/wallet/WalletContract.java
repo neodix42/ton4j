@@ -134,15 +134,6 @@ public interface WalletContract extends Contract {
                 stateInit.data);
     }
 
-    default Cell createSignedMessage(byte[] signature, Cell signingMessage) {
-        CellBuilder msg = CellBuilder.beginCell();
-
-        msg.storeBytes(signature);
-        msg.storeCell(signingMessage);
-
-        return msg.endCell();
-    }
-
     /**
      * Creates external message signed by the specified secretKey.
      * <p>
@@ -166,7 +157,10 @@ public interface WalletContract extends Contract {
         } else {
             signature = Utils.signData(getOptions().publicKey, secretKey, signingMessage.hash());
         }
-        Cell body = createSignedMessage(signature, signingMessage);
+        Cell body = CellBuilder.beginCell()
+                .storeBytes(signature)
+                .storeCell(signingMessage)
+                .endCell();
 
         Cell stateInit = null;
         Cell code = null;
