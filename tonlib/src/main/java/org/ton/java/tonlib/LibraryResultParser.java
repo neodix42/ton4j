@@ -55,10 +55,10 @@ public class LibraryResultParser {
     }
 
     private Object deserializeByType(String type, JsonElement jsonElement, JsonDeserializationContext context) {
-        return switch (type) {
-            case "smc.libraryEntry" -> context.deserialize(jsonElement, SmcLibraryEntry.class);
-            case "smc.libraryResult" -> context.deserialize(jsonElement, SmcLibraryResult.class);
-            default -> null;
-        };
+        if (type.equals("smc.libraryEntry")) {
+            return context.deserialize(jsonElement, SmcLibraryEntry.class);
+        } else if (type.equals("smc.libraryResult")) {
+            return context.deserialize(jsonElement, SmcLibraryResult.class);
+        } else return null;
     }
 }

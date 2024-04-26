@@ -22,10 +22,10 @@ public interface MsgAddressInt extends MsgAddress {
     static MsgAddressInt deserialize(CellSlice cs) {
         int magic = cs.preloadUint(2).intValue();
         switch (magic) {
-            case 0b10 -> {
+            case 0b10: {
                 return MsgAddressIntStd.deserialize(cs);
             }
-            case 0b11 -> {
+            case 0b11: {
                 return MsgAddressIntVar.deserialize(cs);
             }
         }

@@ -69,15 +69,27 @@ public class LiteClient {
         public LiteClient build() {
 
             try {
-                String liteClientName = switch (Utils.getOS()) {
-                    case LINUX -> "lite-client-linux-x86-64";
-                    case LINUX_ARM -> "lite-client-linux-arm64";
-                    case WINDOWS -> "lite-client.exe";
-                    case WINDOWS_ARM -> "lite-client.exe";
-                    case MAC -> "lite-client-mac-x86-64";
-                    case MAC_ARM64 -> "lite-client-mac-arm64";
-                    case UNKNOWN -> throw new Error("Operating system is not supported!");
-                };
+                String liteClientName;
+                switch (Utils.getOS()) {
+                    case LINUX:
+                        liteClientName = "lite-client-linux-x86-64";
+                        break;
+                    case LINUX_ARM:
+                        liteClientName = "lite-client-linux-arm64";
+                        break;
+                    case WINDOWS:
+                    case WINDOWS_ARM:
+                        liteClientName = "lite-client.exe";
+                        break;
+                    case MAC:
+                        liteClientName = "lite-client-mac-x86-64";
+                        break;
+                    case MAC_ARM64:
+                        liteClientName = "lite-client-mac-arm64";
+                        break;
+                    default:
+                        throw new Error("Operating system is not supported!");
+                }
 
                 if (isNull(super.pathToLiteClientBinary)) {
                     super.pathToLiteClientBinary = liteClientName;
@@ -110,11 +122,10 @@ public class LiteClient {
                     }
                 }
 
-                System.out.printf("""
-                                Java Lite-Client configuration:
-                                Location: %s
-                                Path to global config: %s
-                                Testnet: %s%n""",
+                System.out.printf("Java Lite-Client configuration:\n" +
+                                "Location: %s\n" +
+                                "Path to global config: %s\n" +
+                                "Testnet: %s%n",
                         super.pathToLiteClientBinary,
                         super.pathToGlobalConfig,
                         super.testnet);

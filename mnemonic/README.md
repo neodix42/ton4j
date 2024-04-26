@@ -3,31 +3,33 @@
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
 ```xml
+
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>mnemonic</artifactId>
-    <version>0.3.0</version>
+    <version>0.3.1</version>
 </dependency>
 ```
 
 ## Jitpack
 
 ```xml
+
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>mnemonic</artifactId>
-    <version>0.3.0</version>
+    <version>0.3.1</version>
 </dependency>
 ```
 
 ## Usage example
 
 ```java
-List<String> mnemonic = Mnemonic.generate(24, pwd);
-String mnemonicPhrase = String.join(" ", mnemonic);
+List<String> mnemonic=Mnemonic.generate(24,pwd);
+        String mnemonicPhrase=String.join(" ",mnemonic);
 
 //result
-<<mnemonicPhrase containing 24 random words>>
+        <<mnemonicPhrase containing 24random words>>
 ```
 
 More examples on how to construct [Mnemonic](../mnemonic/src/main/java/org/ton/java/mnemonic/Mnemonic.java) can be

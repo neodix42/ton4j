@@ -123,13 +123,26 @@ public class RunResultParser {
     }
 
     private Object deserializeByType(String type, JsonElement jsonElement, JsonDeserializationContext context) {
-        return switch (type) {
-            case "tvm.stackEntryNumber" -> context.deserialize(jsonElement, TvmStackEntryNumber.class);
-            case "tvm.stackEntryCell" -> context.deserialize(jsonElement, TvmStackEntryCell.class);
-            case "tvm.stackEntrySlice" -> context.deserialize(jsonElement, TvmStackEntrySlice.class);
-            case "tvm.stackEntryList" -> context.deserialize(jsonElement, TvmStackEntryList.class);
-            case "tvm.stackEntryTuple" -> context.deserialize(jsonElement, TvmStackEntryTuple.class);
-            default -> null;
-        };
+        Class<?> clazz;
+        switch (type) {
+            case "tvm.stackEntryNumber":
+                clazz = TvmStackEntryNumber.class;
+                break;
+            case "tvm.stackEntryCell":
+                clazz = TvmStackEntryCell.class;
+                break;
+            case "tvm.stackEntrySlice":
+                clazz = TvmStackEntrySlice.class;
+                break;
+            case "tvm.stackEntryList":
+                clazz = TvmStackEntryList.class;
+                break;
+            case "tvm.stackEntryTuple":
+                clazz = TvmStackEntryTuple.class;
+                break;
+            default:
+                clazz = null;
+        }
+        return clazz != null ? context.deserialize(jsonElement, clazz) : null;
     }
 }

@@ -44,15 +44,32 @@ public class TxEmulator {
     private static class CustomEmulatorBuilder extends TxEmulatorBuilder {
         @Override
         public TxEmulator build() {
-            String emulatorName = switch (Utils.getOS()) {
-                case LINUX -> "libemulator-linux-x86-64.so";
-                case LINUX_ARM -> "libemulator-linux-arm64.so";
-                case WINDOWS -> "emulator.dll";
-                case WINDOWS_ARM -> "emulator-arm.dll";
-                case MAC -> "libemulator-mac-x86-64.dylib";
-                case MAC_ARM64 -> "libemulator-mac-arm64.dylib";
-                case UNKNOWN -> throw new Error("Operating system is not supported!");
-            };
+            String emulatorName;
+            Utils.OS os = Utils.getOS();
+            switch (os) {
+                case LINUX:
+                    emulatorName = "libemulator-linux-x86-64.so";
+                    break;
+                case LINUX_ARM:
+                    emulatorName = "libemulator-linux-arm64.so";
+                    break;
+                case WINDOWS:
+                    emulatorName = "emulator.dll";
+                    break;
+                case WINDOWS_ARM:
+                    emulatorName = "emulator-arm.dll";
+                    break;
+                case MAC:
+                    emulatorName = "libemulator-mac-x86-64.dylib";
+                    break;
+                case MAC_ARM64:
+                    emulatorName = "libemulator-mac-arm64.dylib";
+                    break;
+                case UNKNOWN:
+                    throw new Error("Operating system is not supported!");
+                default:
+                    throw new IllegalArgumentException("Unknown operating system: " + os);
+            }
 
             if (isNull(super.pathToEmulatorSharedLib)) {
                 super.pathToEmulatorSharedLib = emulatorName;
@@ -71,10 +88,9 @@ public class TxEmulator {
                 throw new Error("Can't create emulator instance");
             }
 
-            System.out.printf("""
-                            Java TON Emulator configuration:
-                            Location: %s
-                            Verbosity level: %s""",
+            System.out.printf("Java TON Emulator configuration:\n" +
+                            "Location: %s\n" +
+                            "Verbosity level: %s",
                     super.pathToEmulatorSharedLib,
                     super.verbosityLevel);
             return super.build();

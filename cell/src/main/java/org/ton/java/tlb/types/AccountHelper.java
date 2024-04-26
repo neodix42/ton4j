@@ -33,10 +33,14 @@ public class AccountHelper {
         }
         long hash;
         switch (name) {
-            case "recv_internal", "main", "recv_external", "run_ticktock" -> {
+            case "recv_internal":
+            case "main":
+            case "recv_external":
+            case "run_ticktock": {
                 return false;
             }
-            default -> hash = methodNameHash(name);
+            default:
+                hash = methodNameHash(name);
         }
 
         CellSlice cs = CellSlice.beginParse(code);

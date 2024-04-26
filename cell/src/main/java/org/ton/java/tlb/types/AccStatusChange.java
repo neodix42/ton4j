@@ -17,13 +17,13 @@ public class AccStatusChange {
 
     public Cell toCell() {
         switch (type) {
-            case "UNCHANGED" -> {
+            case "UNCHANGED": {
                 return CellBuilder.beginCell().storeUint(0b0, 1).endCell();
             }
-            case "FROZEN" -> {
+            case "FROZEN": {
                 return CellBuilder.beginCell().storeUint(0b01, 2).endCell();
             }
-            case "DELETED" -> {
+            case "DELETED": {
                 return CellBuilder.beginCell().storeUint(0b10, 2).endCell();
             }
         }

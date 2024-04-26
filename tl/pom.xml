@@ -5,14 +5,14 @@
     <parent>
         <artifactId>top</artifactId>
         <groupId>io.github.neodix42</groupId>
-        <version>0.3.0</version>
+        <version>0.3.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
     </properties>
 
 
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>cell</artifactId>
-            <version>0.3.0</version>
+            <version>0.3.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

@@ -34,7 +34,7 @@ public class TransactionDescription {
     public static TransactionDescription deserialize(CellSlice cs) {
         int pfx = cs.preloadUint(3).intValue();
         switch (pfx) {
-            case 0b000 -> {
+            case 0b000: {
                 boolean isStorage = cs.preloadBit();
                 if (isStorage) {
                     TransactionDescriptionStorage desc = TransactionDescriptionStorage.deserialize(cs);
@@ -43,11 +43,11 @@ public class TransactionDescription {
                 TransactionDescriptionOrdinary descOrdinary = TransactionDescriptionOrdinary.deserialize(cs); // skipped was true
                 return TransactionDescription.builder().description(descOrdinary).build();
             }
-            case 0b001 -> {
+            case 0b001: {
                 TransactionDescriptionTickTock descTickTock = TransactionDescriptionTickTock.deserialize(cs); // skipped was true
                 return TransactionDescription.builder().description(descTickTock).build();
             }
-            case 0b010 -> {
+            case 0b010: {
                 boolean isInstall = cs.preloadBit();
                 if (isInstall) {
                     TransactionDescriptionSplitInstall descSplit = TransactionDescriptionSplitInstall.deserialize(cs); // skipped was true
@@ -56,7 +56,7 @@ public class TransactionDescription {
                 TransactionDescriptionSplitPrepare descSplitPrepare = TransactionDescriptionSplitPrepare.deserialize(cs); // skipped was true
                 return TransactionDescription.builder().description(descSplitPrepare).build();
             }
-            case 0b011 -> {
+            case 0b011: {
                 boolean isInstall = cs.preloadBit();
                 if (isInstall) {
                     TransactionDescriptionMergeInstall descMerge = TransactionDescriptionMergeInstall.deserialize(cs); // skipped was true

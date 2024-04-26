@@ -37,29 +37,71 @@ public class Wallet {
 
     public <T extends Contract> T create() {
 
-        Contract result = switch (walletVersion) {
-            case V1R1 -> new WalletV1ContractR1(options);
-            case V1R2 -> new WalletV1ContractR2(options);
-            case V1R3 -> new WalletV1ContractR3(options);
-            case V2R1 -> new WalletV2ContractR1(options);
-            case V2R2 -> new WalletV2ContractR2(options);
-            case V3R1 -> new WalletV3ContractR1(options);
-            case V3R2 -> new WalletV3ContractR2(options);
-            case V4R2 -> new WalletV4ContractR2(options);
-            case lockup -> new LockupWalletV1(options);
-            case dnsCollection -> new DnsCollection(options);
-            case dnsItem -> new DnsItem(options);
-            case jettonMinter -> new JettonMinter(options);
-            case jettonWallet -> new JettonWallet(options);
-            case nftCollection -> new NftCollection(options);
-            case payments -> new PaymentChannel(options);
-            case highload -> new HighloadWallet(options);
-            case highloadV3 -> new HighloadWalletV3(options);
-            case multisig -> new MultisigWallet(options);
-            case master -> throw new Error("not implemented");
-            case config -> throw new Error("not implemented");
-            case unidentified -> throw new Error("not implemented");
-        };
+        Contract result;
+        switch (walletVersion) {
+            case V1R1:
+                result = new WalletV1ContractR1(options);
+                break;
+            case V1R2:
+                result = new WalletV1ContractR2(options);
+                break;
+            case V1R3:
+                result = new WalletV1ContractR3(options);
+                break;
+            case V2R1:
+                result = new WalletV2ContractR1(options);
+                break;
+            case V2R2:
+                result = new WalletV2ContractR2(options);
+                break;
+            case V3R1:
+                result = new WalletV3ContractR1(options);
+                break;
+            case V3R2:
+                result = new WalletV3ContractR2(options);
+                break;
+            case V4R2:
+                result = new WalletV4ContractR2(options);
+                break;
+            case lockup:
+                result = new LockupWalletV1(options);
+                break;
+            case dnsCollection:
+                result = new DnsCollection(options);
+                break;
+            case dnsItem:
+                result = new DnsItem(options);
+                break;
+            case jettonMinter:
+                result = new JettonMinter(options);
+                break;
+            case jettonWallet:
+                result = new JettonWallet(options);
+                break;
+            case nftCollection:
+                result = new NftCollection(options);
+                break;
+            case payments:
+                result = new PaymentChannel(options);
+                break;
+            case highload:
+                result = new HighloadWallet(options);
+                break;
+            case highloadV3:
+                result = new HighloadWalletV3(options);
+                break;
+            case multisig:
+                result = new MultisigWallet(options);
+                break;
+            case master:
+                throw new Error("not implemented");
+            case config:
+                throw new Error("not implemented");
+            case unidentified:
+                throw new Error("not implemented");
+            default:
+                throw new IllegalArgumentException("Unknown wallet version: " + walletVersion);
+        }
 
         return (T) result;
     }

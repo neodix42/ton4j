@@ -17,16 +17,16 @@ public class ComputeSkipReason implements ComputePhase {
 
     public Cell toCell() {
         switch (type) {
-            case "NO_STATE" -> {
+            case "NO_STATE": {
                 return CellBuilder.beginCell().storeUint(0b00, 2).endCell();
             }
-            case "BAD_STATE" -> {
+            case "BAD_STATE": {
                 return CellBuilder.beginCell().storeUint(0b01, 2).endCell();
             }
-            case "NO_GAS" -> {
+            case "NO_GAS": {
                 return CellBuilder.beginCell().storeUint(0b10, 2).endCell();
             }
-            case "SUSPENDED" -> {
+            case "SUSPENDED": {
                 return CellBuilder.beginCell().storeUint(0b110, 3).endCell();
             }
         }
@@ -37,16 +37,16 @@ public class ComputeSkipReason implements ComputePhase {
         int skipReasonFlag = cs.loadUint(2).intValue();
 
         switch (skipReasonFlag) {
-            case 0b00 -> {
+            case 0b00: {
                 return ComputeSkipReason.builder().type("NO_STATE").build();
             }
-            case 0b01 -> {
+            case 0b01: {
                 return ComputeSkipReason.builder().type("BAD_STATE").build();
             }
-            case 0b10 -> {
+            case 0b10: {
                 return ComputeSkipReason.builder().type("NO_GAS").build();
             }
-            case 0b11 -> {
+            case 0b11: {
                 boolean isNotSuspended = cs.loadBit();
                 if (!isNotSuspended) {
                     return ComputeSkipReason.builder().type("SUSPENDED").build();

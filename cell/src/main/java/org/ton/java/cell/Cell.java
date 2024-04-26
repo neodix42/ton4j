@@ -132,14 +132,20 @@ public class Cell {
     }
 
     public static CellType toCellType(int cellType) {
-        return switch (cellType) {
-            case -1 -> ORDINARY;
-            case 1 -> CellType.PRUNED_BRANCH;
-            case 2 -> CellType.LIBRARY;
-            case 3 -> CellType.MERKLE_PROOF;
-            case 4 -> CellType.MERKLE_UPDATE;
-            default -> UNKNOWN;
-        };
+        switch (cellType) {
+            case -1:
+                return CellType.ORDINARY;
+            case 1:
+                return CellType.PRUNED_BRANCH;
+            case 2:
+                return CellType.LIBRARY;
+            case 3:
+                return CellType.MERKLE_PROOF;
+            case 4:
+                return CellType.MERKLE_UPDATE;
+            default:
+                return CellType.UNKNOWN;
+        }
     }
 
     public LevelMask resolveMask() {

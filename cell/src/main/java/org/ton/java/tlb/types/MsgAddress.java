@@ -26,16 +26,16 @@ public interface MsgAddress {
 
         int magic = cs.preloadUint(2).intValue();
         switch (magic) {
-            case 0b00 -> {
+            case 0b00: {
                 return MsgAddressExtNone.builder().build();
             }
-            case 0b01 -> {
+            case 0b01: {
                 return MsgAddressExternal.deserialize(cs);
             }
-            case 0b10 -> {
+            case 0b10: {
                 return MsgAddressIntStd.deserialize(cs);
             }
-            case 0b11 -> {
+            case 0b11: {
                 return MsgAddressIntVar.deserialize(cs);
             }
         }

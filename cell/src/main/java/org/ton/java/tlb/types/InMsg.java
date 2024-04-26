@@ -22,13 +22,13 @@ public interface InMsg {
     public static InMsg deserialize(CellSlice cs) {
         int inMsgFlag = cs.loadUint(3).intValue();
         switch (inMsgFlag) {
-            case 0b000 -> {
+            case 0b000: {
                 return InMsgImportExt.builder()
                         .msg(Message.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .build();
             }
-            case 0b010 -> {
+            case 0b010: {
                 return InMsgImportIhr.builder()
                         .msg(Message.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
@@ -36,35 +36,35 @@ public interface InMsg {
                         .proofCreated(cs.loadRef())
                         .build();
             }
-            case 0b011 -> {
+            case 0b011: {
                 return InMsgImportImm.builder()
                         .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .fwdFee(cs.loadCoins())
                         .build();
             }
-            case 0b100 -> {
+            case 0b100: {
                 return InMsgImportFin.builder()
                         .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .fwdFee(cs.loadCoins())
                         .build();
             }
-            case 0b101 -> {
+            case 0b101: {
                 return InMsgImportTr.builder()
                         .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .transitFee(cs.loadCoins())
                         .build();
             }
-            case 0b110 -> {
+            case 0b110: {
                 return InMsgDiscardFin.builder()
                         .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .transactionId(cs.loadUint(64))
                         .fwdFee(cs.loadCoins())
                         .build();
             }
-            case 0b111 -> {
+            case 0b111: {
                 return InMsgDiscardTr.builder()
                         .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .transactionId(cs.loadUint(64))

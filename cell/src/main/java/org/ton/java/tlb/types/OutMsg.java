@@ -34,44 +34,44 @@ public interface OutMsg {
     static OutMsg deserialize(CellSlice cs) {
         int outMsgFlag = cs.loadUint(3).intValue();
         switch (outMsgFlag) {
-            case 0b000 -> {
+            case 0b000: {
                 return OutMsgExt.builder()
                         .msg(Message.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .build();
             }
-            case 0b010 -> {
+            case 0b010: {
                 return OutMsgImm.builder()
                         .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .reimport(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .build();
             }
-            case 0b001 -> {
+            case 0b001: {
                 return OutMsgNew.builder()
                         .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .build();
             }
-            case 0b011 -> {
+            case 0b011: {
                 return OutMsgTr.builder()
                         .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .imported(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .build();
             }
-            case 0b111 -> {
+            case 0b111: {
                 return OutMsgTrReq.builder()
                         .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .imported(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .build();
             }
-            case 0b100 -> {
+            case 0b100: {
                 return OutMsgDeqImm.builder()
                         .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .reimport(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
                         .build();
             }
-            case 0b110 -> {
+            case 0b110: {
                 boolean outMsgSubFlag = cs.loadBit();
                 if (outMsgSubFlag) {
                     return OutMsgDeqShort.builder()

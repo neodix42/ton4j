@@ -115,15 +115,29 @@ public class Tonlib {
         public Tonlib build() {
 
             try {
-                String tonlibName = switch (Utils.getOS()) {
-                    case LINUX -> "tonlibjson.so";
-                    case LINUX_ARM -> "tonlibjson-arm.so";
-                    case WINDOWS -> "tonlibjson.dll";
-                    case WINDOWS_ARM -> "tonlibjson-arm.dll";
-                    case MAC -> "tonlibjson.dylib";
-                    case MAC_ARM64 -> "tonlibjson-arm.dylib";
-                    case UNKNOWN -> throw new Error("Operating system is not supported!");
-                };
+                String tonlibName;
+                switch (Utils.getOS()) {
+                    case LINUX:
+                        tonlibName = "tonlibjson.so";
+                        break;
+                    case LINUX_ARM:
+                        tonlibName = "tonlibjson-arm.so";
+                        break;
+                    case WINDOWS:
+                        tonlibName = "tonlibjson.dll";
+                        break;
+                    case WINDOWS_ARM:
+                        tonlibName = "tonlibjson-arm.dll";
+                        break;
+                    case MAC:
+                        tonlibName = "tonlibjson.dylib";
+                        break;
+                    case MAC_ARM64:
+                        tonlibName = "tonlibjson-arm.dylib";
+                        break;
+                    default:
+                        throw new Error("Operating system is not supported!");
+                }
 
                 if (isNull(super.pathToTonlibSharedLib)) {
                     super.pathToTonlibSharedLib = tonlibName;
@@ -186,22 +200,29 @@ public class Tonlib {
                 super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
                 super.tonlib = super.tonlibJson.tonlib_client_json_create();
 
-                System.out.printf("""
-                                Java Tonlib configuration:
-                                Location: %s
-                                Verbosity level: %s (%s)
-                                Keystore in memory: %s
-                                Keystore path: %s
-                                Path to global config: %s
-                                Global config as string: %s
-                                Ignore cache: %s
-                                Testnet: %s
-                                Receive timeout: %s seconds
-                                Receive retry times: %s%n""",
-                        super.pathToTonlibSharedLib, super.verbosityLevel, super.verbosityLevel.ordinal(),
-                        super.keystoreInMemory, super.keystorePath, super.pathToGlobalConfig,
-                        isNull(super.globalConfigAsString) ? "" : super.globalConfigAsString.substring(0, 33), super.ignoreCache,
-                        super.testnet, super.receiveTimeout, super.receiveRetryTimes);
+                System.out.printf("Java Tonlib configuration:\n" +
+                                "Location: %s\n" +
+                                "Verbosity level: %s (%s)\n" +
+                                "Keystore in memory: %s\n" +
+                                "Keystore path: %s\n" +
+                                "Path to global config: %s\n" +
+                                "Global config as string: %s\n" +
+                                "Ignore cache: %s\n" +
+                                "Testnet: %s\n" +
+                                "Receive timeout: %s seconds\n" +
+                                "Receive retry times: %s%n",
+                        super.pathToTonlibSharedLib,
+                        super.verbosityLevel,
+                        super.verbosityLevel.ordinal(),
+                        super.keystoreInMemory,
+                        super.keystorePath,
+                        super.pathToGlobalConfig,
+                        (super.globalConfigAsString != null && super.globalConfigAsString.length() > 33) ?
+                                super.globalConfigAsString.substring(0, 33) : "",
+                        super.ignoreCache,
+                        super.testnet,
+                        super.receiveTimeout,
+                        super.receiveRetryTimes);
 
                 VerbosityLevelQuery verbosityLevelQuery = VerbosityLevelQuery.builder().new_verbosity_level(super.verbosityLevel.ordinal()).build();
 

@@ -6,7 +6,6 @@ import org.ton.java.bitstring.BitString;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -447,7 +446,13 @@ public class CellSlice {
         while (nonNull(ref)) {
             try {
                 BitString bitString = ref.loadBits(ref.bits.getLength());
-                result.addAll(Arrays.stream(bitString.toUintArray()).boxed().toList());
+
+                int[] uintArray = bitString.toUintArray();
+                List<Integer> resultList = new ArrayList<>(uintArray.length);
+                for (int value : uintArray) {
+                    resultList.add(value);
+                }
+                result.addAll(resultList);
 
                 if (ref.refs.size() > 1) {
                     throw new Error("more than one ref, it is not snake string");

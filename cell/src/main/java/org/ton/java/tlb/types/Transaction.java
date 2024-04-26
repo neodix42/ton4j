@@ -129,16 +129,16 @@ public class Transaction {
 
     public static Cell serializeAccountState(AccountStates state) {
         switch (state) {
-            case UNINIT -> {
+            case UNINIT: {
                 return CellBuilder.beginCell().storeUint(0, 2).endCell();
             }
-            case FROZEN -> {
+            case FROZEN: {
                 return CellBuilder.beginCell().storeUint(1, 2).endCell();
             }
-            case ACTIVE -> {
+            case ACTIVE: {
                 return CellBuilder.beginCell().storeUint(2, 2).endCell();
             }
-            case NON_EXIST -> {
+            case NON_EXIST: {
                 return CellBuilder.beginCell().storeUint(3, 2).endCell();
             }
         }
@@ -147,16 +147,16 @@ public class Transaction {
 
     public static AccountStates deserializeAccountState(byte state) {
         switch (state) {
-            case 0 -> {
+            case 0: {
                 return AccountStates.UNINIT;
             }
-            case 1 -> {
+            case 1: {
                 return AccountStates.FROZEN;
             }
-            case 2 -> {
+            case 2: {
                 return AccountStates.ACTIVE;
             }
-            case 3 -> {
+            case 3: {
                 return AccountStates.NON_EXIST;
             }
         }

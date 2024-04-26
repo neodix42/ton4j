@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.3.0</version>
+        <version>0.3.1</version>
     </parent>
 
     <artifactId>emulator</artifactId>
@@ -37,8 +37,8 @@
     </scm>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -88,13 +88,13 @@
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>tonlib</artifactId>
-            <version>0.3.0</version>
+            <version>0.3.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>liteclient</artifactId>
-            <version>0.3.0</version>
+            <version>0.3.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

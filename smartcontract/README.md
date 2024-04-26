@@ -7,7 +7,7 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>0.3.0</version>
+    <version>0.3.1</version>
 </dependency>
 ```
 
@@ -18,7 +18,7 @@
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>0.3.0</version>
+    <version>0.3.1</version>
 </dependency>
 ```
 
@@ -31,21 +31,31 @@ Currently, following wallet versions and revisions are supported:
 * V1R1
 * V1R2 [(see usage example)](v1r2-example.md)
 *
+
 V1R3 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV1R3DeployTransfer.java)
+
 *
+
 v2R1 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV2R1DeployTransferShort.java)
+
 *
+
 v2R2 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV2R2DeployTransferShort.java)
+
 * v3R1
 *
+
 v3R2 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV3R2DeployTransferShort.java)
+
 * v4R1
 * v4R2 - subscription, plugins [(see usage example)](plugin-example.md)
 * Lockup -
   restricted [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestLockupWalletDeployTransfer.java)
 * Highload [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestWalletV2Highload.java)
 *
+
 Highload-V3 [(see usage example)](./src/test/java/org/ton/java/smartcontract/integrationtests/TestHighloadWalletV3.java)
+
 * Dns [(see usage example)](dns-example.md)
 * Jetton [(see usage example)](jetton-example.md)
 * NFT [(see usage example)](nft-example.md)
