@@ -16,6 +16,7 @@ import java.util.List;
 public class RawTransaction implements Serializable {
     @SerializedName("@type")
     final String type = "raw.transaction";
+    AccountAddressOnly address;
     long utime;
     String data;
     LastTransactionId transaction_id;

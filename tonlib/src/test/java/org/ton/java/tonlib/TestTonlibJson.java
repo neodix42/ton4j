@@ -3,6 +3,7 @@ package org.ton.java.tonlib;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
+import com.google.gson.ToNumberPolicy;
 import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +76,48 @@ public class TestTonlibJson {
     }
 
     @Test
+    public void testTonlibBinance() {
+        String jsonStr = "{\n" +
+                "  \"@type\": \"raw.transaction\",\n" +
+                "  \"address\": {\n" +
+                "    \"@type\": \"accountAddress\",\n" +
+                "    \"account_address\": \"EQBz3_70feFih5E01v0OcSpkvyEIhx1eHgLA0HlMPQsgQGmP\"\n" +
+                "  },\n" +
+                "  \"utime\": 1713972338,\n" +
+                "  \"data\": \"te6cckECBwEAAUQAA7N3Pf/vR94WKHkTTW/Q5xKmS/IQiHHV4eAsDQeUw9CyBAAAAp6OhjtQN2jMklfnO9LxPXFbjqDp9IvuIDRTxgFac32eT1Ds006gAAKd5v6LRBZikkcgABRDz4gBAgMBAaAEAIJyW4H+/LOPKGSA6Vhw1dhiPd131YpXg5zml3MagJH+JtGFRGstiwE+u9t1wjhb/KrAXD69wHKO+igFQfxCgu0krgANDIefCEBJIAGrSAAWU77K4wVl2vwE1q2cgyokyvyH5DGaox54ZLeNVYme3wAc9/+9H3hYoeRNNb9DnEqZL8hCIcdXh4CwNB5TD0LIEAQEBg1YsgAAU9HQx2oEzFJI5MAFAWZzYtCcVG3k7w3Qd2dQJUC+QAgBd2QewLhHhs+/JScWSKJg9H1P4vlTREsfiKMhP5Q+CUcGAAgAAAAAVG5KZw==\",\n" +
+                "  \"transaction_id\": {\n" +
+                "    \"@type\": \"internal.transactionId\",\n" +
+                "    \"lt\": \"46080308000003\",\n" +
+                "    \"hash\": \"87b1Dqy7BK65B1xeqDv4ZOn1BZIZTg4JH+LWz//YP00=\"\n" +
+                "  },\n" +
+                "  \"fee\": \"7804\",\n" +
+                "  \"storage_fee\": \"7804\",\n" +
+                "  \"other_fee\": \"0\",\n" +
+                "  \"in_msg\": {\n" +
+                "    \"@type\": \"raw.message\",\n" +
+                "    \"source\": \"EQALKd9lcYKy7X4Ca1bOQZUSZX5D8hjNUY88MlvGqsTPb6H4\",\n" +
+                "    \"destination\": \"EQBz3_70feFih5E01v0OcSpkvyEIhx1eHgLA0HlMPQsgQGmP\",\n" +
+                "    \"value\": \"1\",\n" +
+                "    \"fwd_fee\": \"437337\",\n" +
+                "    \"ihr_fee\": \"0\",\n" +
+                "    \"created_lt\": \"46080308000002\",\n" +
+                "    \"body_hash\": \"ioJkcvk5tYHCq/kQmFtTFOKKmMtW+kX/UBAkMeM6kMs=\",\n" +
+                "    \"msg_data\": {\n" +
+                "      \"@type\": \"msg.dataRaw\",\n" +
+                "      \"body\": \"te6cckEBAgEAPAABZnNi0JxUbeTvDdB3Z1AlQL5ACAF3ZB7AuEeGz78lJxZIomD0fU/i+VNESx+IoyE/lD4JRwEACAAAAAAv9IhO\",\n" +
+                "      \"init_state\": \"\"\n" +
+                "    },\n" +
+                "    \"message\": \"c2LQnFRt5O8N0HdnUCVAvkAIAXdkHsC4R4bPvyUnFkiiYPR9T+L5U0RLH4ijIT+UPglH\\n\"\n" +
+                "  },\n" +
+                "  \"out_msgs\": []\n" +
+                "}\n";
+
+        Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
+        RawTransaction rawTransaction = gson.fromJson(jsonStr, RawTransaction.class);
+        log.info("raw {}", rawTransaction);
+    }
+
+    @Test
     public void testTonlib() {
         Tonlib tonlib = Tonlib.builder()
                 .keystoreInMemory(true)
@@ -120,12 +163,12 @@ public class TestTonlibJson {
         Map<String, RawTransactions> txs = tonlib.getAllBlockTransactions(fullblock, 100, null);
         for (Map.Entry<String, RawTransactions> entry : txs.entrySet()) {
             for (RawTransaction tx : entry.getValue().getTransactions()) {
-                if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
-                    log.info("{} <<<<< {} : {} ", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue(), 9));
+                if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().equals(""))) {
+                    log.info("{} <<<<< {} : {} ", tx.getIn_msg().getSource(), tx.getIn_msg().getDestination(), Utils.formatNanoValue(tx.getIn_msg().getValue(), 9));
                 }
                 if (nonNull(tx.getOut_msgs())) {
                     for (RawMessage msg : tx.getOut_msgs()) {
-                        log.info("{} >>>>> {} : {} ", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
+                        log.info("{} >>>>> {} : {} ", msg.getSource(), msg.getDestination(), Utils.formatNanoValue(msg.getValue()));
                     }
                 }
             }
@@ -148,12 +191,12 @@ public class TestTonlibJson {
                 log.info("lt {}, hash {}, account {}", shortTxId.getLt(), shortTxId.getHash(), acccount.toString(false));
                 RawTransactions rawTransactions = tonlib.getRawTransactions(acccount.toString(false), BigInteger.valueOf(shortTxId.getLt()), shortTxId.getHash());
                 for (RawTransaction tx : rawTransactions.getTransactions()) {
-                    if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
-                        log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
+                    if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().equals(""))) {
+                        log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource(), tx.getIn_msg().getDestination(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
                     }
                     if (nonNull(tx.getOut_msgs())) {
                         for (RawMessage msg : tx.getOut_msgs()) {
-                            log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
+                            log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource(), msg.getDestination(), Utils.formatNanoValue(msg.getValue()));
                         }
                     }
                 }
@@ -173,12 +216,12 @@ public class TestTonlibJson {
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
         for (RawTransaction tx : rawTransactions.getTransactions()) {
-            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
-                log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().equals(""))) {
+                log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource(), tx.getIn_msg().getDestination(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
             }
             if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
-                    log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
+                    log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource(), msg.getDestination(), Utils.formatNanoValue(msg.getValue()));
                 }
             }
         }
@@ -195,12 +238,12 @@ public class TestTonlibJson {
         RawTransactions rawTransactions = tonlib.getRawTransactions(address.toString(false), null, null, 3);
 
         for (RawTransaction tx : rawTransactions.getTransactions()) {
-            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
-                log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().equals(""))) {
+                log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource(), tx.getIn_msg().getDestination(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
             }
             if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
-                    log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
+                    log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource(), msg.getDestination(), Utils.formatNanoValue(msg.getValue()));
                 }
             }
         }
@@ -221,12 +264,12 @@ public class TestTonlibJson {
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
         for (RawTransaction tx : rawTransactions.getTransactions()) {
-            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
-                log.info("<<<<< {} - {} : {} ", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().equals(""))) {
+                log.info("<<<<< {} - {} : {} ", tx.getIn_msg().getSource(), tx.getIn_msg().getDestination(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
             }
             if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
-                    log.info(">>>>> {} - {} : {} ", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
+                    log.info(">>>>> {} - {} : {} ", msg.getSource(), msg.getDestination(), Utils.formatNanoValue(msg.getValue()));
                 }
             }
         }
@@ -245,7 +288,7 @@ public class TestTonlibJson {
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
         for (RawTransaction tx : rawTransactions.getTransactions()) {
-            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().equals(""))) {
 
                 String msgBodyText;
                 if (nonNull(tx.getIn_msg().getMsg_data().getBody())) {
@@ -255,7 +298,13 @@ public class TestTonlibJson {
                 } else {
                     msgBodyText = Utils.base64ToString(tx.getIn_msg().getMsg_data().getText());
                 }
-                log.info("<<<<< {} - {} : {}, msgBody cell/text {}, memo {}, memoBytes {}", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()), StringUtils.normalizeSpace(msgBodyText), tx.getIn_msg().getMessage(), Utils.bytesToHex(tx.getIn_msg().getMessageBytes()));
+                log.info("<<<<< {} - {} : {}, msgBody cell/text {}, memo {}, memoBytes {}",
+                        tx.getIn_msg().getSource(),
+                        tx.getIn_msg().getDestination(),
+                        Utils.formatNanoValue(tx.getIn_msg().getValue()),
+                        StringUtils.normalizeSpace(msgBodyText),
+                        tx.getIn_msg().getMessage(),
+                        Utils.bytesToHex(tx.getIn_msg().getMessageBytes()));
             }
             if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
@@ -267,7 +316,7 @@ public class TestTonlibJson {
 //                        msgBodyText = Utils.base64ToString(msg.getMessage());
                         msgBodyText = msg.getMessage();
                     }
-                    log.info(">>>>> {} - {} : {}, msgBody cell/text {}, memo {}, memoHex {}", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()), StringUtils.normalizeSpace(msgBodyText), msg.getMessage(), msg.getMessageHex());
+                    log.info(">>>>> {} - {} : {}, msgBody cell/text {}, memo {}, memoHex {}", msg.getSource(), msg.getDestination(), Utils.formatNanoValue(msg.getValue()), StringUtils.normalizeSpace(msgBodyText), msg.getMessage(), msg.getMessageHex());
                 }
             }
         }
@@ -288,12 +337,12 @@ public class TestTonlibJson {
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
         for (RawTransaction tx : rawTransactions.getTransactions()) {
-            if (nonNull(tx.getIn_msg()) && (StringUtils.isNoneEmpty(tx.getIn_msg().getSource().getAccount_address()))) {
-                log.info("<<<<< {} - {} : {} ", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
+            if (nonNull(tx.getIn_msg()) && (StringUtils.isNoneEmpty(tx.getIn_msg().getSource()))) {
+                log.info("<<<<< {} - {} : {} ", tx.getIn_msg().getSource(), tx.getIn_msg().getDestination(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
             }
             if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
-                    log.info(">>>>> {} - {} : {} ", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
+                    log.info(">>>>> {} - {} : {} ", msg.getSource(), msg.getDestination(), Utils.formatNanoValue(msg.getValue()));
                 }
             }
         }

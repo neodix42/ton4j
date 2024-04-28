@@ -19,8 +19,8 @@ import static java.util.Objects.nonNull;
 public class RawMessage implements Serializable {
     @SerializedName("@type")
     final String type = "raw.message";
-    AccountAddressOnly source;
-    AccountAddressOnly destination;
+    String source;
+    String destination;
     String value;
     String fwd_fee;
     String ihr_fee;

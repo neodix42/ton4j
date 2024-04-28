@@ -1063,7 +1063,8 @@ public class Tonlib {
 
                     for (RawTransaction tx : transactions.getTransactions()) {
                         RawMessage in_msg = tx.getIn_msg();
-                        String txSource = in_msg.getSource().getAccount_address();
+//                        String txSource = in_msg.getSource().getAccount_address();
+                        String txSource = in_msg.getSource();
                         if (StringUtils.isNoneEmpty(txSource) && (Address.of(txSource).toString(false).equals(source.toString(false)))) {
                             if (in_msg.getCreated_lt() == creationLt) {
                                 return tx;
@@ -1126,7 +1127,7 @@ public class Tonlib {
 
                 for (RawTransaction tx : transactions.getTransactions()) {
                     for (RawMessage out_msg : tx.getOut_msgs()) {
-                        String txDestination = out_msg.getDestination().getAccount_address();
+                        String txDestination = out_msg.getDestination();
                         if (StringUtils.isNoneEmpty(txDestination) && (Address.of(txDestination).toString(false).equals(destination.toString(false)))) {
                             if (out_msg.getCreated_lt() == creationLt) {
                                 return tx;
