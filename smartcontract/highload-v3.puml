@@ -1,0 +1,165 @@
+@startuml
+map Message {
+  info => CommonMsgInfo
+  init => StateInit
+  body => Cell
+}
+
+    map ext_in_msg_info {
+        magic => 0b10
+        srcAddr => MsgAddressExt
+        destAddr => MsgAddressInt
+        importFee => Grams
+    }
+
+map StateInit {
+   depth => Maybe (## 5)
+   tickTock => Maybe TickTock
+   code=>Maybe ^Cell
+   data=>Maybe ^Cell
+   library=>Maybe ^Cell
+}
+
+map DataCell {
+   public_key => bits256
+   subwallet_id => uint32
+   old_queries => (HashmapE 14 ^Cell)
+   queries => (HashmapE 14 ^Cell)
+   last_clean_time => uint64
+   timeout => uint22
+}
+
+map ExternalInMsgBody {
+   signature => bits512
+   MsgInner => ^Cell
+}
+
+map MsgInner {
+ subwallet_id => uint32
+ message_to_send => ^Cell
+ send_mode => uint8
+ query_id => uint64
+ created_at => uint64
+ timeout => uint22
+}
+
+map InternalMessageInfoRelaxed {
+ magic => 0b0
+ ihr_disabled => Bool
+ bounce => Bool
+ bounced => Bool
+ src => MsgAddressExtNone
+ dest => MsgAddressIntStd
+ value => CurrencyCollection
+ ihr_fee => Grams
+ fwd_fee => Grams
+ created_lt => uint64
+ created_at => uint32
+}
+
+map MessageRelaxed {
+  info => CommonMsgInfoRelaxed
+  init => StateInit (empty)
+  body => Cell (empty for deploy)
+}
+
+map MessageRelaxed_2 {
+  info => CommonMsgInfoRelaxed
+  init => StateInit (empty)
+  body => Cell
+}
+
+map InternalMessageInfoRelaxed_2 {
+ magic => 0b0
+ ihr_disabled => Bool
+ bounce => Bool
+ bounced => Bool
+ src => MsgAddressExtNone
+ dest => MsgAddressIntStd
+ value => CurrencyCollection
+ ihr_fee => Grams
+ fwd_fee => Grams
+ created_lt => uint64
+ created_at => uint32
+}
+
+map BulkInternalTransfer {
+  internal_transfer => 0xae42e5a4
+  query_id =>uint64
+  actions  => ^(OutList n)
+}
+
+map OutAction {
+  action_send_msg => 0x0ec3c86d
+  mode => uint8
+  out_msg => ^(MessageRelaxed)
+}
+
+map MessageRelaxed_3 {
+  info => CommonMsgInfoRelaxed
+  init => StateInit (empty)
+  body => Cell (empty)
+}
+
+map InternalMessageInfoRelaxed_3 {
+ magic => 0b0
+ ihr_disabled => Bool
+ bounce => Bool
+ bounced => Bool
+ src => MsgAddressExtNone
+ dest => MsgAddressIntStd
+ value => CurrencyCollection
+ ihr_fee => Grams
+ fwd_fee => Grams
+ created_lt => uint64
+ created_at => uint32
+}
+
+
+Message::info --> ext_in_msg_info
+Message::init --> StateInit
+StateInit::data --> DataCell
+Message::body --> ExternalInMsgBody
+ExternalInMsgBody::MsgInner --> MsgInner
+MsgInner::message_to_send  --> MessageRelaxed
+MessageRelaxed::info --> InternalMessageInfoRelaxed
+MessageRelaxed::body --> MessageRelaxed_2
+MessageRelaxed_2::info --> InternalMessageInfoRelaxed_2
+MessageRelaxed_2::body --> BulkInternalTransfer
+BulkInternalTransfer::actions --> OutAction
+OutAction::out_msg --> MessageRelaxed_3
+MessageRelaxed_3::info --> InternalMessageInfoRelaxed_3
+MessageRelaxed_3::body --> MessageRelaxed_2
+
+note right of MessageRelaxed
+  Dummy message with the empty
+  init state, if contract deployment
+  is done via external message.
+end note
+
+note right of InternalMessageInfoRelaxed
+ Dummy message with zero toncoins
+ and self dest address.
+end note
+
+note left of MessageRelaxed_2
+  Used to send toncoins.
+  Body is empty for single destination.
+end note
+
+note right of InternalMessageInfoRelaxed_2
+  In the case of bulk sending, the value
+  should be the sum of all transfers
+  defined in the body.
+end note
+
+note left of OutAction
+  List of up to 254 OutActions (recipients)
+end note
+
+note left of MessageRelaxed_3
+  Fill up the body with MessageRalaxed_2,
+  to send another 254 messages.
+end note
+
+@enduml
