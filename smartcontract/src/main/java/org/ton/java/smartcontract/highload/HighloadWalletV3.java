@@ -148,29 +148,6 @@ public class HighloadWalletV3 implements WalletContract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public ExtMessageInfo send(Tonlib tonlib, byte[] secretKey, HighloadV3Config highloadConfig) {
-        Address ownAddress = getAddress();
-
-        Cell innerMsg = createMessageInner(highloadConfig);
-
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
-                        .importFee(BigInteger.ZERO)
-                        .build())
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().publicKey, secretKey, innerMsg.hash()))
-                        .storeRef(innerMsg)
-                        .endCell())
-                .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-    }
-
     public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey, HighloadV3Config highloadConfig) {
         Address ownAddress = getAddress();
 
@@ -210,7 +187,6 @@ public class HighloadWalletV3 implements WalletContract {
 
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
-
 
     public static Cell createTextMessageBody(String text) {
         CellBuilder cb = CellBuilder.beginCell();
@@ -252,7 +228,7 @@ public class HighloadWalletV3 implements WalletContract {
 
     public Cell createMessageToSend(Address destAddress, double amount, long createdAt, TweetNaclFast.Signature.KeyPair keyPair) {
 
-        CommonMsgInfoRelaxed internalMsg = InternalMessageInfoRelaxed.builder()
+        CommonMsgInfoRelaxed internalMsgInfo = InternalMessageInfoRelaxed.builder()
                 .srcAddr(MsgAddressExtNone.builder().build())
                 .dstAddr(MsgAddressIntStd.builder()
                         .workchainId(destAddress.wc)
@@ -262,10 +238,10 @@ public class HighloadWalletV3 implements WalletContract {
                 .createdAt(createdAt)
                 .build();
 
-        Cell innerMsg = internalMsg.toCell();
+        Cell innerMsg = internalMsgInfo.toCell();
 
         return MessageRelaxed.builder()
-                .info(internalMsg)
+                .info(internalMsgInfo)
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().publicKey, keyPair.getSecretKey(), innerMsg.hash()))
                         .storeRef(innerMsg)

@@ -92,6 +92,11 @@ public class TestHighloadWalletV3 extends CommonTest {
         extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent single message");
+
+//        log.info("sending again with the same query-id causes duplicate message response");
+//        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
+//        assertThat(extMessageInfo.getError().getCode()).isZero();
+//        log.info("sent single message");
     }
 
     @Test
@@ -140,7 +145,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         int numberOfRecipients = 3;
         BigInteger amountToSendTotal = Utils.toNano(0.01 * numberOfRecipients);
 
-        Cell nMessages = createNMessages(numberOfRecipients, contract, createdAt);
+        Cell nMessages = createNMessages(numberOfRecipients, contract, createdAt, null);
 
         Cell extMsgWith3Mgs = contract.createMessagesToSend(amountToSendTotal, nMessages, createdAt);
 
@@ -201,7 +206,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         int numberOfRecipients = 200;
         BigInteger amountToSendTotal = Utils.toNano(0.01 * numberOfRecipients);
 
-        Cell nMessages = createNMessages(numberOfRecipients, contract, createdAt);
+        Cell nMessages = createNMessages(numberOfRecipients, contract, createdAt, null);
 
         Cell extMsgWith200Mgs = contract.createMessagesToSend(amountToSendTotal, nMessages, createdAt);
 
@@ -211,7 +216,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .createdAt(createdAt)
                 .build();
 
-        extMessageInfo = contract.send(tonlib, keyPair.getSecretKey(), config);
+        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent {} messages", numberOfRecipients);
     }
@@ -259,7 +264,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         Utils.sleep(30, "deploying");
 
-        Cell nMessages1 = createNMessages(220, contract, createdAt);
+        Cell nMessages1 = createNMessages(220, contract, createdAt, null);
         Cell nMessages2 = createNMessages(220, contract, createdAt, nMessages1);
         Cell nMessages3 = createNMessages(220, contract, createdAt, nMessages2);
         Cell extMsgWith400Mgs = contract.createMessagesToSend(Utils.toNano(7), nMessages3, createdAt);
@@ -270,7 +275,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .createdAt(createdAt)
                 .build();
 
-        extMessageInfo = contract.send(tonlib, keyPair.getSecretKey(), config);
+        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent {} messages", 660);
     }
@@ -297,42 +302,6 @@ public class TestHighloadWalletV3 extends CommonTest {
         assertThat(nqid).isEqualTo(qid.getQueryId());
         qid = HighloadQueryId.fromQueryId(qid.getQueryId());
         assertThat(nqid).isEqualTo(qid.getQueryId());
-    }
-
-    Cell createNMessages(int numRecipients, HighloadWalletV3 contract, long createdAt) throws NoSuchAlgorithmException {
-        List<OutAction> outActions = new ArrayList<>();
-        for (int i = 0; i < numRecipients; i++) {
-            Address destinationAddress = Address.of("0:" + Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8))));
-            log.info("dest {} is {}", i, destinationAddress.toString(true));
-            OutAction outAction = ActionSendMsg.builder()
-                    .mode((byte) 3)
-                    .outMsg(MessageRelaxed.builder()
-                            .info(InternalMessageInfoRelaxed.builder()
-                                    .bounce(false) // warning, for tests only
-                                    .srcAddr(MsgAddressIntStd.builder()
-                                            .workchainId(contract.getAddress().wc)
-                                            .address(contract.getAddress().toBigInteger())
-                                            .build())
-                                    .dstAddr(MsgAddressIntStd.builder()
-                                            .workchainId(destinationAddress.wc)
-                                            .address(destinationAddress.toBigInteger())
-                                            .build())
-                                    .value(CurrencyCollection.builder()
-                                            .coins(Utils.toNano(0.01))
-                                            .build())
-                                    .createdAt(createdAt)
-                                    .build())
-                            .build())
-                    .build();
-            outActions.add(outAction);
-        }
-
-        return HighloadV3InternalMessageBody.builder()
-                .queryId(BigInteger.ZERO)
-                .actions(OutList.builder()
-                        .actions(outActions)
-                        .build())
-                .build().toCell();
     }
 
     Cell createNMessages(int numRecipients, HighloadWalletV3 contract, long createdAt, Cell body) throws NoSuchAlgorithmException {
