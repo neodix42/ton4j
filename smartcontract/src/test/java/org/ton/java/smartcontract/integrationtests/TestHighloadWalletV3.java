@@ -95,7 +95,7 @@ public class TestHighloadWalletV3 extends CommonTest {
     }
 
     @Test
-    public void testBulkPayloadTransfer3DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
+    public void testBulkPayloadTransfer_3_DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
         tonlib = Tonlib.builder()
                 .testnet(true)
                 .ignoreCache(false)
@@ -156,7 +156,7 @@ public class TestHighloadWalletV3 extends CommonTest {
     }
 
     @Test
-    public void testBulkPayloadTransfer200DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
+    public void testBulkPayloadTransfer_200_DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
         tonlib = Tonlib.builder()
                 .testnet(true)
                 .ignoreCache(false)
@@ -217,7 +217,7 @@ public class TestHighloadWalletV3 extends CommonTest {
     }
 
     @Test
-    public void testBulkPayloadTransfer600DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
+    public void testBulkPayloadTransfer_660_DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
         tonlib = Tonlib.builder()
                 .testnet(true)
                 .ignoreCache(false)
@@ -243,7 +243,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("           raw address {}", contract.getAddress().toString(false));
 
         // top up new wallet using test-faucet-wallet
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(8));
         Utils.sleep(10, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
@@ -259,13 +259,10 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         Utils.sleep(30, "deploying");
 
-//        BigInteger amountToSendTotal = Utils.toNano(0.01 * numberOfRecipients);
-
-        Cell nMessages = createNMessages(200, contract, createdAt);
-//        Cell extMsgWith200Mgs = contract.createMessagesToSend(Utils.toNano(0.01 * 200), nMessages, createdAt);
-
-        Cell nMessages400 = createNMessages(200, contract, createdAt, nMessages);
-        Cell extMsgWith400Mgs = contract.createMessagesToSend(Utils.toNano(0.01 * 202), nMessages400, createdAt);
+        Cell nMessages1 = createNMessages(220, contract, createdAt);
+        Cell nMessages2 = createNMessages(220, contract, createdAt, nMessages1);
+        Cell nMessages3 = createNMessages(220, contract, createdAt, nMessages2);
+        Cell extMsgWith400Mgs = contract.createMessagesToSend(Utils.toNano(7), nMessages3, createdAt);
 
         config = HighloadV3Config.builder()
                 .body(extMsgWith400Mgs)
@@ -275,7 +272,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         extMessageInfo = contract.send(tonlib, keyPair.getSecretKey(), config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        log.info("sent {} messages", 400);
+        log.info("sent {} messages", 660);
     }
 
     @Test
@@ -340,7 +337,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
     Cell createNMessages(int numRecipients, HighloadWalletV3 contract, long createdAt, Cell body) throws NoSuchAlgorithmException {
         List<OutAction> outActions = new ArrayList<>();
-        for (int i = 0; i < numRecipients - 1; i++) {
+        for (int i = 0; i < numRecipients; i++) {
             Address destinationAddress = Address.of("0:" + Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8))));
             log.info("dest {} is {}", i, destinationAddress.toString(true));
             OutAction outAction = ActionSendMsg.builder()
@@ -366,7 +363,7 @@ public class TestHighloadWalletV3 extends CommonTest {
             outActions.add(outAction);
         }
 
-        if (nonNull(body)) { // one of those 200 msgs will contain internal message with new 200 recipients
+        if (nonNull(body)) { // one of those 220 msgs will contain internal message with new 200 recipients
             OutAction outAction = ActionSendMsg.builder()
                     .mode((byte) 3)
                     .outMsg(MessageRelaxed.builder()
@@ -380,11 +377,11 @@ public class TestHighloadWalletV3 extends CommonTest {
                                             .address(contract.getAddress().toBigInteger())
                                             .build())
                                     .value(CurrencyCollection.builder()
-                                            .coins(Utils.toNano(2.2))
+                                            .coins(Utils.toNano(0.01))
                                             .build())
                                     .createdAt(createdAt)
                                     .build())
-                            .body(body)
+                            .body(body) // added other 220 msgs
                             .build())
                     .build();
             outActions.add(outAction);
