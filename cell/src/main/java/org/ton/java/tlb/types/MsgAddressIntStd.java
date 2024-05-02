@@ -19,6 +19,8 @@ import static java.util.Objects.nonNull;
 /**
  * addr_std$10 anycast:(Maybe Anycast)  workchain_id:int8 address:bits256  = MsgAddressInt;
  *
+ * anycast - default is storeBit(false)
+ *
  */
 public class MsgAddressIntStd implements MsgAddressInt {
     int magic;
@@ -41,8 +43,8 @@ public class MsgAddressIntStd implements MsgAddressInt {
             result.storeBit(true);
             result.storeCell(anycast.toCell());
         }
-        result.storeInt(workchainId, 8)
-                .storeUint(address, 256);
+        result.storeInt(workchainId, 8);
+        result.storeUint(address, 256);
         return result.endCell();
     }
 

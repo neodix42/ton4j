@@ -17,8 +17,9 @@ import static java.util.Objects.isNull;
 /**
  * message$_ {X:Type}
  *   info:CommonMsgInfo
- *   init:(Maybe (Either StateInit ^StateInit))
- *   body:(Either X ^X) = Message X;
+ *   init:(Maybe (Either StateInit ^StateInit)) - default storeBit(false)
+ *   body:(Either X ^X)  - default storeBit(false)
+ *   = Message X;
  */
 public class Message {
     String msgType;

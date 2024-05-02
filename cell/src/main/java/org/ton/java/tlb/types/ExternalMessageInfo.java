@@ -10,6 +10,8 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
+
 @Builder
 @Getter
 @Setter
@@ -18,7 +20,10 @@ import java.math.BigInteger;
  ext_in_msg_info$10
  src:MsgAddressExt
  dest:MsgAddressInt
- import_fee:Grams = CommonMsgInfo;
+ import_fee:Grams - default zero
+ = CommonMsgInfo;
+
+ import_fee - default BigInteger.ZERO
  */
 public class ExternalMessageInfo implements CommonMsgInfo {
     long magic;
@@ -35,7 +40,7 @@ public class ExternalMessageInfo implements CommonMsgInfo {
                 .storeUint(0b10, 2)
                 .storeSlice(CellSlice.beginParse(srcAddr.toCell()))
                 .storeSlice(CellSlice.beginParse(dstAddr.toCell()))
-                .storeCoins(importFee);
+                .storeCoins(isNull(importFee) ? BigInteger.ZERO : importFee);
         return result.endCell();
     }
 

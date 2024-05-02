@@ -17,8 +17,9 @@ import static java.util.Objects.isNull;
 /**
  message$_ {X:Type}
  info:CommonMsgInfoRelaxed
- init:(Maybe (Either StateInit ^StateInit))
- body:(Either X ^X) = MessageRelaxed X;
+ init:(Maybe (Either StateInit ^StateInit)) - default storeBit(false)
+ body:(Either X ^X) - default storeBit(false)
+ = MessageRelaxed X;
  */
 public class MessageRelaxed {
     CommonMsgInfoRelaxed info;

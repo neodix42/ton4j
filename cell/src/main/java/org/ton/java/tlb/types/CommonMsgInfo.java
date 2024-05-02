@@ -36,7 +36,7 @@ public interface CommonMsgInfo {
     static CommonMsgInfo deserialize(CellSlice cs) {
         boolean isExternal = cs.preloadBit();
         if (!isExternal) {
-            return InternalMessage.deserialize(cs);
+            return InternalMessageInfo.deserialize(cs);
         } else {
             boolean isOut = cs.preloadBitAt(2);
             if (isOut) {

@@ -5,12 +5,12 @@ map Message {
   body => Cell
 }
 
-    map ext_in_msg_info {
-        magic => 0b10
-        srcAddr => MsgAddressExt
-        destAddr => MsgAddressInt
-        importFee => Grams
-    }
+map ext_in_msg_info {
+    magic => 0b10
+    srcAddr => MsgAddressExt
+    destAddr => MsgAddressInt
+    importFee => Grams
+}
 
 map StateInit {
    depth => Maybe (## 5)
@@ -129,7 +129,11 @@ MessageRelaxed_2::body --> BulkInternalTransfer
 BulkInternalTransfer::actions --> OutAction
 OutAction::out_msg --> MessageRelaxed_3
 MessageRelaxed_3::info --> InternalMessageInfoRelaxed_3
-MessageRelaxed_3::body --> MessageRelaxed_2
+MessageRelaxed_3::body --> BulkInternalTransfer
+
+note right of ExternalInMsgBody
+  recv_external()
+end note
 
 note right of MessageRelaxed
   Dummy message with the empty

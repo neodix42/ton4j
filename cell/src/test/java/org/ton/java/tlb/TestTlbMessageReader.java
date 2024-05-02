@@ -22,13 +22,13 @@ public class TestTlbMessageReader {
     @Test
     public void testCornerInternalMessage() {
         Cell c = CellBuilder.beginCell().fromBoc("b5ee9c724101020100860001b36800bf4c6bdca25797e55d700c1a5448e2af5d1ac16f9a9628719a4e1eb2b44d85e33fd104a366f6fb17799871f82e00e4f2eb8ae6aaf6d3e0b3fb346cd0208e23725e14094ba15d20071f12260000446ee17a9b0cc8c028d8c001004d8002b374733831aac3455708e8f1d2c7f129540b982d3a5de8325bf781083a8a3d2a04a7f943813277f3ea").endCell();
-        InternalMessage internalMessage = InternalMessage.deserialize(CellSlice.beginParse(c));
-        log.info("internalMessage {}", internalMessage);
-        assertThat(internalMessage.isIHRDisabled()).isTrue();
-        assertThat(internalMessage.getValue().getCoins()).isEqualTo(BigInteger.valueOf(9980893000L));
-        assertThat(internalMessage.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
-        assertThat(internalMessage.getCreatedAt()).isEqualTo(1684018284L);
-        assertThat(internalMessage.getCreatedLt()).isEqualTo(BigInteger.valueOf(37621510000006L));
+        InternalMessageInfo internalMessageInfo = InternalMessageInfo.deserialize(CellSlice.beginParse(c));
+        log.info("internalMessage {}", internalMessageInfo);
+        assertThat(internalMessageInfo.isIHRDisabled()).isTrue();
+        assertThat(internalMessageInfo.getValue().getCoins()).isEqualTo(BigInteger.valueOf(9980893000L));
+        assertThat(internalMessageInfo.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
+        assertThat(internalMessageInfo.getCreatedAt()).isEqualTo(1684018284L);
+        assertThat(internalMessageInfo.getCreatedLt()).isEqualTo(BigInteger.valueOf(37621510000006L));
         //run golang test and compare
     }
 
@@ -37,12 +37,12 @@ public class TestTlbMessageReader {
         Cell c = CellBuilder.beginCell().fromBoc("b5ee9c724101020100860001b36800bf4c6bdca25797e55d700c1a5448e2af5d1ac16f9a9628719a4e1eb2b44d85e33fd104a366f6fb17799871f82e00e4f2eb8ae6aaf6d3e0b3fb346cd0208e23725e14094ba15d20071f12260000446ee17a9b0cc8c028d8c001004d8002b374733831aac3455708e8f1d2c7f129540b982d3a5de8325bf781083a8a3d2a04a7f943813277f3ea").endCell();
         Message message = Message.deserialize(CellSlice.beginParse(c));
         log.info("internalMessage {}", message);
-        InternalMessage internalMessage = (InternalMessage) message.getInfo();
-        assertThat(internalMessage.isIHRDisabled()).isTrue();
-        assertThat(internalMessage.getValue().getCoins()).isEqualTo(BigInteger.valueOf(9980893000L));
-        assertThat(internalMessage.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
-        assertThat(internalMessage.getCreatedAt()).isEqualTo(1684018284L);
-        assertThat(internalMessage.getCreatedLt()).isEqualTo(BigInteger.valueOf(37621510000006L));
+        InternalMessageInfo internalMessageInfo = (InternalMessageInfo) message.getInfo();
+        assertThat(internalMessageInfo.isIHRDisabled()).isTrue();
+        assertThat(internalMessageInfo.getValue().getCoins()).isEqualTo(BigInteger.valueOf(9980893000L));
+        assertThat(internalMessageInfo.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
+        assertThat(internalMessageInfo.getCreatedAt()).isEqualTo(1684018284L);
+        assertThat(internalMessageInfo.getCreatedLt()).isEqualTo(BigInteger.valueOf(37621510000006L));
         //run golang test and compare
     }
 
@@ -57,7 +57,7 @@ public class TestTlbMessageReader {
     @Test
     public void testInternalMessageLoadFromCell() {
         Address src = Address.of("EQAOp1zuKuX4zY6L9rEdSLam7J3gogIHhfRu_gH70u2MQnmd");
-        InternalMessage internalMessage = InternalMessage.builder()
+        InternalMessageInfo internalMessageInfo = InternalMessageInfo.builder()
                 .iHRDisabled(false)
                 .bounce(true)
                 .bounced(false)
@@ -74,16 +74,16 @@ public class TestTlbMessageReader {
                 .createdLt(BigInteger.TWO)
                 .build();
 
-        InternalMessage loadedInternalMessage = InternalMessage.deserialize(CellSlice.beginParse(internalMessage.toCell()));
-        log.info("loadedInternalMessage {}", loadedInternalMessage);
-        assertThat(loadedInternalMessage.getValue().getCoins()).isEqualTo(BigInteger.valueOf(500000000L));
-        assertThat(loadedInternalMessage.getCreatedLt()).isEqualTo(BigInteger.valueOf(2L));
-        assertThat(loadedInternalMessage.getCreatedAt()).isEqualTo(5L);
+        InternalMessageInfo loadedInternalMessageInfo = InternalMessageInfo.deserialize(CellSlice.beginParse(internalMessageInfo.toCell()));
+        log.info("loadedInternalMessage {}", loadedInternalMessageInfo);
+        assertThat(loadedInternalMessageInfo.getValue().getCoins()).isEqualTo(BigInteger.valueOf(500000000L));
+        assertThat(loadedInternalMessageInfo.getCreatedLt()).isEqualTo(BigInteger.valueOf(2L));
+        assertThat(loadedInternalMessageInfo.getCreatedAt()).isEqualTo(5L);
     }
 
     @Test
     public void testMessageLoadFromCell() {
-        InternalMessage internalMessage = InternalMessage.builder()
+        InternalMessageInfo internalMessageInfo = InternalMessageInfo.builder()
                 .iHRDisabled(false)
                 .bounce(true)
                 .bounced(false)
@@ -100,7 +100,7 @@ public class TestTlbMessageReader {
                 .createdLt(BigInteger.TWO)
                 .build();
 
-        InternalMessage loadedMessage = InternalMessage.deserialize(CellSlice.beginParse(internalMessage.toCell()));
+        InternalMessageInfo loadedMessage = InternalMessageInfo.deserialize(CellSlice.beginParse(internalMessageInfo.toCell()));
         log.info("loadedMessage {}", loadedMessage);
         assertThat(loadedMessage.getCreatedAt()).isEqualTo(5);
     }

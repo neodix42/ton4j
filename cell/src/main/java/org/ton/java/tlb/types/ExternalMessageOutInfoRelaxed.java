@@ -10,6 +10,8 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
+
 @Builder
 @Getter
 @Setter
@@ -18,13 +20,14 @@ import java.math.BigInteger;
  ext_out_msg_info$11
  src:MsgAddress
  dest:MsgAddressExt
- created_lt:uint64
- created_at:uint32 = CommonMsgInfoRelaxed;
+ created_lt:uint64 - default zero
+ created_at:uint32 = default zero
+ = CommonMsgInfoRelaxed;
  */
 public class ExternalMessageOutInfoRelaxed implements CommonMsgInfoRelaxed {
     long magic;
     MsgAddress srcAddr;
-    MsgAddress dstAddr;
+    MsgAddressExt dstAddr;
     BigInteger createdLt;
     long createdAt;
 
@@ -37,7 +40,7 @@ public class ExternalMessageOutInfoRelaxed implements CommonMsgInfoRelaxed {
                 .storeUint(3, 2)
                 .storeSlice(CellSlice.beginParse(srcAddr.toCell()))
                 .storeSlice(CellSlice.beginParse(dstAddr.toCell()))
-                .storeUint(createdLt, 64)
+                .storeUint(isNull(createdLt) ? BigInteger.ZERO : createdLt, 64)
                 .storeUint(createdAt, 32);
         return result.endCell();
     }
@@ -48,7 +51,7 @@ public class ExternalMessageOutInfoRelaxed implements CommonMsgInfoRelaxed {
         return ExternalMessageOutInfoRelaxed.builder()
                 .magic(0b11)
                 .srcAddr(MsgAddress.deserialize(cs))
-                .dstAddr(MsgAddress.deserialize(cs))
+                .dstAddr(MsgAddressExt.deserialize(cs))
                 .createdLt(cs.loadUint(64))
                 .createdAt(cs.loadUint(32).longValue())
                 .build();
