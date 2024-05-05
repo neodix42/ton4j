@@ -49,6 +49,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .walletId(42L)
                 .timeout(60 * 60)
                 .build();
@@ -76,7 +77,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .createdAt(createdAt)
                 .build();
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), config);
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
@@ -89,7 +90,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .createdAt(createdAt)
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent single message");
 
@@ -111,6 +112,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .walletId(42L)
                 .timeout(60 * 60)
                 .build();
@@ -137,7 +139,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .createdAt(createdAt)
                 .build();
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), config);
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
@@ -155,7 +157,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .createdAt(createdAt)
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent {} messages", numberOfRecipients);
     }
@@ -172,6 +174,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .walletId(42L)
                 .timeout(60 * 60)
                 .build();
@@ -198,7 +201,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .createdAt(createdAt)
                 .build();
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), config);
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
@@ -216,7 +219,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .createdAt(createdAt)
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent {} messages", numberOfRecipients);
     }
@@ -233,6 +236,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .walletId(42L)
                 .timeout(60 * 60)
                 .build();
@@ -259,7 +263,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .createdAt(createdAt)
                 .build();
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey(), config);
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
@@ -275,7 +279,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .createdAt(createdAt)
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent {} messages", 660);
     }

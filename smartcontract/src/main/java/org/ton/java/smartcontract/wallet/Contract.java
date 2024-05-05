@@ -4,7 +4,11 @@ package org.ton.java.smartcontract.wallet;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.StateInit;
+import org.ton.java.smartcontract.types.WalletConfig;
+import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
+import org.ton.java.tlb.types.*;
+import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -15,11 +19,15 @@ import static java.util.Objects.nonNull;
 /**
  * Interface for all smart contract objects in ton4j.
  */
-public interface Contract {
+public interface Contract<T extends WalletConfig> {
 
     Options getOptions();
 
-    Address getAddress();
+    String getName();
+
+    default Address getAddress() {
+        return createStateInit().getAddress();
+    }
 
     /**
      * @return Cell containing contact code
@@ -45,278 +53,83 @@ public interface Contract {
      * @return StateInit
      */
     default StateInit createStateInit() {
-        Cell codeCell = createCodeCell();
-        Cell dataCell = createDataCell();
-        Cell stateInit = createStateInit(codeCell, dataCell);
-
-        byte[] stateInitHash = stateInit.hash();
-
-        Address address = Address.of(getOptions().wc + ":" + Utils.bytesToHex(stateInitHash));
-        return new StateInit(stateInit, address, codeCell, dataCell);
+        return StateInit.builder()
+                .code(createCodeCell())
+                .data(createDataCell())
+                .build();
     }
 
-    // split_depth:(Maybe (## 5))
-    // special:(Maybe TickTock)
-    // code:(Maybe ^Cell)
-    // data:(Maybe ^Cell)
-    // library:(Maybe ^Cell) = StateInit;
+    Cell createTransferBody(T config);
 
-    /**
-     * Message StateInit consists of initial contract code, data and address in a blockchain.
-     * Argments library, splitDepth and ticktock in state init is not yet implemented.
-     *
-     * @param code       Cell
-     * @param data       Cell
-     * @param library    null
-     * @param splitDepth null
-     * @param ticktock   null
-     * @return Cell
-     */
-    default Cell createStateInit(Cell code, Cell data, Cell library, Cell splitDepth, Cell ticktock) {
+    ExtMessageInfo deploy(Tonlib tonlib, T config);
 
-        if (nonNull(splitDepth)) {
-            throw new Error("Split depth in state init is not implemented");
+    default long getSeqno(Tonlib tonlib) {
+
+        if (this instanceof WalletV1ContractR1) {
+            throw new Error("Wallet V1R1 does not have seqno method");
         }
 
-        if (nonNull(ticktock)) {
-            throw new Error("Ticktock in state init is not implemented");
+        Address myAddress = getAddress();
+        return tonlib.getSeqno(myAddress);
+    }
+
+    default Message createExternalMessage(Address destination, boolean stateInit, Cell body) {
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(destination.wc)
+                                .address(destination.toBigInteger())
+                                .build())
+                        .build()).build();
+        if (stateInit) {
+            externalMessage.setInit(createStateInit());
         }
-
-        if (nonNull(library)) {
-            throw new Error("Library in state init is not implemented");
+        if (isNull(body)) {
+            body = CellBuilder.beginCell().endCell();
         }
+        externalMessage.setBody(CellBuilder.beginCell()
+                .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                .storeRef(body)
+                .endCell());
 
-        CellBuilder stateInit = CellBuilder.beginCell();
-
-        stateInit.storeBits(new Boolean[]{nonNull(splitDepth), nonNull(ticktock), nonNull(code), nonNull(data), nonNull(library)});
-
-        if (nonNull(code)) {
-            stateInit.storeRef(code);
-        }
-        if (nonNull(data)) {
-            stateInit.storeRef(data);
-        }
-        if (nonNull(library)) {
-            stateInit.storeRef(library);
-        }
-
-        return stateInit.endCell();
+        return externalMessage;
     }
 
-    default Cell createStateInit(Cell code, Cell data) {
-        return createStateInit(code, data, null, null, null);
-    }
-
-    // extra_currencies$_ dict:(HashmapE 32 (VarUInteger 32))
-    // = ExtraCurrencyCollection;
-    // currencies$_ grams:Grams other:ExtraCurrencyCollection
-    // = CurrencyCollection;
-
-    // int_msg_info$0
-    // ihr_disabled:Bool
-    // bounce:Bool
-    // src:MsgAddressInt
-    // dest:MsgAddressInt
-    // value:CurrencyCollection ihr_fee:Grams fwd_fee:Grams
-    // created_lt:uint64 created_at:uint32 = CommonMsgInfo;
-
-    /**
-     * @param dest               Address
-     * @param gramValue          BigInteger, 0
-     * @param ihrDisabled        boolean, true
-     * @param bounce             boolean, null
-     * @param bounced            boolean, false
-     * @param src                Address, null
-     * @param currencyCollection null,
-     * @param ihrFees            number, 0
-     * @param fwdFees            number, 0
-     * @param createdLt          number, 0
-     * @param createdAt          number, 0
-     * @return Cell
-     */
-    static Cell createInternalMessageHeader(Address dest,
-                                            BigInteger gramValue,
-                                            boolean ihrDisabled,
-                                            Boolean bounce,
-                                            boolean bounced,
-                                            Address src,
-                                            byte[] currencyCollection,
-                                            BigInteger ihrFees,
-                                            BigInteger fwdFees,
-                                            BigInteger createdLt,
-                                            BigInteger createdAt) {
-
-        CellBuilder message = CellBuilder.beginCell();
-        message.storeBit(false);
-        message.storeBit(ihrDisabled);
-
-        if (nonNull(bounce)) {
-            message.storeBit(bounce);
-        } else {
-            message.storeBit(dest.isBounceable);
-        }
-        message.storeBit(bounced);
-        message.storeAddress(src);
-        message.storeAddress(dest);
-        message.storeCoins(gramValue);
-        if (currencyCollection.length != 0) {
-            throw new Error("Currency collections are not implemented yet");
-        }
-        message.storeBit(currencyCollection.length != 0);
-        message.storeCoins(ihrFees);
-        message.storeCoins(fwdFees);
-        message.storeUint(createdLt, 64);
-        message.storeUint(createdAt, 32);
-        return message.endCell();
-    }
-
-    default Cell createInternalMessageHeader(String dest,
-                                             BigInteger gramValue,
-                                             boolean ihrDisabled,
-                                             Boolean bounce,
-                                             boolean bounced,
-                                             Address src,
-                                             byte[] currencyCollection,
-                                             BigInteger ihrFees,
-                                             BigInteger fwdFees,
-                                             BigInteger createdLt,
-                                             BigInteger createdAt) {
-        return createInternalMessageHeader(
-                Address.of(dest), gramValue, ihrDisabled, bounce, bounced,
-                src, currencyCollection, ihrFees, fwdFees,
-                createdLt, createdAt);
-    }
-
-    static Cell createInternalMessageHeader(Address dest, BigInteger toncoinValue) {
-        return createInternalMessageHeader(
-                dest,
-                toncoinValue,
-                true,
-                null,
-                false,
-                null,
-                new byte[0],
-                BigInteger.ZERO,
-                BigInteger.ZERO,
-                BigInteger.ZERO,
-                BigInteger.ZERO);
-    }
-
-    static Cell createInternalMessageHeader(String dest, BigInteger toncoinValue) {
-        return createInternalMessageHeader(
-                Address.of(dest),
-                toncoinValue,
-                true,
-                null,
-                false,
-                null,
-                null,
-                BigInteger.ZERO,
-                BigInteger.ZERO,
-                BigInteger.ZERO,
-                BigInteger.ZERO);
-    }
-
-    /**
-     * Message header
-     * ext_in_msg_info$10 src:MsgAddressExt dest:MsgAddressInt import_fee:Grams = CommonMsgInfo;
-     *
-     * @param dest      Address
-     * @param src       Address
-     * @param importFee BigInteger
-     * @return Cell
-     */
-    static Cell createExternalMessageHeader(Address dest, Address src, BigInteger importFee) {
-        CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(0b10, 2);
-        message.storeAddress(src);
-        message.storeAddress(dest);
-        message.storeCoins(importFee);
-        return message.endCell();
-    }
-
-    /**
-     * @param dest      String
-     * @param src       Address
-     * @param importFee number
-     * @return Cell
-     */
-    static Cell createExternalMessageHeader(String dest, Address src, BigInteger importFee) {
-        return createExternalMessageHeader(Address.of(dest), src, importFee);
-    }
-
-    /**
-     * @param dest      String
-     * @param src       String
-     * @param importFee BigInteger
-     * @return Cell
-     */
-    static Cell createExternalMessageHeader(String dest, String src, BigInteger importFee) {
-        return createExternalMessageHeader(Address.of(dest), Address.of(src), importFee);
-    }
-
-    static Cell createExternalMessageHeader(Address dest) {
-        return createExternalMessageHeader(dest, null, BigInteger.ZERO);
-    }
-
-    static Cell createExternalMessageHeader(String dest) {
-        return createExternalMessageHeader(Address.of(dest), null, BigInteger.ZERO);
-    }
-
-    //tblkch.pdf, page 57
-
-//    message$_ {X:Type} info:CommonMsgInfo
-//    init:(Maybe (Either StateInit ^StateInit))
-//    body:(Either X ^X) = Message X;
-
-    /**
-     * Create CommonMsgInfo contains header, stateInit, body
-     *
-     * @param header    Cell
-     * @param stateInit Cell
-     * @param body      Cell
-     * @return Cell
-     */
-    static Cell createCommonMsgInfo(Cell header, Cell stateInit, Cell body) {
-        CellBuilder commonMsgInfo = CellBuilder.beginCell();
-
-        commonMsgInfo.storeCell(header);
-
-        if (nonNull(stateInit)) {
-            commonMsgInfo.storeBit(true);
-            //-1:  need at least one bit for body
-            if (commonMsgInfo.getFreeBits() - 1 >= stateInit.getBits().getUsedBits()) {
-                commonMsgInfo.storeBit(false);
-                commonMsgInfo.storeCell(stateInit);
-            } else {
-                commonMsgInfo.storeBit(true);
-                commonMsgInfo.storeRef(stateInit);
-            }
-        } else {
-            commonMsgInfo.storeBit(false);
-        }
+    default Message createInternalMessage(Address destination, BigInteger amount, Cell body) {
+        Address ownAddress = getAddress();
+        Message internalMessage = Message.builder()
+                .info(InternalMessageInfo.builder()
+                        .srcAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(destination.wc)
+                                .address(destination.toBigInteger())
+                                .build())
+                        .value(CurrencyCollection.builder().coins(amount).build())
+                        .build()).build();
 
         if (nonNull(body)) {
-            if ((commonMsgInfo.getFreeBits() >= body.getBits().getUsedBits()) && commonMsgInfo.getFreeRefs() >= body.getUsedRefs()) {
-                commonMsgInfo.storeBit(false);
-                commonMsgInfo.storeCell(body);
-            } else {
-                commonMsgInfo.storeBit(true);
-                commonMsgInfo.storeRef(body);
-            }
-        } else {
-            commonMsgInfo.storeBit(false);
+            internalMessage.setBody(CellBuilder.beginCell()
+                    .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                    .storeRef(body)
+                    .endCell());
         }
-        return commonMsgInfo.endCell();
+
+        return internalMessage;
     }
 
     /**
-     * Create CommonMsgInfo without body and stateInit
-     *
-     * @param header Cell
-     * @return Cell
+     * crates external with internal msg as body
      */
-    static Cell createCommonMsgInfo(Cell header) {
-        return createCommonMsgInfo(header, null, null);
+    default Message createTransferMessage(T config) {
+
+//        Cell body = createTransferBody(config);
+//        Cell intMsg = this.createInternalMessage(config.destination, config.amount, body).toCell();
+//
+//        return this.createExternalMessage(config.destination, false, intMsg);
+        return null;
     }
 }

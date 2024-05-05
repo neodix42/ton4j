@@ -3,19 +3,23 @@ package org.ton.java.smartcontract.wallet.v2;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.ExternalMessage;
+import org.ton.java.smartcontract.types.WalletV2Config;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.WalletContract;
+import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.MsgAddressExtNone;
+import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.Date;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
-public class WalletV2ContractBase implements WalletContract {
+public class WalletV2ContractBase implements Contract<WalletV2Config> {
     Options options;
     Address address;
 
@@ -28,18 +32,23 @@ public class WalletV2ContractBase implements WalletContract {
         return "override me";
     }
 
+    @Override
+    public Cell createDataCell() {
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(BigInteger.ZERO, 32); // seqno
+        cell.storeBytes(getOptions().publicKey);
+        return cell.endCell();
+    }
+
     /**
      * Creates message payload with seqno and validUntil fields
-     *
-     * @param seqno long
-     * @return Cell
      */
     @Override
-    public CellBuilder createSigningMessage(long seqno) {
+    public Cell createTransferBody(WalletV2Config config) {
 
         CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(BigInteger.valueOf(seqno), 32);
-        if (seqno == 0) {
+        message.storeUint(BigInteger.valueOf(config.getSeqno()), 32);
+        if (config.getSeqno() == 0) {
             for (int i = 0; i < 32; i++) {
                 message.storeBit(true);
             }
@@ -48,7 +57,29 @@ public class WalletV2ContractBase implements WalletContract {
             long timestamp = (long) Math.floor(date.getTime() / 1e3);
             message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
         }
-        return message;
+
+        if (nonNull(config.getDestination1())) {
+            Message order = this.createInternalMessage(config.getDestination1(), config.getAmount1(), null);
+            message.storeUint(3 & 0xff, 8);
+            message.storeRef(order.toCell());
+        }
+        if (nonNull(config.getDestination2())) {
+            Message order = this.createInternalMessage(config.getDestination2(), config.getAmount2(), null);
+            message.storeUint(3 & 0xff, 8);
+            message.storeRef(order.toCell());
+        }
+        if (nonNull(config.getDestination3())) {
+            Message order = this.createInternalMessage(config.getDestination3(), config.getAmount3(), null);
+            message.storeUint(3 & 0xff, 8);
+            message.storeRef(order.toCell());
+        }
+        if (nonNull(config.getDestination4())) {
+            Message order = this.createInternalMessage(config.getDestination4(), config.getAmount3(), null);
+            message.storeUint(3 & 0xff, 8);
+            message.storeRef(order.toCell());
+        }
+
+        return message.endCell();
     }
 
     @Override
@@ -57,143 +88,68 @@ public class WalletV2ContractBase implements WalletContract {
     }
 
     @Override
-    public Address getAddress() {
-        if (isNull(address)) {
-            return (createStateInit()).address;
+    public ExtMessageInfo deploy(Tonlib tonlib, WalletV2Config config) {
+        Address ownAddress = getAddress();
+
+        Cell body = null;
+        if (nonNull(config)) {
+            body = createTransferBody(config);
         }
-        return address;
+
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
+                        .build())
+                .init(createStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeRef(body)
+                        .endCell())
+                .build();
+
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey) {
-        return tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
-    }
 
-    /**
-     * Sends amount of nano toncoins to destination addresses using auto-fetched seqno without the body and default send-mode 3
-     *
-     * @param tonlib             Tonlib
-     * @param secretKey          byte[]
-     * @param destinationAddress Address
-     * @param amount             BigInteger
-     */
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, WalletV2Config config) {
         long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-        return tonlib.sendRawMessage(msg.message.toBase64());
+        config.setSeqno(seqno);
+
+        Cell body = createTransferBody(config);
+
+        Address ownAddress = getAddress();
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
+                        .build())
+                .init(null)
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeRef(body)
+                        .endCell())
+                .build();
+
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    /**
+
+    /*
      * Sends amount of nano toncoins to destination addresses using auto-fetched seqno with the body and default send-mode 3
-     *
-     * @param tonlib             Tonlib
-     * @param secretKey          byte[]
-     * @param destinationAddress Address
-     * @param amount             BigInteger
-     * @param body               byte[]
-     */
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, byte[] body) {
-        long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    /**
      * Sends amount of nano toncoins to destination address using auto-fetched seqno with the body and default send-mode 3
-     *
-     * @param tonlib             Tonlib
-     * @param secretKey          byte[]
-     * @param destinationAddress Address
-     * @param amount             BigInteger
-     * @param body               Cell
-     */
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, Cell body) {
-        long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    /**
+     * Sends amount of nano toncoins to destination address using auto-fetched seqno with the body and default send-mode 3 with body
      * Sends amount of nano toncoins to destination address using auto-fetched seqno with the body and default send-mode 3
-     *
-     * @param tonlib             Tonlib
-     * @param secretKey          byte[]
-     * @param destinationAddress Address
-     * @param amount             BigInteger
-     * @param body               byte[]
-     */
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, byte[] body) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    /**
-     * Sends amount of nano toncoins to destination address using auto-fetched seqno with the body and default send-mode 3
-     *
-     * @param tonlib             Tonlib
-     * @param secretKey          byte[]
-     * @param destinationAddress Address
-     * @param amount             BigInteger
-     * @param body               Cell
-     */
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, Cell body) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    /**
-     * Sends amount of nano toncoins to destination address using specified seqno with the comment and default send-mode 3
-     *
-     * @param tonlib             Tonlib
-     * @param secretKey          byte[]
-     * @param destinationAddress Address
-     * @param amount             BigInteger
-     * @param seqno              long
-     * @param comment            String
-     */
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, String comment) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    /**
-     * Sends amount of nano toncoins to destination address using specified seqno without comment and default send-mode 3
-     *
-     * @param tonlib             Tonlib
-     * @param secretKey          byte[]
-     * @param destinationAddress Address
-     * @param amount             BigInteger
-     * @param seqno              long
-     */
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    /**
      * Sends amount of nano toncoins to destination addresses using auto-fetched seqno without the body and with the comment and default send-mode 3
-     *
-     * @param tonlib             Tonlib
-     * @param secretKey          byte[]
-     * @param destinationAddress Address
-     * @param amount             BigInteger
-     * @param comment            String
-     */
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, String comment) {
-        long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    /**
      * Sends amount of nano toncoins to destination addresses using auto-fetched seqno with the body and default send-mode 3
-     *
-     * @param tonlib              Tonlib
-     * @param secretKey           byte[]
-     * @param destinationAddress1 Address
-     * @param destinationAddress2 Address
-     * @param amount              BigInteger
-     * @param body                byte[]
-     */
+
+
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount, Cell body) {
         long seqno = getSeqno(tonlib);
 
@@ -214,15 +170,7 @@ public class WalletV2ContractBase implements WalletContract {
         return tonlib.sendRawMessage(msg.message.toBase64());
     }
 
-    /**
-     * Sends amount of nano toncoins to destination addresses using auto-fetched seqno without the body and with comment and default send-mode 3
-     *
-     * @param tonlib              Tonlib
-     * @param secretKey           byte[]
-     * @param destinationAddress1 Address
-     * @param destinationAddress2 Address
-     * @param amount              BigInteger
-     */
+
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, BigInteger amount, String comment) {
         return sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
     }
@@ -286,12 +234,5 @@ public class WalletV2ContractBase implements WalletContract {
         ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, seqno);
         return tonlib.sendRawMessage(msg.message.toBase64());
     }
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount, String comment) {
-        return sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, destinationAddress4, amount, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-    }
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress1, Address destinationAddress2, Address destinationAddress3, Address destinationAddress4, BigInteger amount) {
-        return sendTonCoins(tonlib, secretKey, destinationAddress1, destinationAddress2, destinationAddress3, destinationAddress4, amount, CellBuilder.beginCell().endCell());
-    }
+    */
 }

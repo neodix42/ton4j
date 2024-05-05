@@ -6,12 +6,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.smartcontract.types.ExternalMessage;
-import org.ton.java.smartcontract.types.InitExternalMessage;
+import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR2;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.utils.Utils;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -31,6 +31,7 @@ public class TestWalletsV3 {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .build();
 
@@ -38,23 +39,23 @@ public class TestWalletsV3 {
         WalletV3ContractR2 contract = wallet.create();
         assertThat(options.code.getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED54");
 
-        InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
-        Address address = msg.address;
+        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Address address = msg.getInit().getAddress();
 
         String my = "Creating new advanced wallet in workchain " + options.wc + "\n" +
                 "with unique wallet id " + options.walletId + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
-                "StateInit: " + msg.stateInit.print() + ", hex: " + msg.stateInit.toHex() + "\n" +
-                "StateInit.code: " + "hex: " + msg.code.toHex() + "\n" +
-                "StateInit.data: " + "hex: " + msg.data.toHex() + "\n" +
-                "message.body: " + "hex: " + msg.body.toString() + "\n" +
+                "StateInit: " + msg.getInit().toCell().print() + ", hex: " + msg.getInit().toCell().toHex() + "\n" +
+                "StateInit.code: " + "hex: " + msg.getInit().getCode().toHex() + "\n" +
+                "StateInit.data: " + "hex: " + msg.getInit().getCode().toHex() + "\n" +
+                "message.body: " + "hex: " + msg.getBody().toString() + "\n" +
                 "new wallet address = " + address.toString(false) + "\n" +
                 "(Saving address to file new-wallet.addr)" + "\n" +
                 "Non-bounceable address (for init): " + address.toString(true, true, false, true) + "\n" +
                 "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
-                "signing message: " + msg.signingMessage.print() + ", hex: " + msg.signingMessage.toHex() + "\n" +
-                "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n" +
+                "signing message: " + msg.getBody().print() + ", hex: " + msg.getBody().toHex() + "\n" +
+                "External message for initialization is " + msg.toCell().print() + "\n" +
+                Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
@@ -76,8 +77,8 @@ public class TestWalletsV3 {
                 "(Saved wallet creating query to file new-wallet-query.boc)";
 
         log.info(fiftOutput);
-        assertThat(msg.signingMessage.getBits().toHex()).isEqualTo("29A9A317FFFFFFFF00000000");
-        assertThat(msg.message.getBits().toHex()).isEqualTo("88009F4CFD8AB69CB20864160E3A40E4F578643B5B5B409C51A0215DA579D95E49F6119529DEF4481C60CD81087FC7B058797AFDCEBCC1BE127EE2C4707C1E1C0F3D12F955EC3DE1C63E714876A931F6C6F13E6980284238AA9F94B0EC5859B37C4DE1E5353462FFFFFFFFE00000001_");
+        assertThat(msg.getBody().getBits().toHex()).isEqualTo("29A9A317FFFFFFFF00000000");
+        assertThat(msg.toCell().getBits().toHex()).isEqualTo("88009F4CFD8AB69CB20864160E3A40E4F578643B5B5B409C51A0215DA579D95E49F6119529DEF4481C60CD81087FC7B058797AFDCEBCC1BE127EE2C4707C1E1C0F3D12F955EC3DE1C63E714876A931F6C6F13E6980284238AA9F94B0EC5859B37C4DE1E5353462FFFFFFFFE00000001_");
         assertThat(address.toString(false)).isEqualTo("0:4fa67ec55b4e5904320b071d20727abc321dadada04e28d010aed2bcecaf24fb");
     }
 
@@ -97,26 +98,27 @@ public class TestWalletsV3 {
         Wallet wallet = new Wallet(WalletVersion.V3R2, options);
         WalletV3ContractR2 contract = wallet.create();
 
-        ExternalMessage msg = contract.createTransferMessage(
-                keyPair.getSecretKey(),
-                "0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3",
-                Utils.toNano(1),
-                0L);
-        Address address = msg.address;
+        Message msg = contract.createTransferMessage(WalletV3Config.builder()
+                .destination(Address.of("0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3"))
+                .amount(Utils.toNano(1))
+                .seqno(0L)
+                .build());
+
+        Address address = msg.getInit().getAddress();
 
         String my = "Creating new advanced wallet in workchain " + options.wc + "\n" +
                 "with unique wallet id " + options.walletId + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
-                "StateInit: " + msg.stateInit.print() + "\n" +
+                "StateInit: " + msg.getInit().toCell().print() + "\n" +
                 "new wallet address = " + address.toString(false) + "\n" +
                 "(Saving address to file new-wallet.addr)" + "\n" +
                 "Non-bounceable address (for init): " + address.toString(true, true, false, true) + "\n" +
                 "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
-                "signing message: " + msg.signingMessage.print() + "\n" +
-                "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n" +
+                "signing message: " + msg.getBody().print() + "\n" +
+                "External message for initialization is " + msg.toCell().print() + "\n" +
+                Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
-        assertThat(msg.message).isNotNull();
+        assertThat(msg.getBody()).isNotNull();
     }
 }

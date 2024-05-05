@@ -9,11 +9,12 @@ import org.ton.java.address.Address;
 import org.ton.java.mnemonic.Mnemonic;
 import org.ton.java.mnemonic.Pair;
 import org.ton.java.smartcontract.TestFaucet;
-import org.ton.java.smartcontract.types.InitExternalMessage;
+import org.ton.java.smartcontract.types.WalletV1R3Config;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.QueryFees;
 import org.ton.java.utils.Utils;
@@ -35,28 +36,29 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .build();
 
         Wallet wallet = new Wallet(WalletVersion.V1R3, options);
         WalletV1ContractR3 contract = wallet.create();
 
-        InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
-        Address address = msg.address;
+        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Address address = msg.getInit().getAddress();
 
         String nonBounceableAddress = address.toString(true, true, false, true);
         String bounceableAddress = address.toString(true, true, true, true);
 
         String my = "Creating new wallet in workchain " + options.wc + "\n";
         my = my + "Loading private key from file new-wallet.pk" + "\n";
-        my = my + "StateInit: " + msg.stateInit.print() + "\n";
+        my = my + "StateInit: " + msg.getInit().toCell().print() + "\n";
         my = my + "new wallet address = " + address.toString(false) + "\n";
         my = my + "(Saving address to file new-wallet.addr)" + "\n";
         my = my + "Non-bounceable address (for init): " + nonBounceableAddress + "\n";
         my = my + "Bounceable address (for later access): " + bounceableAddress + "\n";
-        my = my + "signing message: " + msg.signingMessage.print() + "\n";
-        my = my + "External message for initialization is " + msg.message.print() + "\n";
-        my = my + Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n";
+        my = my + "signing message: " + msg.getBody().print() + "\n";
+        my = my + "External message for initialization is " + msg.toCell().print() + "\n";
+        my = my + Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase() + "\n";
         my = my + "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
@@ -65,12 +67,18 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
-        tonlib.sendRawMessage(msg.message.toBase64());
+        tonlib.sendRawMessage(msg.toCell().toBase64());
 
         Utils.sleep(30);
 
+        WalletV1R3Config config = WalletV1R3Config.builder()
+                .destination(Address.of(TestFaucet.BOUNCEABLE))
+                .amount(Utils.toNano(0.8))
+                .comment("testNewWalletV1R3")
+                .build();
+
         // transfer coins from new wallet (back to faucet)
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testNewWalletV1R3");
+        contract.sendTonCoins(tonlib, config);
 
         Utils.sleep(30);
 
@@ -94,6 +102,7 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
 
         log.info("pubkey " + Utils.bytesToHex(keyPairSig.getPublicKey()));
         log.info("seckey " + Utils.bytesToHex(keyPairSig.getSecretKey()));
+
         Options options = Options.builder()
                 .publicKey(keyPairSig.getPublicKey())
                 .wc(0L)
@@ -102,22 +111,22 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         Wallet wallet = new Wallet(WalletVersion.V1R3, options);
         WalletV1ContractR3 contract = wallet.create();
 
-        InitExternalMessage msg = contract.createInitExternalMessage(keyPairSig.getSecretKey());
-        Address address = msg.address;
+        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Address address = msg.getInit().getAddress();
 
         String nonBounceableAddress = address.toString(true, true, false, true);
         String bounceableAddress = address.toString(true, true, true, true);
 
         String my = "Creating new wallet in workchain " + options.wc + "\n";
         my = my + "Loading private key from file new-wallet.pk" + "\n";
-        my = my + "StateInit: " + msg.stateInit.print() + "\n";
+        my = my + "StateInit: " + msg.getInit().toCell().print() + "\n";
         my = my + "new wallet address = " + address.toString(false) + "\n";
         my = my + "(Saving address to file new-wallet.addr)" + "\n";
         my = my + "Non-bounceable address (for init): " + nonBounceableAddress + "\n";
         my = my + "Bounceable address (for later access): " + bounceableAddress + "\n";
-        my = my + "signing message: " + msg.signingMessage.print() + "\n";
-        my = my + "External message for initialization is " + msg.message.print() + "\n";
-        my = my + Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n";
+        my = my + "signing message: " + msg.getBody().print() + "\n";
+        my = my + "External message for initialization is " + msg.toCell().print() + "\n";
+        my = my + Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase() + "\n";
         my = my + "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
@@ -127,12 +136,18 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
-        tonlib.sendRawMessage(msg.message.toBase64());
+        tonlib.sendRawMessage(msg.toCell().toBase64());
 
         Utils.sleep(25);
 
+        WalletV1R3Config config = WalletV1R3Config.builder()
+                .destination(Address.of(TestFaucet.BOUNCEABLE))
+                .amount(Utils.toNano(0.8))
+                .comment("testNewWalletV1R3")
+                .build();
+
         // transfer coins from new wallet (back to faucet)
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testNewWalletV1R3");
+        contract.sendTonCoins(tonlib, config);
 
         Utils.sleep(15);
 
@@ -165,14 +180,26 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         Wallet wallet = new Wallet(WalletVersion.V1R3, options);
         WalletV1ContractR3 contract = wallet.create();
 
-        InitExternalMessage msg = contract.createInitExternalMessage(keyPairSig.getSecretKey());
+        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
 
         Tonlib tonlib = Tonlib.builder().testnet(true).build();
 
-        QueryFees feesWithCodeData = tonlib.estimateFees(msg.address.toString(), msg.message.toBase64(), msg.code.toBase64(), msg.data.toBase64(), false);
+        QueryFees feesWithCodeData = tonlib.estimateFees(
+                msg.getInit().getAddress().toString(),
+                msg.getBody().toBase64(), // message to cell not the whole external
+                msg.getInit().getCode().toBase64(),
+                msg.getInit().getData().toBase64(),
+                false);
+
         log.info("fees {}", feesWithCodeData);
         assertThat(feesWithCodeData).isNotNull();
-        QueryFees feesBodyOnly = tonlib.estimateFees(msg.address.toString(), msg.message.toBase64(), null, null, false);
+
+        QueryFees feesBodyOnly = tonlib.estimateFees(
+                msg.getInit().getAddress().toString(),
+                msg.getBody().toBase64(),
+                null,
+                null,
+                false);
         log.info("fees {}", feesBodyOnly);
         assertThat(feesBodyOnly).isNotNull();
     }

@@ -6,12 +6,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.smartcontract.types.ExternalMessage;
-import org.ton.java.smartcontract.types.InitExternalMessage;
+import org.ton.java.smartcontract.types.WalletV2Config;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v2.WalletV2ContractR2;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.utils.Utils;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -31,6 +31,7 @@ public class TestWalletsV2 {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .build();
 
@@ -39,25 +40,25 @@ public class TestWalletsV2 {
 
         assertThat(options.code.getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
 
-        InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
-        Address address = msg.address;
+        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Address address = msg.getInit().getAddress();
 
         String my = "Creating new advanced wallet in workchain " + options.wc + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
-                "StateInit: " + msg.stateInit.print() + "\n" +
+                "StateInit: " + msg.getInit().toCell().print() + "\n" +
                 "new wallet address = " + address.toString(false) + "\n" +
                 "(Saving address to file new-wallet.addr)" + "\n" +
                 "Non-bounceable address (for init): " + address.toString(true, true, false, true) + "\n" +
                 "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
-                "signing message: " + msg.signingMessage.print() + "\n" +
-                "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n" +
+                "signing message: " + msg.getBody().print() + "\n" +
+                "External message for initialization is " + msg.toCell().print() + "\n" +
+                Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
         assertThat(address.toString(false)).isEqualTo("0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd");
 
-        assertThat(msg.message.getBits().toHex()).isEqualTo("8800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A119006018BC6501587E3EF5710DADC3E58439A9C8BDDAB55067E5C128C3EC1D29255FF7E266DDE2E6639333FBC20FB35A1FE2D2C94BA0D136E6973E87306ECFF40200000001FFFFFFFF_");
+        assertThat(msg.toCell().bitStringToHex()).isEqualTo("8800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A119006018BC6501587E3EF5710DADC3E58439A9C8BDDAB55067E5C128C3EC1D29255FF7E266DDE2E6639333FBC20FB35A1FE2D2C94BA0D136E6973E87306ECFF40200000001FFFFFFFF_");
     }
 
     /**
@@ -79,21 +80,22 @@ public class TestWalletsV2 {
 
         assertThat(options.code.getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
 
-        ExternalMessage msg = contract.createTransferMessage(
-                keyPair.getSecretKey(),
-                "0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd",
-                Utils.toNano(1),
-                1L);
-        Address address = msg.address;
+        Message msg = contract.createTransferMessage(WalletV2Config.builder()
+                .destination1(Address.of("0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd"))
+                .amount1(Utils.toNano(1))
+                .seqno(1L)
+                .build());
+
+        Address address = msg.getInit().getAddress();
 
         String my = "Source wallet address =  " + address.toString(false) + "\n" +
                 address.toString(true, true, true, true) + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
                 "Transferring GR$1. to account 0QAzTo-R8c1y-DmDdovCz74k3mkI2WPVU-SOFS_F4gsbvSPI = 0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd seqno=0x0 bounce=0\n" +
                 "Body of transfer message is x{}" + "\n\n" +
-                "signing message: " + msg.signingMessage.print() + "\n" +
-                "resulting external message: " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n" +
+                "signing message: " + msg.getBody().print() + "\n" +
+                "resulting external message: " + msg.toCell().print() + "\n" +
+                Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase() + "\n" +
                 "Query expires in 60 seconds\n" +
                 "(Saved to file wallet-query.boc)\n";
 

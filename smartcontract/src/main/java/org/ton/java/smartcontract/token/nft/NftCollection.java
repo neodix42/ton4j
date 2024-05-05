@@ -1,19 +1,20 @@
 package org.ton.java.smartcontract.token.nft;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.WalletContract;
+import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.MsgAddressExtNone;
+import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +23,7 @@ import java.util.Deque;
 
 import static java.util.Objects.isNull;
 
-public class NftCollection implements Contract {
+public class NftCollection implements Contract<NftCollectionConfig> {
     // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-collection.fc
     // not editable
     long royaltyBase = 1000;
@@ -68,13 +69,6 @@ public class NftCollection implements Contract {
         return options;
     }
 
-    @Override
-    public Address getAddress() {
-        if (isNull(address)) {
-            return (createStateInit()).address;
-        }
-        return address;
-    }
 
     /**
      * @param collectionContentUri:     String
@@ -118,7 +112,12 @@ public class NftCollection implements Contract {
         return cell.endCell();
     }
 
-    public static Cell createMintBody(long queryId, BigInteger itemIndex, BigInteger amount, Address nftItemOwnerAddress, String nftItemContentUri) {
+    @Override
+    public Cell createTransferBody(NftCollectionConfig config) {
+        return null;
+    }
+
+    public static Cell createMintBody(long queryId, long itemIndex, BigInteger amount, Address nftItemOwnerAddress, String nftItemContentUri) {
         CellBuilder body = CellBuilder.beginCell();
         body.storeUint(1, 32);  // OP deploy new nft
         body.storeUint(queryId, 64);
@@ -277,22 +276,44 @@ public class NftCollection implements Contract {
     }
 
 
-    public ExtMessageInfo deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, TweetNaclFast.Signature.KeyPair keyPair) {
+    @Override
+    public ExtMessageInfo deploy(Tonlib tonlib, NftCollectionConfig config) {
 
-        long seqno = wallet.getSeqno(tonlib);
+//        long seqno = this.getSeqno(tonlib);
+//
+//        Cell payload = null;
+//
+//        ExternalMessage extMsg = wallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                this.getAddress().toString(true, true, false),
+//                msgValue,
+//                seqno,
+//                payload,
+//                (byte) 3, //send mode
+//                this.createStateInit().stateInit
+//        );
+//
+//        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
 
-        Cell payload = null;
+        long seqno = this.getSeqno(tonlib);
+        config.setSeqno(seqno);
+        Address ownAddress = getAddress();
 
-        ExternalMessage extMsg = wallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                this.getAddress().toString(true, true, false),
-                msgValue,
-                seqno,
-                payload,
-                (byte) 3, //send mode
-                this.createStateInit().stateInit
-        );
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
+                        .build())
+                .init(createStateInit())
+//                .body(CellBuilder.beginCell()
+//                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+//                        .storeRef(body)
+//                        .endCell())
+                .build();
 
-        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 }

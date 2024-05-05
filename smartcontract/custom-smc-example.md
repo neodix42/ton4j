@@ -194,7 +194,7 @@ Copy above BoC in hex format into CustomContract consturctor, see below.
     <summary>CustomContract.class</summary>
 
 ```
-public class CustomContract implements WalletContract {
+public class CustomContract implements Contract {
 
     Options options;
     Address address;

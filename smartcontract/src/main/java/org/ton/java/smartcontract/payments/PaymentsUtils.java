@@ -92,19 +92,18 @@ public class PaymentsUtils {
     }
 
     public static Cell createSignedSemiChannelState(byte[] signature, Cell state) {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeBytes(signature);
-        cell.storeCell(state);
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeBytes(signature)
+                .storeCell(state).endCell();
+
     }
 
     public static Cell createStartUncooperativeCloseBody(BigInteger channelId, Cell signedSemiChannelStateA, Cell signedSemiChannelStateB) {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(tag_start_uncooperative_close, 32);
-        cell.storeUint(channelId, 128);
-        cell.storeRef(signedSemiChannelStateA);
-        cell.storeRef(signedSemiChannelStateB);
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(tag_start_uncooperative_close, 32)
+                .storeUint(channelId, 128)
+                .storeRef(signedSemiChannelStateA)
+                .storeRef(signedSemiChannelStateB).endCell();
     }
 
     public static Cell createChallengeQuarantinedStateBody(BigInteger channelId, Cell signedSemiChannelStateA, Cell signedSemiChannelStateB) {

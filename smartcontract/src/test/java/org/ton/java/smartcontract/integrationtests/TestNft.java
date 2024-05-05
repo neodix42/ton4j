@@ -14,9 +14,9 @@ import org.ton.java.smartcontract.token.nft.NftItem;
 import org.ton.java.smartcontract.token.nft.NftMarketplace;
 import org.ton.java.smartcontract.token.nft.NftSale;
 import org.ton.java.smartcontract.types.*;
+import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
@@ -62,16 +62,36 @@ public class TestNft extends CommonTest {
         NftCollection nftCollection = nftCollectionWallet.create();
         log.info("NFT collection address {}", nftCollection.getAddress().toString(true, true, true));
 
-        nftCollection.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(1), adminWallet.getKeyPair());
+        NftCollectionConfig config = NftCollectionConfig.builder()
+                .amount(Utils.toNano(1))
+                .build();
+        nftCollection.deploy(tonlib, config);
 
         Utils.sleep(15, "deploying NFT collection");
         getNftCollectionInfo(nftCollection);
 
+
         // create and deploy NFT Item
-        deployNftItem(tonlib, adminWallet.getWallet(), BigInteger.ZERO, Utils.toNano(0.06), nftCollection.getAddress(), "nft-item-1.json", adminWallet.getKeyPair());
+        NftItemConfig itemConfig = NftItemConfig.builder()
+                .amount(Utils.toNano(0.06))
+                .index(0)
+                .nftCollectionAddress(nftCollection.getAddress())
+                .nftItemContentUri("nft-item-1.json")
+                .build();
+
+        Wallet nftItemWallet = new Wallet(WalletVersion.nftItem);
+        NftItem nftItem = nftItemWallet.create();
+        nftItem.deploy(tonlib, itemConfig);
         Utils.sleep(30, "deploying NFT item #1");
 
-        deployNftItem(tonlib, adminWallet.getWallet(), BigInteger.ONE, Utils.toNano(0.07), nftCollection.getAddress(), "nft-item-2.json", adminWallet.getKeyPair());
+        itemConfig = NftItemConfig.builder()
+                .amount(Utils.toNano(0.07))
+                .index(1)
+                .nftCollectionAddress(nftCollection.getAddress())
+                .nftItemContentUri("nft-item-2.json")
+                .build();
+
+        nftItem.deploy(tonlib, itemConfig);
         Utils.sleep(30, "deploying NFT item #2");
 
         assertThat(getNftCollectionInfo(nftCollection)).isEqualTo(2);
@@ -80,9 +100,15 @@ public class TestNft extends CommonTest {
         NftItem item2 = new NftItem(Options.builder().address(nftItem2).build());
 
         // deploy own nft marketplace
-        NftMarketplace marketplace = new NftMarketplace(Options.builder().adminAddress(adminWallet.getWallet().getAddress()).build());
+        NftMarketplace marketplace = new NftMarketplace(Options.builder()
+                .adminAddress(adminWallet.getWallet().getAddress())
+                .build());
+        NftMarketPlaceConfig nftMarketPlaceConfig = NftMarketPlaceConfig.builder()
+                .adminAddress(adminWallet.getWallet().getAddress())
+                .amount(Utils.toNano(1.1))
+                .build();
         log.info("nft marketplace address {}", marketplace.getAddress().toString(true, true, true));
-        marketplace.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(1.1), adminWallet.getKeyPair());
+        marketplace.deploy(tonlib, nftMarketPlaceConfig);
         Utils.sleep(20, "deploying nft marketplace");
 
         //deploy nft sale for item 1
@@ -95,9 +121,17 @@ public class TestNft extends CommonTest {
                 .royaltyAmount(Utils.toNano(0.3))
                 .build();
 
-        NftSale nftSale1 = new NftSale(optionsNftSale1);
+        Wallet nftSaleWallet = new Wallet(WalletVersion.nftSale, optionsNftSale1);
+        NftSale nftSale1 = nftSaleWallet.create();
+
+//        NftSale nftSale1 = new NftSale(optionsNftSale1);
         log.info("nft-sale-1 address {}", nftSale1.getAddress().toString(true, true, true));
-        nftSale1.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.06), marketplace.getAddress(), adminWallet.getKeyPair());
+        NftSaleConfig nftSaleConfig = NftSaleConfig.builder()
+                .adminWalletAddress(adminWallet.getWallet().getAddress())
+                .amount(Utils.toNano(0.06))
+                .marketPlaceAddress(marketplace.getAddress())
+                .build();
+        nftSale1.deploy(tonlib, nftSaleConfig);
         Utils.sleep(25, "deploying NFT sale smart-contract for nft item #1");
 
         // get nft item 1 data
@@ -113,9 +147,18 @@ public class TestNft extends CommonTest {
                 .royaltyAmount(Utils.toNano(0.2))
                 .build();
 
-        NftSale nftSale2 = new NftSale(optionsNftSale2);
+        Wallet nftSaleWallet2 = new Wallet(WalletVersion.nftSale, optionsNftSale2);
+        NftSale nftSale2 = nftSaleWallet2.create();
+
+        nftSaleConfig = NftSaleConfig.builder()
+                .adminWalletAddress(adminWallet.getWallet().getAddress())
+                .amount(Utils.toNano(0.06))
+                .marketPlaceAddress(marketplace.getAddress())
+                .build();
+
+//        NftSale nftSale2 = new NftSale(optionsNftSale2);
         log.info("nft-sale-2 address {}", nftSale2.getAddress().toString(true, true, true));
-        nftSale2.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.06), marketplace.getAddress(), adminWallet.getKeyPair());
+        nftSale2.deploy(tonlib, nftSaleConfig);
         Utils.sleep(25, "deploying NFT sale smart-contract for nft item #2");
 
         // get nft item 2 data
@@ -133,11 +176,21 @@ public class TestNft extends CommonTest {
         Utils.sleep(30, "transferring item-2 to nft-sale-2 and waiting for seqno update");
 
         // cancels selling of item1, moves nft-item from nft-sale-1 smc back to adminWallet. nft-sale-1 smc becomes uninitialized
-        nftSale1.cancel(tonlib, adminWallet.getWallet(), Utils.toNano(1), nftSale1.getAddress(), 0, adminWallet.getKeyPair());
+        nftSaleConfig = NftSaleConfig.builder()
+                .adminWalletAddress(adminWallet.getWallet().getAddress())
+                .amount(Utils.toNano(1))
+                .saleAddress(nftSale1.getAddress())
+                .queryId(0)
+                .build();
+        nftSale1.cancel(tonlib, nftSaleConfig);
         Utils.sleep(25);
 
         // buy nft-item-2. send fullPrice+minimalGasAmount(1ton)
-        nftItemBuyer.getWallet().sendTonCoins(tonlib, nftItemBuyer.getKeyPair().getSecretKey(), nftSale2.getAddress(), Utils.toNano(1.2 + 1));
+        WalletV3Config walletV3Config = WalletV3Config.builder()
+                .destination(nftSale2.getAddress())
+                .amount(Utils.toNano(1.2 + 1))
+                .build();
+        nftItemBuyer.getWallet().sendTonCoins(tonlib, walletV3Config);
 
         //after changed owner this will fail with 401 error - current nft collection is not editable, so nothing happens
         editNftCollectionContent(tonlib, adminWallet.getWallet(), Utils.toNano(0.055), nftCollection.getAddress(), "ton://my-nft/collection.json", "ton://my-nft/", 0.16, Address.of(WALLET2_ADDRESS), adminWallet.getKeyPair());
@@ -166,73 +219,55 @@ public class TestNft extends CommonTest {
         return data.getNextItemIndex();
     }
 
-    private void deployNftItem(Tonlib tonlib, WalletContract wallet, BigInteger index, BigInteger msgValue, Address nftCollectionAddress, String nftItemContentUri, TweetNaclFast.Signature.KeyPair keyPair) {
 
-        long seqno = wallet.getSeqno(tonlib);
+    public void changeNftCollectionOwner(Tonlib tonlib, Contract wallet, BigInteger msgValue, Address nftCollectionAddress, Address newOwner, TweetNaclFast.Signature.KeyPair keyPair) {
 
-        ExternalMessage extMsg = wallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                nftCollectionAddress,
-                msgValue,
-                seqno,
-                NftCollection.createMintBody(
-                        0,
-                        index,
-                        msgValue,
-                        wallet.getAddress(),
-                        nftItemContentUri));
-
-        tonlib.sendRawMessage(extMsg.message.toBase64());
+//        long seqno = wallet.getSeqno(tonlib);
+//
+//        ExternalMessage extMsg = wallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                nftCollectionAddress,
+//                msgValue,
+//                seqno,
+//                NftCollection.createChangeOwnerBody(0, newOwner)
+//        );
+//
+//        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
-    public void changeNftCollectionOwner(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address nftCollectionAddress, Address newOwner, TweetNaclFast.Signature.KeyPair keyPair) {
+    public void editNftCollectionContent(Tonlib tonlib, Contract wallet, BigInteger msgValue, Address nftCollectionAddress, String collectionContentUri, String nftItemContentBaseUri, double royalty, Address royaltyAddress, TweetNaclFast.Signature.KeyPair keyPair) {
 
-        long seqno = wallet.getSeqno(tonlib);
-
-        ExternalMessage extMsg = wallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                nftCollectionAddress,
-                msgValue,
-                seqno,
-                NftCollection.createChangeOwnerBody(0, newOwner)
-        );
-
-        tonlib.sendRawMessage(extMsg.message.toBase64());
+//        long seqno = wallet.getSeqno(tonlib);
+//
+//        ExternalMessage extMsg = wallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                nftCollectionAddress,
+//                msgValue,
+//                seqno,
+//                NftCollection.createEditContentBody(
+//                        0,
+//                        collectionContentUri,
+//                        nftItemContentBaseUri,
+//                        royalty,
+//                        royaltyAddress)
+//        );
+//
+//        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
-    public void editNftCollectionContent(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address nftCollectionAddress, String collectionContentUri, String nftItemContentBaseUri, double royalty, Address royaltyAddress, TweetNaclFast.Signature.KeyPair keyPair) {
+    public void getRoyaltyParams(Tonlib tonlib, Contract wallet, BigInteger msgValue, Address nftCollectionAddress, TweetNaclFast.Signature.KeyPair keyPair) {
 
-        long seqno = wallet.getSeqno(tonlib);
-
-        ExternalMessage extMsg = wallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                nftCollectionAddress,
-                msgValue,
-                seqno,
-                NftCollection.createEditContentBody(
-                        0,
-                        collectionContentUri,
-                        nftItemContentBaseUri,
-                        royalty,
-                        royaltyAddress)
-        );
-
-        tonlib.sendRawMessage(extMsg.message.toBase64());
-    }
-
-    public void getRoyaltyParams(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address nftCollectionAddress, TweetNaclFast.Signature.KeyPair keyPair) {
-
-        long seqno = wallet.getSeqno(tonlib);
-
-        ExternalMessage extMsg = wallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                nftCollectionAddress,
-                msgValue,
-                seqno,
-                NftCollection.createGetRoyaltyParamsBody(0)
-        );
-
-        tonlib.sendRawMessage(extMsg.message.toBase64());
+//        long seqno = wallet.getSeqno(tonlib);
+//
+//        ExternalMessage extMsg = wallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                nftCollectionAddress,
+//                msgValue,
+//                seqno,
+//                NftCollection.createGetRoyaltyParamsBody(0)
+//        );
+//
+//        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
     private void getNftItemInfo(NftCollection nftCollection, NftItem nftItem) {
@@ -245,37 +280,37 @@ public class TestNft extends CommonTest {
         log.info("nftItem {}", data);
     }
 
-    private void transferNftItem(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, NftItem nftItem, Address nftSaleAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
+    private void transferNftItem(Tonlib tonlib, Contract wallet, BigInteger msgValue, NftItem nftItem, Address nftSaleAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
 
-        long seqno = wallet.getSeqno(tonlib);
-
-        ExternalMessage extMsg = wallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                nftItem.getAddress(),
-                msgValue,
-                seqno,
-                NftItem.createTransferBody(
-                        0,
-                        nftSaleAddress,
-                        forwardAmount,
-                        forwardPayload,
-                        responseAddress)
-        );
-
-        tonlib.sendRawMessage(extMsg.message.toBase64());
+//        long seqno = wallet.getSeqno(tonlib);
+//
+//        ExternalMessage extMsg = wallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                nftItem.getAddress(),
+//                msgValue,
+//                seqno,
+//                NftItem.createTransferBody(
+//                        0,
+//                        nftSaleAddress,
+//                        forwardAmount,
+//                        forwardPayload,
+//                        responseAddress)
+//        );
+//
+//        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 
-    private void getStaticData(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address nftItemAddress, long queryId, TweetNaclFast.Signature.KeyPair keyPair) {
-        long seqno = wallet.getSeqno(tonlib);
-
-        ExternalMessage extMsg = wallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                nftItemAddress,
-                msgValue,
-                seqno,
-                NftItem.createGetStaticDataBody(queryId)
-        );
-
-        tonlib.sendRawMessage(extMsg.message.toBase64());
+    private void getStaticData(Tonlib tonlib, Contract wallet, BigInteger msgValue, Address nftItemAddress, long queryId, TweetNaclFast.Signature.KeyPair keyPair) {
+//        long seqno = wallet.getSeqno(tonlib);
+//
+//        ExternalMessage extMsg = wallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                nftItemAddress,
+//                msgValue,
+//                seqno,
+//                NftItem.createGetStaticDataBody(queryId)
+//        );
+//
+//        tonlib.sendRawMessage(extMsg.message.toBase64());
     }
 }

@@ -7,7 +7,10 @@ import org.ton.java.cell.*;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.WalletContract;
+import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.MsgAddressExtNone;
+import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -18,7 +21,7 @@ import java.util.*;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class MultisigWallet implements WalletContract {
+public class MultisigWallet implements Contract<MultisigWalletConfig> {
 
     //https://github.com/akifoq/multisig/blob/master/multisig-code.fc
     Options options;
@@ -44,13 +47,6 @@ public class MultisigWallet implements WalletContract {
         return options;
     }
 
-    @Override
-    public Address getAddress() {
-        if (isNull(address)) {
-            return (createStateInit()).address;
-        }
-        return address;
-    }
 
     /**
      * Initial contract storage (init state).
@@ -163,9 +159,9 @@ public class MultisigWallet implements WalletContract {
      * @param keyPair TweetNaclFast.Signature.KeyPair
      */
     public void sendOrder(Tonlib tonlib, TweetNaclFast.Signature.KeyPair keyPair, int pubkeyIndex, Cell order) {
-        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
-        ExternalMessage msg = createExternalMessage(signingMessageBody, keyPair.getSecretKey(), 1, false);
-        tonlib.sendRawMessage(msg.message.toBase64());
+//        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
+//        ExternalMessage msg = createExternalMessage(signingMessageBody, keyPair.getSecretKey(), 1, false);
+//        tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -175,9 +171,9 @@ public class MultisigWallet implements WalletContract {
      * @param secretKey byte[]
      */
     public void sendOrder(Tonlib tonlib, byte[] secretKey, int pubkeyIndex, Cell order) {
-        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
-        ExternalMessage msg = createExternalMessage(signingMessageBody, secretKey, 1, false);
-        tonlib.sendRawMessage(msg.message.toBase64());
+//        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
+//        ExternalMessage msg = createExternalMessage(signingMessageBody, secretKey, 1, false);
+//        tonlib.sendRawMessage(msg.message.toBase64());
     }
 
     /**
@@ -314,12 +310,37 @@ public class MultisigWallet implements WalletContract {
 
     /**
      * We do not override createSigningMessage() since we can send an empty message for deployment.
-     *
-     * @param tonlib    Tonlib
-     * @param secretKey secret key
      */
-    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey) {
-        return tonlib.sendRawMessage(createInitExternalMessageWithoutBody(secretKey).message.toBase64());
+//    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey) {
+//        return tonlib.sendRawMessage(createInitExternalMessageWithoutBody(secretKey).message.toBase64());
+//    }
+    @Override
+    public Cell createTransferBody(MultisigWalletConfig config) {
+        return CellBuilder.beginCell().endCell();
+    }
+
+    @Override
+    public ExtMessageInfo deploy(Tonlib tonlib, MultisigWalletConfig config) {
+        Address ownAddress = getAddress();
+
+        Cell body = createTransferBody(config);
+//
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
+                        .build())
+                .init(createStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeRef(body)
+                        .endCell())
+                .build();
+
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
     /**
@@ -329,14 +350,15 @@ public class MultisigWallet implements WalletContract {
      * @return Cell
      */
     public static Cell createOneInternalMsg(Address destination, BigInteger amount, int mode) {
-        Cell intMsgHeader = Contract.createInternalMessageHeader(destination, amount);
-        Cell intMsgTransfer = Contract.createCommonMsgInfo(intMsgHeader);
-
-        CellBuilder p = CellBuilder.beginCell();
-        p.storeUint(mode, 8);
-        p.storeRef(intMsgTransfer);
-
-        return p.endCell();
+//        Cell intMsgHeader = Contract.createInternalMessageHeader(destination, amount);
+//        Cell intMsgTransfer = Contract.createCommonMsgInfo(intMsgHeader);
+//
+//        CellBuilder p = CellBuilder.beginCell();
+//        p.storeUint(mode, 8);
+//        p.storeRef(intMsgTransfer);
+//
+//        return p.endCell();
+        return null; // todo
     }
 
     /**

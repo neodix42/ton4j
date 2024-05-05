@@ -4,21 +4,28 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.ItemData;
+import org.ton.java.smartcontract.types.NftItemConfig;
 import org.ton.java.smartcontract.types.Royalty;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
+import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.MsgAddressExtNone;
+import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class NftItem implements Contract {
+public class NftItem implements Contract<NftItemConfig> {
     // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-item.fc
     Options options;
     Address address;
@@ -50,14 +57,6 @@ public class NftItem implements Contract {
         return options;
     }
 
-    @Override
-    public Address getAddress() {
-        if (isNull(address)) {
-            return (createStateInit()).address;
-        }
-        return address;
-    }
-
     /**
      * @return Cell cell contains nft data
      */
@@ -67,6 +66,11 @@ public class NftItem implements Contract {
         cell.storeUint(options.index, 64);
         cell.storeAddress(options.collectionAddress);
         return cell.endCell();
+    }
+
+    @Override
+    public Cell createTransferBody(NftItemConfig config) {
+        return null;
     }
 
 
@@ -135,6 +139,53 @@ public class NftItem implements Contract {
             cell.storeBytes(forwardPayload);
         }
         return cell.endCell();
+    }
+
+    @Override
+    public ExtMessageInfo deploy(Tonlib tonlib, NftItemConfig config) {
+
+//        long seqno = wallet.getSeqno(tonlib);
+//
+//        ExternalMessage extMsg = wallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                nftCollectionAddress,
+//                msgValue,
+//                seqno,
+//                NftCollection.createMintBody(
+//                        0,
+//                        index,
+//                        msgValue,
+//                        wallet.getAddress(),
+//                        nftItemContentUri));
+//
+//        return tonlib.sendRawMessage(extMsg.message.toBase64());
+
+        // should be internal msg
+        Address ownAddress = getAddress();
+
+        Cell body = NftCollection.createMintBody(
+                0,
+                config.getIndex(),
+                config.getAmount(),
+                this.getAddress(),
+                config.getNftItemContentUri());
+
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
+                        .build())
+                .init(createStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeRef(body)
+                        .endCell())
+                .build();
+
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
     /**

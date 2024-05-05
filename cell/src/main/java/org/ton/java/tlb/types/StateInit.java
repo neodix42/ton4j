@@ -4,9 +4,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
@@ -60,5 +62,18 @@ public class StateInit {
                 .data(cs.loadMaybeRefX())
                 .lib(cs.loadMaybeRefX())
                 .build();
+    }
+
+    public Address getAddress(long wc) {
+        return Address.of(wc + ":" + Utils.bytesToHex(this.toCell().getHash()));
+    }
+
+    public Address getAddress() {
+        return Address.of("0:" + Utils.bytesToHex(this.toCell().getHash()));
+    }
+
+    public Address getAddressNonBounceable(boolean isTestOnly) {
+        Address address = Address.of("0:" + Utils.bytesToHex(this.toCell().getHash()));
+        return Address.of(address.toString(true, true, false, isTestOnly));
     }
 }

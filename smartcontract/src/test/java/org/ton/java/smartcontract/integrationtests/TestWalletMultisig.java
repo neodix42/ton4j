@@ -109,7 +109,9 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
+        MultisigWalletConfig config = MultisigWalletConfig.builder()
+                .build();
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying"); // with empty ext-msg
@@ -240,7 +242,9 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
+        MultisigWalletConfig config = MultisigWalletConfig.builder()
+                .build();
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying"); // with empty ext-msg
@@ -406,7 +410,9 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
+        MultisigWalletConfig config = MultisigWalletConfig.builder()
+                .build();
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying"); // with empty ext msg
@@ -484,7 +490,9 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair3.getSecretKey());
+        MultisigWalletConfig config = MultisigWalletConfig.builder()
+                .build();
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying"); // with empty ext msg
@@ -577,7 +585,9 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
+        MultisigWalletConfig config = MultisigWalletConfig.builder()
+                .build();
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying"); // with empty ext msg
@@ -698,7 +708,9 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
+        MultisigWalletConfig config = MultisigWalletConfig.builder()
+                .build();
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying"); // with empty ext msg
@@ -783,7 +795,9 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, ownerKeyPair.getSecretKey());
+        MultisigWalletConfig config = MultisigWalletConfig.builder()
+                .build();
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying"); // with empty ext msg

@@ -43,9 +43,9 @@ public class TestWalletV2Highload extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .walletId(42L)
-                .highloadQueryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32)
-                        .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
+//                .highloadQueryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32).add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
                 .wc(0L)
                 .build();
 
@@ -64,12 +64,17 @@ public class TestWalletV2Highload extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        HighloadConfig highloadConfig = HighloadConfig.builder()
+                .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32)
+                        .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
+                .build();
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, highloadConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");
 
-        HighloadConfig highloadConfig = HighloadConfig.builder()
+        highloadConfig = HighloadConfig.builder()
                 .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
                 .destinations(List.of(
                         Destination.builder()
@@ -121,7 +126,7 @@ public class TestWalletV2Highload extends CommonTest {
                 .build();
 
         // transfer coins to multiple destination as specified in options
-        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), highloadConfig);
+        extMessageInfo = contract.sendTonCoins(tonlib, highloadConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(90, "sending to 10 destinations");
@@ -138,8 +143,9 @@ public class TestWalletV2Highload extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .walletId(42L)
-                .highloadQueryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32)
+                .highloadQueryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32) // todo remove
                         .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
                 .wc(0L)
                 .build();
@@ -158,19 +164,23 @@ public class TestWalletV2Highload extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        HighloadConfig highloadConfig = HighloadConfig.builder()
+                .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
+                .build();
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, highloadConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(45, "deploying");
 
         List<Destination> destinations = generateTargetsWithSameAmountAndSendMode(200, keyPair.getPublicKey());
 
-        HighloadConfig highloadConfig = HighloadConfig.builder()
+        highloadConfig = HighloadConfig.builder()
                 .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
                 .destinations(destinations)
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), highloadConfig);
+        extMessageInfo = contract.sendTonCoins(tonlib, highloadConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 

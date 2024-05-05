@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.smartcontract.types.InitExternalMessage;
+import org.ton.java.smartcontract.types.WalletV1R3Config;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
@@ -15,6 +15,7 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.AccountAddressOnly;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.FullAccountState;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -40,11 +41,11 @@ public class TestFaucet {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
-        WalletV1ContractR3 faucet = wallet.create();
+        WalletV1ContractR3 faucet = new Wallet(WalletVersion.V1R3, options).create();
 
         BigInteger faucetBalance = null;
         int i = 0;
@@ -65,7 +66,15 @@ public class TestFaucet {
             }
         } while (isNull(faucetBalance));
 
-        ExtMessageInfo extMessageInfo = faucet.sendTonCoins(tonlib, keyPair.getSecretKey(), destinationAddress, amount, "top-up from ton4j");
+        WalletV1R3Config config = WalletV1R3Config.builder()
+                .bounce(false)
+                .destination(destinationAddress)
+                .amount(amount)
+//                .seqno(faucet.getSeqno(tonlib))
+                .comment("top-up from ton4j")
+                .build();
+
+        ExtMessageInfo extMessageInfo = faucet.sendTonCoins(tonlib, config);
 
         if (extMessageInfo.getError().getCode() != 0) {
             throw new Error(extMessageInfo.getError().getMessage());
@@ -128,24 +137,34 @@ public class TestFaucet {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
-        WalletV1ContractR3 contract = wallet.create();
+        WalletV1ContractR3 contract = new Wallet(WalletVersion.V1R3, options).create();
+
         log.info("Private key {}", Utils.bytesToHex(keyPair.getSecretKey()));
         log.info("Public key {}", Utils.bytesToHex(keyPair.getPublicKey()));
-        log.info("Non-bounceable address (for init): {}", contract.getAddress().toString(true, true, false, true));
+        String nonBounceableAddress = contract.getAddress().toString(true, true, false, true);
+        log.info("Non-bounceable address (for init): {}", nonBounceableAddress);
         log.info("Bounceable address (for later access): {}", contract.getAddress().toString(true, true, true, true));
         log.info("Raw address: {}", contract.getAddress().toString(false));
-        InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
 
-        log.info("deploying faucet contract to address {}", contract.getAddress().toString(false));
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
                 .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
-        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.message.toBase64());
+
+//        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, WalletV1R3Config.builder()
+                .bounce(false)
+                .destination(Address.of(nonBounceableAddress))
+                .build());
+
+
+//        log.info("deploying faucet contract to address {}", contract.getAddress().toString(false));
+//        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 

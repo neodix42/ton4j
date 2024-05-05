@@ -7,11 +7,14 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.types.WalletV1R2Config;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR2;
+import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -24,9 +27,20 @@ public class TestWalletV1R2DeployTransfer extends CommonTest {
 
     @Test
     public void testNewWalletV1R2() throws InterruptedException {
+
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder().publicKey(keyPair.getPublicKey()).wc(0L).build();
+        Options options = Options.builder()
+                .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
+                .wc(0L)
+                .build();
 
         log.info(WalletVersion.V1R2.getValue());
         log.info("Wallet version {}", WalletVersion.getKeyByValue("V1R2"));
@@ -39,18 +53,28 @@ public class TestWalletV1R2DeployTransfer extends CommonTest {
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
+        log.info("           raw address {}", contract.getAddress().toString(false));
 
         // top up new wallet using test-faucet-wallet        
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        WalletV1R2Config config = WalletV1R2Config.builder()
+                //. destination()
+                //.amount()
+                .build();
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30);
 
+        config = WalletV1R2Config.builder()
+                .destination(Address.of(TestFaucet.BOUNCEABLE))
+                .amount(Utils.toNano(0.8))
+                .comment("testNewWalletV1R2")
+                .build();
         // transfer coins from new wallet (back to faucet)
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testNewWalletV1R2");
+        contract.sendTonCoins(tonlib, config);
 
         Utils.sleep(30);
 

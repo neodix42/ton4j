@@ -4,11 +4,13 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.token.nft.NftUtils;
+import org.ton.java.smartcontract.types.JettonWalletConfig;
 import org.ton.java.smartcontract.types.JettonWalletData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
@@ -18,7 +20,7 @@ import java.math.BigInteger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class JettonWallet implements Contract {
+public class JettonWallet implements Contract<JettonWalletConfig> {
 
     Options options;
     Address address;
@@ -48,17 +50,20 @@ public class JettonWallet implements Contract {
         return options;
     }
 
-    @Override
-    public Address getAddress() {
-        if (isNull(this.address)) {
-            return (createStateInit()).address;
-        }
-        return this.address;
-    }
 
     @Override
     public Cell createDataCell() {
         return CellBuilder.beginCell().endCell();
+    }
+
+    @Override
+    public Cell createTransferBody(JettonWalletConfig config) {
+        return null;
+    }
+
+    @Override
+    public ExtMessageInfo deploy(Tonlib tonlib, JettonWalletConfig config) {
+        return null;
     }
 
     /**

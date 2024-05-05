@@ -7,11 +7,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.TestFaucet;
-import org.ton.java.smartcontract.types.InitExternalMessage;
+import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.VerbosityLevel;
@@ -37,28 +38,29 @@ public class TestWalletV3R1DeployTransfer extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V3R1, options);
-        WalletV3ContractR1 contract = wallet.create();
+        WalletV3ContractR1 contract = new Wallet(WalletVersion.V3R1, options).create();
 
-        InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
-        Address address = msg.address;
+
+        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Address address = msg.getInit().getAddress();
 
         String nonBounceableAddress = address.toString(true, true, false, true);
         String bounceableAddress = address.toString(true, true, true, true);
 
         String my = "Creating new wallet in workchain " + options.wc + "\n";
         my = my + "Loading private key from file new-wallet.pk" + "\n";
-        my = my + "StateInit: " + msg.stateInit.print() + "\n";
+        my = my + "StateInit: " + msg.getInit().toCell().print() + "\n";
         my = my + "new wallet address = " + address.toString(false) + "\n";
         my = my + "(Saving address to file new-wallet.addr)" + "\n";
         my = my + "Non-bounceable address (for init): " + nonBounceableAddress + "\n";
         my = my + "Bounceable address (for later access): " + bounceableAddress + "\n";
-        my = my + "signing message: " + msg.signingMessage.print() + "\n";
-        my = my + "External message for initialization is " + msg.message.print() + "\n";
-        my = my + Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n";
+        my = my + "signing message: " + msg.getBody().print() + "\n";
+        my = my + "External message for initialization is " + msg.toCell().print() + "\n";
+        my = my + Utils.bytesToHex(msg.getBody().toBoc()).toUpperCase() + "\n";
         my = my + "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
@@ -67,13 +69,20 @@ public class TestWalletV3R1DeployTransfer extends CommonTest {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
-        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.message.toBase64());
+        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30);
 
         // try to transfer coins from new wallet (back to faucet)
-        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8), "testWalletV3R1");
+        WalletV3Config config = WalletV3Config.builder()
+                .destination(Address.of(TestFaucet.BOUNCEABLE))
+                .amount(Utils.toNano(0.8))
+                .comment("testWalletV3R1")
+                .build();
+
+//        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30);

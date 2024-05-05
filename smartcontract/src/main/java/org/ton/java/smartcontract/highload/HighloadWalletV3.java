@@ -7,8 +7,8 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.HighloadV3BatchItem;
 import org.ton.java.smartcontract.types.HighloadV3Config;
 import org.ton.java.smartcontract.types.WalletCodes;
+import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -21,7 +21,7 @@ import java.math.BigInteger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class HighloadWalletV3 implements WalletContract {
+public class HighloadWalletV3 implements Contract<HighloadV3Config> {
 
     Options options;
     Address address;
@@ -46,13 +46,6 @@ public class HighloadWalletV3 implements WalletContract {
         return options;
     }
 
-    @Override
-    public Address getAddress() {
-        if (isNull(address)) {
-            return (createStateInit()).address;
-        }
-        return address;
-    }
 
     /**
      * initial contract storage
@@ -77,14 +70,8 @@ public class HighloadWalletV3 implements WalletContract {
     }
 
     @Override
-    public CellBuilder createSigningMessage(long seqno) {
-        CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
-
-        message.storeUint(getOptions().getHighloadQueryId(), 64);
-        message.storeBit(false);
-
-        return message;
+    public Cell createTransferBody(HighloadV3Config config) {
+        return null; // todo
     }
 
     public String getPublicKey(Tonlib tonlib) {
@@ -110,7 +97,7 @@ public class HighloadWalletV3 implements WalletContract {
      *
      * @return Cell
      */
-    public Cell createMessageInner(HighloadV3Config highloadConfig) {
+    public Cell createMessageInner(HighloadV3Config highloadConfig) { // todo rename
         return CellBuilder.beginCell()
                 .storeUint(BigInteger.valueOf(getOptions().getWalletId()), 32)
                 .storeRef(highloadConfig.getBody())
@@ -123,10 +110,9 @@ public class HighloadWalletV3 implements WalletContract {
 
     /**
      * @param tonlib         Tonlib
-     * @param secretKey      byte[]
      * @param highloadConfig HighloadV3Config
      */
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, HighloadV3Config highloadConfig) {
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, HighloadV3Config highloadConfig) {
         Address ownAddress = getAddress();
 
         Cell innerMsg = createMessageInner(highloadConfig);
@@ -140,7 +126,7 @@ public class HighloadWalletV3 implements WalletContract {
                                 .build())
                         .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().publicKey, secretKey, innerMsg.hash()))
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), innerMsg.hash()))
                         .storeRef(innerMsg)
                         .endCell())
                 .build();
@@ -148,7 +134,7 @@ public class HighloadWalletV3 implements WalletContract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey, HighloadV3Config highloadConfig) {
+    public ExtMessageInfo deploy(Tonlib tonlib, HighloadV3Config highloadConfig) {
         Address ownAddress = getAddress();
 
         if (isNull(highloadConfig.getBody())) {
@@ -180,7 +166,7 @@ public class HighloadWalletV3 implements WalletContract {
                         .data(createDataCell())
                         .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().publicKey, secretKey, innerMsg.hash()))
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), innerMsg.hash()))
                         .storeRef(innerMsg)
                         .endCell())
                 .build();

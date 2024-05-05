@@ -5,23 +5,25 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.TonHashMap;
 import org.ton.java.smartcontract.types.Destination;
-import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.HighloadConfig;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.WalletContract;
+import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.MsgAddressExtNone;
+import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class HighloadWallet implements WalletContract {
+public class HighloadWallet implements Contract<HighloadConfig> {
 
     //https://github.com/ton-blockchain/ton/blob/master/crypto/smartcont/highload-wallet-v2-code.fc
     Options options;
@@ -47,13 +49,6 @@ public class HighloadWallet implements WalletContract {
         return options;
     }
 
-    @Override
-    public Address getAddress() {
-        if (isNull(address)) {
-            return (createStateInit()).address;
-        }
-        return address;
-    }
 
     /**
      * initial contract storage
@@ -71,12 +66,17 @@ public class HighloadWallet implements WalletContract {
     }
 
     @Override
-    public CellBuilder createSigningMessage(long seqno) {
+    public Cell createTransferBody(HighloadConfig config) {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
         message.storeUint(getOptions().getHighloadQueryId(), 64);
-        message.storeBit(false);
-        return message;
+        if (nonNull(config.getDestinations())) {
+            message.storeBit(true);
+            message.storeRef(createDict(config));
+        } else {
+            message.storeBit(false);
+        }
+        return message.endCell();
     }
 
     public Cell createSigningMessageInternal(HighloadConfig highloadConfig) {
@@ -104,13 +104,32 @@ public class HighloadWallet implements WalletContract {
      * Sends to up to 84 destinations
      *
      * @param tonlib         Tonlib
-     * @param secretKey      byte[]
      * @param highloadConfig HighloadConfig
      */
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, HighloadConfig highloadConfig) {
-        Cell signingMessageAll = createSigningMessageInternal(highloadConfig);
-        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1);
-        return tonlib.sendRawMessage(msg.message.toBase64());
+    public ExtMessageInfo sendTonCoins(Tonlib tonlib, HighloadConfig highloadConfig) {
+//        Cell signingMessageAll = createSigningMessageInternal(highloadConfig);
+//        ExternalMessage msg = createExternalMessage(signingMessageAll, secretKey, 1);
+//        return tonlib.sendRawMessage(msg.message.toBase64());
+
+        Address ownAddress = getAddress();
+
+        Cell innerMsg = createTransferBody(highloadConfig);
+
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
+                        .build())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), innerMsg.hash()))
+                        .storeRef(innerMsg)
+                        .endCell())
+                .build();
+
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
     private Cell createDict(HighloadConfig highloadConfig) {
@@ -120,21 +139,19 @@ public class HighloadWallet implements WalletContract {
         long i = 0; // key, index 16bit
         for (Destination destination : highloadConfig.getDestinations()) {
 
-            Cell orderHeader = Contract.createInternalMessageHeader(destination.getAddress(), destination.getAmount());
             Cell order;
             if (nonNull(destination.getComment())) {
-                order = Contract.createCommonMsgInfo(orderHeader, null,
-                        CellBuilder.beginCell()
-                                .storeUint(0, 32)
-                                .storeString(destination.getComment())
-                                .endCell());
+                order = this.createInternalMessage(destination.getAddress(), destination.getAmount(), CellBuilder.beginCell()
+                        .storeUint(0, 32)
+                        .storeString(destination.getComment())
+                        .endCell()).toCell();
             } else {
-                order = Contract.createCommonMsgInfo(orderHeader);
+                order = this.createInternalMessage(destination.getAddress(), destination.getAmount(), null).toCell();
             }
 
-            CellBuilder p = CellBuilder.beginCell();
-            p.storeUint(destination.getMode(), 8); // mode
-            p.storeRef(order);
+            CellBuilder p = CellBuilder.beginCell()
+                    .storeUint(destination.getMode(), 8)
+                    .storeRef(order);
 
             dictDestinations.elements.put(i++, p.endCell());
         }
@@ -147,7 +164,30 @@ public class HighloadWallet implements WalletContract {
         return cellDict;
     }
 
-    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey) {
-        return tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
+    @Override
+    public ExtMessageInfo deploy(Tonlib tonlib, HighloadConfig config) {
+
+        Address ownAddress = getAddress();
+
+        Cell body = createTransferBody(config);
+
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
+                        .build())
+                .init(createStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeRef(body)
+                        .endCell())
+                .build();
+
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+
+//        return tonlib.sendRawMessage(createInitExternalMessage(secretKey).message.toBase64());
     }
 }

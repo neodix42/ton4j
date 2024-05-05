@@ -7,11 +7,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
-import org.ton.java.smartcontract.types.InitExternalMessage;
 import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.utils.Utils;
 
 import java.util.List;
@@ -30,6 +30,7 @@ public class TestWalletsLockup {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .lockupConfig(LockupConfig.builder()
                         .allowedDestinations(
@@ -42,16 +43,16 @@ public class TestWalletsLockup {
         Wallet wallet = new Wallet(WalletVersion.lockup, options);
         LockupWalletV1 contract = wallet.create();
 
-        InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
-        Address address = msg.address;
+        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Address address = msg.getInit().getAddress();
 
         String info = "Creating lockup wallet in workchain " + options.wc + "\n" +
-                "StateInit: " + msg.stateInit.print() + "\n" +
+                "StateInit: " + msg.getInit().toCell().print() + "\n" +
                 "new wallet address = " + address.toString(false) + "\n" +
                 "Non-bounceable address (for init): " + address.toString(true, true, false, true) + "\n" +
                 "Bounceable address (for later access): " + address.toString(true, true, true, true);
         log.info(info);
 
-        assertThat(msg.code).isNotNull();
+        assertThat(msg.getInit().getCode()).isNotNull();
     }
 }

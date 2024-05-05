@@ -8,9 +8,10 @@ import org.ton.java.mnemonic.Ed25519;
 import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.ChannelData;
 import org.ton.java.smartcontract.types.ChannelState;
+import org.ton.java.smartcontract.types.FromWalletConfig;
 import org.ton.java.smartcontract.types.WalletCodes;
+import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.WalletContract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 
@@ -20,7 +21,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.ton.java.smartcontract.payments.PaymentsUtils.*;
 
-public class PaymentChannel implements WalletContract {
+public class PaymentChannel implements Contract<FromWalletConfig> {
 
     public static final long STATE_UNINITED = 0;
     public static final long STATE_OPEN = 1;
@@ -76,14 +77,6 @@ public class PaymentChannel implements WalletContract {
     }
 
     @Override
-    public Address getAddress() {
-        if (isNull(this.address)) {
-            return (createStateInit()).address;
-        }
-        return this.address;
-    }
-
-    @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeBit(false); // inited
@@ -109,13 +102,24 @@ public class PaymentChannel implements WalletContract {
         cell.storeUint(0, 32); // committed_seqno_B
         cell.storeBit(false); // quarantine ref
 
-        CellBuilder paymentConfig = CellBuilder.beginCell();
-        paymentConfig.storeCoins(isNull(getOptions().excessFee) ? BigInteger.ZERO : getOptions().excessFee); // excess_fee
-        paymentConfig.storeAddress(getOptions().getChannelConfig().getAddressA()); // addr_A
-        paymentConfig.storeAddress(getOptions().getChannelConfig().getAddressB()); // addr_B
+        CellBuilder paymentConfig = CellBuilder.beginCell()
+                .storeCoins(isNull(getOptions().excessFee) ? BigInteger.ZERO : getOptions().excessFee) // excess_fee
+                .storeAddress(getOptions().getChannelConfig().getAddressA()) // addr_A
+                .storeAddress(getOptions().getChannelConfig().getAddressB()); // addr_B
+
         cell.storeRef(paymentConfig.endCell());
 
         return cell.endCell();
+    }
+
+    @Override
+    public Cell createTransferBody(FromWalletConfig config) {
+        return null;
+    }
+
+    @Override
+    public ExtMessageInfo deploy(Tonlib tonlib, FromWalletConfig config) {
+        return null;
     }
 
     public Signature createOneSignature(long op, Cell cellForSigning) {
@@ -220,21 +224,36 @@ public class PaymentChannel implements WalletContract {
     }
 
     public boolean verifyClose(ChannelState channelState, byte[] hisSignature) {
-        Cell cell = PaymentsUtils.createCooperativeCloseChannelBody(getOptions().getChannelConfig().getChannelId(),
-                channelState.getBalanceA(), channelState.getBalanceB(), channelState.getSeqnoA(), channelState.getSeqnoB());
+        Cell cell = PaymentsUtils.createCooperativeCloseChannelBody(
+                getOptions().getChannelConfig().getChannelId(),
+                channelState.getBalanceA(),
+                channelState.getBalanceB(),
+                channelState.getSeqnoA(),
+                channelState.getSeqnoB());
         return Ed25519.verify(getOptions().isA ? getOptions().publicKeyB : getOptions().publicKeyA, cell.hash(), hisSignature);
     }
 
     public Signature createStartUncooperativeClose(Cell signedSemiChannelStateA, Cell signedSemiChannelStateB) {
-        return this.createOneSignature(op_start_uncooperative_close, createStartUncooperativeCloseBody(getOptions().getChannelConfig().getChannelId(), signedSemiChannelStateA, signedSemiChannelStateB));
+        return this.createOneSignature(op_start_uncooperative_close,
+                createStartUncooperativeCloseBody(
+                        getOptions().getChannelConfig().getChannelId(),
+                        signedSemiChannelStateA,
+                        signedSemiChannelStateB));
     }
 
     public Signature createChallengeQuarantinedState(Cell signedSemiChannelStateA, Cell signedSemiChannelStateB) {
-        return this.createOneSignature(op_challenge_quarantined_state, createChallengeQuarantinedStateBody(getOptions().getChannelConfig().getChannelId(), signedSemiChannelStateA, signedSemiChannelStateB));
+        return this.createOneSignature(op_challenge_quarantined_state,
+                createChallengeQuarantinedStateBody(
+                        getOptions().getChannelConfig().getChannelId(),
+                        signedSemiChannelStateA,
+                        signedSemiChannelStateB));
     }
 
     public Signature createSettleConditionals(Cell conditionalsToSettle) {
-        return this.createOneSignature(op_settle_conditionals, createSettleConditionalsBody(getOptions().getChannelConfig().getChannelId(), conditionalsToSettle));
+        return this.createOneSignature(op_settle_conditionals,
+                createSettleConditionalsBody(
+                        getOptions().getChannelConfig().getChannelId(),
+                        conditionalsToSettle));
     }
 
     public Cell createFinishUncooperativeClose() {
@@ -321,7 +340,7 @@ public class PaymentChannel implements WalletContract {
                 .build();
     }
 
-    public FromWallet fromWallet(Tonlib tonlib, WalletContract wallet, byte[] secretKey) {
+    public FromWallet fromWallet(Tonlib tonlib, Contract wallet, byte[] secretKey) {
         return new FromWallet(tonlib, wallet, secretKey, this.options);
     }
 }

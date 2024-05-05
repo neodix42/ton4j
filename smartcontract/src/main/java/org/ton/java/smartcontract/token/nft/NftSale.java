@@ -4,11 +4,14 @@ import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.ExternalMessage;
+import org.ton.java.smartcontract.types.NftSaleConfig;
 import org.ton.java.smartcontract.types.NftSaleData;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.WalletContract;
+import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.MsgAddressExtNone;
+import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
@@ -21,7 +24,7 @@ import java.math.BigInteger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class NftSale implements Contract {
+public class NftSale implements Contract<NftSaleConfig> {
     public static final String NFT_SALE_HEX_CODE = "B5EE9C7241020A010001B4000114FF00F4A413F4BCF2C80B01020120020302014804050004F2300202CD0607002FA03859DA89A1F481F481F481F401A861A1F401F481F4006101F7D00E8698180B8D8492F82707D201876A2687D207D207D207D006A18116BA4E10159C71D991B1B2990E382C92F837028916382F970FA01698FC1080289C6C8895D7970FAE99F98FD2018201A642802E78B2801E78B00E78B00FD016664F6AA701363804C9B081B2299823878027003698FE99F9810E000C92F857010C0801F5D41081DCD650029285029185F7970E101E87D007D207D0018384008646582A804E78B28B9D090D0A85AD08A500AFD010AE5B564B8FD80384008646582AC678B2803FD010B65B564B8FD80384008646582A802E78B00FD0109E5B564B8FD80381041082FE61E8A10C00C646582A802E78B117D010A65B509E58F8A40900C8C0029A3110471036454012F004E032363704C0038E4782103B9ACA0015BEF2E1C95312C70559C705B1F2E1CA702082105FCC3D14218010C8CB055006CF1622FA0215CB6A14CB1F14CB3F21CF1601CF16CA0021FA02CA00C98100A0FB00E05F06840FF2F0002ACB3F22CF1658CF16CA0021FA02CA00C98100A0FB00AECABAD1";
 
     Options options;
@@ -57,14 +60,6 @@ public class NftSale implements Contract {
         return options;
     }
 
-    @Override
-    public Address getAddress() {
-        if (isNull(address)) {
-            return (createStateInit()).address;
-        }
-        return address;
-    }
-
     /**
      * @return Cell cell contains sale data
      */
@@ -83,6 +78,17 @@ public class NftSale implements Contract {
         cell.storeRef(feesCell.endCell());
 
         return cell.endCell();
+    }
+
+    @Override
+    public Cell createTransferBody(NftSaleConfig config) {
+        Cell emptyBody = CellBuilder.beginCell().endCell();
+
+        return CellBuilder.beginCell()
+                .storeUint(1, 32)
+                .storeCoins(config.getAmount())
+                .storeRef(createStateInit().toCell())
+                .storeRef(emptyBody).endCell();
     }
 
 
@@ -155,44 +161,76 @@ public class NftSale implements Contract {
     /**
      * Deploys nft-sale smc to marketplaceAddress
      */
-    public ExtMessageInfo deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address marketplaceAddress, TweetNaclFast.Signature.KeyPair keyPair) {
+    public ExtMessageInfo deploy(Tonlib tonlib, NftSaleConfig config) {
 
-        long seqno = wallet.getSeqno(tonlib);
+//        long seqno = wallet.getSeqno(tonlib);
+//
+//        Cell emptyBody = CellBuilder.beginCell().endCell();
+//
+//        byte[] signature = buildSignature(keyPair, this.createStateInit().stateInit, emptyBody);
+//
+//        CellBuilder body = CellBuilder.beginCell();
+//        body.storeUint(1, 32);
+////        body.storeBytes(signature);
+//        body.storeCoins(config.msgValue);
+//        body.storeRef(this.createStateInit().stateInit);
+//        body.storeRef(emptyBody);
+//
+//        ExternalMessage extMsg = wallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                marketplaceAddress,
+//                msgValue,
+//                seqno,
+//                body.endCell()
+//        );
+//
+//        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+        Cell body = createTransferBody(config);
 
-        Cell emptyBody = CellBuilder.beginCell().endCell();
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(config.getMarketPlaceAddress().wc)
+                                .address(config.getMarketPlaceAddress().toBigInteger())
+                                .build())
+                        .build())
+                .init(createStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeRef(body)
+                        .endCell())
+                .build();
 
-        byte[] signature = buildSignature(keyPair, this.createStateInit().stateInit, emptyBody);
-
-        CellBuilder body = CellBuilder.beginCell();
-        body.storeUint(1, 32);
-//        body.storeBytes(signature);
-        body.storeCoins(msgValue);
-        body.storeRef(this.createStateInit().stateInit);
-        body.storeRef(emptyBody);
-
-        ExternalMessage extMsg = wallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                marketplaceAddress,
-                msgValue,
-                seqno,
-                body.endCell()
-        );
-
-        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public void cancel(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, Address saleAddress, long queryId, TweetNaclFast.Signature.KeyPair keyPair) {
+    public void cancel(Tonlib tonlib, NftSaleConfig config) {
 
-        long seqno = wallet.getSeqno(tonlib);
+//        long seqno = wallet.getSeqno(tonlib);
+//        ExternalMessage extMsg = wallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                saleAddress,
+//                msgValue,
+//                seqno,
+//                NftSale.createCancelBody(queryId)
+//        );
+//        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
 
-        ExternalMessage extMsg = wallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                saleAddress,
-                msgValue,
-                seqno,
-                NftSale.createCancelBody(queryId)
-        );
+        long seqno = this.getSeqno(tonlib);// todo seqno!!
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+        Cell burnBody = NftSale.createCancelBody(config.getQueryId());
+//review destination address
+        Cell body = this.createInternalMessage(config.getSaleAddress(), config.getAmount(), burnBody).toCell();
+
+        Cell extMsg = this.createExternalMessage(config.getSaleAddress(), false, body).toCell();
+//        ExternalMessage extMsg = admin.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                Address.of(jettonWalletAddress),
+//                Utils.toNano(0.05),
+//                seqno,
+//                body);
+
+        tonlib.sendRawMessage(extMsg.toBase64());
     }
 }

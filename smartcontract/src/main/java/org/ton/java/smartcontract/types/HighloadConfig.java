@@ -12,7 +12,7 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
-public class HighloadConfig {
+public class HighloadConfig implements WalletConfig {
     public BigInteger queryId;
     public List<Destination> destinations;
 }

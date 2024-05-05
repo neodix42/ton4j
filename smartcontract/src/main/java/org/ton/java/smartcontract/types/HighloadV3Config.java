@@ -1,20 +1,19 @@
 package org.ton.java.smartcontract.types;
 
-import java.math.BigInteger;
-
-import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.address.Address;
+import org.ton.java.cell.Cell;
+
+import java.math.BigInteger;
 
 @Builder
 @Getter
 @Setter
 @ToString
-public class HighloadV3Config {
+public class HighloadV3Config implements WalletConfig {
     byte mode;
     int queryId;
     long createdAt;

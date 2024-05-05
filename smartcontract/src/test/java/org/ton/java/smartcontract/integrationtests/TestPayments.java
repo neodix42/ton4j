@@ -105,7 +105,11 @@ public class TestPayments extends CommonTest {
         // 0.05 TON is the amount to execute this transaction on the blockchain. The unused portion will be returned.
         // After this action, a smart contract of our payment channel will be created in the blockchain.
 
-        fromWalletA.deploy(Utils.toNano(0.05)).send();
+        FromWalletConfig config = FromWalletConfig.builder()
+                .amount(Utils.toNano(0.05))
+                .build();
+
+        fromWalletA.deploy(config);
         Utils.sleep(30, "deploying channel A");
 
         log.info("channel A state {}", channelA.getChannelState(tonlib));
@@ -118,9 +122,14 @@ public class TestPayments extends CommonTest {
 
         // Now each parties must send their initial balance from the wallet to the channel contract.
 
-        fromWalletA.topUp(channelInitState.getBalanceA(), BigInteger.ZERO, channelInitState.getBalanceA().add(Utils.toNano(0.05))).send(); // +0.05 TON to network fees
+        fromWalletA.topUp(channelInitState.getBalanceA(),
+                BigInteger.ZERO,
+                channelInitState.getBalanceA().add(Utils.toNano(0.05))); // +0.05 TON to network fees
         Utils.sleep(30, "topping up from wallet A...");
-        fromWalletB.topUp(BigInteger.ZERO, channelInitState.getBalanceB(), channelInitState.getBalanceB().add(Utils.toNano(0.05))).send(); // +0.05 TON to network fees
+
+        fromWalletB.topUp(BigInteger.ZERO,
+                channelInitState.getBalanceB(),
+                channelInitState.getBalanceB().add(Utils.toNano(0.05))); // +0.05 TON to network fees
         Utils.sleep(30, "topping up from wallet B...");
 
         log.info("channel A state {}", channelA.getChannelState(tonlib));
@@ -133,7 +142,9 @@ public class TestPayments extends CommonTest {
 
         // After everyone has done top-up, we can initialize the channel from any wallet
 
-        fromWalletA.init(channelInitState.getBalanceA(), channelInitState.getBalanceB(), Utils.toNano(0.05)).send();
+        fromWalletA.init(channelInitState.getBalanceA(),
+                channelInitState.getBalanceB(),
+                Utils.toNano(0.05));
         Utils.sleep(30, "initializing channel...");
         // to check, call the get method - `state` should change to `TonWeb.payments.PaymentChannel.STATE_OPEN`
 
@@ -230,6 +241,6 @@ public class TestPayments extends CommonTest {
             throw new Error("Invalid B signature");
         }
 
-        fromWalletA.close(channelState3, signatureCloseB, Utils.toNano(0.05)).send();
+        fromWalletA.close(channelState3, signatureCloseB, Utils.toNano(0.05));
     }
 }

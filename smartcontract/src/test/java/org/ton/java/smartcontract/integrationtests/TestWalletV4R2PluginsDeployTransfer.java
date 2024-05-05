@@ -9,12 +9,15 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.smartcontract.TestFaucet;
-import org.ton.java.smartcontract.types.*;
-import org.ton.java.smartcontract.wallet.Contract;
+import org.ton.java.smartcontract.types.DeployedPlugin;
+import org.ton.java.smartcontract.types.NewPlugin;
+import org.ton.java.smartcontract.types.WalletV4R1Config;
+import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.java.smartcontract.wallet.v4.WalletV4ContractR2;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.tonlib.types.RunResult;
@@ -37,6 +40,7 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .walletId(42L)
                 .subscriptionConfig(SubscriptionInfo.builder()
@@ -54,8 +58,8 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         WalletV4ContractR2 contract = new Wallet(WalletVersion.V4R2, options).create();
 
-        InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
-        Address walletAddress = msg.address;
+        Message msg = contract.createExternalMessage(contract.getAddress(), false, null);
+        Address walletAddress = contract.getAddress();
 
         String nonBounceableAddress = walletAddress.toString(true, true, false, true);
         String bounceableAddress = walletAddress.toString(true, true, true, true);
@@ -63,14 +67,14 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
         String my = "\nCreating new advanced wallet V4 with plugins in workchain " + options.wc + "\n" +
                 "with unique wallet id " + options.walletId + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
-                "StateInit: " + msg.stateInit.print() + "\n" +
+                "StateInit: " + msg.getInit().toCell().print() + "\n" +
                 "new wallet address = " + walletAddress.toString(false) + "\n" +
                 "(Saving address to file new-wallet.addr)" + "\n" +
                 "Non-bounceable address (for init): " + nonBounceableAddress + "\n" +
                 "Bounceable address (for later access): " + bounceableAddress + "\n" +
-                "signing message: " + msg.signingMessage.print() + "\n" +
-                "External message for initialization is " + msg.message.print() + "\n" +
-                Utils.bytesToHex(msg.message.toBoc()).toUpperCase() + "\n" +
+                "signing message: " + msg.getBody().print() + "\n" +
+                "External message for initialization is " + msg.toCell().print() + "\n" +
+                Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase() + "\n" +
                 "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
         log.info(my);
 
@@ -78,7 +82,7 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy wallet-v4
-        tonlib.sendRawMessage(msg.message.toBase64());
+        tonlib.sendRawMessage(msg.toCell().toBase64());
 
         //check if state of the new contract/wallet has changed from un-init to active
         FullAccountState state;
@@ -114,16 +118,18 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(state.getBalance()));
 
-        NewPlugin plugin = NewPlugin.builder()
-                .secretKey(keyPair.getSecretKey())
-                .seqno(walletCurrentSeqno)
-                .pluginWc(options.wc) // reuse wc of the wallet
-                .amount(Utils.toNano(0.1)) // initial plugin balance, will be taken from wallet-v4
-                .stateInit(contract.createPluginStateInit())
-                .body(contract.createPluginBody())
+        WalletV4R1Config walletV4R1Config = WalletV4R1Config.builder()
+                .newPlugin(NewPlugin.builder()
+                        .secretKey(keyPair.getSecretKey())
+                        .seqno(walletCurrentSeqno)
+                        .pluginWc(options.wc) // reuse wc of the wallet
+                        .amount(Utils.toNano(0.1)) // initial plugin balance, will be taken from wallet-v4
+                        .stateInit(contract.createPluginStateInit())
+                        .body(contract.createPluginBody())
+                        .build())
                 .build();
 
-        ExtMessageInfo extMessageInfo = contract.deployAndInstallPlugin(tonlib, plugin);
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, walletV4R1Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(45);
@@ -145,10 +151,12 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         // Collect very first service fee
 
-        Cell header = Contract.createExternalMessageHeader(pluginAddress);
-        Cell extMessage = Contract.createCommonMsgInfo(header, null, null); // dummy external message, only destination address is relevant
-        String extMessageBase64boc = Utils.bytesToBase64(extMessage.toBoc());
-        tonlib.sendRawMessage(extMessageBase64boc);
+        Cell extMessage = contract.createExternalMessage(pluginAddress, false, null).toCell();
+
+//        Cell header = Contract.createExternalMessageHeader(pluginAddress);
+//        Cell extMessage = Contract.createCommonMsgInfo(header, null, null); // dummy external message, only destination address is relevant
+//        String extMessageBase64boc = Utils.bytesToBase64(extMessage.toBoc());
+        tonlib.sendRawMessage(extMessage.toBase64());
 
         Utils.sleep(30);
         i = 0;
@@ -182,10 +190,13 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         Utils.sleep(90);
 
-        header = Contract.createExternalMessageHeader(pluginAddress);
-        extMessage = Contract.createCommonMsgInfo(header, null, null);
-        extMessageBase64boc = Utils.bytesToBase64(extMessage.toBoc());
-        tonlib.sendRawMessage(extMessageBase64boc);
+        extMessage = contract.createExternalMessage(pluginAddress, false, null).toCell();
+
+//        header = Contract.createExternalMessageHeader(pluginAddress);
+//        extMessage = Contract.createCommonMsgInfo(header, null, null);
+//        extMessageBase64boc = Utils.bytesToBase64(extMessage.toBoc());
+//        tonlib.sendRawMessage(extMessageBase64boc);
+        tonlib.sendRawMessage(extMessage.toBase64());
 
         i = 0;
         do {
@@ -217,17 +228,21 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
         log.info("Uninstalling plugin {}", Address.of(contract.getPluginsList(tonlib).get(0)));
 
         walletCurrentSeqno = contract.getSeqno(tonlib);
-        DeployedPlugin deployedPlugin = DeployedPlugin.builder()
-                .seqno(walletCurrentSeqno)
-                .amount(Utils.toNano(0.1))
-                .pluginAddress(Address.of(contract.getPluginsList(tonlib).get(0)))
-                .secretKey(keyPair.getSecretKey())
-                .queryId(0)
+
+        WalletV4R1Config config = WalletV4R1Config.builder()
+                .deployedPlugin(DeployedPlugin.builder()
+                        .seqno(walletCurrentSeqno)
+                        .amount(Utils.toNano(0.1))
+                        .pluginAddress(Address.of(contract.getPluginsList(tonlib).get(0)))
+                        .secretKey(keyPair.getSecretKey())
+                        .queryId(0)
+                        .build())
                 .build();
 
-        ExternalMessage extMsgRemovePlugin = contract.removePlugin(deployedPlugin);
-        String extMsgRemovePluginBase64boc = Utils.bytesToBase64(extMsgRemovePlugin.message.toBoc());
-        tonlib.sendRawMessage(extMsgRemovePluginBase64boc);
+
+        extMessageInfo = contract.uninstallPlugin(tonlib, config);
+        Utils.sleep(30, "sent uninstall request");
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         // uninstall plugin -- end
 
@@ -236,6 +251,11 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
         log.info("pluginsList: {}", list);
         assertThat(list.isEmpty()).isTrue();
 
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(FAUCET_ADDRESS_RAW), Utils.toNano(0.33));
+        config.setDestination(Address.of(FAUCET_ADDRESS_RAW));
+        config.setAmount(Utils.toNano(0.33));
+
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
+        Utils.sleep(30, "sent toncoins");
+        assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 }

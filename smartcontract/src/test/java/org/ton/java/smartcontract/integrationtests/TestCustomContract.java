@@ -6,9 +6,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.smartcontract.types.ExternalMessage;
-import org.ton.java.smartcontract.types.InitExternalMessage;
+import org.ton.java.smartcontract.types.CustomContractConfig;
 import org.ton.java.smartcontract.wallet.Options;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
@@ -31,6 +31,7 @@ public class TestCustomContract {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .build();
 
@@ -38,11 +39,11 @@ public class TestCustomContract {
 
         CustomContract customContract = new CustomContract(options);
 
-        InitExternalMessage msg = customContract.createInitExternalMessage(keyPair.getSecretKey());
-        Address address = msg.address;
+        Message msg = customContract.createExternalMessage(customContract.getAddress(), true, null);
+        Address address = msg.getInit().getAddress();
 
         log.info("Creating new wallet in workchain {}\nStateInit: {}\nnew wallet address = {}\n(Saving address to file new-wallet.addr)\nNon-bounceable address (for init): {}\nBounceable address (for later access): {}\nsigning message: {}\nExternal message for initialization is {}\n{}\n(Saved wallet creating query to file new-wallet-query.boc)\n"
-                , options.wc, msg.stateInit.print(), address.toString(false), address.toString(true, true, false, true), address.toString(true, true, true, true), msg.signingMessage.print(), msg.message.print(), Utils.bytesToHex(msg.message.toBoc()).toUpperCase());
+                , options.wc, msg.getInit().toCell().print(), address.toString(false), address.toString(true, true, false, true), address.toString(true, true, true, true), msg.getBody().print(), msg.getBody().print(), Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase());
 
         // put a breakpoint and send toincoins to non-bouncelable wallet address, only then deploy smart contract using Tonlib
 
@@ -52,7 +53,7 @@ public class TestCustomContract {
                 .ignoreCache(false)
                 .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
-        String base64boc = Utils.bytesToBase64(msg.message.toBoc());
+        String base64boc = msg.toCell().toBase64();
         log.info(base64boc);
         ExtMessageInfo resultRawMsg = tonlib.sendRawMessage(base64boc); // deploy
         log.info("body_hash {}, error {}", resultRawMsg.getBody_hash(), resultRawMsg.getError().getCode());
@@ -76,12 +77,15 @@ public class TestCustomContract {
 
         Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
 
-        ExternalMessage extMsg = customContract.createTransferMessage(keyPair.getSecretKey(),
-                destinationAddress,
-                Utils.toNano(0.5),
-                1);
-        String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBoc());
-        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(base64bocExtMsg);
+        CustomContractConfig config = CustomContractConfig.builder()
+                .destination(destinationAddress)
+                .amount(Utils.toNano(0.5))
+                .seqno(1)
+                .build();
+
+        ExtMessageInfo extMessageInfo = customContract.sendTonCoins(tonlib, config);
+//        String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBoc());
+//        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(extMsg.);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
     }

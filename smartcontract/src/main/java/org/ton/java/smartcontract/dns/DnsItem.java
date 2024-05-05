@@ -5,11 +5,13 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.AuctionInfo;
+import org.ton.java.smartcontract.types.DnsItemConfig;
 import org.ton.java.smartcontract.types.ItemData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
@@ -20,7 +22,7 @@ import java.math.BigInteger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class DnsItem implements Contract {
+public class DnsItem implements Contract<DnsItemConfig> {
 
     // should be this https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-item.fc
     // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-item.fc
@@ -52,14 +54,6 @@ public class DnsItem implements Contract {
         return options;
     }
 
-    @Override
-    public Address getAddress() {
-        if (isNull(address)) {
-            return (createStateInit()).address;
-        }
-        return address;
-    }
-
     /**
      * @return Cell cell contains nft data
      */
@@ -69,6 +63,16 @@ public class DnsItem implements Contract {
         cell.storeUint(new BigInteger(options.index, 16), 256);
         cell.storeAddress(options.collectionAddress);
         return cell.endCell();
+    }
+
+    @Override
+    public Cell createTransferBody(DnsItemConfig config) {
+        return null;
+    }
+
+    @Override
+    public ExtMessageInfo deploy(Tonlib tonlib, DnsItemConfig config) {
+        return null;
     }
 
     /**

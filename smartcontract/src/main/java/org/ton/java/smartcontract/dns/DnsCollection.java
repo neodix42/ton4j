@@ -1,17 +1,16 @@
 package org.ton.java.smartcontract.dns;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.CollectionData;
-import org.ton.java.smartcontract.types.ExternalMessage;
+import org.ton.java.smartcontract.types.DnsCollectionConfig;
 import org.ton.java.smartcontract.types.ItemData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.WalletContract;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
@@ -26,7 +25,7 @@ import java.util.Deque;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class DnsCollection implements Contract {
+public class DnsCollection implements Contract<DnsCollectionConfig> {
 
     //https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-collection.fc
     Options options;
@@ -64,14 +63,6 @@ public class DnsCollection implements Contract {
         return options;
     }
 
-    @Override
-    public Address getAddress() {
-        if (isNull(address)) {
-            return (createStateInit()).address;
-        }
-        return address;
-    }
-
     /**
      * @return Cell cell contains dns collection data
      */
@@ -81,6 +72,11 @@ public class DnsCollection implements Contract {
         cell.storeRef(options.getCollectionContent());
         cell.storeRef(CellBuilder.beginCell().fromBoc(options.getDnsItemCodeHex()).endCell());
         return cell.endCell();
+    }
+
+    @Override
+    public Cell createTransferBody(DnsCollectionConfig config) {
+        return null;
     }
 
     /**
@@ -155,24 +151,29 @@ public class DnsCollection implements Contract {
         return DnsUtils.dnsResolve(tonlib, myAddress, domain, category, oneStep);
     }
 
-    public ExtMessageInfo deploy(Tonlib tonlib, WalletContract wallet, BigInteger msgValue, TweetNaclFast.Signature.KeyPair keyPair) {
+    @Override
+//    public ExtMessageInfo deploy(Tonlib tonlib, Contract wallet, BigInteger msgValue, TweetNaclFast.Signature.KeyPair keyPair) {
+    public ExtMessageInfo deploy(Tonlib tonlib, DnsCollectionConfig config) {
 
-        long seqno = wallet.getSeqno(tonlib);
+        long seqno = this.getSeqno(tonlib);
 
-        CellBuilder payload = CellBuilder.beginCell();
-        payload.storeUint(0x370fec51, 32); // op::fill_up, https://github.com/ton-blockchain/dns-contract/blob/main/func/dns-utils.fc
-        payload.storeUint(0, 6);
+        Cell payload = CellBuilder.beginCell()
+                .storeUint(0x370fec51, 32) // op::fill_up, https://github.com/ton-blockchain/dns-contract/blob/main/func/dns-utils.fc
+                .storeUint(0, 6)
+                .endCell();
 
-        ExternalMessage extMsg = wallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                this.getAddress(),
-                msgValue,
-                seqno,
-                payload.endCell(),
-                (byte) 3, //send mode
-                this.createStateInit().stateInit
-        );
+        Message extMsg = this.createExternalMessage(getAddress(), false, payload);
 
-        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+//        ExternalMessage extMsg = wallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                this.getAddress(),
+//                msgValue,
+//                seqno,
+//                payload.endCell(),
+//                (byte) 3, //send mode
+//                this.createStateInit().toCell()
+//        );
+
+        return tonlib.sendRawMessage(extMsg.toCell().toBase64());
     }
 }

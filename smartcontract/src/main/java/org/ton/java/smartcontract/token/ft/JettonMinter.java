@@ -1,16 +1,15 @@
 package org.ton.java.smartcontract.token.ft;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.token.nft.NftUtils;
-import org.ton.java.smartcontract.types.ExternalMessage;
+import org.ton.java.smartcontract.types.JettonMinterConfig;
 import org.ton.java.smartcontract.types.JettonMinterData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.WalletContract;
+import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -22,7 +21,7 @@ import java.util.Deque;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class JettonMinter implements Contract {
+public class JettonMinter implements Contract<JettonMinterConfig> {
 
     Options options;
     Address address;
@@ -51,14 +50,6 @@ public class JettonMinter implements Contract {
         return options;
     }
 
-    @Override
-    public Address getAddress() {
-        if (isNull(address)) {
-            return (createStateInit()).address;
-        }
-        return address;
-    }
-
     /**
      * @return Cell cell - contains jetton data cell
      */
@@ -70,6 +61,39 @@ public class JettonMinter implements Contract {
         cell.storeRef(NftUtils.createOffchainUriCell(options.jettonContentUri));
         cell.storeRef(CellBuilder.beginCell().fromBoc(options.jettonWalletCodeHex).endCell());
         return cell.endCell();
+    }
+
+    @Override
+    public Cell createTransferBody(JettonMinterConfig config) {
+        Address ownAddress = getAddress();
+        CommonMsgInfo internalMsgInfo = InternalMessageInfo.builder()
+                .srcAddr(MsgAddressIntStd.builder()
+                        .workchainId(ownAddress.wc)
+                        .address(ownAddress.toBigInteger())
+                        .build())
+                .dstAddr(MsgAddressIntStd.builder()
+                        .workchainId(config.getDestination().wc)
+                        .address(config.getDestination().toBigInteger())
+                        .build())
+                .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                .createdAt(config.getCreatedAt())
+                .build();
+
+        Cell innerMsg = internalMsgInfo.toCell();
+
+        Cell order = Message.builder()
+                .info(internalMsgInfo)
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().publicKey, options.getSecretKey(), innerMsg.hash()))
+                        .storeRef(innerMsg)
+                        .endCell())
+                .build().toCell();
+
+        return CellBuilder.beginCell()
+                .storeUint(BigInteger.valueOf(config.getSeqno()), 32)
+                .storeUint(config.getMode() & 0xff, 8)
+                .storeRef(order)
+                .endCell();
     }
 
     /**
@@ -225,32 +249,83 @@ public class JettonMinter implements Contract {
         return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(addr.getSlice().getBytes())).endCell());
     }
 
-    public ExtMessageInfo deploy(Tonlib tonlib, WalletContract adminWallet, BigInteger walletMsgValue, TweetNaclFast.Signature.KeyPair keyPair) {
-        long seqno = adminWallet.getSeqno(tonlib);
+    //    public ExtMessageInfo deploy(Tonlib tonlib, Contract adminWallet, BigInteger walletMsgValue, TweetNaclFast.Signature.KeyPair keyPair) {
+    @Override
+    public ExtMessageInfo deploy(Tonlib tonlib, JettonMinterConfig config) {
+        long seqno = this.getSeqno(tonlib);
+        config.setSeqno(seqno);
+        Address ownAddress = getAddress();
 
-        ExternalMessage extMsg = adminWallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                this.getAddress(),
-                walletMsgValue,
-                seqno,
-                (Cell) null, // body
-                (byte) 3, //send mode
-                this.createStateInit().stateInit);
+//        Cell body = createInternalMessage(ownAddress)
+//
+//        ExternalMessage extMsg = adminWallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                this.getAddress(),
+//                walletMsgValue,
+//                seqno,
+//                (Cell) null, // body
+//                (byte) 3, //send mode
+//                this.createStateInit().stateInit);
+//
+//        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
 
-        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+
+        Cell body = createTransferBody(config);
+
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
+                        .build())
+                .init(createStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeRef(body)
+                        .endCell())
+                .build();
+
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public void mint(Tonlib tonlib, WalletContract adminWallet, Address destination, BigInteger walletMsgValue, BigInteger mintMsgValue, BigInteger jettonToMintAmount, TweetNaclFast.Signature.KeyPair keyPair) {
+    public void mint(Tonlib tonlib, Contract adminWallet, JettonMinterConfig config) {
 
         long seqno = adminWallet.getSeqno(tonlib);
+        config.setSeqno(seqno);
+        config.setBody(this.createMintBody(0,
+                config.getDestination(),
+                config.getMintMsgValue(),
+                config.getJettonToMintAmount()));
 
-        ExternalMessage extMsg = adminWallet.createTransferMessage(
-                keyPair.getSecretKey(),
-                this.getAddress(),
-                walletMsgValue,
-                seqno,
-                this.createMintBody(0, destination, mintMsgValue, jettonToMintAmount));
+//        ExternalMessage extMsg = adminWallet.createTransferMessage(
+//                keyPair.getSecretKey(),
+//                this.getAddress(),
+//                walletMsgValue,
+//                seqno,
+//                );
+//
+//        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
 
-        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+        Cell body = createTransferBody(config);
+
+        Address ownAddress = getAddress();
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
+                        .build())
+                .init(null)
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeRef(body)
+                        .endCell())
+                .build();
+
+        tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 }

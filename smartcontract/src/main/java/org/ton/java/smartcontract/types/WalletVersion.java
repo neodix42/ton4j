@@ -15,6 +15,8 @@ public enum WalletVersion {
     jettonMinter("Jetton minter"),
     jettonWallet("Jetton wallet"),
     nftCollection("NFT Collection"),
+    nftItem("NFT Item"),
+    nftSale("NFT Sale"),
     payments("Payments"),
     highload("Highload"),
     highloadV3("Highload V3"),

@@ -8,11 +8,12 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
-import org.ton.java.smartcontract.types.InitExternalMessage;
 import org.ton.java.smartcontract.types.LockupConfig;
+import org.ton.java.smartcontract.types.LockupWalletV1Config;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
@@ -50,8 +51,8 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
         Wallet wallet = new Wallet(WalletVersion.lockup, options);
         LockupWalletV1 contract = wallet.create();
 
-        InitExternalMessage msg = contract.createInitExternalMessage(keyPair.getSecretKey());
-        Address address = msg.address;
+        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Address address = msg.getInit().getAddress();
 
         String nonBounceableAddress = address.toString(true, true, false);
         String bounceableAddress = address.toString(true, true, true);
@@ -60,7 +61,7 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
         log.info("    bounceable address {}", bounceableAddress);
         log.info("    bounceable address {}", address.toString(false));
 
-        assertThat(msg.code).isNotNull();
+        assertThat(msg.getInit().getCode()).isNotNull();
 
 
 //        Tonlib tonlib = Tonlib.builder()
@@ -73,7 +74,7 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         Utils.sleep(5);
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, LockupWalletV1Config.builder().build());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(60, "deploying");
@@ -92,7 +93,12 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         // try to transfer coins from new lockup wallet to allowed address (back to faucet)
         log.info("sending toncoins to allowed address...");
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(4), "send-to-allowed-1");
+        LockupWalletV1Config config = LockupWalletV1Config.builder()
+                .destination(Address.of(TestFaucet.BOUNCEABLE))
+                .amount(Utils.toNano(4))
+                .comment("send-to-allowed-1")
+                .build();
+        contract.sendTonCoins(tonlib, config);
         Utils.sleep(70);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
@@ -100,7 +106,12 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
         assertThat(balance.longValue()).isLessThan(Utils.toNano(4).longValue());
 
         log.info("sending toncoins to prohibited address 1st time ...");
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of("EQDZno6LOWYJRHPpRv-MM3qrhFPk6OHOxVOg1HvEEAtJxK3y"), Utils.toNano(1.5), "send-to-prohibited-1");
+        config = LockupWalletV1Config.builder()
+                .destination(Address.of("EQDZno6LOWYJRHPpRv-MM3qrhFPk6OHOxVOg1HvEEAtJxK3y"))
+                .amount(Utils.toNano(1.5))
+                .comment("send-to-prohibited-1")
+                .build();
+        contract.sendTonCoins(tonlib, config);
         Utils.sleep(70);
 
         log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance(tonlib)));
@@ -111,7 +122,12 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
         log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
 
         log.info("sending toncoins to prohibited address 2nd time ...");
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of("0f_N_wfrFUwuWVkwpqmkRRYIJRzByJRobEwRCJTeQ8lq06n9"), Utils.toNano(1.6), "send-to-prohibited-2");
+        config = LockupWalletV1Config.builder()
+                .destination(Address.of("0f_N_wfrFUwuWVkwpqmkRRYIJRzByJRobEwRCJTeQ8lq06n9"))
+                .amount(Utils.toNano(1.6))
+                .comment("send-to-prohibited-2")
+                .build();
+        contract.sendTonCoins(tonlib, config);
         Utils.sleep(70);
 
         log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance(tonlib)));
@@ -125,7 +141,11 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
         assertThat(balance.longValue()).isGreaterThan(Utils.toNano(0.9).longValue());
 
         log.info("sending toncoins to allowed address...");
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of("kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"), Utils.toNano(0.5));
+        config = LockupWalletV1Config.builder()
+                .destination(Address.of("kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
+                .amount(Utils.toNano(0.5))
+                .build();
+        contract.sendTonCoins(tonlib, config);
         Utils.sleep(70);
 
         log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance(tonlib)));
@@ -166,8 +186,8 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
         Wallet wallet = new Wallet(WalletVersion.lockup, options);
         LockupWalletV1 contract = wallet.create();
 
-        InitExternalMessage msg = contract.createInitExternalMessage(sigKeyPair.getSecretKey());
-        Address address = msg.address;
+        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Address address = msg.getInit().getAddress();
 
         String nonBounceableAddress = address.toString(true, true, false, true);
         String bounceableAddress = address.toString(true, true, true, true);
@@ -183,7 +203,7 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         Utils.sleep(5);
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, sigKeyPair.getSecretKey());
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, LockupWalletV1Config.builder().build());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying");

@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.types.WalletV1R3Config;
 import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
@@ -45,13 +46,19 @@ public class TestWalletV1R3DeployTransferShort extends CommonTest {
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
         log.info("new wallet {} balance: {}", contract.getName(), formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, keyPair.getSecretKey());
+        WalletV1R3Config config = WalletV1R3Config.builder().build();
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30);
 
         // transfer coins from new wallet (back to faucet)
-        contract.sendTonCoins(tonlib, keyPair.getSecretKey(), Address.of(TestFaucet.BOUNCEABLE), Utils.toNano(0.8));
+        config = WalletV1R3Config.builder()
+                .destination(Address.of(TestFaucet.BOUNCEABLE))
+                .amount(Utils.toNano(0.8))
+                .build();
+        contract.sendTonCoins(tonlib, config);
 
         Utils.sleep(30);
 
