@@ -33,9 +33,9 @@ import static java.util.Objects.nonNull;
  */
 public class InternalMessageInfo implements CommonMsgInfo {
     int magic;
-    boolean iHRDisabled;
-    boolean bounce;
-    boolean bounced;
+    Boolean iHRDisabled;
+    Boolean bounce;
+    Boolean bounced;
     MsgAddressInt srcAddr;
     MsgAddressInt dstAddr;
     CurrencyCollection value;
@@ -51,7 +51,7 @@ public class InternalMessageInfo implements CommonMsgInfo {
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell()
                 .storeUint(0, 1)
-                .storeBit(isNull(iHRDisabled) ? true : bounce)
+                .storeBit(isNull(iHRDisabled) ? true : iHRDisabled)
                 .storeBit(isNull(bounce) ? true : bounce)
                 .storeBit(isNull(bounced) ? false : bounced)
                 .storeSlice(CellSlice.beginParse(srcAddr.toCell()))

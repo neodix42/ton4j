@@ -79,12 +79,14 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
 
         Cell innerMsg = internalMsgInfo.toCell();
 
+        config.setBody(CellBuilder.beginCell()
+                .storeUint(0, 32)
+                .storeString(config.getComment())
+                .endCell());
+
         Cell order = Message.builder()
                 .info(internalMsgInfo)
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().publicKey, options.getSecretKey(), innerMsg.hash()))
-                        .storeRef(innerMsg)
-                        .endCell())
+                .body(config.getBody())
                 .build().toCell();
 
         return CellBuilder.beginCell()
