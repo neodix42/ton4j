@@ -83,7 +83,11 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
      * @param config WalletV1R2Config
      */
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, WalletV1R2Config config) {
+        long seqno = getSeqno(tonlib);
+        config.setSeqno(seqno);
+
         Cell body = createTransferBody(config);
+
         Address ownAddress = getAddress();
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -96,7 +100,7 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
                 .init(null)
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body)
+                        .storeCell(body)
                         .endCell())
                 .build();
 
@@ -107,7 +111,10 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV1R2Config config) {
         Address ownAddress = getAddress();
 
-        Cell body = createTransferBody(config);
+//        Cell body = createTransferBody(config);
+        Cell body = CellBuilder.beginCell()
+                .storeUint(0, 32)
+                .endCell();
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()

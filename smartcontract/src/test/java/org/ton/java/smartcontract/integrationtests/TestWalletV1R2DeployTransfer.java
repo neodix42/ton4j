@@ -61,17 +61,16 @@ public class TestWalletV1R2DeployTransfer extends CommonTest {
 
         WalletV1R2Config config = WalletV1R2Config.builder()
                 .destination(contract.getAddress())
-                .mode((byte) 3)
-                .amount(Utils.toNano(0.1))
-                //.amount()
                 .build();
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
+        log.info("deployed");
 
         Utils.sleep(30);
 
         config = WalletV1R2Config.builder()
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
+                .mode((byte) 3)
                 .amount(Utils.toNano(0.8))
                 .comment("testNewWalletV1R2")
                 .build();
