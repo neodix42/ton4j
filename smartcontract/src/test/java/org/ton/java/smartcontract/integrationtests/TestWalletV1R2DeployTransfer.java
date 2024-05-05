@@ -60,7 +60,9 @@ public class TestWalletV1R2DeployTransfer extends CommonTest {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         WalletV1R2Config config = WalletV1R2Config.builder()
-                //. destination()
+                .destination(contract.getAddress())
+                .mode((byte) 3)
+                .amount(Utils.toNano(0.1))
                 //.amount()
                 .build();
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);

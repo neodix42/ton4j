@@ -120,9 +120,10 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
                 .init(null)
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
-                        .storeRef(body)
+                        .storeCell(body) // was storeRef!!
                         .endCell())
                 .build();
+
 
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }

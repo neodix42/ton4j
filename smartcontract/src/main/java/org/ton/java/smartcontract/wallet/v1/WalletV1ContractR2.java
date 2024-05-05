@@ -42,10 +42,10 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
     public Cell createTransferBody(WalletV1R2Config config) {
         Address ownAddress = getAddress();
         CommonMsgInfo internalMsgInfo = InternalMessageInfo.builder()
-                .srcAddr(MsgAddressIntStd.builder()
-                        .workchainId(ownAddress.wc)
-                        .address(ownAddress.toBigInteger())
-                        .build())
+//                .srcAddr(MsgAddressIntStd.builder()
+//                        .workchainId(ownAddress.wc)
+//                        .address(ownAddress.toBigInteger())
+//                        .build())
                 .dstAddr(MsgAddressIntStd.builder()
                         .workchainId(config.getDestination().wc)
                         .address(config.getDestination().toBigInteger())
@@ -120,7 +120,7 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
                 .init(createStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body)
+                        .storeCell(body)
                         .endCell())
                 .build();
 
