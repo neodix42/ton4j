@@ -70,7 +70,7 @@ public class TestFaucet {
                 .bounce(false)
                 .destination(destinationAddress)
                 .amount(amount)
-//                .seqno(faucet.getSeqno(tonlib))
+                .mode((byte) 3)
                 .comment("top-up from ton4j")
                 .build();
 
