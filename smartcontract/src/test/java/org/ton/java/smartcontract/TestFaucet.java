@@ -67,7 +67,8 @@ public class TestFaucet {
         } while (isNull(faucetBalance));
 
         WalletV1R3Config config = WalletV1R3Config.builder()
-                .bounce(false)
+//                .bounce(false)
+                .seqno(faucet.getSeqno(tonlib))
                 .destination(destinationAddress)
                 .amount(amount)
                 .mode((byte) 3)
@@ -84,7 +85,7 @@ public class TestFaucet {
         i = 0;
         do {
             log.info("checking wallet balance: {}", destinationAddress.toString(true, true, true));
-            TimeUnit.SECONDS.sleep(8);
+            TimeUnit.SECONDS.sleep(10);
             if (nonNull(tonlib.getAccountState(destinationAddress).getBalance())) {
                 newBalance = new BigInteger(tonlib.getAccountState(destinationAddress).getBalance());
             }

@@ -59,17 +59,16 @@ public class TestWalletV1R2DeployTransfer extends CommonTest {
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        WalletV1R2Config config = WalletV1R2Config.builder()
-                .destination(contract.getAddress())
-                .build();
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, null);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("deployed");
 
-        Utils.sleep(30);
+        Utils.sleep(40);
 
-        config = WalletV1R2Config.builder()
+        WalletV1R2Config config = WalletV1R2Config.builder()
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
+                .seqno(contract.getSeqno(tonlib))
                 .mode((byte) 3)
                 .amount(Utils.toNano(0.8))
                 .comment("testNewWalletV1R2")

@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.mnemonic.Mnemonic;
 import org.ton.java.mnemonic.Pair;
 import org.ton.java.smartcontract.types.WalletV1R3Config;
@@ -15,6 +17,7 @@ import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR2;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
+import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.utils.Utils;
 
@@ -49,11 +52,22 @@ public class TestWalletsV1 {
 
         assertThat(options.code.bitStringToHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F260810200D71820D70B1FED44D0D31FD3FFD15112BAF2A122F901541044F910F2A2F80001D31F3120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED54");
 
+        Cell body = CellBuilder.beginCell().storeUint(0, 32).endCell();
+        Message msg = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .dstAddr(contract.getAddressIntStd())
+                        .build())
+                .init(contract.createStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(options.getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeCell(body)
+                        .endCell())
+                .build();
 //        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
 
-        Message msg = contract.createTransferMessage(WalletV1R3Config.builder()
-                .destination(contract.getAddress())
-                .build());
+//        Message msg = contract.createTransferMessage(WalletV1R3Config.builder()
+//                .destination(contract.getAddress())
+//                .build());
         Address address = msg.getInit().getAddress();
 
         String my = "Creating new wallet in workchain " + options.wc + "\n";
@@ -86,6 +100,7 @@ public class TestWalletsV1 {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .build();
 
@@ -139,6 +154,7 @@ public class TestWalletsV1 {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .build();
 
@@ -158,6 +174,7 @@ public class TestWalletsV1 {
 
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
+                .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .build();
 
@@ -182,6 +199,7 @@ public class TestWalletsV1 {
 
         Options options = Options.builder()
                 .publicKey(keyPairSig.getPublicKey())
+                .secretKey(keyPairSig.getSecretKey())
                 .wc(0L)
                 .build();
 

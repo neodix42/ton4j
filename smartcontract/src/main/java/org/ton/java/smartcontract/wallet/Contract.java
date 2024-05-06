@@ -29,6 +29,14 @@ public interface Contract<T extends WalletConfig> {
         return createStateInit().getAddress();
     }
 
+    default MsgAddressIntStd getAddressIntStd() {
+        Address ownAddress = createStateInit().getAddress();
+        return MsgAddressIntStd.builder()
+                .workchainId(ownAddress.wc)
+                .address(ownAddress.toBigInteger())
+                .build();
+    }
+
     /**
      * @return Cell containing contact code
      */

@@ -31,10 +31,6 @@ public class DnsRoot implements Contract<DnsRootConfig> {
         }
     }
 
-    public DnsRoot() {
-        this(Options.builder().build());
-    }
-
     public String getName() {
         return "dnsRoot";
     }

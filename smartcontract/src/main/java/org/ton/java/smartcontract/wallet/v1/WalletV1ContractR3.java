@@ -62,31 +62,18 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
 
     @Override
     public Cell createTransferBody(WalletV1R3Config config) {
-        Address ownAddress = getAddress();
-        CommonMsgInfo internalMsgInfo = InternalMessageInfo.builder()
-                .bounce(config.isBounce())
-//                .srcAddr(MsgAddressIntStd.builder()
-//                        .workchainId(ownAddress.wc)
-//                        .address(ownAddress.toBigInteger())
-//                        .build())
-                .dstAddr(MsgAddressIntStd.builder()
-                        .workchainId(config.getDestination().wc)
-                        .address(config.getDestination().toBigInteger())
-                        .build())
-                .value(CurrencyCollection.builder().coins(config.getAmount()).build())
-                .createdAt(config.getCreatedAt())
-                .build();
-
-        Cell innerMsg = internalMsgInfo.toCell();
-
-        config.setBody(CellBuilder.beginCell()
-                .storeUint(0, 32)
-                .storeString(config.getComment())
-                .endCell());
-
         Cell order = Message.builder()
-                .info(internalMsgInfo)
-                .body(config.getBody())
+                .info(InternalMessageInfo.builder()
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(config.getDestination().wc)
+                                .address(config.getDestination().toBigInteger())
+                                .build())
+                        .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                        .build())
+                .body(CellBuilder.beginCell()
+                        .storeUint(0, 32)
+                        .storeString(config.getComment())
+                        .endCell())
                 .build().toCell();
 
         return CellBuilder.beginCell()
@@ -103,21 +90,19 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
      * @param config WalletV1R2Config
      */
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, WalletV1R3Config config) {
-        long seqno = getSeqno(tonlib);
-        config.setSeqno(seqno);
+//        long seqno = getSeqno(tonlib);
+//        config.setSeqno(seqno);
 
         Cell body = createTransferBody(config);
 
         Address ownAddress = getAddress();
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(ownAddress.wc)
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .init(null)
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
                         .storeCell(body) // was storeRef!!
