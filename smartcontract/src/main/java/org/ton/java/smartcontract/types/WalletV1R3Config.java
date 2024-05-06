@@ -16,7 +16,7 @@ import java.math.BigInteger;
 public class WalletV1R3Config implements WalletConfig {
     boolean bounce;
     long seqno;
-    byte mode;
+    int mode;
     long createdAt;
     Address destination;
     BigInteger amount;

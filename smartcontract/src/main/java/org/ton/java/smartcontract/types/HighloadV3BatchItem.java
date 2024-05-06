@@ -12,6 +12,6 @@ import lombok.ToString;
 @Setter
 @ToString
 public class HighloadV3BatchItem {
-    byte mode;
+    int mode;
     Cell message;
 }

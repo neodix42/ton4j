@@ -44,13 +44,14 @@ public class TestWalletV2Highload extends CommonTest {
         Options options = Options.builder()
                 .publicKey(keyPair.getPublicKey())
                 .secretKey(keyPair.getSecretKey())
-                .walletId(42L)
+                .walletId(42L) // todo
 //                .highloadQueryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32).add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.highload, options);
-        HighloadWallet contract = wallet.create();
+        log.info("pubKey {}, prvKey {}", Utils.bytesToHex(keyPair.getPublicKey()), Utils.bytesToHex(keyPair.getSecretKey()));
+
+        HighloadWallet contract = new Wallet(WalletVersion.highload, options).create();
 
         String nonBounceableAddress = contract.getAddress().toString(true, true, false);
         String bounceableAddress = contract.getAddress().toString(true, true, true);
@@ -64,28 +65,31 @@ public class TestWalletV2Highload extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        HighloadConfig highloadConfig = HighloadConfig.builder()
-                .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32)
-                        .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
+        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32)
+                .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond())));
+
+        HighloadConfig config = HighloadConfig.builder()
+                .subWalletId(42L)
+                .queryId(queryId)
                 .build();
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, highloadConfig);
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying");
+        Utils.sleep(45, "deploying");
 
-        highloadConfig = HighloadConfig.builder()
+        config = HighloadConfig.builder()
                 .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
                 .destinations(List.of(
                         Destination.builder()
                                 .address(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
                                 .amount(Utils.toNano(0.2))
-                                .mode((byte) 3)
+                                .mode(3)
                                 .build(),
                         Destination.builder()
                                 .address(Address.of("EQBrpstctZ5gF-VaaPswcWHe3JQijjNbtJVn5USXlZ-bAgO3"))
                                 .amount(Utils.toNano(0.1))
-                                .mode((byte) 3)
+                                .mode(3)
                                 .comment("destination 2")
                                 .build(),
                         Destination.builder()
@@ -111,13 +115,11 @@ public class TestWalletV2Highload extends CommonTest {
                         Destination.builder()
                                 .address(Address.of("EQCP-ejxzoB6KJ6auhnsPrW1pW6gAZ8uHXnUSHuHGNpY1zJf"))
                                 .amount(Utils.toNano(0.42))
-                                .build()
-                        ,
+                                .build(),
                         Destination.builder()
                                 .address(Address.of("EQCkS2OnOOjeLV-LEEUmIPh-_in4pdFr1cScZG1Inft3qUea"))
                                 .amount(Utils.toNano(0.22))
-                                .build()
-                        ,
+                                .build(),
                         Destination.builder()
                                 .address(Address.of("EQCZlgy61mcgYNXK0yiFHC9CxjoxxAFkwiUtzTONrk6_Qk6W"))
                                 .amount(Utils.toNano(0.33))
@@ -126,7 +128,7 @@ public class TestWalletV2Highload extends CommonTest {
                 .build();
 
         // transfer coins to multiple destination as specified in options
-        extMessageInfo = contract.sendTonCoins(tonlib, highloadConfig);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(90, "sending to 10 destinations");

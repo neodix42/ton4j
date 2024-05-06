@@ -13,6 +13,7 @@ import java.util.List;
 @Setter
 @ToString
 public class HighloadConfig implements WalletConfig {
+    public long subWalletId;
     public BigInteger queryId;
     public List<Destination> destinations;
 }

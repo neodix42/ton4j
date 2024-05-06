@@ -14,7 +14,7 @@ import java.math.BigInteger;
 @Setter
 @ToString
 public class HighloadV3Config implements WalletConfig {
-    byte mode;
+    int mode;
     int queryId;
     long createdAt;
     Address destination;

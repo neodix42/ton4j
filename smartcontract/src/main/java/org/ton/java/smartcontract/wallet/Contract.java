@@ -98,7 +98,7 @@ public interface Contract<T extends WalletConfig> {
         }
         externalMessage.setBody(CellBuilder.beginCell()
                 .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
-                .storeRef(body)
+                .storeCell(body) // was ref careful
                 .endCell());
 
         return externalMessage;

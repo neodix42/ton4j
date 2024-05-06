@@ -15,7 +15,7 @@ import java.math.BigInteger;
 @ToString
 public class DnsItemConfig implements WalletConfig {
     long seqno;
-    byte mode;
+    int mode;
     long createdAt;
     Address destination;
     BigInteger amount;

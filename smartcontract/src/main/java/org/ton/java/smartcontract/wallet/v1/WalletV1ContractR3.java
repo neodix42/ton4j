@@ -60,10 +60,15 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
         return cell.endCell();
     }
 
+    public Cell createDeployMessage() {
+        return CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell();
+    }
+
     @Override
     public Cell createTransferBody(WalletV1R3Config config) {
         Cell order = Message.builder()
                 .info(InternalMessageInfo.builder()
+                        .bounce(config.isBounce())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(config.getDestination().wc)
                                 .address(config.getDestination().toBigInteger())
@@ -95,13 +100,9 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
 
         Cell body = createTransferBody(config);
 
-        Address ownAddress = getAddress();
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
+                        .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
@@ -109,29 +110,23 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
                         .endCell())
                 .build();
 
-
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
     @Override
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV1R3Config config) {
-        Address ownAddress = createStateInit().getAddress();
 
-        Cell body = createTransferBody(config);
+        Cell body = createDeployMessage();
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
+                        .dstAddr(getAddressIntStd())
                         .build())
                 .init(createStateInit())
-//                .body(CellBuilder.beginCell()
-//                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-//                        .storeRef(body)
-//                        .endCell())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeCell(body)
+                        .endCell())
                 .build();
 
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());

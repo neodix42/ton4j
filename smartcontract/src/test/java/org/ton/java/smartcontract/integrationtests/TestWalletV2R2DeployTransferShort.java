@@ -33,8 +33,7 @@ public class TestWalletV2R2DeployTransferShort extends CommonTest {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V2R2, options);
-        WalletV2ContractR2 contract = wallet.create();
+        WalletV2ContractR2 contract = new Wallet(WalletVersion.V2R2, options).create();
 
         String nonBounceableAddress = contract.getAddress().toString(true, true, false);
         String bounceableAddress = contract.getAddress().toString(true, true, true);
@@ -46,31 +45,36 @@ public class TestWalletV2R2DeployTransferShort extends CommonTest {
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        WalletV2Config config = WalletV2Config.builder().build(); // todo WalletV2R2Config
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, null);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30);
+        Utils.sleep(30, "deploying");
 
         // transfer coins from new wallet (back to faucet)
+        WalletV2Config config = WalletV2Config.builder().build();
+        config.setSeqno(contract.getSeqno(tonlib));
         config.setDestination1(Address.of(TestFaucet.BOUNCEABLE));
-        config.setAmount1(Utils.toNano(0.01));
+        config.setAmount1(Utils.toNano(0.1));
+
         extMessageInfo = contract.sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "sending to one destination");
 
         //multi send
+        config = WalletV2Config.builder().build();
+        config.setSeqno(contract.getSeqno(tonlib));
         config.setDestination1(Address.of("EQA84DSUMyREa1Frp32wxFATnAVIXnWlYrbd3TFS1NLCbC-B"));
         config.setDestination2(Address.of("EQCJZ3sJnes-o86xOa4LDDug6Lpz23RzyJ84CkTMIuVCCuan"));
         config.setDestination3(Address.of("EQBjS7elE36MmEmE6-jbHQZNEEK0ObqRgaAxXWkx4pDGeefB"));
         config.setDestination4(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"));
-        config.setAmount1(Utils.toNano(0.015));
-        config.setAmount2(Utils.toNano(0.015));
-        config.setAmount3(Utils.toNano(0.015));
-        config.setAmount4(Utils.toNano(0.015));
+        config.setAmount1(Utils.toNano(0.15));
+        config.setAmount2(Utils.toNano(0.15));
+        config.setAmount3(Utils.toNano(0.15));
+        config.setAmount4(Utils.toNano(0.15));
 
-        contract.sendTonCoins(tonlib, config);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "sending to four destinations");
 

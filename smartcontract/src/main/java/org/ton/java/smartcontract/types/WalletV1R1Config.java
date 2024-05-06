@@ -14,7 +14,7 @@ import java.math.BigInteger;
 @Setter
 @ToString
 public class WalletV1R1Config implements WalletConfig {
-    byte mode;
+    int mode;
     long createdAt;
     Address destination;
     BigInteger amount;

@@ -56,7 +56,7 @@ public class TestWalletV1R2DeployTransfer extends CommonTest {
         log.info("           raw address {}", contract.getAddress().toString(false));
 
         // top up new wallet using test-faucet-wallet        
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
 
@@ -67,10 +67,10 @@ public class TestWalletV1R2DeployTransfer extends CommonTest {
         Utils.sleep(40);
 
         WalletV1R2Config config = WalletV1R2Config.builder()
-                .destination(Address.of(TestFaucet.BOUNCEABLE))
                 .seqno(contract.getSeqno(tonlib))
-                .mode((byte) 3)
-                .amount(Utils.toNano(0.8))
+                .destination(Address.of(TestFaucet.BOUNCEABLE))
+                .amount(Utils.toNano(0.08))
+                .mode(3)
                 .comment("testNewWalletV1R2")
                 .build();
         // transfer coins from new wallet (back to faucet)
@@ -80,6 +80,6 @@ public class TestWalletV1R2DeployTransfer extends CommonTest {
 
         balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
-        assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
+        assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
     }
 }

@@ -15,7 +15,7 @@ import java.math.BigInteger;
 @ToString
 public class WalletV2Config implements WalletConfig {
     long seqno;
-    byte mode;
+    int mode;
     long createdAt;
     Address destination1;
     Address destination2;

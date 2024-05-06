@@ -1,6 +1,5 @@
 package org.ton.java.smartcontract.wallet.v1;
 
-import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletCodes;
@@ -79,13 +78,9 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, WalletV1R2Config config) {
         Cell body = createTransferBody(config);
 
-        Address ownAddress = getAddress();
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
+                        .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))

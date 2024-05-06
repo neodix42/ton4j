@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.mnemonic.Mnemonic;
 import org.ton.java.mnemonic.Pair;
 import org.ton.java.smartcontract.TestFaucet;
@@ -15,7 +16,7 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
 import org.ton.java.tlb.types.Message;
-import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.QueryFees;
 import org.ton.java.utils.Utils;
 
@@ -43,7 +44,9 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         Wallet wallet = new Wallet(WalletVersion.V1R3, options);
         WalletV1ContractR3 contract = wallet.create();
 
-        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Message msg = contract.createExternalMessage(contract.getAddress(),
+                true,
+                CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell());
         Address address = msg.getInit().getAddress();
 
         String nonBounceableAddress = address.toString(true, true, false, true);
@@ -63,28 +66,32 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         log.info(my);
 
         // top up new wallet using test-faucet-wallet
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
-        tonlib.sendRawMessage(msg.toCell().toBase64());
+        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30);
 
         WalletV1R3Config config = WalletV1R3Config.builder()
+                .seqno(contract.getSeqno(tonlib))
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
-                .amount(Utils.toNano(0.8))
+                .amount(Utils.toNano(0.08))
+                .mode(3)
                 .comment("testNewWalletV1R3")
                 .build();
 
         // transfer coins from new wallet (back to faucet)
-        contract.sendTonCoins(tonlib, config);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
-        assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
+        assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
 
         log.info("seqno {}", contract.getSeqno(tonlib));
         log.info("pubkey {}", contract.getPublicKey(tonlib));
@@ -105,13 +112,14 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPairSig.getPublicKey())
+                .secretKey(keyPairSig.getSecretKey())
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
-        WalletV1ContractR3 contract = wallet.create();
+        WalletV1ContractR3 contract = new Wallet(WalletVersion.V1R3, options).create();
 
-        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Message msg = contract.createExternalMessage(contract.getAddress(), true,
+                CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell());
         Address address = msg.getInit().getAddress();
 
         String nonBounceableAddress = address.toString(true, true, false, true);
@@ -131,29 +139,32 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         log.info(my);
 
         // top up new wallet using test-faucet-wallet
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy new wallet
-        tonlib.sendRawMessage(msg.toCell().toBase64());
+        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(25);
 
         WalletV1R3Config config = WalletV1R3Config.builder()
+                .seqno(contract.getSeqno(tonlib))
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
-                .amount(Utils.toNano(0.8))
+                .amount(Utils.toNano(0.08))
+                .mode(3)
                 .comment("testNewWalletV1R3")
                 .build();
 
         // transfer coins from new wallet (back to faucet)
-        contract.sendTonCoins(tonlib, config);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(15);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
-        assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
+        assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
 
         log.info("seqno {}", contract.getSeqno(tonlib));
         log.info("pubkey {}", contract.getPublicKey(tonlib));
@@ -174,15 +185,14 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(keyPairSig.getPublicKey())
+                .secretKey(keyPairSig.getSecretKey())
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
-        WalletV1ContractR3 contract = wallet.create();
+        WalletV1ContractR3 contract = new Wallet(WalletVersion.V1R3, options).create();
+
 
         Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
-
-        Tonlib tonlib = Tonlib.builder().testnet(true).build();
 
         QueryFees feesWithCodeData = tonlib.estimateFees(
                 msg.getInit().getAddress().toString(),

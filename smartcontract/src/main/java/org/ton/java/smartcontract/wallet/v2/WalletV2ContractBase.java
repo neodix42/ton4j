@@ -8,8 +8,6 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MsgAddressExtNone;
-import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
@@ -40,6 +38,15 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
         return cell.endCell();
     }
 
+    public Cell createDeployMessage(WalletV2Config config) {
+        CellBuilder message = CellBuilder.beginCell();
+        message.storeUint(BigInteger.ZERO, 32);
+        for (int i = 0; i < 32; i++) { // valid-until
+            message.storeBit(true);
+        }
+        return message.endCell();
+    }
+
     /**
      * Creates message payload with seqno and validUntil fields
      */
@@ -48,15 +55,10 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
 
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(config.getSeqno()), 32);
-        if (config.getSeqno() == 0) {
-            for (int i = 0; i < 32; i++) {
-                message.storeBit(true);
-            }
-        } else {
-            Date date = new Date();
-            long timestamp = (long) Math.floor(date.getTime() / 1e3);
-            message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
-        }
+
+        Date date = new Date();
+        long timestamp = (long) Math.floor(date.getTime() / 1e3);
+        message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
 
         if (nonNull(config.getDestination1())) {
             Message order = this.createInternalMessage(config.getDestination1(), config.getAmount1(), null);
@@ -89,25 +91,16 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
 
     @Override
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV2Config config) {
-        Address ownAddress = getAddress();
-
-        Cell body = null;
-        if (nonNull(config)) {
-            body = createTransferBody(config);
-        }
+        Cell body = createDeployMessage(config);
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
+                        .dstAddr(getAddressIntStd())
                         .build())
                 .init(createStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body)
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeCell(body)
                         .endCell())
                 .build();
 
@@ -116,24 +109,15 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
 
 
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, WalletV2Config config) {
-        long seqno = getSeqno(tonlib);
-        config.setSeqno(seqno);
-
         Cell body = createTransferBody(config);
 
-        Address ownAddress = getAddress();
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
+                        .dstAddr(getAddressIntStd())
                         .build())
-                .init(null)
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body)
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeCell(body) // was storeRef!!
                         .endCell())
                 .build();
 

@@ -15,7 +15,7 @@ import java.math.BigInteger;
 @ToString
 public class NftItemConfig implements WalletConfig {
     long seqno;
-    byte mode;
+    int mode;
     long createdAt;
     Address destination;
     BigInteger amount;

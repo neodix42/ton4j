@@ -67,7 +67,7 @@ public class TestFaucet {
         } while (isNull(faucetBalance));
 
         WalletV1R3Config config = WalletV1R3Config.builder()
-//                .bounce(false)
+                .bounce(false)
                 .seqno(faucet.getSeqno(tonlib))
                 .destination(destinationAddress)
                 .amount(amount)
