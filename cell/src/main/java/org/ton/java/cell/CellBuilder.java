@@ -400,6 +400,10 @@ public class CellBuilder {
         return cell.getFreeRefs();
     }
 
+    public int getUsedRefs() {
+        return cell.getUsedRefs();
+    }
+
     void checkBitsOverflow(int length) {
         if (length > cell.bits.getFreeBits()) {
             throw new Error("Bits overflow. Can't add " + length + " cell.bits. " + cell.bits.getFreeBits() + " bits left.");

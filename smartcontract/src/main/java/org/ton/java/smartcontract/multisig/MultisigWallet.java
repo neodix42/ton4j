@@ -327,7 +327,6 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
                         .dstAddr(getAddressIntStd())
                         .build())
                 .init(createStateInit())
-//                .body(body)
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
                         .storeCell(body)

@@ -41,7 +41,7 @@ public class Message {
         if (isNull(body)) {
             c.storeBit(false);
         } else {
-            if ((body.getBits().getFreeBits() >= body.getBits().getUsedBits()) && body.getFreeRefs() >= body.getUsedRefs()) {
+            if ((c.getFreeBits() >= c.getUsedBits()) && c.getFreeRefs() >= c.getUsedRefs()) {
                 c.storeBit(false);
                 c.storeCell(body);
             } else {
