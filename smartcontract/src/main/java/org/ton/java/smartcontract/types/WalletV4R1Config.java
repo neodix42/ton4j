@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 
 import java.math.BigInteger;
 
@@ -14,6 +15,7 @@ import java.math.BigInteger;
 @Setter
 @ToString
 public class WalletV4R1Config implements WalletConfig {
+    long subWalletId;
     long seqno;
     int mode;
     long createdAt;
@@ -21,6 +23,7 @@ public class WalletV4R1Config implements WalletConfig {
     BigInteger amount;
     Cell body;
     int operation; // 0 - simple send; 1 - deploy and install plugin; 2 - install plugin; 3 - remove plugin
+    SubscriptionInfo subscriptionInfo;
     NewPlugin newPlugin;
     DeployedPlugin deployedPlugin;
 }

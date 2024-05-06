@@ -41,9 +41,9 @@ public class CustomContract implements Contract<CustomContractConfig> {
     public Cell createDataCell() {
         System.out.println("CustomContract createDataCell");
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(BigInteger.ZERO, 32); // seqno
+        cell.storeUint(0, 32); // seqno
         cell.storeBytes(getOptions().publicKey); // 256 bits
-        cell.storeUint(BigInteger.TWO, 64); // stored_x_data
+        cell.storeUint(2, 64); // stored_x_data
         return cell.endCell();
     }
 

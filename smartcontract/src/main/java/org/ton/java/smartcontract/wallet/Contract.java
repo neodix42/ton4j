@@ -77,8 +77,7 @@ public interface Contract<T extends WalletConfig> {
             throw new Error("Wallet V1R1 does not have seqno method");
         }
 
-        Address myAddress = getAddress();
-        return tonlib.getSeqno(myAddress);
+        return tonlib.getSeqno(getAddress());
     }
 
     default Message createExternalMessage(Address destination, boolean stateInit, Cell body) {

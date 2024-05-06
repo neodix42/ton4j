@@ -106,8 +106,8 @@ public class LockupWalletV1 implements Contract<LockupWalletV1Config> {
     public Cell createDataCell() {
 
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(BigInteger.ZERO, 32); // seqno
-        cell.storeUint(BigInteger.valueOf(getOptions().getWalletId()), 32);
+        cell.storeUint(0, 32); // seqno
+        cell.storeUint(getOptions().getWalletId(), 32);
         cell.storeBytes(getOptions().getPublicKey()); //256
         cell.storeBytes(Utils.hexToSignedBytes(options.getLockupConfig().getConfigPublicKey())); // 256
 

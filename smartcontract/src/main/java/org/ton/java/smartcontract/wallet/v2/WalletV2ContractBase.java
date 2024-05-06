@@ -33,14 +33,14 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(BigInteger.ZERO, 32); // seqno
+        cell.storeUint(0, 32); // seqno
         cell.storeBytes(getOptions().publicKey);
         return cell.endCell();
     }
 
     public Cell createDeployMessage(WalletV2Config config) {
         CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(BigInteger.ZERO, 32);
+        message.storeUint(0, 32);
         for (int i = 0; i < 32; i++) { // valid-until
             message.storeBit(true);
         }

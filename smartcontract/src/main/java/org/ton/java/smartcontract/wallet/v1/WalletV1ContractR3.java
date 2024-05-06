@@ -55,7 +55,7 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(BigInteger.ZERO, 32); // seqno
+        cell.storeUint(0, 32); // seqno
         cell.storeBytes(getOptions().publicKey);
         return cell.endCell();
     }

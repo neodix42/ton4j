@@ -11,8 +11,6 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
-
 public class WalletV3ContractBase implements Contract<WalletV3Config> {
     Options options;
     Address address;
@@ -65,8 +63,8 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(BigInteger.ZERO, 32); // seqno
-        cell.storeUint(BigInteger.valueOf(getOptions().getWalletId()), 32);
+        cell.storeUint(0, 32); // seqno
+        cell.storeUint(getOptions().getWalletId(), 32);
         cell.storeBytes(getOptions().getPublicKey());
         return cell.endCell();
     }
@@ -78,7 +76,7 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
         for (int i = 0; i < 32; i++) { // valid-until
             message.storeBit(true);
         }
-        message.storeUint(BigInteger.ZERO, 32); //seqno
+        message.storeUint(0, 32); //seqno
         return message.endCell();
     }
 

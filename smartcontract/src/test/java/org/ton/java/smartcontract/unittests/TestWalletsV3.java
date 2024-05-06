@@ -33,6 +33,7 @@ public class TestWalletsV3 {
                 .publicKey(keyPair.getPublicKey())
                 .secretKey(keyPair.getSecretKey())
                 .wc(0L)
+                .walletId(698983191L)
                 .build();
 
         Wallet wallet = new Wallet(WalletVersion.V3R2, options);

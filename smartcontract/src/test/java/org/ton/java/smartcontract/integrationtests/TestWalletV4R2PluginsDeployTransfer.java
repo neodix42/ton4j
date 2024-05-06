@@ -2,7 +2,6 @@ package org.ton.java.smartcontract.integrationtests;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -17,10 +16,11 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.java.smartcontract.wallet.v4.WalletV4ContractR2;
-import org.ton.java.tlb.types.Message;
+import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.tonlib.types.RunResult;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -36,6 +36,12 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
     @Test
     public void testPlugins() throws InterruptedException {
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Options options = Options.builder()
@@ -43,57 +49,39 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
                 .secretKey(keyPair.getSecretKey())
                 .wc(0L)
                 .walletId(42L)
-                .subscriptionConfig(SubscriptionInfo.builder()
-                        .beneficiary(Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka"))
-                        .subscriptionFee(Utils.toNano(2))
-                        .period(60)
-                        .startTime(0)
-                        .timeOut(30)
-                        .lastPaymentTime(0)
-                        .lastRequestTime(0)
-                        .failedAttempts(0)
-                        .subscriptionId(12345)
-                        .build())
                 .build();
 
         WalletV4ContractR2 contract = new Wallet(WalletVersion.V4R2, options).create();
-
-        Message msg = contract.createExternalMessage(contract.getAddress(), false, null);
+//
+//        Message msg = contract.createExternalMessage(contract.getAddress(), false, null);
         Address walletAddress = contract.getAddress();
-
+//
         String nonBounceableAddress = walletAddress.toString(true, true, false, true);
         String bounceableAddress = walletAddress.toString(true, true, true, true);
-
-        String my = "\nCreating new advanced wallet V4 with plugins in workchain " + options.wc + "\n" +
-                "with unique wallet id " + options.walletId + "\n" +
-                "Loading private key from file new-wallet.pk" + "\n" +
-                "StateInit: " + msg.getInit().toCell().print() + "\n" +
-                "new wallet address = " + walletAddress.toString(false) + "\n" +
-                "(Saving address to file new-wallet.addr)" + "\n" +
-                "Non-bounceable address (for init): " + nonBounceableAddress + "\n" +
-                "Bounceable address (for later access): " + bounceableAddress + "\n" +
-                "signing message: " + msg.getBody().print() + "\n" +
-                "External message for initialization is " + msg.toCell().print() + "\n" +
-                Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase() + "\n" +
-                "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
-        log.info(my);
+        log.info("bounceableAddress: {}", bounceableAddress);
 
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy wallet-v4
-        tonlib.sendRawMessage(msg.toCell().toBase64());
+//        tonlib.sendRawMessage(msg.toCell().toBase64());
+        WalletV4R1Config config = WalletV4R1Config.builder()
+                .subWalletId(42)
+                .build();
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         //check if state of the new contract/wallet has changed from un-init to active
         FullAccountState state;
         int i = 0;
         do {
-            Utils.sleep(5, "waiting for account state");
+            Utils.sleep(8, "waiting for account state");
             state = tonlib.getAccountState(walletAddress);
             if (i++ > 10) {
                 throw new Error("time out getting account state");
             }
-        } while (StringUtils.isEmpty(state.getAccount_state().getCode()));
+        } while (state.getAccount_state().getWallet_id() == 0);
 
         log.info("subwallet-id from fullAccountState {}", state.getAccount_state().getWallet_id());
 
@@ -106,11 +94,25 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         RunResult result = tonlib.runMethod(Address.of(bounceableAddress), "get_subwallet_id");
         log.info("V4R2 get_subwallet_id {}", result);
+
         // create and deploy plugin -- start
+
+        SubscriptionInfo subscriptionInfo = SubscriptionInfo.builder()
+                .beneficiary(Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka"))
+                .subscriptionFee(Utils.toNano(2))
+                .period(60)
+                .startTime(0)
+                .timeOut(30)
+                .lastPaymentTime(0)
+                .lastRequestTime(0)
+                .failedAttempts(0)
+                .subscriptionId(12345)
+                .build();
+
         i = 0;
         do {
             Utils.sleep(5);
-            state = tonlib.getAccountState(options.subscriptionConfig.getBeneficiary());
+            state = tonlib.getAccountState(subscriptionInfo.getBeneficiary());
             if (i++ > 10) {
                 throw new Error("time out getting account state");
             }
@@ -118,18 +120,21 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(state.getBalance()));
 
-        WalletV4R1Config walletV4R1Config = WalletV4R1Config.builder()
+        config = WalletV4R1Config.builder()
+                .seqno(contract.getSeqno(tonlib))
+                .operation(1) // deploy and install plugin
+                .subWalletId(42)
                 .newPlugin(NewPlugin.builder()
                         .secretKey(keyPair.getSecretKey())
                         .seqno(walletCurrentSeqno)
                         .pluginWc(options.wc) // reuse wc of the wallet
                         .amount(Utils.toNano(0.1)) // initial plugin balance, will be taken from wallet-v4
-                        .stateInit(contract.createPluginStateInit())
+                        .stateInit(contract.createPluginStateInit(subscriptionInfo))
                         .body(contract.createPluginBody())
                         .build())
                 .build();
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, walletV4R1Config);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(45);
@@ -143,26 +148,23 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
         Address pluginAddress = Address.of(plugins.get(0));
         log.info("pluginAddress {}", pluginAddress.toString(false));
 
-        SubscriptionInfo subscriptionInfo = contract.getSubscriptionData(tonlib, pluginAddress);
+        subscriptionInfo = contract.getSubscriptionData(tonlib, pluginAddress);
 
         log.info("{}", subscriptionInfo);
+        log.info("plugin hash {}", new BigInteger(pluginAddress.hashPart).toString());
 
         log.info("plugin {} installed {}", pluginAddress, contract.isPluginInstalled(tonlib, pluginAddress));
 
-        // Collect very first service fee
+        // Collect fee - first time
 
         Cell extMessage = contract.createExternalMessage(pluginAddress, false, null).toCell();
+        extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
-//        Cell header = Contract.createExternalMessageHeader(pluginAddress);
-//        Cell extMessage = Contract.createCommonMsgInfo(header, null, null); // dummy external message, only destination address is relevant
-//        String extMessageBase64boc = Utils.bytesToBase64(extMessage.toBoc());
-        tonlib.sendRawMessage(extMessage.toBase64());
-
-        Utils.sleep(30);
         i = 0;
         do {
             Utils.sleep(5);
-            state = tonlib.getAccountState(options.subscriptionConfig.getBeneficiary());
+            state = tonlib.getAccountState(subscriptionInfo.getBeneficiary());
             if (i++ > 10) {
                 throw new Error("time out getting account state");
             }
@@ -177,7 +179,7 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
             if (i++ > 10) {
                 throw new Error("time out getting account state");
             }
-        } while (isNull(state.getAccount_state().getCode()));
+        } while (state.getAccount_state().getSeqno() == 1);
 
         log.info("walletV4 balance: {}", Utils.formatNanoValue(state.getBalance()));
 
@@ -186,22 +188,19 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         assertThat(subscriptionInfo.getLastPaymentTime()).isNotEqualTo(0);
 
-        // collect fee again
+        // collect fee - second time
 
         Utils.sleep(90);
 
         extMessage = contract.createExternalMessage(pluginAddress, false, null).toCell();
 
-//        header = Contract.createExternalMessageHeader(pluginAddress);
-//        extMessage = Contract.createCommonMsgInfo(header, null, null);
-//        extMessageBase64boc = Utils.bytesToBase64(extMessage.toBoc());
-//        tonlib.sendRawMessage(extMessageBase64boc);
-        tonlib.sendRawMessage(extMessage.toBase64());
+        extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         i = 0;
         do {
-            Utils.sleep(5);
-            state = tonlib.getAccountState(options.subscriptionConfig.getBeneficiary());
+            Utils.sleep(10);
+            state = tonlib.getAccountState(subscriptionInfo.getBeneficiary());
             if (i++ > 10) {
                 throw new Error("time out getting account state");
             }
@@ -229,7 +228,8 @@ public class TestWalletV4R2PluginsDeployTransfer extends CommonTest {
 
         walletCurrentSeqno = contract.getSeqno(tonlib);
 
-        WalletV4R1Config config = WalletV4R1Config.builder()
+        config = WalletV4R1Config.builder()
+                .operation(3) // uninstall plugin
                 .deployedPlugin(DeployedPlugin.builder()
                         .seqno(walletCurrentSeqno)
                         .amount(Utils.toNano(0.1))
