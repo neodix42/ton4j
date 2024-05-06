@@ -56,7 +56,7 @@ public class TestWalletMultisig extends CommonTest {
         log.info("pubKey4 {}", Utils.bytesToHex(keyPair4.getPublicKey()));
         log.info("pubKey5 {}", Utils.bytesToHex(keyPair5.getPublicKey()));
 
-        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 2 * 60 * 60L << 32);
+        BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 2 * 60 * 60L, 32));
 
         Long walletId = new Random().nextLong() & 0xffffffffL;
         log.info("queryId {}, walletId {}", queryId, walletId);
