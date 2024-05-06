@@ -22,7 +22,6 @@ import static java.util.Objects.isNull;
  *   = Message X;
  */
 public class Message {
-    String msgType;
     CommonMsgInfo info;
     StateInit init;
     Cell body;

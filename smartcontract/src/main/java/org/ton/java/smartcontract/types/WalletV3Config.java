@@ -14,6 +14,7 @@ import java.math.BigInteger;
 @Setter
 @ToString
 public class WalletV3Config implements WalletConfig {
+    long subWalletId;
     long seqno;
     int mode;
     long createdAt;
@@ -22,4 +23,5 @@ public class WalletV3Config implements WalletConfig {
     Cell body;
     byte[] secretKey;
     String comment;
+    long validUntil;
 }

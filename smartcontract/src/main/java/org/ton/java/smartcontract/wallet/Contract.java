@@ -84,7 +84,6 @@ public interface Contract<T extends WalletConfig> {
     default Message createExternalMessage(Address destination, boolean stateInit, Cell body) {
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(destination.wc)
                                 .address(destination.toBigInteger())
