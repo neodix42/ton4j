@@ -118,7 +118,7 @@ public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
                 .init(createStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body)
+                        .storeRef(body) // todo review
                         .endCell())
                 .build();
 

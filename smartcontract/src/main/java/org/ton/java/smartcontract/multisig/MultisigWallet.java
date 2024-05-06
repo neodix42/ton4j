@@ -9,8 +9,6 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MsgAddressExtNone;
-import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -53,7 +51,7 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
      * Creator/deployer will be always part of k signatures.
      * By default, it will reside in owner_infos dict at index 0.
      *
-     * @return cell Cell
+     * @return Cell
      */
     @Override
     public Cell createDataCell() {
@@ -62,7 +60,7 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
         cell.storeUint(getOptions().getWalletId(), 32);
         cell.storeUint(getOptions().getMultisigConfig().getN(), 8); // n
         cell.storeUint(getOptions().getMultisigConfig().getK(), 8); // k - collect at least k signatures
-        cell.storeUint(BigInteger.ZERO, 64); // last cleaned
+        cell.storeUint(0, 64); // last cleaned
         if (isNull(getOptions().getMultisigConfig().getOwners()) || getOptions().getMultisigConfig().getOwners().isEmpty()) {
             cell.storeBit(false); // initial owners dict
         } else {
@@ -321,22 +319,18 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
 
     @Override
     public ExtMessageInfo deploy(Tonlib tonlib, MultisigWalletConfig config) {
-        Address ownAddress = getAddress();
 
         Cell body = createTransferBody(config);
 //
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
+                        .dstAddr(getAddressIntStd())
                         .build())
                 .init(createStateInit())
+//                .body(body)
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body)
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeCell(body)
                         .endCell())
                 .build();
 

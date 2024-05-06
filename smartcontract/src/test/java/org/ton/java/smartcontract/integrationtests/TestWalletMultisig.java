@@ -15,6 +15,7 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -42,13 +43,20 @@ public class TestWalletMultisig extends CommonTest {
      */
     @Test
     public void testWalletMultisigOffline() throws InterruptedException {
+
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
         log.info("pubKey3 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
         log.info("pubKey4 {}", Utils.bytesToHex(keyPair4.getPublicKey()));
         log.info("pubKey5 {}", Utils.bytesToHex(keyPair5.getPublicKey()));
 
-        BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 2 * 60 * 60L, 32));
+        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 2 * 60 * 60L << 32);
 
         Long walletId = new Random().nextLong() & 0xffffffffL;
         log.info("queryId {}, walletId {}", queryId, walletId);
@@ -63,6 +71,7 @@ public class TestWalletMultisig extends CommonTest {
 
         Options options = Options.builder()
                 .publicKey(ownerKeyPair.getPublicKey())
+                .secretKey(ownerKeyPair.getSecretKey())
                 .walletId(walletId)
                 .multisigConfig(MultisigConfig.builder()
                         .queryId(queryId)
@@ -95,8 +104,7 @@ public class TestWalletMultisig extends CommonTest {
                         ).build())
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.multisig, options);
-        MultisigWallet contract = wallet.create();
+        MultisigWallet contract = new Wallet(WalletVersion.multisig, options).create();
 
         String nonBounceableAddress = contract.getAddress().toString(true, true, false);
         String bounceableAddress = contract.getAddress().toString(true, true, true);
@@ -109,9 +117,9 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder()
-                .build();
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, null);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "deploying"); // with empty ext-msg
