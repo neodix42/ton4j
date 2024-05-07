@@ -34,14 +34,21 @@ public class Message {
             c.storeBit(false);
         } else { // init:(Maybe (Either StateInit ^StateInit))
             c.storeBit(true);
-            c.storeBit(true);
-            c.storeRef(init.toCell()); // todo check if can be stored in the same cell, not in ref
+            Cell initCell = init.toCell();
+            // -1:  need at least one bit for body
+            if ((c.getFreeBits() - 1 >= initCell.getBits().getUsedBits())) {
+                c.storeBit(false);
+                c.storeCell(initCell);
+            } else {
+                c.storeBit(true);
+                c.storeRef(initCell); // todo check if can be stored in the same cell, not in ref
+            }
         }
 
         if (isNull(body)) {
             c.storeBit(false);
         } else {
-            if ((c.getFreeBits() >= c.getUsedBits()) && c.getFreeRefs() >= c.getUsedRefs()) {
+            if ((c.getFreeBits() >= body.getBits().getUsedBits()) && c.getFreeRefs() >= body.getUsedRefs()) {
                 c.storeBit(false);
                 c.storeCell(body);
             } else {
