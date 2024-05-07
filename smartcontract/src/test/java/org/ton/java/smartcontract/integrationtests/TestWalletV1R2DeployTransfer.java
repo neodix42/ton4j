@@ -74,7 +74,8 @@ public class TestWalletV1R2DeployTransfer extends CommonTest {
                 .comment("testNewWalletV1R2")
                 .build();
         // transfer coins from new wallet (back to faucet)
-        contract.sendTonCoins(tonlib, config);
+        extMessageInfo = contract.sendTonCoins(tonlib, config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30);
 

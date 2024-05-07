@@ -20,7 +20,4 @@ public class FromWalletConfig implements WalletConfig {
     Address destination;
     BigInteger amount;
     Cell body;
-    int operation; // 0 - simple send; 1 - deploy and install plugin; 2 - install plugin; 3 - remove plugin
-    NewPlugin newPlugin;
-    DeployedPlugin deployedPlugin;
 }

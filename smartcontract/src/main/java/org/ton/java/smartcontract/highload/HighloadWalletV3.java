@@ -141,7 +141,6 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
             //dummy deploy msg
             highloadConfig.setBody(MessageRelaxed.builder()
                     .info(InternalMessageInfoRelaxed.builder()
-                            .srcAddr(MsgAddressExtNone.builder().build())
                             .dstAddr(MsgAddressIntStd.builder()
                                     .workchainId(ownAddress.wc)
                                     .address(ownAddress.toBigInteger())
@@ -155,16 +154,12 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(ownAddress.wc)
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .init(StateInit.builder()
-                        .code(getOptions().code)
-                        .data(createDataCell())
-                        .build())
+                .init(createStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), innerMsg.hash()))
                         .storeRef(innerMsg)
@@ -239,7 +234,6 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
         Address ownAddress = getAddress();
         return MessageRelaxed.builder()
                 .info(InternalMessageInfoRelaxed.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(ownAddress.wc)
                                 .address(ownAddress.toBigInteger())

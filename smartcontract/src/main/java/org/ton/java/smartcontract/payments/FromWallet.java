@@ -13,6 +13,7 @@ import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.MsgAddressExtNone;
 import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -37,39 +38,18 @@ public class FromWallet extends PaymentChannel {
         this.secretKey = secretKey;
     }
 
-    public FromWallet deploy(FromWalletConfig config) {
+    public ExtMessageInfo deploy(FromWalletConfig config) {
 //        transfer(null, true, amount);
-        Address ownAddress = getAddress();
-
-        Cell body = createTransferBody(config);
-
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
-                        .build())
-                .init(createStateInit())
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body)
-                        .endCell())
-                .build();
-
-        tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-        return this;
+        return transfer(null, true, config.getAmount());
     }
 
-    public FromWallet topUp(BigInteger balanceA, BigInteger balanceB, BigInteger amount) {
-        transfer(this.createTopUpBalance(balanceA, balanceB), amount);
-        return this;
+    public ExtMessageInfo topUp(BigInteger balanceA, BigInteger balanceB, BigInteger amount) {
+        return transfer(this.createTopUpBalance(balanceA, balanceB), amount);
+
     }
 
-    public FromWallet init(BigInteger balanceA, BigInteger balanceB, BigInteger amount) {
-        transfer(this.createInitChannel(balanceA, balanceB).getCell(), amount);
-        return this;
+    public ExtMessageInfo init(BigInteger balanceA, BigInteger balanceB, BigInteger amount) {
+        return transfer(this.createInitChannel(balanceA, balanceB).getCell(), amount);
     }
 
     public FromWallet estimateFee() {
@@ -81,8 +61,8 @@ public class FromWallet extends PaymentChannel {
         return this;
     }
 
-    public void close(ChannelState channelState, byte[] hisSignature, BigInteger amount) {
-        transfer(this.createCooperativeCloseChannel(hisSignature, channelState).getCell(), amount);
+    public ExtMessageInfo close(ChannelState channelState, byte[] hisSignature, BigInteger amount) {
+        return transfer(this.createCooperativeCloseChannel(hisSignature, channelState).getCell(), amount);
     }
 
     public void commit(byte[] hisSignature, BigInteger seqnoA, BigInteger seqnoB, BigInteger amount) {
@@ -109,13 +89,16 @@ public class FromWallet extends PaymentChannel {
 //        extMsg = createExtMsg(payload, needStateInit, amount);
 //    }
 
-    private void transfer(Cell payload, BigInteger amount) {
-//        extMsg = createExtMsg(payload, false, amount);
-//        Cell stateInit = needStateInit ? (this.createStateInit()).stateInit : null;
+    private ExtMessageInfo transfer(Cell payload, BigInteger amount) {
+        return transfer(payload, false, amount);
+    }
 
+    private ExtMessageInfo transfer(Cell payload, boolean needStateInit, BigInteger amount) {
+//        Cell stateInit = false ? (this.createStateInit()).stateInit : null;
+//        Address myAddress = this.getAddress();
 //        long seqno = wallet.getSeqno(tonlib);
 //
-//        extMsg = wallet.createTransferMessage(
+//        return wallet.createTransferMessage(
 //                secretKey,
 //                myAddress.toString(true, true, true), //to payment channel
 //                amount,
@@ -126,8 +109,13 @@ public class FromWallet extends PaymentChannel {
 
         Address ownAddress = getAddress();
 //        Cell body = payload;
-        Cell body = this.createInternalMessage(ownAddress, amount, payload).toCell();
+        Cell order = this.createInternalMessage(ownAddress, amount, payload).toCell();
 
+        Cell signingMessage = CellBuilder.beginCell()
+                .storeUint(0, 32) // seqno
+                .storeUint(3, 8) // send mode
+                .storeRef(order)
+                .endCell();
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -137,14 +125,14 @@ public class FromWallet extends PaymentChannel {
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .init(null)
+                .init(needStateInit ? (this.createStateInit()) : null)
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body)
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), signingMessage.hash()))
+                        .storeCell(signingMessage)
                         .endCell())
                 .build();
 
-        tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
 //    public ExternalMessage createExtMsg(Cell payload, boolean needStateInit, BigInteger amount) {

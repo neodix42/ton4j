@@ -103,13 +103,8 @@ public interface Contract<T extends WalletConfig> {
     }
 
     default Message createInternalMessage(Address destination, BigInteger amount, Cell body) {
-        Address ownAddress = getAddress();
         Message internalMessage = Message.builder()
                 .info(InternalMessageInfo.builder()
-                        .srcAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(destination.wc)
                                 .address(destination.toBigInteger())
@@ -118,10 +113,7 @@ public interface Contract<T extends WalletConfig> {
                         .build()).build();
 
         if (nonNull(body)) {
-            internalMessage.setBody(CellBuilder.beginCell()
-                    .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
-                    .storeRef(body)
-                    .endCell());
+            internalMessage.setBody(body);
         }
 
         return internalMessage;

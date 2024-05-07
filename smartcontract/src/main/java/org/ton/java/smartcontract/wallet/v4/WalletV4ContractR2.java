@@ -116,13 +116,6 @@ public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
     @Override
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV4R1Config config) {
 
-//        Address ownAddress = getAddress();
-//        config.setOperation(1);
-//        Cell body = createTransferBody(config); //seqno only needed
-//        Cell extMsg = this.createExternalMessage(ownAddress, true, body).toCell();
-//
-//        return tonlib.sendRawMessage(extMsg.toBase64());
-
         Cell body = createDeployMessage(config);
 
         Message externalMessage = Message.builder()

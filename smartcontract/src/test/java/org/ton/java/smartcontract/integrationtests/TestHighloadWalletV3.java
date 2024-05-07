@@ -93,11 +93,6 @@ public class TestHighloadWalletV3 extends CommonTest {
         extMessageInfo = contract.sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent single message");
-
-//        log.info("sending again with the same query-id causes duplicate message response");
-//        extMessageInfo = contract.sendTonCoins(tonlib, keyPair.getSecretKey(), config);
-//        assertThat(extMessageInfo.getError().getCode()).isZero();
-//        log.info("sent single message");
     }
 
     @Test
@@ -225,7 +220,7 @@ public class TestHighloadWalletV3 extends CommonTest {
     }
 
     @Test
-    public void testBulkPayloadTransfer_660_DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
+    public void testBulkPayloadTransfer_1000_DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
         tonlib = Tonlib.builder()
                 .testnet(true)
                 .ignoreCache(false)
@@ -252,7 +247,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("           raw address {}", contract.getAddress().toString(false));
 
         // top up new wallet using test-faucet-wallet
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(8));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(12));
         Utils.sleep(10, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
@@ -268,10 +263,11 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         Utils.sleep(30, "deploying");
 
-        Cell nMessages1 = createNMessages(220, contract, createdAt, null);
-        Cell nMessages2 = createNMessages(220, contract, createdAt, nMessages1);
-        Cell nMessages3 = createNMessages(220, contract, createdAt, nMessages2);
-        Cell extMsgWith400Mgs = contract.createMessagesToSend(Utils.toNano(7), nMessages3, createdAt);
+        Cell nMessages1 = createNMessages(250, contract, createdAt, null);
+        Cell nMessages2 = createNMessages(250, contract, createdAt, nMessages1);
+        Cell nMessages3 = createNMessages(250, contract, createdAt, nMessages2);
+        Cell nMessages4 = createNMessages(250, contract, createdAt, nMessages3);
+        Cell extMsgWith400Mgs = contract.createMessagesToSend(Utils.toNano(11), nMessages4, createdAt);
 
         config = HighloadV3Config.builder()
                 .body(extMsgWith400Mgs)
@@ -281,7 +277,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         extMessageInfo = contract.sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        log.info("sent {} messages", 660);
+        log.info("sent {} messages", 1000);
     }
 
     @Test
@@ -318,10 +314,6 @@ public class TestHighloadWalletV3 extends CommonTest {
                     .outMsg(MessageRelaxed.builder()
                             .info(InternalMessageInfoRelaxed.builder()
                                     .bounce(false) // warning, for tests only
-                                    .srcAddr(MsgAddressIntStd.builder()
-                                            .workchainId(contract.getAddress().wc)
-                                            .address(contract.getAddress().toBigInteger())
-                                            .build())
                                     .dstAddr(MsgAddressIntStd.builder()
                                             .workchainId(destinationAddress.wc)
                                             .address(destinationAddress.toBigInteger())
@@ -341,10 +333,6 @@ public class TestHighloadWalletV3 extends CommonTest {
                     .mode((byte) 3)
                     .outMsg(MessageRelaxed.builder()
                             .info(InternalMessageInfoRelaxed.builder()
-                                    .srcAddr(MsgAddressIntStd.builder()
-                                            .workchainId(contract.getAddress().wc)
-                                            .address(contract.getAddress().toBigInteger())
-                                            .build())
                                     .dstAddr(MsgAddressIntStd.builder()
                                             .workchainId(contract.getAddress().wc)
                                             .address(contract.getAddress().toBigInteger())

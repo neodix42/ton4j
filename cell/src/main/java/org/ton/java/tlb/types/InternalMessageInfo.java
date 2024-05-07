@@ -54,8 +54,8 @@ public class InternalMessageInfo implements CommonMsgInfo {
                 .storeBit(isNull(iHRDisabled) ? true : iHRDisabled)
                 .storeBit(isNull(bounce) ? true : bounce)
                 .storeBit(isNull(bounced) ? false : bounced)
-                .storeSlice(CellSlice.beginParse(isNull(srcAddr) ? MsgAddressExtNone.builder().build().toCell() : srcAddr.toCell()))
-                .storeSlice(CellSlice.beginParse(dstAddr.toCell()))
+                .storeCell(isNull(srcAddr) ? MsgAddressExtNone.builder().build().toCell() : srcAddr.toCell())
+                .storeCell(dstAddr.toCell())
                 .storeCoins(isNull(value) ? BigInteger.ZERO : value.getCoins())
                 .storeDict((nonNull(value) && nonNull(value.getExtraCurrencies())) ? value.getExtraCurrencies().serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
