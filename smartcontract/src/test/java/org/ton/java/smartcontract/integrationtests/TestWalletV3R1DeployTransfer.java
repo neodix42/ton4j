@@ -48,7 +48,8 @@ public class TestWalletV3R1DeployTransfer extends CommonTest {
 
         WalletV3ContractR1 contract = new Wallet(WalletVersion.V3R1, options).create();
 
-        Message msg = contract.createExternalMessage(contract.getAddress(), true,
+        Message msg = contract.createExternalMessage(contract.getAddress(),
+                true,
                 CellBuilder.beginCell()
                         .storeUint(42, 32) // subwallet
                         .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32)  //valid-until

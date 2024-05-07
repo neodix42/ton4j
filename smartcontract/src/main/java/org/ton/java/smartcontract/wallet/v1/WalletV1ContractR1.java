@@ -1,6 +1,5 @@
 package org.ton.java.smartcontract.wallet.v1;
 
-import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletCodes;
@@ -11,6 +10,8 @@ import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
+
+import java.math.BigInteger;
 
 public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
 
@@ -32,38 +33,32 @@ public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-//        cell.storeUint(BigInteger.ZERO, 32); // seqno
+        cell.storeUint(BigInteger.ZERO, 32); // seqno
         cell.storeBytes(getOptions().publicKey);
         return cell.endCell();
     }
 
+    public Cell createDeployMessage() {
+        return CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell();
+    }
+
     public Cell createTransferBody(WalletV1R1Config config) {
-        Address ownAddress = getAddress();
-        CommonMsgInfo internalMsgInfo = InternalMessageInfo.builder()
-                .srcAddr(MsgAddressIntStd.builder()
-                        .workchainId(ownAddress.wc)
-                        .address(ownAddress.toBigInteger())
-                        .build())
-                .dstAddr(MsgAddressIntStd.builder()
-                        .workchainId(config.getDestination().wc)
-                        .address(config.getDestination().toBigInteger())
-                        .build())
-                .value(CurrencyCollection.builder().coins(config.getAmount()).build())
-                .createdAt(config.getCreatedAt())
-                .build();
-
-        Cell innerMsg = internalMsgInfo.toCell();
-
         Cell order = Message.builder()
-                .info(internalMsgInfo)
+                .info(InternalMessageInfo.builder()
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(config.getDestination().wc)
+                                .address(config.getDestination().toBigInteger())
+                                .build())
+                        .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                        .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().publicKey, options.getSecretKey(), innerMsg.hash()))
-                        .storeRef(innerMsg)
+                        .storeUint(0, 32)
+                        .storeString(config.getComment())
                         .endCell())
                 .build().toCell();
 
         return CellBuilder.beginCell()
-//                .storeUint(BigInteger.valueOf(config.getSeqno()), 32)
+                .storeUint(BigInteger.valueOf(config.getSeqno()), 32)
                 .storeUint(config.getMode() & 0xff, 8)
                 .storeRef(order)
                 .endCell();
@@ -82,19 +77,13 @@ public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
      */
     public ExtMessageInfo sendTonCoins(Tonlib tonlib, WalletV1R1Config config) {
         Cell body = createTransferBody(config);
-        Address ownAddress = getAddress();
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
+                        .dstAddr(getAddressIntStd())
                         .build())
-                .init(null)
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body)
+                        .storeCell(body)
                         .endCell())
                 .build();
 
@@ -103,22 +92,16 @@ public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
 
     @Override
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV1R1Config config) {
-        Address ownAddress = getAddress();
-
-        Cell body = createTransferBody(config);
+        Cell body = createDeployMessage();
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
+                        .dstAddr(getAddressIntStd())
                         .build())
                 .init(createStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body) // todo review
+                        .storeCell(body)
                         .endCell())
                 .build();
 

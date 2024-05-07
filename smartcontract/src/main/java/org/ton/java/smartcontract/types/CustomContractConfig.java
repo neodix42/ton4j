@@ -21,4 +21,5 @@ public class CustomContractConfig implements WalletConfig {
     BigInteger amount;
     Cell body;
     long extraField;
+    String comment;
 }
