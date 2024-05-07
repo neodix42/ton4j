@@ -30,11 +30,16 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @RunWith(JUnit4.class)
 public class TestWalletMultisig extends CommonTest {
 
-    TweetNaclFast.Signature.KeyPair ownerKeyPair = Utils.generateSignatureKeyPair();
-    TweetNaclFast.Signature.KeyPair keyPair2 = Utils.generateSignatureKeyPair();
-    TweetNaclFast.Signature.KeyPair keyPair3 = Utils.generateSignatureKeyPair();
-    TweetNaclFast.Signature.KeyPair keyPair4 = Utils.generateSignatureKeyPair();
-    TweetNaclFast.Signature.KeyPair keyPair5 = Utils.generateSignatureKeyPair();
+    public static String SECRET_KEY1 = "16aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
+    public static String SECRET_KEY2 = "26aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
+    public static String SECRET_KEY3 = "36aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
+    public static String SECRET_KEY4 = "46aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
+    public static String SECRET_KEY5 = "56aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
+    TweetNaclFast.Signature.KeyPair ownerKeyPair = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY1));
+    TweetNaclFast.Signature.KeyPair keyPair2 = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY2));
+    TweetNaclFast.Signature.KeyPair keyPair3 = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY3));
+    TweetNaclFast.Signature.KeyPair keyPair4 = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY4));
+    TweetNaclFast.Signature.KeyPair keyPair5 = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY5));
 
     /**
      * Any user deploys a multisig wallet.
@@ -56,9 +61,9 @@ public class TestWalletMultisig extends CommonTest {
         log.info("pubKey4 {}", Utils.bytesToHex(keyPair4.getPublicKey()));
         log.info("pubKey5 {}", Utils.bytesToHex(keyPair5.getPublicKey()));
 
-        BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 2 * 60 * 60L, 32));
+        BigInteger queryId = new BigInteger("9223372036854775807");
 
-        Long walletId = new Random().nextLong() & 0xffffffffL;
+        Long walletId = 1045609917L;
         log.info("queryId {}, walletId {}", queryId, walletId);
 
         int rootIndex = 0;
