@@ -21,9 +21,11 @@ import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RawAccountState;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.time.Instant;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -39,6 +41,7 @@ public class TestDns extends CommonTest {
     static Tonlib tonlib = Tonlib.builder()
             .testnet(true)
             .ignoreCache(false)
+            .verbosityLevel(VerbosityLevel.DEBUG)
             .build();
 
 
@@ -80,22 +83,51 @@ public class TestDns extends CommonTest {
     @Test
     public void testDnsRootDeploy() throws InterruptedException {
 
-        adminWallet = GenerateWallet.random(tonlib, 15);
+        adminWallet = GenerateWallet.random(tonlib, 1);
 
         Options options = Options.builder()
                 .publicKey(adminWallet.getKeyPair().getPublicKey())
-                .publicKey(adminWallet.getKeyPair().getSecretKey())
+                .secretKey(adminWallet.getKeyPair().getSecretKey())
                 .wc(0L)
                 .build();
 
         DnsRoot dnsRoot = new DnsRoot(options);
         log.info("new root DNS address {}", dnsRoot.getAddress().toString(true, true, true));
 
+//        // top up new wallet using test-faucet-wallet
+//        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(dnsRoot.getAddress()), Utils.toNano(0.11));
+//        log.info("new root dns {} balance: {}", dnsRoot.getName(), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = dnsRoot.deploy(tonlib, null);
+        DnsRootConfig config = DnsRootConfig.builder()
+                .wc(0)
+                .seqno(adminWallet.getWallet().getSeqno(tonlib))
+                .comment("deploy root dns")
+                .amount(Utils.toNano(0.12))
+                .body(null)
+                .adminWallet(adminWallet.getWallet())
+                .adminKeyPair(adminWallet.getKeyPair())
+                .stateInit(dnsRoot.createStateInit())
+                .build();
+
+        WalletV3Config adminWalletConfig = WalletV3Config.builder()
+                .subWalletId(42)
+                .seqno(1)
+                .mode(3)
+                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
+                .secretKey(adminWallet.getKeyPair().getSecretKey())
+                .publicKey(adminWallet.getKeyPair().getPublicKey())
+                .destination(dnsRoot.getAddress())
+                .comment("deploy root dns")
+                .amount(Utils.toNano(0.12))
+                .body(null)
+                .stateInit(dnsRoot.createStateInit())
+                .build();
+
+//        does not work
+        ExtMessageInfo extMessageInfo = adminWallet.getWallet().sendTonCoins(tonlib, adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30);
+        Utils.sleep(20, "deploying");
 
         RawAccountState state;
         int i = 0;
@@ -113,8 +145,8 @@ public class TestDns extends CommonTest {
     @Test
     public void testDnsCollectionItemDeploy() throws InterruptedException {
 
-        adminWallet = GenerateWallet.random(tonlib, 15);
-        buyerWallet = GenerateWallet.random(tonlib, 40);
+        adminWallet = GenerateWallet.random(tonlib, 2);
+        buyerWallet = GenerateWallet.random(tonlib, 4);
 
         log.info("admin wallet address {}", adminWallet.getWallet().getAddress().toString(true, true, true));
         log.info("buyer wallet address {}", buyerWallet.getWallet().getAddress().toString(true, true, true));
@@ -125,21 +157,22 @@ public class TestDns extends CommonTest {
 
         Options optionsDnsCollection = Options.builder()
                 .publicKey(adminWallet.getKeyPair().getPublicKey())
-                .publicKey(adminWallet.getKeyPair().getSecretKey())
-                .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/dns-collection-2.json"))
+                .secretKey(adminWallet.getKeyPair().getSecretKey())
+                .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/dns-collection.json"))
                 .dnsItemCodeHex(dnsItemCodeHex)
                 .code(CellBuilder.beginCell().fromBoc(dnsCollectionCodeHex).endCell())
                 .build();
 
-        Wallet dnsCollectionWallet = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection);
-        DnsCollection dnsCollection = dnsCollectionWallet.create();
+        DnsCollection dnsCollection = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection).create();
         log.info("DNS collection address {}", dnsCollection.getAddress().toString(true, true, true));
 
         DnsCollectionConfig dnsCollectionConfig = DnsCollectionConfig.builder()
-                .amount(Utils.toNano(0.1)).build();
+                .amount(Utils.toNano(0.1))
+                .build();
 
-        dnsCollection.deploy(tonlib, dnsCollectionConfig);
-
+        // dnsCollection.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.5), adminWallet.getKeyPair());
+        ExtMessageInfo extMessageInfo = dnsCollection.deploy(tonlib, dnsCollectionConfig);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "deploying dnsCollection");
 
         getDnsCollectionInfo(dnsCollection);

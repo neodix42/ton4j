@@ -29,10 +29,22 @@ public interface Contract<T extends WalletConfig> {
         return createStateInit().getAddress();
     }
 
+    default Address getAddress(byte workchain) {
+        return createStateInit().getAddress(workchain);
+    }
+
     default MsgAddressIntStd getAddressIntStd() {
         Address ownAddress = createStateInit().getAddress();
         return MsgAddressIntStd.builder()
                 .workchainId(ownAddress.wc)
+                .address(ownAddress.toBigInteger())
+                .build();
+    }
+
+    default MsgAddressIntStd getAddressIntStd(int workchain) {
+        Address ownAddress = createStateInit().getAddress();
+        return MsgAddressIntStd.builder()
+                .workchainId((byte) workchain)
                 .address(ownAddress.toBigInteger())
                 .build();
     }
@@ -83,10 +95,7 @@ public interface Contract<T extends WalletConfig> {
     default Message createExternalMessage(Address destination, boolean stateInit, Cell body) {
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(destination.wc)
-                                .address(destination.toBigInteger())
-                                .build())
+                        .dstAddr(getAddressIntStd())
                         .build()).build();
         if (stateInit) {
             externalMessage.setInit(createStateInit());
@@ -102,7 +111,10 @@ public interface Contract<T extends WalletConfig> {
         return externalMessage;
     }
 
-    default Message createInternalMessage(Address destination, BigInteger amount, Cell body) {
+    default Message createInternalMessage(Address destination,
+                                          BigInteger amount,
+                                          Cell body,
+                                          org.ton.java.tlb.types.StateInit stateInit) {
         Message internalMessage = Message.builder()
                 .info(InternalMessageInfo.builder()
                         .dstAddr(MsgAddressIntStd.builder()
@@ -111,6 +123,10 @@ public interface Contract<T extends WalletConfig> {
                                 .build())
                         .value(CurrencyCollection.builder().coins(amount).build())
                         .build()).build();
+
+        if (nonNull(stateInit)) {
+            internalMessage.setInit(stateInit);
+        }
 
         if (nonNull(body)) {
             internalMessage.setBody(body);
@@ -124,10 +140,10 @@ public interface Contract<T extends WalletConfig> {
      */
     default Message createTransferMessage(T config) {
 
-//        Cell body = createTransferBody(config);
-//        Cell intMsg = this.createInternalMessage(config.destination, config.amount, body).toCell();
+        //Cell body = createTransferBody(config);
+//        Cell intMsg = this.createInternalMessage(destination, amount, body).toCell();
 //
-//        return this.createExternalMessage(config.destination, false, intMsg);
+//        return this.createExternalMessage(destination, false, intMsg);
         return null;
     }
 }

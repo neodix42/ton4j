@@ -109,7 +109,7 @@ public class FromWallet extends PaymentChannel {
 
         Address ownAddress = getAddress();
 //        Cell body = payload;
-        Cell order = this.createInternalMessage(ownAddress, amount, payload).toCell();
+        Cell order = this.createInternalMessage(ownAddress, amount, payload, null).toCell();
 
         Cell signingMessage = CellBuilder.beginCell()
                 .storeUint(0, 32) // seqno

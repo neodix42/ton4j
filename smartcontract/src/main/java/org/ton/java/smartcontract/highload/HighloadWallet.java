@@ -145,9 +145,9 @@ public class HighloadWallet implements Contract<HighloadConfig> {
                 order = this.createInternalMessage(destination.getAddress(), destination.getAmount(), CellBuilder.beginCell()
                         .storeUint(0, 32)
                         .storeString(destination.getComment())
-                        .endCell()).toCell();
+                        .endCell(), null).toCell();
             } else {
-                order = this.createInternalMessage(destination.getAddress(), destination.getAmount(), null).toCell();
+                order = this.createInternalMessage(destination.getAddress(), destination.getAmount(), null, null).toCell();
             }
 
             CellBuilder p = CellBuilder.beginCell()

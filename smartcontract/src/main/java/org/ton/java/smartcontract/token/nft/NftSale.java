@@ -221,7 +221,7 @@ public class NftSale implements Contract<NftSaleConfig> {
 
         Cell burnBody = NftSale.createCancelBody(config.getQueryId());
 //review destination address
-        Cell body = this.createInternalMessage(config.getSaleAddress(), config.getAmount(), burnBody).toCell();
+        Cell body = this.createInternalMessage(config.getSaleAddress(), config.getAmount(), burnBody, null).toCell();
 
         Cell extMsg = this.createExternalMessage(config.getSaleAddress(), false, body).toCell();
 //        ExternalMessage extMsg = admin.createTransferMessage(

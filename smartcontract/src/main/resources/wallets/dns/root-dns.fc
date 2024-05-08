@@ -1,0 +1,80 @@
+;; Root DNS resolver 2.0 in masterchain
+;; Added support for ".t.me" domain zone (https://t.me/tonblockchain/167), in addition to ".ton" domain zone.
+;; Added redirect from short "www.ton" to "foundation.ton" domain
+;; compiled by FunC https://github.com/ton-blockchain/ton/tree/20758d6bdd0c1327091287e8a620f660d1a9f4da
+
+(slice, slice, slice) load_data() inline {
+    slice ds = get_data().begin_parse();
+    return (
+            ds~load_msg_addr(), ;; address of ".ton" dns resolver smart contract in basechain
+            ds~load_msg_addr(), ;; address of ".t.me" dns resolver smart contract in basechain
+            ds~load_msg_addr() ;; address of "www.ton" dns resolver smart contract in basechain
+    );
+}
+
+(int, cell) dnsresolve(slice subdomain, int category) method_id {
+    throw_unless(70, mod(slice_bits(subdomain), 8) == 0);
+
+    int starts_with_zero_byte = subdomain.preload_int(8) == 0;
+
+    int subdomain_len = slice_bits(subdomain);
+
+    if (starts_with_zero_byte & (subdomain_len == 8)) { ;; "." requested
+        return (8, null()); ;; resolved but no dns-records
+    }
+    if (starts_with_zero_byte) {
+        subdomain~load_uint(8);
+    }
+
+    (slice ton_address, slice t_me_address, slice ton_www_address) = load_data();
+
+    slice ton_www_domain = begin_cell().store_slice("ton").store_uint(0, 8).store_slice("www").store_uint(0, 8).end_cell().begin_parse();
+
+    if (subdomain_len >= 8 * 8) {
+        if (equal_slices(subdomain.preload_bits(8 * 8), ton_www_domain)) {
+
+            cell result = begin_cell()
+                    .store_uint(dns_next_resolver_prefix, 16)
+                    .store_slice(ton_www_address)
+                    .end_cell();
+
+            return (7 * 8 + (starts_with_zero_byte ? 8 : 0), result);
+
+        }
+    }
+
+    slice ton_domain = begin_cell().store_slice("ton").store_uint(0, 8).end_cell().begin_parse();
+
+    if (subdomain_len >= 4 * 8) {
+        if (equal_slices(subdomain.preload_bits(4 * 8), ton_domain)) {
+
+            cell result = begin_cell()
+                    .store_uint(dns_next_resolver_prefix, 16)
+                    .store_slice(ton_address)
+                    .end_cell();
+
+            return (3 * 8 + (starts_with_zero_byte ? 8 : 0), result);
+
+        }
+    }
+
+    slice t_me_domain = begin_cell().store_slice("me").store_uint(0, 8).store_slice("t").store_uint(0, 8).end_cell().begin_parse();
+
+    if (subdomain_len >= 5 * 8) {
+        if (equal_slices(subdomain.preload_bits(5 * 8), t_me_domain)) {
+
+            cell result = begin_cell()
+                    .store_uint(dns_next_resolver_prefix, 16)
+                    .store_slice(t_me_address)
+                    .end_cell();
+
+            return (4 * 8 + (starts_with_zero_byte ? 8 : 0), result);
+
+        }
+    }
+
+    return (0, null()); ;; domain cannot be resolved
+}
+
+() recv_internal(int msg_value, cell in_msg_full, slice in_msg_body) impure {
+}

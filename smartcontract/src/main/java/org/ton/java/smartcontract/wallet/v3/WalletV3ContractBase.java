@@ -33,16 +33,15 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
 
         Cell order = Message.builder()
                 .info(InternalMessageInfo.builder()
+                        .bounce(config.isBounce())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(config.getDestination().wc)
                                 .address(config.getDestination().toBigInteger())
                                 .build())
                         .value(CurrencyCollection.builder().coins(config.getAmount()).build())
                         .build())
-                .body(CellBuilder.beginCell()
-                        .storeUint(0, 32)
-                        .storeString(config.getComment())
-                        .endCell())
+                .init(config.getStateInit())
+                .body(config.getBody())
                 .build().toCell();
 
         return CellBuilder.beginCell()
@@ -112,7 +111,7 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(config.getPublicKey(), config.getSecretKey(), body.hash()))
                         .storeCell(body) // was storeRef!!
                         .endCell())
                 .build();

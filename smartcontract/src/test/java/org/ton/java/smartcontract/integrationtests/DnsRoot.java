@@ -6,8 +6,13 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.DnsRootConfig;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
+import org.ton.java.tlb.types.CurrencyCollection;
+import org.ton.java.tlb.types.InternalMessageInfo;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+
+import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -42,38 +47,37 @@ public class DnsRoot implements Contract<DnsRootConfig> {
 
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeAddress(Address.of("EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz"));
-        cell.storeAddress(Address.of("EQCA14o1-VWhS2efqoh_9M1b_A9DtKTuoqfmkn83AbJzwnPi"));
-        cell.storeAddress(Address.of("EQB43-VCmf17O7YMd51fAvOjcMkCw46N_3JMCoegH_ZDo40e"));
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeAddress(Address.of("EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz"))
+                .storeAddress(Address.of("EQCA14o1-VWhS2efqoh_9M1b_A9DtKTuoqfmkn83AbJzwnPi"))
+                .storeAddress(Address.of("kQAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi47nL"))
+                .endCell();
     }
 
     @Override
     public Cell createTransferBody(DnsRootConfig config) {
-        return null;
+        Cell order = Message.builder()
+                .info(InternalMessageInfo.builder()
+                        .dstAddr(getAddressIntStd())
+                        .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                        .build())
+                .body(config.getBody())
+                .build().toCell();
+
+        return CellBuilder.beginCell()
+                .storeUint(BigInteger.valueOf(config.getSeqno()), 32)
+                .storeUint(config.getMode() & 0xff, 8)
+                .storeRef(order)
+                .endCell();
+    }
+
+    public Cell createDeployMessage(DnsRootConfig config) {
+        return CellBuilder.beginCell().endCell();
     }
 
     @Override
     public ExtMessageInfo deploy(Tonlib tonlib, DnsRootConfig config) {
-        Address ownAddress = getAddress();
-        config.setSeqno(this.getSeqno(tonlib));
 
-        Cell extMsg = this.createExternalMessage(ownAddress, true, null).toCell();
-
-        return tonlib.sendRawMessage(extMsg.toBase64());
-//        long seqno = wallet.getSeqno(tonlib);
-//
-//        ExternalMessage extMsg = wallet.createTransferMessage(
-//                keyPair.getSecretKey(),
-//                this.getAddress(),
-//                Utils.toNano(0.1),
-//                seqno,
-//                (Cell) null, // payload body
-//                (byte) 3, //send mode
-//                this.createStateInit().stateInit
-//        );
-//
-//        return tonlib.sendRawMessage(extMsg.message.toBase64());
+        return null; // must be deployed from admin wallet
     }
 }

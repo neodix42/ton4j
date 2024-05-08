@@ -61,22 +61,22 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
         message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
 
         if (nonNull(config.getDestination1())) {
-            Message order = this.createInternalMessage(config.getDestination1(), config.getAmount1(), null);
+            Message order = this.createInternalMessage(config.getDestination1(), config.getAmount1(), null, null);
             message.storeUint(3 & 0xff, 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination2())) {
-            Message order = this.createInternalMessage(config.getDestination2(), config.getAmount2(), null);
+            Message order = this.createInternalMessage(config.getDestination2(), config.getAmount2(), null, null);
             message.storeUint(3 & 0xff, 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination3())) {
-            Message order = this.createInternalMessage(config.getDestination3(), config.getAmount3(), null);
+            Message order = this.createInternalMessage(config.getDestination3(), config.getAmount3(), null, null);
             message.storeUint(3 & 0xff, 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination4())) {
-            Message order = this.createInternalMessage(config.getDestination4(), config.getAmount3(), null);
+            Message order = this.createInternalMessage(config.getDestination4(), config.getAmount3(), null, null);
             message.storeUint(3 & 0xff, 8);
             message.storeRef(order.toCell());
         }

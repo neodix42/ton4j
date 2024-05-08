@@ -208,7 +208,7 @@ public class TestJetton {
                 responseAddress
         );
 //review destination address
-        Cell body = admin.createInternalMessage(jettonWalletAddress, Utils.toNano(0.05), burnBody).toCell();
+        Cell body = admin.createInternalMessage(jettonWalletAddress, Utils.toNano(0.05), burnBody, null).toCell();
 
         Cell extMsg = admin.createExternalMessage(jettonWalletAddress, false, body).toCell();
 //        ExternalMessage extMsg = admin.createTransferMessage(
