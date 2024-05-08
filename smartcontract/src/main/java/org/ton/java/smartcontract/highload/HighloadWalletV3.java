@@ -133,7 +133,6 @@ public class HighloadWalletV3 implements WalletContract {
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(ownAddress.wc)
                                 .address(ownAddress.toBigInteger())
@@ -155,7 +154,6 @@ public class HighloadWalletV3 implements WalletContract {
             //dummy deploy msg
             highloadConfig.setBody(MessageRelaxed.builder()
                     .info(InternalMessageInfoRelaxed.builder()
-                            .srcAddr(MsgAddressExtNone.builder().build())
                             .dstAddr(MsgAddressIntStd.builder()
                                     .workchainId(ownAddress.wc)
                                     .address(ownAddress.toBigInteger())
@@ -169,7 +167,6 @@ public class HighloadWalletV3 implements WalletContract {
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(ownAddress.wc)
                                 .address(ownAddress.toBigInteger())
@@ -229,7 +226,6 @@ public class HighloadWalletV3 implements WalletContract {
     public Cell createMessageToSend(Address destAddress, double amount, long createdAt, TweetNaclFast.Signature.KeyPair keyPair) {
 
         CommonMsgInfoRelaxed internalMsgInfo = InternalMessageInfoRelaxed.builder()
-                .srcAddr(MsgAddressExtNone.builder().build())
                 .dstAddr(MsgAddressIntStd.builder()
                         .workchainId(destAddress.wc)
                         .address(destAddress.toBigInteger())
@@ -253,7 +249,6 @@ public class HighloadWalletV3 implements WalletContract {
         Address ownAddress = getAddress();
         return MessageRelaxed.builder()
                 .info(InternalMessageInfoRelaxed.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(ownAddress.wc)
                                 .address(ownAddress.toBigInteger())

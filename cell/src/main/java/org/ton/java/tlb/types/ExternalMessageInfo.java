@@ -38,8 +38,8 @@ public class ExternalMessageInfo implements CommonMsgInfo {
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell()
                 .storeUint(0b10, 2)
-                .storeSlice(CellSlice.beginParse(srcAddr.toCell()))
-                .storeSlice(CellSlice.beginParse(dstAddr.toCell()))
+                .storeCell(isNull(srcAddr) ? MsgAddressExtNone.builder().build().toCell() : srcAddr.toCell())
+                .storeCell(isNull(dstAddr) ? MsgAddressExtNone.builder().build().toCell() : dstAddr.toCell())
                 .storeCoins(isNull(importFee) ? BigInteger.ZERO : importFee);
         return result.endCell();
     }

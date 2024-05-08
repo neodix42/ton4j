@@ -81,10 +81,10 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         Utils.sleep(30, "deploying");
 
-        Cell transferMsg = contract.createMessageToSend(destAddress, 0.02, createdAt, keyPair);
+        Cell messageToSend = contract.createMessageToSend(destAddress, 0.02, createdAt, keyPair);
 
         config = HighloadV3Config.builder()
-                .body(transferMsg)
+                .body(messageToSend)
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
                 .createdAt(createdAt)
                 .build();
