@@ -38,8 +38,8 @@ public class ExternalMessageOutInfoRelaxed implements CommonMsgInfoRelaxed {
     public Cell toCell() {
         CellBuilder result = CellBuilder.beginCell()
                 .storeUint(3, 2)
-                .storeSlice(CellSlice.beginParse(srcAddr.toCell()))
-                .storeSlice(CellSlice.beginParse(dstAddr.toCell()))
+                .storeCell(isNull(srcAddr) ? MsgAddressExtNone.builder().build().toCell() : srcAddr.toCell())
+                .storeCell(dstAddr.toCell())
                 .storeUint(isNull(createdLt) ? BigInteger.ZERO : createdLt, 64)
                 .storeUint(createdAt, 32);
         return result.endCell();
