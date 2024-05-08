@@ -119,7 +119,6 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(ownAddress.wc)
                                 .address(ownAddress.toBigInteger())

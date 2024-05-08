@@ -59,29 +59,15 @@ map InternalMessageInfoRelaxed {
 
 map MessageRelaxed {
   info => CommonMsgInfoRelaxed
-  init => StateInit (empty)
-  body => Cell (empty for deploy)
-}
-
-map MessageRelaxed_2 {
-  info => CommonMsgInfoRelaxed
-  init => StateInit (empty)
+  init => StateInit
   body => Cell
 }
 
-map InternalMessageInfoRelaxed_2 {
- magic => 0b0
- ihr_disabled => Bool
- bounce => Bool
- bounced => Bool
- src => MsgAddressExtNone
- dest => MsgAddressIntStd
- value => CurrencyCollection
- ihr_fee => Grams
- fwd_fee => Grams
- created_lt => uint64
- created_at => uint32
+map SingleMessage {
+  signature => 512
+  body => ^Cell
 }
+
 
 map BulkInternalTransfer {
   internal_transfer => 0xae42e5a4
@@ -123,47 +109,18 @@ Message::body --> ExternalInMsgBody
 ExternalInMsgBody::MsgInner --> MsgInner
 MsgInner::message_to_send  --> MessageRelaxed
 MessageRelaxed::info --> InternalMessageInfoRelaxed
-MessageRelaxed::body --> MessageRelaxed_2
-MessageRelaxed_2::info --> InternalMessageInfoRelaxed_2
-MessageRelaxed_2::body --> BulkInternalTransfer
+
+
+MessageRelaxed::body --> BulkInternalTransfer
+MessageRelaxed::body --> SingleMessage
+SingleMessage::body -->InternalMessageInfoRelaxed
 BulkInternalTransfer::actions --> OutAction
 OutAction::out_msg --> MessageRelaxed_3
 MessageRelaxed_3::info --> InternalMessageInfoRelaxed_3
-MessageRelaxed_3::body --> BulkInternalTransfer
-
-note right of ExternalInMsgBody
-  recv_external()
-end note
-
-note right of MessageRelaxed
-  Dummy message with the empty
-  init state, if contract deployment
-  is done via external message.
-end note
-
-note right of InternalMessageInfoRelaxed
- Dummy message with zero toncoins
- and self dest address.
-end note
-
-note left of MessageRelaxed_2
-  Used to send toncoins.
-  Body is empty for single destination.
-end note
-
-note right of InternalMessageInfoRelaxed_2
-  In the case of bulk sending, the value
-  should be the sum of all transfers
-  defined in the body.
-end note
+MessageRelaxed_3::body --> MessageRelaxed
 
 note left of OutAction
   List of up to 254 OutActions (recipients)
-end note
-
-note left of MessageRelaxed_3
-  Fill up the body with MessageRalaxed_2,
-  to send another 254 messages.
 end note
 
 @enduml
