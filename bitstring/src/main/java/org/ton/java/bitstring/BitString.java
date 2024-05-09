@@ -6,7 +6,10 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 
 import static java.util.Objects.isNull;
 
@@ -19,9 +22,9 @@ public class BitString implements Bits<Boolean> {
 
     Deque<Boolean> array;
 
-    private static int MAX_LENGTH = 1023;
+    private static final int MAX_LENGTH = 1023;
 
-    private int initialLength;
+    private final int initialLength;
 
     public BitString(BitString bs) {
         array = new ArrayDeque<>(bs.array.size());
@@ -689,25 +692,6 @@ public class BitString implements Bits<Boolean> {
                 temp.writeBit(false);
             }
             return temp.toHex().toUpperCase() + '_';
-        }
-    }
-
-    public void setTopUppedArray(int[] arr, Boolean fulfilledBytes) {
-        int length = arr.length * 8;
-        array = new BitString(arr).array;
-
-        if (!(fulfilledBytes || (length == 0))) {
-            boolean foundEndBit = false;
-            for (byte c = 0; c < 7; c++) {
-                if (array.pollLast()) {
-                    foundEndBit = true;
-                    break;
-                }
-            }
-            if (!foundEndBit) {
-                System.err.println(Arrays.toString(arr) + ", " + fulfilledBytes);
-                throw new Error("Incorrect TopUppedArray");
-            }
         }
     }
 }
