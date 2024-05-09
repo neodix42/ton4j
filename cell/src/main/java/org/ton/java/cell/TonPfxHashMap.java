@@ -68,7 +68,7 @@ public class TonPfxHashMap extends TonHashMap {
      * @param se      List<Object> which contains [label as "0" and "1" string, maximal possible size of label, leaf or left fork, right fork]
      * @param builder Cell to which edge will be serialized
      */
-    void serialize_edge(List<Object> se, Cell builder) {
+    void serialize_edge(List<Object> se, CellBuilder builder) {
         if (se.size() == 0) {
             return;
         }
@@ -78,17 +78,17 @@ public class TonPfxHashMap extends TonHashMap {
             BitString bs = node.key.readBits(node.key.getUsedBits());
             se.set(0, bs.toBitString());
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            builder.bits.writeBit(false); //pfx feature
-            builder.writeCell(node.value);
+            builder.storeBit(false); //pfx feature
+            builder.storeCell(node.value);
         } else { // contains fork
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            builder.bits.writeBit(true); //pfx feature
-            Cell leftCell = CellBuilder.beginCell().endCell();
+            builder.storeBit(true); //pfx feature
+            CellBuilder leftCell = CellBuilder.beginCell();
             serialize_edge((List<Object>) se.get(2), leftCell);
-            Cell rightCell = CellBuilder.beginCell().endCell();
+            CellBuilder rightCell = CellBuilder.beginCell();
             serialize_edge((List<Object>) se.get(3), rightCell);
-            builder.refs.add(leftCell);
-            builder.refs.add(rightCell);
+            builder.storeRef(leftCell.endCell());
+            builder.storeRef(rightCell.endCell());
         }
     }
 
@@ -105,9 +105,9 @@ public class TonPfxHashMap extends TonHashMap {
         }
 
         List<Object> s = flatten(splitTree(se), keySize);
-        Cell b = CellBuilder.beginCell().endCell();
+        CellBuilder b = CellBuilder.beginCell();
         serialize_edge(s, b);
 
-        return b;
+        return b.endCell();
     }
 }

@@ -54,12 +54,12 @@ public class TonHashMapAugE extends TonHashMapAug {
             return CellBuilder.beginCell().storeBit(false).endCell();
         } else {
             List<Object> s = flatten(splitTree(se), keySize);
-            Cell b = CellBuilder.beginCell().endCell();
+            CellBuilder b = CellBuilder.beginCell();
             serialize_edge(s, b, forkExtra);
 
             return CellBuilder.beginCell()
                     .storeBit(true)
-                    .storeRef(b)
+                    .storeRef(b.endCell())
                     .endCell();
         }
     }

@@ -310,9 +310,6 @@ public class Cell {
         Cell cloned = anotherCell.clone();
         bits.writeBitString(cloned.bits);
         refs.addAll(cloned.refs);
-        hashes = new ArrayList<>();
-        depths = new ArrayList<>();
-        calculateHashes();
     }
 
     public int getMaxRefs() {

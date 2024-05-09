@@ -162,39 +162,39 @@ public class TonHashMap {
      * @param m       int maximal possible length of the label
      * @param builder Cell to which label will be serialized
      */
-    void serialize_label(String label, int m, Cell builder) {
+    void serialize_label(String label, int m, CellBuilder builder) {
         int n = label.length();
         if (label.isEmpty()) {
-            builder.bits.writeBit(false); //hml_short$0
-            builder.bits.writeBit(false); //Unary 0
+            builder.storeBit(false); //hml_short$0
+            builder.storeBit(false); //Unary 0
             return;
         }
 
         int sizeOfM = BigInteger.valueOf(m).bitLength();
         if (n < sizeOfM) {
-            builder.bits.writeBit(false);  // hml_short
+            builder.storeBit(false);  // hml_short
             for (int i = 0; i < n; i++) {
-                builder.bits.writeBit(true); // Unary n
+                builder.storeBit(true); // Unary n
             }
-            builder.bits.writeBit(false);  // Unary 0
+            builder.storeBit(false);  // Unary 0
             for (Character c : label.toCharArray()) {
-                builder.bits.writeBit(c == '1');
+                builder.storeBit(c == '1');
             }
             return;
         }
 
         boolean isSame = ((label.equals("0".repeat(label.length()))) || label.equals("10".repeat(label.length())));
         if (isSame) {
-            builder.bits.writeBit(true);
-            builder.bits.writeBit(true); //hml_same
-            builder.bits.writeBit(label.charAt(0) == '1');
-            builder.bits.writeUint(label.length(), sizeOfM);
+            builder.storeBit(true);
+            builder.storeBit(true); //hml_same
+            builder.storeBit(label.charAt(0) == '1');
+            builder.storeUint(label.length(), sizeOfM);
         } else {
-            builder.bits.writeBit(true);
-            builder.bits.writeBit(false); //hml_long
-            builder.bits.writeUint(label.length(), sizeOfM);
+            builder.storeBit(true);
+            builder.storeBit(false); //hml_long
+            builder.storeUint(label.length(), sizeOfM);
             for (Character c : label.toCharArray()) {
-                builder.bits.writeBit(c == '1');
+                builder.storeBit(c == '1');
             }
         }
     }
@@ -207,7 +207,7 @@ public class TonHashMap {
      * @param se      List<Object> which contains [label as "0" and "1" string, maximal possible size of label, leaf or left fork, right fork]
      * @param builder Cell to which edge will be serialized
      */
-    void serialize_edge(List<Object> se, Cell builder) {
+    void serialize_edge(List<Object> se, CellBuilder builder) {
         if (se.size() == 0) {
             return;
         }
@@ -216,18 +216,15 @@ public class TonHashMap {
             BitString bs = node.key.readBits(node.key.getUsedBits());
             se.set(0, bs.toBitString());
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            builder.writeCell(node.value);
+            builder.storeCell(node.value);
         } else { // contains fork
             serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            Cell leftCell = CellBuilder.beginCell().endCell();
+            CellBuilder leftCell = CellBuilder.beginCell();
             serialize_edge((List<Object>) se.get(2), leftCell);
-            Cell rightCell = CellBuilder.beginCell().endCell();
+            CellBuilder rightCell = CellBuilder.beginCell();
             serialize_edge((List<Object>) se.get(3), rightCell);
-            builder.refs.add(leftCell);
-            builder.refs.add(rightCell);
-            builder.hashes = new ArrayList<>();
-            builder.depths = new ArrayList<>();
-            builder.calculateHashes();
+            builder.storeRef(leftCell.endCell());
+            builder.storeRef(rightCell.endCell());
         }
     }
 
@@ -244,10 +241,10 @@ public class TonHashMap {
         }
 
         List<Object> s = flatten(splitTree(se), keySize);
-        Cell b = CellBuilder.beginCell().endCell();
+        CellBuilder b = CellBuilder.beginCell();
         serialize_edge(s, b);
 
-        return b;
+        return b.endCell();
     }
 
     /**
