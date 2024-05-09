@@ -64,7 +64,7 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
         if (isNull(getOptions().getMultisigConfig().getOwners()) || getOptions().getMultisigConfig().getOwners().isEmpty()) {
             cell.storeBit(false); // initial owners dict
         } else {
-            cell.storeDict(createOwnersInfosDict(getOptions().getMultisigConfig().getOwners()));
+            cell.storeDict(createOwnersInfoDict(getOptions().getMultisigConfig().getOwners()));
         }
 
         if (isNull(getOptions().getMultisigConfig().getPendingQueries()) || getOptions().getMultisigConfig().getPendingQueries().isEmpty()) {
@@ -180,7 +180,7 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
      * @param ownerInfos OwnerInfo
      * @return Cell
      */
-    public Cell createOwnersInfosDict(List<OwnerInfo> ownerInfos) {
+    public Cell createOwnersInfoDict(List<OwnerInfo> ownerInfos) {
         int dictKeySize = 8;
         TonHashMapE dictDestinations = new TonHashMapE(dictKeySize);
 
@@ -327,12 +327,14 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
                         .dstAddr(getAddressIntStd())
                         .build())
                 .init(createStateInit())
-                .body(body)
+//                .body(body)
 //                .body(CellBuilder.beginCell()
 //                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
-//                        .storeCell(body)
+//                        .storeRef(body)
 //                        .endCell())
                 .build();
+
+        System.out.println("print " + externalMessage.toCell().print());
 
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }

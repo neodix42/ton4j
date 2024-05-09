@@ -68,7 +68,13 @@ public class TestHashMap {
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
-        log.info("serialized cell {}", cell.print());
+        log.info("serialized cell: \n{}", cell.print());
+
+        log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
+        
+        log.info("cell hash ref0 {}", Utils.bytesToHex(cell.getRefs().get(0).hash()));
+        log.info("cell hash ref1 {}", Utils.bytesToHex(cell.getRefs().get(1).hash()));
+
 
         CellSlice cs = CellSlice.beginParse(cell);
         TonHashMap dex = cs.loadDict(9,

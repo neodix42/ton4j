@@ -840,6 +840,28 @@ public class Tonlib {
         }
     }
 
+    public RunResult runMethod(Address contractAddress, long methodId) {
+        long contractId = loadContract(AccountAddressOnly.builder().account_address(contractAddress.toString(false)).build());
+        if (contractId == -1) {
+            System.err.println("cannot load contract " + AccountAddressOnly.builder().account_address(contractAddress.toString(false)));
+            return null;
+        } else {
+            return runMethod(contractId, methodId, null);
+        }
+    }
+
+    public RunResult runMethod(Address contractAddress, long methodId, Deque<String> stackData) {
+        synchronized (gson) {
+            long contractId = loadContract(AccountAddressOnly.builder().account_address(contractAddress.toString(false)).build());
+            if (contractId == -1) {
+                System.err.println("cannot load contract " + AccountAddressOnly.builder().account_address(contractAddress.toString(false)));
+                return null;
+            } else {
+                return runMethod(contractId, methodId, stackData);
+            }
+        }
+    }
+
     public RunResult runMethod(long contractId, String methodName, Deque<String> stackData) {
         synchronized (gson) {
             Deque<TvmStackEntry> stack = null;
@@ -859,6 +881,25 @@ public class Tonlib {
         }
     }
 
+    public RunResult runMethod(long contractId, long methodId, Deque<String> stackData) {
+        synchronized (gson) {
+            Deque<TvmStackEntry> stack = null;
+            if (nonNull(stackData)) {
+                stack = ParseRunResult.renderTvmStack(stackData);
+            }
+
+            RunMethodIntQuery runMethodQuery = RunMethodIntQuery.builder()
+                    .id(contractId)
+                    .method(MethodNumber.builder().number(methodId).build())
+                    .stack(stack)
+                    .build();
+
+            String result = syncAndRead(gson.toJson(runMethodQuery));
+
+            return runResultParser.parse(result);
+        }
+    }
+
     /**
      * Generic method to call seqno method of a contract. There is no check if seqno method exists.
      *
@@ -867,6 +908,17 @@ public class Tonlib {
      */
     public long getSeqno(Address address) {
         RunResult result = runMethod(address, "seqno");
+        if (result.getExit_code() != 0) {
+            throw new Error("can't get/parse result by executing seqno method, exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
+
+        return seqno.getNumber().longValue();
+    }
+
+    public long getSeqnoById(Address address) {
+        RunResult result = runMethod(address, 85143L);
         if (result.getExit_code() != 0) {
             throw new Error("can't get/parse result by executing seqno method, exit code " + result.getExit_code());
         }

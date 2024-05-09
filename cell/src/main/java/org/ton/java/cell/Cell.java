@@ -303,8 +303,6 @@ public class Cell {
         c.levelMask = this.levelMask.clone();
         c.hashes = new ArrayList<>(this.hashes);
         c.depths = new ArrayList<>(this.depths);
-//        c.dataBytes = Arrays.copyOf(this.dataBytes, this.dataBytes.length);
-        //c.calculateHashes();
         return c;
     }
 
@@ -312,6 +310,9 @@ public class Cell {
         Cell cloned = anotherCell.clone();
         bits.writeBitString(cloned.bits);
         refs.addAll(cloned.refs);
+        hashes = new ArrayList<>();
+        depths = new ArrayList<>();
+        calculateHashes();
     }
 
     public int getMaxRefs() {

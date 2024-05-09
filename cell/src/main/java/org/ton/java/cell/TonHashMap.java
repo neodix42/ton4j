@@ -225,6 +225,9 @@ public class TonHashMap {
             serialize_edge((List<Object>) se.get(3), rightCell);
             builder.refs.add(leftCell);
             builder.refs.add(rightCell);
+            builder.hashes = new ArrayList<>();
+            builder.depths = new ArrayList<>();
+            builder.calculateHashes();
         }
     }
 

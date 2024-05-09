@@ -28,6 +28,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestWalletV3R2DeployTransferShort extends CommonTest {
 
     @Test
+    public void testWalletV3R2GetSeqno() {
+        tonlib = Tonlib.builder()
+                .testnet(false)
+                .ignoreCache(false)
+                .build();
+        log.info("seqno {}", tonlib.getSeqno(Address.of("UQDUOClsfRg_f9zf96Vmeqba11KYqNXVhRqeO07E7SfxPB2H")));
+    }
+
+    @Test
     public void testWalletV3R2() throws InterruptedException {
 
         tonlib = Tonlib.builder()
@@ -84,7 +93,7 @@ public class TestWalletV3R2DeployTransferShort extends CommonTest {
                 .subWalletId(42)
                 .build();
         ExtMessageInfo extMessageInfo = contract1.deploy(tonlib, config);
-        AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         config = WalletV3Config.builder()
                 .subWalletId(98)

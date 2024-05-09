@@ -15,14 +15,30 @@ public class TestCellSerialization {
 
     @Test
     public void testCellSerialization0() {
+        Cell c0 = CellBuilder.beginCell().endCell();
+        assertThat(Utils.bytesToHex(c0.hash())).isEqualTo("96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7");
+
+        Cell c00 = CellBuilder.beginCell().storeUint(0, 2).endCell();
+        assertThat(Utils.bytesToHex(c00.hash())).isEqualTo("a1bb2a842d54edb8942f95bedaf53923d2d788d698232cfb256571e9e8b10a86");
+
+        Cell cbs = CellBuilder.beginCell().storeUint(0x5f21, 15).endCell();
+        assertThat(Utils.bytesToHex(cbs.hash())).isEqualTo("7c617d77cf0f8561eb82bede8fcc95e728710b4c31510699eb78b5793fd8c6c2");
+
+
         Cell c1 = CellBuilder.beginCell().storeUint(42, 7).endCell();
         Cell c2 = CellBuilder.beginCell().storeUint(12, 8).storeRef(c1).endCell();
-//        log.info(Utils.bytesToHex(c1.hash()));
-//        log.info(Utils.bytesToHex(c2.hash()));
-//        log.info(Utils.bytesToHex(c2.hash()));
-//        log.info(Utils.bytesToHex(c2.toBoc()));
-//        log.info(Utils.bytesToHex(c2.toBoc(false)));
+        Cell c3 = CellBuilder.beginCell().storeUint(13, 8).storeRef(c1).storeRef(c2).endCell();
+        log.info("c1-hash: {}", Utils.bytesToHex(c1.hash()));
+        log.info("c2-hash: {}", Utils.bytesToHex(c2.hash()));
+        log.info("c3-hash: {}", Utils.bytesToHex(c3.hash()));
+        assertThat(Utils.bytesToHex(c1.hash())).isEqualTo("9184089c2c7fe2f12874575da31cf5d15ea91a3b7b5e41e910d4ccf935bf0a76");
+        assertThat(Utils.bytesToHex(c2.hash())).isEqualTo("13f640f9f30969b9f7b6d51a6ad277e719bc93c792c81e14cf9cddd7b387ff47");
+        assertThat(Utils.bytesToHex(c3.hash())).isEqualTo("6c2f0317132aad2b120968921bac0e3788b7588cc6ff470946e3ada3430d3338");
+        log.info(Utils.bytesToHex(c2.hash()));
+        log.info(Utils.bytesToHex(c2.toBoc()));
+        log.info(Utils.bytesToHex(c2.toBoc(false)));
         log.info(Utils.bytesToHex(c2.toBoc(true, true)));
+        assertThat(Utils.bytesToHex(c3.toBoc(true, true))).isEqualTo("b5ee9c72c1010301000c0005040302020d020101020c02000155296aa6ad");
     }
 
     @Test

@@ -8,6 +8,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.multisig.MultisigWallet;
 import org.ton.java.smartcontract.types.*;
@@ -215,30 +217,28 @@ public class TestWalletMultisig extends CommonTest {
                         .k(k)
                         .n(n)
                         .rootI(rootIndex)
-                        .owners(
-                                List.of(
-                                        OwnerInfo.builder()
-                                                .publicKey(ownerKeyPair.getPublicKey())
-                                                .flood(1)
-                                                .build(),
-                                        OwnerInfo.builder()
-                                                .publicKey(keyPair2.getPublicKey())
-                                                .flood(2)
-                                                .build(),
-                                        OwnerInfo.builder()
-                                                .publicKey(keyPair3.getPublicKey())
-                                                .flood(3)
-                                                .build(),
-                                        OwnerInfo.builder()
-                                                .publicKey(keyPair4.getPublicKey())
-                                                .flood(4)
-                                                .build(),
-                                        OwnerInfo.builder()
-                                                .publicKey(keyPair5.getPublicKey())
-                                                .flood(5)
-                                                .build()
-                                )
-                        ).build())
+                        .owners(List.of(
+                                OwnerInfo.builder()
+                                        .publicKey(ownerKeyPair.getPublicKey())
+                                        .flood(1)
+                                        .build(),
+                                OwnerInfo.builder()
+                                        .publicKey(keyPair2.getPublicKey())
+                                        .flood(2)
+                                        .build(),
+                                OwnerInfo.builder()
+                                        .publicKey(keyPair3.getPublicKey())
+                                        .flood(3)
+                                        .build(),
+                                OwnerInfo.builder()
+                                        .publicKey(keyPair4.getPublicKey())
+                                        .flood(4)
+                                        .build(),
+                                OwnerInfo.builder()
+                                        .publicKey(keyPair5.getPublicKey())
+                                        .flood(5)
+                                        .build()
+                        )).build())
                 .build();
 
         Wallet wallet = new Wallet(WalletVersion.multisig, options);
@@ -441,7 +441,7 @@ public class TestWalletMultisig extends CommonTest {
                         .build()
         );
 
-        Cell stateInit = contract.getInitState(tonlib, walletId, n, k, contract.createOwnersInfosDict(ownersPublicKeys));
+        Cell stateInit = contract.getInitState(tonlib, walletId, n, k, contract.createOwnersInfoDict(ownersPublicKeys));
         log.info("state-init {}", stateInit.toHex(false));
     }
 
@@ -866,5 +866,79 @@ public class TestWalletMultisig extends CommonTest {
 
             log.info("{} query-id {}, msg {}", label, query_id, query);
         }
+    }
+
+    @Test
+    public void testCellSerialization5() {
+
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
+        CellBuilder cell = CellBuilder.beginCell();
+
+        cell.storeUint(42, 32);
+        cell.storeUint(5, 8);
+        cell.storeUint(3, 8);
+        cell.storeUint(0, 64);
+        cell.storeDict(createOwnersInfoDict(List.of(
+                        OwnerInfo.builder()
+                                .publicKey(ownerKeyPair.getPublicKey())
+                                .flood(1)
+                                .build(),
+                        OwnerInfo.builder()
+                                .publicKey(keyPair2.getPublicKey())
+                                .flood(2)
+                                .build(),
+                        OwnerInfo.builder()
+                                .publicKey(keyPair3.getPublicKey())
+                                .flood(3)
+                                .build(),
+                        OwnerInfo.builder()
+                                .publicKey(keyPair4.getPublicKey())
+                                .flood(4)
+                                .build(),
+                        OwnerInfo.builder()
+                                .publicKey(keyPair5.getPublicKey())
+                                .flood(5)
+                                .build()
+                )
+        ));
+        cell.storeBit(false); // initial  pending queries dict
+
+        System.out.println("print cell: " + cell.endCell().print());
+
+        String bocHexWithCrc = cell.endCell().toHex();
+        System.out.println("print (bocHexWithCrc): " + bocHexWithCrc);
+
+        Cell c = Cell.fromBoc(bocHexWithCrc);
+        System.out.println("print c: \n" + c.print());
+    }
+
+    private Cell createOwnersInfoDict(List<OwnerInfo> testOwnerInfos) {
+        int dictKeySize = 8;
+        TonHashMapE dictDestinations = new TonHashMapE(dictKeySize);
+
+        long i = 0; // key, index 16bit
+        for (OwnerInfo testOwnerInfo : testOwnerInfos) {
+
+            CellBuilder ownerInfoCell = CellBuilder.beginCell();
+            ownerInfoCell.storeBytes(testOwnerInfo.getPublicKey()); //256 bits
+            ownerInfoCell.storeUint(testOwnerInfo.getFlood(), 8);
+
+            dictDestinations.elements.put(
+                    i++, // key - index
+                    ownerInfoCell.endCell() // value - cell - OwnerInfo
+            );
+        }
+
+        Cell cellDict = dictDestinations.serialize(
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
+                v -> (Cell) v
+        );
+
+        return cellDict;
     }
 }

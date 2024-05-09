@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.ton.java.tonlib.types.TvmStackEntry;
+
+import java.util.Deque;
 
 @Builder
 @Setter
@@ -15,7 +18,7 @@ public class RunMethodIntQuery extends ExtraQuery {
     final String type = "smc.runGetMethod";
     long id;
     MethodNumber method;
-    String stack;
+    Deque<TvmStackEntry> stack;
 }
 
 
