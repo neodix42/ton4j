@@ -112,7 +112,7 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
                         .build())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(config.getPublicKey(), config.getSecretKey(), body.hash()))
-                        .storeCell(body) // was storeRef!!
+                        .storeCell(body)
                         .endCell())
                 .build();
 

@@ -26,6 +26,7 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.UUID;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -123,7 +124,6 @@ public class TestDns extends CommonTest {
                 .stateInit(dnsRoot.createStateInit())
                 .build();
 
-//        does not work
         ExtMessageInfo extMessageInfo = adminWallet.getWallet().sendTonCoins(tonlib, adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
@@ -145,7 +145,7 @@ public class TestDns extends CommonTest {
     @Test
     public void testDnsCollectionItemDeploy() throws InterruptedException {
 
-        adminWallet = GenerateWallet.random(tonlib, 2);
+        adminWallet = GenerateWallet.random(tonlib, 20);
         buyerWallet = GenerateWallet.random(tonlib, 4);
 
         log.info("admin wallet address {}", adminWallet.getWallet().getAddress().toString(true, true, true));
@@ -158,7 +158,10 @@ public class TestDns extends CommonTest {
         Options optionsDnsCollection = Options.builder()
                 .publicKey(adminWallet.getKeyPair().getPublicKey())
                 .secretKey(adminWallet.getKeyPair().getSecretKey())
-                .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/dns-collection.json"))
+                .collectionContent(
+                        NftUtils.createOffchainUriCell(
+                                UUID.randomUUID().toString()) // unique collection's address each time
+                )
                 .dnsItemCodeHex(dnsItemCodeHex)
                 .code(CellBuilder.beginCell().fromBoc(dnsCollectionCodeHex).endCell())
                 .build();
@@ -166,23 +169,43 @@ public class TestDns extends CommonTest {
         DnsCollection dnsCollection = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection).create();
         log.info("DNS collection address {}", dnsCollection.getAddress().toString(true, true, true));
 
-        DnsCollectionConfig dnsCollectionConfig = DnsCollectionConfig.builder()
-                .amount(Utils.toNano(0.1))
+//        DnsCollectionConfig dnsCollectionConfig = DnsCollectionConfig.builder()
+//                .amount(Utils.toNano(0.1))
+//                .build();
+
+        WalletV3Config adminWalletConfig = WalletV3Config.builder()
+                .subWalletId(42)
+                .seqno(1)
+                .mode(3)
+                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
+                .secretKey(adminWallet.getKeyPair().getSecretKey())
+                .publicKey(adminWallet.getKeyPair().getPublicKey())
+                .destination(dnsCollection.getAddress())
+                .amount(Utils.toNano(15)) // mind min auction price, which is 10 tons
+                .body(CellBuilder.beginCell()
+                        .storeUint(0, 32)  // OP deploy new nft
+                        .storeRef(CellBuilder.beginCell().storeString("test-one-unique1").endCell())
+                        .endCell())
+                .stateInit(dnsCollection.createStateInit())
                 .build();
 
-        // dnsCollection.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.5), adminWallet.getKeyPair());
-        ExtMessageInfo extMessageInfo = dnsCollection.deploy(tonlib, dnsCollectionConfig);
+        ExtMessageInfo extMessageInfo = adminWallet.getWallet().sendTonCoins(tonlib, adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "deploying dnsCollection");
 
-        getDnsCollectionInfo(dnsCollection);
+        // dnsCollection.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.5), adminWallet.getKeyPair());
+//        ExtMessageInfo extMessageInfo = dnsCollection.deploy(tonlib, dnsCollectionConfig);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        Utils.sleep(20, "deploying dnsCollection");
+
+//        getDnsCollectionInfo(dnsCollection);
 
         resolveDnsCollectionItems(dnsCollection);
 
         String dnsItem1DomainName = "alice-alice-alice-9"; // do not add .ton, it will fail with error code 203
         // create and deploy DNS Item
-        deployDnsItem(tonlib, adminWallet.getWallet(), Utils.toNano(10), dnsCollection.getAddress(), dnsItem1DomainName, adminWallet.getKeyPair());
-        Utils.sleep(30, "deploying DNS item " + dnsItem1DomainName);
+        extMessageInfo = deployDnsItem(tonlib, adminWallet.getWallet(), Utils.toNano(10), dnsCollection.getAddress(), dnsItem1DomainName, adminWallet.getKeyPair());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        Utils.sleep(20, "deploying DNS item " + dnsItem1DomainName);
 
         Address dnsItem1Address = dnsCollection.getNftItemAddressByDomain(tonlib, dnsItem1DomainName);
         DnsItem dnsItem1 = new DnsItem(Options.builder().address(dnsItem1Address).build());
@@ -196,7 +219,8 @@ public class TestDns extends CommonTest {
                 .amount(Utils.toNano(13))
                 .build();
 
-        buyerWallet.getWallet().sendTonCoins(tonlib, config);
+        extMessageInfo = buyerWallet.getWallet().sendTonCoins(tonlib, config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "bidding for DNS item " + dnsItem1DomainName);
 
         Address dnsItem1Editor = dnsItem1.getEditor(tonlib);
@@ -207,26 +231,31 @@ public class TestDns extends CommonTest {
         getDnsItemInfo(dnsCollection, dnsItem1);
 
         // claim your domain by doing any action with it
-        getStaticData(adminWallet, dnsItem1);
+        extMessageInfo = getStaticData(adminWallet, dnsItem1);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "Claim DNS item " + dnsItem1DomainName);
-        //or assign your wallet to it, so it could resolove your wallet address to your-domain.ton
-        changeDnsRecord(buyerWallet, dnsItem1, buyerWallet.getWallet().getAddress());
+        //or assign your wallet to it, so it could resolve your wallet address to your-domain.ton
+        extMessageInfo = changeDnsRecord(buyerWallet, dnsItem1, buyerWallet.getWallet().getAddress());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "Claim DNS item " + dnsItem1DomainName);
 
         getDnsItemInfo(dnsCollection, dnsItem1);
         dnsItem1Editor = dnsItem1.getEditor(tonlib);
         log.info("dnsItem1 editor {}", nonNull(dnsItem1Editor) ? dnsItem1Editor.toString(true, true, true) : null);
 
-        governDnsItem(buyerWallet, dnsItem1);
+        extMessageInfo = governDnsItem(buyerWallet, dnsItem1);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "govern dns item");
 
-        transferDnsItem(buyerWallet, dnsItem1, "EQBCMRzsJBTMDqF5JW8Mbq9Ap7b88qKxkwktlZEChtLbiFIH");
+        extMessageInfo = transferDnsItem(buyerWallet, dnsItem1, "EQBCMRzsJBTMDqF5JW8Mbq9Ap7b88qKxkwktlZEChtLbiFIH");
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "transferring domain to other user");
 
         // release of domain is possible if either one year has passed and auction has ended;
         // also msg_value >= min_price and obviously only the owner can release domain name;
         // once it is released the owner changed to null and auction starts again
-        releaseDnsItem(buyerWallet, dnsItem1, Utils.toNano(15)); // will fail with error code 414
+        extMessageInfo = releaseDnsItem(buyerWallet, dnsItem1, Utils.toNano(15)); // will fail with error code 414
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30);
 
         getDnsItemInfo(dnsCollection, dnsItem1);
@@ -236,24 +265,25 @@ public class TestDns extends CommonTest {
     @Test
     public void testDnsItemDeployAtGlobalCollection() throws InterruptedException {
 
-        adminWallet = GenerateWallet.random(tonlib, 15);
+        adminWallet = GenerateWallet.random(tonlib, 5);
         log.info("admin wallet address {}", adminWallet.getWallet().getAddress().toString(true, true, true));
 //        log.info("buyer wallet address {}", buyerWallet.getWallet().getAddress().toString(true, true, true));
 
         Options optionsDnsCollection = Options.builder()
-                .address(Address.of("EQDjPtM6QusgMgWfl9kMcG-EALslbTITnKcH8VZK1pnH3UZA"))
+                .address(Address.of("EQDjPtM6QusgMgWfl9kMcG-EALslbTITnKcH8VZK1pnH3UZA")) // ton dns domains
                 .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/dns-collection.json"))
                 .build();
 
-        Wallet dnsCollectionWallet = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection);
-        DnsCollection dnsCollection = dnsCollectionWallet.create();
+        DnsCollection dnsCollection = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection).create();
+
         log.info("DNS collection address {}", dnsCollection.getAddress().toString(true, true, true));
 
         getDnsCollectionInfo(dnsCollection);
 
         String dnsItem1DomainName = "alice-alice-alice-12";
         // create and deploy DNS Item
-        deployDnsItem(tonlib, adminWallet.getWallet(), Utils.toNano(10), dnsCollection.getAddress(), dnsItem1DomainName, adminWallet.getKeyPair());
+        ExtMessageInfo extMessageInfo = deployDnsItem(tonlib, adminWallet.getWallet(), Utils.toNano(1), dnsCollection.getAddress(), dnsItem1DomainName, adminWallet.getKeyPair());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "deploying DNS item " + dnsItem1DomainName);
 
         Address dnsItem1Address = dnsCollection.getNftItemAddressByDomain(tonlib, dnsItem1DomainName);
@@ -267,9 +297,12 @@ public class TestDns extends CommonTest {
         getDnsItemInfo(dnsCollection, dnsItem1);
 
         // claim your domain by doing any action with it
-        getStaticData(adminWallet, dnsItem1);
+        extMessageInfo = getStaticData(adminWallet, dnsItem1);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         //assign your wallet to domain name
-        changeDnsRecord(adminWallet, dnsItem1, adminWallet.getWallet().getAddress());
+        extMessageInfo = changeDnsRecord(adminWallet, dnsItem1, adminWallet.getWallet().getAddress());
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
         Utils.sleep(25);
 
         getDnsItemInfo(dnsCollection, dnsItem1);
@@ -348,7 +381,7 @@ public class TestDns extends CommonTest {
         log.info("lastFillUpTime {}, {}", lastFillUpTime, Utils.toUTC(lastFillUpTime));
     }
 
-    private void changeDnsRecord(TestWallet ownerWallet, DnsItem dnsItem, Address newSmartContract) {
+    private ExtMessageInfo changeDnsRecord(TestWallet ownerWallet, DnsItem dnsItem, Address newSmartContract) {
 //        long seqno = ownerWallet.getWallet().getSeqno(tonlib);
 //
 //        ExternalMessage extMsg = ownerWallet.getWallet().createTransferMessage(
@@ -361,9 +394,10 @@ public class TestDns extends CommonTest {
 //                        0));
 //
 //        tonlib.sendRawMessage(extMsg.message.toBase64());
+        return null;
     }
 
-    private void transferDnsItem(TestWallet ownerWallet, DnsItem dnsItem, String newOwner) {
+    private ExtMessageInfo transferDnsItem(TestWallet ownerWallet, DnsItem dnsItem, String newOwner) {
 //        long seqno = ownerWallet.getWallet().getSeqno(tonlib);
 //
 //        ExternalMessage extMsg = ownerWallet.getWallet().createTransferMessage(
@@ -379,9 +413,10 @@ public class TestDns extends CommonTest {
 //                        ownerWallet.getWallet().getAddress()));
 //
 //        tonlib.sendRawMessage(extMsg.message.toBase64());
+        return null;
     }
 
-    private void releaseDnsItem(TestWallet ownerWallet, DnsItem dnsItem, BigInteger amount) {
+    private ExtMessageInfo releaseDnsItem(TestWallet ownerWallet, DnsItem dnsItem, BigInteger amount) {
 //        long seqno = ownerWallet.getWallet().getSeqno(tonlib);
 //
 //        CellBuilder payload = CellBuilder.beginCell();
@@ -396,9 +431,10 @@ public class TestDns extends CommonTest {
 //                payload.endCell());
 //
 //        tonlib.sendRawMessage(extMsg.message.toBase64());
+        return null; // todo
     }
 
-    private void governDnsItem(TestWallet ownerWallet, DnsItem dnsItem) {
+    private ExtMessageInfo governDnsItem(TestWallet ownerWallet, DnsItem dnsItem) {
 //        long seqno = ownerWallet.getWallet().getSeqno(tonlib);
 //
 //        CellBuilder payload = CellBuilder.beginCell();
@@ -413,9 +449,10 @@ public class TestDns extends CommonTest {
 //                payload.endCell());
 //
 //        tonlib.sendRawMessage(extMsg.message.toBase64());
+        return null; // todo
     }
 
-    private void getStaticData(TestWallet ownerWallet, DnsItem dnsItem) {
+    private ExtMessageInfo getStaticData(TestWallet ownerWallet, DnsItem dnsItem) {
 //        long seqno = ownerWallet.getWallet().getSeqno(tonlib);
 //
 //        ExternalMessage extMsg = ownerWallet.getWallet().createTransferMessage(
@@ -426,16 +463,17 @@ public class TestDns extends CommonTest {
 //                dnsItem.createStaticDataBody(661));
 //
 //        tonlib.sendRawMessage(extMsg.message.toBase64());
+        return null; // todo
     }
 
-    private void deployDnsItem(Tonlib tonlib, Contract adminWallet, BigInteger msgValue, Address dnsCollectionAddress, String domainName, TweetNaclFast.Signature.KeyPair keyPair) {
+    private ExtMessageInfo deployDnsItem(Tonlib tonlib, Contract adminWallet, BigInteger msgValue, Address dnsCollectionAddress, String domainName, TweetNaclFast.Signature.KeyPair keyPair) {
 
-//        long seqno = adminWallet.getSeqno(tonlib);
-//
-//        CellBuilder body = CellBuilder.beginCell();
-//        body.storeUint(0, 32);  // OP deploy new nft
-//        body.storeRef(CellBuilder.beginCell().storeString(domainName).endCell());
-//
+        long seqno = adminWallet.getSeqno(tonlib);
+
+        CellBuilder body = CellBuilder.beginCell();
+        body.storeUint(0, 32);  // OP deploy new nft
+        body.storeRef(CellBuilder.beginCell().storeString(domainName).endCell());
+
 //        ExternalMessage extMsg = adminWallet.createTransferMessage(
 //                keyPair.getSecretKey(),
 //                dnsCollectionAddress,
@@ -443,7 +481,7 @@ public class TestDns extends CommonTest {
 //                seqno,
 //                body.endCell()
 //        );
-//
-//        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
+
+        return null; //todo
     }
 }

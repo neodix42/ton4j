@@ -68,10 +68,10 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
      */
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeRef(options.getCollectionContent());
-        cell.storeRef(CellBuilder.beginCell().fromBoc(options.getDnsItemCodeHex()).endCell());
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeRef(options.getCollectionContent())
+                .storeRef(CellBuilder.beginCell().fromBoc(options.getDnsItemCodeHex()).endCell())
+                .endCell();
     }
 
     @Override
