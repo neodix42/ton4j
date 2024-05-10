@@ -32,16 +32,11 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @RunWith(JUnit4.class)
 public class TestWalletMultisig extends CommonTest {
 
-    public static String SECRET_KEY1 = "16aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
-    public static String SECRET_KEY2 = "26aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
-    public static String SECRET_KEY3 = "36aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
-    public static String SECRET_KEY4 = "46aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
-    public static String SECRET_KEY5 = "56aab91daaaa375d40588384fdf7e36c62d0c0f38c46adfea7f9c904c5973d97c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
-    TweetNaclFast.Signature.KeyPair ownerKeyPair = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY1));
-    TweetNaclFast.Signature.KeyPair keyPair2 = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY2));
-    TweetNaclFast.Signature.KeyPair keyPair3 = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY3));
-    TweetNaclFast.Signature.KeyPair keyPair4 = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY4));
-    TweetNaclFast.Signature.KeyPair keyPair5 = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY5));
+    TweetNaclFast.Signature.KeyPair ownerKeyPair = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPair2 = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPair3 = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPair4 = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPair5 = Utils.generateSignatureKeyPair();
 
     /**
      * Any user deploys a multisig wallet.
@@ -49,7 +44,7 @@ public class TestWalletMultisig extends CommonTest {
      * then sends the order to the wallet.
      */
     @Test
-    public void testWalletMultisigOffline() throws InterruptedException {
+    public void testWalletMultiSigOffline() throws InterruptedException {
 
         tonlib = Tonlib.builder()
                 .testnet(true)
@@ -124,7 +119,7 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
+//        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
 
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, null);
         assertThat(extMessageInfo.getError().getCode()).isZero();
@@ -173,7 +168,9 @@ public class TestWalletMultisig extends CommonTest {
         signedOrder.toFile("signedOrder.boc", false);
 
         // submitter keypair must come from User3 or User4, otherwise you get error 34
-        contract.sendOrder(tonlib, keyPair5, pubkey5Index, signedOrder);
+        extMessageInfo = contract.sendOrder(tonlib, keyPair5, pubkey5Index, signedOrder);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
         Utils.sleep(30, "processing 1st query");
 
         Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId);
@@ -188,7 +185,7 @@ public class TestWalletMultisig extends CommonTest {
      * Hybrid: On-chain/Off-chain consensus.
      */
     @Test
-    public void testWalletMultisigHybrid() throws InterruptedException {
+    public void testWalletMultiSigHybrid() throws InterruptedException {
 
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
@@ -255,8 +252,7 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder()
-                .build();
+        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
@@ -403,8 +399,7 @@ public class TestWalletMultisig extends CommonTest {
                                 OwnerInfo.builder()
                                         .publicKey(keyPair2.getPublicKey())
                                         .flood(2)
-                                        .build()
-                        ))
+                                        .build()))
                         .build())
                 .build();
 
@@ -484,8 +479,7 @@ public class TestWalletMultisig extends CommonTest {
                                 OwnerInfo.builder()
                                         .publicKey(keyPair3.getPublicKey())
                                         .flood(3)
-                                        .build()
-                        ))
+                                        .build()))
                         .build())
                 .build();
 
@@ -520,7 +514,8 @@ public class TestWalletMultisig extends CommonTest {
         byte[] order1Signature3 = MultisigWallet.signCell(keyPair3, order1);
 
         // send order-1 signed by 3rd owner (root index 2)
-        contract.sendOrder(tonlib, keyPair3, 2, order1); // root index 2
+        extMessageInfo = contract.sendOrder(tonlib, keyPair3, 2, order1); // root index 2
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "processing 1st query");
 
         Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId1);
@@ -530,14 +525,16 @@ public class TestWalletMultisig extends CommonTest {
         Cell order2 = MultisigWallet.createOrder(walletId, queryId2, msg2);
 
         // send order-2 signed by 2nd owner (root index 1)
-        contract.sendOrder(tonlib, keyPair2, 1, order2);
+        extMessageInfo = contract.sendOrder(tonlib, keyPair2, 1, order2);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "processing 2nd query");
 
         queryState = contract.getQueryState(tonlib, queryId2);
         log.info("get_query_state (query {}): status {}, mask {}", queryId2, queryState.getLeft(), queryState.getRight());
 
         // send order-2 signed by 3rd owner (root index 2)
-        contract.sendOrder(tonlib, keyPair3, 2, order2);
+        extMessageInfo = contract.sendOrder(tonlib, keyPair3, 2, order2);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "processing 3rd query");
 
         queryState = contract.getQueryState(tonlib, queryId2);
@@ -578,8 +575,7 @@ public class TestWalletMultisig extends CommonTest {
                                 OwnerInfo.builder()
                                         .publicKey(keyPair2.getPublicKey())
                                         .flood(2)
-                                        .build()
-                        ))
+                                        .build()))
                         .build())
                 .build();
 
@@ -598,8 +594,7 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder()
-                .build();
+        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
@@ -614,7 +609,8 @@ public class TestWalletMultisig extends CommonTest {
         Cell order = MultisigWallet.createOrder(walletId, queryId, txMsg1);
 
         // send order-1 signed by 1st owner (root index 0)
-        contract.sendOrder(tonlib, ownerKeyPair.getSecretKey(), 0, order); // root index 0
+        extMessageInfo = contract.sendOrder(tonlib, ownerKeyPair.getSecretKey(), 0, order); // root index 0
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "processing 1st query");
 
         showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, 0), "MessagesUnsignedByIndex-" + 0);
@@ -624,7 +620,8 @@ public class TestWalletMultisig extends CommonTest {
         log.info("get_query_state (query {}): status {}, mask {}", queryId, queryState.getLeft(), queryState.getRight());
 
         // send order-1 signed by 2nd owner (root index 1)
-        contract.sendOrder(tonlib, keyPair2.getSecretKey(), 1, order); // root index 1
+        extMessageInfo = contract.sendOrder(tonlib, keyPair2.getSecretKey(), 1, order); // root index 1
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "processing 2st query");
 
         queryState = contract.getQueryState(tonlib, queryId);
@@ -633,7 +630,7 @@ public class TestWalletMultisig extends CommonTest {
     }
 
     @Test
-    public void testMultisigPendingQueries() throws InterruptedException {
+    public void testMultiSigPendingQueries() throws InterruptedException {
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
         log.info("pubKey3 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
@@ -685,8 +682,7 @@ public class TestWalletMultisig extends CommonTest {
                                 OwnerInfo.builder()
                                         .publicKey(keyPair5.getPublicKey())
                                         .flood(5)
-                                        .build()
-                        ))
+                                        .build()))
                         .pendingQueries(List.of(
                                 PendingQuery.builder()
                                         .queryId(queryId1)
@@ -701,8 +697,7 @@ public class TestWalletMultisig extends CommonTest {
                                         .cnt(1)
                                         .cntBits(1)
                                         .msg(msg2)
-                                        .build()
-                        ))
+                                        .build()))
                         .build())
                 .build();
 
@@ -721,8 +716,7 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder()
-                .build();
+        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
@@ -741,8 +735,8 @@ public class TestWalletMultisig extends CommonTest {
         showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), "Messages-SignedByIndex-" + rootIndex);
         showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, rootIndex), "Messages-UnsignedByIndex-" + rootIndex);
 
-        contract.sendOrder(tonlib, keyPair3.getSecretKey(), pubkey3Index, order1);
-
+        extMessageInfo = contract.sendOrder(tonlib, keyPair3.getSecretKey(), pubkey3Index, order1);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "processing query");
 
         queryState = contract.getQueryState(tonlib, queryId1);
@@ -788,8 +782,7 @@ public class TestWalletMultisig extends CommonTest {
                                 OwnerInfo.builder()
                                         .publicKey(keyPair2.getPublicKey())
                                         .flood(2)
-                                        .build()
-                        ))
+                                        .build()))
                         .build())
                 .build();
 
@@ -808,8 +801,7 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder()
-                .build();
+        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 

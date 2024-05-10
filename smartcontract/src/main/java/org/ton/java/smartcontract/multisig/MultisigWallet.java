@@ -7,8 +7,7 @@ import org.ton.java.cell.*;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.tlb.types.ExternalMessageInfo;
-import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -77,10 +76,10 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
     }
 
     private Cell createSigningMessageInternal(int pubkeyIndex, Cell order) {
-        CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(pubkeyIndex, 8); // root-id - pk-index for owner_infos dict
-        message.storeCell(order);
-        return message.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(pubkeyIndex, 8) // root-id - pk-index for owner_infos dict
+                .storeCell(order)
+                .endCell();
     }
 
 
@@ -96,7 +95,8 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
         }
 
         TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStack().get(0);
-        Cell cell = CellBuilder.beginCell().fromBoc(cellResult.getCell().getBytes()).endCell();
+        Cell cell = CellBuilder.beginCell().fromBocBase64(cellResult.getCell().getBytes()).endCell();
+//        Cell cell = Cell.fromBocBase64(cellResult.getCell().getBytes());
 
         CellSlice cs = CellSlice.beginParse(cell);
         TonHashMap loadedDict = cs.loadDict(8,
@@ -147,31 +147,52 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
         }
 
         TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStack().get(0);
-        return CellBuilder.beginCell().fromBoc(domainCell.getCell().getBytes()).endCell();
+        return CellBuilder.beginCell().fromBocBase64(domainCell.getCell().getBytes()).endCell();
     }
 
     /**
-     * Sends an external msg with the order containing all collected signatures signed by owner at index pubkeyIndex with keyPair.
+     * Sends an external msg with the order containing all collected signatures signed by owner at index
+     * pubkeyIndex with keyPair.
      *
      * @param tonlib  Tonlib
      * @param keyPair TweetNaclFast.Signature.KeyPair
      */
-    public void sendOrder(Tonlib tonlib, TweetNaclFast.Signature.KeyPair keyPair, int pubkeyIndex, Cell order) {
-//        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
-//        ExternalMessage msg = createExternalMessage(signingMessageBody, keyPair.getSecretKey(), 1, false);
-//        tonlib.sendRawMessage(msg.message.toBase64());
+    public ExtMessageInfo sendOrder(Tonlib tonlib, TweetNaclFast.Signature.KeyPair keyPair, int pubkeyIndex, Cell order) {
+
+        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
+
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .dstAddr(getAddressIntStd())
+                        .build())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), signingMessageBody.hash()))
+                        .storeCell(signingMessageBody)
+                        .endCell())
+                .build();
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
     /**
-     * Sends an external msg with the order containing all collected signatures signed by owner at index pubkeyIndex with secretKey.
+     * Sends an external msg with the order containing all collected signatures signed by owner at index
+     * pubkeyIndex with secretKey.
      *
      * @param tonlib    Tonlib
      * @param secretKey byte[]
      */
-    public void sendOrder(Tonlib tonlib, byte[] secretKey, int pubkeyIndex, Cell order) {
-//        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
-//        ExternalMessage msg = createExternalMessage(signingMessageBody, secretKey, 1, false);
-//        tonlib.sendRawMessage(msg.message.toBase64());
+    public ExtMessageInfo sendOrder(Tonlib tonlib, byte[] secretKey, int pubkeyIndex, Cell order) {
+        Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
+
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .dstAddr(getAddressIntStd())
+                        .build())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(getOptions().getPublicKey(), secretKey, signingMessageBody.hash()))
+                        .storeCell(signingMessageBody)
+                        .endCell())
+                .build();
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
     /**
@@ -320,17 +341,11 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
     @Override
     public ExtMessageInfo deploy(Tonlib tonlib, MultisigWalletConfig config) {
 
-        Cell body = createTransferBody(config);
-//
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .init(createStateInit())
-//                .body(CellBuilder.beginCell()
-//                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
-//                        .storeRef(body)
-//                        .endCell())
                 .build();
 
         System.out.println("print " + externalMessage.toCell().print());
@@ -345,15 +360,20 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
      * @return Cell
      */
     public static Cell createOneInternalMsg(Address destination, BigInteger amount, int mode) {
-//        Cell intMsgHeader = Contract.createInternalMessageHeader(destination, amount);
-//        Cell intMsgTransfer = Contract.createCommonMsgInfo(intMsgHeader);
-//
-//        CellBuilder p = CellBuilder.beginCell();
-//        p.storeUint(mode, 8);
-//        p.storeRef(intMsgTransfer);
-//
-//        return p.endCell();
-        return null; // todo
+        Message internalMessage = Message.builder()
+                .info(InternalMessageInfo.builder()
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(destination.wc)
+                                .address(destination.toBigInteger())
+                                .build())
+                        .value(CurrencyCollection.builder().coins(amount).build())
+                        .build()).build();
+
+        CellBuilder p = CellBuilder.beginCell();
+        p.storeUint(mode, 8);
+        p.storeRef(internalMessage.toCell());
+
+        return p.endCell();
     }
 
     /**
@@ -519,7 +539,7 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
         }
 
         TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
-        Cell cellDict = CellBuilder.beginCell().fromBoc(entryCell.getCell().getBytes()).endCell();
+        Cell cellDict = CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
 
         CellSlice cs = CellSlice.beginParse(cellDict);
 
@@ -563,7 +583,7 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
         }
 
         TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
-        Cell cellDict = CellBuilder.beginCell().fromBoc(entryCell.getCell().getBytes()).endCell();
+        Cell cellDict = CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
 
         CellSlice cs = CellSlice.beginParse(cellDict);
 
@@ -606,7 +626,7 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
         }
 
         TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
-        Cell cellDict = CellBuilder.beginCell().fromBoc(entryCell.getCell().getBytes()).endCell();
+        Cell cellDict = CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
 
         CellSlice cs = CellSlice.beginParse(cellDict);
 
@@ -689,7 +709,7 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
 
         TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
 
-        return CellBuilder.beginCell().fromBoc(entryCell.getCell().getBytes()).endCell();
+        return CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
     }
 
     /**

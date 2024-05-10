@@ -429,6 +429,11 @@ public class CellBuilder {
         return cell.bits.toSignedByteArray();
     }
 
+    public CellBuilder fromBocBase64(String data) {
+        cell = Cell.fromBocMultiRoot(Utils.base64ToSignedBytes(data)).get(0);
+        return this;
+    }
+
     public CellBuilder fromBoc(String data) {
         cell = Cell.fromBocMultiRoot(Utils.hexToSignedBytes(data)).get(0);
         return this;
