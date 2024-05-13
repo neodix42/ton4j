@@ -19,6 +19,7 @@ public class WalletV3Config implements WalletConfig {
     int mode;
     boolean bounce;
     long createdAt;
+    Address source;
     Address destination;
     BigInteger amount;
     Cell body;

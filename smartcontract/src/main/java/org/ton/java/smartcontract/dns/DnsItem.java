@@ -11,10 +11,7 @@ import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryCell;
-import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -78,9 +75,9 @@ public class DnsItem implements Contract<DnsItemConfig> {
     /**
      * @return DnsData
      */
-    public ItemData getData(Tonlib tonlib) {
-        Address myAddress = this.getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "get_nft_data");
+    public static ItemData getData(Tonlib tonlib, Address dnsItemAddress) {
+        //Address myAddress = this.getAddress();
+        RunResult result = tonlib.runMethod(dnsItemAddress, "get_nft_data");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_nft_data, returned an exit code " + result.getExit_code());
@@ -91,11 +88,11 @@ public class DnsItem implements Contract<DnsItemConfig> {
 
         BigInteger index = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber();
 
-        TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStack().get(2);
-        Address collectionAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(collectionAddr.getCell().getBytes()).endCell());
+        TvmStackEntrySlice collectionAddr = (TvmStackEntrySlice) result.getStack().get(2);
+        Address collectionAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(collectionAddr.getSlice().getBytes())).endCell());
 
-        TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStack().get(3);
-        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(ownerAddr.getCell().getBytes()).endCell()) : null;
+        TvmStackEntrySlice ownerAddr = (TvmStackEntrySlice) result.getStack().get(3);
+        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(ownerAddr.getSlice().getBytes())).endCell()) : null;
 
         TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStack().get(4);
         Cell contentCell = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentC.getCell().getBytes())).endCell();
@@ -116,7 +113,7 @@ public class DnsItem implements Contract<DnsItemConfig> {
      * @param forwardPayload  byte[] optional, default null
      * @param responseAddress Address
      */
-    public Cell createTransferBody(long queryId, Address newOwnerAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress) {
+    public static Cell createTransferBody(long queryId, Address newOwnerAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress) {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(0x5fcc3d14, 32); // transfer op
         cell.storeUint(queryId, 64);
@@ -136,53 +133,53 @@ public class DnsItem implements Contract<DnsItemConfig> {
      * @param queryId long
      * @return Cell
      */
-    public Cell createStaticDataBody(long queryId) {
-        CellBuilder body = CellBuilder.beginCell();
-        body.storeUint(0x2fcb26a2, 32); // OP
-        body.storeUint(queryId, 64); // query_id
-        return body.endCell();
+    public static Cell createStaticDataBody(long queryId) {
+        return CellBuilder.beginCell()
+                .storeUint(0x2fcb26a2, 32) // OP
+                .storeUint(queryId, 64) // query_id
+                .endCell();
     }
 
     /**
      * @return String
      */
-    public String getDomain(Tonlib tonlib) {
-        Address myAddress = this.getAddress();
+    public static String getDomain(Tonlib tonlib, Address dnsItemAddress) {
+        Address myAddress = dnsItemAddress;
         RunResult result = tonlib.runMethod(myAddress, "get_domain");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_domain, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStack().get(0);
-        return new String(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(domainCell.getCell().getBytes())).endCell().getBits().toByteArray());
+        TvmStackEntrySlice domainCell = (TvmStackEntrySlice) result.getStack().get(0);
+        return new String(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(domainCell.getSlice().getBytes())).endCell().getBits().toByteArray());
     }
 
-    public Address getEditor(Tonlib tonlib) {
-        Address myAddress = this.getAddress();
+    public static Address getEditor(Tonlib tonlib, Address dnsItemAddress) {
+        Address myAddress = dnsItemAddress;
         RunResult result = tonlib.runMethod(myAddress, "get_editor");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_editor, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell editorCell = (TvmStackEntryCell) result.getStack().get(0);
-        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(editorCell.getCell().getBytes())).endCell());
+        TvmStackEntrySlice editorCell = (TvmStackEntrySlice) result.getStack().get(0);
+        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(editorCell.getSlice().getBytes())).endCell());
     }
 
     /**
      * @return AuctionInfo
      */
-    public AuctionInfo getAuctionInfo(Tonlib tonlib) {
-        Address myAddress = this.getAddress();
+    public static AuctionInfo getAuctionInfo(Tonlib tonlib, Address dnsItemAddress) {
+        Address myAddress = dnsItemAddress;
         RunResult result = tonlib.runMethod(myAddress, "get_auction_info");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_auction_info, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell maxBidAddressCell = (TvmStackEntryCell) result.getStack().get(0);
-        Address maxBidAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(maxBidAddressCell.getCell().getBytes())).endCell());
+        TvmStackEntrySlice maxBidAddressCell = (TvmStackEntrySlice) result.getStack().get(0);
+        Address maxBidAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(maxBidAddressCell.getSlice().getBytes())).endCell());
 
         TvmStackEntryNumber maxBidAmountNumber = (TvmStackEntryNumber) result.getStack().get(1);
         BigInteger maxBidAmount = maxBidAmountNumber.getNumber();
@@ -197,8 +194,8 @@ public class DnsItem implements Contract<DnsItemConfig> {
                 .build();
     }
 
-    public long getLastFillUpTime(Tonlib tonlib) {
-        Address myAddress = this.getAddress();
+    public static long getLastFillUpTime(Tonlib tonlib, Address dnsItemAddress) {
+        Address myAddress = dnsItemAddress;
         RunResult result = tonlib.runMethod(myAddress, "get_last_fill_up_time");
 
         if (result.getExit_code() != 0) {
@@ -215,13 +212,13 @@ public class DnsItem implements Contract<DnsItemConfig> {
      * @param oneStep  boolean non-recursive
      * @return Cell | Address | AdnlAddress | null
      */
-    public Object resolve(Tonlib tonlib, String domain, String category, boolean oneStep) {
-        Address myAddress = this.getAddress();
+    public static Object resolve(Tonlib tonlib, String domain, String category, boolean oneStep, Address dnsItemAddress) {
+        Address myAddress = dnsItemAddress;
         return DnsUtils.dnsResolve(tonlib, myAddress, domain, category, oneStep);
     }
 
-    public Object resolve(Tonlib tonlib, String domain) {
-        Address myAddress = this.getAddress();
+    public static Object resolve(Tonlib tonlib, String domain, Address dnsItemAddress) {
+        Address myAddress = dnsItemAddress;
         return DnsUtils.dnsResolve(tonlib, myAddress, domain, null, false);
     }
 

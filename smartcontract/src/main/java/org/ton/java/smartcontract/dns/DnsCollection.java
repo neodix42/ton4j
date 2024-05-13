@@ -12,10 +12,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryCell;
-import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -106,12 +103,8 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
                 .build();
     }
 
-    /**
-     * @param nftItem DnsItem
-     * @return NftItemInfo
-     */
-    public ItemData getNftItemContent(Tonlib tonlib, DnsItem nftItem) {
-        return nftItem.getData(tonlib);
+    public ItemData getNftItemContent(Tonlib tonlib, Address dnsItemAddress) {
+        return DnsItem.getData(tonlib, dnsItemAddress);
     }
 
     /**
@@ -129,8 +122,8 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
             throw new Error("method get_nft_address_by_index, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell addr = (TvmStackEntryCell) result.getStack().get(0);
-        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(addr.getCell().getBytes())).endCell());
+        TvmStackEntrySlice addr = (TvmStackEntrySlice) result.getStack().get(0);
+        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(addr.getSlice().getBytes())).endCell());
     }
 
     public Address getNftItemAddressByDomain(Tonlib tonlib, String domain) {

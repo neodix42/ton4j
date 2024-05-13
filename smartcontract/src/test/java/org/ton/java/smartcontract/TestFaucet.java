@@ -58,7 +58,7 @@ public class TestFaucet {
                 faucetBalance = new BigInteger(tonlib.getAccountState(faucet.getAddress()).getBalance());
                 log.info("Faucet address {}, balance {}", faucet.getAddress().toString(true, true, true), Utils.formatNanoValue(faucetBalance));
                 if (faucetBalance.compareTo(amount) < 0) {
-                    throw new Error("Faucet does not have that much toncoins. faucet balance" + Utils.formatNanoValue(faucetBalance) + ", requested " + Utils.formatNanoValue(amount));
+                    throw new Error("Faucet does not have that much toncoins. faucet balance " + Utils.formatNanoValue(faucetBalance) + ", requested " + Utils.formatNanoValue(amount));
                 }
             } catch (Exception e) {
                 log.info("Cannot get faucet balance. Restarting...");

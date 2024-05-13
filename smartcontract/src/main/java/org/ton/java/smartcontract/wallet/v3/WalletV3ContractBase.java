@@ -11,6 +11,8 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
+import static java.util.Objects.isNull;
+
 public class WalletV3ContractBase implements Contract<WalletV3Config> {
     Options options;
     Address address;
@@ -34,6 +36,11 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
         Cell order = Message.builder()
                 .info(InternalMessageInfo.builder()
                         .bounce(config.isBounce())
+                        .srcAddr(isNull(config.getSource()) ? null :
+                                MsgAddressIntStd.builder()
+                                        .workchainId(config.getSource().wc)
+                                        .address(config.getSource().toBigInteger())
+                                        .build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(config.getDestination().wc)
                                 .address(config.getDestination().toBigInteger())
