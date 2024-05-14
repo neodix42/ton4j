@@ -79,8 +79,8 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
     /**
      * @return CollectionInfo
      */
-    public CollectionData getCollectionData(Tonlib tonlib) {
-        Address myAddress = this.getAddress();
+    public static CollectionData getCollectionData(Tonlib tonlib, Address dnsCollectionAddress) {
+        Address myAddress = dnsCollectionAddress;
 
         RunResult result = tonlib.runMethod(myAddress, "get_collection_data");
 
@@ -103,7 +103,7 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
                 .build();
     }
 
-    public ItemData getNftItemContent(Tonlib tonlib, Address dnsItemAddress) {
+    public static ItemData getNftItemContent(Tonlib tonlib, Address dnsItemAddress) {
         return DnsItem.getData(tonlib, dnsItemAddress);
     }
 
@@ -111,8 +111,8 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
      * @param index BigInteger
      * @return Address
      */
-    public Address getNftItemAddressByIndex(Tonlib tonlib, BigInteger index) {
-        Address myAddress = this.getAddress();
+    public static Address getNftItemAddressByIndex(Tonlib tonlib, Address collectionAddress, BigInteger index) {
+        Address myAddress = collectionAddress;
         Deque<String> stack = new ArrayDeque<>();
 
         stack.offer("[num, " + index.toString() + "]");
@@ -126,11 +126,11 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
         return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(addr.getSlice().getBytes())).endCell());
     }
 
-    public Address getNftItemAddressByDomain(Tonlib tonlib, String domain) {
+    public static Address getNftItemAddressByDomain(Tonlib tonlib, Address dnsCollectionAddress, String domain) {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeString(domain);
         String cellHash = Utils.bytesToHex(cell.endCell().hash());
-        return getNftItemAddressByIndex(tonlib, new BigInteger(cellHash, 16));
+        return getNftItemAddressByIndex(tonlib, dnsCollectionAddress, new BigInteger(cellHash, 16));
     }
 
     /**
@@ -139,8 +139,8 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
      * @param oneStep?  boolean non-recursive
      * @return Cell | Address | AdnlAddress | null
      */
-    public Object resolve(Tonlib tonlib, String domain, String category, boolean oneStep) {
-        Address myAddress = this.getAddress();
+    public static Object resolve(Tonlib tonlib, Address dnsCollectionAddress, String domain, String category, boolean oneStep) {
+        Address myAddress = dnsCollectionAddress;
         return DnsUtils.dnsResolve(tonlib, myAddress, domain, category, oneStep);
     }
 

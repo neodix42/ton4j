@@ -82,7 +82,11 @@ public class NftUtils {
         }
 
         bytes = Arrays.copyOfRange(cs.loadSignedBytes(), 0, length);
-        return parseUri(Arrays.copyOfRange(bytes, 1, bytes.length)); // slice OFFCHAIN_CONTENT_PREFIX
+        if (bytes.length != 0) {
+            return parseUri(Arrays.copyOfRange(bytes, 1, bytes.length)); // slice OFFCHAIN_CONTENT_PREFIX
+        } else {
+            return "";
+        }
     }
 
     /**

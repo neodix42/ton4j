@@ -201,7 +201,7 @@ public class TestDns extends CommonTest {
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(20, "deploying dnsCollection");
 
-//        getDnsCollectionInfo(dnsCollection);
+//        getDnsCollectionInfo(tonlib, dnsCollection.getAddress());
 
 //        resolveDnsCollectionItems(dnsCollection);
 
@@ -218,7 +218,7 @@ public class TestDns extends CommonTest {
                 .publicKey(adminWallet.getKeyPair().getPublicKey())
                 .source(adminWallet.getWallet().getAddress())
                 .destination(dnsCollection.getAddress())
-                .amount(Utils.toNano(15)) // mind min auction price, which is 10 tons
+                .amount(Utils.toNano(11)) // mind min auction price, which is 10 tons
                 .body(CellBuilder.beginCell()
                         .storeUint(0, 32)  // OP deploy new nft
                         .storeRef(CellBuilder.beginCell().storeString(dnsItem1DomainName).endCell())
@@ -234,11 +234,11 @@ public class TestDns extends CommonTest {
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "deploying DNS item " + dnsItem1DomainName);
 
-        Address dnsItem1Address = dnsCollection.getNftItemAddressByDomain(tonlib, dnsItem1DomainName);
+        Address dnsItem1Address = DnsCollection.getNftItemAddressByDomain(tonlib, dnsCollection.getAddress(), dnsItem1DomainName);
 //        DnsItem dnsItem1 = new DnsItem(Options.builder().address(dnsItem1Address).build());
         log.info("dnsItem1 address {}", dnsItem1Address.toString(true, true, true));
 
-        getDnsItemInfo(dnsCollection, dnsItem1Address);
+        getDnsItemInfo(tonlib, dnsItem1Address);
 
         //make a bid
         WalletV3Config buyerConfig = WalletV3Config.builder()
@@ -261,7 +261,7 @@ public class TestDns extends CommonTest {
 
         Utils.sleep(60 * 4, "wait till auction is finished");
 
-        getDnsItemInfo(dnsCollection, dnsItem1Address);
+        getDnsItemInfo(tonlib, dnsItem1Address);
 
         // claim your domain by doing any action with it
         extMessageInfo = getStaticData(adminWallet, dnsItem1Address);
@@ -273,7 +273,7 @@ public class TestDns extends CommonTest {
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "Claim DNS item " + dnsItem1DomainName);
 
-        getDnsItemInfo(dnsCollection, dnsItem1Address);
+        getDnsItemInfo(tonlib, dnsItem1Address);
         dnsItem1Editor = DnsItem.getEditor(tonlib, dnsItem1Address);
         log.info("dnsItem1 editor {}", nonNull(dnsItem1Editor) ? dnsItem1Editor.toString(true, true, true) : null);
 
@@ -292,7 +292,7 @@ public class TestDns extends CommonTest {
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30);
 
-        getDnsItemInfo(dnsCollection, dnsItem1Address);
+        getDnsItemInfo(tonlib, dnsItem1Address);
     }
 
 
@@ -308,11 +308,14 @@ public class TestDns extends CommonTest {
                 .collectionContent(NftUtils.createOffchainUriCell("https://raw.githubusercontent.com/neodiX42/ton4j/main/1-media/dns-collection.json"))
                 .build();
 
-        DnsCollection dnsCollection = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection).create();
+//        DnsCollection dnsCollection = new Wallet(WalletVersion.dnsCollection, optionsDnsCollection).create();
 
-        log.info("DNS collection address {}", dnsCollection.getAddress().toString(true, true, true));
+        Address dnsCollectionAddress = Address.of("EQDjPtM6QusgMgWfl9kMcG-EALslbTITnKcH8VZK1pnH3UZA");
+        log.info("DNS collection address {}", dnsCollectionAddress.toString(true, true, true));
 
-        getDnsCollectionInfo(dnsCollection);
+        getDnsCollectionInfo(tonlib, dnsCollectionAddress);
+
+        resolveDnsCollectionItems(dnsCollectionAddress);
 
         String dnsItem1DomainName = "alice-alice-alice-12";
 
@@ -324,7 +327,7 @@ public class TestDns extends CommonTest {
                 .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
                 .secretKey(adminWallet.getKeyPair().getSecretKey())
                 .publicKey(adminWallet.getKeyPair().getPublicKey())
-                .destination(dnsCollection.getAddress())
+                .destination(dnsCollectionAddress)
                 .amount(Utils.toNano(15)) // mind min auction price, which is 10 tons
                 .body(CellBuilder.beginCell()
                         .storeUint(0, 32)  // OP deploy new nft
@@ -337,26 +340,27 @@ public class TestDns extends CommonTest {
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "deploying DNS item " + dnsItem1DomainName);
 
-        Address dnsItem1Address = dnsCollection.getNftItemAddressByDomain(tonlib, dnsItem1DomainName);
-        DnsItem dnsItem1 = new DnsItem(Options.builder().address(dnsItem1Address).build());
-        log.info("dnsItem1 address {}", dnsItem1.getAddress().toString(true, true, true));
+        Address dnsItem1Address = DnsCollection.getNftItemAddressByDomain(tonlib, dnsCollectionAddress, dnsItem1DomainName);
+//        DnsItem dnsItem1 = new DnsItem(Options.builder().address(dnsItem1Address).build());
+        log.info("dnsItem1 address {}", dnsItem1Address.toString(true, true, true));
 
-        getDnsItemInfo(dnsCollection, dnsItem1Address);
+        getDnsItemInfo(tonlib, dnsItem1Address);
 
         Utils.sleep(60 * 4, "wait till auction is finished");
 
-        getDnsItemInfo(dnsCollection, dnsItem1Address);
+        getDnsItemInfo(tonlib, dnsItem1Address);
 
         // claim your domain by doing any action with it
         extMessageInfo = getStaticData(adminWallet, dnsItem1Address);
         assertThat(extMessageInfo.getError().getCode()).isZero();
+
         //assign your wallet to domain name
         extMessageInfo = changeDnsRecord(adminWallet, dnsItem1Address, adminWallet.getWallet().getAddress());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(25);
 
-        getDnsItemInfo(dnsCollection, dnsItem1Address);
+        getDnsItemInfo(tonlib, dnsItem1Address);
 
         Dns dns = new Dns(tonlib);
         Address dnsRootAddress = dns.getRootDnsAddress();
@@ -369,13 +373,12 @@ public class TestDns extends CommonTest {
         log.info("{} resolved to {}", dnsItem1DomainName + ".ton", addrW.toString(true, true, true));
     }
 
-    private long getDnsCollectionInfo(DnsCollection dnsCollection) {
-        CollectionData data = dnsCollection.getCollectionData(tonlib);
+    private void getDnsCollectionInfo(Tonlib tonlib, Address dnsCollectionAddres) {
+        CollectionData data = DnsCollection.getCollectionData(tonlib, dnsCollectionAddres);
         log.info("dns collection info {}", data);
-        return data.getNextItemIndex();
     }
 
-    private void resolveDnsCollectionItems(DnsCollection dnsCollection) {
+    private static void resolveDnsCollectionItems(Address dnsCollectionAddress) {
         CellBuilder cellApple = CellBuilder.beginCell();
         cellApple.storeString("apple");
         String hashApple = Utils.bytesToHex(cellApple.endCell().hash());
@@ -391,26 +394,26 @@ public class TestDns extends CommonTest {
         String hashAlices = Utils.bytesToHex(cellAlices.endCell().hash());
         log.info("alices hash {}", hashAlices); // 8b98cad1bf9de7e1bd830ba3fba9608e6190825dddcf7edac7851ee16a692e81
 
-        Address apple = dnsCollection.getNftItemAddressByIndex(tonlib, new BigInteger(hashApple, 16));
-        Address alice3 = dnsCollection.getNftItemAddressByIndex(tonlib, new BigInteger(hash3Alices, 16));
-        Address aliceX = dnsCollection.getNftItemAddressByIndex(tonlib, new BigInteger(hashAlices, 16));
+        Address apple = DnsCollection.getNftItemAddressByIndex(tonlib, dnsCollectionAddress, new BigInteger(hashApple, 16));
+        Address alice3 = DnsCollection.getNftItemAddressByIndex(tonlib, dnsCollectionAddress, new BigInteger(hash3Alices, 16));
+        Address aliceX = DnsCollection.getNftItemAddressByIndex(tonlib, dnsCollectionAddress, new BigInteger(hashAlices, 16));
 
         log.info("address at index hash(apple)             {} = {}", hashApple, apple.toString(true, true, true));
         log.info("address at index hash(alice-alice-alice) {} = {}", hash3Alices, alice3.toString(true, true, true));
         log.info("address at index hash(alice...)          {} = {}", hashAlices, aliceX.toString(true, true, true));
 
-        Address appleAddress = (Address) dnsCollection.resolve(tonlib, "apple", DNS_CATEGORY_NEXT_RESOLVER, true);
+        Address appleAddress = (Address) DnsCollection.resolve(tonlib, dnsCollectionAddress, "apple", DNS_CATEGORY_NEXT_RESOLVER, true);
         log.info("apple resolved to {}", appleAddress.toString(true, true, true));
 
-        Address alice3Resolved = (Address) dnsCollection.resolve(tonlib, "alice-alice-alice", DNS_CATEGORY_NEXT_RESOLVER, true);
+        Address alice3Resolved = (Address) DnsCollection.resolve(tonlib, dnsCollectionAddress, "alice-alice-alice", DNS_CATEGORY_NEXT_RESOLVER, true);
         log.info("alice-alice-alice resolved to {}", alice3Resolved.toString(true, true, true));
 
-        Address alices = (Address) dnsCollection.resolve(tonlib, "alicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicea", DNS_CATEGORY_NEXT_RESOLVER, true);
+        Address alices = (Address) DnsCollection.resolve(tonlib, dnsCollectionAddress, "alicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicealicea", DNS_CATEGORY_NEXT_RESOLVER, true);
         log.info("alice... resolved to {}", alices.toString(true, true, true));
     }
 
-    private void getDnsItemInfo(DnsCollection dnsCollection, Address dnsItemAddress) {
-        ItemData data = dnsCollection.getNftItemContent(tonlib, dnsItemAddress);
+    private void getDnsItemInfo(Tonlib tonlib, Address dnsItemAddress) {
+        ItemData data = DnsCollection.getNftItemContent(tonlib, dnsItemAddress);
         log.info("dns item data {}", data);
         log.info("dns item collection address {}", data.getCollectionAddress().toString(true, true, true));
         if (nonNull(data.getOwnerAddress())) {
