@@ -39,13 +39,18 @@ public class TestFaucet {
         byte[] secretKey = Utils.hexToSignedBytes(SECRET_KEY);
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
-                .build();
+//        Options options = Options.builder()
+//                .publicKey(keyPair.getPublicKey())
+//                .secretKey(keyPair.getSecretKey())
+//                .wc(0L)
+//                .build();
+//
+//        WalletV1ContractR3 faucet = new Wallet(WalletVersion.V1R3, options).create();
 
-        WalletV1ContractR3 faucet = new Wallet(WalletVersion.V1R3, options).create();
+        WalletV1ContractR3 faucet = WalletV1ContractR3.builder()
+                .wc(0)
+                .keyPair(keyPair)
+                .build();
 
         BigInteger faucetBalance = null;
         int i = 0;

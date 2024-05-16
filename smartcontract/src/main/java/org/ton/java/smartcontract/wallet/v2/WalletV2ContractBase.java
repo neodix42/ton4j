@@ -4,6 +4,7 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletV2Config;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.ExternalMessageInfo;
@@ -28,6 +29,11 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
     @Override
     public String getName() {
         return "override me";
+    }
+
+    @Override
+    public Cell createCodeCell() {
+        return null;
     }
 
     @Override
@@ -61,22 +67,22 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
         message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
 
         if (nonNull(config.getDestination1())) {
-            Message order = this.createInternalMessage(config.getDestination1(), config.getAmount1(), null, null);
+            Message order = MsgUtils.createInternalMessage(config.getDestination1(), config.getAmount1(), null, null);
             message.storeUint(3 & 0xff, 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination2())) {
-            Message order = this.createInternalMessage(config.getDestination2(), config.getAmount2(), null, null);
+            Message order = MsgUtils.createInternalMessage(config.getDestination2(), config.getAmount2(), null, null);
             message.storeUint(3 & 0xff, 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination3())) {
-            Message order = this.createInternalMessage(config.getDestination3(), config.getAmount3(), null, null);
+            Message order = MsgUtils.createInternalMessage(config.getDestination3(), config.getAmount3(), null, null);
             message.storeUint(3 & 0xff, 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination4())) {
-            Message order = this.createInternalMessage(config.getDestination4(), config.getAmount3(), null, null);
+            Message order = MsgUtils.createInternalMessage(config.getDestination4(), config.getAmount3(), null, null);
             message.storeUint(3 & 0xff, 8);
             message.storeRef(order.toCell());
         }
@@ -89,7 +95,7 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
         return options;
     }
 
-    @Override
+
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV2Config config) {
         Cell body = createDeployMessage(config);
 
@@ -97,7 +103,7 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
                         .storeCell(body)

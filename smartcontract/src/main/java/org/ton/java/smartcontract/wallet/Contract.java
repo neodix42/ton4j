@@ -6,15 +6,14 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletConfig;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
-import org.ton.java.tlb.types.*;
+import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.MsgAddressIntStd;
+import org.ton.java.tlb.types.StateInit;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
-
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 /**
  * Interface for all smart contract objects in ton4j.
@@ -25,16 +24,16 @@ public interface Contract<T extends WalletConfig> {
 
     String getName();
 
-    default Address getAddress() {
-        return createStateInit().getAddress();
+    default Address getAddress() { // remove default
+        return getStateInit().getAddress();
     }
 
     default Address getAddress(byte workchain) {
-        return createStateInit().getAddress(workchain);
+        return getStateInit().getAddress(workchain);
     }
 
     default MsgAddressIntStd getAddressIntStd() {
-        Address ownAddress = createStateInit().getAddress();
+        Address ownAddress = getStateInit().getAddress();
         return MsgAddressIntStd.builder()
                 .workchainId(ownAddress.wc)
                 .address(ownAddress.toBigInteger())
@@ -42,7 +41,7 @@ public interface Contract<T extends WalletConfig> {
     }
 
     default MsgAddressIntStd getAddressIntStd(int workchain) {
-        Address ownAddress = createStateInit().getAddress();
+        Address ownAddress = getStateInit().getAddress();
         return MsgAddressIntStd.builder()
                 .workchainId((byte) workchain)
                 .address(ownAddress.toBigInteger())
@@ -52,12 +51,14 @@ public interface Contract<T extends WalletConfig> {
     /**
      * @return Cell containing contact code
      */
-    default Cell createCodeCell() {
-        if (isNull(getOptions().code)) {
-            throw new Error("Contract: options.code is not defined");
-        }
-        return getOptions().code;
-    }
+//    default Cell createCodeCell() {
+//        if (isNull(getOptions().code)) {
+//            throw new Error("Contract: options.code is not defined");
+//        }
+//        return getOptions().code;
+//    }
+
+    Cell createCodeCell();
 
     /**
      * Method to override
@@ -72,7 +73,7 @@ public interface Contract<T extends WalletConfig> {
      *
      * @return StateInit
      */
-    default StateInit createStateInit() {
+    default StateInit getStateInit() {
         return StateInit.builder()
                 .code(createCodeCell())
                 .data(createDataCell())
@@ -81,7 +82,7 @@ public interface Contract<T extends WalletConfig> {
 
     Cell createTransferBody(T config);
 
-    ExtMessageInfo deploy(Tonlib tonlib, T config);
+//    ExtMessageInfo deploy(Tonlib tonlib, T config);
 
     default long getSeqno(Tonlib tonlib) {
 
@@ -98,42 +99,42 @@ public interface Contract<T extends WalletConfig> {
                         .dstAddr(getAddressIntStd())
                         .build()).build();
         if (stateInit) {
-            externalMessage.setInit(createStateInit());
+            externalMessage.setInit(getStateInit());
         }
         if (isNull(body)) {
             body = CellBuilder.beginCell().endCell();
         }
         externalMessage.setBody(CellBuilder.beginCell()
                 .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
-                .storeCell(body) // was ref careful
+                .storeCell(body)
                 .endCell());
 
         return externalMessage;
     }
-
-    default Message createInternalMessage(Address destination,
-                                          BigInteger amount,
-                                          Cell body,
-                                          org.ton.java.tlb.types.StateInit stateInit) {
-        Message internalMessage = Message.builder()
-                .info(InternalMessageInfo.builder()
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(destination.wc)
-                                .address(destination.toBigInteger())
-                                .build())
-                        .value(CurrencyCollection.builder().coins(amount).build())
-                        .build()).build();
-
-        if (nonNull(stateInit)) {
-            internalMessage.setInit(stateInit);
-        }
-
-        if (nonNull(body)) {
-            internalMessage.setBody(body);
-        }
-
-        return internalMessage;
-    }
+//
+//    default Message createInternalMessage(Address destination,
+//                                          BigInteger amount,
+//                                          Cell body,
+//                                          StateInit stateInit) {
+//        Message internalMessage = Message.builder()
+//                .info(InternalMessageInfo.builder()
+//                        .dstAddr(MsgAddressIntStd.builder()
+//                                .workchainId(destination.wc)
+//                                .address(destination.toBigInteger())
+//                                .build())
+//                        .value(CurrencyCollection.builder().coins(amount).build())
+//                        .build()).build();
+//
+//        if (nonNull(stateInit)) {
+//            internalMessage.setInit(stateInit);
+//        }
+//
+//        if (nonNull(body)) {
+//            internalMessage.setBody(body);
+//        }
+//
+//        return internalMessage;
+//    }
 
     /**
      * crates external with internal msg as body

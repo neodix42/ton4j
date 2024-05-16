@@ -54,6 +54,13 @@ public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
                 .endCell();
     }
 
+    @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.V4R2.getValue()).
+                endCell();
+    }
+
     public Cell createDeployMessage(WalletV4R1Config config) {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(config.getSubWalletId(), 32); //wallet-id
@@ -113,7 +120,7 @@ public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
      *
      * @param config NewPlugin
      */
-    @Override
+
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV4R1Config config) {
 
         Cell body = createDeployMessage(config);
@@ -122,7 +129,7 @@ public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
                         .storeCell(body)
@@ -334,7 +341,7 @@ public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
                         .storeCell(body) // was storeRef!!

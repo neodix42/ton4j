@@ -5,6 +5,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.TonPfxHashMapE;
 import org.ton.java.smartcontract.types.LockupWalletV1Config;
+import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.ExternalMessageInfo;
@@ -134,6 +135,13 @@ public class LockupWalletV1 implements Contract<LockupWalletV1Config> {
         return cell.endCell();
     }
 
+    @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.lockup.getValue()).
+                endCell();
+    }
+
     /**
      * @return long
      */
@@ -219,7 +227,6 @@ public class LockupWalletV1 implements Contract<LockupWalletV1Config> {
         return tonlib.getSeqno(myAddress);
     }
 
-    @Override
     public ExtMessageInfo deploy(Tonlib tonlib, LockupWalletV1Config config) {
         Address ownAddress = getAddress();
 
@@ -233,7 +240,7 @@ public class LockupWalletV1 implements Contract<LockupWalletV1Config> {
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
                         .storeRef(body)

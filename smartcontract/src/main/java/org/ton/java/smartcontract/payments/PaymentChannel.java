@@ -113,11 +113,18 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
     }
 
     @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.payments.getValue()).
+                endCell();
+    }
+
+    @Override
     public Cell createTransferBody(FromWalletConfig config) {
         return null;
     }
 
-    @Override
+
     public ExtMessageInfo deploy(Tonlib tonlib, FromWalletConfig config) {
         return null;
     }

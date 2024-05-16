@@ -54,8 +54,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .timeout(60 * 60)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.highloadV3, options);
-        HighloadWalletV3 contract = wallet.create();
+        HighloadWalletV3 contract = new Wallet(WalletVersion.highloadV3, options).create();
 
         String nonBounceableAddress = contract.getAddress().toString(true, true, false);
         String bounceableAddress = contract.getAddress().toString(true, true, true);

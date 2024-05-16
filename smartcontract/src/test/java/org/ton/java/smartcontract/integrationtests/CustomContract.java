@@ -44,6 +44,11 @@ public class CustomContract implements Contract<CustomContractConfig> {
         return cell.endCell();
     }
 
+    @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().fromBoc("B5EE9C7241010C0100B2000114FF00F4A413F4BCF2C80B01020120020302014804050094F28308D71820D31FD31FD33F02F823BBF263ED44D0D31FD3FFD33F305152BAF2A105F901541065F910F2A2F800019320D74A96D307D402FB00E8D103A4C8CB1F12CBFFCB3FCB3FC9ED540004D03002012006070201200809001DBDC3676A268698F98E9FF98EB859FC0017BB39CED44D0D31F31D70BFF80202710A0B0022AA77ED44D0D31F31D3FF31D33F31D70B3F0010A897ED44D0D70B1F56A9826C").endCell();
+    }
+
 //    @Override
 //    public Cell createSigningMessage(long seqno) {
 //        return createSigningMessage(seqno, 4L);
@@ -92,8 +97,7 @@ public class CustomContract implements Contract<CustomContractConfig> {
         message.storeUint(0, 64); //extra field
         return message.endCell();
     }
-
-    @Override
+    
     public ExtMessageInfo deploy(Tonlib tonlib, CustomContractConfig config) {
         Cell body = createDeployMessage();
 
@@ -101,7 +105,7 @@ public class CustomContract implements Contract<CustomContractConfig> {
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
                         .storeCell(body)

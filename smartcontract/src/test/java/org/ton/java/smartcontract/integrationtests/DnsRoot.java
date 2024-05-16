@@ -9,8 +9,6 @@ import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.CurrencyCollection;
 import org.ton.java.tlb.types.InternalMessageInfo;
 import org.ton.java.tlb.types.Message;
-import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
 
 import java.math.BigInteger;
 
@@ -55,6 +53,11 @@ public class DnsRoot implements Contract<DnsRootConfig> {
     }
 
     @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().fromBoc(DNS_ROOT_CODE_HEX).endCell();
+    }
+
+    @Override
     public Cell createTransferBody(DnsRootConfig config) {
         Cell order = Message.builder()
                 .info(InternalMessageInfo.builder()
@@ -75,9 +78,4 @@ public class DnsRoot implements Contract<DnsRootConfig> {
         return CellBuilder.beginCell().endCell();
     }
 
-    @Override
-    public ExtMessageInfo deploy(Tonlib tonlib, DnsRootConfig config) {
-
-        return null; // must be deployed from admin wallet
-    }
 }

@@ -110,7 +110,7 @@ public class TestDns extends CommonTest {
                 .body(null)
                 .adminWallet(adminWallet.getWallet())
                 .adminKeyPair(adminWallet.getKeyPair())
-                .stateInit(dnsRoot.createStateInit())
+                .stateInit(dnsRoot.getStateInit())
                 .build();
 
         WalletV3Config adminWalletConfig = WalletV3Config.builder()
@@ -124,7 +124,7 @@ public class TestDns extends CommonTest {
                 .comment("deploy root dns")
                 .amount(Utils.toNano(0.12))
                 .body(null)
-                .stateInit(dnsRoot.createStateInit())
+                .stateInit(dnsRoot.getStateInit())
                 .build();
 
         ExtMessageInfo extMessageInfo = adminWallet.getWallet().sendTonCoins(tonlib, adminWalletConfig);
@@ -189,7 +189,7 @@ public class TestDns extends CommonTest {
                         .storeUint(0x370fec51, 32)  // OP deploy new nft
                         .storeRef(CellBuilder.beginCell().storeString("deploy nft collection").endCell())
                         .endCell())
-                .stateInit(dnsCollection.createStateInit())
+                .stateInit(dnsCollection.getStateInit())
                 .build();
 
         //deploy

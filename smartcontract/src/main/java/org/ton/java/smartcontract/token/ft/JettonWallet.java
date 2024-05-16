@@ -57,11 +57,17 @@ public class JettonWallet implements Contract<JettonWalletConfig> {
     }
 
     @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.jettonWallet.getValue()).
+                endCell();
+    }
+
+    @Override
     public Cell createTransferBody(JettonWalletConfig config) {
         return null;
     }
 
-    @Override
     public ExtMessageInfo deploy(Tonlib tonlib, JettonWalletConfig config) {
         return null;
     }

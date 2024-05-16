@@ -37,6 +37,13 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
                 .storeBytes(getOptions().publicKey).endCell();
     }
 
+    @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.V1R2.getValue()).
+                endCell();
+    }
+
 
     public Cell createDeployMessage() {
         return CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell();
@@ -91,14 +98,13 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    @Override
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV1R2Config config) {
         Cell body = createDeployMessage();
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
                         .storeCell(body)

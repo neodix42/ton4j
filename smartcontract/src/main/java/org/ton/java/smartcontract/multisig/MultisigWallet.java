@@ -75,6 +75,13 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
         return cell.endCell();
     }
 
+    @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.multisig.getValue()).
+                endCell();
+    }
+
     private Cell createSigningMessageInternal(int pubkeyIndex, Cell order) {
         return CellBuilder.beginCell()
                 .storeUint(pubkeyIndex, 8) // root-id - pk-index for owner_infos dict
@@ -338,14 +345,14 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
         return CellBuilder.beginCell().endCell();
     }
 
-    @Override
+
     public ExtMessageInfo deploy(Tonlib tonlib, MultisigWalletConfig config) {
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .build();
 
         System.out.println("print " + externalMessage.toCell().print());

@@ -20,6 +20,4 @@ public class DnsCollectionConfig implements WalletConfig {
     Address destination;
     BigInteger amount;
     Cell body;
-    boolean withoutOp;
-    NewPlugin newPlugin;
 }

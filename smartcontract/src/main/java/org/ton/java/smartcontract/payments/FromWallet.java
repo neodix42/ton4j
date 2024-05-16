@@ -6,6 +6,7 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.ChannelState;
 import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.FromWalletConfig;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.ExternalMessageInfo;
@@ -109,7 +110,7 @@ public class FromWallet extends PaymentChannel {
 
         Address ownAddress = getAddress();
 //        Cell body = payload;
-        Cell order = this.createInternalMessage(ownAddress, amount, payload, null).toCell();
+        Cell order = MsgUtils.createInternalMessage(ownAddress, amount, null, payload).toCell();
 
         Cell signingMessage = CellBuilder.beginCell()
                 .storeUint(0, 32) // seqno
@@ -125,7 +126,7 @@ public class FromWallet extends PaymentChannel {
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .init(needStateInit ? (this.createStateInit()) : null)
+                .init(needStateInit ? (this.getStateInit()) : null)
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), signingMessage.hash()))
                         .storeCell(signingMessage)

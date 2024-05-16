@@ -59,14 +59,19 @@ public class NftMarketplace implements Contract<NftMarketPlaceConfig> {
     }
 
     @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().fromBoc(NFT_MARKETPLACE_CODE_HEX).endCell();
+    }
+
+    @Override
     public Cell createTransferBody(NftMarketPlaceConfig config) {
         return null;
     }
 
     public ExtMessageInfo deploy(Tonlib tonlib, NftMarketPlaceConfig config) {
 
-        long seqno = this.getSeqno(tonlib);
-        config.setSeqno(seqno);
+//        long seqno = this.getSeqno(tonlib);
+//        config.setSeqno(seqno);
         Address ownAddress = getAddress();
 
         Message externalMessage = Message.builder()
@@ -77,7 +82,7 @@ public class NftMarketplace implements Contract<NftMarketPlaceConfig> {
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
 //                .body(CellBuilder.beginCell()
 //                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
 //                        .storeRef(body)

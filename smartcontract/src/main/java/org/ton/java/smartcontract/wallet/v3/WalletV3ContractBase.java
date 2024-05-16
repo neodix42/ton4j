@@ -26,6 +26,11 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
         return "override me";
     }
 
+    @Override
+    public Cell createCodeCell() {
+        return null;
+    }
+
     /**
      * Creates message payload with subwallet-id, valid-until and seqno, equivalent to:
      * <b subwallet-id 32 u, timestamp 32 i, seqno 32 u, b> // signing message
@@ -90,7 +95,7 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
         return getOptions().walletId;
     }
 
-    @Override
+
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV3Config config) {
 
         Cell body = createDeployMessage(config);
@@ -99,7 +104,7 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
                         .storeCell(body)

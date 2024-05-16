@@ -10,6 +10,7 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.types.WalletVersion;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
@@ -48,8 +49,8 @@ public class TestWalletV3R1DeployTransfer extends CommonTest {
 
         WalletV3ContractR1 contract = new Wallet(WalletVersion.V3R1, options).create();
 
-        Message msg = contract.createExternalMessage(contract.getAddress(),
-                true,
+        Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, contract.getAddress(),
+                contract.getStateInit(),
                 CellBuilder.beginCell()
                         .storeUint(42, 32) // subwallet
                         .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32)  //valid-until

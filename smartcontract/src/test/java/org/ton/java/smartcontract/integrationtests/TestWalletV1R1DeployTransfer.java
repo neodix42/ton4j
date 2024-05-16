@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.WalletV1R1Config;
 import org.ton.java.smartcontract.types.WalletVersion;
@@ -24,6 +25,44 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestWalletV1R1DeployTransfer extends CommonTest {
+
+    @Test
+    public void testNewWalletV1R1POC() throws InterruptedException {
+
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
+                .build();
+
+        WalletV1ContractR1 contract = WalletV1ContractR1.builder()
+                .wc(0)
+                .code(CellBuilder.beginCell().endCell())
+                .build();
+
+        Address contractAddress = contract.getAddress();
+        log.info("address: {}", contract.getAddress());
+
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, contractAddress, Utils.toNano(0.1));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+
+        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, null);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        Utils.sleep(20, "deploying");
+
+        WalletV1R1Config config = WalletV1R1Config.builder()
+                .seqno(1) // V1R1 does not have get_seqno method
+                .destination(Address.of(TestFaucet.BOUNCEABLE))
+                .amount(Utils.toNano(0.08))
+                .mode(3)
+                .comment("testNewWalletV1R1")
+                .build();
+
+        extMessageInfo = contract.send(tonlib, config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+    }
 
     @Test
     public void testNewWalletV1R1() throws InterruptedException {
@@ -74,7 +113,7 @@ public class TestWalletV1R1DeployTransfer extends CommonTest {
                 .comment("testNewWalletV1R1")
                 .build();
         // transfer coins from new wallet (back to faucet)
-        extMessageInfo = contract.sendTonCoins(tonlib, config);
+        extMessageInfo = contract.send(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30);

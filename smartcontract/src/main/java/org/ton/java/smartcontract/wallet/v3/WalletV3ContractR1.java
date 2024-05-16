@@ -1,5 +1,6 @@
 package org.ton.java.smartcontract.wallet.v3;
 
+import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Options;
@@ -22,5 +23,12 @@ public class WalletV3ContractR1 extends WalletV3ContractBase {
     @Override
     public String getName() {
         return "V3R1";
+    }
+
+    @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.V3R1.getValue()).
+                endCell();
     }
 }

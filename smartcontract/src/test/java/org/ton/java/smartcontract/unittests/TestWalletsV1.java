@@ -41,25 +41,30 @@ public class TestWalletsV1 {
         byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+//        Options options = Options.builder()
+//                .publicKey(keyPair.getPublicKey())
+//                .secretKey(keyPair.getSecretKey())
+//                .wc(0L)
+//                .build();
+//
+//        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
+//        WalletV1ContractR3 contract = wallet.create();
+
+        WalletV1ContractR3 contract = WalletV1ContractR3.builder()
+                .wc(0)
+                .keyPair(keyPair)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
-        WalletV1ContractR3 contract = wallet.create();
-
-        assertThat(options.code.bitStringToHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F260810200D71820D70B1FED44D0D31FD3FFD15112BAF2A122F901541044F910F2A2F80001D31F3120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED54");
+        assertThat(contract.createCodeCell().bitStringToHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F260810200D71820D70B1FED44D0D31FD3FFD15112BAF2A122F901541044F910F2A2F80001D31F3120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED54");
 
         Cell body = CellBuilder.beginCell().storeUint(0, 32).endCell();
         Message msg = Message.builder()
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(contract.getAddressIntStd())
                         .build())
-                .init(contract.createStateInit())
+                .init(contract.getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(options.getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(contract.getKeyPair().getPublicKey(), contract.getKeyPair().getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
                 .build();
@@ -70,7 +75,7 @@ public class TestWalletsV1 {
 //                .build());
         Address address = msg.getInit().getAddress();
 
-        String my = "Creating new wallet in workchain " + options.wc + "\n";
+        String my = "Creating new wallet in workchain " + contract.getWc() + "\n";
         my = my + "Loading private key from file new-wallet.pk" + "\n";
         my = my + "StateInit: " + msg.getInit().toCell().print() + "\n";
         my = my + "new wallet address = " + address.toString(false) + "\n";
@@ -97,17 +102,21 @@ public class TestWalletsV1 {
     public void testCreateTransferMessageWalletV1() {
         byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+//
+//        Options options = Options.builder()
+//                .publicKey(keyPair.getPublicKey())
+//                .secretKey(keyPair.getSecretKey())
+//                .wc(0L)
+//                .build();
+//
+//        WalletV1ContractR3 contract  = new Wallet(WalletVersion.V1R3, options).create();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+        WalletV1ContractR3 contract = WalletV1ContractR3.builder()
+                .wc(0)
+                .keyPair(keyPair)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
-        WalletV1ContractR3 contract = wallet.create();
-
-        assertThat(options.code.getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F260810200D71820D70B1FED44D0D31FD3FFD15112BAF2A122F901541044F910F2A2F80001D31F3120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED54");
+        assertThat(contract.createCodeCell().getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F260810200D71820D70B1FED44D0D31FD3FFD15112BAF2A122F901541044F910F2A2F80001D31F3120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED54");
 
         Message msg = contract.createTransferMessage(WalletV1R3Config.builder()
                 .destination(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
@@ -158,8 +167,7 @@ public class TestWalletsV1 {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V1R1, options);
-        WalletV1ContractR1 contract = wallet.create();
+        WalletV1ContractR1 contract = new Wallet(WalletVersion.V1R1, options).create();
         assertThat(contract.getAddress()).isNotNull();
     }
 

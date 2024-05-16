@@ -8,8 +8,9 @@ import org.ton.java.cell.CellSlice;
 import org.ton.java.smartcontract.types.Royalty;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.TvmStackEntrySlice;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.net.URLDecoder;
@@ -148,8 +149,8 @@ public class NftUtils {
         BigInteger royaltyBase = royaltyBaseNumber.getNumber();
 
         double royalty = royaltyFactor.divide(royaltyBase).doubleValue();
-        TvmStackEntryCell royaltyAddressCell = (TvmStackEntryCell) result.getStack().get(2);
-        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(royaltyAddressCell.getCell().getBytes()).endCell());
+        TvmStackEntrySlice royaltyAddressCell = (TvmStackEntrySlice) result.getStack().get(2);
+        Address royaltyAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(royaltyAddressCell.getSlice().getBytes())).endCell());
 
         return Royalty.builder()
                 .royaltyFactor(royaltyFactor)

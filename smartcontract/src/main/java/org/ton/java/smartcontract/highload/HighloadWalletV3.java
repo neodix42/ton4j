@@ -70,6 +70,13 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
     }
 
     @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.highloadV3.getValue()).
+                endCell();
+    }
+
+    @Override
     public Cell createTransferBody(HighloadV3Config config) {
         return null; // todo
     }
@@ -158,7 +165,7 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), innerMsg.hash()))
                         .storeRef(innerMsg)

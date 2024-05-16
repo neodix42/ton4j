@@ -16,8 +16,8 @@ import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.TvmStackEntrySlice;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -69,6 +69,13 @@ public class NftItem implements Contract<NftItemConfig> {
     }
 
     @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.nftItem.getValue()).
+                endCell();
+    }
+
+    @Override
     public Cell createTransferBody(NftItemConfig config) {
         return null;
     }
@@ -90,14 +97,14 @@ public class NftItem implements Contract<NftItemConfig> {
 
         BigInteger index = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber();
 
-        TvmStackEntryCell collectionAddr = (TvmStackEntryCell) result.getStack().get(2);
-        Address collectionAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(collectionAddr.getCell().getBytes()).endCell());
+        TvmStackEntrySlice collectionAddr = (TvmStackEntrySlice) result.getStack().get(2);
+        Address collectionAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(collectionAddr.getSlice().getBytes()).endCell());
 
-        TvmStackEntryCell ownerAddr = (TvmStackEntryCell) result.getStack().get(3);
-        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(ownerAddr.getCell().getBytes()).endCell()) : null;
+        TvmStackEntrySlice ownerAddr = (TvmStackEntrySlice) result.getStack().get(3);
+        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(ownerAddr.getSlice().getBytes()).endCell()) : null;
 
-        TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStack().get(4);
-        Cell cell = CellBuilder.beginCell().fromBoc(contentCell.getCell().getBytes()).endCell();
+        TvmStackEntrySlice contentCell = (TvmStackEntrySlice) result.getStack().get(4);
+        Cell cell = CellBuilder.beginCell().fromBoc(contentCell.getSlice().getBytes()).endCell();
 
         String contentUri = null;
         try {
@@ -141,7 +148,7 @@ public class NftItem implements Contract<NftItemConfig> {
         return cell.endCell();
     }
 
-    @Override
+
     public ExtMessageInfo deploy(Tonlib tonlib, NftItemConfig config) {
 
 //        long seqno = wallet.getSeqno(tonlib);
@@ -178,7 +185,7 @@ public class NftItem implements Contract<NftItemConfig> {
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
                         .storeRef(body)

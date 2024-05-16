@@ -11,10 +11,8 @@ import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.MsgAddressExtNone;
 import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryCell;
-import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.*;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -62,6 +60,13 @@ public class NftCollection implements Contract<NftCollectionConfig> {
 
     public String getName() {
         return "nftCollection";
+    }
+
+    @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.nftCollection.getValue()).
+                endCell();
     }
 
     @Override
@@ -201,7 +206,7 @@ public class NftCollection implements Contract<NftCollectionConfig> {
 
 
         TvmStackEntryCell collectionContent = (TvmStackEntryCell) result.getStack().get(1);
-        Cell collectionContentCell = CellBuilder.beginCell().fromBoc(collectionContent.getCell().getBytes()).endCell();
+        Cell collectionContentCell = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(collectionContent.getCell().getBytes())).endCell();
 
         String collectionContentUri = null;
         try {
@@ -210,8 +215,8 @@ public class NftCollection implements Contract<NftCollectionConfig> {
             //todo
         }
 
-        TvmStackEntryCell ownerAddressCell = (TvmStackEntryCell) result.getStack().get(2);
-        Address ownerAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(ownerAddressCell.getCell().getBytes()).endCell());
+        TvmStackEntrySlice ownerAddressCell = (TvmStackEntrySlice) result.getStack().get(2);
+        Address ownerAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(ownerAddressCell.getSlice().getBytes())).endCell());
 
         return CollectionData.builder()
                 .nextItemIndex(nextItemIndex)
@@ -240,7 +245,7 @@ public class NftCollection implements Contract<NftCollectionConfig> {
             }
 
             TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStack().get(2);
-            Cell content = CellBuilder.beginCell().fromBoc(contentCell.getCell().getBytes()).endCell();
+            Cell content = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentCell.getCell().getBytes())).endCell();
 
             try {
                 nftData.setContentUri(NftUtils.parseOffchainUriCell(content));
@@ -266,8 +271,8 @@ public class NftCollection implements Contract<NftCollectionConfig> {
             throw new Error("method get_nft_address_by_index, returned an exit code " + result.getExit_code());
         }
 
-        TvmStackEntryCell addrCell = (TvmStackEntryCell) result.getStack().get(0);
-        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(addrCell.getCell().getBytes()).endCell());
+        TvmStackEntrySlice addrCell = (TvmStackEntrySlice) result.getStack().get(0);
+        return NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(addrCell.getSlice().getBytes())).endCell());
     }
 
     public Royalty getRoyaltyParams(Tonlib tonlib) {
@@ -276,7 +281,6 @@ public class NftCollection implements Contract<NftCollectionConfig> {
     }
 
 
-    @Override
     public ExtMessageInfo deploy(Tonlib tonlib, NftCollectionConfig config) {
 
 //        long seqno = this.getSeqno(tonlib);
@@ -307,11 +311,7 @@ public class NftCollection implements Contract<NftCollectionConfig> {
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .init(createStateInit())
-//                .body(CellBuilder.beginCell()
-//                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-//                        .storeRef(body)
-//                        .endCell())
+                .init(getStateInit())
                 .build();
 
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());

@@ -64,6 +64,13 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
     }
 
     @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.jettonMinter.getValue()).
+                endCell();
+    }
+
+    @Override
     public Cell createTransferBody(JettonMinterConfig config) {
         Address ownAddress = getAddress();
         CommonMsgInfo internalMsgInfo = InternalMessageInfo.builder()
@@ -250,7 +257,7 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
     }
 
     //    public ExtMessageInfo deploy(Tonlib tonlib, Contract adminWallet, BigInteger walletMsgValue, TweetNaclFast.Signature.KeyPair keyPair) {
-    @Override
+
     public ExtMessageInfo deploy(Tonlib tonlib, JettonMinterConfig config) {
         long seqno = this.getSeqno(tonlib);
         config.setSeqno(seqno);
@@ -280,7 +287,7 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
                         .storeRef(body)

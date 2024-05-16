@@ -13,6 +13,7 @@ import org.ton.java.smartcontract.TestWallet;
 import org.ton.java.smartcontract.token.ft.JettonMinter;
 import org.ton.java.smartcontract.token.ft.JettonWallet;
 import org.ton.java.smartcontract.types.*;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
@@ -208,7 +209,7 @@ public class TestJetton {
                 responseAddress
         );
 //review destination address
-        Cell body = admin.createInternalMessage(jettonWalletAddress, Utils.toNano(0.05), burnBody, null).toCell();
+        Cell body = MsgUtils.createInternalMessage(jettonWalletAddress, Utils.toNano(0.05), null, burnBody).toCell();
 
         Cell extMsg = admin.createExternalMessage(jettonWalletAddress, false, body).toCell();
 //        ExternalMessage extMsg = admin.createTransferMessage(

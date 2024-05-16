@@ -7,6 +7,7 @@ import org.ton.java.cell.TonHashMap;
 import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.HighloadConfig;
 import org.ton.java.smartcontract.types.WalletCodes;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.ExternalMessageInfo;
@@ -61,6 +62,13 @@ public class HighloadWallet implements Contract<HighloadConfig> {
         cell.storeBytes(getOptions().getPublicKey()); // 256 bits
         cell.storeBit(false); // initial storage has old_queries dict empty
         return cell.endCell();
+    }
+
+    @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.highload.getValue()).
+                endCell();
     }
 
     public Cell createDeployMessage(HighloadConfig config) {
@@ -142,12 +150,12 @@ public class HighloadWallet implements Contract<HighloadConfig> {
 
             Cell order;
             if (nonNull(destination.getComment())) {
-                order = this.createInternalMessage(destination.getAddress(), destination.getAmount(), CellBuilder.beginCell()
+                order = MsgUtils.createInternalMessage(destination.getAddress(), destination.getAmount(), null, CellBuilder.beginCell()
                         .storeUint(0, 32)
                         .storeString(destination.getComment())
-                        .endCell(), null).toCell();
+                        .endCell()).toCell();
             } else {
-                order = this.createInternalMessage(destination.getAddress(), destination.getAmount(), null, null).toCell();
+                order = MsgUtils.createInternalMessage(destination.getAddress(), destination.getAmount(), null, null).toCell();
             }
 
             CellBuilder p = CellBuilder.beginCell()
@@ -165,7 +173,6 @@ public class HighloadWallet implements Contract<HighloadConfig> {
         return cellDict;
     }
 
-    @Override
     public ExtMessageInfo deploy(Tonlib tonlib, HighloadConfig config) {
 
         Cell body = createDeployMessage(config);
@@ -174,7 +181,7 @@ public class HighloadWallet implements Contract<HighloadConfig> {
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
-                .init(createStateInit())
+                .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
                         .storeCell(body)

@@ -12,6 +12,7 @@ import org.ton.java.mnemonic.Pair;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.WalletV1R3Config;
 import org.ton.java.smartcontract.types.WalletVersion;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
@@ -41,11 +42,10 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
                 .wc(0L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
-        WalletV1ContractR3 contract = wallet.create();
+        WalletV1ContractR3 contract = new Wallet(WalletVersion.V1R3, options).create();
 
-        Message msg = contract.createExternalMessage(contract.getAddress(),
-                true,
+        Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, contract.getAddress(),
+                contract.getStateInit(),
                 CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell());
         Address address = msg.getInit().getAddress();
 
@@ -118,7 +118,8 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
 
         WalletV1ContractR3 contract = new Wallet(WalletVersion.V1R3, options).create();
 
-        Message msg = contract.createExternalMessage(contract.getAddress(), true,
+        Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPairSig, contract.getAddress(),
+                contract.getStateInit(),
                 CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell());
         Address address = msg.getInit().getAddress();
 
@@ -192,7 +193,8 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         WalletV1ContractR3 contract = new Wallet(WalletVersion.V1R3, options).create();
 
 
-        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPairSig, contract.getAddress(),
+                contract.getStateInit(), null);
 
         QueryFees feesWithCodeData = tonlib.estimateFees(
                 msg.getInit().getAddress().toString(),

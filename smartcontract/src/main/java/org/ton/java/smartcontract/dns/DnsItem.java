@@ -63,11 +63,18 @@ public class DnsItem implements Contract<DnsItemConfig> {
     }
 
     @Override
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.dnsItem.getValue()).
+                endCell();
+    }
+
+    @Override
     public Cell createTransferBody(DnsItemConfig config) {
         return null;
     }
 
-    @Override
+
     public ExtMessageInfo deploy(Tonlib tonlib, DnsItemConfig config) {
         return null;
     }

@@ -10,10 +10,9 @@ import org.ton.java.smartcontract.payments.PaymentChannel;
 import org.ton.java.smartcontract.token.ft.JettonMinter;
 import org.ton.java.smartcontract.token.ft.JettonWallet;
 import org.ton.java.smartcontract.token.nft.NftCollection;
+import org.ton.java.smartcontract.token.nft.NftSale;
 import org.ton.java.smartcontract.types.WalletVersion;
-import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR2;
-import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
 import org.ton.java.smartcontract.wallet.v2.WalletV2ContractR1;
 import org.ton.java.smartcontract.wallet.v2.WalletV2ContractR2;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
@@ -37,16 +36,17 @@ public class Wallet {
 
     public <T extends Contract> T create() {
 
-        Contract result;
+        Contract result = null;
+
         switch (walletVersion) {
             case V1R1:
-                result = new WalletV1ContractR1(options);
+                // result = new WalletV1ContractR1(options);
                 break;
             case V1R2:
                 result = new WalletV1ContractR2(options);
                 break;
             case V1R3:
-                result = new WalletV1ContractR3(options);
+//                result = new WalletV1ContractR3(options);
                 break;
             case V2R1:
                 result = new WalletV2ContractR1(options);
@@ -80,6 +80,9 @@ public class Wallet {
                 break;
             case nftCollection:
                 result = new NftCollection(options);
+                break;
+            case nftSale:
+                result = new NftSale(options);
                 break;
             case payments:
                 result = new PaymentChannel(options);

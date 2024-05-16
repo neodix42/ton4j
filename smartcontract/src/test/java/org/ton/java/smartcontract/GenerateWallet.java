@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletVersion;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
@@ -46,7 +47,8 @@ public class GenerateWallet {
         Wallet walletcontract = new Wallet(WalletVersion.V3R1, options);
         adminWallet = walletcontract.create();
 
-        Message msg = adminWallet.createExternalMessage(adminWallet.getAddress(), true,
+        Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, adminWallet.getAddress(),
+                adminWallet.getStateInit(),
                 CellBuilder.beginCell()
                         .storeUint(42L, 32) // subwallet-id
                         .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32) // valid-until
