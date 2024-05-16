@@ -26,7 +26,6 @@ public class GenerateWallet {
 
     public static TestWallet random(Tonlib tonlib, long initialBalanceInToncoins) throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair;
-        WalletV3ContractR1 adminWallet;
         String predefinedSecretKey = "";
 
         if (StringUtils.isEmpty(predefinedSecretKey)) {
@@ -44,8 +43,7 @@ public class GenerateWallet {
                 .walletId(42L)
                 .build();
 
-        Wallet walletcontract = new Wallet(WalletVersion.V3R1, options);
-        adminWallet = walletcontract.create();
+        WalletV3ContractR1 adminWallet = new Wallet(WalletVersion.V3R1, options).create();
 
         Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, adminWallet.getAddress(),
                 adminWallet.getStateInit(),

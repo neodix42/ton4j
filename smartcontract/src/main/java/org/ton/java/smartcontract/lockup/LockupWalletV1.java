@@ -77,7 +77,7 @@ public class LockupWalletV1 implements Contract<LockupWalletV1Config> {
         Date date = new Date();
         long timestamp = (long) Math.floor(date.getTime() / 1e3);
         message.storeUint(BigInteger.valueOf(timestamp + 60L), 32); // 1 minute
-        
+
         return message.endCell();
     }
 
@@ -298,41 +298,5 @@ public class LockupWalletV1 implements Contract<LockupWalletV1Config> {
 
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
 
-//        long seqno = getSeqno(tonlib);
-//        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-//        return tonlib.sendRawMessage(msg.message.toBase64());
     }
-/*
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, byte[] body) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, byte[] body, byte sendMode) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body, sendMode);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, byte[] body) {
-        long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, String comment) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, String comment) {
-        long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, byte[] body, byte sendMode) {
-        long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body, sendMode);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
- */
 }

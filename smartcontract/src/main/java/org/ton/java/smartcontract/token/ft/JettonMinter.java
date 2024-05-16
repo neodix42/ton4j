@@ -1,5 +1,6 @@
 package org.ton.java.smartcontract.token.ft;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -7,14 +8,17 @@ import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.JettonMinterConfig;
 import org.ton.java.smartcontract.types.JettonMinterData;
 import org.ton.java.smartcontract.types.WalletCodes;
+import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
+import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -55,12 +59,12 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
      */
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeCoins(BigInteger.ZERO);
-        cell.storeAddress(options.adminAddress);
-        cell.storeRef(NftUtils.createOffchainUriCell(options.jettonContentUri));
-        cell.storeRef(CellBuilder.beginCell().fromBoc(options.jettonWalletCodeHex).endCell());
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeCoins(BigInteger.ZERO)
+                .storeAddress(options.adminAddress)
+                .storeRef(NftUtils.createOffchainUriCell(options.jettonContentUri))
+                .storeRef(CellBuilder.beginCell().fromBoc(options.jettonWalletCodeHex).endCell())
+                .endCell();
     }
 
     @Override
@@ -112,7 +116,9 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
      */
     public Cell createMintBody(long queryId, Address destination, BigInteger amount, BigInteger jettonAmount) {
 
-        return createMintBody(queryId, destination, amount, jettonAmount, null, null, BigInteger.ZERO);
+        return createMintBody(queryId, destination, amount, jettonAmount,
+                null, null,
+                BigInteger.ZERO);
     }
 
     /**
@@ -125,10 +131,12 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
      * @param forwardAmount   BigInteger
      * @return Cell
      */
-    public Cell createMintBody(long queryId, Address destination, BigInteger amount, BigInteger jettonAmount, Address fromAddress, Address responseAddress, BigInteger forwardAmount) {
+    public Cell createMintBody(long queryId, Address destination, BigInteger amount,
+                               BigInteger jettonAmount, Address fromAddress, Address
+                                       responseAddress, BigInteger forwardAmount) {
         CellBuilder body = CellBuilder.beginCell();
         body.storeUint(21, 32); // OP mint
-        body.storeUint(queryId, 64); // query_id, default 0
+        body.storeUint(queryId, 64);   // query_id, default 0
         body.storeAddress(destination);
         body.storeCoins(amount);
 
@@ -136,9 +144,9 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
         transferBody.storeUint(0x178d4519, 32); // internal_transfer op
         transferBody.storeUint(queryId, 64); // default 0
         transferBody.storeCoins(jettonAmount);
-        transferBody.storeAddress(fromAddress); // from_address
+        transferBody.storeAddress(fromAddress);     // from_address
         transferBody.storeAddress(responseAddress); // response_address
-        transferBody.storeCoins(forwardAmount); // forward_amount
+        transferBody.storeCoins(forwardAmount);     // forward_amount
         transferBody.storeBit(false); // forward_payload in this slice, not separate cell
 
         body.storeRef(transferBody.endCell());
@@ -156,11 +164,11 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
             throw new Error("Specify newAdminAddress");
         }
 
-        CellBuilder body = CellBuilder.beginCell();
-        body.storeUint(3, 32); // OP
-        body.storeUint(queryId, 64); // query_id
-        body.storeAddress(newAdminAddress);
-        return body.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(3, 32) // OP
+                .storeUint(queryId, 64) // query_id
+                .storeAddress(newAdminAddress)
+                .endCell();
     }
 
     /**
@@ -169,11 +177,11 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
      * @return Cell
      */
     public Cell createEditContentBody(String jettonContentUri, long queryId) {
-        CellBuilder body = CellBuilder.beginCell();
-        body.storeUint(4, 32); // OP change content
-        body.storeUint(queryId, 64); // query_id
-        body.storeRef(NftUtils.createOffchainUriCell(jettonContentUri));
-        return body.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(4, 32) // OP change content
+                .storeUint(queryId, 64) // query_id
+                .storeRef(NftUtils.createOffchainUriCell(jettonContentUri))
+                .endCell();
     }
 
     /**
@@ -182,7 +190,6 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
     public JettonMinterData getJettonData(Tonlib tonlib) {
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_jetton_data"); //minter
-
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_nft_data, returned an exit code " + result.getExit_code());
@@ -297,14 +304,24 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public void mint(Tonlib tonlib, Contract adminWallet, JettonMinterConfig config) {
+    public ExtMessageInfo mint(Tonlib tonlib, WalletV3ContractR1 adminWallet, JettonMinterConfig config, TweetNaclFast.Signature.KeyPair keyPair) {
 
-        long seqno = adminWallet.getSeqno(tonlib);
-        config.setSeqno(seqno);
-        config.setBody(this.createMintBody(0,
-                config.getDestination(),
-                config.getMintMsgValue(),
-                config.getJettonToMintAmount()));
+        System.out.println("addr: " + getAddress().toString(true));
+        WalletV3Config walletV3Config = WalletV3Config.builder()
+                .subWalletId(42)
+                .seqno(adminWallet.getSeqno(tonlib))
+                .mode(3)
+                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
+                .secretKey(keyPair.getSecretKey())
+                .publicKey(keyPair.getPublicKey())
+                .destination(getAddress())
+                .amount(config.getWalletMsgValue())
+                .body(createMintBody(0,
+                        config.getDestination(),
+                        config.getMintMsgValue(),
+                        config.getJettonToMintAmount()))
+                .build();
+        return adminWallet.sendTonCoins(tonlib, walletV3Config);
 
 //        ExternalMessage extMsg = adminWallet.createTransferMessage(
 //                keyPair.getSecretKey(),
@@ -315,24 +332,6 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
 //
 //        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
 
-        Cell body = createTransferBody(config);
 
-        Address ownAddress = getAddress();
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
-                        .build())
-                .init(null)
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
-                        .storeRef(body)
-                        .endCell())
-                .build();
-
-        tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 }
