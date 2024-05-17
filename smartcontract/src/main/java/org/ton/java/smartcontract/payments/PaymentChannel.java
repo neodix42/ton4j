@@ -14,6 +14,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
@@ -129,51 +130,17 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
         return null;
     }
 
-    public Signature createOneSignature(long op, Cell cellForSigning) {
-        byte[] signature = new TweetNaclFast.Signature(getOptions().myKeyPair.getPublicKey(), getOptions().myKeyPair.getSecretKey()).detached(cellForSigning.hash());
-
-        Cell cell = PaymentsUtils.createOneSignature(op, getOptions().isA, signature, cellForSigning);
-
-        return Signature.builder().cell(cell).signature(signature).build();
-    }
-
-    public Signature createTwoSignature(long op, byte[] hisSignature, Cell cellForSigning) {
-        byte[] signature = new TweetNaclFast.Signature(getOptions().myKeyPair.getPublicKey(), getOptions().myKeyPair.getSecretKey()).detached(cellForSigning.hash());
-
-        byte[] signatureA = getOptions().isA ? signature : hisSignature;
-        byte[] signatureB = !getOptions().isA ? signature : hisSignature;
-
-        Cell cell = PaymentsUtils.createTwoSignature(op, signatureA, signatureB, cellForSigning);
-
-        return Signature.builder().cell(cell).signature(signature).build();
-    }
 
     public Cell createTopUpBalance(BigInteger coinsA, BigInteger coinsB) {
         return PaymentsUtils.createTopUpBalance(coinsA, coinsB);
     }
 
-    public Signature createInitChannel(BigInteger balanceA, BigInteger balanceB) {
-        return this.createOneSignature(op_init_channel, PaymentsUtils.createInitChannelBody(getOptions().getChannelConfig().getChannelId(), balanceA, balanceB));
-    }
 
-    public Signature createCooperativeCloseChannel(byte[] hisSignature, ChannelState channelState) {
-        if (isNull(hisSignature)) {
-            hisSignature = new byte[512 / 8];
-        }
-        return this.createTwoSignature(op_cooperative_close, hisSignature,
-                PaymentsUtils.createCooperativeCloseChannelBody(
-                        getOptions().getChannelConfig().getChannelId(),
-                        channelState.getBalanceA(),
-                        channelState.getBalanceB(),
-                        channelState.getSeqnoA(),
-                        channelState.getSeqnoB()));
-    }
-
-    public Signature createCooperativeCommit(byte[] hisSignature, BigInteger seqnoA, BigInteger seqnoB) {
+    public Signature createCooperativeCommit(Options options, byte[] hisSignature, BigInteger seqnoA, BigInteger seqnoB) {
         if (hisSignature.length != 0) {
             hisSignature = new byte[512 / 8];
         }
-        return this.createTwoSignature(op_cooperative_close, hisSignature, PaymentsUtils.createCooperativeCommitBody(getOptions().getChannelConfig().getChannelId(), seqnoA, seqnoB));
+        return PaymentsUtils.createTwoSignature(options, op_cooperative_close, hisSignature, PaymentsUtils.createCooperativeCommitBody(getOptions().getChannelConfig().getChannelId(), seqnoA, seqnoB));
     }
 
     public Signature createSignedSemiChannelState(BigInteger mySeqNo, BigInteger mySentCoins, BigInteger hisSeqno, BigInteger hisSentCoins) {
@@ -225,8 +192,8 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
         return Ed25519.verify(getOptions().isA ? getOptions().publicKeyB : getOptions().publicKeyA, state.hash(), hisSignature);
     }
 
-    public byte[] signClose(ChannelState channelState) {
-        Signature s = this.createCooperativeCloseChannel(null, channelState);
+    public byte[] signClose(Options options, ChannelState channelState) {
+        Signature s = PaymentsUtils.createCooperativeCloseChannel(options, null, channelState);
         return s.signature;
     }
 
@@ -240,28 +207,6 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
         return Ed25519.verify(getOptions().isA ? getOptions().publicKeyB : getOptions().publicKeyA, cell.hash(), hisSignature);
     }
 
-    public Signature createStartUncooperativeClose(Cell signedSemiChannelStateA, Cell signedSemiChannelStateB) {
-        return this.createOneSignature(op_start_uncooperative_close,
-                createStartUncooperativeCloseBody(
-                        getOptions().getChannelConfig().getChannelId(),
-                        signedSemiChannelStateA,
-                        signedSemiChannelStateB));
-    }
-
-    public Signature createChallengeQuarantinedState(Cell signedSemiChannelStateA, Cell signedSemiChannelStateB) {
-        return this.createOneSignature(op_challenge_quarantined_state,
-                createChallengeQuarantinedStateBody(
-                        getOptions().getChannelConfig().getChannelId(),
-                        signedSemiChannelStateA,
-                        signedSemiChannelStateB));
-    }
-
-    public Signature createSettleConditionals(Cell conditionalsToSettle) {
-        return this.createOneSignature(op_settle_conditionals,
-                createSettleConditionalsBody(
-                        getOptions().getChannelConfig().getChannelId(),
-                        conditionalsToSettle));
-    }
 
     public Cell createFinishUncooperativeClose() {
         return PaymentsUtils.createFinishUncooperativeClose();
@@ -320,13 +265,13 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
         TvmStackEntryTuple trippleTuple = (TvmStackEntryTuple) result.getStack().get(7);
         TvmStackEntryNumber excessFee = (TvmStackEntryNumber) trippleTuple.getTuple().getElements().get(0);
 
-        TvmStackEntryCell addressACell = (TvmStackEntryCell) trippleTuple.getTuple().getElements().get(1);
+        TvmStackEntrySlice addressACell = (TvmStackEntrySlice) trippleTuple.getTuple().getElements().get(1);
 
-        Address addressA = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(addressACell.getCell().getBytes()).endCell());
+        Address addressA = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(addressACell.getSlice().getBytes())).endCell());
 
-        TvmStackEntryCell AddressBCell = (TvmStackEntryCell) trippleTuple.getTuple().getElements().get(2);
+        TvmStackEntrySlice AddressBCell = (TvmStackEntrySlice) trippleTuple.getTuple().getElements().get(2);
 
-        Address addressB = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(AddressBCell.getCell().getBytes()).endCell());
+        Address addressB = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(AddressBCell.getSlice().getBytes())).endCell());
 
         return ChannelData.builder()
                 .state(stateNumber.getNumber().longValue())

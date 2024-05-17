@@ -1,21 +1,13 @@
 package org.ton.java.smartcontract.payments;
 
-import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.ChannelState;
 import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.FromWalletConfig;
-import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.tlb.types.ExternalMessageInfo;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MsgAddressExtNone;
-import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
@@ -49,9 +41,9 @@ public class FromWallet extends PaymentChannel {
 
     }
 
-    public ExtMessageInfo init(BigInteger balanceA, BigInteger balanceB, BigInteger amount) {
-        return transfer(this.createInitChannel(balanceA, balanceB).getCell(), amount);
-    }
+//    public ExtMessageInfo init(BigInteger balanceA, BigInteger balanceB, BigInteger amount) {
+//        return transfer(this.createInitChannel(balanceA, balanceB).getCell(), amount);
+//    }
 
     public FromWallet estimateFee() {
         if (nonNull(extMsg)) {
@@ -63,23 +55,24 @@ public class FromWallet extends PaymentChannel {
     }
 
     public ExtMessageInfo close(ChannelState channelState, byte[] hisSignature, BigInteger amount) {
-        return transfer(this.createCooperativeCloseChannel(hisSignature, channelState).getCell(), amount);
+//        return transfer(PaymentsUtils.createCooperativeCloseChannel(hisSignature, channelState).getCell(), amount);
+        return null;
     }
 
     public void commit(byte[] hisSignature, BigInteger seqnoA, BigInteger seqnoB, BigInteger amount) {
-        transfer(this.createCooperativeCommit(hisSignature, seqnoA, seqnoB).getCell(), amount);
+//        transfer(this.createCooperativeCommit(hisSignature, seqnoA, seqnoB).getCell(), amount);
     }
 
     public void startUncooperativeClose(Cell signedSemiChannelStateA, Cell signedSemiChannelStateB, BigInteger amount) {
-        transfer(this.createStartUncooperativeClose(signedSemiChannelStateA, signedSemiChannelStateB).getCell(), amount);
+//        transfer(this.createStartUncooperativeClose(signedSemiChannelStateA, signedSemiChannelStateB).getCell(), amount);
     }
 
     public void challengeQuarantinedState(Cell signedSemiChannelStateA, Cell signedSemiChannelStateB, BigInteger amount) {
-        transfer(this.createChallengeQuarantinedState(signedSemiChannelStateA, signedSemiChannelStateB).getCell(), amount);
+//        transfer(this.createChallengeQuarantinedState(signedSemiChannelStateA, signedSemiChannelStateB).getCell(), amount);
     }
 
-    public void settleConditionals(Cell conditionalsToSettle, BigInteger amount) {
-        transfer(this.createSettleConditionals(conditionalsToSettle).getCell(), amount);
+    public void settleConditionals(Options options, Cell conditionalsToSettle, BigInteger amount) {
+        transfer(PaymentsUtils.createSettleConditionals(options, conditionalsToSettle).getCell(), amount);
     }
 
     public void finishUncooperativeClose(BigInteger amount) {
@@ -107,33 +100,7 @@ public class FromWallet extends PaymentChannel {
 //                payload, // body
 //                (byte) 3,
 //                stateInit);
-
-        Address ownAddress = getAddress();
-//        Cell body = payload;
-        Cell order = MsgUtils.createInternalMessage(ownAddress, amount, null, payload).toCell();
-
-        Cell signingMessage = CellBuilder.beginCell()
-                .storeUint(0, 32) // seqno
-                .storeUint(3, 8) // send mode
-                .storeRef(order)
-                .endCell();
-
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
-                        .build())
-                .init(needStateInit ? (this.getStateInit()) : null)
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), signingMessage.hash()))
-                        .storeCell(signingMessage)
-                        .endCell())
-                .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+        return null;
     }
 
 //    public ExternalMessage createExtMsg(Cell payload, boolean needStateInit, BigInteger amount) {

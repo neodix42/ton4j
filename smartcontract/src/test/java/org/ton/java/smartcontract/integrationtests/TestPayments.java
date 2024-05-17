@@ -10,6 +10,7 @@ import org.ton.java.smartcontract.GenerateWallet;
 import org.ton.java.smartcontract.TestWallet;
 import org.ton.java.smartcontract.payments.FromWallet;
 import org.ton.java.smartcontract.payments.PaymentChannel;
+import org.ton.java.smartcontract.payments.PaymentsUtils;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
@@ -19,6 +20,7 @@ import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,8 +39,8 @@ public class TestPayments extends CommonTest {
         // The payment channel is established between two participants A and B.
         // Each has own secret key, which he does not reveal to the other.
 
-        walletA = GenerateWallet.random(tonlib, 3);
-        walletB = GenerateWallet.random(tonlib, 3);
+        walletA = GenerateWallet.random(tonlib, 6);
+        walletB = GenerateWallet.random(tonlib, 6);
         walletAddressA = walletA.getWallet().getAddress();
         walletAddressB = walletB.getWallet().getAddress();
     }
@@ -114,14 +116,28 @@ public class TestPayments extends CommonTest {
         // 0.05 TON is the amount to execute this transaction on the blockchain. The unused portion will be returned.
         // After this action, a smart contract of our payment channel will be created in the blockchain.
 
-        FromWalletConfig config = FromWalletConfig.builder()
-                .seqno(0)
-                .amount(Utils.toNano(0.05))
+//        FromWalletConfig config = FromWalletConfig.builder()
+//                .seqno(0)
+//                .amount(Utils.toNano(0.05))
+//                .build();
+
+        WalletV3Config config = WalletV3Config.builder()
+                .subWalletId(42)
+                .seqno(walletA.getWallet().getSeqno(tonlib))
+                .mode(3)
+                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
+                .secretKey(walletA.getKeyPair().getSecretKey())
+                .publicKey(walletA.getKeyPair().getPublicKey())
+                .destination(channelA.getAddress())
+                .amount(Utils.toNano(0.055))
+                .stateInit(channelA.getStateInit())
+                .body(PaymentsUtils.createTopUpBalance(Utils.toNano(0), Utils.toNano(0)))
                 .build();
 
-        ExtMessageInfo extMessageInfo = fromWalletA.deploy(config);
+//        ExtMessageInfo extMessageInfo = fromWalletA.deploy(config);
+        ExtMessageInfo extMessageInfo = walletA.getWallet().sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "deploying channel A");
+        Utils.sleep(35, "deploying channel A");
 
         log.info("channel A state {}", channelA.getChannelState(tonlib));
         ChannelData data = channelA.getData(tonlib);
@@ -133,21 +149,46 @@ public class TestPayments extends CommonTest {
 
         // Now each parties must send their initial balance from the wallet to the channel contract.
 
-        extMessageInfo = fromWalletA.topUp(channelInitState.getBalanceA(),
-                BigInteger.ZERO,
-                channelInitState.getBalanceA().add(Utils.toNano(0.05))); // +0.05 TON to network fees
+//        extMessageInfo = fromWalletA.topUp(channelInitState.getBalanceA(), BigInteger.ZERO,
+//        channelInitState.getBalanceA().add(Utils.toNano(0.05))); // +0.05 TON to network fees
+        config = WalletV3Config.builder()
+                .subWalletId(42)
+                .seqno(walletA.getWallet().getSeqno(tonlib))
+                .mode(3)
+                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
+                .secretKey(walletA.getKeyPair().getSecretKey())
+                .publicKey(walletA.getKeyPair().getPublicKey())
+                .destination(channelA.getAddress())
+                .amount(channelInitState.getBalanceA().add(Utils.toNano(0.05))) // // +0.05 TON to network fees
+                .body(PaymentsUtils.createTopUpBalance(channelInitState.getBalanceA(), BigInteger.ZERO))
+                .build();
+        extMessageInfo = walletA.getWallet().sendTonCoins(tonlib, config);
+
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "topping up from wallet A...");
 
-        extMessageInfo = fromWalletB.topUp(BigInteger.ZERO,
-                channelInitState.getBalanceB(),
-                channelInitState.getBalanceB().add(Utils.toNano(0.05))); // +0.05 TON to network fees
+//        extMessageInfo = fromWalletB.topUp(BigInteger.ZERO, channelInitState.getBalanceB(), channelInitState.getBalanceB().add(Utils.toNano(0.05))); // +0.05 TON to network fees
+        config = WalletV3Config.builder()
+                .subWalletId(42)
+                .seqno(walletB.getWallet().getSeqno(tonlib))
+                .mode(3)
+                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
+                .secretKey(walletB.getKeyPair().getSecretKey())
+                .publicKey(walletB.getKeyPair().getPublicKey())
+                .destination(channelB.getAddress())
+                .amount(channelInitState.getBalanceB().add(Utils.toNano(0.05))) // // +0.05 TON to network fees
+                .body(PaymentsUtils.createTopUpBalance(BigInteger.ZERO, channelInitState.getBalanceB()))
+                .build();
+        extMessageInfo = walletB.getWallet().sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "topping up from wallet B...");
+        Utils.sleep(40, "topping up from wallet B...");
 
+        ChannelData channelData = channelA.getData(tonlib);
         log.info("channel A state {}", channelA.getChannelState(tonlib));
+        log.info("channel A data {}", channelData);
 
-        log.info("channel A data {}", channelA.getData(tonlib));
+        assertThat(channelData.getBalanceA()).isNotEqualTo(BigInteger.ZERO);
+        assertThat(channelData.getBalanceB()).isNotEqualTo(BigInteger.ZERO);
 
         // to check, call the get method - the balances should change
 
@@ -155,18 +196,32 @@ public class TestPayments extends CommonTest {
 
         // After everyone has done top-up, we can initialize the channel from any wallet
 
-        extMessageInfo = fromWalletA.init(channelInitState.getBalanceA(),
-                channelInitState.getBalanceB(),
-                Utils.toNano(0.05));
+//        extMessageInfo = fromWalletA.init(channelInitState.getBalanceA(), channelInitState.getBalanceB(), Utils.toNano(0.05));
+        config = WalletV3Config.builder()
+                .subWalletId(42)
+                .seqno(walletA.getWallet().getSeqno(tonlib))
+                .mode(3)
+                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
+                .secretKey(walletA.getKeyPair().getSecretKey())
+                .publicKey(walletA.getKeyPair().getPublicKey())
+                .destination(channelA.getAddress())
+                .amount(Utils.toNano(0.05)) // +0.05 TON to network fees
+                .body(PaymentsUtils.createInitChannel(channelOptionsA, channelInitState.getBalanceA(), channelInitState.getBalanceB()))
+                .build();
+        extMessageInfo = walletA.getWallet().sendTonCoins(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "initializing channel...");
-        // to check, call the get method - `state` should change to `TonWeb.payments.PaymentChannel.STATE_OPEN`
+        Utils.sleep(45, "initializing channel...");
 
-        log.info("channel A state {}", channelA.getChannelState(tonlib));
+        // to test call the get method - `state` should change to `TonWeb.payments.PaymentChannel.STATE_OPEN`
+
+        BigInteger channelAState = channelA.getChannelState(tonlib);
+        log.info("channel A state {}", channelAState);
         log.info("channel A data {}", channelA.getData(tonlib));
 
+        assertThat(channelAState).isNotEqualTo(BigInteger.ZERO);
+
         //----------------------------------------------------------------------
-        // FIRST OFFCHAIN TRANSFER - A sends 0.1 TON to B
+        // FIRST OFF-CHAIN TRANSFER - A sends 0.1 TON to B
 
         // A creates new state - subtracts 0.1 from A's balance, adds 0.1 to B's balance, increases A's seqno by 1
         ChannelState channelState1 = ChannelState.builder()
@@ -175,8 +230,8 @@ public class TestPayments extends CommonTest {
                 .seqnoA(BigInteger.ONE)
                 .seqnoB(BigInteger.ZERO)
                 .build();
-        // A signs this state and send signed state to B (e.g. via websocket)
 
+        // A signs this state and sends signed state to B (e.g. via websocket)
         byte[] signatureA1 = channelA.signState(channelState1);
 
         // B checks that the state is changed according to the rules, signs this state, send signed state to A (e.g. via websocket)
@@ -243,7 +298,7 @@ public class TestPayments extends CommonTest {
 
         // First B signs closing message with last state, B sends it to A (e.g. via websocket)
 
-        byte[] signatureCloseB = channelB.signClose(channelState3);
+        byte[] signatureCloseB = channelB.signClose(channelOptionsB, channelState3);
 
 
         // A verifies and signs this closing message and include B's signature
@@ -255,7 +310,20 @@ public class TestPayments extends CommonTest {
             throw new Error("Invalid B signature");
         }
 
-        extMessageInfo = fromWalletA.close(channelState3, signatureCloseB, Utils.toNano(0.05));
+//        extMessageInfo = fromWalletA.close(channelState3, signatureCloseB, Utils.toNano(0.05));
+        config = WalletV3Config.builder()
+                .subWalletId(42)
+                .seqno(walletA.getWallet().getSeqno(tonlib))
+                .mode(3)
+                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
+                .secretKey(walletA.getKeyPair().getSecretKey())
+                .publicKey(walletA.getKeyPair().getPublicKey())
+                .destination(channelA.getAddress())
+                .amount(Utils.toNano(0.05))
+                .body(PaymentsUtils.createCooperativeCloseChannel(channelOptionsA, signatureCloseB, channelState3).getCell())
+                .build();
+        extMessageInfo = walletA.getWallet().sendTonCoins(tonlib, config);
+        log.info("channel B address {}", channelB.getAddress().toString(true, true, true));
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 }
