@@ -76,11 +76,6 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
                 endCell();
     }
 
-    @Override
-    public Cell createTransferBody(HighloadV3Config config) {
-        return null; // todo
-    }
-
     public String getPublicKey(Tonlib tonlib) {
 
         Address myAddress = this.getAddress();

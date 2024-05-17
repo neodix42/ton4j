@@ -74,7 +74,6 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
                 endCell();
     }
 
-    @Override
     public Cell createTransferBody(JettonMinterConfig config) {
         Address ownAddress = getAddress();
         CommonMsgInfo internalMsgInfo = InternalMessageInfo.builder()

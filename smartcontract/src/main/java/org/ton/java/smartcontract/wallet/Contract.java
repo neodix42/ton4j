@@ -25,7 +25,10 @@ public interface Contract<T extends WalletConfig> {
     String getName();
 
     default Address getAddress() { // remove default
-        return getStateInit().getAddress();
+        return StateInit.builder()
+                .code(createCodeCell())
+                .data(createDataCell())
+                .build().getAddress();
     }
 
     default Address getAddress(byte workchain) {
@@ -80,7 +83,7 @@ public interface Contract<T extends WalletConfig> {
                 .build();
     }
 
-    Cell createTransferBody(T config);
+//    Cell createTransferBody(T config);
 
 //    ExtMessageInfo deploy(Tonlib tonlib, T config);
 

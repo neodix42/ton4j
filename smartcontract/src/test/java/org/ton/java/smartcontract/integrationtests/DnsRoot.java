@@ -57,7 +57,7 @@ public class DnsRoot implements Contract<DnsRootConfig> {
         return CellBuilder.beginCell().fromBoc(DNS_ROOT_CODE_HEX).endCell();
     }
 
-    @Override
+
     public Cell createTransferBody(DnsRootConfig config) {
         Cell order = Message.builder()
                 .info(InternalMessageInfo.builder()

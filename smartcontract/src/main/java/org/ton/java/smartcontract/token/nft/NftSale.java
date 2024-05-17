@@ -88,7 +88,7 @@ public class NftSale implements Contract<NftSaleConfig> {
         return CellBuilder.beginCell().fromBoc(NFT_SALE_HEX_CODE).endCell();
     }
 
-    @Override
+
     public Cell createTransferBody(NftSaleConfig config) {
         Cell emptyBody = CellBuilder.beginCell().endCell();
 

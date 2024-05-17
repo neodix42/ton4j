@@ -63,11 +63,6 @@ public class NftMarketplace implements Contract<NftMarketPlaceConfig> {
         return CellBuilder.beginCell().fromBoc(NFT_MARKETPLACE_CODE_HEX).endCell();
     }
 
-    @Override
-    public Cell createTransferBody(NftMarketPlaceConfig config) {
-        return null;
-    }
-
     public ExtMessageInfo deploy(Tonlib tonlib, NftMarketPlaceConfig config) {
 
 //        long seqno = this.getSeqno(tonlib);

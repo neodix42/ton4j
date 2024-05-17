@@ -83,11 +83,6 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
                 endCell();
     }
 
-    @Override
-    public Cell createTransferBody(DnsCollectionConfig config) {
-        return null;
-    }
-
     /**
      * @return CollectionInfo
      */

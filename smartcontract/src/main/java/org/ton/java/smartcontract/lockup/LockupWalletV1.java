@@ -81,7 +81,7 @@ public class LockupWalletV1 implements Contract<LockupWalletV1Config> {
         return message.endCell();
     }
 
-    @Override
+
     public Cell createTransferBody(LockupWalletV1Config config) {
 //        CellBuilder message = CellBuilder.beginCell();
 //
@@ -260,11 +260,11 @@ public class LockupWalletV1 implements Contract<LockupWalletV1Config> {
         );
     }
 
-    public long getSeqno(Tonlib tonlib) {
-
-        Address myAddress = getAddress();
-        return tonlib.getSeqno(myAddress);
-    }
+//    public long getSeqno(Tonlib tonlib) {
+//
+//        Address myAddress = getAddress();
+//        return tonlib.getSeqno(myAddress);
+//    }
 
     public ExtMessageInfo deploy(Tonlib tonlib, LockupWalletV1Config config) {
         Cell body = createDeployMessage(config);

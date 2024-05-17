@@ -79,7 +79,6 @@ public class HighloadWallet implements Contract<HighloadConfig> {
                 .endCell();
     }
 
-    @Override
     public Cell createTransferBody(HighloadConfig config) {
         CellBuilder body = CellBuilder.beginCell();
         body.storeUint(BigInteger.valueOf(getOptions().walletId), 32);

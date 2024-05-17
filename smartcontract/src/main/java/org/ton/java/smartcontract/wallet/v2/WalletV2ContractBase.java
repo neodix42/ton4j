@@ -56,7 +56,6 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
     /**
      * Creates message payload with seqno and validUntil fields
      */
-    @Override
     public Cell createTransferBody(WalletV2Config config) {
 
         CellBuilder message = CellBuilder.beginCell();

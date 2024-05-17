@@ -75,12 +75,6 @@ public class NftItem implements Contract<NftItemConfig> {
                 endCell();
     }
 
-    @Override
-    public Cell createTransferBody(NftItemConfig config) {
-        return null;
-    }
-
-
     /**
      * @return DnsData
      */

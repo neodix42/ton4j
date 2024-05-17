@@ -23,12 +23,9 @@ import static java.util.Objects.isNull;
 @Getter
 public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
 
-    Options options;
     TweetNaclFast.Signature.KeyPair keyPair;
     int wc;
-    Cell code; // for PoC
-//    Address address;
-//    StateInit stateInit;
+    long initialSeqno;
 
     public static class WalletV1ContractR1Builder {
         WalletV1ContractR1Builder() {
@@ -37,12 +34,6 @@ public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
             }
         }
     }
-
-
-//    public WalletV1ContractR1(Options options) {
-//        this.options = options;
-//        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.V1R1.getValue()).endCell();
-//    }
 
     @Override
     public Options getOptions() {
@@ -54,63 +45,41 @@ public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
         return "V1R1";
     }
 
-//    @Override
-//    public Address getAddress() {
-//        if (isNull(address)) {
-//            address = getStateInit().getAddress();
-//            return address;
-//        } else {
-//            return address;
-//        }
-//    }
-//
-//    @Override
-//    public StateInit getStateInit() {
-//        if (isNull(stateInit)) {
-//            stateInit = StateInit.builder()
-//                    .code(createCodeCell())
-//                    .data(createDataCell())
-//                    .build();
-//            return stateInit;
-//        } else {
-//            return stateInit;
-//        }
-//    }
-
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(BigInteger.ZERO, 32); // seqno
-        cell.storeBytes(keyPair.getPublicKey());
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(initialSeqno, 32) // seqno
+                .storeBytes(keyPair.getPublicKey())
+                .endCell();
     }
 
     @Override
     public Cell createCodeCell() {
-        if (isNull(code)) {
-            return CellBuilder.beginCell().
-                    fromBoc(WalletCodes.V1R1.getValue()).
-                    endCell();
-        } else {
-            return code;
-        }
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.V1R1.getValue()).
+                endCell();
     }
 
-    public Cell createDeployMessage() {
-        return CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell();
+    Cell createDeployMessage() {
+        return CellBuilder.beginCell().storeUint(initialSeqno, 32).endCell();
     }
 
-    public Cell createTransferBody(WalletV1R1Config config) {
+    Cell createTransferBody(WalletV1R1Config config) {
         Cell body = CellBuilder.beginCell()
                 .storeUint(0, 32)
                 .storeString(config.getComment())
                 .endCell();
 
-        Cell order = MsgUtils.createInternalMessage(config.getDestination(), config.getAmount(), null, body).toCell();
+        Cell order = MsgUtils.createInternalMessage(
+                        config.getDestination(),
+                        config.getAmount(),
+                        config.getIntMsgStateInit(),
+                        body)
+                .toCell();
 
         return CellBuilder.beginCell()
                 .storeUint(BigInteger.valueOf(config.getSeqno()), 32)
-                .storeUint(config.getMode() & 0xff, 8)
+                .storeUint((config.getMode() == 0) ? 3 : config.getMode() & 0xff, 8)
                 .storeRef(order)
                 .endCell();
     }
@@ -124,27 +93,14 @@ public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
      */
     public ExtMessageInfo send(Tonlib tonlib, WalletV1R1Config config) {
         Cell body = isNull(config.getBody()) ? createTransferBody(config) : config.getBody();
-        Message externalMessage = MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), getStateInit(), body);
-
+        Message externalMessage = MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
 
-    public ExtMessageInfo deploy(Tonlib tonlib, WalletV1R1Config config) {
-        Cell body = isNull(config) ? createDeployMessage() : config.getBody();
-
+    public ExtMessageInfo deploy(Tonlib tonlib) {
+        Cell body = createDeployMessage();
         Message externalMessage = MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), getStateInit(), body);
-//        Message externalMessage = Message.builder()
-//                .info(ExternalMessageInfo.builder()
-//                        .dstAddr(getAddressIntStd())
-//                        .build())
-//                .init(this.getStateInit())
-//                .body(CellBuilder.beginCell()
-//                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-//                        .storeCell(body)
-//                        .endCell())
-//                .build();
-
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 }

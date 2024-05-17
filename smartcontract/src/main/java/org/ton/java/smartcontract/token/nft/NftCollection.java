@@ -117,11 +117,6 @@ public class NftCollection implements Contract<NftCollectionConfig> {
         return cell.endCell();
     }
 
-    @Override
-    public Cell createTransferBody(NftCollectionConfig config) {
-        return null;
-    }
-
     public static Cell createMintBody(long queryId, long itemIndex, BigInteger amount, Address nftItemOwnerAddress, String nftItemContentUri) {
         CellBuilder body = CellBuilder.beginCell();
         body.storeUint(1, 32);  // OP deploy new nft

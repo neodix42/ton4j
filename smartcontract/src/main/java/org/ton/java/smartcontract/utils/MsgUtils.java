@@ -29,17 +29,18 @@ public class MsgUtils {
         if (isNull(body)) {
             body = CellBuilder.beginCell().endCell();
         }
-        externalMessage.setBody(CellBuilder.beginCell()
-                .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                .storeCell(body)
-                .endCell());
+        externalMessage.setBody(
+                CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                        .storeCell(body)
+                        .endCell());
 
         return externalMessage;
     }
 
     public static Message createInternalMessage(Address destination,
                                                 BigInteger amount,
-                                                org.ton.java.tlb.types.StateInit stateInit,
+                                                StateInit stateInit,
                                                 Cell body) {
         return Message.builder()
                 .info(InternalMessageInfo.builder()

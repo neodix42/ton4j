@@ -340,7 +340,6 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
 //    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey) {
 //        return tonlib.sendRawMessage(createInitExternalMessageWithoutBody(secretKey).message.toBase64());
 //    }
-    @Override
     public Cell createTransferBody(MultisigWalletConfig config) {
         return CellBuilder.beginCell().endCell();
     }

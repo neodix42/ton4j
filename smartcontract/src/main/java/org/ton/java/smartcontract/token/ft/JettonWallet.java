@@ -61,11 +61,6 @@ public class JettonWallet implements Contract<JettonWalletConfig> {
                 endCell();
     }
 
-    @Override
-    public Cell createTransferBody(JettonWalletConfig config) {
-        return null;
-    }
-
     public ExtMessageInfo deploy(Tonlib tonlib, JettonWalletConfig config) {
         return null;
     }

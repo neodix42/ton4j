@@ -120,11 +120,6 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
                 endCell();
     }
 
-    @Override
-    public Cell createTransferBody(FromWalletConfig config) {
-        return null;
-    }
-
 
     public ExtMessageInfo deploy(Tonlib tonlib, FromWalletConfig config) {
         return null;

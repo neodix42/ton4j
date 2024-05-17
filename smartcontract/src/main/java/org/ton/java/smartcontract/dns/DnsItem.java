@@ -69,11 +69,6 @@ public class DnsItem implements Contract<DnsItemConfig> {
                 endCell();
     }
 
-    @Override
-    public Cell createTransferBody(DnsItemConfig config) {
-        return null;
-    }
-
 
     public ExtMessageInfo deploy(Tonlib tonlib, DnsItemConfig config) {
         return null;

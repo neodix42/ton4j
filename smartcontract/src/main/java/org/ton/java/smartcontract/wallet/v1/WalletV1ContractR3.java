@@ -87,7 +87,6 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
         return CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell();
     }
 
-    @Override
     public Cell createTransferBody(WalletV1R3Config config) {
         Cell order = Message.builder()
                 .info(InternalMessageInfo.builder()

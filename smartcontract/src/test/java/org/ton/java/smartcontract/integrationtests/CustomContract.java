@@ -54,7 +54,6 @@ public class CustomContract implements Contract<CustomContractConfig> {
 //        return createSigningMessage(seqno, 4L);
 //    }
 
-    @Override
     public Cell createTransferBody(CustomContractConfig config) {
         System.out.println("CustomContract createSigningMessage");
 
@@ -97,7 +96,7 @@ public class CustomContract implements Contract<CustomContractConfig> {
         message.storeUint(0, 64); //extra field
         return message.endCell();
     }
-    
+
     public ExtMessageInfo deploy(Tonlib tonlib, CustomContractConfig config) {
         Cell body = createDeployMessage();
 
