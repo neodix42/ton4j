@@ -1,12 +1,13 @@
 package org.ton.java.smartcontract.wallet.v4;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV4R1Config;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.StateInit;
@@ -17,22 +18,18 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 import java.util.*;
 
-import static java.util.Objects.isNull;
+public class WalletV4ContractR2 implements Contract {
 
-public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
+    TweetNaclFast.Signature.KeyPair keyPair;
+    long walletId;
 
-    Options options;
-
-    /**
-     * @param options Options
-     */
-    public WalletV4ContractR2(Options options) {
-        this.options = options;
-        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.V4R2.getValue()).endCell();
-        if (isNull(options.walletId)) {
-            options.walletId = 698983191 + options.wc;
-        }
-    }
+//    public WalletV4ContractR2(Options options) {
+//        this.options = options;
+//        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.V4R2.getValue()).endCell();
+//        if (isNull(options.walletId)) {
+//            options.walletId = 698983191 + options.wc;
+//        }
+//    }
 
     @Override
     public String getName() {
@@ -40,16 +37,11 @@ public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
     }
 
     @Override
-    public Options getOptions() {
-        return options;
-    }
-
-    @Override
     public Cell createDataCell() {
         return CellBuilder.beginCell()
                 .storeUint(BigInteger.ZERO, 32)
-                .storeUint(getOptions().getWalletId(), 32)
-                .storeBytes(getOptions().getPublicKey())
+                .storeUint(walletId, 32)
+                .storeBytes(keyPair.getPublicKey())
                 .storeUint(BigInteger.ZERO, 1)//plugins dict empty
                 .endCell();
     }
@@ -131,7 +123,7 @@ public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
                 .build();
@@ -178,7 +170,7 @@ public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
         Address ownAddress = getAddress();
         config.setOperation(2);
         Cell body = createTransferBody(config); //seqno only needed
-        Cell extMsg = this.createExternalMessage(ownAddress, true, body).toCell();
+        Cell extMsg = MsgUtils.createExternalMessageWithSignedBody(keyPair, ownAddress, getStateInit(), body).toCell();
 
         return tonlib.sendRawMessage(extMsg.toBase64());
     }
@@ -188,7 +180,7 @@ public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
         Address ownAddress = getAddress();
         config.setOperation(3);
         Cell body = createTransferBody(config); //seqno only needed
-        Cell extMsg = this.createExternalMessage(ownAddress, true, body).toCell();
+        Cell extMsg = MsgUtils.createExternalMessageWithSignedBody(keyPair, ownAddress, getStateInit(), body).toCell();
 
         return tonlib.sendRawMessage(extMsg.toBase64());
     }
@@ -343,7 +335,7 @@ public class WalletV4ContractR2 implements Contract<WalletV4R1Config> {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body) // was storeRef!!
                         .endCell())
                 .build();

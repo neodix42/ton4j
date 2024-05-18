@@ -20,4 +20,5 @@ public class HighloadV3Config implements WalletConfig {
     Address destination;
     BigInteger amount;
     Cell body;
+    long timeOut;
 }

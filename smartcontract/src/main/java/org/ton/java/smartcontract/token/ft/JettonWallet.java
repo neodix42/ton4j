@@ -18,7 +18,7 @@ import java.math.BigInteger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class JettonWallet implements Contract<JettonWalletConfig> {
+public class JettonWallet implements Contract {
 
     Options options;
     Address address;
@@ -42,12 +42,6 @@ public class JettonWallet implements Contract<JettonWalletConfig> {
     public String getName() {
         return "jettonWallet";
     }
-
-    @Override
-    public Options getOptions() {
-        return options;
-    }
-
 
     @Override
     public Cell createDataCell() {

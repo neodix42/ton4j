@@ -18,10 +18,13 @@ import java.util.*;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class MultisigWallet implements Contract<MultisigWalletConfig> {
+public class MultisigWallet implements Contract {
 
     //https://github.com/akifoq/multisig/blob/master/multisig-code.fc
-    Options options;
+    TweetNaclFast.Box.KeyPair keyPair;
+    long walletId;
+
+    MultiSigConfig config;
     Address address;
 
     /**
@@ -30,18 +33,12 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
      * @param options Options - mandatory -  highloadQueryId, walletId, publicKey
      */
     public MultisigWallet(Options options) {
-        this.options = options;
         options.code = CellBuilder.beginCell().fromBoc(WalletCodes.multisig.getValue()).endCell();
     }
 
     @Override
     public String getName() {
         return "multisig";
-    }
-
-    @Override
-    public Options getOptions() {
-        return options;
     }
 
 
@@ -56,20 +53,20 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
 
-        cell.storeUint(getOptions().getWalletId(), 32);
-        cell.storeUint(getOptions().getMultisigConfig().getN(), 8); // n
-        cell.storeUint(getOptions().getMultisigConfig().getK(), 8); // k - collect at least k signatures
+        cell.storeUint(walletId, 32);
+        cell.storeUint(config.getN(), 8); // n
+        cell.storeUint(config.getK(), 8); // k - collect at least k signatures
         cell.storeUint(0, 64); // last cleaned
-        if (isNull(getOptions().getMultisigConfig().getOwners()) || getOptions().getMultisigConfig().getOwners().isEmpty()) {
+        if (isNull(config.getOwners()) || config.getOwners().isEmpty()) {
             cell.storeBit(false); // initial owners dict
         } else {
-            cell.storeDict(createOwnersInfoDict(getOptions().getMultisigConfig().getOwners()));
+            cell.storeDict(createOwnersInfoDict(config.getOwners()));
         }
 
-        if (isNull(getOptions().getMultisigConfig().getPendingQueries()) || getOptions().getMultisigConfig().getPendingQueries().isEmpty()) {
+        if (isNull(config.getPendingQueries()) || config.getPendingQueries().isEmpty()) {
             cell.storeBit(false); // initial  pending queries dict
         } else {
-            cell.storeDict(createPendingQueries(getOptions().getMultisigConfig().getPendingQueries(), getOptions().getMultisigConfig().getN()));
+            cell.storeDict(createPendingQueries(config.getPendingQueries(), config.getN()));
         }
 
         return cell.endCell();
@@ -195,7 +192,7 @@ public class MultisigWallet implements Contract<MultisigWalletConfig> {
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), secretKey, signingMessageBody.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), secretKey, signingMessageBody.hash()))
                         .storeCell(signingMessageBody)
                         .endCell())
                 .build();

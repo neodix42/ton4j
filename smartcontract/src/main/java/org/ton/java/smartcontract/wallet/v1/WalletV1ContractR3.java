@@ -9,7 +9,6 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV1R3Config;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -23,13 +22,11 @@ import static java.util.Objects.isNull;
 
 @Builder
 @Getter
-public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
+public class WalletV1ContractR3 implements Contract {
 
-    Options options;
     TweetNaclFast.Signature.KeyPair keyPair;
     int wc;
-    Cell code;
-
+    long initialSeqno;
 
     public static class WalletV1ContractR3Builder {
         WalletV1ContractR3Builder() {
@@ -49,11 +46,6 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
         return "V1R3";
     }
 
-    @Override
-    public Options getOptions() {
-        return options;
-    }
-
 
     public String getPublicKey(Tonlib tonlib) {
 
@@ -71,7 +63,7 @@ public class WalletV1ContractR3 implements Contract<WalletV1R3Config> {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(0, 32); // seqno
+        cell.storeUint(initialSeqno, 32); // seqno
         cell.storeBytes(keyPair.getPublicKey());
         return cell.endCell();
     }

@@ -12,7 +12,7 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
-public class MultisigConfig {
+public class MultiSigConfig {
 
     BigInteger queryId;
     /**

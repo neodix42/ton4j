@@ -10,7 +10,6 @@ import org.ton.java.smartcontract.types.JettonMinterData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
@@ -23,35 +22,30 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
-public class JettonMinter implements Contract<JettonMinterConfig> {
+public class JettonMinter implements Contract {
 
-    Options options;
-    Address address;
+    TweetNaclFast.Signature.KeyPair keyPair;
+    long wc;
+    Address adminAddress;
 
-    /**
-     * @param options Options
-     */
-    public JettonMinter(Options options) {
-        this.options = options;
-        this.options.wc = 0;
+    String jettonContentUri;
+    String jettonWalletCodeHex;
 
-        if (nonNull(options.address)) {
-            this.address = Address.of(options.address);
-        }
-        if (isNull(options.code)) {
-            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.jettonMinter.getValue()).endCell();
-        }
-    }
+//    public JettonMinter(Options options) {
+//        this.options = options;
+//        this.options.wc = 0;
+//
+//        if (nonNull(options.address)) {
+//            this.address = Address.of(options.address);
+//        }
+//        if (isNull(options.code)) {
+//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.jettonMinter.getValue()).endCell();
+//        }
+//    }
 
     public String getName() {
         return "jettonMinter";
-    }
-
-    @Override
-    public Options getOptions() {
-        return options;
     }
 
     /**
@@ -61,9 +55,9 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
     public Cell createDataCell() {
         return CellBuilder.beginCell()
                 .storeCoins(BigInteger.ZERO)
-                .storeAddress(options.adminAddress)
-                .storeRef(NftUtils.createOffchainUriCell(options.jettonContentUri))
-                .storeRef(CellBuilder.beginCell().fromBoc(options.jettonWalletCodeHex).endCell())
+                .storeAddress(adminAddress)
+                .storeRef(NftUtils.createOffchainUriCell(jettonContentUri))
+                .storeRef(CellBuilder.beginCell().fromBoc(jettonWalletCodeHex).endCell())
                 .endCell();
     }
 
@@ -94,7 +88,7 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
         Cell order = Message.builder()
                 .info(internalMsgInfo)
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().publicKey, options.getSecretKey(), innerMsg.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), innerMsg.hash()))
                         .storeRef(innerMsg)
                         .endCell())
                 .build().toCell();
@@ -295,7 +289,7 @@ public class JettonMinter implements Contract<JettonMinterConfig> {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), options.getSecretKey(), body.hash()))
                         .storeRef(body)
                         .endCell())
                 .build();

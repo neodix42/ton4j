@@ -1,11 +1,13 @@
 package org.ton.java.smartcontract.wallet.v3;
 
+import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -13,13 +15,14 @@ import org.ton.java.utils.Utils;
 
 import static java.util.Objects.isNull;
 
-public class WalletV3ContractBase implements Contract<WalletV3Config> {
-    Options options;
+@Builder
+@Getter
+public class WalletV3ContractBase implements Contract {
     Address address;
 
-    protected WalletV3ContractBase(Options options) {
-        this.options = options;
-    }
+    TweetNaclFast.Signature.KeyPair keyPair;
+    long walletId;
+
 
     @Override
     public String getName() {
@@ -64,18 +67,13 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
                 .endCell();
     }
 
-    @Override
-    public Options getOptions() {
-        return options;
-    }
-
 
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(0, 32); // seqno
-        cell.storeUint(getOptions().getWalletId(), 32);
-        cell.storeBytes(getOptions().getPublicKey());
+        cell.storeUint(walletId, 32);
+        cell.storeBytes(keyPair.getPublicKey());
         return cell.endCell();
     }
 
@@ -90,10 +88,6 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
         return message.endCell();
     }
 
-    public long getWalletId() {
-        return getOptions().walletId;
-    }
-
 
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV3Config config) {
 
@@ -105,7 +99,7 @@ public class WalletV3ContractBase implements Contract<WalletV3Config> {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
                 .build();

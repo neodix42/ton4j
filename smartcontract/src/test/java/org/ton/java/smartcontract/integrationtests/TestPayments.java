@@ -8,7 +8,6 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.GenerateWallet;
 import org.ton.java.smartcontract.TestWallet;
-import org.ton.java.smartcontract.payments.FromWallet;
 import org.ton.java.smartcontract.payments.PaymentChannel;
 import org.ton.java.smartcontract.payments.PaymentsUtils;
 import org.ton.java.smartcontract.types.*;
@@ -106,8 +105,8 @@ public class TestPayments extends CommonTest {
 
         assertThat(channelA.getAddress().toString(true, true, true)).isEqualTo(channelB.getAddress().toString(true, true, true));
 
-        FromWallet fromWalletA = channelA.fromWallet(tonlib, walletA.getWallet(), walletA.getKeyPair().getSecretKey());
-        FromWallet fromWalletB = channelB.fromWallet(tonlib, walletB.getWallet(), walletB.getKeyPair().getSecretKey());
+//        FromWallet fromWalletA = channelA.fromWallet(tonlib, walletA.getWallet(), walletA.getKeyPair().getSecretKey());
+//        FromWallet fromWalletB = channelB.fromWallet(tonlib, walletB.getWallet(), walletB.getKeyPair().getSecretKey());
 
         //----------------------------------------------------------------------
         // DEPLOY PAYMENT CHANNEL FROM WALLET A

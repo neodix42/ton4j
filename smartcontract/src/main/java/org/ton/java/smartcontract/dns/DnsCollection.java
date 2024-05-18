@@ -6,11 +6,9 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.CollectionData;
-import org.ton.java.smartcontract.types.DnsCollectionConfig;
 import org.ton.java.smartcontract.types.ItemData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryCell;
@@ -22,16 +20,14 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-
-public class DnsCollection implements Contract<DnsCollectionConfig> {
+public class DnsCollection implements Contract {
 
     //https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-collection.fc
-    Options options;
-    Address address;
-
     TweetNaclFast.Signature.KeyPair keyPair;
+    Address address;
+    long wc;
+    String dnsItemCodeHex;
+    Cell collectionContent;
 
     /**
      * Options
@@ -39,30 +35,22 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
      * dnsItemCodeHex String
      * address: Address String
      */
-    public DnsCollection(Options options) {
-        this.options = options;
-        this.options.wc = 0;
-
-        if (nonNull(options.address)) {
-            this.address = Address.of(options.address);
-        }
-
-        if (isNull(options.code)) {
-            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
-        }
-
-        if (isNull(options.getCollectionContent()) && isNull(options.getAddress())) {
-            throw new Error("Required collectionContent cell");
-        }
-    }
-
+//    public DnsCollection(Options options) {
+//
+//        if (nonNull(options.address)) {
+//            this.address = Address.of(options.address);
+//        }
+//
+//        if (isNull(options.code)) {
+//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
+//        }
+//
+//        if (isNull(options.getCollectionContent()) && isNull(options.getAddress())) {
+//            throw new Error("Required collectionContent cell");
+//        }
+//    }
     public String getName() {
         return "dnsCollection";
-    }
-
-    @Override
-    public Options getOptions() {
-        return options;
     }
 
     /**
@@ -71,8 +59,8 @@ public class DnsCollection implements Contract<DnsCollectionConfig> {
     @Override
     public Cell createDataCell() {
         return CellBuilder.beginCell()
-                .storeRef(options.getCollectionContent())
-                .storeRef(CellBuilder.beginCell().fromBoc(options.getDnsItemCodeHex()).endCell())
+                .storeRef(collectionContent)
+                .storeRef(CellBuilder.beginCell().fromBoc(dnsItemCodeHex).endCell())
                 .endCell();
     }
 

@@ -1,5 +1,6 @@
 package org.ton.java.smartcontract.token.nft;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -8,7 +9,6 @@ import org.ton.java.smartcontract.types.NftItemConfig;
 import org.ton.java.smartcontract.types.Royalty;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.MsgAddressExtNone;
@@ -22,39 +22,33 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class NftItem implements Contract<NftItemConfig> {
+public class NftItem implements Contract {
     // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-item.fc
-    Options options;
-    Address address;
+    TweetNaclFast.Signature.KeyPair keyPair;
+    long wc;
 
-    /**
-     * @param options Options
-     */
-    public NftItem(Options options) {
-        this.options = options;
+    BigInteger index;
+    Address collectionAddress;
 
-        if (nonNull(options.address)) {
-            this.address = Address.of(options.address);
-        }
-        if (isNull(options.wc)) {
-            options.wc = nonNull(this.address) ? this.address.wc : 0;
-        }
 
-        if (isNull(options.code)) {
-            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
-        }
-    }
+//    public NftItem(Options options) {
+//
+//        if (nonNull(options.address)) {
+//            this.address = Address.of(options.address);
+//        }
+//        if (isNull(options.wc)) {
+//            options.wc = nonNull(this.address) ? this.address.wc : 0;
+//        }
+//
+//        if (isNull(options.code)) {
+//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
+//        }
+//    }
 
     public String getName() {
         return "nftItem";
-    }
-
-    @Override
-    public Options getOptions() {
-        return options;
     }
 
     /**
@@ -62,10 +56,10 @@ public class NftItem implements Contract<NftItemConfig> {
      */
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(options.index, 64);
-        cell.storeAddress(options.collectionAddress);
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(index, 64)
+                .storeAddress(collectionAddress)
+                .endCell();
     }
 
     @Override
@@ -181,7 +175,7 @@ public class NftItem implements Contract<NftItemConfig> {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeRef(body)
                         .endCell())
                 .build();

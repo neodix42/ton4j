@@ -3,24 +3,17 @@ package org.ton.java.smartcontract.wallet;
 
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.WalletConfig;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
-import org.ton.java.tlb.types.ExternalMessageInfo;
-import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tlb.types.StateInit;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.utils.Utils;
-
-import static java.util.Objects.isNull;
 
 /**
  * Interface for all smart contract objects in ton4j.
  */
-public interface Contract<T extends WalletConfig> {
+public interface Contract {
 
-    Options getOptions();
+//    Options getOptions();
 
     String getName();
 
@@ -96,24 +89,24 @@ public interface Contract<T extends WalletConfig> {
         return tonlib.getSeqno(getAddress());
     }
 
-    default Message createExternalMessage(Address destination, boolean stateInit, Cell body) {
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .dstAddr(getAddressIntStd())
-                        .build()).build();
-        if (stateInit) {
-            externalMessage.setInit(getStateInit());
-        }
-        if (isNull(body)) {
-            body = CellBuilder.beginCell().endCell();
-        }
-        externalMessage.setBody(CellBuilder.beginCell()
-                .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
-                .storeCell(body)
-                .endCell());
-
-        return externalMessage;
-    }
+//    default Message createExternalMessage(Address destination, boolean stateInit, Cell body) {
+//        Message externalMessage = Message.builder()
+//                .info(ExternalMessageInfo.builder()
+//                        .dstAddr(getAddressIntStd())
+//                        .build()).build();
+//        if (stateInit) {
+//            externalMessage.setInit(getStateInit());
+//        }
+//        if (isNull(body)) {
+//            body = CellBuilder.beginCell().endCell();
+//        }
+//        externalMessage.setBody(CellBuilder.beginCell()
+//                .storeBytes(Utils.signData(key.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+//                .storeCell(body)
+//                .endCell());
+//
+//        return externalMessage;
+//    }
 //
 //    default Message createInternalMessage(Address destination,
 //                                          BigInteger amount,
@@ -142,12 +135,12 @@ public interface Contract<T extends WalletConfig> {
     /**
      * crates external with internal msg as body
      */
-    default Message createTransferMessage(T config) {
-
-        //Cell body = createTransferBody(config);
-//        Cell intMsg = this.createInternalMessage(destination, amount, body).toCell();
+//    default Message createTransferMessage(T config) {
 //
-//        return this.createExternalMessage(destination, false, intMsg);
-        return null;
-    }
+//        //Cell body = createTransferBody(config);
+////        Cell intMsg = this.createInternalMessage(destination, amount, body).toCell();
+////
+////        return this.createExternalMessage(destination, false, intMsg);
+//        return null;
+//    }
 }

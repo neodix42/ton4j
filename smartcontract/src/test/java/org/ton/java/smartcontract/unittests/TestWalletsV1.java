@@ -10,8 +10,8 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.mnemonic.Mnemonic;
 import org.ton.java.mnemonic.Pair;
-import org.ton.java.smartcontract.types.WalletV1R3Config;
 import org.ton.java.smartcontract.types.WalletVersion;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
@@ -19,6 +19,7 @@ import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR2;
 import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
 import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.utils.Utils;
 
 import java.security.InvalidKeyException;
@@ -118,11 +119,27 @@ public class TestWalletsV1 {
 
         assertThat(contract.createCodeCell().getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F260810200D71820D70B1FED44D0D31FD3FFD15112BAF2A122F901541044F910F2A2F80001D31F3120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED54");
 
-        Message msg = contract.createTransferMessage(WalletV1R3Config.builder()
-                .destination(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
-                .amount(Utils.toNano(1))
-                .seqno(1L)
-                .build());
+        Address destination = Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d");
+        Cell body = CellBuilder.beginCell().storeUint(1, 32).endCell();
+        Message msg = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(destination.wc)
+                                .address(destination.toBigInteger())
+                                .build())
+                        .build())
+                .init(contract.getStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(contract.getKeyPair().getPublicKey(), contract.getKeyPair().getSecretKey(), body.hash()))
+                        .storeCell(body)
+                        .endCell())
+                .build();
+
+//        Message msg = contract.createTransferMessage(WalletV1R3Config.builder()
+//                .destination(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
+//                .amount(Utils.toNano(1))
+//                .seqno(1L)
+//                .build());
         Address address = msg.getInit().getAddress();
 
         String my = "Source wallet address =  " + address.toString(false) + "\n" +
@@ -215,7 +232,8 @@ public class TestWalletsV1 {
         WalletV1ContractR2 contract = wallet.create();
         assertThat(contract.getAddress()).isNotNull();
 
-        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPairSig, contract.getAddress(), contract.getStateInit(), null);
+        //contract.createExternalMessage(contract.getAddress(), true, null);
         log.info("msg {}", msg.getInit().getAddress().toString(false));
 
     }

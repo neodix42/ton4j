@@ -12,7 +12,6 @@ import org.ton.java.smartcontract.token.ft.JettonWallet;
 import org.ton.java.smartcontract.token.nft.NftCollection;
 import org.ton.java.smartcontract.token.nft.NftSale;
 import org.ton.java.smartcontract.types.WalletVersion;
-import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR2;
 import org.ton.java.smartcontract.wallet.v2.WalletV2ContractR1;
 import org.ton.java.smartcontract.wallet.v2.WalletV2ContractR2;
 import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
@@ -43,7 +42,7 @@ public class Wallet {
                 // result = new WalletV1ContractR1(options);
                 break;
             case V1R2:
-                result = new WalletV1ContractR2(options);
+//                result = new WalletV1ContractR2(options);
                 break;
             case V1R3:
 //                result = new WalletV1ContractR3(options);

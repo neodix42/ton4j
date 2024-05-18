@@ -1,5 +1,6 @@
 package org.ton.java.smartcontract.dns;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -9,46 +10,38 @@ import org.ton.java.smartcontract.types.DnsItemConfig;
 import org.ton.java.smartcontract.types.ItemData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class DnsItem implements Contract<DnsItemConfig> {
+public class DnsItem implements Contract {
 
     // should be this https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-item.fc
     // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-item.fc
-    Options options;
+    TweetNaclFast.Signature.KeyPair keyPair;
     Address address;
 
-    /**
-     * @param options Options - index, collectionAddress
-     */
-    public DnsItem(Options options) {
-        this.options = options;
-        if (nonNull(options.address)) {
-            this.address = Address.of(options.address);
-        }
-        if (options.wc == 0) {
-            options.wc = nonNull(this.address) ? this.address.wc : 0;
-        }
-        if (isNull(options.code)) {
-            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
-        }
-    }
+    BigInteger index;
+    Address collectionAddress;
+
+//    public DnsItem(Options options) {
+//        if (nonNull(options.address)) {
+//            this.address = Address.of(options.address);
+//        }
+//        if (options.wc == 0) {
+//            options.wc = nonNull(this.address) ? this.address.wc : 0;
+//        }
+//        if (isNull(options.code)) {
+//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
+//        }
+//    }
 
     public String getName() {
         return "dnsItem";
-    }
-
-    @Override
-    public Options getOptions() {
-        return options;
     }
 
     /**
@@ -57,8 +50,9 @@ public class DnsItem implements Contract<DnsItemConfig> {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(new BigInteger(options.index, 16), 256);
-        cell.storeAddress(options.collectionAddress);
+//        cell.storeUint(new BigInteger(options.index, 16), 256);
+        cell.storeUint(index, 256);
+        cell.storeAddress(collectionAddress);
         return cell.endCell();
     }
 

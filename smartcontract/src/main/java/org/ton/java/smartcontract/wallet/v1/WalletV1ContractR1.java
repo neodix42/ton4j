@@ -9,7 +9,6 @@ import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV1R1Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -21,7 +20,7 @@ import static java.util.Objects.isNull;
 
 @Builder
 @Getter
-public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
+public class WalletV1ContractR1 implements Contract {
 
     TweetNaclFast.Signature.KeyPair keyPair;
     int wc;
@@ -33,11 +32,6 @@ public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
                 keyPair = Utils.generateSignatureKeyPair();
             }
         }
-    }
-
-    @Override
-    public Options getOptions() {
-        return null;
     }
 
     @Override
@@ -95,6 +89,11 @@ public class WalletV1ContractR1 implements Contract<WalletV1R1Config> {
         Cell body = isNull(config.getBody()) ? createTransferBody(config) : config.getBody();
         Message externalMessage = MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    }
+
+    public Message prepareMsg(Tonlib tonlib, WalletV1R1Config config) {
+        Cell body = isNull(config.getBody()) ? createTransferBody(config) : config.getBody();
+        return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
     }
 
 

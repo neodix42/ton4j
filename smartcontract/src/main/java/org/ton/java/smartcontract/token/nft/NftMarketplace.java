@@ -16,7 +16,7 @@ import org.ton.java.tonlib.types.ExtMessageInfo;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class NftMarketplace implements Contract<NftMarketPlaceConfig> {
+public class NftMarketplace implements Contract {
     public static final String NFT_MARKETPLACE_CODE_HEX = "B5EE9C7241010401006D000114FF00F4A413F4BCF2C80B01020120020300AAD23221C700915BE0D0D3030171B0915BE0FA40ED44D0FA403012C705F2E19101D31F01C0018E2BFA003001D4D43021F90070C8CA07CBFFC9D077748018C8CB05CB0258CF165004FA0213CB6BCCCCC971FB00915BE20004F2308EF7CCE7";
 
     Options options;
@@ -41,12 +41,6 @@ public class NftMarketplace implements Contract<NftMarketPlaceConfig> {
     public String getName() {
         return "nftMarketplace";
     }
-
-    @Override
-    public Options getOptions() {
-        return options;
-    }
-
 
     /**
      * @return Cell cell contains nft marketplace data
@@ -79,7 +73,7 @@ public class NftMarketplace implements Contract<NftMarketPlaceConfig> {
                         .build())
                 .init(getStateInit())
 //                .body(CellBuilder.beginCell()
-//                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+//                        .storeBytes(Utils.signData(keyPair.getPublicKey(), options.getSecretKey(), body.hash()))
 //                        .storeRef(body)
 //                        .endCell())
                 .build();

@@ -1,11 +1,13 @@
 package org.ton.java.smartcontract.wallet.v1;
 
+import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV1R2Config;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -13,16 +15,22 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
-public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
+import static java.util.Objects.isNull;
 
-    Options options;
+@Builder
+@Getter
+public class WalletV1ContractR2 implements Contract {
 
-    /**
-     * @param options Options
-     */
-    public WalletV1ContractR2(Options options) {
-        this.options = options;
-        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.V1R2.getValue()).endCell();
+    TweetNaclFast.Signature.KeyPair keyPair;
+    int wc;
+    long initialSeqno;
+
+    public static class WalletV1ContractR2Builder {
+        WalletV1ContractR2Builder() {
+            if (isNull(keyPair)) {
+                keyPair = Utils.generateSignatureKeyPair();
+            }
+        }
     }
 
     @Override
@@ -33,8 +41,8 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
     @Override
     public Cell createDataCell() {
         return CellBuilder.beginCell()
-                .storeUint(BigInteger.ZERO, 32) // seqno
-                .storeBytes(getOptions().publicKey).endCell();
+                .storeUint(initialSeqno, 32) // seqno
+                .storeBytes(keyPair.getPublicKey()).endCell();
     }
 
     @Override
@@ -71,11 +79,6 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
                 .endCell();
     }
 
-    @Override
-    public Options getOptions() {
-        return options;
-    }
-
     /**
      * Sends amount of nano toncoins to destination address using specified seqno
      *
@@ -90,7 +93,7 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
                 .build();
@@ -106,7 +109,7 @@ public class WalletV1ContractR2 implements Contract<WalletV1R2Config> {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
                 .build();

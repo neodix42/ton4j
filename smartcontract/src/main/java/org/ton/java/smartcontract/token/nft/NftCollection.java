@@ -21,7 +21,7 @@ import java.util.Deque;
 
 import static java.util.Objects.isNull;
 
-public class NftCollection implements Contract<NftCollectionConfig> {
+public class NftCollection implements Contract {
     // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-collection.fc
     // not editable
     long royaltyBase = 1000;
@@ -68,12 +68,6 @@ public class NftCollection implements Contract<NftCollectionConfig> {
                 fromBoc(WalletCodes.nftCollection.getValue()).
                 endCell();
     }
-
-    @Override
-    public Options getOptions() {
-        return options;
-    }
-
 
     /**
      * @param collectionContentUri:     String

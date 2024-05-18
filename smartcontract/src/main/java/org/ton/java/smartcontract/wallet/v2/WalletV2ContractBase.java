@@ -1,12 +1,12 @@
 package org.ton.java.smartcontract.wallet.v2;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletV2Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
@@ -18,13 +18,11 @@ import java.util.Date;
 
 import static java.util.Objects.nonNull;
 
-public class WalletV2ContractBase implements Contract<WalletV2Config> {
-    Options options;
+public class WalletV2ContractBase implements Contract {
+    TweetNaclFast.Signature.KeyPair keyPair;
+    long walletId;
     Address address;
 
-    protected WalletV2ContractBase(Options options) {
-        this.options = options;
-    }
 
     @Override
     public String getName() {
@@ -40,7 +38,7 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(0, 32); // seqno
-        cell.storeBytes(getOptions().publicKey);
+        cell.storeBytes(keyPair.getPublicKey());
         return cell.endCell();
     }
 
@@ -89,12 +87,6 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
         return message.endCell();
     }
 
-    @Override
-    public Options getOptions() {
-        return options;
-    }
-
-
     public ExtMessageInfo deploy(Tonlib tonlib, WalletV2Config config) {
         Cell body = createDeployMessage(config);
 
@@ -104,7 +96,7 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
                 .build();
@@ -121,7 +113,7 @@ public class WalletV2ContractBase implements Contract<WalletV2Config> {
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body) // was storeRef!!
                         .endCell())
                 .build();

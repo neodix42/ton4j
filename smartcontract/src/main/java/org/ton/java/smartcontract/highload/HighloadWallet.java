@@ -1,5 +1,6 @@
 package org.ton.java.smartcontract.highload;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -22,10 +23,11 @@ import java.math.BigInteger;
 
 import static java.util.Objects.nonNull;
 
-public class HighloadWallet implements Contract<HighloadConfig> {
+public class HighloadWallet implements Contract {
 
     //https://github.com/ton-blockchain/ton/blob/master/crypto/smartcont/highload-wallet-v2-code.fc
-    Options options;
+    TweetNaclFast.Signature.KeyPair keyPair;
+    long walletId;
     Address address;
 
     /**
@@ -34,7 +36,6 @@ public class HighloadWallet implements Contract<HighloadConfig> {
      * @param options Options - mandatory -  highloadQueryId, walletId, publicKey
      */
     public HighloadWallet(Options options) {
-        this.options = options;
         options.code = CellBuilder.beginCell().fromBoc(WalletCodes.highload.getValue()).endCell();
     }
 
@@ -42,12 +43,6 @@ public class HighloadWallet implements Contract<HighloadConfig> {
     public String getName() {
         return "highload-v2";
     }
-
-    @Override
-    public Options getOptions() {
-        return options;
-    }
-
 
     /**
      * initial contract storage
@@ -57,9 +52,9 @@ public class HighloadWallet implements Contract<HighloadConfig> {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(BigInteger.valueOf(getOptions().walletId), 32); // sub-wallet id
+        cell.storeUint(walletId, 32); // sub-wallet id
         cell.storeUint(BigInteger.ZERO, 64); // last_cleaned
-        cell.storeBytes(getOptions().getPublicKey()); // 256 bits
+        cell.storeBytes(keyPair.getPublicKey()); // 256 bits
         cell.storeBit(false); // initial storage has old_queries dict empty
         return cell.endCell();
     }
@@ -81,7 +76,7 @@ public class HighloadWallet implements Contract<HighloadConfig> {
 
     public Cell createTransferBody(HighloadConfig config) {
         CellBuilder body = CellBuilder.beginCell();
-        body.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
+        body.storeUint(walletId, 32);
         body.storeUint(config.getQueryId(), 64);
         if (nonNull(config.getDestinations())) {
             body.storeBit(true);
@@ -132,7 +127,7 @@ public class HighloadWallet implements Contract<HighloadConfig> {
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
                 .build();
@@ -182,7 +177,7 @@ public class HighloadWallet implements Contract<HighloadConfig> {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
                 .build();

@@ -21,9 +21,11 @@ import java.math.BigInteger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class HighloadWalletV3 implements Contract<HighloadV3Config> {
+public class HighloadWalletV3 implements Contract {
 
-    Options options;
+    TweetNaclFast.Signature.KeyPair keyPair;
+    long walletId;
+    long timeout;
     Address address;
 
     /**
@@ -32,7 +34,6 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
      * @param options Options - mandatory -  highloadQueryId, walletId, publicKey
      */
     public HighloadWalletV3(Options options) {
-        this.options = options;
         options.code = CellBuilder.beginCell().fromBoc(WalletCodes.highloadV3.getValue()).endCell();
     }
 
@@ -40,12 +41,6 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
     public String getName() {
         return "highload-v3";
     }
-
-    @Override
-    public Options getOptions() {
-        return options;
-    }
-
 
     /**
      * initial contract storage
@@ -59,12 +54,12 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
 
-        cell.storeBytes(getOptions().getPublicKey());
-        cell.storeUint(BigInteger.valueOf(getOptions().getWalletId()), 32);
+        cell.storeBytes(keyPair.getPublicKey());
+        cell.storeUint(walletId, 32);
         cell.storeBit(false); // old queries
         cell.storeBit(false); // queries
         cell.storeUint(0, 64); // last clean time
-        cell.storeUint(getOptions().getTimeout(), 22); //time out
+        cell.storeUint(timeout, 22); //time out
 
         return cell.endCell();
     }
@@ -101,12 +96,12 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
      */
     public Cell createMessageInner(HighloadV3Config highloadConfig) { // todo rename
         return CellBuilder.beginCell()
-                .storeUint(BigInteger.valueOf(getOptions().getWalletId()), 32)
+                .storeUint(walletId, 32)
                 .storeRef(highloadConfig.getBody())
                 .storeUint(highloadConfig.getMode(), 8)
                 .storeUint(highloadConfig.getQueryId(), 23)
                 .storeUint(highloadConfig.getCreatedAt(), 64)
-                .storeUint(getOptions().getTimeout(), 22)
+                .storeUint(highloadConfig.getTimeOut(), 22)
                 .endCell();
     }
 
@@ -127,7 +122,7 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
                                 .build())
                         .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), innerMsg.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), innerMsg.hash()))
                         .storeRef(innerMsg)
                         .endCell())
                 .build();
@@ -162,7 +157,7 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), innerMsg.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), innerMsg.hash()))
                         .storeRef(innerMsg)
                         .endCell())
                 .build();
@@ -225,7 +220,7 @@ public class HighloadWalletV3 implements Contract<HighloadV3Config> {
         return MessageRelaxed.builder()
                 .info(internalMsgInfo)
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().publicKey, keyPair.getSecretKey(), innerMsg.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), innerMsg.hash()))
                         .storeRef(innerMsg)
                         .endCell())
                 .build().toCell();

@@ -6,10 +6,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.mnemonic.Ed25519;
 import org.ton.java.smartcontract.token.nft.NftUtils;
-import org.ton.java.smartcontract.types.ChannelData;
-import org.ton.java.smartcontract.types.ChannelState;
-import org.ton.java.smartcontract.types.FromWalletConfig;
-import org.ton.java.smartcontract.types.WalletCodes;
+import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tonlib.Tonlib;
@@ -22,7 +19,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.ton.java.smartcontract.payments.PaymentsUtils.*;
 
-public class PaymentChannel implements Contract<FromWalletConfig> {
+public class PaymentChannel implements Contract {
 
     public static final long STATE_UNINITED = 0;
     public static final long STATE_OPEN = 1;
@@ -30,8 +27,22 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
     public static final long STATE_SETTLING_CONDITIONALS = 3;
     public static final long STATE_AWAITING_FINALIZATION = 4;
 
-    Options options;
     Address address;
+    boolean isA;
+    BigInteger channelId;
+    TweetNaclFast.Signature.KeyPair myKeyPair;
+    byte[] hisPublicKey;
+    byte[] publicKeyA;
+    byte[] publicKeyB;
+    BigInteger initBalanceA;
+    BigInteger initBalanceB;
+    Address addressA;
+    Address addressB;
+
+    BigInteger excessFee;
+
+    ChannelConfig channelConfig;
+    ClosingConfig closingChannelConfig;
 
     /**
      * <a href="https://github.com/ton-blockchain/payment-channels">Payment Channels</a>
@@ -55,26 +66,19 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
      */
     public PaymentChannel(Options options) {
 
-        this.options = options;
-        this.options.publicKeyA = options.isA ? options.myKeyPair.getPublicKey() : options.hisPublicKey;
-        this.options.publicKeyB = !options.isA ? options.myKeyPair.getPublicKey() : options.hisPublicKey;
+        publicKeyA = isA ? myKeyPair.getPublicKey() : hisPublicKey;
+        publicKeyB = !isA ? myKeyPair.getPublicKey() : hisPublicKey;
 
-        if (nonNull(options.address)) {
-            this.address = Address.of(options.address);
+        if (nonNull(address)) {
+            this.address = Address.of(address);
         }
 
-        if (isNull(options.code)) {
-            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.payments.getValue()).endCell();
-        }
+//        code = CellBuilder.beginCell().fromBoc(WalletCodes.payments.getValue()).endCell();
+        
     }
 
     public String getName() {
         return "payments";
-    }
-
-    @Override
-    public Options getOptions() {
-        return options;
     }
 
     @Override
@@ -83,15 +87,15 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
         cell.storeBit(false); // inited
         cell.storeCoins(BigInteger.ZERO); // balance_A
         cell.storeCoins(BigInteger.ZERO); // balance_B
-        cell.storeBytes(getOptions().publicKeyA);
-        cell.storeBytes(getOptions().publicKeyB);
-        cell.storeUint(getOptions().getChannelConfig().getChannelId(), 128); // channel_id
+        cell.storeBytes(publicKeyA);
+        cell.storeBytes(publicKeyB);
+        cell.storeUint(channelConfig.getChannelId(), 128); // channel_id
 
         CellBuilder closingConfig = CellBuilder.beginCell();
-        if (nonNull(getOptions().getClosingConfig())) {
-            closingConfig.storeUint(getOptions().getClosingConfig().quarantineDuration, 32); // quarantine_duration
-            closingConfig.storeCoins(isNull(getOptions().getClosingConfig().misbehaviorFine) ? BigInteger.ZERO : getOptions().getClosingConfig().misbehaviorFine); // misbehavior_fine
-            closingConfig.storeUint(getOptions().getClosingConfig().conditionalCloseDuration, 32); // conditional_close_duration
+        if (nonNull(channelConfig)) {
+            closingConfig.storeUint(closingChannelConfig.getQuarantineDuration(), 32); // quarantine_duration
+            closingConfig.storeCoins(isNull(closingChannelConfig.getMisbehaviorFine()) ? BigInteger.ZERO : closingChannelConfig.getMisbehaviorFine()); // misbehavior_fine
+            closingConfig.storeUint(closingChannelConfig.getConditionalCloseDuration(), 32); // conditional_close_duration
         } else {
             closingConfig.storeUint(0, 32); // quarantine_duration
             closingConfig.storeCoins(BigInteger.ZERO); // misbehavior_fine
@@ -104,9 +108,9 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
         cell.storeBit(false); // quarantine ref
 
         CellBuilder paymentConfig = CellBuilder.beginCell()
-                .storeCoins(isNull(getOptions().excessFee) ? BigInteger.ZERO : getOptions().excessFee) // excess_fee
-                .storeAddress(getOptions().getChannelConfig().getAddressA()) // addr_A
-                .storeAddress(getOptions().getChannelConfig().getAddressB()); // addr_B
+                .storeCoins(isNull(excessFee) ? BigInteger.ZERO : excessFee) // excess_fee
+                .storeAddress(channelConfig.getAddressA()) // addr_A
+                .storeAddress(channelConfig.getAddressB()); // addr_B
 
         cell.storeRef(paymentConfig.endCell());
 
@@ -135,16 +139,16 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
         if (hisSignature.length != 0) {
             hisSignature = new byte[512 / 8];
         }
-        return PaymentsUtils.createTwoSignature(options, op_cooperative_close, hisSignature, PaymentsUtils.createCooperativeCommitBody(getOptions().getChannelConfig().getChannelId(), seqnoA, seqnoB));
+        return PaymentsUtils.createTwoSignature(options, op_cooperative_close, hisSignature, PaymentsUtils.createCooperativeCommitBody(channelConfig.getChannelId(), seqnoA, seqnoB));
     }
 
     public Signature createSignedSemiChannelState(BigInteger mySeqNo, BigInteger mySentCoins, BigInteger hisSeqno, BigInteger hisSentCoins) {
         Cell state = createSemiChannelState(
-                getOptions().getChannelConfig().getChannelId(),
+                channelConfig.getChannelId(),
                 createSemiChannelBody(mySeqNo, mySentCoins, null),
                 isNull(hisSeqno) ? null : createSemiChannelBody(hisSeqno, hisSentCoins, null));
 
-        byte[] signature = new TweetNaclFast.Signature(getOptions().myKeyPair.getPublicKey(), getOptions().myKeyPair.getSecretKey()).detached(state.hash());
+        byte[] signature = new TweetNaclFast.Signature(myKeyPair.getPublicKey(), myKeyPair.getSecretKey()).detached(state.hash());
         Cell cell = PaymentsUtils.createSignedSemiChannelState(signature, state);
 
         return Signature.builder()
@@ -154,37 +158,37 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
     }
 
     public byte[] signState(ChannelState channelState) {
-        BigInteger mySeqno = getOptions().isA ? channelState.getSeqnoA() : channelState.getSeqnoB();
-        BigInteger hisSeqno = !getOptions().isA ? channelState.getSeqnoA() : channelState.getSeqnoB();
+        BigInteger mySeqno = isA ? channelState.getSeqnoA() : channelState.getSeqnoB();
+        BigInteger hisSeqno = !isA ? channelState.getSeqnoA() : channelState.getSeqnoB();
 
-        BigInteger sentCoinsA = getOptions().getChannelConfig().getInitBalanceA().compareTo(channelState.getBalanceA()) > 0 ? getOptions().getChannelConfig().getInitBalanceA().subtract(channelState.getBalanceA()) : BigInteger.ZERO;
-        BigInteger sentCoinsB = getOptions().getChannelConfig().getInitBalanceB().compareTo(channelState.getBalanceB()) > 0 ? getOptions().getChannelConfig().getInitBalanceB().subtract(channelState.getBalanceB()) : BigInteger.ZERO;
+        BigInteger sentCoinsA = channelConfig.getInitBalanceA().compareTo(channelState.getBalanceA()) > 0 ? channelConfig.getInitBalanceA().subtract(channelState.getBalanceA()) : BigInteger.ZERO;
+        BigInteger sentCoinsB = channelConfig.getInitBalanceB().compareTo(channelState.getBalanceB()) > 0 ? channelConfig.getInitBalanceB().subtract(channelState.getBalanceB()) : BigInteger.ZERO;
 
-        BigInteger mySentCoins = getOptions().isA ? sentCoinsA : sentCoinsB;
-        BigInteger hisSentCoins = !getOptions().isA ? sentCoinsA : sentCoinsB;
+        BigInteger mySentCoins = isA ? sentCoinsA : sentCoinsB;
+        BigInteger hisSentCoins = !isA ? sentCoinsA : sentCoinsB;
 
         Signature s = createSignedSemiChannelState(mySeqno, mySentCoins, hisSeqno, hisSentCoins);
         return s.signature;
     }
 
     public boolean verifyState(ChannelState channelState, byte[] hisSignature) {
-        BigInteger mySeqno = !getOptions().isA ? channelState.getSeqnoA() : channelState.getSeqnoB();
-        BigInteger hisSeqno = getOptions().isA ? channelState.getSeqnoA() : channelState.getSeqnoB();
+        BigInteger mySeqno = !isA ? channelState.getSeqnoA() : channelState.getSeqnoB();
+        BigInteger hisSeqno = isA ? channelState.getSeqnoA() : channelState.getSeqnoB();
 
-        BigInteger sentCoinsA = getOptions().getChannelConfig().getInitBalanceA().compareTo(channelState.getBalanceA()) > 0 ?
-                getOptions().getChannelConfig().getInitBalanceA().subtract(channelState.getBalanceA()) : BigInteger.ZERO;
-        BigInteger sentCoinsB = getOptions().getChannelConfig().getInitBalanceB().compareTo(channelState.getBalanceB()) > 0 ?
-                getOptions().getChannelConfig().getInitBalanceB().subtract(channelState.getBalanceB()) : BigInteger.ZERO;
+        BigInteger sentCoinsA = channelConfig.getInitBalanceA().compareTo(channelState.getBalanceA()) > 0 ?
+                channelConfig.getInitBalanceA().subtract(channelState.getBalanceA()) : BigInteger.ZERO;
+        BigInteger sentCoinsB = channelConfig.getInitBalanceB().compareTo(channelState.getBalanceB()) > 0 ?
+                channelConfig.getInitBalanceB().subtract(channelState.getBalanceB()) : BigInteger.ZERO;
 
-        BigInteger mySentCoins = !getOptions().isA ? sentCoinsA : sentCoinsB;
-        BigInteger hisSentCoins = getOptions().isA ? sentCoinsA : sentCoinsB;
+        BigInteger mySentCoins = !isA ? sentCoinsA : sentCoinsB;
+        BigInteger hisSentCoins = isA ? sentCoinsA : sentCoinsB;
 
         Cell state = createSemiChannelState(
-                getOptions().getChannelConfig().getChannelId(),
+                channelConfig.getChannelId(),
                 createSemiChannelBody(mySeqno, mySentCoins, null),
                 isNull(hisSeqno) ? null : createSemiChannelBody(hisSeqno, hisSentCoins, null));
 
-        return Ed25519.verify(getOptions().isA ? getOptions().publicKeyB : getOptions().publicKeyA, state.hash(), hisSignature);
+        return Ed25519.verify(isA ? publicKeyB : publicKeyA, state.hash(), hisSignature);
     }
 
     public byte[] signClose(Options options, ChannelState channelState) {
@@ -194,12 +198,12 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
 
     public boolean verifyClose(ChannelState channelState, byte[] hisSignature) {
         Cell cell = PaymentsUtils.createCooperativeCloseChannelBody(
-                getOptions().getChannelConfig().getChannelId(),
+                channelConfig.getChannelId(),
                 channelState.getBalanceA(),
                 channelState.getBalanceB(),
                 channelState.getSeqnoA(),
                 channelState.getSeqnoB());
-        return Ed25519.verify(getOptions().isA ? getOptions().publicKeyB : getOptions().publicKeyA, cell.hash(), hisSignature);
+        return Ed25519.verify(isA ? publicKeyB : publicKeyA, cell.hash(), hisSignature);
     }
 
 
@@ -285,9 +289,5 @@ public class PaymentChannel implements Contract<FromWalletConfig> {
                 .addressA(addressA)
                 .addressB(addressB)
                 .build();
-    }
-
-    public FromWallet fromWallet(Tonlib tonlib, Contract wallet, byte[] secretKey) {
-        return new FromWallet(tonlib, wallet, secretKey, this.options);
     }
 }

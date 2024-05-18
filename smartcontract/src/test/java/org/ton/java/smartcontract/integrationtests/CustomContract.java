@@ -1,12 +1,12 @@
 package org.ton.java.smartcontract.integrationtests;
 
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.CustomContractConfig;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -15,14 +15,15 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 import java.util.Date;
 
-public class CustomContract implements Contract<CustomContractConfig> {
-    Options options;
+public class CustomContract implements Contract {
+
+    TweetNaclFast.Signature.KeyPair keyPair;
     Address address;
 
-    public CustomContract(Options options) {
-        this.options = options;
-        options.code = CellBuilder.beginCell().fromBoc("B5EE9C7241010C0100B2000114FF00F4A413F4BCF2C80B01020120020302014804050094F28308D71820D31FD31FD33F02F823BBF263ED44D0D31FD3FFD33F305152BAF2A105F901541065F910F2A2F800019320D74A96D307D402FB00E8D103A4C8CB1F12CBFFCB3FCB3FC9ED540004D03002012006070201200809001DBDC3676A268698F98E9FF98EB859FC0017BB39CED44D0D31F31D70BFF80202710A0B0022AA77ED44D0D31F31D3FF31D33F31D70B3F0010A897ED44D0D70B1F56A9826C").endCell();
-    }
+//    public CustomContract(Options options) {
+//        this.options = options;
+//        options.code = CellBuilder.beginCell().fromBoc("B5EE9C7241010C0100B2000114FF00F4A413F4BCF2C80B01020120020302014804050094F28308D71820D31FD31FD33F02F823BBF263ED44D0D31FD3FFD33F305152BAF2A105F901541065F910F2A2F800019320D74A96D307D402FB00E8D103A4C8CB1F12CBFFCB3FCB3FC9ED540004D03002012006070201200809001DBDC3676A268698F98E9FF98EB859FC0017BB39CED44D0D31F31D70BFF80202710A0B0022AA77ED44D0D31F31D3FF31D33F31D70B3F0010A897ED44D0D70B1F56A9826C").endCell();
+//    }
 
     @Override
     public String getName() {
@@ -30,16 +31,11 @@ public class CustomContract implements Contract<CustomContractConfig> {
     }
 
     @Override
-    public Options getOptions() {
-        return options;
-    }
-
-    @Override
     public Cell createDataCell() {
         System.out.println("CustomContract createDataCell");
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(0, 32); // seqno
-        cell.storeBytes(getOptions().publicKey); // 256 bits
+        cell.storeBytes(keyPair.getPublicKey()); // 256 bits
         cell.storeUint(2, 64); // stored_x_data
         return cell.endCell();
     }
@@ -106,7 +102,7 @@ public class CustomContract implements Contract<CustomContractConfig> {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
                 .build();
@@ -121,7 +117,7 @@ public class CustomContract implements Contract<CustomContractConfig> {
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(getOptions().getPublicKey(), getOptions().getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
                 .build();
