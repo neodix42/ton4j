@@ -10,13 +10,10 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.mnemonic.Mnemonic;
 import org.ton.java.mnemonic.Pair;
-import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.utils.MsgUtils;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
-import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR2;
-import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
+import org.ton.java.smartcontract.wallet.v1.WalletV1R1;
+import org.ton.java.smartcontract.wallet.v1.WalletV1R2;
+import org.ton.java.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.MsgAddressIntStd;
@@ -51,7 +48,7 @@ public class TestWalletsV1 {
 //        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
 //        WalletV1ContractR3 contract = wallet.create();
 
-        WalletV1ContractR3 contract = WalletV1ContractR3.builder()
+        WalletV1R3 contract = WalletV1R3.builder()
                 .wc(0)
                 .keyPair(keyPair)
                 .build();
@@ -112,7 +109,7 @@ public class TestWalletsV1 {
 //
 //        WalletV1ContractR3 contract  = new Wallet(WalletVersion.V1R3, options).create();
 
-        WalletV1ContractR3 contract = WalletV1ContractR3.builder()
+        WalletV1R3 contract = WalletV1R3.builder()
                 .wc(0)
                 .keyPair(keyPair)
                 .build();
@@ -178,34 +175,21 @@ public class TestWalletsV1 {
         byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+        WalletV1R1 contract = WalletV1R1.builder()
+                .wc(0)
+                .keyPair(keyPair)
                 .build();
-
-        WalletV1ContractR1 contract = new Wallet(WalletVersion.V1R1, options).create();
         assertThat(contract.getAddress()).isNotNull();
     }
 
     @Test
     public void testNewWalletV1R2() {
-        //byte[] publicKey = Utils.hexToBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
-        //byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
-        TweetNaclFast.Box.KeyPair keyPair = TweetNaclFast.Box.keyPair();
-
-        log.info("pubkey " + Utils.bytesToHex(keyPair.getPublicKey()));
-        log.info("seckey " + Utils.bytesToHex(keyPair.getSecretKey()));
-
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+        WalletV1R2 contract = WalletV1R2.builder()
+                .wc(0)
                 .build();
-
-        Wallet wallet = new Wallet(WalletVersion.V1R2, options);
-        WalletV1ContractR2 contract = wallet.create();
         assertThat(contract.getAddress()).isNotNull();
+        log.info("pubkey " + Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("seckey " + Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
     }
 
     @Test
@@ -222,18 +206,13 @@ public class TestWalletsV1 {
         log.info("seckey " + Utils.bytesToHex(keyPairSig.getSecretKey()));
 
 
-        Options options = Options.builder()
-                .publicKey(keyPairSig.getPublicKey())
-                .secretKey(keyPairSig.getSecretKey())
-                .wc(0L)
+        WalletV1R1 contract = WalletV1R1.builder()
+                .wc(0)
+                .keyPair(keyPairSig)
                 .build();
-
-        Wallet wallet = new Wallet(WalletVersion.V1R2, options);
-        WalletV1ContractR2 contract = wallet.create();
         assertThat(contract.getAddress()).isNotNull();
 
         Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPairSig, contract.getAddress(), contract.getStateInit(), null);
-        //contract.createExternalMessage(contract.getAddress(), true, null);
         log.info("msg {}", msg.getInit().getAddress().toString(false));
 
     }

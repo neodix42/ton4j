@@ -8,8 +8,9 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.WalletV1R1Config;
-import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
+import org.ton.java.smartcontract.wallet.v1.WalletV1R1;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.RawAccountState;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -18,26 +19,34 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV1R1DeployTransfer extends CommonTest {
+public class TestWalletV1R1 extends CommonTest {
 
     @Test
-    public void testNewWalletV1R1GeneratedKeyPair() throws InterruptedException {
+    public void testNewWalletV1R1AutoKeyPair() throws InterruptedException {
 
-        WalletV1ContractR1 contract = WalletV1ContractR1.builder()
+        WalletV1R1 contract = WalletV1R1.builder()
                 .wc(0)
+                .tonlib(tonlib)
                 .build();
+
+        Address walletAddress = contract.getAddress();
 
         log.info("Wallet version {}", contract.getName());
         log.info("Wallet pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("Wallet address {}", walletAddress);
 
         // top up new wallet using test-faucet-wallet
-        BigInteger balance = TestFaucet.topUpContract(tonlib, contract.getAddress(), Utils.toNano(0.1));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, walletAddress, Utils.toNano(0.1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(20, "deploying");
+        contract.waitForDeployment(45);
+
+        RawAccountState accountState2 = tonlib.getRawAccountState(walletAddress);
+        log.info("raw  accountState {}", accountState2);
+        log.info("deployed? {}", contract.isDeployed());
 
         WalletV1R1Config config = WalletV1R1Config.builder()
                 .seqno(1) // V1R1 does not have get_seqno method
@@ -46,7 +55,7 @@ public class TestWalletV1R1DeployTransfer extends CommonTest {
                 .comment("testNewWalletV1R1")
                 .build();
 
-        extMessageInfo = contract.send(tonlib, config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
@@ -54,7 +63,8 @@ public class TestWalletV1R1DeployTransfer extends CommonTest {
     public void testNewWalletV1R1() throws InterruptedException {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
-        WalletV1ContractR1 contract = WalletV1ContractR1.builder()
+        WalletV1R1 contract = WalletV1R1.builder()
+                .tonlib(tonlib)
                 .wc(0)
                 .keyPair(keyPair)
                 .build();
@@ -62,8 +72,8 @@ public class TestWalletV1R1DeployTransfer extends CommonTest {
         log.info("Wallet version {}", contract.getName());
         log.info("Wallet pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
 
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -74,11 +84,12 @@ public class TestWalletV1R1DeployTransfer extends CommonTest {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        log.info("deployed");
+        contract.waitForDeployment(45);
 
-        Utils.sleep(30, "deploying");
+        balance = contract.getBalance();
+        log.info("    wallet balance: {}", Utils.formatNanoValue(balance));
 
         WalletV1R1Config config = WalletV1R1Config.builder()
                 .seqno(1)
@@ -88,13 +99,14 @@ public class TestWalletV1R1DeployTransfer extends CommonTest {
                 .build();
 
         // transfer coins from new wallet (back to faucet)
-        extMessageInfo = contract.send(tonlib, config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "sending");
+        contract.waitForBalanceChange(45);
 
-        balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
-        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+        balance = contract.getBalance();
+        log.info("new wallet balance: {}", Utils.formatNanoValue(balance));
+
         assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
     }
 }

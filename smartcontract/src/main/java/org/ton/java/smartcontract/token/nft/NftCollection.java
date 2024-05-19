@@ -1,11 +1,13 @@
 package org.ton.java.smartcontract.token.nft;
 
+import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.MsgAddressExtNone;
@@ -21,13 +23,22 @@ import java.util.Deque;
 
 import static java.util.Objects.isNull;
 
+@Builder
+@Getter
 public class NftCollection implements Contract {
     // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-collection.fc
     // not editable
-    long royaltyBase = 1000;
+    TweetNaclFast.Signature.KeyPair keyPair;
+
+    long royaltyBase; // default 1000
     double royaltyFactor;
-    Options options;
     Address address;
+    Address adminAddress;
+    String collectionContentUri;
+    String collectionContentBaseUri;
+    String nftItemCodeHex;
+    Double royalty;
+    Address royaltyAddress;
 
     /**
      * Creates editable NFT collection
@@ -40,22 +51,42 @@ public class NftCollection implements Contract {
      * royaltyAddress: Address
      * address: Address | string
      * code: Cell
-     *
-     * @param options Options
      */
-    public NftCollection(Options options) {
-        this.options = options;
-        this.options.wc = 0;
+//    public NftCollection(Options options) {
+//        this.options = options;
+//        this.options.wc = 0;
+//
+//        if (options.royalty > 1) {
+//            throw new Error("royalty > 1");
+//        }
+//
+//        royaltyFactor = Math.floor(options.royalty * royaltyBase);
+//
+//        if (isNull(options.code)) {
+//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftCollection.getValue()).endCell();
+//        }
+//    }
 
-        if (options.royalty > 1) {
-            throw new Error("royalty > 1");
+    public static class NftCollectionBuilder {
+        NftCollectionBuilder() {
+            if (isNull(keyPair)) {
+                keyPair = Utils.generateSignatureKeyPair();
+            }
+            royaltyBase = 1000;
         }
+    }
 
-        royaltyFactor = Math.floor(options.royalty * royaltyBase);
+    private Tonlib tonlib;
+    private long wc;
 
-        if (isNull(options.code)) {
-            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftCollection.getValue()).endCell();
-        }
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
     }
 
     public String getName() {
@@ -103,11 +134,11 @@ public class NftCollection implements Contract {
     @Override
     public Cell createDataCell() {
         CellBuilder cell = CellBuilder.beginCell();
-        cell.storeAddress(options.adminAddress);
+        cell.storeAddress(adminAddress);
         cell.storeUint(0, 64); // next_item_index
-        cell.storeRef(createContentCell(options.collectionContentUri, options.collectionContentBaseUri));
-        cell.storeRef(CellBuilder.beginCell().fromBoc(options.nftItemCodeHex).endCell());
-        cell.storeRef(createRoyaltyCell(options.royaltyAddress, options.royalty, royaltyBase));
+        cell.storeRef(createContentCell(collectionContentUri, collectionContentBaseUri));
+        cell.storeRef(CellBuilder.beginCell().fromBoc(nftItemCodeHex).endCell());
+        cell.storeRef(createRoyaltyCell(royaltyAddress, royalty, royaltyBase));
         return cell.endCell();
     }
 
@@ -272,23 +303,7 @@ public class NftCollection implements Contract {
 
     public ExtMessageInfo deploy(Tonlib tonlib, NftCollectionConfig config) {
 
-//        long seqno = this.getSeqno(tonlib);
-//
-//        Cell payload = null;
-//
-//        ExternalMessage extMsg = wallet.createTransferMessage(
-//                keyPair.getSecretKey(),
-//                this.getAddress().toString(true, true, false),
-//                msgValue,
-//                seqno,
-//                payload,
-//                (byte) 3, //send mode
-//                this.createStateInit().stateInit
-//        );
-//
-//        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
-
-        long seqno = this.getSeqno(tonlib);
+        long seqno = getSeqno();
         config.setSeqno(seqno);
         Address ownAddress = getAddress();
 

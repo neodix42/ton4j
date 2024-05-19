@@ -9,11 +9,8 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.WalletV3Config;
-import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.utils.MsgUtils;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
+import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -22,13 +19,12 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.Date;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV3R1DeployTransfer extends CommonTest {
+public class TestWalletV3R1 extends CommonTest {
     @Test
     public void testWalletV3R1() throws InterruptedException {
 
@@ -40,14 +36,10 @@ public class TestWalletV3R1DeployTransfer extends CommonTest {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .walletId(42L)
-                .wc(0L)
+        WalletV3R1 contract = WalletV3R1.builder()
+                .keyPair(keyPair)
+                .walletId(42)
                 .build();
-
-        WalletV3ContractR1 contract = new Wallet(WalletVersion.V3R1, options).create();
 
         Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, contract.getAddress(),
                 contract.getStateInit(),
@@ -61,7 +53,7 @@ public class TestWalletV3R1DeployTransfer extends CommonTest {
         String nonBounceableAddress = address.toString(true, true, false, true);
         String bounceableAddress = address.toString(true, true, true, true);
 
-        String my = "Creating new wallet in workchain " + options.wc + "\n";
+        String my = "Creating new wallet in workchain " + contract.getWc() + "\n";
         my = my + "Loading private key from file new-wallet.pk" + "\n";
         my = my + "StateInit: " + msg.getInit().toCell().print() + "\n";
         my = my + "new wallet address = " + address.toString(false) + "\n";
@@ -82,25 +74,22 @@ public class TestWalletV3R1DeployTransfer extends CommonTest {
         ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying");
+        contract.waitForDeployment(20);
 
         // try to transfer coins from new wallet (back to faucet)
         WalletV3Config config = WalletV3Config.builder()
-                .seqno(contract.getSeqno(tonlib))
-                .subWalletId(42)
+                .seqno(contract.getSeqno())
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
                 .amount(Utils.toNano(0.8))
-                .mode(3)
-                .validUntil((long) (Math.floor(new Date().getTime() / 1e3) + 60))
                 .comment("testWalletV3R1")
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(tonlib, config);
+        extMessageInfo = contract.sendTonCoins(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(40);
+        contract.waitForBalanceChange(90);
 
-        balance = new BigInteger(tonlib.getAccountState(address).getBalance());
+        balance = contract.getBalance();
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
     }

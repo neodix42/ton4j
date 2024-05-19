@@ -9,7 +9,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 /**
- * Multisig order containing n,  1<= n <=3, internal messages
+ * MultiSig order containing n,  1<= n <=3, internal messages
  */
 @Builder
 @Getter

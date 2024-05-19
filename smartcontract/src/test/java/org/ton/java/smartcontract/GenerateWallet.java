@@ -5,11 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.utils.MsgUtils;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
+import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -36,14 +33,20 @@ public class GenerateWallet {
 
         log.info("pubKey {}, prvKey {}", Utils.bytesToHex(keyPair.getPublicKey()), Utils.bytesToHex(keyPair.getSecretKey()));
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0)
-                .walletId(42L)
-                .build();
+//        Options options = Options.builder()
+//                .publicKey(keyPair.getPublicKey())
+//                .secretKey(keyPair.getSecretKey())
+//                .wc(0)
+//                .walletId(42L)
+//                .build();
+//
+//        WalletV3ContractR1 adminWallet = new Wallet(WalletVersion.V3R1, options).create();
 
-        WalletV3ContractR1 adminWallet = new Wallet(WalletVersion.V3R1, options).create();
+        WalletV3R1 adminWallet = WalletV3R1.builder()
+                .keyPair(keyPair)
+                .wc(0)
+                .walletId(42)
+                .build();
 
         Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, adminWallet.getAddress(),
                 adminWallet.getStateInit(),

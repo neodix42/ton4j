@@ -15,9 +15,10 @@ import java.math.BigInteger;
 @Setter
 @ToString
 public class WalletV4R1Config implements WalletConfig {
-    long subWalletId;
+    long walletId;
     long seqno;
     int mode;
+    long validUntil;
     long createdAt;
     Address destination;
     BigInteger amount;

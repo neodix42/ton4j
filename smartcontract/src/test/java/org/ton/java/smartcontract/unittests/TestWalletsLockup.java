@@ -8,9 +8,7 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
 import org.ton.java.smartcontract.types.LockupConfig;
-import org.ton.java.smartcontract.types.WalletVersion;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.utils.Utils;
 
@@ -28,10 +26,24 @@ public class TestWalletsLockup {
         byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
+//        Options options = Options.builder()
+//                .publicKey(keyPair.getPublicKey())
+//                .secretKey(keyPair.getSecretKey())
+//                .wc(0L)
+//                .lockupConfig(LockupConfig.builder()
+//                        .allowedDestinations(
+//                                List.of("Ef9eYuD_Mwol4jAtZ0lxZmhuv_92fvwzLW1hAFbJ657_iqRP",
+//                                        "kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka"))
+//                        .configPublicKey(Utils.bytesToHex(publicKey))
+//                        .build())
+//                .build();
+
+//        Wallet wallet = new Wallet(WalletVersion.lockup, options);
+//        LockupWalletV1 contract = wallet.create();
+
+        LockupWalletV1 contract = LockupWalletV1.builder()
                 .wc(0L)
+                .keyPair(keyPair)
                 .lockupConfig(LockupConfig.builder()
                         .allowedDestinations(
                                 List.of("Ef9eYuD_Mwol4jAtZ0lxZmhuv_92fvwzLW1hAFbJ657_iqRP",
@@ -40,13 +52,10 @@ public class TestWalletsLockup {
                         .build())
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.lockup, options);
-        LockupWalletV1 contract = wallet.create();
-
-        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Message msg = MsgUtils.createExternalMessageWithSignedBody(contract.getKeyPair(), contract.getAddress(), contract.getStateInit(), null);
         Address address = msg.getInit().getAddress();
 
-        String info = "Creating lockup wallet in workchain " + options.wc + "\n" +
+        String info = "Creating lockup wallet in workchain " + contract.getWc() + "\n" +
                 "StateInit: " + msg.getInit().toCell().print() + "\n" +
                 "new wallet address = " + address.toString(false) + "\n" +
                 "Non-bounceable address (for init): " + address.toString(true, true, false, true) + "\n" +

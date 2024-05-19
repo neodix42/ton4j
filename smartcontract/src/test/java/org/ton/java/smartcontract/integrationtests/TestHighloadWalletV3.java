@@ -12,13 +12,8 @@ import org.ton.java.smartcontract.highload.HighloadWalletV3;
 import org.ton.java.smartcontract.types.HighloadQueryId;
 import org.ton.java.smartcontract.types.HighloadV3Config;
 import org.ton.java.smartcontract.types.HighloadV3InternalMessageBody;
-import org.ton.java.smartcontract.types.WalletVersion;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.tlb.types.*;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -39,25 +34,18 @@ public class TestHighloadWalletV3 extends CommonTest {
 
     @Test
     public void testSinglePayloadTransfer() throws InterruptedException {
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .walletId(42L)
+        HighloadWalletV3 contract = HighloadWalletV3.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42)
                 .timeout(60 * 60)
                 .build();
 
-        HighloadWalletV3 contract = new Wallet(WalletVersion.highloadV3, options).create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -79,7 +67,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying");
+        contract.waitForDeployment(30);
 
         Cell messageToSend = contract.createMessageToSend(destAddress, 0.02, createdAt, keyPair);
 
@@ -96,26 +84,17 @@ public class TestHighloadWalletV3 extends CommonTest {
 
     @Test
     public void testBulkPayloadTransfer_3_DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
-
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .walletId(42L)
+        HighloadWalletV3 contract = HighloadWalletV3.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42)
                 .timeout(60 * 60)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.highloadV3, options);
-        HighloadWalletV3 contract = wallet.create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -136,7 +115,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying");
+        contract.waitForDeployment(30);
 
         int numberOfRecipients = 3;
         BigInteger amountToSendTotal = Utils.toNano(0.01 * numberOfRecipients);
@@ -158,26 +137,18 @@ public class TestHighloadWalletV3 extends CommonTest {
 
     @Test
     public void testBulkPayloadTransfer_200_DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .walletId(42L)
+        HighloadWalletV3 contract = HighloadWalletV3.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42)
                 .timeout(60 * 60)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.highloadV3, options);
-        HighloadWalletV3 contract = wallet.create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -198,7 +169,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying");
+        contract.waitForDeployment(30);
 
         int numberOfRecipients = 200;
         BigInteger amountToSendTotal = Utils.toNano(0.01 * numberOfRecipients);
@@ -220,26 +191,18 @@ public class TestHighloadWalletV3 extends CommonTest {
 
     @Test
     public void testBulkPayloadTransfer_1000_DifferentRecipients() throws InterruptedException, NoSuchAlgorithmException {
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .walletId(42L)
+        HighloadWalletV3 contract = HighloadWalletV3.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42)
                 .timeout(60 * 60)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.highloadV3, options);
-        HighloadWalletV3 contract = wallet.create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -260,7 +223,7 @@ public class TestHighloadWalletV3 extends CommonTest {
         ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying");
+        contract.waitForDeployment(30);
 
         Cell nMessages1 = createNMessages(250, contract, createdAt, null);
         Cell nMessages2 = createNMessages(250, contract, createdAt, nMessages1);

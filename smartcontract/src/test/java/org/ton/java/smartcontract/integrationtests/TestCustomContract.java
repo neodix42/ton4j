@@ -6,20 +6,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.CustomContractConfig;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.time.Instant;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
@@ -36,50 +31,37 @@ public class TestCustomContract {
         Tonlib tonlib = Tonlib.builder()
                 .testnet(true)
                 .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+        CustomContract customContract = CustomContract.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
                 .build();
 
-        log.info("pubkey {}", Utils.bytesToHex(options.publicKey));
-
-        CustomContract customContract = new CustomContract(options);
-
-        Message msg = customContract.createExternalMessage(customContract.getAddress(),
-                true,
-                CellBuilder.beginCell()
-                        .storeUint(0, 32) // seqno
-                        .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32)  //valid-until
-                        .storeUint(0, 64) //extra-field
-                        .endCell());
-        Address address = msg.getInit().getAddress();
-
-        log.info("Creating new wallet in workchain {}\nStateInit: {}\nnew wallet address = {}\n(Saving address to file new-wallet.addr)\nNon-bounceable address (for init): {}\nBounceable address (for later access): {}\nsigning message: {}\nExternal message for initialization is {}\n{}\n(Saved wallet creating query to file new-wallet-query.boc)\n"
-                , options.wc, msg.getInit().toCell().print(), address.toString(false), address.toString(true, true, false, true), address.toString(true, true, true, true), msg.getBody().print(), msg.getBody().print(), Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase());
-
+        log.info("pubkey {}", Utils.bytesToHex(customContract.getKeyPair().getPublicKey()));
+//
+//        Message msg = MsgUtils.createExternalMessageWithSignedBody(customContract.keyPair, customContract.getAddress(),
+//                customContract.getStateInit(),
+//                CellBuilder.beginCell()
+//                        .storeUint(0, 32) // seqno
+//                        .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32)  //valid-until
+//                        .storeUint(0, 64) //extra-field
+//                        .endCell());
+        Address address = customContract.getAddress();
+        log.info("contract address {}", address);
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(address.toString(true)), Utils.toNano(0.1));
         log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
-        String base64boc = msg.toCell().toBase64();
-        log.info(base64boc);
-        ExtMessageInfo resultRawMsg = tonlib.sendRawMessage(base64boc); // deploy
-        log.info("body_hash {}, error {}", resultRawMsg.getBody_hash(), resultRawMsg.getError().getCode());
+        customContract.deploy();
 
-        Utils.sleep(30, "deploying");
+        customContract.waitForDeployment(45);
 
-        RunResult result = tonlib.runMethod(address, "seqno");
-        log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
-        log.info("seqno: {}", seqno.getNumber());
+        log.info("seqno: {}", customContract.getSeqno());
 
-        result = tonlib.runMethod(address, "get_x_data");
+        RunResult result = tonlib.runMethod(address, "get_x_data");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
         TvmStackEntryNumber x_data = (TvmStackEntryNumber) result.getStack().get(0);
         log.info("x_data: {}", x_data.getNumber());
@@ -92,22 +74,24 @@ public class TestCustomContract {
         Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
 
         CustomContractConfig config = CustomContractConfig.builder()
-                .seqno(1)
+                .seqno(customContract.getSeqno())
                 .destination(destinationAddress)
                 .amount(Utils.toNano(0.05))
                 .extraField(42)
                 .comment("no-way")
                 .build();
 
-        ExtMessageInfo extMessageInfo = customContract.sendTonCoins(tonlib, config);
+        ExtMessageInfo extMessageInfo = customContract.sendTonCoins(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(5);
+        customContract.waitForBalanceChange(45);
 
         result = tonlib.runMethod(address, "get_extra_field");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
         extra_field = (TvmStackEntryNumber) result.getStack().get(0);
         log.info("extra_field: {}", extra_field.getNumber());
+
+        assertThat(extra_field.getNumber().longValue()).isEqualTo(42);
 
     }
 }

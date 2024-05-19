@@ -16,7 +16,7 @@ import java.math.BigInteger;
 public class WalletV2Config implements WalletConfig {
     long seqno;
     int mode;
-    long createdAt;
+    long validUntil;
     Address destination1;
     Address destination2;
     Address destination3;

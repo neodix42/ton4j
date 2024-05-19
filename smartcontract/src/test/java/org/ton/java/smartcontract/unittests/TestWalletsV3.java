@@ -7,10 +7,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.types.WalletV3Config;
-import org.ton.java.smartcontract.types.WalletVersion;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR2;
+import org.ton.java.smartcontract.utils.MsgUtils;
+import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.utils.Utils;
 
@@ -29,22 +27,19 @@ public class TestWalletsV3 {
         byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+        WalletV3R2 contract = WalletV3R2.builder()
+                .wc(0)
+                .keyPair(keyPair)
                 .walletId(698983191L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V3R2, options);
-        WalletV3ContractR2 contract = wallet.create();
-        assertThat(options.code.getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED54");
+        assertThat(contract.getStateInit().getCode().getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED54");
 
-        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Message msg = MsgUtils.createExternalMessageWithSignedBody(contract.getKeyPair(), contract.getAddress(), contract.getStateInit(), null);
         Address address = msg.getInit().getAddress();
 
-        String my = "Creating new advanced wallet in workchain " + options.wc + "\n" +
-                "with unique wallet id " + options.walletId + "\n" +
+        String my = "Creating new advanced wallet in workchain " + contract.getWc() + "\n" +
+                "with unique wallet id " + contract.getWalletId() + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
                 "StateInit: " + msg.getInit().toCell().print() + ", hex: " + msg.getInit().toCell().toHex() + "\n" +
                 "StateInit.code: " + "hex: " + msg.getInit().getCode().toHex() + "\n" +
@@ -91,24 +86,24 @@ public class TestWalletsV3 {
         byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .wc(0L)
+        WalletV3R2 contract = WalletV3R2.builder()
+                .wc(0)
+                .keyPair(keyPair)
+                .walletId(698983191L)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V3R2, options);
-        WalletV3ContractR2 contract = wallet.create();
-
-        Message msg = contract.createTransferMessage(WalletV3Config.builder()
+        WalletV3Config config = WalletV3Config.builder()
                 .destination(Address.of("0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3"))
                 .amount(Utils.toNano(1))
                 .seqno(0L)
-                .build());
+                .build();
+
+        Message msg = contract.prepareMsg(config);
 
         Address address = msg.getInit().getAddress();
 
-        String my = "Creating new advanced wallet in workchain " + options.wc + "\n" +
-                "with unique wallet id " + options.walletId + "\n" +
+        String my = "Creating new advanced wallet in workchain " + contract.getWc() + "\n" +
+                "with unique wallet id " + contract.getWalletId() + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
                 "StateInit: " + msg.getInit().toCell().print() + "\n" +
                 "new wallet address = " + address.toString(false) + "\n" +

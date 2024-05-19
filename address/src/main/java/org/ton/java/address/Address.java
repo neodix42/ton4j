@@ -161,8 +161,13 @@ public class Address {
         Files.write(Paths.get(filename), Utils.concatBytes(hashPart, wcBytes));
     }
 
+    /**
+     * Default flags are: userFriendly=true, UrlSafe=true, Bounceable=true and TestOnly=false
+     *
+     * @return String
+     */
     public String toString() {
-        return toString(isUserFriendly, isUrlSafe, isBounceable, isTestOnly);
+        return toBounceable();
     }
 
     public String toString(boolean isUserFriendly) {
@@ -175,6 +180,18 @@ public class Address {
 
     public String toString(boolean isUserFriendly, boolean isUrlSafe, boolean isBounceable) {
         return toString(isUserFriendly, isUrlSafe, isBounceable, isTestOnly);
+    }
+
+    public String toBounceable() {
+        return toString(true, true, true, false);
+    }
+
+    public String toRaw() {
+        return toString(false, true, true, false);
+    }
+
+    public String toNonBounceable() {
+        return toString(true, true, false, false);
     }
 
     public String toString(boolean isUserFriendly,

@@ -1,5 +1,8 @@
 package org.ton.java.smartcontract.token.ft;
 
+import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -8,7 +11,6 @@ import org.ton.java.smartcontract.types.JettonWalletConfig;
 import org.ton.java.smartcontract.types.JettonWalletData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -16,27 +18,46 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
+@Builder
+@Getter
 public class JettonWallet implements Contract {
 
-    Options options;
+    TweetNaclFast.Signature.KeyPair keyPair;
     Address address;
 
-    /**
-     * @param options Options
-     */
-    public JettonWallet(Options options) {
-        this.options = options;
-        this.options.wc = 0;
+//    public JettonWallet(Options options) {
+//        this.options = options;
+//        this.options.wc = 0;
+//
+//        if (nonNull(options.address)) {
+//            this.address = Address.of(options.address);
+//        }
+//
+//        if (isNull(options.code)) {
+//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.jettonWallet.getValue()).endCell();
+//        }
+//    }
 
-        if (nonNull(options.address)) {
-            this.address = Address.of(options.address);
+    public static class JettonWalletBuilder {
+        JettonWalletBuilder() {
+            if (isNull(keyPair)) {
+                keyPair = Utils.generateSignatureKeyPair();
+            }
         }
+    }
 
-        if (isNull(options.code)) {
-            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.jettonWallet.getValue()).endCell();
-        }
+    private Tonlib tonlib;
+    private long wc;
+
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
     }
 
     public String getName() {

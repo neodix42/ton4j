@@ -16,7 +16,7 @@ import java.math.BigInteger;
 public class CustomContractConfig implements WalletConfig {
     long seqno;
     int mode;
-    long createdAt;
+    long validUntil;
     Address destination;
     BigInteger amount;
     Cell body;

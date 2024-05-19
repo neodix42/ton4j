@@ -5,7 +5,6 @@ import org.ton.java.smartcontract.types.ChannelState;
 import org.ton.java.smartcontract.types.ExternalMessage;
 import org.ton.java.smartcontract.types.FromWalletConfig;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 
@@ -13,9 +12,7 @@ import java.math.BigInteger;
 
 import static java.util.Objects.nonNull;
 
-public class FromWallet extends PaymentChannel {
-
-    Options options;
+public class FromWallet {
     Contract wallet;
     byte[] secretKey;
 
@@ -23,13 +20,11 @@ public class FromWallet extends PaymentChannel {
 
     ExternalMessage extMsg;
 
-    public FromWallet(Tonlib tonlib, Contract wallet, byte[] secretKey, Options options) {
-        super(options);
-        this.options = options;
-        this.tonlib = tonlib;
-        this.wallet = wallet;
-        this.secretKey = secretKey;
-    }
+//    public FromWallet(Tonlib tonlib, Contract wallet, byte[] secretKey, Options options) {
+//        this.tonlib = tonlib;
+//        this.wallet = wallet;
+//        this.secretKey = secretKey;
+//    }
 
     public ExtMessageInfo deploy(FromWalletConfig config) {
 //        transfer(null, true, amount);
@@ -37,8 +32,8 @@ public class FromWallet extends PaymentChannel {
     }
 
     public ExtMessageInfo topUp(BigInteger balanceA, BigInteger balanceB, BigInteger amount) {
-        return transfer(this.createTopUpBalance(balanceA, balanceB), amount);
-
+//        return transfer(this.createTopUpBalance(balanceA, balanceB), amount);
+        return null;
     }
 
 //    public ExtMessageInfo init(BigInteger balanceA, BigInteger balanceB, BigInteger amount) {
@@ -71,12 +66,13 @@ public class FromWallet extends PaymentChannel {
 //        transfer(this.createChallengeQuarantinedState(signedSemiChannelStateA, signedSemiChannelStateB).getCell(), amount);
     }
 
-    public void settleConditionals(Options options, Cell conditionalsToSettle, BigInteger amount) {
-        transfer(PaymentsUtils.createSettleConditionals(options, conditionalsToSettle).getCell(), amount);
-    }
+//    public void settleConditionals(Options options, Cell conditionalsToSettle, BigInteger amount) {
+//        transfer(PaymentsUtils.createSettleConditionals(options, conditionalsToSettle).getCell(), amount);
+//    }
 
     public void finishUncooperativeClose(BigInteger amount) {
-        transfer(this.createFinishUncooperativeClose(), amount);
+        // transfer(this.createFinishUncooperativeClose(), amount);
+        return;
     }
 
 //    private void transfer(Cell payload, boolean needStateInit, BigInteger amount) {

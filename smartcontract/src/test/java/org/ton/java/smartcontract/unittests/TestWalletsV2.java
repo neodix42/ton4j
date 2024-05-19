@@ -7,10 +7,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.types.WalletV2Config;
-import org.ton.java.smartcontract.types.WalletVersion;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v2.WalletV2ContractR2;
+import org.ton.java.smartcontract.utils.MsgUtils;
+import org.ton.java.smartcontract.wallet.v2.WalletV2R2;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.utils.Utils;
 
@@ -29,21 +27,17 @@ public class TestWalletsV2 {
         byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+        WalletV2R2 contract = WalletV2R2.builder()
+                .wc(0)
+                .keyPair(keyPair)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V2R2, options);
-        WalletV2ContractR2 contract = wallet.create();
+        assertThat(contract.getStateInit().getCode().getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
 
-        assertThat(options.code.getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
-
-        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Message msg = MsgUtils.createExternalMessageWithSignedBody(contract.getKeyPair(), contract.getAddress(), contract.getStateInit(), null);
         Address address = msg.getInit().getAddress();
 
-        String my = "Creating new advanced wallet in workchain " + options.wc + "\n" +
+        String my = "Creating new advanced wallet in workchain " + contract.getWc() + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
                 "StateInit: " + msg.getInit().toCell().print() + "\n" +
                 "new wallet address = " + address.toString(false) + "\n" +
@@ -70,21 +64,20 @@ public class TestWalletsV2 {
         byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .wc(0L)
+        WalletV2R2 contract = WalletV2R2.builder()
+                .wc(0)
+                .keyPair(keyPair)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V2R2, options);
-        WalletV2ContractR2 contract = wallet.create();
+        assertThat(contract.getStateInit().getCode().getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
 
-        assertThat(options.code.getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
-
-        Message msg = contract.createTransferMessage(WalletV2Config.builder()
+        WalletV2Config config = WalletV2Config.builder()
                 .destination1(Address.of("0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd"))
                 .amount1(Utils.toNano(1))
                 .seqno(1L)
-                .build());
+                .build();
+
+        Message msg = contract.prepareExternalMsg(config);
 
         Address address = msg.getInit().getAddress();
 

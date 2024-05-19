@@ -1,6 +1,8 @@
 package org.ton.java.smartcontract.wallet.v4;
 
 import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -16,12 +18,43 @@ import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 
-public class WalletV4ContractR2 implements Contract {
+import static java.util.Objects.isNull;
+
+@Builder
+@Getter
+public class WalletV4R2 implements Contract {
 
     TweetNaclFast.Signature.KeyPair keyPair;
     long walletId;
+    long initialSeqno;
+
+
+    public static class WalletV4R2Builder {
+        WalletV4R2Builder() {
+            if (isNull(keyPair)) {
+                keyPair = Utils.generateSignatureKeyPair();
+            }
+        }
+    }
+
+    private Tonlib tonlib;
+    private long wc;
+
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
+    }
 
 //    public WalletV4ContractR2(Options options) {
 //        this.options = options;
@@ -39,7 +72,7 @@ public class WalletV4ContractR2 implements Contract {
     @Override
     public Cell createDataCell() {
         return CellBuilder.beginCell()
-                .storeUint(BigInteger.ZERO, 32)
+                .storeUint(initialSeqno, 32)
                 .storeUint(walletId, 32)
                 .storeBytes(keyPair.getPublicKey())
                 .storeUint(BigInteger.ZERO, 1)//plugins dict empty
@@ -53,14 +86,14 @@ public class WalletV4ContractR2 implements Contract {
                 endCell();
     }
 
-    public Cell createDeployMessage(WalletV4R1Config config) {
+    public Cell createDeployMessage() {
         CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(config.getSubWalletId(), 32); //wallet-id
+        message.storeUint(walletId, 32);
 
         for (int i = 0; i < 32; i++) { // valid-until
             message.storeBit(true);
         }
-        message.storeUint(0, 32); //seqno
+        message.storeUint(initialSeqno, 32); //seqno
         return message.endCell();
     }
 
@@ -68,13 +101,11 @@ public class WalletV4ContractR2 implements Contract {
 
         CellBuilder message = CellBuilder.beginCell();
 
-        message.storeUint(config.getSubWalletId(), 32); // subwallet_id
+        message.storeUint(config.getWalletId(), 32);
 
-        Date date = new Date();
-        long timestamp = (long) Math.floor(date.getTime() / 1e3);
-        message.storeUint(BigInteger.valueOf(timestamp + 60L), 32); // valid_until
+        message.storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), 32);
 
-        message.storeUint(BigInteger.valueOf(config.getSeqno()), 32);// msg_seqno
+        message.storeUint(config.getSeqno(), 32);// msg_seqno
 
         if (config.getOperation() == 0) {
             message.storeUint(BigInteger.ZERO, 8); // op simple send
@@ -107,15 +138,13 @@ public class WalletV4ContractR2 implements Contract {
     }
 
     /**
-     * Deploy and install/assigns subscription plugin.
+     * Deploy wallet without any plugins.
      * One can also deploy plugin separately and later install into the wallet. See installPlugin().
-     *
-     * @param config NewPlugin
      */
 
-    public ExtMessageInfo deploy(Tonlib tonlib, WalletV4R1Config config) {
+    public ExtMessageInfo deploy() {
 
-        Cell body = createDeployMessage(config);
+        Cell body = createDeployMessage();
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -156,13 +185,15 @@ public class WalletV4ContractR2 implements Contract {
     }
 
     public Cell createPluginBody() {
-        CellBuilder body = CellBuilder.beginCell(); // mgsBody in simple-subscription-plugin.fc is not used
-        body.storeUint(new BigInteger("706c7567", 16).add(new BigInteger("80000000", 16)), 32); //OP
-        return body.endCell();
+        return CellBuilder.beginCell() // mgsBody in simple-subscription-plugin.fc is not used
+                .storeUint(new BigInteger("706c7567", 16).add(new BigInteger("80000000", 16)), 32) //OP
+                .endCell();
     }
 
     public Cell createPluginSelfDestructBody() {
-        return CellBuilder.beginCell().storeUint(0x64737472, 32).endCell();
+        return CellBuilder.beginCell()
+                .storeUint(0x64737472, 32)
+                .endCell();
     }
 
     public ExtMessageInfo installPlugin(Tonlib tonlib, WalletV4R1Config config) {
@@ -175,7 +206,7 @@ public class WalletV4ContractR2 implements Contract {
         return tonlib.sendRawMessage(extMsg.toBase64());
     }
 
-    public ExtMessageInfo uninstallPlugin(Tonlib tonlib, WalletV4R1Config config) {
+    public ExtMessageInfo uninstallPlugin(WalletV4R1Config config) {
 
         Address ownAddress = getAddress();
         config.setOperation(3);
@@ -188,14 +219,14 @@ public class WalletV4ContractR2 implements Contract {
     /**
      * @return subwallet-id long
      */
-    public long getWalletId(Tonlib tonlib) {
+    public long getWalletId() {
         RunResult result = tonlib.runMethod(getAddress(), "get_subwallet_id");
         TvmStackEntryNumber subWalletId = (TvmStackEntryNumber) result.getStack().get(0);
 
         return subWalletId.getNumber().longValue();
     }
 
-    public byte[] getPublicKey(Tonlib tonlib) {
+    public byte[] getPublicKey() {
         RunResult result = tonlib.runMethod(getAddress(), "get_public_key");
         TvmStackEntryNumber pubKey = (TvmStackEntryNumber) result.getStack().get(0);
 
@@ -206,7 +237,7 @@ public class WalletV4ContractR2 implements Contract {
      * @param pluginAddress Address
      * @return boolean
      */
-    public boolean isPluginInstalled(Tonlib tonlib, Address pluginAddress) {
+    public boolean isPluginInstalled(Address pluginAddress) {
         String hashPart = new BigInteger(pluginAddress.hashPart).toString();
 
         Address myAddress = getAddress();
@@ -224,7 +255,7 @@ public class WalletV4ContractR2 implements Contract {
     /**
      * @return List<String> plugins addresses
      */
-    public List<String> getPluginsList(Tonlib tonlib) {
+    public List<String> getPluginsList() {
         List<String> r = new ArrayList<>();
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_plugin_list");
@@ -244,7 +275,7 @@ public class WalletV4ContractR2 implements Contract {
      *
      * @return TvmStackEntryList
      */
-    public SubscriptionInfo getSubscriptionData(Tonlib tonlib, Address pluginAddress) {
+    public SubscriptionInfo getSubscriptionData(Address pluginAddress) {
 
         RunResult result = tonlib.runMethod(pluginAddress, "get_subscription_data");
         if (result.getExit_code() == 0) {
@@ -266,18 +297,18 @@ public class WalletV4ContractR2 implements Contract {
                                      long failedAttempts,
                                      long subscriptionId) {
 
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeAddress(wallet);
-        cell.storeAddress(beneficiary);
-        cell.storeCoins(amount);
-        cell.storeUint(BigInteger.valueOf(period), 32);
-        cell.storeUint(BigInteger.valueOf(startTime), 32);
-        cell.storeUint(BigInteger.valueOf(timeOut), 32);
-        cell.storeUint(BigInteger.valueOf(lastPaymentTime), 32);
-        cell.storeUint(BigInteger.valueOf(lastRequestTime), 32);
-        cell.storeUint(BigInteger.valueOf(failedAttempts), 8);
-        cell.storeUint(BigInteger.valueOf(subscriptionId), 32);
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeAddress(wallet)
+                .storeAddress(beneficiary)
+                .storeCoins(amount)
+                .storeUint(BigInteger.valueOf(period), 32)
+                .storeUint(BigInteger.valueOf(startTime), 32)
+                .storeUint(BigInteger.valueOf(timeOut), 32)
+                .storeUint(BigInteger.valueOf(lastPaymentTime), 32)
+                .storeUint(BigInteger.valueOf(lastRequestTime), 32)
+                .storeUint(BigInteger.valueOf(failedAttempts), 8)
+                .storeUint(BigInteger.valueOf(subscriptionId), 32)
+                .endCell();
     }
 
     private SubscriptionInfo parseSubscriptionData(List subscriptionData) {
@@ -321,11 +352,10 @@ public class WalletV4ContractR2 implements Contract {
     /**
      * Sends amount of nano toncoins to destination address using auto-fetched seqno without the body and default send-mode 3
      *
-     * @param tonlib Tonlib
      * @param config WalletV4R1Config
      */
 
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, WalletV4R1Config config) {
+    public ExtMessageInfo sendTonCoins(WalletV4R1Config config) {
 
         Cell body = createTransferBody(config);
 
@@ -336,64 +366,11 @@ public class WalletV4ContractR2 implements Contract {
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                        .storeCell(body) // was storeRef!!
+                        .storeCell(body)
                         .endCell())
                 .build();
 
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
 
     }
-
-/*
-     * Sends amount of nano toncoins to destination address using specified seqno with the body and default send-mode 3
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, byte[] body) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-     * Sends amount of nano toncoins to destination address using specified seqno with the body and specified send-mode
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, byte[] body, byte sendMode) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body, sendMode);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-     * Sends amount of nano toncoins to destination address using auto-fetched seqno with the body and default send-mode 3
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, byte[] body) {
-        long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-     * Sends amount of nano toncoins to destination address using specified seqno with the comment and default send-mode 3
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno, String comment) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-     * Sends amount of nano toncoins to destination address using specified seqno without the comment and default send-mode 3
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, long seqno) {
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-     * Sends amount of nano toncoins to destination address using auto-fetched seqno without the body and default send-mode 3
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, String comment) {
-        long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, CellBuilder.beginCell().storeUint(0, 32).storeString(comment).endCell());
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-
-     * Sends amount of nano toncoins to destination address using auto-fetched seqno with the body and specified send-mode
-
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, byte[] secretKey, Address destinationAddress, BigInteger amount, byte[] body, byte sendMode) {
-        long seqno = getSeqno(tonlib);
-        ExternalMessage msg = createTransferMessage(secretKey, destinationAddress, amount, seqno, body, sendMode);
-        return tonlib.sendRawMessage(msg.message.toBase64());
-    }
-    */
 }

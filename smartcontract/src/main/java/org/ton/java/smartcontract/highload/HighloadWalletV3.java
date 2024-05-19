@@ -1,6 +1,8 @@
 package org.ton.java.smartcontract.highload;
 
 import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -8,7 +10,6 @@ import org.ton.java.smartcontract.types.HighloadV3BatchItem;
 import org.ton.java.smartcontract.types.HighloadV3Config;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -21,22 +22,44 @@ import java.math.BigInteger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+@Builder
+@Getter
 public class HighloadWalletV3 implements Contract {
 
     TweetNaclFast.Signature.KeyPair keyPair;
     long walletId;
     long timeout;
-    Address address;
 
     /**
      * interface to <a href="https://github.com/ton-blockchain/highload-wallet-contract-v3/blob/main/contracts/highload-wallet-v3.func">highload-v3 smart-contract</a>
-     *
-     * @param options Options - mandatory -  highloadQueryId, walletId, publicKey
+     * <p>
+     * Options - mandatory -  highloadQueryId, walletId, publicKey
      */
-    public HighloadWalletV3(Options options) {
-        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.highloadV3.getValue()).endCell();
+//    public HighloadWalletV3(Options options) {
+//        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.highloadV3.getValue()).endCell();
+//    }
+
+    public static class HighloadWalletV3Builder {
+        HighloadWalletV3Builder() {
+            if (isNull(keyPair)) {
+                keyPair = Utils.generateSignatureKeyPair();
+            }
+        }
     }
 
+    private Tonlib tonlib;
+    private long wc;
+
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
+    }
+    
     @Override
     public String getName() {
         return "highload-v3";

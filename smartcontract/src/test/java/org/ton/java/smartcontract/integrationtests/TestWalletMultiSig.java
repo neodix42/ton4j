@@ -11,13 +11,12 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.TestFaucet;
-import org.ton.java.smartcontract.multisig.MultisigWallet;
-import org.ton.java.smartcontract.types.*;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.tonlib.Tonlib;
+import org.ton.java.smartcontract.multisig.MultiSigWallet;
+import org.ton.java.smartcontract.types.MultiSigConfig;
+import org.ton.java.smartcontract.types.MultisigSignature;
+import org.ton.java.smartcontract.types.OwnerInfo;
+import org.ton.java.smartcontract.types.PendingQuery;
 import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -30,7 +29,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletMultisig extends CommonTest {
+public class TestWalletMultiSig extends CommonTest {
 
     TweetNaclFast.Signature.KeyPair ownerKeyPair = Utils.generateSignatureKeyPair();
     TweetNaclFast.Signature.KeyPair keyPair2 = Utils.generateSignatureKeyPair();
@@ -39,18 +38,12 @@ public class TestWalletMultisig extends CommonTest {
     TweetNaclFast.Signature.KeyPair keyPair5 = Utils.generateSignatureKeyPair();
 
     /**
-     * Any user deploys a multisig wallet.
+     * Any user deploys a multiSig wallet.
      * Any user from the list creates an order and gathers all the required signatures,
      * then sends the order to the wallet.
      */
     @Test
     public void testWalletMultiSigOffline() throws InterruptedException {
-
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
 
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
@@ -71,11 +64,11 @@ public class TestWalletMultisig extends CommonTest {
         int k = 3;
         int n = 5;
 
-        Options options = Options.builder()
-                .publicKey(ownerKeyPair.getPublicKey())
-                .secretKey(ownerKeyPair.getSecretKey())
+        MultiSigWallet contract = MultiSigWallet.builder()
+                .tonlib(tonlib)
+                .keyPair(ownerKeyPair)
                 .walletId(walletId)
-                .multisigConfig(MultiSigConfig.builder()
+                .config(MultiSigConfig.builder()
                         .queryId(queryId)
                         .k(k)
                         .n(n)
@@ -106,10 +99,8 @@ public class TestWalletMultisig extends CommonTest {
                         ).build())
                 .build();
 
-        MultisigWallet contract = new Wallet(WalletVersion.multisig, options).create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -119,36 +110,34 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-//        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
-
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, null);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying"); // with empty ext-msg
+        contract.waitForDeployment(30); // with empty ext-msg
 
-        log.info("owners publicKeys {}", contract.getPublicKeys(tonlib));
-        log.info("owners publicKeysHex {}", contract.getPublicKeysHex(tonlib));
+        log.info("owners publicKeys {}", contract.getPublicKeys());
+        log.info("owners publicKeysHex {}", contract.getPublicKeysHex());
 
-        Pair<Long, Long> n_k = contract.getNandK(tonlib);
+        Pair<Long, Long> n_k = contract.getNandK();
         log.info("n {}, k {}", n_k.getLeft(), n_k.getRight());
 
         // You can include up to 3 destinations
-        Cell msg1 = MultisigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
-        Cell msg2 = MultisigWallet.createOneInternalMsg(Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.6), 3);
-        Cell msg3 = MultisigWallet.createOneInternalMsg(Address.of("EQCAy2ue54I-uDvEgD3qXdqjtrJI4F4OeFn3V10Kgt0jXpQn"), Utils.toNano(0.7), 3);
+        Cell msg1 = MultiSigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
+        Cell msg2 = MultiSigWallet.createOneInternalMsg(Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.6), 3);
+        Cell msg3 = MultiSigWallet.createOneInternalMsg(Address.of("EQCAy2ue54I-uDvEgD3qXdqjtrJI4F4OeFn3V10Kgt0jXpQn"), Utils.toNano(0.7), 3);
 
         // Having message(s) to send you can group it to a new order
-        Cell order = MultisigWallet.createOrder(walletId, queryId, msg1, msg2, msg3);
+        Cell order = MultiSigWallet.createOrder(walletId, queryId, msg1, msg2, msg3);
         order.toFile("order.boc");
 
-        byte[] orderSignatureUser1 = MultisigWallet.signOrder(ownerKeyPair, order);
-        byte[] orderSignatureUser2 = MultisigWallet.signOrder(keyPair2, order);
-        byte[] orderSignatureUser3 = MultisigWallet.signOrder(keyPair3, order);
-        byte[] orderSignatureUser4 = MultisigWallet.signOrder(keyPair4, order);
-        byte[] orderSignatureUser5 = MultisigWallet.signOrder(keyPair5, order);
+        byte[] orderSignatureUser1 = MultiSigWallet.signOrder(ownerKeyPair, order);
+        byte[] orderSignatureUser2 = MultiSigWallet.signOrder(keyPair2, order);
+        byte[] orderSignatureUser3 = MultiSigWallet.signOrder(keyPair3, order);
+        byte[] orderSignatureUser4 = MultiSigWallet.signOrder(keyPair4, order);
+        byte[] orderSignatureUser5 = MultiSigWallet.signOrder(keyPair5, order);
 
         // collected two more signatures
-        Cell signedOrder = MultisigWallet.addSignatures(order,
+        Cell signedOrder = MultiSigWallet.addSignatures(order,
                 List.of(
                         MultisigSignature.builder()
                                 .pubKeyPosition(pubkey3Index)
@@ -168,12 +157,12 @@ public class TestWalletMultisig extends CommonTest {
         signedOrder.toFile("signedOrder.boc", false);
 
         // submitter keypair must come from User3 or User4, otherwise you get error 34
-        extMessageInfo = contract.sendOrder(tonlib, keyPair5, pubkey5Index, signedOrder);
+        extMessageInfo = contract.sendOrder(keyPair5, pubkey5Index, signedOrder);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "processing 1st query");
+        contract.waitForBalanceChange(30);
 
-        Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId);
+        Pair<Long, Long> queryState = contract.getQueryState(queryId);
         log.info("get_query_state (query {}): status {}, mask {}", queryId, queryState.getLeft(), queryState.getRight());
 
         assertThat(queryState.getLeft()).isEqualTo(-1);
@@ -193,7 +182,7 @@ public class TestWalletMultisig extends CommonTest {
         log.info("pubKey4 {}", Utils.bytesToHex(keyPair4.getPublicKey()));
         log.info("pubKey5 {}", Utils.bytesToHex(keyPair5.getPublicKey()));
 
-        BigInteger queryId = BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 2 * 60 * 60L, 32));
+        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60 * 60L << 32);
 
         Long walletId = new Random().nextLong() & 0xffffffffL;
         log.info("queryId {}, walletId {}", queryId, walletId);
@@ -206,10 +195,11 @@ public class TestWalletMultisig extends CommonTest {
         int k = 3;
         int n = 5;
 
-        Options options = Options.builder()
-                .publicKey(ownerKeyPair.getPublicKey())
+        MultiSigWallet contract = MultiSigWallet.builder()
+                .tonlib(tonlib)
+                .keyPair(ownerKeyPair)
                 .walletId(walletId)
-                .multisigConfig(MultiSigConfig.builder()
+                .config(MultiSigConfig.builder()
                         .queryId(queryId)
                         .k(k)
                         .n(n)
@@ -238,11 +228,8 @@ public class TestWalletMultisig extends CommonTest {
                         )).build())
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.multisig, options);
-        MultisigWallet contract = wallet.create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -252,40 +239,41 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying"); // with empty ext-msg
+        contract.waitForDeployment(45); // with empty ext-msg
 
-        log.info("owners publicKeysHex {}", contract.getPublicKeysHex(tonlib));
+        log.info("owners publicKeysHex {}", contract.getPublicKeysHex());
 
-        Pair<Long, Long> n_k = contract.getNandK(tonlib);
+        Pair<Long, Long> n_k = contract.getNandK();
         log.info("n {}, k {}", n_k.getLeft(), n_k.getRight());
 
         // You can include up to 3 destinations
-        Cell msg1 = MultisigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
-        Cell msg2 = MultisigWallet.createOneInternalMsg(Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.6), 3);
-        Cell msg3 = MultisigWallet.createOneInternalMsg(Address.of("EQCAy2ue54I-uDvEgD3qXdqjtrJI4F4OeFn3V10Kgt0jXpQn"), Utils.toNano(0.7), 3);
+        Cell msg1 = MultiSigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
+        Cell msg2 = MultiSigWallet.createOneInternalMsg(Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.6), 3);
+        Cell msg3 = MultiSigWallet.createOneInternalMsg(Address.of("EQCAy2ue54I-uDvEgD3qXdqjtrJI4F4OeFn3V10Kgt0jXpQn"), Utils.toNano(0.7), 3);
 
         // Having message(s) to send you can group it to a new order
-        Cell order = MultisigWallet.createOrder(walletId, queryId, msg1, msg2, msg3);
+        Cell order = MultiSigWallet.createOrder(walletId, queryId, msg1, msg2, msg3);
         order.toFile("order.boc", false);
 
-        byte[] orderSignatureUser1 = MultisigWallet.signOrder(ownerKeyPair, order);
-        byte[] orderSignatureUser2 = MultisigWallet.signOrder(keyPair2, order);
-        byte[] orderSignatureUser3 = MultisigWallet.signOrder(keyPair3, order);
-        byte[] orderSignatureUser4 = MultisigWallet.signOrder(keyPair4, order);
-        byte[] orderSignatureUser5 = MultisigWallet.signOrder(keyPair5, order);
+        byte[] orderSignatureUser1 = MultiSigWallet.signOrder(ownerKeyPair, order);
+        byte[] orderSignatureUser2 = MultiSigWallet.signOrder(keyPair2, order);
+        byte[] orderSignatureUser3 = MultiSigWallet.signOrder(keyPair3, order);
+        byte[] orderSignatureUser4 = MultiSigWallet.signOrder(keyPair4, order);
+        byte[] orderSignatureUser5 = MultiSigWallet.signOrder(keyPair5, order);
 
-        contract.sendOrder(tonlib, ownerKeyPair, rootIndex, order);
-        Utils.sleep(30, "processing 1st query");
+        extMessageInfo = contract.sendOrder(ownerKeyPair, rootIndex, order);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+//        Utils.sleep(30, "processing 1st query");
+        contract.waitForBalanceChange(30);
 
-        Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId);
+        Pair<Long, Long> queryState = contract.getQueryState(queryId);
         log.info("get_query_state (query {}): status {}, mask {}", queryId, queryState.getLeft(), queryState.getRight());
 
         // collected two more signatures
-        Cell signedOrder = MultisigWallet.addSignatures(order,
+        Cell signedOrder = MultiSigWallet.addSignatures(order,
                 List.of(
                         MultisigSignature.builder()
                                 .pubKeyPosition(pubkey3Index)
@@ -301,22 +289,24 @@ public class TestWalletMultisig extends CommonTest {
         signedOrder.toFile("signedOrder.boc", false);
 
         // submitter keypair must come from User3 or User4, otherwise you get error 34
-        contract.sendOrder(tonlib, keyPair3, pubkey3Index, signedOrder);
-        Utils.sleep(20, "processing 1st query");
+        extMessageInfo = contract.sendOrder(keyPair3, pubkey3Index, signedOrder);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+//        Utils.sleep(20, "processing 1st query");
+        contract.waitForBalanceChange(30);
 
-        showMessagesInfo(contract.getMessagesUnsigned(tonlib), "Messages-Unsigned");
-        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), "Messages-SignedByIndex-" + rootIndex);
-        showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, rootIndex), "Messages-UnsignedByIndex-" + rootIndex);
-        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, pubkey2Index), "Messages-SignedByIndex-" + pubkey2Index);
-        showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, pubkey2Index), "Messages-UnsignedByIndex-" + pubkey2Index);
+        showMessagesInfo(contract.getMessagesUnsigned(), "Messages-Unsigned");
+        showMessagesInfo(contract.getMessagesSignedByIndex(rootIndex), "Messages-SignedByIndex-" + rootIndex);
+        showMessagesInfo(contract.getMessagesUnsignedByIndex(rootIndex), "Messages-UnsignedByIndex-" + rootIndex);
+        showMessagesInfo(contract.getMessagesSignedByIndex(pubkey2Index), "Messages-SignedByIndex-" + pubkey2Index);
+        showMessagesInfo(contract.getMessagesUnsignedByIndex(pubkey2Index), "Messages-UnsignedByIndex-" + pubkey2Index);
 
-        queryState = contract.getQueryState(tonlib, queryId);
+        queryState = contract.getQueryState(queryId);
         log.info("get_query_state (query {}): status {}, mask {}", queryId, queryState.getLeft(), queryState.getRight());
 
         assertThat(queryState.getLeft()).isEqualTo(-1);
 
         // 1 2 3
-        Cell query = MultisigWallet.createQuery(ownerKeyPair,
+        Cell query = MultiSigWallet.createQuery(ownerKeyPair,
                 List.of(
                         MultisigSignature.builder()
                                 .pubKeyPosition(rootIndex)
@@ -335,7 +325,7 @@ public class TestWalletMultisig extends CommonTest {
         log.info("cnt {}, mask {}", cnt_mask.getLeft(), cnt_mask.getRight());
 
         // 1 2 3 5
-        query = MultisigWallet.createQuery(ownerKeyPair,
+        query = MultiSigWallet.createQuery(ownerKeyPair,
                 List.of(
                         MultisigSignature.builder()
                                 .pubKeyPosition(rootIndex)
@@ -366,12 +356,6 @@ public class TestWalletMultisig extends CommonTest {
     @Test
     public void testGetInitState() throws InterruptedException {
 
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-//                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
-
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey1 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
 
@@ -383,10 +367,11 @@ public class TestWalletMultisig extends CommonTest {
         int k = 1;
         int n = 2;
 
-        Options options = Options.builder()
-                .publicKey(ownerKeyPair.getPublicKey())
+        MultiSigWallet contract = MultiSigWallet.builder()
+                .tonlib(tonlib)
+                .keyPair(ownerKeyPair)
                 .walletId(walletId)
-                .multisigConfig(MultiSigConfig.builder()
+                .config(MultiSigConfig.builder()
                         .queryId(queryId)
                         .k(k)
                         .n(n)
@@ -403,12 +388,8 @@ public class TestWalletMultisig extends CommonTest {
                         .build())
                 .build();
 
-
-        Wallet wallet = new Wallet(WalletVersion.multisig, options);
-        MultisigWallet contract = wallet.create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -418,12 +399,10 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder()
-                .build();
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying"); // with empty ext msg
+        contract.waitForDeployment(45); // with empty ext msg
 
         List<OwnerInfo> ownersPublicKeys = List.of(
                 OwnerInfo.builder()
@@ -436,7 +415,7 @@ public class TestWalletMultisig extends CommonTest {
                         .build()
         );
 
-        Cell stateInit = contract.getInitState(tonlib, walletId, n, k, contract.createOwnersInfoDict(ownersPublicKeys));
+        Cell stateInit = contract.getInitState(walletId, n, k, contract.createOwnersInfoDict(ownersPublicKeys));
         log.info("state-init {}", stateInit.toHex(false));
     }
 
@@ -459,10 +438,11 @@ public class TestWalletMultisig extends CommonTest {
         int k = 2;
         int n = 3;
 
-        Options options = Options.builder()
-                .publicKey(ownerKeyPair.getPublicKey())
+        MultiSigWallet contract = MultiSigWallet.builder()
+                .tonlib(tonlib)
+                .keyPair(ownerKeyPair)
                 .walletId(walletId)
-                .multisigConfig(MultiSigConfig.builder()
+                .config(MultiSigConfig.builder()
                         .queryId(queryId1)
                         .k(k)
                         .n(n)
@@ -483,11 +463,8 @@ public class TestWalletMultisig extends CommonTest {
                         .build())
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.multisig, options);
-        MultisigWallet contract = wallet.create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -497,47 +474,46 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder()
-                .build();
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying"); // with empty ext msg
+        contract.waitForDeployment(45); // with empty ext msg
 
-        log.info("owners publicKeysHex {}", contract.getPublicKeysHex(tonlib));
+        log.info("owners publicKeysHex {}", contract.getPublicKeysHex());
 
-        Pair<Long, Long> n_k = contract.getNandK(tonlib);
+        Pair<Long, Long> n_k = contract.getNandK();
         log.info("n {}, k {}", n_k.getLeft(), n_k.getRight());
 
-        Cell txMsg1 = MultisigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
-        Cell order1 = MultisigWallet.createOrder(walletId, queryId1, txMsg1);
-        byte[] order1Signature3 = MultisigWallet.signCell(keyPair3, order1);
+        Cell txMsg1 = MultiSigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
+        Cell order1 = MultiSigWallet.createOrder(walletId, queryId1, txMsg1);
+        byte[] order1Signature3 = MultiSigWallet.signCell(keyPair3, order1);
 
         // send order-1 signed by 3rd owner (root index 2)
-        extMessageInfo = contract.sendOrder(tonlib, keyPair3, 2, order1); // root index 2
+        extMessageInfo = contract.sendOrder(keyPair3, 2, order1); // root index 2
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "processing 1st query");
+        contract.waitForBalanceChange(30);
 
-        Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId1);
+        Pair<Long, Long> queryState = contract.getQueryState(queryId1);
         log.info("get_query_state (query {}): status {}, mask {}", queryId1.toString(10), queryState.getLeft(), queryState.getRight());
 
-        Cell msg2 = MultisigWallet.createOneInternalMsg(Address.of("EQCAy2ue54I-uDvEgD3qXdqjtrJI4F4OeFn3V10Kgt0jXpQn"), Utils.toNano(0.8), 3);
-        Cell order2 = MultisigWallet.createOrder(walletId, queryId2, msg2);
+        Cell msg2 = MultiSigWallet.createOneInternalMsg(Address.of("EQCAy2ue54I-uDvEgD3qXdqjtrJI4F4OeFn3V10Kgt0jXpQn"), Utils.toNano(0.8), 3);
+        Cell order2 = MultiSigWallet.createOrder(walletId, queryId2, msg2);
 
         // send order-2 signed by 2nd owner (root index 1)
-        extMessageInfo = contract.sendOrder(tonlib, keyPair2, 1, order2);
+        extMessageInfo = contract.sendOrder(keyPair2, 1, order2);
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "processing 2nd query");
+        contract.waitForBalanceChange(30);
 
-        queryState = contract.getQueryState(tonlib, queryId2);
+        queryState = contract.getQueryState(queryId2);
         log.info("get_query_state (query {}): status {}, mask {}", queryId2, queryState.getLeft(), queryState.getRight());
 
         // send order-2 signed by 3rd owner (root index 2)
-        extMessageInfo = contract.sendOrder(tonlib, keyPair3, 2, order2);
+        extMessageInfo = contract.sendOrder(keyPair3, 2, order2);
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "processing 3rd query");
+        contract.waitForBalanceChange(30);
 
-        queryState = contract.getQueryState(tonlib, queryId2);
+        queryState = contract.getQueryState(queryId2);
         log.info("get_query_state (query {}): status {}, mask {}", queryId2, queryState.getLeft(), queryState.getRight());
         assertThat(queryState.getLeft()).isEqualTo(-1);
     }
@@ -547,6 +523,7 @@ public class TestWalletMultisig extends CommonTest {
      */
     @Test
     public void testEmptySignaturesListOnChain() throws InterruptedException {
+
         log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
         log.info("pubKey1 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
         log.info("pubKey2 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
@@ -559,10 +536,11 @@ public class TestWalletMultisig extends CommonTest {
         int k = 2;
         int n = 3;
 
-        Options options = Options.builder()
-                .publicKey(ownerKeyPair.getPublicKey())
+        MultiSigWallet contract = MultiSigWallet.builder()
+                .tonlib(tonlib)
+                .keyPair(ownerKeyPair)
                 .walletId(walletId)
-                .multisigConfig(MultiSigConfig.builder()
+                .config(MultiSigConfig.builder()
                         .queryId(queryId)
                         .k(k)
                         .n(n)
@@ -579,12 +557,8 @@ public class TestWalletMultisig extends CommonTest {
                         .build())
                 .build();
 
-
-        Wallet wallet = new Wallet(WalletVersion.multisig, options);
-        MultisigWallet contract = wallet.create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -594,37 +568,36 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying"); // with empty ext msg
+        contract.waitForDeployment(45); // with empty ext msg
 
-        log.info("owners publicKeysHex {}", contract.getPublicKeysHex(tonlib));
+        log.info("owners publicKeysHex {}", contract.getPublicKeysHex());
 
-        Pair<Long, Long> n_k = contract.getNandK(tonlib);
+        Pair<Long, Long> n_k = contract.getNandK();
         log.info("n {}, k {}", n_k.getLeft(), n_k.getRight());
 
-        Cell txMsg1 = MultisigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
-        Cell order = MultisigWallet.createOrder(walletId, queryId, txMsg1);
+        Cell txMsg1 = MultiSigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
+        Cell order = MultiSigWallet.createOrder(walletId, queryId, txMsg1);
 
         // send order-1 signed by 1st owner (root index 0)
-        extMessageInfo = contract.sendOrder(tonlib, ownerKeyPair.getSecretKey(), 0, order); // root index 0
+        extMessageInfo = contract.sendOrder(ownerKeyPair.getSecretKey(), 0, order); // root index 0
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "processing 1st query");
+        contract.waitForBalanceChange(30);
 
-        showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, 0), "MessagesUnsignedByIndex-" + 0);
-        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, 0), "MessagesSignedByIndex-" + 0);
+        showMessagesInfo(contract.getMessagesUnsignedByIndex(0), "MessagesUnsignedByIndex-" + 0);
+        showMessagesInfo(contract.getMessagesSignedByIndex(0), "MessagesSignedByIndex-" + 0);
 
-        Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId);
+        Pair<Long, Long> queryState = contract.getQueryState(queryId);
         log.info("get_query_state (query {}): status {}, mask {}", queryId, queryState.getLeft(), queryState.getRight());
 
         // send order-1 signed by 2nd owner (root index 1)
-        extMessageInfo = contract.sendOrder(tonlib, keyPair2.getSecretKey(), 1, order); // root index 1
+        extMessageInfo = contract.sendOrder(keyPair2.getSecretKey(), 1, order); // root index 1
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "processing 2st query");
+        contract.waitForBalanceChange(30);
 
-        queryState = contract.getQueryState(tonlib, queryId);
+        queryState = contract.getQueryState(queryId);
         log.info("get_query_state (query {}): status {}, mask {}", queryId, queryState.getLeft(), queryState.getRight());
         assertThat(queryState.getLeft()).isEqualTo(-1);
     }
@@ -649,15 +622,16 @@ public class TestWalletMultisig extends CommonTest {
         int k = 3;
         int n = 5;
 
-        Cell msg1 = MultisigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.3), 3);
-        Cell order1 = MultisigWallet.createOrder(walletId, queryId1, msg1);
+        Cell msg1 = MultiSigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.3), 3);
+        Cell order1 = MultiSigWallet.createOrder(walletId, queryId1, msg1);
 
-        Cell msg2 = MultisigWallet.createOneInternalMsg(Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.4), 3);
+        Cell msg2 = MultiSigWallet.createOneInternalMsg(Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.4), 3);
 
-        Options options = Options.builder()
-                .publicKey(ownerKeyPair.getPublicKey())
+        MultiSigWallet contract = MultiSigWallet.builder()
+                .tonlib(tonlib)
+                .keyPair(ownerKeyPair)
                 .walletId(walletId)
-                .multisigConfig(MultiSigConfig.builder()
+                .config(MultiSigConfig.builder()
                         .queryId(queryId1)
                         .k(k)
                         .n(n)
@@ -701,12 +675,9 @@ public class TestWalletMultisig extends CommonTest {
                         .build())
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.multisig, options);
-        MultisigWallet contract = wallet.create();
 
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -716,36 +687,36 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying"); // with empty ext msg
+        contract.waitForDeployment(45); // with empty ext msg
 
-        log.info("owners publicKeysHex {}", contract.getPublicKeysHex(tonlib));
+        log.info("owners publicKeysHex {}", contract.getPublicKeysHex());
 
-        Pair<Long, Long> queryState = contract.getQueryState(tonlib, queryId1);
+        Pair<Long, Long> queryState = contract.getQueryState(queryId1);
         log.info("get_query_state (query-1 {}): status {}, mask {}", queryId1, queryState.getLeft(), queryState.getRight());
 
-        queryState = contract.getQueryState(tonlib, queryId2);
+        queryState = contract.getQueryState(queryId2);
         log.info("get_query_state (query-2 {}): status {}, mask {}", queryId2, queryState.getLeft(), queryState.getRight());
 
 
-        showMessagesInfo(contract.getMessagesUnsigned(tonlib), "Messages-Unsigned");
-        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), "Messages-SignedByIndex-" + rootIndex);
-        showMessagesInfo(contract.getMessagesUnsignedByIndex(tonlib, rootIndex), "Messages-UnsignedByIndex-" + rootIndex);
+        showMessagesInfo(contract.getMessagesUnsigned(), "Messages-Unsigned");
+        showMessagesInfo(contract.getMessagesSignedByIndex(rootIndex), "Messages-SignedByIndex-" + rootIndex);
+        showMessagesInfo(contract.getMessagesUnsignedByIndex(rootIndex), "Messages-UnsignedByIndex-" + rootIndex);
 
-        extMessageInfo = contract.sendOrder(tonlib, keyPair3.getSecretKey(), pubkey3Index, order1);
+        extMessageInfo = contract.sendOrder(keyPair3.getSecretKey(), pubkey3Index, order1);
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "processing query");
+//        Utils.sleep(30, "processing query");
+        contract.waitForBalanceChange(30);
 
-        queryState = contract.getQueryState(tonlib, queryId1);
+        queryState = contract.getQueryState(queryId1);
         log.info("get_query_state (query-1 {}): status {}, mask {}", queryId1, queryState.getLeft(), queryState.getRight());
 
         assertThat(queryState.getLeft()).isEqualTo(-1);
 
-        showMessagesInfo(contract.getMessagesUnsigned(tonlib), "Messages-Unsigned");
-        showMessagesInfo(contract.getMessagesSignedByIndex(tonlib, rootIndex), "Messages-SignedByIndex-" + rootIndex);
+        showMessagesInfo(contract.getMessagesUnsigned(), "Messages-Unsigned");
+        showMessagesInfo(contract.getMessagesSignedByIndex(rootIndex), "Messages-SignedByIndex-" + rootIndex);
     }
 
     @Test
@@ -763,13 +734,14 @@ public class TestWalletMultisig extends CommonTest {
         int k = 2;
         int n = 3;
 
-        Cell msg1 = MultisigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.3), 3);
-        Cell msg2 = MultisigWallet.createOneInternalMsg(Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.4), 3);
+        Cell msg1 = MultiSigWallet.createOneInternalMsg(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.3), 3);
+        Cell msg2 = MultiSigWallet.createOneInternalMsg(Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.4), 3);
 
-        Options options = Options.builder()
-                .publicKey(ownerKeyPair.getPublicKey())
+        MultiSigWallet contract = MultiSigWallet.builder()
+                .tonlib(tonlib)
+                .keyPair(ownerKeyPair)
                 .walletId(walletId)
-                .multisigConfig(MultiSigConfig.builder()
+                .config(MultiSigConfig.builder()
                         .queryId(queryId1)
                         .k(k)
                         .n(n)
@@ -786,12 +758,8 @@ public class TestWalletMultisig extends CommonTest {
                         .build())
                 .build();
 
-
-        Wallet wallet = new Wallet(WalletVersion.multisig, options);
-        MultisigWallet contract = wallet.create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -801,14 +769,13 @@ public class TestWalletMultisig extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        MultisigWalletConfig config = MultisigWalletConfig.builder().build();
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "deploying"); // with empty ext msg
+        contract.waitForDeployment(45); // with empty ext msg
 
-        log.info("owners publicKeysHex {}", contract.getPublicKeysHex(tonlib));
-        Cell dict1 = MultisigWallet.createPendingQueries(
+        log.info("owners publicKeysHex {}", contract.getPublicKeysHex());
+        Cell dict1 = MultiSigWallet.createPendingQueries(
                 List.of(
                         PendingQuery.builder()
                                 .queryId(queryId1)
@@ -826,7 +793,7 @@ public class TestWalletMultisig extends CommonTest {
                                 .build()
                 ), n);
 
-        Cell dict2 = MultisigWallet.createPendingQueries(
+        Cell dict2 = MultiSigWallet.createPendingQueries(
                 List.of(
                         PendingQuery.builder()
                                 .queryId(queryId1)
@@ -862,12 +829,6 @@ public class TestWalletMultisig extends CommonTest {
 
     @Test
     public void testCellSerialization5() {
-
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
 
         CellBuilder cell = CellBuilder.beginCell();
 

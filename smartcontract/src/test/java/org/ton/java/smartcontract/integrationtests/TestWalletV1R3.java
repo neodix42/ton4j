@@ -6,16 +6,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
+import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.mnemonic.Mnemonic;
 import org.ton.java.mnemonic.Pair;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.WalletV1R3Config;
-import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.utils.MsgUtils;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
+import org.ton.java.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.QueryFees;
@@ -30,29 +28,26 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV1R3DeployTransfer extends CommonTest {
+public class TestWalletV1R3 extends CommonTest {
 
     @Test
-    public void testNewWalletV1R3() throws InterruptedException {
+    public void testWalletV1R3() throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+        WalletV1R3 contract = WalletV1R3.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
                 .build();
 
-        WalletV1ContractR3 contract = new Wallet(WalletVersion.V1R3, options).create();
-
+        Cell deployMessage = CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell();
         Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, contract.getAddress(),
-                contract.getStateInit(),
-                CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell());
+                contract.getStateInit(), deployMessage);
         Address address = msg.getInit().getAddress();
 
-        String nonBounceableAddress = address.toString(true, true, false, true);
-        String bounceableAddress = address.toString(true, true, true, true);
+        String nonBounceableAddress = address.toNonBounceable();
+        String bounceableAddress = address.toBounceable();
 
-        String my = "Creating new wallet in workchain " + options.wc + "\n";
+        String my = "Creating new wallet in workchain " + contract.getWc() + "\n";
         my = my + "Loading private key from file new-wallet.pk" + "\n";
         my = my + "StateInit: " + msg.getInit().toCell().print() + "\n";
         my = my + "new wallet address = " + address.toString(false) + "\n";
@@ -73,32 +68,31 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30);
+        contract.waitForDeployment(20);
 
         WalletV1R3Config config = WalletV1R3Config.builder()
-                .seqno(contract.getSeqno(tonlib))
+                .seqno(contract.getSeqno())
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
                 .amount(Utils.toNano(0.08))
-                .mode(3)
                 .comment("testNewWalletV1R3")
                 .build();
 
         // transfer coins from new wallet (back to faucet)
-        extMessageInfo = contract.sendTonCoins(tonlib, config);
+        extMessageInfo = contract.sendTonCoins(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30);
+        contract.waitForBalanceChange(30);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
 
-        log.info("seqno {}", contract.getSeqno(tonlib));
-        log.info("pubkey {}", contract.getPublicKey(tonlib));
+        log.info("seqno {}", contract.getSeqno());
+        log.info("pubkey {}", contract.getPublicKey());
     }
 
     @Test
-    public void testNewWalletV1R3WithMnemonic() throws InterruptedException, NoSuchAlgorithmException, InvalidKeyException {
+    public void testWalletV1R3WithMnemonic() throws InterruptedException, NoSuchAlgorithmException, InvalidKeyException {
         List<String> mnemonic = Mnemonic.generate(24);
         Pair keyPair = Mnemonic.toKeyPair(mnemonic);
 
@@ -110,23 +104,20 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         log.info("pubkey " + Utils.bytesToHex(keyPairSig.getPublicKey()));
         log.info("seckey " + Utils.bytesToHex(keyPairSig.getSecretKey()));
 
-        Options options = Options.builder()
-                .publicKey(keyPairSig.getPublicKey())
-                .secretKey(keyPairSig.getSecretKey())
-                .wc(0L)
+        WalletV1R3 contract = WalletV1R3.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPairSig)
                 .build();
-
-        WalletV1ContractR3 contract = new Wallet(WalletVersion.V1R3, options).create();
 
         Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPairSig, contract.getAddress(),
                 contract.getStateInit(),
                 CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell());
         Address address = msg.getInit().getAddress();
 
-        String nonBounceableAddress = address.toString(true, true, false, true);
-        String bounceableAddress = address.toString(true, true, true, true);
+        String nonBounceableAddress = address.toBounceable();
+        String bounceableAddress = address.toNonBounceable();
 
-        String my = "Creating new wallet in workchain " + options.wc + "\n";
+        String my = "Creating new wallet in workchain " + contract.getWc() + "\n";
         my = my + "Loading private key from file new-wallet.pk" + "\n";
         my = my + "StateInit: " + msg.getInit().toCell().print() + "\n";
         my = my + "new wallet address = " + address.toString(false) + "\n";
@@ -147,32 +138,31 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(25);
+        contract.waitForDeployment(30);
 
         WalletV1R3Config config = WalletV1R3Config.builder()
-                .seqno(contract.getSeqno(tonlib))
+                .seqno(contract.getSeqno())
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
                 .amount(Utils.toNano(0.08))
-                .mode(3)
                 .comment("testNewWalletV1R3")
                 .build();
 
         // transfer coins from new wallet (back to faucet)
-        extMessageInfo = contract.sendTonCoins(tonlib, config);
+        extMessageInfo = contract.sendTonCoins(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(15);
+        contract.waitForBalanceChange(30);
 
         balance = new BigInteger(tonlib.getAccountState(address).getBalance());
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
 
-        log.info("seqno {}", contract.getSeqno(tonlib));
-        log.info("pubkey {}", contract.getPublicKey(tonlib));
+        log.info("seqno {}", contract.getSeqno());
+        log.info("pubkey {}", contract.getPublicKey());
     }
 
     @Test
-    public void testWalletV1EstimateFees() throws NoSuchAlgorithmException, InvalidKeyException {
+    public void testWalletV1R3EstimateFees() throws NoSuchAlgorithmException, InvalidKeyException {
         List<String> mnemonic = Mnemonic.generate(24);
         Pair keyPair = Mnemonic.toKeyPair(mnemonic);
 
@@ -184,14 +174,9 @@ public class TestWalletV1R3DeployTransfer extends CommonTest {
         log.info("pubkey " + Utils.bytesToHex(keyPairSig.getPublicKey()));
         log.info("seckey " + Utils.bytesToHex(keyPairSig.getSecretKey()));
 
-        Options options = Options.builder()
-                .publicKey(keyPairSig.getPublicKey())
-                .secretKey(keyPairSig.getSecretKey())
-                .wc(0L)
+        WalletV1R3 contract = WalletV1R3.builder()
+                .keyPair(keyPairSig)
                 .build();
-
-        WalletV1ContractR3 contract = new Wallet(WalletVersion.V1R3, options).create();
-
 
         Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPairSig, contract.getAddress(),
                 contract.getStateInit(), null);

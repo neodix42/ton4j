@@ -15,6 +15,7 @@ import java.math.BigInteger;
 @Setter
 @ToString
 public class WalletV1R1Config implements WalletConfig {
+    Boolean bounce; // default true
     long seqno;
     int mode; // default 3
     Address destination;

@@ -1,6 +1,8 @@
 package org.ton.java.smartcontract.token.nft;
 
 import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -24,13 +26,27 @@ import java.math.BigInteger;
 
 import static java.util.Objects.nonNull;
 
+@Builder
+@Getter
 public class NftItem implements Contract {
     // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-item.fc
     TweetNaclFast.Signature.KeyPair keyPair;
-    long wc;
 
     BigInteger index;
     Address collectionAddress;
+
+    private Tonlib tonlib;
+    private long wc;
+
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
+    }
 
 
 //    public NftItem(Options options) {

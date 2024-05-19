@@ -3,36 +3,70 @@ package org.ton.java.smartcontract.wallet.v3;
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV3Config;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
+import java.time.Instant;
+
 import static java.util.Objects.isNull;
 
 @Builder
 @Getter
-public class WalletV3ContractBase implements Contract {
-    Address address;
-
+public class WalletV3R1 implements Contract {
     TweetNaclFast.Signature.KeyPair keyPair;
+    long initialSeqno;
     long walletId;
 
+    public static class WalletV3R1Builder {
+        WalletV3R1Builder() {
+            if (isNull(keyPair)) {
+                keyPair = Utils.generateSignatureKeyPair();
+            }
+        }
+    }
+
+    private Tonlib tonlib;
+    private long wc;
+
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
+    }
 
     @Override
     public String getName() {
-        return "override me";
+        return "V3R1";
     }
 
     @Override
     public Cell createCodeCell() {
-        return null;
+        return CellBuilder.beginCell().
+                fromBoc(WalletCodes.V3R1.getValue()).
+                endCell();
     }
+
+    @Override
+    public Cell createDataCell() {
+        CellBuilder cell = CellBuilder.beginCell();
+        cell.storeUint(initialSeqno, 32);
+        cell.storeUint(walletId, 32);
+        cell.storeBytes(keyPair.getPublicKey());
+        return cell.endCell();
+    }
+
 
     /**
      * Creates message payload with subwallet-id, valid-until and seqno, equivalent to:
@@ -60,38 +94,28 @@ public class WalletV3ContractBase implements Contract {
 
         return CellBuilder.beginCell()
                 .storeUint(config.getSubWalletId(), 32)
-                .storeUint(config.getValidUntil(), 32)
+                .storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), 32)
                 .storeUint(config.getSeqno(), 32)
-                .storeUint(config.getMode() & 0xff, 8)
+                .storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8)
                 .storeRef(order)
                 .endCell();
     }
 
-
-    @Override
-    public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(0, 32); // seqno
-        cell.storeUint(walletId, 32);
-        cell.storeBytes(keyPair.getPublicKey());
-        return cell.endCell();
-    }
-
-    public Cell createDeployMessage(WalletV3Config config) {
+    public Cell createDeployMessage() {
         CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(config.getSubWalletId(), 32); //wallet-id
+        message.storeUint(walletId, 32); //wallet-id
 
         for (int i = 0; i < 32; i++) { // valid-until
             message.storeBit(true);
         }
-        message.storeUint(0, 32); //seqno
+        message.storeUint(initialSeqno, 32); //seqno
         return message.endCell();
     }
 
 
-    public ExtMessageInfo deploy(Tonlib tonlib, WalletV3Config config) {
+    public ExtMessageInfo deploy() {
 
-        Cell body = createDeployMessage(config);
+        Cell body = createDeployMessage();
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -107,7 +131,7 @@ public class WalletV3ContractBase implements Contract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, WalletV3Config config) {
+    public ExtMessageInfo sendTonCoins(WalletV3Config config) {
 
         Cell body = createTransferBody(config);
 
@@ -116,11 +140,16 @@ public class WalletV3ContractBase implements Contract {
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(config.getPublicKey(), config.getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash())) // config?
                         .storeCell(body)
                         .endCell())
                 .build();
 
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    }
+
+    public Message prepareExternalMsg(WalletV3Config config) {
+        Cell body = isNull(config.getBody()) ? createTransferBody(config) : config.getBody();
+        return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
     }
 }

@@ -1,12 +1,13 @@
 package org.ton.java.smartcontract.multisig;
 
 import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
 import org.ton.java.cell.*;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.Options;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
@@ -18,22 +19,44 @@ import java.util.*;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class MultisigWallet implements Contract {
+@Builder
+@Getter
+public class MultiSigWallet implements Contract {
 
     //https://github.com/akifoq/multisig/blob/master/multisig-code.fc
-    TweetNaclFast.Box.KeyPair keyPair;
+    TweetNaclFast.Signature.KeyPair keyPair;
     long walletId;
 
     MultiSigConfig config;
-    Address address;
 
     /**
      * interface to <a href="https://github.com/akifoq/multisig/blob/master/multisig-code.fc">multisig wallet smart-contract</a>
-     *
-     * @param options Options - mandatory -  highloadQueryId, walletId, publicKey
+     * <p>
+     * mandatory -  highloadQueryId, walletId, publicKey
      */
-    public MultisigWallet(Options options) {
-        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.multisig.getValue()).endCell();
+//    public MultisigWallet(Options options) {
+//        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.multisig.getValue()).endCell();
+//    }
+
+    public static class MultiSigWalletBuilder {
+        MultiSigWalletBuilder() {
+            if (isNull(keyPair)) {
+                keyPair = Utils.generateSignatureKeyPair();
+            }
+        }
+    }
+
+    private Tonlib tonlib;
+    private long wc;
+
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
     }
 
     @Override
@@ -87,7 +110,7 @@ public class MultisigWallet implements Contract {
     }
 
 
-    public List<BigInteger> getPublicKeys(Tonlib tonlib) {
+    public List<BigInteger> getPublicKeys() {
 
         List<BigInteger> publicKeys = new ArrayList<>();
 
@@ -116,8 +139,8 @@ public class MultisigWallet implements Contract {
         return publicKeys;
     }
 
-    public List<String> getPublicKeysHex(Tonlib tonlib) {
-        List<BigInteger> l = getPublicKeys(tonlib);
+    public List<String> getPublicKeysHex() {
+        List<BigInteger> l = getPublicKeys();
         List<String> result = new ArrayList<>();
         for (BigInteger i : l) {
             result.add(i.toString(16));
@@ -128,14 +151,13 @@ public class MultisigWallet implements Contract {
     /**
      * generates and returns init-state onchain
      *
-     * @param tonlib     tonlib
      * @param walletId   walletid
      * @param n          total keys
      * @param k          minimum number of keys
      * @param ownersInfo arrays with public keys
      * @return cell with state-init
      */
-    public Cell getInitState(Tonlib tonlib, long walletId, int n, int k, Cell ownersInfo) {
+    public Cell getInitState(long walletId, int n, int k, Cell ownersInfo) {
 
         Address myAddress = this.getAddress();
         Deque<String> stack = new ArrayDeque<>();
@@ -158,10 +180,9 @@ public class MultisigWallet implements Contract {
      * Sends an external msg with the order containing all collected signatures signed by owner at index
      * pubkeyIndex with keyPair.
      *
-     * @param tonlib  Tonlib
      * @param keyPair TweetNaclFast.Signature.KeyPair
      */
-    public ExtMessageInfo sendOrder(Tonlib tonlib, TweetNaclFast.Signature.KeyPair keyPair, int pubkeyIndex, Cell order) {
+    public ExtMessageInfo sendOrder(TweetNaclFast.Signature.KeyPair keyPair, int pubkeyIndex, Cell order) {
 
         Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
 
@@ -181,10 +202,9 @@ public class MultisigWallet implements Contract {
      * Sends an external msg with the order containing all collected signatures signed by owner at index
      * pubkeyIndex with secretKey.
      *
-     * @param tonlib    Tonlib
      * @param secretKey byte[]
      */
-    public ExtMessageInfo sendOrder(Tonlib tonlib, byte[] secretKey, int pubkeyIndex, Cell order) {
+    public ExtMessageInfo sendOrder(byte[] secretKey, int pubkeyIndex, Cell order) {
         Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
 
         Message externalMessage = Message.builder()
@@ -202,15 +222,15 @@ public class MultisigWallet implements Contract {
     /**
      * Serializes list of multisig wallet owners.
      *
-     * @param ownerInfos OwnerInfo
+     * @param ownersInfo OwnerInfo
      * @return Cell
      */
-    public Cell createOwnersInfoDict(List<OwnerInfo> ownerInfos) {
+    public Cell createOwnersInfoDict(List<OwnerInfo> ownersInfo) {
         int dictKeySize = 8;
         TonHashMapE dictDestinations = new TonHashMapE(dictKeySize);
 
         long i = 0; // key, index 16bit
-        for (OwnerInfo ownerInfo : ownerInfos) {
+        for (OwnerInfo ownerInfo : ownersInfo) {
 
             CellBuilder ownerInfoCell = CellBuilder.beginCell();
             ownerInfoCell.storeBytes(ownerInfo.getPublicKey()); //256 bits
@@ -331,18 +351,7 @@ public class MultisigWallet implements Contract {
         return query.endCell();
     }
 
-    /**
-     * We do not override createSigningMessage() since we can send an empty message for deployment.
-     */
-//    public ExtMessageInfo deploy(Tonlib tonlib, byte[] secretKey) {
-//        return tonlib.sendRawMessage(createInitExternalMessageWithoutBody(secretKey).message.toBase64());
-//    }
-    public Cell createTransferBody(MultisigWalletConfig config) {
-        return CellBuilder.beginCell().endCell();
-    }
-
-
-    public ExtMessageInfo deploy(Tonlib tonlib, MultisigWalletConfig config) {
+    public ExtMessageInfo deploy() {
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -350,8 +359,6 @@ public class MultisigWallet implements Contract {
                         .build())
                 .init(getStateInit())
                 .build();
-
-        System.out.println("print " + externalMessage.toCell().print());
 
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
@@ -507,9 +514,9 @@ public class MultisigWallet implements Contract {
         return signCell(keyPair, o.endCell());
     }
 
-    public Pair<Long, Long> getNandK(Tonlib tonlib) {
+    public Pair<Long, Long> getNandK() {
 
-        Address myAddress = this.getAddress();
+        Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_n_k");
 
         if (result.getExit_code() != 0) {
@@ -525,10 +532,9 @@ public class MultisigWallet implements Contract {
     /**
      * Returns list of all unsigned messages
      *
-     * @param tonlib Tonlib
      * @return List<Cell> pending queries
      */
-    public Map<BigInteger, Cell> getMessagesUnsigned(Tonlib tonlib) {
+    public Map<BigInteger, Cell> getMessagesUnsigned() {
 
         Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_messages_unsigned");
@@ -565,10 +571,9 @@ public class MultisigWallet implements Contract {
     /**
      * Returns list of all signed messages by index
      *
-     * @param tonlib Tonlib
      * @return List<Cell> pending queries
      */
-    public Map<BigInteger, Cell> getMessagesSignedByIndex(Tonlib tonlib, long index) {
+    public Map<BigInteger, Cell> getMessagesSignedByIndex(long index) {
 
         Address myAddress = this.getAddress();
         Deque<String> stack = new ArrayDeque<>();
@@ -608,10 +613,9 @@ public class MultisigWallet implements Contract {
     /**
      * Returns list of all unsigned messages by index
      *
-     * @param tonlib Tonlib
      * @return List<Cell> pending queries
      */
-    public Map<BigInteger, Cell> getMessagesUnsignedByIndex(Tonlib tonlib, long index) {
+    public Map<BigInteger, Cell> getMessagesUnsignedByIndex(long index) {
 
         Address myAddress = this.getAddress();
         Deque<String> stack = new ArrayDeque<>();
@@ -653,7 +657,7 @@ public class MultisigWallet implements Contract {
      *
      * @return Pair<Long, Long> status, mask
      */
-    public Pair<Long, Long> getQueryState(Tonlib tonlib, BigInteger queryId) {
+    public Pair<Long, Long> getQueryState(BigInteger queryId) {
 
         Address myAddress = this.getAddress();
 

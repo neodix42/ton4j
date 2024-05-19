@@ -1,6 +1,8 @@
 package org.ton.java.smartcontract.dns;
 
 import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -20,14 +22,29 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+@Builder
+@Getter
 public class DnsCollection implements Contract {
 
     //https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-collection.fc
     TweetNaclFast.Signature.KeyPair keyPair;
     Address address;
-    long wc;
     String dnsItemCodeHex;
     Cell collectionContent;
+    Cell code;
+
+    private Tonlib tonlib;
+    private long wc;
+
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
+    }
 
     /**
      * Options

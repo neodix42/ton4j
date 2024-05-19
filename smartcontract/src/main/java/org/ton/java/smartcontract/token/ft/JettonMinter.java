@@ -1,6 +1,8 @@
 package org.ton.java.smartcontract.token.ft;
 
 import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -10,23 +12,22 @@ import org.ton.java.smartcontract.types.JettonMinterData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR1;
+import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
 import static java.util.Objects.isNull;
 
+@Builder
+@Getter
 public class JettonMinter implements Contract {
-
     TweetNaclFast.Signature.KeyPair keyPair;
-    long wc;
     Address adminAddress;
 
     String jettonContentUri;
@@ -43,6 +44,27 @@ public class JettonMinter implements Contract {
 //            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.jettonMinter.getValue()).endCell();
 //        }
 //    }
+
+    public static class JettonMinterBuilder {
+        JettonMinterBuilder() {
+            if (isNull(keyPair)) {
+                keyPair = Utils.generateSignatureKeyPair();
+            }
+        }
+    }
+
+    private Tonlib tonlib;
+    private long wc;
+
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
+    }
 
     public String getName() {
         return "jettonMinter";
@@ -259,7 +281,7 @@ public class JettonMinter implements Contract {
     //    public ExtMessageInfo deploy(Tonlib tonlib, Contract adminWallet, BigInteger walletMsgValue, TweetNaclFast.Signature.KeyPair keyPair) {
 
     public ExtMessageInfo deploy(Tonlib tonlib, JettonMinterConfig config) {
-        long seqno = this.getSeqno(tonlib);
+        long seqno = getSeqno();
         config.setSeqno(seqno);
         Address ownAddress = getAddress();
 
@@ -289,7 +311,7 @@ public class JettonMinter implements Contract {
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), options.getSecretKey(), body.hash()))
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeRef(body)
                         .endCell())
                 .build();
@@ -297,16 +319,13 @@ public class JettonMinter implements Contract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public ExtMessageInfo mint(Tonlib tonlib, WalletV3ContractR1 adminWallet, JettonMinterConfig config, TweetNaclFast.Signature.KeyPair keyPair) {
+    public ExtMessageInfo mint(WalletV3R1 adminWallet, JettonMinterConfig config) {
 
-        System.out.println("addr: " + getAddress().toString(true));
         WalletV3Config walletV3Config = WalletV3Config.builder()
                 .subWalletId(42)
-                .seqno(adminWallet.getSeqno(tonlib))
-                .mode(3)
-                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
-                .secretKey(keyPair.getSecretKey())
-                .publicKey(keyPair.getPublicKey())
+                .seqno(adminWallet.getSeqno())
+//                .mode(3)
+//                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
                 .destination(getAddress())
                 .amount(config.getWalletMsgValue())
                 .body(createMintBody(0,
@@ -314,7 +333,7 @@ public class JettonMinter implements Contract {
                         config.getMintMsgValue(),
                         config.getJettonToMintAmount()))
                 .build();
-        return adminWallet.sendTonCoins(tonlib, walletV3Config);
+        return adminWallet.sendTonCoins(walletV3Config);
 
 //        ExternalMessage extMsg = adminWallet.createTransferMessage(
 //                keyPair.getSecretKey(),

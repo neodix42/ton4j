@@ -1,6 +1,8 @@
 package org.ton.java.smartcontract.dns;
 
 import com.iwebpp.crypto.TweetNaclFast;
+import lombok.Builder;
+import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -18,6 +20,8 @@ import java.math.BigInteger;
 
 import static java.util.Objects.nonNull;
 
+@Builder
+@Getter
 public class DnsItem implements Contract {
 
     // should be this https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-item.fc
@@ -27,6 +31,19 @@ public class DnsItem implements Contract {
 
     BigInteger index;
     Address collectionAddress;
+
+    private Tonlib tonlib;
+    private long wc;
+
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
+    }
 
 //    public DnsItem(Options options) {
 //        if (nonNull(options.address)) {

@@ -18,6 +18,7 @@ public class WalletV3Config implements WalletConfig {
     long subWalletId;
     long seqno;
     int mode;
+    long validUntil;
     boolean bounce;
     long createdAt;
     Address source;
@@ -25,8 +26,7 @@ public class WalletV3Config implements WalletConfig {
     BigInteger amount;
     Cell body;
     StateInit stateInit;
-    byte[] secretKey;
-    byte[] publicKey;
+    //    byte[] secretKey;
+//    byte[] publicKey;
     String comment;
-    long validUntil;
 }

@@ -3,7 +3,6 @@ package org.ton.java.smartcontract.types;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
-import org.ton.java.address.Address;
 
 import java.math.BigInteger;
 
@@ -11,8 +10,9 @@ import java.math.BigInteger;
 @Getter
 @ToString
 public class Destination {
+    boolean bounce; // default true
     int mode; // default mode 3
-    Address address;
+    String address;
     BigInteger amount;
     String comment;
 }

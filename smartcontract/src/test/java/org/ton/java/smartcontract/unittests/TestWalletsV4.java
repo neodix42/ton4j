@@ -6,10 +6,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.smartcontract.types.WalletVersion;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v4.WalletV4ContractR2;
+import org.ton.java.smartcontract.utils.MsgUtils;
+import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.utils.Utils;
 
@@ -28,20 +26,16 @@ public class TestWalletsV4 {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+        WalletV4R2 contract = WalletV4R2.builder()
+                .wc(0)
+                .keyPair(keyPair)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V4R2, options);
-        WalletV4ContractR2 contract = wallet.create();
-
-        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
+        Message msg = MsgUtils.createExternalMessageWithSignedBody(contract.getKeyPair(), contract.getAddress(), contract.getStateInit(), null);
         Address walletAddress = msg.getInit().getAddress();
 
-        String my = "Creating new advanced wallet V4 with plugins in workchain " + options.wc + "\n" +
-                "with unique wallet id " + options.walletId + "\n" +
+        String my = "Creating new advanced wallet V4 with plugins in workchain " + contract.getWc() + "\n" +
+                "with unique wallet id " + contract.getWalletId() + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
                 "StateInit: " + msg.getInit().toCell().print() + "\n" +
                 "new wallet address = " + walletAddress.toString(false) + "\n" +

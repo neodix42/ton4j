@@ -10,10 +10,7 @@ import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.highload.HighloadWallet;
 import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.HighloadConfig;
-import org.ton.java.smartcontract.types.WalletVersion;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v3.WalletV3ContractR2;
+import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.VerbosityLevel;
@@ -23,16 +20,16 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestWalletV2Highload extends CommonTest {
+public class TestHighloadWalletV2 extends CommonTest {
 
     @Test
-    public void testWalletV2HighloadSendTo10() throws InterruptedException {
+    public void testSendTo10() throws InterruptedException {
+
         tonlib = Tonlib.builder()
                 .testnet(true)
                 .ignoreCache(false)
@@ -41,122 +38,117 @@ public class TestWalletV2Highload extends CommonTest {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .walletId(42L) // todo
-//                .highloadQueryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32).add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
-                .wc(0L)
+        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32);
+
+        HighloadWallet contract = HighloadWallet.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42L)
+                .queryId(queryId)
                 .build();
 
         log.info("pubKey {}, prvKey {}", Utils.bytesToHex(keyPair.getPublicKey()), Utils.bytesToHex(keyPair.getSecretKey()));
 
-        HighloadWallet contract = new Wallet(WalletVersion.highload, options).create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
+        String rawAddress = contract.getAddress().toRaw();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
-        log.info("           raw address {}", contract.getAddress().toString(false));
+        log.info("           raw address {}", rawAddress);
 
         // top up new wallet using test-faucet-wallet        
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32)
-                .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond())));
+//        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32)
+//                .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond())));
 
-        HighloadConfig config = HighloadConfig.builder()
-                .subWalletId(42L)
-                .queryId(queryId)
-                .build();
 
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(45, "deploying");
+        contract.waitForDeployment(20);
 
-        config = HighloadConfig.builder()
+        HighloadConfig config = HighloadConfig.builder()
+                .walletId(42)
                 .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
                 .destinations(List.of(
                         Destination.builder()
-                                .address(Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G"))
+                                .address("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G")
                                 .amount(Utils.toNano(0.2))
                                 .mode(3)
                                 .build(),
                         Destination.builder()
-                                .address(Address.of("EQBrpstctZ5gF-VaaPswcWHe3JQijjNbtJVn5USXlZ-bAgO3"))
+                                .address("EQBrpstctZ5gF-VaaPswcWHe3JQijjNbtJVn5USXlZ-bAgO3")
                                 .amount(Utils.toNano(0.1))
                                 .mode(3)
                                 .comment("destination 2")
                                 .build(),
                         Destination.builder()
-                                .address(Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"))
+                                .address("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_")
                                 .amount(Utils.toNano(0.3))
                                 .build(),
                         Destination.builder()
-                                .address(Address.of("EQAUEeWmzaf2An-MmNi1DRlFAU6ol_qTLP-_LlUnfgF-lA00"))
+                                .address("EQAUEeWmzaf2An-MmNi1DRlFAU6ol_qTLP-_LlUnfgF-lA00")
                                 .amount(Utils.toNano(0.6))
                                 .build(),
                         Destination.builder()
-                                .address(Address.of("EQCwqNA5WhNTTQtl-QDlOlwcBDUS377Q4tRW69V82Q3LXvru"))
+                                .address("EQCwqNA5WhNTTQtl-QDlOlwcBDUS377Q4tRW69V82Q3LXvru")
                                 .amount(Utils.toNano(0.2))
                                 .build(),
                         Destination.builder()
-                                .address(Address.of("EQAQ93wokze84Loos4arP5aK7AlQFqbg1HDjEogsMCCbZyNo"))
+                                .address("EQAQ93wokze84Loos4arP5aK7AlQFqbg1HDjEogsMCCbZyNo")
                                 .amount(Utils.toNano(0.1))
                                 .build(),
                         Destination.builder()
-                                .address(Address.of("EQALeq_z73heR4wMQRFKgA_fwkbZgxEf0ya0Kl6UjvpvG-A3"))
+                                .address("EQALeq_z73heR4wMQRFKgA_fwkbZgxEf0ya0Kl6UjvpvG-A3")
                                 .amount(Utils.toNano(0.15))
                                 .build(),
                         Destination.builder()
-                                .address(Address.of("EQCP-ejxzoB6KJ6auhnsPrW1pW6gAZ8uHXnUSHuHGNpY1zJf"))
+                                .address("EQCP-ejxzoB6KJ6auhnsPrW1pW6gAZ8uHXnUSHuHGNpY1zJf")
                                 .amount(Utils.toNano(0.42))
                                 .build(),
                         Destination.builder()
-                                .address(Address.of("EQCkS2OnOOjeLV-LEEUmIPh-_in4pdFr1cScZG1Inft3qUea"))
+                                .address("EQCkS2OnOOjeLV-LEEUmIPh-_in4pdFr1cScZG1Inft3qUea")
                                 .amount(Utils.toNano(0.22))
                                 .build(),
                         Destination.builder()
-                                .address(Address.of("EQCZlgy61mcgYNXK0yiFHC9CxjoxxAFkwiUtzTONrk6_Qk6W"))
+                                .address("EQCZlgy61mcgYNXK0yiFHC9CxjoxxAFkwiUtzTONrk6_Qk6W")
                                 .amount(Utils.toNano(0.33))
                                 .build()
                 ))
                 .build();
 
         // transfer coins to multiple destination as specified in options
-        extMessageInfo = contract.sendTonCoins(tonlib, config);
+        extMessageInfo = contract.sendTonCoins(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(90, "sending to 10 destinations");
+        log.info("sending to 10 destinations");
+        contract.waitForBalanceChange(90);
 
-        balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
-        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+        balance = contract.getBalance();
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(contract.getBalance()));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(3).longValue());
     }
 
     @Test
-    public void testWalletV2HighloadSendTo200() throws InterruptedException {
+    public void testSendTo250() throws InterruptedException {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
+        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32);
+
+        HighloadWallet contract = HighloadWallet.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
                 .walletId(42L)
-                .highloadQueryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32) // todo remove
-                        .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond()))))
-                .wc(0L)
+                .queryId(queryId)
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.highload, options);
-        HighloadWallet contract = wallet.create();
-
-        String nonBounceableAddress = contract.getAddress().toString(true, true, false);
-        String bounceableAddress = contract.getAddress().toString(true, true, true);
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
@@ -166,50 +158,38 @@ public class TestWalletV2Highload extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        HighloadConfig highloadConfig = HighloadConfig.builder()
-                .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
-                .build();
-
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, highloadConfig);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(45, "deploying");
+        contract.waitForDeployment(60);
 
-        List<Destination> destinations = generateTargetsWithSameAmountAndSendMode(200, keyPair.getPublicKey());
+        List<Destination> destinations = generateTargetsWithSameAmountAndSendMode(250);
 
-        highloadConfig = HighloadConfig.builder()
+        HighloadConfig highloadConfig = HighloadConfig.builder()
+                .walletId(42)
                 .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
                 .destinations(destinations)
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(tonlib, highloadConfig);
+        extMessageInfo = contract.sendTonCoins(highloadConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
-    private List<Destination> generateTargetsWithSameAmountAndSendMode(int count, byte[] publicKey) {
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
+    private List<Destination> generateTargetsWithSameAmountAndSendMode(int count) {
 
         List<Destination> result = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
 
-            Options options = Options.builder()
-                    .walletId(new Random().nextLong() & 0xffffffffL)
-                    .publicKey(publicKey)
-                    .build();
+            WalletV3R2 contract = WalletV3R2.builder().build();
 
-            Wallet wallet = new Wallet(WalletVersion.V3R2, options);
-            WalletV3ContractR2 contract = wallet.create();
             Address dest = contract.getAddress();
             double amount = 0.05;
-            log.info("send {} to {}", Utils.formatNanoValue(Utils.toNano(amount)), dest.toString(true, true, true));
+            log.info("will send {} to {}", Utils.formatNanoValue(Utils.toNano(amount)), dest.toNonBounceable());
 
             Destination destination = Destination.builder()
-                    .address(dest)
+                    .bounce(false)
+                    .address(dest.toNonBounceable())
                     .amount(Utils.toNano(amount))
                     .build();
 

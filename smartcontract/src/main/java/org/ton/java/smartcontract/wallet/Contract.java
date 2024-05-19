@@ -1,19 +1,27 @@
 package org.ton.java.smartcontract.wallet;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
-import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR1;
+import org.ton.java.smartcontract.wallet.v1.WalletV1R1;
 import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tlb.types.StateInit;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.RawTransaction;
+import org.ton.java.utils.Utils;
+
+import java.math.BigInteger;
+import java.util.List;
 
 /**
  * Interface for all smart contract objects in ton4j.
  */
 public interface Contract {
 
-//    Options getOptions();
+    Tonlib getTonlib();
+
+    long getWorkchain();
 
     String getName();
 
@@ -21,12 +29,12 @@ public interface Contract {
         return StateInit.builder()
                 .code(createCodeCell())
                 .data(createDataCell())
-                .build().getAddress();
+                .build().getAddress(getWorkchain());
     }
 
-    default Address getAddress(byte workchain) {
-        return getStateInit().getAddress(workchain);
-    }
+//    default Address getAddress(byte workchain) {
+//        return getStateInit().getAddress(workchain);
+//    }
 
     default MsgAddressIntStd getAddressIntStd() {
         Address ownAddress = getStateInit().getAddress();
@@ -76,71 +84,53 @@ public interface Contract {
                 .build();
     }
 
-//    Cell createTransferBody(T config);
+    default long getSeqno() {
 
-//    ExtMessageInfo deploy(Tonlib tonlib, T config);
-
-    default long getSeqno(Tonlib tonlib) {
-
-        if (this instanceof WalletV1ContractR1) {
+        if (this instanceof WalletV1R1) {
             throw new Error("Wallet V1R1 does not have seqno method");
         }
 
-        return tonlib.getSeqno(getAddress());
+        return getTonlib().getSeqno(getAddress());
     }
 
-//    default Message createExternalMessage(Address destination, boolean stateInit, Cell body) {
-//        Message externalMessage = Message.builder()
-//                .info(ExternalMessageInfo.builder()
-//                        .dstAddr(getAddressIntStd())
-//                        .build()).build();
-//        if (stateInit) {
-//            externalMessage.setInit(getStateInit());
-//        }
-//        if (isNull(body)) {
-//            body = CellBuilder.beginCell().endCell();
-//        }
-//        externalMessage.setBody(CellBuilder.beginCell()
-//                .storeBytes(Utils.signData(key.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-//                .storeCell(body)
-//                .endCell());
-//
-//        return externalMessage;
-//    }
-//
-//    default Message createInternalMessage(Address destination,
-//                                          BigInteger amount,
-//                                          Cell body,
-//                                          StateInit stateInit) {
-//        Message internalMessage = Message.builder()
-//                .info(InternalMessageInfo.builder()
-//                        .dstAddr(MsgAddressIntStd.builder()
-//                                .workchainId(destination.wc)
-//                                .address(destination.toBigInteger())
-//                                .build())
-//                        .value(CurrencyCollection.builder().coins(amount).build())
-//                        .build()).build();
-//
-//        if (nonNull(stateInit)) {
-//            internalMessage.setInit(stateInit);
-//        }
-//
-//        if (nonNull(body)) {
-//            internalMessage.setBody(body);
-//        }
-//
-//        return internalMessage;
-//    }
+    default boolean isDeployed() {
+        return StringUtils.isNotEmpty(getTonlib().getRawAccountState(getAddress()).getCode());
+    }
 
-    /**
-     * crates external with internal msg as body
-     */
-//    default Message createTransferMessage(T config) {
-//
-//        //Cell body = createTransferBody(config);
-////        Cell intMsg = this.createInternalMessage(destination, amount, body).toCell();
-////
-////        return this.createExternalMessage(destination, false, intMsg);
-//        return null;
-//    }
+    default void waitForDeployment(int timeoutSeconds) {
+        System.out.println("waiting for deployment up to " + timeoutSeconds + " sec");
+        int i = 0;
+        do {
+            if (++i * 2 >= timeoutSeconds) {
+                throw new Error("Can't deploy contract within specified timeout.");
+            }
+            Utils.sleep(2);
+        }
+        while (!isDeployed());
+    }
+
+    default void waitForBalanceChange(int timeoutSeconds) {
+        System.out.println("waiting for balance change up to " + timeoutSeconds + " sec");
+        BigInteger initialBalance = getBalance();
+        int i = 0;
+        do {
+            if (++i * 2 >= timeoutSeconds) {
+                throw new Error("Balance was not changed within specified timeout.");
+            }
+            Utils.sleep(2);
+        }
+        while (initialBalance.equals(getBalance()));
+    }
+
+    default BigInteger getBalance() {
+        return new BigInteger(getTonlib().getAccountState(getAddress()).getBalance());
+    }
+
+    default List<RawTransaction> getTransactions(int historyLimit) {
+        return getTonlib().getAllRawTransactions(getAddress().toBounceable(), BigInteger.ZERO, null, historyLimit).getTransactions();
+    }
+
+    default List<RawTransaction> getTransactions() {
+        return getTonlib().getAllRawTransactions(getAddress().toBounceable(), BigInteger.ZERO, null, 20).getTransactions();
+    }
 }

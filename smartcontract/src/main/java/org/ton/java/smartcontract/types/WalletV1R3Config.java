@@ -14,7 +14,7 @@ import java.math.BigInteger;
 @Setter
 @ToString
 public class WalletV1R3Config implements WalletConfig {
-    boolean bounce;
+    Boolean bounce;
     long seqno;
     int mode;
     long createdAt;

@@ -7,10 +7,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.types.WalletV1R3Config;
-import org.ton.java.smartcontract.types.WalletVersion;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
-import org.ton.java.smartcontract.wallet.v1.WalletV1ContractR3;
+import org.ton.java.smartcontract.wallet.ContractUtils;
+import org.ton.java.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.AccountAddressOnly;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -19,10 +17,8 @@ import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
@@ -47,8 +43,8 @@ public class TestFaucet {
 //
 //        WalletV1ContractR3 faucet = new Wallet(WalletVersion.V1R3, options).create();
 
-        WalletV1ContractR3 faucet = WalletV1ContractR3.builder()
-                .wc(0)
+        WalletV1R3 faucet = WalletV1R3.builder()
+                .tonlib(tonlib)
                 .keyPair(keyPair)
                 .build();
 
@@ -60,7 +56,7 @@ public class TestFaucet {
                     throw new Error("Cannot get faucet balance. Restart.");
                 }
 
-                faucetBalance = new BigInteger(tonlib.getAccountState(faucet.getAddress()).getBalance());
+                faucetBalance = faucet.getBalance();
                 log.info("Faucet address {}, balance {}", faucet.getAddress().toString(true, true, true), Utils.formatNanoValue(faucetBalance));
                 if (faucetBalance.compareTo(amount) < 0) {
                     throw new Error("Faucet does not have that much toncoins. faucet balance " + Utils.formatNanoValue(faucetBalance) + ", requested " + Utils.formatNanoValue(amount));
@@ -73,33 +69,34 @@ public class TestFaucet {
 
         WalletV1R3Config config = WalletV1R3Config.builder()
                 .bounce(false)
-                .seqno(faucet.getSeqno(tonlib))
+                .seqno(faucet.getSeqno())
                 .destination(destinationAddress)
                 .amount(amount)
-                .mode((byte) 3)
                 .comment("top-up from ton4j")
                 .build();
 
-        ExtMessageInfo extMessageInfo = faucet.sendTonCoins(tonlib, config);
+        ExtMessageInfo extMessageInfo = faucet.sendTonCoins(config);
 
         if (extMessageInfo.getError().getCode() != 0) {
             throw new Error(extMessageInfo.getError().getMessage());
         }
 
-        BigInteger newBalance = BigInteger.ZERO;
-        i = 0;
-        do {
-            log.info("checking wallet balance: {}", destinationAddress.toString(true, true, true));
-            TimeUnit.SECONDS.sleep(10);
-            if (nonNull(tonlib.getAccountState(destinationAddress).getBalance())) {
-                newBalance = new BigInteger(tonlib.getAccountState(destinationAddress).getBalance());
-            }
-            if (++i > 10) {
-                throw new Error("cannot top up the contract " + destinationAddress);
-            }
-        } while (newBalance.compareTo(BigInteger.ZERO) < 1);
+        ContractUtils.waitForBalanceChange(tonlib, destinationAddress, 60);
 
-        return newBalance;
+//        BigInteger newBalance = BigInteger.ZERO;
+//        i = 0;
+//        do {
+//            log.info("checking wallet balance: {}", destinationAddress.toString(true, true, true));
+//            TimeUnit.SECONDS.sleep(10);
+//            if (nonNull(tonlib.getAccountState(destinationAddress).getBalance())) {
+//                newBalance = new BigInteger(tonlib.getAccountState(destinationAddress).getBalance());
+//            }
+//            if (++i > 10) {
+//                throw new Error("cannot top up the contract " + destinationAddress);
+//            }
+//        } while (newBalance.compareTo(BigInteger.ZERO) < 1);
+
+        return ContractUtils.getBalance(tonlib, destinationAddress);
     }
 
     @Test
@@ -115,18 +112,12 @@ public class TestFaucet {
 
     @Test
     public void createFaucetWallet() {
-        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
-
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .wc(0L)
+        WalletV1R3 contract = WalletV1R3.builder()
                 .build();
 
-        Wallet wallet = new Wallet(WalletVersion.V1R3, options);
-        WalletV1ContractR3 contract = wallet.create();
         assertThat(contract.getAddress()).isNotNull();
-        log.info("Private key {}", Utils.bytesToHex(keyPair.getSecretKey()));
-        log.info("Public key {}", Utils.bytesToHex(keyPair.getPublicKey()));
+        log.info("Private key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+        log.info("Public key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
         log.info("Non-bounceable address (for init): {}", contract.getAddress().toString(true, true, false, true));
         log.info("Bounceable address (for later access): {}", contract.getAddress().toString(true, true, true, true));
         log.info("Raw address: {}", contract.getAddress().toString(false));
@@ -141,13 +132,16 @@ public class TestFaucet {
         byte[] secretKey = Utils.hexToSignedBytes(SECRET_KEY);
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .verbosityLevel(VerbosityLevel.DEBUG)
                 .build();
 
-        WalletV1ContractR3 contract = new Wallet(WalletVersion.V1R3, options).create();
+        WalletV1R3 contract = WalletV1R3.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .build();
 
         log.info("Private key {}", Utils.bytesToHex(keyPair.getSecretKey()));
         log.info("Public key {}", Utils.bytesToHex(keyPair.getPublicKey()));
@@ -156,21 +150,9 @@ public class TestFaucet {
         log.info("Bounceable address (for later access): {}", contract.getAddress().toString(true, true, true, true));
         log.info("Raw address: {}", contract.getAddress().toString(false));
 
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
 
 //        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
-        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, WalletV1R3Config.builder()
-                .bounce(false)
-                .destination(Address.of(nonBounceableAddress))
-                .build());
-
-
-//        log.info("deploying faucet contract to address {}", contract.getAddress().toString(false));
-//        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 

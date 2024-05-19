@@ -11,10 +11,7 @@ import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.lockup.LockupWalletV1;
 import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.types.LockupWalletV1Config;
-import org.ton.java.smartcontract.types.WalletVersion;
 import org.ton.java.smartcontract.utils.MsgUtils;
-import org.ton.java.smartcontract.wallet.Options;
-import org.ton.java.smartcontract.wallet.Wallet;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
@@ -28,17 +25,33 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestLockupWalletDeployTransfer extends CommonTest {
+public class TestLockupWallet extends CommonTest {
 
     @Test
     public void testNewWalletLockup() throws InterruptedException {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        Options options = Options.builder()
-                .publicKey(keyPair.getPublicKey())
-                .secretKey(keyPair.getSecretKey())
-                .wc(0L)
+//        Options options = Options.builder()
+//                .publicKey(keyPair.getPublicKey())
+//                .secretKey(keyPair.getSecretKey())
+//                .wc(0L)
+//                .lockupConfig(LockupConfig.builder()
+//                        .configPublicKey(Utils.bytesToHex(keyPair.getPublicKey()))
+//                        // important to specify totalRestrictedValue! otherwise wallet will send to prohibited addresses
+//                        // can be more than total balance wallet
+//                        .totalRestrictedValue(Utils.toNano(5_000_000))
+//                        .allowedDestinations(List.of(
+//                                TestFaucet.BOUNCEABLE,
+//                                "kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
+//                        .build())
+//                .build();
+
+
+//        LockupWalletV1 contract = new Wallet(WalletVersion.lockup, options).create();
+
+        LockupWalletV1 contract = LockupWalletV1.builder()
+                .keyPair(keyPair)
                 .lockupConfig(LockupConfig.builder()
                         .configPublicKey(Utils.bytesToHex(keyPair.getPublicKey()))
                         // important to specify totalRestrictedValue! otherwise wallet will send to prohibited addresses
@@ -50,13 +63,10 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
                         .build())
                 .build();
 
-
-        LockupWalletV1 contract = new Wallet(WalletVersion.lockup, options).create();
-
         Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair,
                 contract.getAddress(), contract.getStateInit(),
                 CellBuilder.beginCell()
-                        .storeUint(options.getWalletId(), 32) // subwallet-id
+                        .storeUint(contract.getWalletId(), 32) // subwallet-id
                         .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32) // valid-until
                         .storeUint(0, 32) // seqno
                         .endCell());
@@ -83,7 +93,7 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         Utils.sleep(60, "deploying");
 
-        log.info("seqno {}", contract.getSeqno(tonlib));
+        log.info("seqno {}", contract.getSeqno());
         log.info("sub-wallet id {}", contract.getWalletId(tonlib));
         log.info("public key {}", contract.getPublicKey(tonlib));
 
@@ -98,7 +108,7 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
         // try to transfer coins from new lockup wallet to allowed address (back to faucet)
         log.info("sending toncoins to allowed address...");
         LockupWalletV1Config config = LockupWalletV1Config.builder()
-                .seqno(contract.getSeqno(tonlib))
+                .seqno(contract.getSeqno())
                 .mode(3)
                 .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
@@ -117,7 +127,7 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         log.info("sending toncoins to prohibited address 1st time ...");
         config = LockupWalletV1Config.builder()
-                .seqno(contract.getSeqno(tonlib))
+                .seqno(contract.getSeqno())
                 .mode(3)
                 .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
                 .destination(Address.of("EQDZno6LOWYJRHPpRv-MM3qrhFPk6OHOxVOg1HvEEAtJxK3y"))
@@ -137,7 +147,7 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         log.info("sending toncoins to prohibited address 2nd time ...");
         config = LockupWalletV1Config.builder()
-                .seqno(contract.getSeqno(tonlib))
+                .seqno(contract.getSeqno())
                 .mode(3)
                 .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
                 .destination(Address.of("0f_N_wfrFUwuWVkwpqmkRRYIJRzByJRobEwRCJTeQ8lq06n9"))
@@ -160,7 +170,7 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         log.info("sending toncoins to allowed address...");
         config = LockupWalletV1Config.builder()
-                .seqno(contract.getSeqno(tonlib))
+                .seqno(contract.getSeqno())
                 .mode(3)
                 .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
                 .destination(Address.of("kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
@@ -192,10 +202,24 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         // echo 'hex-prv-key' | xxd -r -p  > /usr/local/bin/mytoncore/wallets/restricted-validator-wallet-001.pk
 
-        Options options = Options.builder()
-                .publicKey(sigKeyPair.getPublicKey())
-                .secretKey(sigKeyPair.getSecretKey())
-                .wc(0L)
+//        Options options = Options.builder()
+//                .publicKey(sigKeyPair.getPublicKey())
+//                .secretKey(sigKeyPair.getSecretKey())
+//                .wc(0L)
+//                .lockupConfig(LockupConfig.builder()
+//                        .configPublicKey(Utils.bytesToHex(sigKeyPair.getPublicKey())) // same as owner
+//                        .totalRestrictedValue(Utils.toNano(5_000_000))
+//                        .allowedDestinations(List.of(
+//                                elector.toString(),
+//                                myWallet.toString())
+//                        ).build())
+//                .build();
+
+
+//        LockupWalletV1 contract = new Wallet(WalletVersion.lockup, options).create();
+
+        LockupWalletV1 contract = LockupWalletV1.builder()
+                .keyPair(sigKeyPair)
                 .lockupConfig(LockupConfig.builder()
                         .configPublicKey(Utils.bytesToHex(sigKeyPair.getPublicKey())) // same as owner
                         .totalRestrictedValue(Utils.toNano(5_000_000))
@@ -205,12 +229,9 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
                         ).build())
                 .build();
 
-
-        LockupWalletV1 contract = new Wallet(WalletVersion.lockup, options).create();
-
         Message msg = MsgUtils.createExternalMessageWithSignedBody(sigKeyPair, contract.getAddress(), contract.getStateInit(),
                 CellBuilder.beginCell()
-                        .storeUint(options.getWalletId(), 32) // subwallet-id
+                        .storeUint(contract.getWalletId(), 32) // subwallet-id
                         .storeUint(Instant.now().getEpochSecond() + 60L, 32) // valid-until
                         .storeUint(0, 32) // seqno
                         .endCell());
@@ -237,7 +258,7 @@ public class TestLockupWalletDeployTransfer extends CommonTest {
 
         Utils.sleep(30, "deploying");
 
-        log.info("seqno {}", contract.getSeqno(tonlib));
+        log.info("seqno {}", contract.getSeqno());
         address.saveToFile("restricted-validator-wallet-001.addr");
     }
 }

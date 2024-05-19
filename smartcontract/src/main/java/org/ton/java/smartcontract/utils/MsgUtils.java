@@ -54,4 +54,22 @@ public class MsgUtils {
                 .body(nonNull(body) ? body : null)
                 .build();
     }
+
+    public static Message createNonBounceableInternalMessage(Address destination,
+                                                             BigInteger amount,
+                                                             StateInit stateInit,
+                                                             Cell body) {
+        return Message.builder()
+                .info(InternalMessageInfo.builder()
+                        .bounce(false)
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(destination.wc)
+                                .address(destination.toBigInteger())
+                                .build())
+                        .value(CurrencyCollection.builder().coins(amount).build())
+                        .build())
+                .init(nonNull(stateInit) ? stateInit : null)
+                .body(nonNull(body) ? body : null)
+                .build();
+    }
 }
