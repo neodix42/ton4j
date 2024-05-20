@@ -161,27 +161,33 @@ public class HighloadWallet implements Contract {
 
             Cell order;
             if (destination.isBounce()) {
-                if (nonNull(destination.getComment())) {
-                    order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, CellBuilder.beginCell()
-                            .storeUint(0, 32)
-                            .storeString(destination.getComment())
-                            .endCell()).toCell();
+                if (isNull(destination.getBody()) && nonNull(destination.getComment())) {
+                    order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null,
+                            CellBuilder.beginCell()
+                                    .storeUint(0, 32)
+                                    .storeString(destination.getComment())
+                                    .endCell()).toCell();
+                } else if (nonNull(destination.getBody())) {
+                    order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, destination.getBody()).toCell();
                 } else {
                     order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, null).toCell();
                 }
             } else {
-                if (nonNull(destination.getComment())) {
-                    order = MsgUtils.createNonBounceableInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, CellBuilder.beginCell()
-                            .storeUint(0, 32)
-                            .storeString(destination.getComment())
-                            .endCell()).toCell();
+                if (isNull(destination.getBody()) && nonNull(destination.getComment())) {
+                    order = MsgUtils.createNonBounceableInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null,
+                            CellBuilder.beginCell()
+                                    .storeUint(0, 32)
+                                    .storeString(destination.getComment())
+                                    .endCell()).toCell();
+                } else if (nonNull(destination.getBody())) {
+                    order = MsgUtils.createNonBounceableInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, destination.getBody()).toCell();
                 } else {
                     order = MsgUtils.createNonBounceableInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, null).toCell();
                 }
             }
 
             CellBuilder p = CellBuilder.beginCell()
-                    .storeUint(destination.getMode(), 8)
+                    .storeUint((destination.getMode() == 0) ? 3 : destination.getMode() & 0xff, 8)
                     .storeRef(order);
 
             dictDestinations.elements.put(i++, p.endCell());

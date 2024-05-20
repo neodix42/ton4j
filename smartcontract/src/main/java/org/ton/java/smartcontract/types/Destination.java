@@ -3,6 +3,7 @@ package org.ton.java.smartcontract.types;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
+import org.ton.java.cell.Cell;
 
 import java.math.BigInteger;
 
@@ -15,4 +16,5 @@ public class Destination {
     String address;
     BigInteger amount;
     String comment;
+    Cell body;
 }

@@ -6,14 +6,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.highload.HighloadWallet;
 import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.HighloadConfig;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -29,12 +28,6 @@ public class TestHighloadWalletV2 extends CommonTest {
 
     @Test
     public void testSendTo10() throws InterruptedException {
-
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
@@ -62,14 +55,11 @@ public class TestHighloadWalletV2 extends CommonTest {
         Utils.sleep(30, "topping up...");
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-//        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32)
-//                .add(new BigInteger(String.valueOf(Instant.now().getEpochSecond())));
-
 
         ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        contract.waitForDeployment(20);
+        contract.waitForDeployment(30);
 
         HighloadConfig config = HighloadConfig.builder()
                 .walletId(42)
@@ -78,14 +68,17 @@ public class TestHighloadWalletV2 extends CommonTest {
                         Destination.builder()
                                 .address("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G")
                                 .amount(Utils.toNano(0.2))
-                                .mode(3)
+                                .comment("test-comment-1")
                                 .build(),
                         Destination.builder()
                                 .address("EQBrpstctZ5gF-VaaPswcWHe3JQijjNbtJVn5USXlZ-bAgO3")
                                 .amount(Utils.toNano(0.1))
                                 .mode(3)
-                                .comment("destination 2")
-                                .build(),
+                                .body(CellBuilder.beginCell()
+                                        .storeUint(0, 32)
+                                        .storeString("test-comment-2")
+                                        .endCell()
+                                ).build(),
                         Destination.builder()
                                 .address("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_")
                                 .amount(Utils.toNano(0.3))
