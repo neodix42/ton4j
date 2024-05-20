@@ -21,7 +21,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class GenerateWallet {
 
-    public static TestWallet random(Tonlib tonlib, long initialBalanceInToncoins) throws InterruptedException {
+    public static WalletV3R1 random(Tonlib tonlib, long initialBalanceInToncoins) throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair;
         String predefinedSecretKey = "";
 
@@ -33,14 +33,6 @@ public class GenerateWallet {
 
         log.info("pubKey {}, prvKey {}", Utils.bytesToHex(keyPair.getPublicKey()), Utils.bytesToHex(keyPair.getSecretKey()));
 
-//        Options options = Options.builder()
-//                .publicKey(keyPair.getPublicKey())
-//                .secretKey(keyPair.getSecretKey())
-//                .wc(0)
-//                .walletId(42L)
-//                .build();
-//
-//        WalletV3ContractR1 adminWallet = new Wallet(WalletVersion.V3R1, options).create();
 
         WalletV3R1 adminWallet = WalletV3R1.builder()
                 .keyPair(keyPair)
@@ -58,10 +50,15 @@ public class GenerateWallet {
         );
         Address address = msg.getInit().getAddress();
 
-        String nonBounceableAddress = address.toString(true, true, false, true);
-        String bounceableAddress = address.toString(true, true, true, true);
+        String nonBounceableAddress = address.toNonBounceable();
+        String bounceableAddress = address.toBounceable();
+        String rawAddress = address.toRaw();
 
-        log.info("\nNon-bounceable address (for init): {}\nBounceable address (for later access): {}\nraw: {}\n", nonBounceableAddress, bounceableAddress, address.toString(false));
+        log.info("non-bounceable address {}", nonBounceableAddress);
+        log.info("    bounceable address {}", bounceableAddress);
+        log.info("           raw address {}", rawAddress);
+        log.info("pubKey: {}", Utils.bytesToHex(adminWallet.getKeyPair().getPublicKey()));
+
 
         if (StringUtils.isEmpty(predefinedSecretKey)) {
             BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins));
@@ -71,9 +68,6 @@ public class GenerateWallet {
             assertThat(extMessageInfo.getError().getCode()).isZero();
             Utils.sleep(20);
         }
-        return TestWallet.builder()
-                .keyPair(keyPair)
-                .wallet(adminWallet)
-                .build();
+        return adminWallet;
     }
 }
