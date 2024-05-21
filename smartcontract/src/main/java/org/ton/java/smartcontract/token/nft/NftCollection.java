@@ -32,7 +32,6 @@ public class NftCollection implements Contract {
 
     long royaltyBase; // default 1000
     double royaltyFactor;
-    Address address;
     Address adminAddress;
     String collectionContentUri;
     String collectionContentBaseUri;
@@ -244,7 +243,6 @@ public class NftCollection implements Contract {
      * @return DnsData
      */
     public ItemData getNftItemContent(Tonlib tonlib, NftItem nftItem) {
-        Address myAddress = this.getAddress();
         ItemData nftData = nftItem.getData(tonlib);
 
         if (nftData.isInitialized()) {
@@ -252,7 +250,7 @@ public class NftCollection implements Contract {
             stack.offer("[num, " + nftData.getIndex() + "]");
             stack.offer("[slice, " + nftData.getContentCell().toHex(true) + "]");
 
-            RunResult result = tonlib.runMethod(myAddress, "get_nft_content", stack);
+            RunResult result = tonlib.runMethod(getAddress(), "get_nft_content", stack);
 
             if (result.getExit_code() != 0) {
                 throw new Error("method get_nft_content, returned an exit code " + result.getExit_code());

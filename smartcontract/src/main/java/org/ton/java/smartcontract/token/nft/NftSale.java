@@ -6,24 +6,15 @@ import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.NftSaleConfig;
 import org.ton.java.smartcontract.types.NftSaleData;
-import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
-import org.ton.java.tlb.types.ExternalMessageInfo;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MsgAddressExtNone;
-import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.tonlib.types.TvmStackEntrySlice;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.time.Instant;
 
 import static java.util.Objects.isNull;
 
@@ -88,35 +79,21 @@ public class NftSale implements Contract {
      */
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeAddress(marketplaceAddress);
-        cell.storeAddress(nftItemAddress);
-        cell.storeAddress(null); //nft_owner_address
-        cell.storeCoins(fullPrice);
-
-        CellBuilder feesCell = CellBuilder.beginCell();
-        feesCell.storeCoins(marketplaceFee);
-        feesCell.storeAddress(royaltyAddress);
-        feesCell.storeCoins(royaltyAmount);
-        cell.storeRef(feesCell.endCell());
-
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeAddress(marketplaceAddress)
+                .storeAddress(nftItemAddress)
+                .storeAddress(null) //nft_owner_address
+                .storeCoins(fullPrice)
+                .storeRef(CellBuilder.beginCell() // fees cell
+                        .storeCoins(marketplaceFee)
+                        .storeAddress(royaltyAddress)
+                        .storeCoins(royaltyAmount).endCell())
+                .endCell();
     }
 
     @Override
     public Cell createCodeCell() {
         return CellBuilder.beginCell().fromBoc(NFT_SALE_HEX_CODE).endCell();
-    }
-
-
-    public Cell createTransferBody(NftSaleConfig config) {
-        Cell emptyBody = CellBuilder.beginCell().endCell();
-
-        return CellBuilder.beginCell()
-                .storeUint(1, 32)
-                .storeCoins(config.getAmount())
-                .storeRef(getStateInit().toCell())
-                .storeRef(emptyBody).endCell();
     }
 
 
@@ -184,42 +161,5 @@ public class NftSale implements Contract {
                 .storeRef(msgBody)
                 .endCell();
         return Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), c.hash());
-    }
-
-    /**
-     * Deploys nft-sale smc to marketplaceAddress
-     */
-    public ExtMessageInfo deploy(Tonlib tonlib, NftSaleConfig config) {
-        Cell body = createTransferBody(config);
-
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(config.getMarketPlaceAddress().wc)
-                                .address(config.getMarketPlaceAddress().toBigInteger())
-                                .build())
-                        .build())
-                .init(getStateInit())
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                        .storeRef(body)
-                        .endCell())
-                .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-    }
-
-    public ExtMessageInfo cancel(WalletV3R1 wallet, NftSaleConfig config, TweetNaclFast.Signature.KeyPair keyPair) {
-
-        WalletV3Config walletV3Config = WalletV3Config.builder()
-                .walletId(42)
-                .seqno(wallet.getSeqno())
-                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
-                .destination(config.getSaleAddress())
-                .amount(config.getAmount())
-                .body(NftSale.createCancelBody(config.getQueryId()))
-                .build();
-        return wallet.sendTonCoins(walletV3Config);
     }
 }

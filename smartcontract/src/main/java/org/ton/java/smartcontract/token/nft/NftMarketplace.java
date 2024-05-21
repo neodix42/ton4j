@@ -6,14 +6,8 @@ import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.NftMarketPlaceConfig;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.tlb.types.ExternalMessageInfo;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MsgAddressExtNone;
-import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import static java.util.Objects.isNull;
@@ -25,7 +19,6 @@ public class NftMarketplace implements Contract {
 
     TweetNaclFast.Signature.KeyPair keyPair;
     Address adminAddress;
-    Address address;
 
     public static class NftMarketplaceBuilder {
     }
@@ -69,37 +62,13 @@ public class NftMarketplace implements Contract {
      */
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeAddress(adminAddress);
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeAddress(adminAddress)
+                .endCell();
     }
 
     @Override
     public Cell createCodeCell() {
         return CellBuilder.beginCell().fromBoc(NFT_MARKETPLACE_CODE_HEX).endCell();
-    }
-
-    public ExtMessageInfo deploy(Tonlib tonlib, NftMarketPlaceConfig config) {
-
-//        long seqno = this.getSeqno(tonlib);
-//        config.setSeqno(seqno);
-        Address ownAddress = getAddress();
-
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
-                        .build())
-                .init(getStateInit())
-//                .body(CellBuilder.beginCell()
-//                        .storeBytes(Utils.signData(keyPair.getPublicKey(), options.getSecretKey(), body.hash()))
-//                        .storeRef(body)
-//                        .endCell())
-                .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 }

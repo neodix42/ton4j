@@ -7,16 +7,10 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.ItemData;
-import org.ton.java.smartcontract.types.NftItemConfig;
 import org.ton.java.smartcontract.types.Royalty;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.tlb.types.ExternalMessageInfo;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MsgAddressExtNone;
-import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.tonlib.types.TvmStackEntrySlice;
@@ -92,8 +86,7 @@ public class NftItem implements Contract {
      * @return DnsData
      */
     public ItemData getData(Tonlib tonlib) {
-        Address myAddress = this.getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "get_nft_data");
+        RunResult result = tonlib.runMethod(getAddress(), "get_nft_data");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_nft_data, returned an exit code " + result.getExit_code());
@@ -104,11 +97,11 @@ public class NftItem implements Contract {
 
         BigInteger index = ((TvmStackEntryNumber) result.getStack().get(1)).getNumber();
 
-        TvmStackEntrySlice collectionAddr = (TvmStackEntrySlice) result.getStack().get(2);
-        Address collectionAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(collectionAddr.getSlice().getBytes()).endCell());
+        TvmStackEntrySlice collectionAddressSlice = (TvmStackEntrySlice) result.getStack().get(2);
+        Address collectionAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(collectionAddressSlice.getSlice().getBytes()).endCell());
 
-        TvmStackEntrySlice ownerAddr = (TvmStackEntrySlice) result.getStack().get(3);
-        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(ownerAddr.getSlice().getBytes()).endCell()) : null;
+        TvmStackEntrySlice ownerAddressSlice = (TvmStackEntrySlice) result.getStack().get(3);
+        Address ownerAddress = isInitialized ? NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(ownerAddressSlice.getSlice().getBytes()).endCell()) : null;
 
         TvmStackEntrySlice contentCell = (TvmStackEntrySlice) result.getStack().get(4);
         Cell cell = CellBuilder.beginCell().fromBoc(contentCell.getSlice().getBytes()).endCell();
@@ -133,13 +126,13 @@ public class NftItem implements Contract {
 
 
     /**
-     * @param queryId         long optional, default 0
+     * @param queryId         BigInteger optional, default 0
      * @param newOwnerAddress Address
      * @param forwardAmount   BigInteger optional, default 0
      * @param forwardPayload  byte[] optional, default null
      * @param responseAddress Address
      */
-    public static Cell createTransferBody(long queryId, Address newOwnerAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress) {
+    public static Cell createTransferBody(BigInteger queryId, Address newOwnerAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress) {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(0x5fcc3d14, 32); // transfer op
         cell.storeUint(queryId, 64);
@@ -155,58 +148,11 @@ public class NftItem implements Contract {
         return cell.endCell();
     }
 
-
-    public ExtMessageInfo deploy(Tonlib tonlib, NftItemConfig config) {
-
-//        long seqno = wallet.getSeqno(tonlib);
-//
-//        ExternalMessage extMsg = wallet.createTransferMessage(
-//                keyPair.getSecretKey(),
-//                nftCollectionAddress,
-//                msgValue,
-//                seqno,
-//                NftCollection.createMintBody(
-//                        0,
-//                        index,
-//                        msgValue,
-//                        wallet.getAddress(),
-//                        nftItemContentUri));
-//
-//        return tonlib.sendRawMessage(extMsg.message.toBase64());
-
-        // should be internal msg
-        Address ownAddress = getAddress();
-
-        Cell body = NftCollection.createMintBody(
-                0,
-                config.getIndex(),
-                config.getAmount(),
-                this.getAddress(),
-                config.getNftItemContentUri());
-
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .srcAddr(MsgAddressExtNone.builder().build())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(ownAddress.wc)
-                                .address(ownAddress.toBigInteger())
-                                .build())
-                        .build())
-                .init(getStateInit())
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                        .storeRef(body)
-                        .endCell())
-                .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-    }
-
     /**
      * @param queryId long, default 0
      * @return Cell
      */
-    public static Cell createGetStaticDataBody(long queryId) {
+    public static Cell createGetStaticDataBody(BigInteger queryId) {
         CellBuilder body = CellBuilder.beginCell();
         body.storeUint(0x2fcb26a2, 32); // op::get_static_data() asm "0x2fcb26a2 PUSHINT";
         body.storeUint(queryId, 64); // query_id
