@@ -50,10 +50,19 @@ public class NftSale implements Contract {
      * royaltyAmount
      */
     public static class NftSaleBuilder {
-        NftSaleBuilder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static NftSaleBuilder builder() {
+        return new CustomNftSaleBuilder();
+    }
+
+    private static class CustomNftSaleBuilder extends NftSaleBuilder {
+        @Override
+        public NftSale build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 

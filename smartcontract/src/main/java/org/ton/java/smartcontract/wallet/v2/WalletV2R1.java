@@ -35,10 +35,19 @@ public class WalletV2R1 implements Contract {
 
 
     public static class WalletV2R1Builder {
-        WalletV2R1Builder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static WalletV2R1Builder builder() {
+        return new CustomWalletV2R1Builder();
+    }
+
+    private static class CustomWalletV2R1Builder extends WalletV2R1Builder {
+        @Override
+        public WalletV2R1 build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 

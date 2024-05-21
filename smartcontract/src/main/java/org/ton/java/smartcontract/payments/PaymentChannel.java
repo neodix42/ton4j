@@ -33,7 +33,6 @@ public class PaymentChannel implements Contract {
     public static final long STATE_SETTLING_CONDITIONALS = 3;
     public static final long STATE_AWAITING_FINALIZATION = 4;
 
-    //    Address address;
     boolean isA;
     BigInteger channelId;
     TweetNaclFast.Signature.KeyPair myKeyPair;
@@ -86,14 +85,6 @@ public class PaymentChannel implements Contract {
             return super.build();
         }
     }
-
-//    public static class PaymentChannelBuilder {
-//        PaymentChannelBuilder() {
-//            publicKeyA = isA ? myKeyPair.getPublicKey() : hisPublicKey;
-//            publicKeyB = !isA ? myKeyPair.getPublicKey() : hisPublicKey;
-//
-//        }
-//    }
 
     private Tonlib tonlib;
     private long wc;

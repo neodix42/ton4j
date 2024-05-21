@@ -52,27 +52,21 @@ public class NftCollection implements Contract {
      * address: Address | string
      * code: Cell
      */
-//    public NftCollection(Options options) {
-//        this.options = options;
-//        this.options.wc = 0;
-//
-//        if (options.royalty > 1) {
-//            throw new Error("royalty > 1");
-//        }
-//
-//        royaltyFactor = Math.floor(options.royalty * royaltyBase);
-//
-//        if (isNull(options.code)) {
-//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftCollection.getValue()).endCell();
-//        }
-//    }
-
     public static class NftCollectionBuilder {
-        NftCollectionBuilder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static NftCollectionBuilder builder() {
+        return new CustomNftCollectionBuilder();
+    }
+
+    private static class CustomNftCollectionBuilder extends NftCollectionBuilder {
+        @Override
+        public NftCollection build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
-            royaltyBase = 1000;
+            super.royaltyBase = 1000;
+            return super.build();
         }
     }
 

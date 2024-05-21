@@ -26,24 +26,20 @@ public class JettonWallet implements Contract {
     TweetNaclFast.Signature.KeyPair keyPair;
     Address address;
 
-//    public JettonWallet(Options options) {
-//        this.options = options;
-//        this.options.wc = 0;
-//
-//        if (nonNull(options.address)) {
-//            this.address = Address.of(options.address);
-//        }
-//
-//        if (isNull(options.code)) {
-//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.jettonWallet.getValue()).endCell();
-//        }
-//    }
-
     public static class JettonWalletBuilder {
-        JettonWalletBuilder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static JettonWalletBuilder builder() {
+        return new CustomJettonWalletBuilder();
+    }
+
+    private static class CustomJettonWalletBuilder extends JettonWalletBuilder {
+        @Override
+        public JettonWallet build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 

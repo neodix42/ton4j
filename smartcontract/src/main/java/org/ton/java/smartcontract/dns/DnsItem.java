@@ -8,16 +8,19 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.AuctionInfo;
-import org.ton.java.smartcontract.types.DnsItemConfig;
 import org.ton.java.smartcontract.types.ItemData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.*;
+import org.ton.java.tonlib.types.RunResult;
+import org.ton.java.tonlib.types.TvmStackEntryCell;
+import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.TvmStackEntrySlice;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @Builder
@@ -27,7 +30,6 @@ public class DnsItem implements Contract {
     // should be this https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-item.fc
     // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-item.fc
     TweetNaclFast.Signature.KeyPair keyPair;
-    Address address;
 
     BigInteger index;
     Address collectionAddress;
@@ -45,17 +47,22 @@ public class DnsItem implements Contract {
         return wc;
     }
 
-//    public DnsItem(Options options) {
-//        if (nonNull(options.address)) {
-//            this.address = Address.of(options.address);
-//        }
-//        if (options.wc == 0) {
-//            options.wc = nonNull(this.address) ? this.address.wc : 0;
-//        }
-//        if (isNull(options.code)) {
-//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
-//        }
-//    }
+    public static class DnsItemBuilder {
+    }
+
+    public static DnsItemBuilder builder() {
+        return new CustomDnsItemBuilder();
+    }
+
+    private static class CustomDnsItemBuilder extends DnsItemBuilder {
+        @Override
+        public DnsItem build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
+            }
+            return super.build();
+        }
+    }
 
     public String getName() {
         return "dnsItem";
@@ -66,11 +73,10 @@ public class DnsItem implements Contract {
      */
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-//        cell.storeUint(new BigInteger(options.index, 16), 256);
-        cell.storeUint(index, 256);
-        cell.storeAddress(collectionAddress);
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(index, 256)
+                .storeAddress(collectionAddress)
+                .endCell();
     }
 
     @Override
@@ -80,16 +86,10 @@ public class DnsItem implements Contract {
                 endCell();
     }
 
-
-    public ExtMessageInfo deploy(Tonlib tonlib, DnsItemConfig config) {
-        return null;
-    }
-
     /**
      * @return DnsData
      */
     public static ItemData getData(Tonlib tonlib, Address dnsItemAddress) {
-        //Address myAddress = this.getAddress();
         RunResult result = tonlib.runMethod(dnsItemAddress, "get_nft_data");
 
         if (result.getExit_code() != 0) {
@@ -157,8 +157,7 @@ public class DnsItem implements Contract {
      * @return String
      */
     public static String getDomain(Tonlib tonlib, Address dnsItemAddress) {
-        Address myAddress = dnsItemAddress;
-        RunResult result = tonlib.runMethod(myAddress, "get_domain");
+        RunResult result = tonlib.runMethod(dnsItemAddress, "get_domain");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_domain, returned an exit code " + result.getExit_code());
@@ -169,8 +168,7 @@ public class DnsItem implements Contract {
     }
 
     public static Address getEditor(Tonlib tonlib, Address dnsItemAddress) {
-        Address myAddress = dnsItemAddress;
-        RunResult result = tonlib.runMethod(myAddress, "get_editor");
+        RunResult result = tonlib.runMethod(dnsItemAddress, "get_editor");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_editor, returned an exit code " + result.getExit_code());
@@ -184,8 +182,7 @@ public class DnsItem implements Contract {
      * @return AuctionInfo
      */
     public static AuctionInfo getAuctionInfo(Tonlib tonlib, Address dnsItemAddress) {
-        Address myAddress = dnsItemAddress;
-        RunResult result = tonlib.runMethod(myAddress, "get_auction_info");
+        RunResult result = tonlib.runMethod(dnsItemAddress, "get_auction_info");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_auction_info, returned an exit code " + result.getExit_code());
@@ -208,8 +205,7 @@ public class DnsItem implements Contract {
     }
 
     public static long getLastFillUpTime(Tonlib tonlib, Address dnsItemAddress) {
-        Address myAddress = dnsItemAddress;
-        RunResult result = tonlib.runMethod(myAddress, "get_last_fill_up_time");
+        RunResult result = tonlib.runMethod(dnsItemAddress, "get_last_fill_up_time");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_last_fill_up_time, returned an exit code " + result.getExit_code());
@@ -226,13 +222,11 @@ public class DnsItem implements Contract {
      * @return Cell | Address | AdnlAddress | null
      */
     public static Object resolve(Tonlib tonlib, String domain, String category, boolean oneStep, Address dnsItemAddress) {
-        Address myAddress = dnsItemAddress;
-        return DnsUtils.dnsResolve(tonlib, myAddress, domain, category, oneStep);
+        return DnsUtils.dnsResolve(tonlib, dnsItemAddress, domain, category, oneStep);
     }
 
     public static Object resolve(Tonlib tonlib, String domain, Address dnsItemAddress) {
-        Address myAddress = dnsItemAddress;
-        return DnsUtils.dnsResolve(tonlib, myAddress, domain, null, false);
+        return DnsUtils.dnsResolve(tonlib, dnsItemAddress, domain, null, false);
     }
 
     /**

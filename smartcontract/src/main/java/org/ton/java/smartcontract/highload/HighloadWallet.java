@@ -36,10 +36,19 @@ public class HighloadWallet implements Contract {
     BigInteger queryId;
 
     public static class HighloadWalletBuilder {
-        HighloadWalletBuilder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static HighloadWalletBuilder builder() {
+        return new CustomHighloadWalletBuilder();
+    }
+
+    private static class CustomHighloadWalletBuilder extends HighloadWalletBuilder {
+        @Override
+        public HighloadWallet build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 

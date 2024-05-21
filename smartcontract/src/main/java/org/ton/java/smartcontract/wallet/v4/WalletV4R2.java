@@ -36,10 +36,19 @@ public class WalletV4R2 implements Contract {
 
 
     public static class WalletV4R2Builder {
-        WalletV4R2Builder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static WalletV4R2Builder builder() {
+        return new CustomWalletV4R2Builder();
+    }
+
+    private static class CustomWalletV4R2Builder extends WalletV4R2Builder {
+        @Override
+        public WalletV4R2 build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 
@@ -55,14 +64,6 @@ public class WalletV4R2 implements Contract {
     public long getWorkchain() {
         return wc;
     }
-
-//    public WalletV4ContractR2(Options options) {
-//        this.options = options;
-//        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.V4R2.getValue()).endCell();
-//        if (isNull(options.walletId)) {
-//            options.walletId = 698983191 + options.wc;
-//        }
-//    }
 
     @Override
     public String getName() {

@@ -37,15 +37,22 @@ public class HighloadWalletV3 implements Contract {
      * <p>
      * Options - mandatory -  highloadQueryId, walletId, publicKey
      */
-//    public HighloadWalletV3(Options options) {
-//        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.highloadV3.getValue()).endCell();
-//    }
+
 
     public static class HighloadWalletV3Builder {
-        HighloadWalletV3Builder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static HighloadWalletV3Builder builder() {
+        return new CustomHighloadWalletV3Builder();
+    }
+
+    private static class CustomHighloadWalletV3Builder extends HighloadWalletV3Builder {
+        @Override
+        public HighloadWalletV3 build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 

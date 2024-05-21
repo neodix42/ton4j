@@ -203,7 +203,7 @@ public class TestDns extends CommonTest {
         //or assign your wallet to it, so it could resolve your wallet address to your-domain.ton
         extMessageInfo = changeDnsRecord(buyerWallet, dnsItem1Address, buyerWallet.getAddress());
         assertThat(extMessageInfo.getError().getCode()).isZero();
-        Utils.sleep(30, "Claim DNS item " + dnsItem1DomainName);
+        Utils.sleep(30, "Assign wallet to domain " + dnsItem1DomainName);
 
         getDnsItemInfo(tonlib, dnsItem1Address);
         dnsItem1Editor = DnsItem.getEditor(tonlib, dnsItem1Address);

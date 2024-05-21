@@ -27,27 +27,23 @@ public class NftMarketplace implements Contract {
     Address adminAddress;
     Address address;
 
-    /**
-     * required adminAddress (owner)
-     */
-//    public NftMarketplace(Options options) {
-//        this.options = options;
-//        this.options.wc = 0;
-//
-//        if (nonNull(options.address)) {
-//            this.address = Address.of(options.address);
-//        }
-//
-//        if (isNull(options.code)) {
-//            options.code = CellBuilder.beginCell().fromBoc(NFT_MARKETPLACE_CODE_HEX).endCell();
-//        }
-//    }
-
     public static class NftMarketplaceBuilder {
-        NftMarketplaceBuilder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static NftMarketplaceBuilder builder() {
+        return new CustomNftMarketplaceBuilder();
+    }
+
+    private static class CustomNftMarketplaceBuilder extends NftMarketplaceBuilder {
+        @Override
+        public NftMarketplace build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            if (isNull(super.adminAddress)) {
+                throw new IllegalArgumentException("adminAddress parameter is mandatory.");
+            }
+            return super.build();
         }
     }
 

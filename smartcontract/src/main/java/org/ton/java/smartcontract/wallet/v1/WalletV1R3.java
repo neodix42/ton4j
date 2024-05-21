@@ -28,11 +28,20 @@ public class WalletV1R3 implements Contract {
     TweetNaclFast.Signature.KeyPair keyPair;
     long initialSeqno;
 
-    public static class WalletV1R3Builder {
-        WalletV1R3Builder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    public static class WalletV1R1Builder {
+    }
+
+    public static WalletV1R3Builder builder() {
+        return new CustomWalletV1R3Builder();
+    }
+
+    private static class CustomWalletV1R3Builder extends WalletV1R3Builder {
+        @Override
+        public WalletV1R3 build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 

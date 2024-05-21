@@ -34,10 +34,19 @@ public class JettonMinter implements Contract {
     String jettonWalletCodeHex;
 
     public static class JettonMinterBuilder {
-        JettonMinterBuilder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static JettonMinterBuilder builder() {
+        return new CustomJettonMinterBuilder();
+    }
+
+    private static class CustomJettonMinterBuilder extends JettonMinterBuilder {
+        @Override
+        public JettonMinter build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 

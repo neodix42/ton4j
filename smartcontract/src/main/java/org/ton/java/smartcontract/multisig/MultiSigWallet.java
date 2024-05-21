@@ -26,7 +26,6 @@ public class MultiSigWallet implements Contract {
     //https://github.com/akifoq/multisig/blob/master/multisig-code.fc
     TweetNaclFast.Signature.KeyPair keyPair;
     long walletId;
-
     MultiSigConfig config;
 
     /**
@@ -36,10 +35,19 @@ public class MultiSigWallet implements Contract {
      */
 
     public static class MultiSigWalletBuilder {
-        MultiSigWalletBuilder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static MultiSigWalletBuilder builder() {
+        return new CustomMultiSigWalletBuilder();
+    }
+
+    private static class CustomMultiSigWalletBuilder extends MultiSigWalletBuilder {
+        @Override
+        public MultiSigWallet build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 

@@ -54,10 +54,19 @@ public class LockupWalletV1 implements Contract {
      */
 
     public static class LockupWalletV1Builder {
-        LockupWalletV1Builder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static LockupWalletV1Builder builder() {
+        return new CustomLockupWalletV1Builder();
+    }
+
+    private static class CustomLockupWalletV1Builder extends LockupWalletV1Builder {
+        @Override
+        public LockupWalletV1 build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 

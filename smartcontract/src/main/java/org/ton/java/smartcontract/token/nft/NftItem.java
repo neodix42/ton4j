@@ -24,6 +24,7 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @Builder
@@ -48,20 +49,22 @@ public class NftItem implements Contract {
         return wc;
     }
 
+    public static class NftItemBuilder {
+    }
 
-//    public NftItem(Options options) {
-//
-//        if (nonNull(options.address)) {
-//            this.address = Address.of(options.address);
-//        }
-//        if (isNull(options.wc)) {
-//            options.wc = nonNull(this.address) ? this.address.wc : 0;
-//        }
-//
-//        if (isNull(options.code)) {
-//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
-//        }
-//    }
+    public static NftItemBuilder builder() {
+        return new CustomNftItemBuilder();
+    }
+
+    private static class CustomNftItemBuilder extends NftItemBuilder {
+        @Override
+        public NftItem build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
+            }
+            return super.build();
+        }
+    }
 
     public String getName() {
         return "nftItem";

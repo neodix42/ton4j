@@ -22,13 +22,14 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+import static java.util.Objects.isNull;
+
 @Builder
 @Getter
 public class DnsCollection implements Contract {
 
     //https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-collection.fc
     TweetNaclFast.Signature.KeyPair keyPair;
-    //    Address address;
     String dnsItemCodeHex;
     Cell collectionContent;
     Cell code;
@@ -52,20 +53,31 @@ public class DnsCollection implements Contract {
      * dnsItemCodeHex String
      * address: Address String
      */
-//    public DnsCollection(Options options) {
-//
-//        if (nonNull(options.address)) {
-//            this.address = Address.of(options.address);
-//        }
-//
-//        if (isNull(options.code)) {
-//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.nftItem.getValue()).endCell();
-//        }
-//
-//        if (isNull(options.getCollectionContent()) && isNull(options.getAddress())) {
-//            throw new Error("Required collectionContent cell");
-//        }
-//    }
+
+    public static class DnsCollectionBuilder {
+    }
+
+    public static DnsCollectionBuilder builder() {
+        return new CustomDnsCollectionBuilder();
+    }
+
+    private static class CustomDnsCollectionBuilder extends DnsCollectionBuilder {
+        @Override
+        public DnsCollection build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
+            }
+            if (isNull(super.collectionContent)) {
+                throw new Error("Required collectionContent cell");
+            }
+
+            if (isNull(super.dnsItemCodeHex)) {
+                throw new Error("Required dnsItemCodeHex field");
+            }
+            return super.build();
+        }
+    }
+
     public String getName() {
         return "dnsCollection";
     }
@@ -92,9 +104,7 @@ public class DnsCollection implements Contract {
      * @return CollectionInfo
      */
     public static CollectionData getCollectionData(Tonlib tonlib, Address dnsCollectionAddress) {
-        Address myAddress = dnsCollectionAddress;
-
-        RunResult result = tonlib.runMethod(myAddress, "get_collection_data");
+        RunResult result = tonlib.runMethod(dnsCollectionAddress, "get_collection_data");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_collection_data, returned an exit code " + result.getExit_code());
@@ -124,11 +134,10 @@ public class DnsCollection implements Contract {
      * @return Address
      */
     public static Address getNftItemAddressByIndex(Tonlib tonlib, Address collectionAddress, BigInteger index) {
-        Address myAddress = collectionAddress;
         Deque<String> stack = new ArrayDeque<>();
 
         stack.offer("[num, " + index.toString() + "]");
-        RunResult result = tonlib.runMethod(myAddress, "get_nft_address_by_index", stack);
+        RunResult result = tonlib.runMethod(collectionAddress, "get_nft_address_by_index", stack);
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_nft_address_by_index, returned an exit code " + result.getExit_code());
@@ -139,9 +148,10 @@ public class DnsCollection implements Contract {
     }
 
     public static Address getNftItemAddressByDomain(Tonlib tonlib, Address dnsCollectionAddress, String domain) {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeString(domain);
-        String cellHash = Utils.bytesToHex(cell.endCell().hash());
+        Cell cell = CellBuilder.beginCell()
+                .storeString(domain)
+                .endCell();
+        String cellHash = Utils.bytesToHex(cell.hash());
         return getNftItemAddressByIndex(tonlib, dnsCollectionAddress, new BigInteger(cellHash, 16));
     }
 
@@ -154,20 +164,4 @@ public class DnsCollection implements Contract {
     public static Object resolve(Tonlib tonlib, Address dnsCollectionAddress, String domain, String category, boolean oneStep) {
         return DnsUtils.dnsResolve(tonlib, dnsCollectionAddress, domain, category, oneStep);
     }
-
-//    @Override
-////    public ExtMessageInfo deploy(Tonlib tonlib, Contract wallet, BigInteger msgValue, TweetNaclFast.Signature.KeyPair keyPair) {
-//    public ExtMessageInfo deploy(Tonlib tonlib, DnsCollectionConfig config) {
-//
-//        long seqno = this.getSeqno(tonlib);
-//
-//        Cell payload = CellBuilder.beginCell()
-//                .storeUint(0x370fec51, 32) // op::fill_up, https://github.com/ton-blockchain/dns-contract/blob/main/func/dns-utils.fc
-//                .storeUint(0, 6)
-//                .endCell();
-//
-//        Message extMsg = MsgUtils.createExternalMessageWithSignedBody(config., getAddress(), false, payload);
-//
-//        return tonlib.sendRawMessage(extMsg.toCell().toBase64());
-//    }
 }
