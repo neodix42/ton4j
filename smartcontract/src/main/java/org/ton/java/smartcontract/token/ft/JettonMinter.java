@@ -33,18 +33,6 @@ public class JettonMinter implements Contract {
     String jettonContentUri;
     String jettonWalletCodeHex;
 
-//    public JettonMinter(Options options) {
-//        this.options = options;
-//        this.options.wc = 0;
-//
-//        if (nonNull(options.address)) {
-//            this.address = Address.of(options.address);
-//        }
-//        if (isNull(options.code)) {
-//            options.code = CellBuilder.beginCell().fromBoc(WalletCodes.jettonMinter.getValue()).endCell();
-//        }
-//    }
-
     public static class JettonMinterBuilder {
         JettonMinterBuilder() {
             if (isNull(keyPair)) {
@@ -285,20 +273,6 @@ public class JettonMinter implements Contract {
         config.setSeqno(seqno);
         Address ownAddress = getAddress();
 
-//        Cell body = createInternalMessage(ownAddress)
-//
-//        ExternalMessage extMsg = adminWallet.createTransferMessage(
-//                keyPair.getSecretKey(),
-//                this.getAddress(),
-//                walletMsgValue,
-//                seqno,
-//                (Cell) null, // body
-//                (byte) 3, //send mode
-//                this.createStateInit().stateInit);
-//
-//        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
-
-
         Cell body = createTransferBody(config);
 
         Message externalMessage = Message.builder()
@@ -322,7 +296,7 @@ public class JettonMinter implements Contract {
     public ExtMessageInfo mint(WalletV3R1 adminWallet, JettonMinterConfig config) {
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -334,16 +308,5 @@ public class JettonMinter implements Contract {
                         config.getJettonToMintAmount()))
                 .build();
         return adminWallet.sendTonCoins(walletV3Config);
-
-//        ExternalMessage extMsg = adminWallet.createTransferMessage(
-//                keyPair.getSecretKey(),
-//                this.getAddress(),
-//                walletMsgValue,
-//                seqno,
-//                );
-//
-//        tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
-
-
     }
 }

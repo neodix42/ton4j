@@ -73,7 +73,7 @@ public class TestNft extends CommonTest {
 
 
         WalletV3Config adminWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -107,7 +107,7 @@ public class TestNft extends CommonTest {
                 itemConfig.getNftItemContentUri());
 
         adminWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -140,7 +140,7 @@ public class TestNft extends CommonTest {
 
 
         adminWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -174,7 +174,7 @@ public class TestNft extends CommonTest {
         log.info("nft marketplace address {}", marketplace.getAddress().toString(true, true, true));
 
         adminWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -226,7 +226,7 @@ public class TestNft extends CommonTest {
                 .endCell();
 
         adminWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -279,7 +279,7 @@ public class TestNft extends CommonTest {
                 .endCell();
 
         adminWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -324,7 +324,7 @@ public class TestNft extends CommonTest {
 
         // buy nft-item-2. send fullPrice+minimalGasAmount(1ton)
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(nftItemBuyer.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -367,7 +367,7 @@ public class TestNft extends CommonTest {
     public void changeNftCollectionOwner(Tonlib tonlib, WalletV3R1 wallet, BigInteger msgValue, Address nftCollectionAddress, Address newOwner, TweetNaclFast.Signature.KeyPair keyPair) {
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(wallet.getSeqno())
                 .destination(nftCollectionAddress)
                 .amount(msgValue)
@@ -380,7 +380,7 @@ public class TestNft extends CommonTest {
     public void editNftCollectionContent(Tonlib tonlib, WalletV3R1 wallet, BigInteger msgValue, Address nftCollectionAddress, String collectionContentUri, String nftItemContentBaseUri, double royalty, Address royaltyAddress, TweetNaclFast.Signature.KeyPair keyPair) {
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(wallet.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -402,7 +402,7 @@ public class TestNft extends CommonTest {
     public void getRoyaltyParams(Tonlib tonlib, WalletV3R1 wallet, BigInteger msgValue, Address nftCollectionAddress, TweetNaclFast.Signature.KeyPair keyPair) {
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(wallet.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -429,7 +429,7 @@ public class TestNft extends CommonTest {
     private void transferNftItem(WalletV3R1 wallet, BigInteger msgValue, Address nftItemAddress, Address nftSaleAddress, BigInteger forwardAmount, byte[] forwardPayload, Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(wallet.getSeqno())
                 .destination(nftItemAddress)
                 .amount(msgValue)
@@ -448,7 +448,7 @@ public class TestNft extends CommonTest {
 
     private void getStaticData(WalletV3R1 wallet, BigInteger msgValue, Address nftItemAddress, long queryId, TweetNaclFast.Signature.KeyPair keyPair) {
         WalletV3Config config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(wallet.getSeqno())
                 .destination(nftItemAddress)
                 .amount(msgValue)

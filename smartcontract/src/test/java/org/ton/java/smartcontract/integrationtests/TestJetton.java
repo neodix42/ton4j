@@ -127,7 +127,7 @@ public class TestJetton {
                 .build();
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
 //                .mode(3)
 //                .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -173,7 +173,7 @@ public class TestJetton {
     private void editMinterContent(WalletV3R1 adminWallet, JettonMinter minter, String newUriContent, TweetNaclFast.Signature.KeyPair keyPair) {
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
                 .destination(minter.getAddress())
                 .amount(Utils.toNano(0.055))
@@ -195,7 +195,7 @@ public class TestJetton {
     private void changeMinterAdmin(WalletV3R1 adminWallet, JettonMinter minter, Address newAdmin, TweetNaclFast.Signature.KeyPair keyPair) {
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
                 .destination(minter.getAddress())
                 .amount(Utils.toNano(0.056))
@@ -225,7 +225,7 @@ public class TestJetton {
     private void transfer(WalletV3R1 adminWallet, Address jettonWalletAddress, Address toAddress, BigInteger jettonAmount, TweetNaclFast.Signature.KeyPair keyPair) {
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
                 .destination(jettonWalletAddress)
                 .amount(Utils.toNano(0.057))
@@ -265,7 +265,7 @@ public class TestJetton {
 
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
                 .destination(jettonWalletAddress)
                 .amount(Utils.toNano(0.05))

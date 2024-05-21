@@ -91,7 +91,7 @@ public class TestDns extends CommonTest {
         log.info("new root DNS address {}", dnsRootContract.getAddress());
 
         WalletV3Config adminWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(1)
                 .destination(dnsRootContract.getAddress())
                 .amount(Utils.toNano(0.12))
@@ -130,7 +130,7 @@ public class TestDns extends CommonTest {
         log.info("DNS collection address {}", dnsCollection.getAddress());
 
         WalletV3Config adminWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(1)
                 .destination(dnsCollection.getAddress())
                 .amount(Utils.toNano(1))
@@ -152,7 +152,7 @@ public class TestDns extends CommonTest {
 
         // create and deploy DNS Item
         adminWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
                 .source(adminWallet.getAddress())
                 .destination(dnsCollection.getAddress())
@@ -178,7 +178,7 @@ public class TestDns extends CommonTest {
 
         //make a bid
         WalletV3Config buyerConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(buyerWallet.getSeqno())
                 .destination(dnsItem1Address)
                 .amount(Utils.toNano(13))
@@ -244,7 +244,7 @@ public class TestDns extends CommonTest {
 
         // create and deploy DNS Item
         WalletV3Config adminWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(adminWallet.getSeqno())
                 .destination(dnsCollectionAddress)
                 .amount(Utils.toNano(15))
@@ -361,7 +361,7 @@ public class TestDns extends CommonTest {
                 0);
 
         WalletV3Config ownerWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(ownerWallet.getSeqno())
                 .destination(dnsItemAddress)
                 .amount(Utils.toNano(0.07))
@@ -373,7 +373,7 @@ public class TestDns extends CommonTest {
 
     private ExtMessageInfo transferDnsItem(WalletV3R1 ownerWallet, Address dnsItemAddress, String newOwner) {
         WalletV3Config ownerWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(ownerWallet.getSeqno())
                 .destination(dnsItemAddress)
                 .amount(Utils.toNano(0.07))
@@ -396,7 +396,7 @@ public class TestDns extends CommonTest {
                 .storeUint(123, 64)
                 .endCell();
         WalletV3Config ownerWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(ownerWallet.getSeqno())
                 .destination(dnsItemAddress)
                 .amount(amount)
@@ -412,7 +412,7 @@ public class TestDns extends CommonTest {
                 .storeUint(123, 64)
                 .endCell();
         WalletV3Config ownerWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(ownerWallet.getSeqno())
                 .destination(dnsItemAddress)
                 .amount(Utils.toNano(1))
@@ -424,7 +424,7 @@ public class TestDns extends CommonTest {
 
     private static ExtMessageInfo getStaticData(WalletV3R1 ownerWallet, Address dnsItem1Address) {
         WalletV3Config ownerWalletConfig = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(ownerWallet.getSeqno())
                 .destination(dnsItem1Address)
                 .amount(Utils.toNano(0.05))

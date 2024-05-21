@@ -134,7 +134,7 @@ public class TestPayments extends CommonTest {
 //                .build();
 
         WalletV3Config config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(walletA.getSeqno())
                 .mode(3)
                 .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -164,7 +164,7 @@ public class TestPayments extends CommonTest {
 //        extMessageInfo = fromWalletA.topUp(channelInitState.getBalanceA(), BigInteger.ZERO,
 //        channelInitState.getBalanceA().add(Utils.toNano(0.05))); // +0.05 TON to network fees
         config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(walletA.getSeqno())
                 .mode(3)
                 .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -181,7 +181,7 @@ public class TestPayments extends CommonTest {
 
 //        extMessageInfo = fromWalletB.topUp(BigInteger.ZERO, channelInitState.getBalanceB(), channelInitState.getBalanceB().add(Utils.toNano(0.05))); // +0.05 TON to network fees
         config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(walletB.getSeqno())
                 .mode(3)
                 .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -210,7 +210,7 @@ public class TestPayments extends CommonTest {
 
 //        extMessageInfo = fromWalletA.init(channelInitState.getBalanceA(), channelInitState.getBalanceB(), Utils.toNano(0.05));
         config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(walletA.getSeqno())
                 .mode(3)
                 .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
@@ -324,7 +324,7 @@ public class TestPayments extends CommonTest {
 
 //        extMessageInfo = fromWalletA.close(channelState3, signatureCloseB, Utils.toNano(0.05));
         config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(walletA.getSeqno())
                 .destination(channelA.getAddress())
                 .amount(Utils.toNano(0.05))

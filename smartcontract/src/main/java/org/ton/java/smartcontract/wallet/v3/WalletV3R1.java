@@ -93,7 +93,7 @@ public class WalletV3R1 implements Contract {
                 .build().toCell();
 
         return CellBuilder.beginCell()
-                .storeUint(config.getSubWalletId(), 32)
+                .storeUint(config.getWalletId(), 32)
                 .storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), 32)
                 .storeUint(config.getSeqno(), 32)
                 .storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8)

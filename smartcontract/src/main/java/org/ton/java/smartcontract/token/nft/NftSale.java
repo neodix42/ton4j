@@ -49,18 +49,6 @@ public class NftSale implements Contract {
      * royaltyAddress
      * royaltyAmount
      */
-//    public NftSale(Options options) {
-//        this.options = options;
-//        this.options.wc = 0;
-//        if (nonNull(options.address)) {
-//            this.address = Address.of(options.address);
-//        }
-//
-//        if (isNull(options.code)) {
-//            options.code = CellBuilder.beginCell().fromBoc(NFT_SALE_HEX_CODE).endCell();
-//        }
-//    }
-
     public static class NftSaleBuilder {
         NftSaleBuilder() {
             if (isNull(keyPair)) {
@@ -193,29 +181,6 @@ public class NftSale implements Contract {
      * Deploys nft-sale smc to marketplaceAddress
      */
     public ExtMessageInfo deploy(Tonlib tonlib, NftSaleConfig config) {
-
-//        long seqno = wallet.getSeqno(tonlib);
-//
-//        Cell emptyBody = CellBuilder.beginCell().endCell();
-//
-//        byte[] signature = buildSignature(keyPair, this.createStateInit().stateInit, emptyBody);
-//
-//        CellBuilder body = CellBuilder.beginCell();
-//        body.storeUint(1, 32);
-////        body.storeBytes(signature);
-//        body.storeCoins(config.msgValue);
-//        body.storeRef(this.createStateInit().stateInit);
-//        body.storeRef(emptyBody);
-//
-//        ExternalMessage extMsg = wallet.createTransferMessage(
-//                keyPair.getSecretKey(),
-//                marketplaceAddress,
-//                msgValue,
-//                seqno,
-//                body.endCell()
-//        );
-//
-//        return tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBoc()));
         Cell body = createTransferBody(config);
 
         Message externalMessage = Message.builder()
@@ -239,7 +204,7 @@ public class NftSale implements Contract {
     public ExtMessageInfo cancel(WalletV3R1 wallet, NftSaleConfig config, TweetNaclFast.Signature.KeyPair keyPair) {
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(wallet.getSeqno())
                 .validUntil(Instant.now().getEpochSecond() + 5 * 60L)
                 .destination(config.getSaleAddress())

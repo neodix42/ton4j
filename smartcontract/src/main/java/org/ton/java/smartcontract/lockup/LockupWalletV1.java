@@ -19,8 +19,8 @@ import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayDeque;
-import java.util.Date;
 import java.util.Deque;
 import java.util.List;
 
@@ -40,9 +40,9 @@ public class LockupWalletV1 implements Contract {
 
     TweetNaclFast.Signature.KeyPair keyPair;
     long walletId;
+    long initialSeqno;
 
     LockupConfig lockupConfig;
-    Address address;
 
     /**
      * Interface to <a href="https://github.com/toncenter/tonweb/tree/master/src/contract/lockup">lockup contract</a>
@@ -80,19 +80,15 @@ public class LockupWalletV1 implements Contract {
     }
 
 
-    public Cell createDeployMessage(LockupWalletV1Config config) {
+    public Cell createDeployMessage() {
         CellBuilder message = CellBuilder.beginCell();
 
         message.storeUint(walletId, 32);
 
-        for (int i = 0; i < 32; i++) {
+        for (int i = 0; i < 32; i++) { // valid-until
             message.storeBit(true);
         }
-
-        Date date = new Date();
-        long timestamp = (long) Math.floor(date.getTime() / 1e3);
-        message.storeUint(BigInteger.valueOf(timestamp + 60L), 32); // 1 minute
-
+        message.storeUint(initialSeqno, 32); //seqno
         return message.endCell();
     }
 
@@ -102,11 +98,6 @@ public class LockupWalletV1 implements Contract {
         Cell order = Message.builder()
                 .info(InternalMessageInfo.builder()
                         .bounce(config.isBounce())
-                        .srcAddr(isNull(config.getSource()) ? null :
-                                MsgAddressIntStd.builder()
-                                        .workchainId(config.getSource().wc)
-                                        .address(config.getSource().toBigInteger())
-                                        .build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(config.getDestination().wc)
                                 .address(config.getDestination().toBigInteger())
@@ -118,10 +109,10 @@ public class LockupWalletV1 implements Contract {
                 .build().toCell();
 
         return CellBuilder.beginCell()
-                .storeUint(walletId, 32) // todo
-                .storeUint(config.getValidUntil(), 32)
+                .storeUint(config.getWalletId(), 32)
+                .storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), 32)
                 .storeUint(config.getSeqno(), 32)
-                .storeUint(config.getMode() & 0xff, 8)
+                .storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8)
                 .storeRef(order)
                 .endCell();
 
@@ -183,7 +174,7 @@ public class LockupWalletV1 implements Contract {
     /**
      * @return long
      */
-    public long getWalletId(Tonlib tonlib) {
+    public long getWalletId() {
 
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "wallet_id");
@@ -192,7 +183,7 @@ public class LockupWalletV1 implements Contract {
         return subWalletId.getNumber().longValue();
     }
 
-    public String getPublicKey(Tonlib tonlib) {
+    public String getPublicKey() {
 
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_public_key");
@@ -201,7 +192,7 @@ public class LockupWalletV1 implements Contract {
         return pubkey.getNumber().toString(16);
     }
 
-    public boolean check_destination(Tonlib tonlib, String destination) {
+    public boolean check_destination(String destination) {
 
         Address myAddress = getAddress();
 
@@ -220,23 +211,23 @@ public class LockupWalletV1 implements Contract {
     /**
      * @return BigInteger Amount of nano-coins that can be spent immediately.
      */
-    public BigInteger getLiquidBalance(Tonlib tonlib) {
-        List<BigInteger> balances = getBalances(tonlib);
+    public BigInteger getLiquidBalance() {
+        List<BigInteger> balances = getBalances();
         return balances.get(0).subtract(balances.get(1)).subtract(balances.get(2));
     }
 
     /**
      * @return BigInteger Amount of nano-coins that can be spent after the time-lock OR to the whitelisted addresses.
      */
-    public BigInteger getNominalRestrictedBalance(Tonlib tonlib) {
-        return getBalances(tonlib).get(1);
+    public BigInteger getNominalRestrictedBalance() {
+        return getBalances().get(1);
     }
 
     /**
      * @return BigInteger Amount of nano-coins that can be spent after the time-lock only (whitelisted addresses not used).
      */
-    public BigInteger getNominalLockedBalance(Tonlib tonlib) {
-        return getBalances(tonlib).get(2);
+    public BigInteger getNominalLockedBalance() {
+        return getBalances().get(2);
     }
 
     /**
@@ -245,7 +236,7 @@ public class LockupWalletV1 implements Contract {
      * nominal restricted value
      * nominal locked value
      */
-    public List<BigInteger> getBalances(Tonlib tonlib) {
+    public List<BigInteger> getBalances() {
         Address myAddress = getAddress();
         RunResult result = tonlib.runMethod(myAddress, "get_balances");
         TvmStackEntryNumber balance = (TvmStackEntryNumber) result.getStack().get(0); // ton balance
@@ -259,8 +250,8 @@ public class LockupWalletV1 implements Contract {
         );
     }
 
-    public ExtMessageInfo deploy(Tonlib tonlib, LockupWalletV1Config config) {
-        Cell body = createDeployMessage(config);
+    public ExtMessageInfo deploy() {
+        Cell body = createDeployMessage();
 
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -276,7 +267,7 @@ public class LockupWalletV1 implements Contract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public ExtMessageInfo sendTonCoins(Tonlib tonlib, LockupWalletV1Config config) {
+    public ExtMessageInfo sendTonCoins(LockupWalletV1Config config) {
         Cell body = createTransferBody(config);
 
         Message externalMessage = Message.builder()

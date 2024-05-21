@@ -15,12 +15,11 @@ import java.math.BigInteger;
 @Setter
 @ToString
 public class LockupWalletV1Config implements WalletConfig {
+    long walletId;
     long seqno;
     int mode;
     boolean bounce;
     long validUntil;
-    long createdAt;
-    Address source;
     Address destination;
     StateInit stateInit;
     BigInteger amount;

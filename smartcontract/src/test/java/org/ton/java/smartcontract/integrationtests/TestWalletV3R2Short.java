@@ -73,7 +73,7 @@ public class TestWalletV3R2Short extends CommonTest {
         contract2.waitForDeployment(30);
 
         WalletV3Config config = WalletV3Config.builder()
-                .subWalletId(42)
+                .walletId(42)
                 .seqno(contract1.getSeqno())
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
                 .amount(Utils.toNano(0.8))
@@ -87,7 +87,7 @@ public class TestWalletV3R2Short extends CommonTest {
         contract1.waitForBalanceChange(90);
 
         config = WalletV3Config.builder()
-                .subWalletId(98)
+                .walletId(98)
                 .seqno(contract2.getSeqno())
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
                 .amount(Utils.toNano(0.8))
