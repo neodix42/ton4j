@@ -25,16 +25,16 @@ public interface Contract {
 
     String getName();
 
-    default Address getAddress() { // remove default
+    default Address getAddress() {
         return StateInit.builder()
                 .code(createCodeCell())
                 .data(createDataCell())
                 .build().getAddress(getWorkchain());
     }
 
-//    default Address getAddress(byte workchain) {
-//        return getStateInit().getAddress(workchain);
-//    }
+    default Address getAddress(byte workchain) {
+        return getStateInit().getAddress(workchain);
+    }
 
     default MsgAddressIntStd getAddressIntStd() {
         Address ownAddress = getStateInit().getAddress();
@@ -55,13 +55,6 @@ public interface Contract {
     /**
      * @return Cell containing contact code
      */
-//    default Cell createCodeCell() {
-//        if (isNull(getOptions().code)) {
-//            throw new Error("Contract: options.code is not defined");
-//        }
-//        return getOptions().code;
-//    }
-
     Cell createCodeCell();
 
     /**
@@ -69,7 +62,6 @@ public interface Contract {
      *
      * @return {Cell} cell contains contract data
      */
-
     Cell createDataCell();
 
     /**

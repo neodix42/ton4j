@@ -41,21 +41,16 @@ public class TestCustomContract {
                 .build();
 
         log.info("pubkey {}", Utils.bytesToHex(customContract.getKeyPair().getPublicKey()));
-//
-//        Message msg = MsgUtils.createExternalMessageWithSignedBody(customContract.keyPair, customContract.getAddress(),
-//                customContract.getStateInit(),
-//                CellBuilder.beginCell()
-//                        .storeUint(0, 32) // seqno
-//                        .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32)  //valid-until
-//                        .storeUint(0, 64) //extra-field
-//                        .endCell());
+
         Address address = customContract.getAddress();
         log.info("contract address {}", address);
+
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(address.toString(true)), Utils.toNano(0.1));
         log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
-        customContract.deploy();
+        ExtMessageInfo extMessageInfo = customContract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         customContract.waitForDeployment(45);
 
@@ -81,7 +76,7 @@ public class TestCustomContract {
                 .comment("no-way")
                 .build();
 
-        ExtMessageInfo extMessageInfo = customContract.sendTonCoins(config);
+        extMessageInfo = customContract.sendTonCoins(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         customContract.waitForBalanceChange(45);

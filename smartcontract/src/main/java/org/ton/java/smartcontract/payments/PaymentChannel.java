@@ -8,7 +8,10 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.mnemonic.Ed25519;
 import org.ton.java.smartcontract.token.nft.NftUtils;
-import org.ton.java.smartcontract.types.*;
+import org.ton.java.smartcontract.types.ChannelConfig;
+import org.ton.java.smartcontract.types.ChannelData;
+import org.ton.java.smartcontract.types.ChannelState;
+import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
@@ -30,7 +33,7 @@ public class PaymentChannel implements Contract {
     public static final long STATE_SETTLING_CONDITIONALS = 3;
     public static final long STATE_AWAITING_FINALIZATION = 4;
 
-    Address address;
+    //    Address address;
     boolean isA;
     BigInteger channelId;
     TweetNaclFast.Signature.KeyPair myKeyPair;
@@ -67,31 +70,30 @@ public class PaymentChannel implements Contract {
      * },
      * excessFee?: BigInteger
      */
-//    public PaymentChannel(Options options) {
-//
-//        publicKeyA = isA ? myKeyPair.getPublicKey() : hisPublicKey;
-//        publicKeyB = !isA ? myKeyPair.getPublicKey() : hisPublicKey;
-//
-//        if (nonNull(address)) {
-//            this.address = Address.of(address);
-//        }
-//
-////        code = CellBuilder.beginCell().fromBoc(WalletCodes.payments.getValue()).endCell();
-//
-//    }
 
     public static class PaymentChannelBuilder {
-        PaymentChannelBuilder() {
-            publicKeyA = isA ? myKeyPair.getPublicKey() : hisPublicKey;
-            publicKeyB = !isA ? myKeyPair.getPublicKey() : hisPublicKey;
+    }
 
-            if (nonNull(address)) {
-                this.address = Address.of(address);
-            }
+    public static PaymentChannelBuilder builder() {
+        return new CustomPaymentChannelBuilder();
+    }
 
-//        code = CellBuilder.beginCell().fromBoc(WalletCodes.payments.getValue()).endCell();
+    private static class CustomPaymentChannelBuilder extends PaymentChannelBuilder {
+        @Override
+        public PaymentChannel build() {
+            super.publicKeyA = super.isA ? super.myKeyPair.getPublicKey() : super.hisPublicKey;
+            super.publicKeyB = !super.isA ? super.myKeyPair.getPublicKey() : super.hisPublicKey;
+            return super.build();
         }
     }
+
+//    public static class PaymentChannelBuilder {
+//        PaymentChannelBuilder() {
+//            publicKeyA = isA ? myKeyPair.getPublicKey() : hisPublicKey;
+//            publicKeyB = !isA ? myKeyPair.getPublicKey() : hisPublicKey;
+//
+//        }
+//    }
 
     private Tonlib tonlib;
     private long wc;
@@ -121,7 +123,7 @@ public class PaymentChannel implements Contract {
         cell.storeUint(channelConfig.getChannelId(), 128); // channel_id
 
         CellBuilder closingConfig = CellBuilder.beginCell();
-        if (nonNull(channelConfig)) {
+        if (nonNull(closingChannelConfig)) {
             closingConfig.storeUint(closingChannelConfig.getQuarantineDuration(), 32); // quarantine_duration
             closingConfig.storeCoins(isNull(closingChannelConfig.getMisbehaviorFine()) ? BigInteger.ZERO : closingChannelConfig.getMisbehaviorFine()); // misbehavior_fine
             closingConfig.storeUint(closingChannelConfig.getConditionalCloseDuration(), 32); // conditional_close_duration
@@ -153,22 +155,15 @@ public class PaymentChannel implements Contract {
                 endCell();
     }
 
-
-    public ExtMessageInfo deploy(Tonlib tonlib, FromWalletConfig config) {
-        return null;
-    }
-
-
-    public Cell createTopUpBalance(BigInteger coinsA, BigInteger coinsB) {
-        return PaymentsUtils.createTopUpBalance(coinsA, coinsB);
-    }
-
-
     public Signature createCooperativeCommit(byte[] hisSignature, BigInteger seqnoA, BigInteger seqnoB) {
         if (hisSignature.length != 0) {
             hisSignature = new byte[512 / 8];
         }
-        return createTwoSignature(op_cooperative_close, hisSignature, PaymentsUtils.createCooperativeCommitBody(channelConfig.getChannelId(), seqnoA, seqnoB));
+        return createTwoSignature(op_cooperative_close, hisSignature,
+                PaymentsUtils.createCooperativeCommitBody(
+                        channelConfig.getChannelId(),
+                        seqnoA,
+                        seqnoB));
     }
 
     public Signature createCooperativeCloseChannel(byte[] hisSignature, ChannelState channelState) {
@@ -303,9 +298,7 @@ public class PaymentChannel implements Contract {
     }
 
     public BigInteger getChannelState() {
-        Address myAddress = this.getAddress();
-        System.out.println("get state my address " + myAddress.toString(true, true, true));
-        RunResult result = tonlib.runMethod(myAddress, "get_channel_state");
+        RunResult result = tonlib.runMethod(getAddress(), "get_channel_state");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_channel_state, returned an exit code " + result.getExit_code());
@@ -316,9 +309,7 @@ public class PaymentChannel implements Contract {
     }
 
     public ChannelData getData() {
-        Address myAddress = this.getAddress();
-        System.out.println("get data my address " + myAddress.toString(true, true, true));
-        RunResult result = tonlib.runMethod(myAddress, "get_channel_data");
+        RunResult result = tonlib.runMethod(getAddress(), "get_channel_data");
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_channel_data, returned an exit code " + result.getExit_code());

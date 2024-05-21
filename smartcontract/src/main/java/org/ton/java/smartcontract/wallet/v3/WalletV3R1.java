@@ -26,10 +26,19 @@ public class WalletV3R1 implements Contract {
     long walletId;
 
     public static class WalletV3R1Builder {
-        WalletV3R1Builder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
+    }
+
+    public static WalletV3R1Builder builder() {
+        return new WalletV3R1.CustomWalletV3R1Builder();
+    }
+
+    private static class CustomWalletV3R1Builder extends WalletV3R1Builder {
+        @Override
+        public WalletV3R1 build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
             }
+            return super.build();
         }
     }
 

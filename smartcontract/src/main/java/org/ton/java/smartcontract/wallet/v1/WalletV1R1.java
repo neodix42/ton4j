@@ -29,12 +29,20 @@ public class WalletV1R1 implements Contract {
     long initialSeqno;
 
     public static class WalletV1R1Builder {
-        WalletV1R1Builder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
-            }
-        }
+    }
 
+    public static WalletV1R1Builder builder() {
+        return new CustomWalletV1R1Builder();
+    }
+
+    private static class CustomWalletV1R1Builder extends WalletV1R1Builder {
+        @Override
+        public WalletV1R1 build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
+            }
+            return super.build();
+        }
     }
 
     private Tonlib tonlib;

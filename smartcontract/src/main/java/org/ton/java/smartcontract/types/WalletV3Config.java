@@ -26,7 +26,5 @@ public class WalletV3Config implements WalletConfig {
     BigInteger amount;
     Cell body;
     StateInit stateInit;
-    //    byte[] secretKey;
-//    byte[] publicKey;
     String comment;
 }
