@@ -35,6 +35,7 @@ public class GenerateWallet {
 
 
         WalletV3R1 adminWallet = WalletV3R1.builder()
+                .tonlib(tonlib)
                 .keyPair(keyPair)
                 .wc(0)
                 .walletId(42)

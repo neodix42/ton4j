@@ -1,21 +1,19 @@
 package org.ton.java.smartcontract.dns;
 
+import lombok.Builder;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
+@Builder
 public class Dns {
 
     public static final String DNS_CATEGORY_NEXT_RESOLVER = "dns_next_resolver"; // Smart Contract address
     public static final String DNS_CATEGORY_WALLET = "wallet"; // Smart Contract address
     public static final String DNS_CATEGORY_SITE = "site"; // ADNL address
 
-    Tonlib tonlib;
-
-    public Dns(Tonlib tonlib) {
-        this.tonlib = tonlib;
-    }
+    private Tonlib tonlib;
 
     public Address getRootDnsAddress() {
         Cell cell = tonlib.getConfigParam(tonlib.getLast().getLast(), 4);

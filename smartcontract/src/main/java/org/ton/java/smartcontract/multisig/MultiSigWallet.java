@@ -34,9 +34,6 @@ public class MultiSigWallet implements Contract {
      * <p>
      * mandatory -  highloadQueryId, walletId, publicKey
      */
-//    public MultisigWallet(Options options) {
-//        options.code = CellBuilder.beginCell().fromBoc(WalletCodes.multisig.getValue()).endCell();
-//    }
 
     public static class MultiSigWalletBuilder {
         MultiSigWalletBuilder() {

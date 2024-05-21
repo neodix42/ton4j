@@ -28,7 +28,7 @@ public class DnsCollection implements Contract {
 
     //https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-collection.fc
     TweetNaclFast.Signature.KeyPair keyPair;
-    Address address;
+    //    Address address;
     String dnsItemCodeHex;
     Cell collectionContent;
     Cell code;
@@ -152,8 +152,7 @@ public class DnsCollection implements Contract {
      * @return Cell | Address | AdnlAddress | null
      */
     public static Object resolve(Tonlib tonlib, Address dnsCollectionAddress, String domain, String category, boolean oneStep) {
-        Address myAddress = dnsCollectionAddress;
-        return DnsUtils.dnsResolve(tonlib, myAddress, domain, category, oneStep);
+        return DnsUtils.dnsResolve(tonlib, dnsCollectionAddress, domain, category, oneStep);
     }
 
 //    @Override

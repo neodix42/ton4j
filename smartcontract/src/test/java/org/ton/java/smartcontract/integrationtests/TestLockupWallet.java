@@ -32,24 +32,6 @@ public class TestLockupWallet extends CommonTest {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-//        Options options = Options.builder()
-//                .publicKey(keyPair.getPublicKey())
-//                .secretKey(keyPair.getSecretKey())
-//                .wc(0L)
-//                .lockupConfig(LockupConfig.builder()
-//                        .configPublicKey(Utils.bytesToHex(keyPair.getPublicKey()))
-//                        // important to specify totalRestrictedValue! otherwise wallet will send to prohibited addresses
-//                        // can be more than total balance wallet
-//                        .totalRestrictedValue(Utils.toNano(5_000_000))
-//                        .allowedDestinations(List.of(
-//                                TestFaucet.BOUNCEABLE,
-//                                "kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
-//                        .build())
-//                .build();
-
-
-//        LockupWalletV1 contract = new Wallet(WalletVersion.lockup, options).create();
-
         LockupWalletV1 contract = LockupWalletV1.builder()
                 .keyPair(keyPair)
                 .lockupConfig(LockupConfig.builder()
@@ -201,22 +183,6 @@ public class TestLockupWallet extends CommonTest {
         log.info("restricted-validator-wallet-001.pk {}", Utils.bytesToHex(boxKeyPair.getSecretKey()));
 
         // echo 'hex-prv-key' | xxd -r -p  > /usr/local/bin/mytoncore/wallets/restricted-validator-wallet-001.pk
-
-//        Options options = Options.builder()
-//                .publicKey(sigKeyPair.getPublicKey())
-//                .secretKey(sigKeyPair.getSecretKey())
-//                .wc(0L)
-//                .lockupConfig(LockupConfig.builder()
-//                        .configPublicKey(Utils.bytesToHex(sigKeyPair.getPublicKey())) // same as owner
-//                        .totalRestrictedValue(Utils.toNano(5_000_000))
-//                        .allowedDestinations(List.of(
-//                                elector.toString(),
-//                                myWallet.toString())
-//                        ).build())
-//                .build();
-
-
-//        LockupWalletV1 contract = new Wallet(WalletVersion.lockup, options).create();
 
         LockupWalletV1 contract = LockupWalletV1.builder()
                 .keyPair(sigKeyPair)

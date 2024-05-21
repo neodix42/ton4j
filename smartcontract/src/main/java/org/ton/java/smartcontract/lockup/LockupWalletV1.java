@@ -52,12 +52,6 @@ public class LockupWalletV1 implements Contract {
      * options.lockupConfig.allowedDestinations
      * options.lockupConfig.totalRestrictedValue
      */
-//    public LockupWalletV1(Options options) {
-////        code = CellBuilder.beginCell().fromBoc(LOCKUP_R1_CODE_HEX).endCell();
-//        if (walletId == 0) {
-//            options.walletId = 698983191 + options.wc;
-//        }
-//    }
 
     public static class LockupWalletV1Builder {
         LockupWalletV1Builder() {
@@ -104,22 +98,6 @@ public class LockupWalletV1 implements Contract {
 
 
     public Cell createTransferBody(LockupWalletV1Config config) {
-//        CellBuilder message = CellBuilder.beginCell();
-//
-//        message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);
-//
-//        if (config.getSeqno() == 0) {
-//            for (int i = 0; i < 32; i++) {
-//                message.storeBit(true);
-//            }
-//        } else {
-//            Date date = new Date();
-//            long timestamp = (long) Math.floor(date.getTime() / 1e3);
-//            message.storeUint(BigInteger.valueOf(timestamp + 60L), 32); // 1 minute
-//        }
-//
-//        message.storeUint(BigInteger.valueOf(config.getSeqno()), 32);
-
 
         Cell order = Message.builder()
                 .info(InternalMessageInfo.builder()
@@ -281,12 +259,6 @@ public class LockupWalletV1 implements Contract {
         );
     }
 
-//    public long getSeqno(Tonlib tonlib) {
-//
-//        Address myAddress = getAddress();
-//        return tonlib.getSeqno(myAddress);
-//    }
-
     public ExtMessageInfo deploy(Tonlib tonlib, LockupWalletV1Config config) {
         Cell body = createDeployMessage(config);
 
@@ -318,6 +290,5 @@ public class LockupWalletV1 implements Contract {
                 .build();
 
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-
     }
 }

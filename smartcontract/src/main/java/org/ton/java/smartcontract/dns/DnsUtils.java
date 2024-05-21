@@ -43,11 +43,11 @@ public class DnsUtils {
      * @return Cell
      */
     public static Cell createSmartContractAddressRecord(Address smartContractAddress) {
-        CellBuilder cellBuilder = CellBuilder.beginCell();
-        cellBuilder.storeUint(0x9fd3, 16); // https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L827
-        cellBuilder.storeAddress(smartContractAddress);
-        cellBuilder.storeUint(0, 8);
-        return cellBuilder.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(0x9fd3, 16) // https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L827
+                .storeAddress(smartContractAddress)
+                .storeUint(0, 8)
+                .endCell();
     }
 
     /**
@@ -55,11 +55,11 @@ public class DnsUtils {
      * @return Cell
      */
     public static Cell createAdnlAddressRecord(AdnlAddress adnlAddress) {
-        CellBuilder cellBuilder = CellBuilder.beginCell();
-        cellBuilder.storeUint(0xad01, 16); // https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L821
-        cellBuilder.storeBytes(adnlAddress.getBytes());
-        cellBuilder.storeUint(0, 8);
-        return cellBuilder.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(0xad01, 16) // https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L821
+                .storeBytes(adnlAddress.getBytes())
+                .storeUint(0, 8)
+                .endCell();
     }
 
     /**
@@ -67,11 +67,11 @@ public class DnsUtils {
      * @return Cell
      */
     public static Cell createNextResolverRecord(Address smartContractAddress) {
-        CellBuilder cellBuilder = CellBuilder.beginCell();
-        cellBuilder.storeUint(0xba93, 16); // https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L819
-        cellBuilder.storeAddress(smartContractAddress);
-        cellBuilder.storeUint(0, 8);
-        return cellBuilder.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(0xba93, 16) // https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L819
+                .storeAddress(smartContractAddress)
+                .storeUint(0, 8)
+                .endCell();
     }
 
     /**
@@ -112,10 +112,10 @@ public class DnsUtils {
      * @return AdnlAddress
      */
     static AdnlAddress parseAdnlAddressRecord(Cell cell) {
-        if ((cell.getBits().toByteArray()[0] & 0xFF) != 0xad || (cell.getBits().toByteArray()[1] & 0xFF) != 0x01) { // todo
+        if ((cell.getBits().toByteArray()[0] & 0xFF) != 0xad || (cell.getBits().toByteArray()[1] & 0xFF) != 0x01) {
             throw new Error("Invalid dns record value prefix");
         }
-        byte[] bytes = Arrays.copyOfRange(cell.getBits().toByteArray(), 2, 2 + 32);// cell.bits.array.slice(2, 2 + 32); // skip prefix - first 16 bits
+        byte[] bytes = Arrays.copyOfRange(cell.getBits().toByteArray(), 2, 2 + 32);
         return new AdnlAddress(bytes);
     }
 
@@ -203,7 +203,7 @@ public class DnsUtils {
      * @return byte[]
      */
     static byte[] domainToBytes(String domain) {
-        if (isNull(domain) || domain.length() == 0) {
+        if (isNull(domain) || domain.isEmpty()) {
             throw new Error("Empty domain");
         }
         if (domain.equals(".")) {
@@ -229,7 +229,7 @@ public class DnsUtils {
         List<String> arr = new ArrayList<>(List.of(domain.split("\\.")));
 
         for (String part : arr) {
-            if (part.length() == 0) {
+            if (part.isEmpty()) {
                 throw new Error("Domain name cannot have an empty component");
             }
         }
