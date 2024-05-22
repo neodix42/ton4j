@@ -909,18 +909,7 @@ public class Tonlib {
     public long getSeqno(Address address) {
         RunResult result = runMethod(address, "seqno");
         if (result.getExit_code() != 0) {
-            throw new Error("can't get/parse result by executing seqno method, exit code " + result.getExit_code());
-        }
-
-        TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
-
-        return seqno.getNumber().longValue();
-    }
-
-    public long getSeqnoById(Address address) {
-        RunResult result = runMethod(address, 85143L);
-        if (result.getExit_code() != 0) {
-            throw new Error("can't get/parse result by executing seqno method, exit code " + result.getExit_code());
+            throw new Error("can't get result by executing seqno method, exit code " + result.getExit_code());
         }
 
         TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);

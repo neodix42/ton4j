@@ -83,19 +83,6 @@ public class TestFaucet {
 
         ContractUtils.waitForBalanceChange(tonlib, destinationAddress, 60);
 
-//        BigInteger newBalance = BigInteger.ZERO;
-//        i = 0;
-//        do {
-//            log.info("checking wallet balance: {}", destinationAddress.toString(true, true, true));
-//            TimeUnit.SECONDS.sleep(10);
-//            if (nonNull(tonlib.getAccountState(destinationAddress).getBalance())) {
-//                newBalance = new BigInteger(tonlib.getAccountState(destinationAddress).getBalance());
-//            }
-//            if (++i > 10) {
-//                throw new Error("cannot top up the contract " + destinationAddress);
-//            }
-//        } while (newBalance.compareTo(BigInteger.ZERO) < 1);
-
         return ContractUtils.getBalance(tonlib, destinationAddress);
     }
 

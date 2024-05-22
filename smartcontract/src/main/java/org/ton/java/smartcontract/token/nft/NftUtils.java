@@ -1,7 +1,6 @@
 package org.ton.java.smartcontract.token.nft;
 
 import org.ton.java.address.Address;
-import org.ton.java.bitstring.BitString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -16,7 +15,6 @@ import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 public class NftUtils {
 
@@ -39,55 +37,38 @@ public class NftUtils {
     }
 
     /**
-     * @param bytes byte[]
+     * @param uri
      * @return String
      */
-    static String parseUri(byte[] bytes) {
-        return URLDecoder.decode(new String(bytes), StandardCharsets.UTF_8);
+    static String parseUri(String uri) {
+        return URLDecoder.decode(uri, StandardCharsets.UTF_8);
     }
 
     /**
      * @param uri String
      * @return Cell
      */
-    public static Cell createOffchainUriCell(String uri) {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(OFFCHAIN_CONTENT_PREFIX, 8);
-        cell.storeBytes(uri.getBytes(StandardCharsets.UTF_8));
-        return cell.endCell();
+    public static Cell createOffChainUriCell(String uri) {
+        return CellBuilder.beginCell()
+                .storeUint(OFFCHAIN_CONTENT_PREFIX, 8)
+                .storeSnakeString(uri)
+                .endCell();
     }
 
     /**
      * @param cell Cell
      * @return String
      */
-    public static String parseOffchainUriCell(Cell cell) {
+    public static String parseOffChainUriCell(Cell cell) {
         if ((cell.getBits().toByteArray()[0] & 0xFF) != OFFCHAIN_CONTENT_PREFIX) {
-            throw new Error("no OFFCHAIN_CONTENT_PREFIX");
+            throw new Error("not OFFCHAIN_CONTENT_PREFIX");
         }
 
-        int length = 0;
-        CellSlice cs = CellSlice.beginParse(cell);
-        while (cs.getRefsCount() != 0) {
-            length += cs.loadBytes().length;
-            cs.loadRef();
-        }
+        return parseUri(CellSlice.beginParse(cell).skipBits(8).loadSnakeString());
+    }
 
-        byte[] bytes = new byte[length];
-        length = 0;
-        cs = CellSlice.beginParse(cell);
-        while (cs.getRefsCount() != 0) {
-            bytes = Arrays.copyOfRange(cs.loadSignedBytes(), 0, length);
-            length += cs.loadBytes().length;
-            cs.loadRef();
-        }
-
-        bytes = Arrays.copyOfRange(cs.loadSignedBytes(), 0, length);
-        if (bytes.length != 0) {
-            return parseUri(Arrays.copyOfRange(bytes, 1, bytes.length)); // slice OFFCHAIN_CONTENT_PREFIX
-        } else {
-            return "";
-        }
+    public static String parseOnChainUriCell(Cell cell) {
+        return parseUri(CellSlice.beginParse(cell).loadSnakeString());
     }
 
     /**
@@ -106,23 +87,6 @@ public class NftUtils {
         cell.storeBytes(name.getBytes(StandardCharsets.UTF_8));
         cell.storeString(description);
         return cell.endCell();
-    }
-
-    /**
-     * @param bs     BitString
-     * @param cursor number
-     * @param bits   number
-     * @return BigInt
-     */
-    public static BigInteger readIntFromBitString(BitString bs, int cursor, int bits) {
-        BitString cloned = bs.clone();
-        cloned.readBits(cursor);
-        BigInteger n = BigInteger.ZERO;
-        for (int i = 0; i < bits; i++) {
-            n = n.multiply(BigInteger.TWO);
-            n = n.add(cloned.readBit() ? BigInteger.ONE : BigInteger.ZERO);
-        }
-        return n;
     }
 
     /**

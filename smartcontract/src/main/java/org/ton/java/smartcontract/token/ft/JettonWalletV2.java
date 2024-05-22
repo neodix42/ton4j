@@ -23,21 +23,21 @@ import static java.util.Objects.isNull;
 
 @Builder
 @Getter
-public class JettonWallet implements Contract {
+public class JettonWalletV2 implements Contract {
 
     TweetNaclFast.Signature.KeyPair keyPair;
     Address address;
 
-    public static class JettonWalletBuilder {
+    public static class JettonWalletV2Builder {
     }
 
-    public static JettonWalletBuilder builder() {
-        return new CustomJettonWalletBuilder();
+    public static JettonWalletV2Builder builder() {
+        return new CustomJettonWalletV2Builder();
     }
 
-    private static class CustomJettonWalletBuilder extends JettonWalletBuilder {
+    private static class CustomJettonWalletV2Builder extends JettonWalletV2Builder {
         @Override
-        public JettonWallet build() {
+        public JettonWalletV2 build() {
             if (isNull(super.keyPair)) {
                 super.keyPair = Utils.generateSignatureKeyPair();
             }
@@ -59,7 +59,7 @@ public class JettonWallet implements Contract {
     }
 
     public String getName() {
-        return "jettonWallet";
+        return "jettonWalletV2";
     }
 
     @Override
@@ -70,7 +70,7 @@ public class JettonWallet implements Contract {
     @Override
     public Cell createCodeCell() {
         return CellBuilder.beginCell().
-                fromBoc(WalletCodes.jettonWallet.getValue()).
+                fromBoc(WalletCodes.jettonWalletV2.getValue()).
                 endCell();
     }
 
@@ -86,7 +86,7 @@ public class JettonWallet implements Contract {
         cell.storeAddress(responseAddress);
         cell.storeBit(false); // null custom_payload
         cell.storeCoins(forwardAmount); // default 0
-        cell.storeBit(false); // forward_payload in this slice, not separate cell
+        cell.storeBit(false); // forward_payload in this slice, not ref cell
         if (forwardPayload.length != 0) {
             cell.storeBytes(forwardPayload);
         }
@@ -99,12 +99,30 @@ public class JettonWallet implements Contract {
      * @param responseAddress Address
      */
     public static Cell createBurnBody(long queryId, BigInteger jettonAmount, Address responseAddress) {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(0x595f07bc, 32); //burn up
-        cell.storeUint(queryId, 64);
-        cell.storeCoins(jettonAmount);
-        cell.storeAddress(responseAddress);
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(0x595f07bc, 32) //burn up
+                .storeUint(queryId, 64)
+                .storeCoins(jettonAmount)
+                .storeAddress(responseAddress)
+                .endCell();
+    }
+
+    /**
+     * Note, status==0 means unlocked - user can freely transfer and receive jettons (only admin can burn).
+     * (status & 1) bit means user can not send jettons
+     * (status & 2) bit means user can not receive jettons.
+     * Master (minter) smart-contract able to make outgoing actions (transfer, burn jettons) with any status.
+     *
+     * @param queryId
+     * @param status
+     * @return
+     */
+    public static Cell createStatusBody(long queryId, int status) {
+        return CellBuilder.beginCell()
+                .storeUint(0xeed236d3, 32) //change status
+                .storeUint(queryId, 64)
+                .storeUint(status, 4) //new status
+                .endCell();
     }
 
     public JettonWalletData getData() {

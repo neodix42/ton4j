@@ -109,7 +109,7 @@ public class NftItem implements Contract {
         String contentUri = null;
         try {
             if (isInitialized && nonNull(collectionAddress)) {
-                contentUri = NftUtils.parseOffchainUriCell(cell);
+                contentUri = NftUtils.parseOffChainUriCell(cell);
             }
         } catch (Error e) {
             //todo

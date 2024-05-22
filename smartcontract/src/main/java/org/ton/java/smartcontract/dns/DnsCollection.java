@@ -115,7 +115,7 @@ public class DnsCollection implements Contract {
 
         TvmStackEntryCell collectionContentResult = (TvmStackEntryCell) result.getStack().get(1); // cell or slice
         Cell collectionContent = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(collectionContentResult.getCell().getBytes())).endCell();
-        String collectionContentUri = NftUtils.parseOffchainUriCell(collectionContent);
+        String collectionContentUri = NftUtils.parseOffChainUriCell(collectionContent);
 
         return CollectionData.builder()
                 .collectionContentUri(collectionContentUri)

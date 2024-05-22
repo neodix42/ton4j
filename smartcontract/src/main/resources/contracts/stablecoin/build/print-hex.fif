@@ -1,0 +1,18 @@
+#!/usr/bin/fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+
+"jetton-minter.fif" include
+."jetton-minter hash:" cr
+dup hashB dup Bx. cr drop
+."jetton-minter code:" cr
+boc>B dup Bx. cr
+
+
+"jetton-wallet.fif" include
+."jetton-wallet hash:" cr
+dup hashB dup Bx. cr drop
+."jetton-wallet code:" cr
+boc>B dup Bx. cr
+

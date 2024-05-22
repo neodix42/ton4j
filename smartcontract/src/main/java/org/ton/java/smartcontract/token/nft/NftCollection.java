@@ -99,7 +99,7 @@ public class NftCollection implements Contract {
      * @return Cell
      */
     private static Cell createContentCell(String collectionContentUri, String collectionContentBaseUri) {
-        Cell collectionContentCell = NftUtils.createOffchainUriCell(collectionContentUri);
+        Cell collectionContentCell = NftUtils.createOffChainUriCell(collectionContentUri);
         CellBuilder commonContentCell = CellBuilder.beginCell();
         commonContentCell.storeBytes(collectionContentBaseUri.getBytes(StandardCharsets.UTF_8));
 
@@ -223,7 +223,7 @@ public class NftCollection implements Contract {
 
         String collectionContentUri = null;
         try {
-            collectionContentUri = NftUtils.parseOffchainUriCell(collectionContentCell);
+            collectionContentUri = NftUtils.parseOffChainUriCell(collectionContentCell);
         } catch (Error e) {
             //todo
         }
@@ -260,7 +260,7 @@ public class NftCollection implements Contract {
             Cell content = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentCell.getCell().getBytes())).endCell();
 
             try {
-                nftData.setContentUri(NftUtils.parseOffchainUriCell(content));
+                nftData.setContentUri(NftUtils.parseOffChainUriCell(content));
             } catch (Error e) {
                 //todo
             }

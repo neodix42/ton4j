@@ -34,9 +34,12 @@ public class TestWalletV3R2Short extends CommonTest {
 
         String nonBounceableAddress1 = contract1.getAddress().toNonBounceable();
         String bounceableAddress1 = contract1.getAddress().toBounceable();
+        String rawAddress1 = contract1.getAddress().toRaw();
 
         log.info("non-bounceable address 1: {}", nonBounceableAddress1);
         log.info("    bounceable address 1: {}", bounceableAddress1);
+        log.info("    raw address 1: {}", rawAddress1);
+
         String status = tonlib.getAccountStatus(Address.of(bounceableAddress1));
         log.info("account status {}", status);
 
@@ -112,5 +115,26 @@ public class TestWalletV3R2Short extends CommonTest {
         log.info("2 pubkey {}", contract2.getPublicKey());
 
         assertThat(contract1.getPublicKey()).isEqualTo(contract2.getPublicKey());
+    }
+
+    /*
+     * addr - EQA-XwAkPLS-i4s9_N5v0CXGVFecw7lZV2rYeXDAimuWi9zI
+     * pub key - 2c188d86ba469755554baad436663b8073145b29f117550432426c513e7c582a
+     * prv key - c67cf48806f08929a49416ebebd97078100540ac8a3283646222b4d958b3e9e22c188d86ba469755554baad436663b8073145b29f117550432426c513e7c582a
+     */
+    @Test
+    public void testWallet() throws InterruptedException {
+        WalletV3R2 contract = WalletV3R2.builder()
+                .tonlib(tonlib)
+                .walletId(42)
+                .build();
+        log.info("pub key: {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv key: {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, contract.getAddress(), Utils.toNano(1));
+        log.info("walletId {} new wallet {} balance: {}", contract.getWalletId(), contract.getName(), Utils.formatNanoValue(balance));
+
+        contract.deploy();
+        contract.waitForDeployment(60);
     }
 }

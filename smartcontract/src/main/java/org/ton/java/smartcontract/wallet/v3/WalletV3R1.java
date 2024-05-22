@@ -86,11 +86,6 @@ public class WalletV3R1 implements Contract {
         Cell order = Message.builder()
                 .info(InternalMessageInfo.builder()
                         .bounce(config.isBounce())
-                        .srcAddr(isNull(config.getSource()) ? null :
-                                MsgAddressIntStd.builder()
-                                        .workchainId(config.getSource().wc)
-                                        .address(config.getSource().toBigInteger())
-                                        .build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(config.getDestination().wc)
                                 .address(config.getDestination().toBigInteger())
