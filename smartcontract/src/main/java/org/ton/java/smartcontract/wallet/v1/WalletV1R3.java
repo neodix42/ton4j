@@ -20,6 +20,7 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -107,10 +108,12 @@ public class WalletV1R3 implements Contract {
                                 .build())
                         .value(CurrencyCollection.builder().coins(config.getAmount()).build())
                         .build())
-                .body(CellBuilder.beginCell()
-                        .storeUint(0, 32)
-                        .storeString(config.getComment())
-                        .endCell())
+                .body((isNull(config.getBody()) && nonNull(config.getComment())) ?
+                        CellBuilder.beginCell()
+                                .storeUint(0, 32)
+                                .storeString(config.getComment())
+                                .endCell()
+                        : config.getBody())
                 .build().toCell();
 
         return CellBuilder.beginCell()

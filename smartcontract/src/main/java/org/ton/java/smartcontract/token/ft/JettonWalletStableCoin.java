@@ -23,21 +23,21 @@ import static java.util.Objects.isNull;
 
 @Builder
 @Getter
-public class JettonWalletV2 implements Contract {
+public class JettonWalletStableCoin implements Contract {
 
     TweetNaclFast.Signature.KeyPair keyPair;
     Address address;
 
-    public static class JettonWalletV2Builder {
+    public static class JettonWalletStableCoinBuilder {
     }
 
-    public static JettonWalletV2Builder builder() {
-        return new CustomJettonWalletV2Builder();
+    public static JettonWalletStableCoinBuilder builder() {
+        return new CustomJettonWalletStableCoinBuilder();
     }
 
-    private static class CustomJettonWalletV2Builder extends JettonWalletV2Builder {
+    private static class CustomJettonWalletStableCoinBuilder extends JettonWalletStableCoinBuilder {
         @Override
-        public JettonWalletV2 build() {
+        public JettonWalletStableCoin build() {
             if (isNull(super.keyPair)) {
                 super.keyPair = Utils.generateSignatureKeyPair();
             }
@@ -59,7 +59,7 @@ public class JettonWalletV2 implements Contract {
     }
 
     public String getName() {
-        return "jettonWalletV2";
+        return "jettonWalletStableCoin";
     }
 
     @Override
@@ -70,7 +70,7 @@ public class JettonWalletV2 implements Contract {
     @Override
     public Cell createCodeCell() {
         return CellBuilder.beginCell().
-                fromBoc(WalletCodes.jettonWalletV2.getValue()).
+                fromBoc(WalletCodes.jettonWalletStableCoin.getValue()).
                 endCell();
     }
 
@@ -112,16 +112,22 @@ public class JettonWalletV2 implements Contract {
      * (status & 1) bit means user can not send jettons
      * (status & 2) bit means user can not receive jettons.
      * Master (minter) smart-contract able to make outgoing actions (transfer, burn jettons) with any status.
-     *
-     * @param queryId
-     * @param status
-     * @return
      */
     public static Cell createStatusBody(long queryId, int status) {
         return CellBuilder.beginCell()
-                .storeUint(0xeed236d3, 32) //change status
+                .storeUint(new BigInteger("eed236d3", 16), 32)
                 .storeUint(queryId, 64)
-                .storeUint(status, 4) //new status
+                .storeUint(status, 4)
+                .endCell();
+    }
+
+    public static Cell createCallToBody(long queryId, Address destination, BigInteger tonAmount, Cell payload) {
+        return CellBuilder.beginCell()
+                .storeUint(0x235caf52, 32)
+                .storeUint(queryId, 64)
+                .storeAddress(destination)
+                .storeCoins(tonAmount)
+                .storeRef(payload)
                 .endCell();
     }
 

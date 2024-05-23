@@ -694,6 +694,10 @@ public class Utils {
         return String.format("%,." + scale + "f", new BigDecimal(value).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.CEILING));
     }
 
+    public static String formatNanoValue(BigInteger value, int scale) {
+        return String.format("%,." + scale + "f", new BigDecimal(value).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.CEILING));
+    }
+
     public static void sleep(long seconds) {
         try {
             //  System.out.println("pause " + seconds + " seconds");

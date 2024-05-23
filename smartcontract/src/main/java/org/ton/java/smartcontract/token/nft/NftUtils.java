@@ -1,9 +1,11 @@
 package org.ton.java.smartcontract.token.nft;
 
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.types.Royalty;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.RunResult;
@@ -68,24 +70,53 @@ public class NftUtils {
     }
 
     public static String parseOnChainUriCell(Cell cell) {
-        return parseUri(CellSlice.beginParse(cell).loadSnakeString());
+
+        if ((cell.getBits().toByteArray()[0] & 0xFF) != ONCHAIN_CONTENT_PREFIX) {
+            throw new Error("not ONCHAIN_CONTENT_PREFIX");
+        }
+
+        CellSlice cs = CellSlice.beginParse(cell);
+        cs.skipBits(8);
+
+        TonHashMapE loadedDict = cs
+                .loadDictE(256,
+                        k -> k.readUint(256),
+                        v -> CellSlice.beginParse(v).loadSnakeString()
+                );
+        BigInteger key = new BigInteger(Utils.sha256("uri".getBytes()), 16);
+        String uri = loadedDict.elements.get(key).toString();
+        return StringUtils.trim(uri);
     }
 
     /**
-     * TODO onchain content
      * The first byte is 0x00 and the rest is key/value dictionary.
      * Key is sha256 hash of string.
      * Value is data encoded as described in "Data serialization" paragraph.
      *
-     * @param name        String name of Jetton
-     * @param description String description of Jetton
+     * @param uri
      * @return Cell
      */
-    public static Cell createOnchainDataCell(String name, String description) { // https://github.com/ton-blockchain/TIPs/issues/64
+    public static Cell createOnchainDataCell(String uri, Long decimals) {
+        // https://github.com/ton-blockchain/TIPs/issues/64
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(ONCHAIN_CONTENT_PREFIX, 8);
-        cell.storeBytes(name.getBytes(StandardCharsets.UTF_8));
-        cell.storeString(description);
+
+        int keySizeX = 256;
+        TonHashMapE x = new TonHashMapE(keySizeX);
+
+        BigInteger uriKey = new BigInteger(Utils.sha256("uri".getBytes()), 16);
+        x.elements.put(uriKey, CellBuilder.beginCell().storeSnakeString(uri).endCell());
+        BigInteger decimalsKey = new BigInteger(Utils.sha256("decimals".getBytes()), 16);
+
+        x.elements.put(uriKey, CellBuilder.beginCell().storeSnakeString(uri).endCell());
+        x.elements.put(decimalsKey, CellBuilder.beginCell().storeString(decimals.toString()).endCell());
+
+        Cell cellDict = x.serialize(
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, keySizeX).endCell().getBits(),
+                v -> CellBuilder.beginCell().storeCell((Cell) v).endCell()
+        );
+
+        cell.storeDict(cellDict);
         return cell.endCell();
     }
 

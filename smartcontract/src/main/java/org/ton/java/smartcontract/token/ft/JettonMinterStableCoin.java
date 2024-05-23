@@ -3,6 +3,7 @@ package org.ton.java.smartcontract.token.ft;
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -25,7 +26,7 @@ import static java.util.Objects.isNull;
 
 @Builder
 @Getter
-public class JettonMinterV2 implements Contract {
+public class JettonMinterStableCoin implements Contract {
     TweetNaclFast.Signature.KeyPair keyPair;
     Address adminAddress;
     Address nextAdminAddress;
@@ -34,16 +35,16 @@ public class JettonMinterV2 implements Contract {
 
     String code;
 
-    public static class JettonMinterV2Builder {
+    public static class JettonMinterStableCoinBuilder {
     }
 
-    public static JettonMinterV2Builder builder() {
-        return new CustomJettonMinterV2Builder();
+    public static JettonMinterStableCoinBuilder builder() {
+        return new CustomJettonMinterStableCoinBuilder();
     }
 
-    private static class CustomJettonMinterV2Builder extends JettonMinterV2Builder {
+    private static class CustomJettonMinterStableCoinBuilder extends JettonMinterStableCoinBuilder {
         @Override
-        public JettonMinterV2 build() {
+        public JettonMinterStableCoin build() {
             if (isNull(super.keyPair)) {
                 super.keyPair = Utils.generateSignatureKeyPair();
             }
@@ -66,7 +67,7 @@ public class JettonMinterV2 implements Contract {
     }
 
     public String getName() {
-        return "jettonMinter";
+        return "jettonMinterStableCoin";
     }
 
     /**
@@ -80,14 +81,20 @@ public class JettonMinterV2 implements Contract {
                 .storeAddress(nextAdminAddress)
                 .storeRef(CellBuilder.beginCell().fromBoc(jettonWalletCodeHex).endCell())
                 .storeRef(NftUtils.createOffChainUriCell(jettonContentUri))
+//                .storeRef(NftUtils.createOnchainDataCell(jettonContentUri, 6L))
                 .endCell();
     }
 
     @Override
     public Cell createCodeCell() {
-
+        if (StringUtils.isNotEmpty(code)) {
+            System.out.println("Using custom JettonMinter");
+            return CellBuilder.beginCell().
+                    fromBoc(code).
+                    endCell();
+        }
         return CellBuilder.beginCell().
-                fromBoc(WalletCodes.jettonMinterV2.getValue()).
+                fromBoc(WalletCodes.jettonMinterStableCoin.getValue()).
                 endCell();
     }
 
@@ -103,7 +110,8 @@ public class JettonMinterV2 implements Contract {
      */
     public static Cell createMintBody(long queryId, Address destination, BigInteger amount,
                                       BigInteger jettonAmount, Address fromAddress, Address
-                                              responseAddress, BigInteger forwardAmount) {
+                                              responseAddress, BigInteger forwardAmount,
+                                      Cell forwardPayload) {
         return CellBuilder.beginCell()
                 .storeUint(0x642b7d07, 32)
                 .storeUint(queryId, 64)
@@ -117,6 +125,8 @@ public class JettonMinterV2 implements Contract {
                         .storeAddress(responseAddress) // response_address
                         .storeCoins(forwardAmount)     // forward_amount
                         .storeBit(false)               // forward payload
+                        // forward_payload in this slice, not separate cell
+                        .storeCell(forwardPayload)
                         .endCell())
                 .endCell();
     }
@@ -198,11 +208,9 @@ public class JettonMinterV2 implements Contract {
         TvmStackEntryCell jettonContent = (TvmStackEntryCell) result.getStack().get(3);
         Cell jettonContentCell = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(jettonContent.getCell().getBytes())).endCell();
         String jettonContentUri = null;
-        try {
-            jettonContentUri = NftUtils.parseOnChainUriCell(jettonContentCell);
-        } catch (Exception e) {
-            //todo
-        }
+
+        jettonContentUri = NftUtils.parseOnChainUriCell(jettonContentCell);
+
 
         TvmStackEntryCell contentC = (TvmStackEntryCell) result.getStack().get(4);
         Cell jettonWalletCode = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentC.getCell().getBytes())).endCell();
@@ -229,7 +237,7 @@ public class JettonMinterV2 implements Contract {
         return totalSupplyNumber.getNumber();
     }
 
-    public JettonWalletV2 getJettonWallet(Address ownerAddress) {
+    public JettonWalletStableCoin getJettonWallet(Address ownerAddress) {
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeAddress(ownerAddress);
 
@@ -246,7 +254,7 @@ public class JettonMinterV2 implements Contract {
         TvmStackEntrySlice addr = (TvmStackEntrySlice) result.getStack().get(0);
         Address jettonWalletAddress = NftUtils.parseAddress(CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(addr.getSlice().getBytes())).endCell());
 
-        return JettonWalletV2.builder()
+        return JettonWalletStableCoin.builder()
                 .tonlib(tonlib)
                 .address(jettonWalletAddress)
                 .build();

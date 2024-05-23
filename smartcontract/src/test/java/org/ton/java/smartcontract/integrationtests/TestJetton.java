@@ -12,6 +12,7 @@ import org.ton.java.smartcontract.token.ft.JettonWallet;
 import org.ton.java.smartcontract.types.JettonMinterData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV3Config;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -60,7 +61,7 @@ public class TestJetton {
                 .destination(minter.getAddress())
                 .amount(Utils.toNano(0.2))
                 .stateInit(minter.getStateInit())
-                .comment("deploy minter") // todo
+                .comment("deploy minter")
                 .build();
 
         ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
@@ -83,9 +84,9 @@ public class TestJetton {
                         Utils.toNano(100500),
                         null,
                         null,
-                        BigInteger.ZERO))
-                .comment("mint tokens")
-                .build();
+                        BigInteger.ONE,
+                        MsgUtils.createTextMessageBody("minting"))
+                ).build();
 
         extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
@@ -145,10 +146,10 @@ public class TestJetton {
                 .body(JettonWallet.createTransferBody(
                                 0,
                                 Utils.toNano(444),
-                                wallet2.getAddress(), // recipient
-                                adminWallet.getAddress(), // response address
-                                Utils.toNano("0.01"), // forward amount
-                                "gift".getBytes() // forward payload
+                                wallet2.getAddress(),         // recipient
+                                adminWallet.getAddress(),     // response address
+                                BigInteger.ONE, // forward amount
+                                MsgUtils.createTextMessageBody("gift") // forward payload
                         )
                 )
                 .build();

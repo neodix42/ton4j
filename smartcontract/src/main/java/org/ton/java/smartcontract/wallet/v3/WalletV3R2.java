@@ -72,11 +72,11 @@ public class WalletV3R2 implements Contract {
 
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(initialSeqno, 32); // seqno
-        cell.storeUint(walletId, 32);
-        cell.storeBytes(keyPair.getPublicKey());
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(initialSeqno, 32)
+                .storeUint(walletId, 32)
+                .storeBytes(keyPair.getPublicKey())
+                .endCell();
     }
 
     public String getPublicKey() {

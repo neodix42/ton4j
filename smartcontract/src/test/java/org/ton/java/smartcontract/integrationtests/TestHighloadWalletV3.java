@@ -53,6 +53,8 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
         log.info("           raw address {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
@@ -94,9 +96,13 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         extMessageInfo = contract.sendTonCoins(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
+        log.info("sent 2 messages");
     }
 
 
+    /**
+     * Sends 1000 messages with values without comment/memo field
+     */
     @Test
     public void testBulkTransferSimplified_1000() throws InterruptedException, NoSuchAlgorithmException {
 
@@ -135,12 +141,64 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .walletId(42)
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
                 .body(contract.createBulkTransfer(
-                        createDummyDestinations(1),
+                        createDummyDestinations(1000),
                         BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
                 .build();
 
         extMessageInfo = contract.sendTonCoins(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
+        log.info("sent 1000 messages");
+    }
+
+
+    /**
+     * Sends 1000 messages with jetton values with comment
+     */
+    @Test
+    public void testBulkJettonTransferSimplified_1000() throws InterruptedException, NoSuchAlgorithmException {
+
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+        HighloadWalletV3 contract = HighloadWalletV3.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42)
+                .build();
+
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
+        String rawAddress = contract.getAddress().toRaw();
+
+        log.info("non-bounceable address {}", nonBounceableAddress);
+        log.info("    bounceable address {}", bounceableAddress);
+        log.info("           raw address {}", rawAddress);
+
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(12));
+        Utils.sleep(30, "topping up...");
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        HighloadV3Config config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+                .build();
+
+        ExtMessageInfo extMessageInfo = contract.deploy(config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(45);
+
+        config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+                .body(contract.createBulkTransfer(
+                        createDummyDestinations(300),
+                        BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+                .build();
+
+        extMessageInfo = contract.sendTonCoins(config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        log.info("sent 1000 messages");
     }
 
     @Test
@@ -161,6 +219,8 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
         log.info("           raw address {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         // top up new wallet using test-faucet-wallet        
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
@@ -268,6 +328,8 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
         log.info("           raw address {}", contract.getAddress().toString(false));
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(3));
@@ -437,6 +499,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                     .bounce(false)
                     .address(dstDummyAddress)
                     .amount(Utils.toNano(0.01))
+                    .comment("comment-" + i)
                     .build());
         }
         return result;

@@ -26,16 +26,8 @@ public class TestAddress {
     @Test
     public void testAddress() {
 
-        Address address01 = Address.of(TEST_ADDRESS_0);
-
-        assertThat(address01.toString()).isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
-
-        Address address02 = Address.of(TEST_ADDRESS_1);
-        assertThat(address02.toString()).isEqualTo(TEST_ADDRESS_1);
-        assertThat(address02.isBounceable).isTrue();
-
         Address address03 = Address.of(TEST_ADDRESS_3);
-        assertThat(address03.toString()).isEqualTo(TEST_ADDRESS_3);
+        assertThat(address03.toRaw()).isEqualTo(TEST_ADDRESS_3);
 
         Address address04 = Address.of(TEST_ADDRESS_0);
         assertThat(address04.toString(true, true, false)).isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");

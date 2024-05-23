@@ -114,7 +114,12 @@ public class LockupWalletV1 implements Contract {
                         .value(CurrencyCollection.builder().coins(config.getAmount()).build())
                         .build())
                 .init(config.getStateInit())
-                .body(config.getBody())
+                .body((isNull(config.getBody()) && nonNull(config.getComment())) ?
+                        CellBuilder.beginCell()
+                                .storeUint(0, 32)
+                                .storeString(config.getComment())
+                                .endCell()
+                        : config.getBody())
                 .build().toCell();
 
         return CellBuilder.beginCell()

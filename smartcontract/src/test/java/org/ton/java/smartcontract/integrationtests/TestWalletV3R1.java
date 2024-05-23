@@ -12,9 +12,7 @@ import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.java.tlb.types.Message;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -27,19 +25,16 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public class TestWalletV3R1 extends CommonTest {
     @Test
     public void testWalletV3R1() throws InterruptedException {
-
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
-
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         WalletV3R1 contract = WalletV3R1.builder()
                 .keyPair(keyPair)
                 .walletId(42)
                 .build();
+
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
 
         Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, contract.getAddress(),
                 contract.getStateInit(),

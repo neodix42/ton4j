@@ -40,8 +40,6 @@ public class TestHighloadWalletV2 extends CommonTest {
                 .queryId(queryId)
                 .build();
 
-        log.info("pubKey {}, prvKey {}", Utils.bytesToHex(keyPair.getPublicKey()), Utils.bytesToHex(keyPair.getSecretKey()));
-
         String nonBounceableAddress = contract.getAddress().toNonBounceable();
         String bounceableAddress = contract.getAddress().toBounceable();
         String rawAddress = contract.getAddress().toRaw();
@@ -49,6 +47,8 @@ public class TestHighloadWalletV2 extends CommonTest {
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
         log.info("           raw address {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         // top up new wallet using test-faucet-wallet        
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
@@ -145,6 +145,8 @@ public class TestHighloadWalletV2 extends CommonTest {
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(15));

@@ -72,4 +72,11 @@ public class MsgUtils {
                 .body(nonNull(body) ? body : null)
                 .build();
     }
+
+    public static Cell createTextMessageBody(String text) {
+        return CellBuilder.beginCell()
+                .storeUint(0, 32)
+                .storeSnakeString(text)
+                .endCell();
+    }
 }

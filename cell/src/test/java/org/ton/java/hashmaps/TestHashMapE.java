@@ -49,13 +49,13 @@ public class TestHashMapE {
 
         CellSlice cs = CellSlice.beginParse(cellDict);
 
-        TonHashMap loadedDict = cs
+        TonHashMapE loadedDict = cs
                 .loadDictE(dictKeySize,
                         k -> k.readUint(dictKeySize),
                         v -> CellSlice.beginParse(v).loadUint(3)
                 );
 
-        log.info("Deserialized hashmap from cell {}", x);
+        log.info("Deserialized hashmap from cell {}", loadedDict);
     }
 
     @Test

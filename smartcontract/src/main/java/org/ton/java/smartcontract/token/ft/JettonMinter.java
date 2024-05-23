@@ -96,31 +96,33 @@ public class JettonMinter implements Contract {
     }
 
     /**
-     * @param queryId         long
-     * @param destination     Address
-     * @param amount          BigInteger
-     * @param jettonAmount    BigInteger
-     * @param fromAddress     Address
-     * @param responseAddress Address
-     * @param forwardAmount   BigInteger
+     * @param queryId          long
+     * @param destination      Address
+     * @param amount           BigInteger
+     * @param jettonAmount     BigInteger
+     * @param fromAddress      Address
+     * @param responseAddress  Address
+     * @param forwardTonAmount BigInteger
      * @return Cell
      */
     public Cell createMintBody(long queryId, Address destination, BigInteger amount,
                                BigInteger jettonAmount, Address fromAddress, Address
-                                       responseAddress, BigInteger forwardAmount) {
+                                       responseAddress, BigInteger forwardTonAmount,
+                               Cell forwardPayload) {
         return CellBuilder.beginCell()
                 .storeUint(21, 32) // OP mint
                 .storeUint(queryId, 64)   // query_id, default 0
                 .storeAddress(destination)
                 .storeCoins(amount)
-                .storeRef(CellBuilder.beginCell() // internal transfer
+                .storeRef(CellBuilder.beginCell()
                         .storeUint(0x178d4519, 32) // internal_transfer op
                         .storeUint(queryId, 64) // default 0
                         .storeCoins(jettonAmount)
                         .storeAddress(fromAddress)     // from_address
                         .storeAddress(responseAddress) // response_address
-                        .storeCoins(forwardAmount)     // forward_amount
-                        .storeBit(false)               // forward payload
+                        .storeCoins(forwardTonAmount)  // forward_ton_amount
+                        .storeBit(false) // store payload in the same cell
+                        .storeCell(forwardPayload) // forward payload
                         .endCell())
                 .endCell();
     }

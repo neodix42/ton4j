@@ -15,9 +15,7 @@ import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.ContractUtils;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -33,12 +31,6 @@ public class TestWalletV4R2Plugins extends CommonTest {
     @Test
     public void testPlugins() throws InterruptedException {
 
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .verbosityLevel(VerbosityLevel.DEBUG)
-                .build();
-
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         WalletV4R2 contract = WalletV4R2.builder()
@@ -48,10 +40,12 @@ public class TestWalletV4R2Plugins extends CommonTest {
                 .build();
 
         Address walletAddress = contract.getAddress();
-//
+
         String nonBounceableAddress = walletAddress.toNonBounceable();
         String bounceableAddress = walletAddress.toBounceable();
         log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
@@ -135,13 +129,11 @@ public class TestWalletV4R2Plugins extends CommonTest {
         extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-//        contract.waitForBalanceChange(90);
         ContractUtils.waitForDeployment(tonlib, beneficiaryAddress, 90); // no need?
 
         log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(ContractUtils.getBalance(tonlib, beneficiaryAddress)));
 
         Utils.sleep(30, "wait for seqno update");
-//        ContractUtils.waitForBalanceChange(tonlib, walletAddress, 90);
 
         log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
 

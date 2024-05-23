@@ -7,7 +7,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.*;
+import org.ton.java.smartcontract.types.Destination;
+import org.ton.java.smartcontract.types.HighloadV3Config;
+import org.ton.java.smartcontract.types.HighloadV3InternalMessageBody;
+import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
@@ -197,13 +200,6 @@ public class HighloadWalletV3 implements Contract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public static Cell createTextMessageBody(String text) {
-        return CellBuilder.beginCell()
-                .storeUint(0, 32)
-                .storeSnakeString(text)
-                .endCell();
-    }
-
     public static Cell createJettonTransferBody(long queryId, BigInteger amount, Address destination, Address responseDestination, Cell customPayload, BigInteger forwardAmount, Cell forwardPayload) {
         return CellBuilder.beginCell()
                 .storeUint(0x0f8a7ea5, 32)
@@ -214,24 +210,6 @@ public class HighloadWalletV3 implements Contract {
                 .storeRefMaybe(customPayload)
                 .storeCoins(forwardAmount)
                 .storeRefMaybe(forwardPayload)
-                .endCell();
-    }
-
-    public static Cell createInternalTransferBody(HighloadV3BatchItem[] items, long queryId) {
-        Cell prev = CellBuilder.beginCell().endCell();
-        for (int i = items.length - 1; i >= 0; i--) {
-            CellBuilder cb = CellBuilder.beginCell();
-            cb.storeRef(prev);
-            cb.storeUint(0x0ec3c86d, 32);
-            cb.storeUint(items[i].getMode(), 8);
-            cb.storeRef(items[i].getMessage());
-            prev = cb.endCell();
-        }
-
-        return CellBuilder.beginCell()
-                .storeUint(0xae42e5a4, 32)
-                .storeUint(queryId, 64)
-                .storeRef(prev)
                 .endCell();
     }
 
@@ -387,7 +365,7 @@ public class HighloadWalletV3 implements Contract {
                             //.init() is not supported
                             .body((isNull(destination.getBody()) && StringUtils.isNotEmpty(destination.getComment())) ?
                                     CellBuilder.beginCell()
-                                            .storeUint(0, 32)
+                                            .storeUint(0, 32) // 0 opcode means we have a comment
                                             .storeString(destination.getComment())
                                             .endCell() :
                                     destination.getBody()

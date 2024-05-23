@@ -39,6 +39,8 @@ public class TestWalletV3R2Short extends CommonTest {
         log.info("non-bounceable address 1: {}", nonBounceableAddress1);
         log.info("    bounceable address 1: {}", bounceableAddress1);
         log.info("    raw address 1: {}", rawAddress1);
+        log.info("pub-key {}", Utils.bytesToHex(contract1.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract1.getKeyPair().getSecretKey()));
 
         String status = tonlib.getAccountStatus(Address.of(bounceableAddress1));
         log.info("account status {}", status);
@@ -51,9 +53,14 @@ public class TestWalletV3R2Short extends CommonTest {
 
         String nonBounceableAddress2 = contract2.getAddress().toNonBounceable();
         String bounceableAddress2 = contract2.getAddress().toBounceable();
+        String rawAddress2 = contract2.getAddress().toRaw();
 
         log.info("non-bounceable address 2: {}", nonBounceableAddress2);
         log.info("    bounceable address 2: {}", bounceableAddress2);
+        log.info("    raw address 2: {}", rawAddress2);
+
+        log.info("pub-key {}", Utils.bytesToHex(contract2.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract2.getKeyPair().getSecretKey()));
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance1 = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress1), Utils.toNano(1));
@@ -61,9 +68,6 @@ public class TestWalletV3R2Short extends CommonTest {
 
         BigInteger balance2 = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress2), Utils.toNano(1));
         log.info("walletId {} new wallet {} balance: {}", contract2.getWalletId(), contract2.getName(), Utils.formatNanoValue(balance2));
-
-
-        Utils.sleep(15, "balance");
 
         ExtMessageInfo extMessageInfo = contract1.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();

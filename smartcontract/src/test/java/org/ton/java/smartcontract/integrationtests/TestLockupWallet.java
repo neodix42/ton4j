@@ -42,14 +42,7 @@ public class TestLockupWallet extends CommonTest {
                                 "kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
                         .build())
                 .build();
-//
-//        Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair,
-//                contract.getAddress(), contract.getStateInit(),
-//                CellBuilder.beginCell()
-//                        .storeUint(42, 32) // subwallet-id
-//                        .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32) // valid-until
-//                        .storeUint(0, 32) // seqno
-//                        .endCell());
+
         Address address = contract.getAddress();
 
         String nonBounceableAddress = address.toNonBounceable();
@@ -59,18 +52,12 @@ public class TestLockupWallet extends CommonTest {
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
         log.info("           raw address {}", rawAddress);
-
-//        assertThat(msg.getInit().getCode()).isNotNull();
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
         log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
-
-//        Utils.sleep(5);
-
-//        ExtMessageInfo extMessageInfo = contract.deploy(tonlib, config); // also valid deployment
-//        ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
-//        assertThat(extMessageInfo.getError().getCode()).isZero();
 
         ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();

@@ -325,13 +325,12 @@ public class CellBuilder {
         }
         return this;
     }
-//    Cell cc = c.clone();
-//    checkBitsOverflow(cc.bits.getUsedBits());
-//    checkRefsOverflow(cc.refs.size());
-//    storeBitString(cc.bits);
-//    cell.refs.addAll(cc.refs);
+
 
     public CellBuilder storeCell(Cell c) {
+        if (isNull(c)) {
+            return this;
+        }
         checkBitsOverflow(c.bits.getUsedBits());
         checkRefsOverflow(c.refs.size());
 
@@ -339,9 +338,6 @@ public class CellBuilder {
         for (Cell cc : c.refs) {
             cell.refs.add(cc.clone());
         }
-        //cell.depths.addAll(c.depths);
-        //cell.hashes.addAll(c.hashes);
-//        cell.calculateHashes();
         return this;
     }
 

@@ -19,7 +19,7 @@ import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.Date;
+import java.time.Instant;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -93,10 +93,10 @@ public class WalletV2R2 implements Contract {
 
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(initialSeqno, 32); // seqno
-        cell.storeBytes(keyPair.getPublicKey());
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(initialSeqno, 32)
+                .storeBytes(keyPair.getPublicKey())
+                .endCell();
     }
 
     public Cell createDeployMessage() {
@@ -116,9 +116,7 @@ public class WalletV2R2 implements Contract {
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(config.getSeqno()), 32);
 
-        Date date = new Date();
-        long timestamp = (long) Math.floor(date.getTime() / 1e3);
-        message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
+        message.storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), 32);
 
         if (nonNull(config.getDestination1())) {
             Message order = MsgUtils.createInternalMessage(config.getDestination1(), config.getAmount1(), null, null);

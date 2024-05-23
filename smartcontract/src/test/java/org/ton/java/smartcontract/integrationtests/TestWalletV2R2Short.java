@@ -33,6 +33,9 @@ public class TestWalletV2R2Short extends CommonTest {
 
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
 
         // top up new wallet using test-faucet-wallet        
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
@@ -79,8 +82,5 @@ public class TestWalletV2R2Short extends CommonTest {
         balance = contract.getBalance();
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
         assertThat(balance.longValue()).isLessThan(Utils.toNano(0.3).longValue());
-
-        log.info("seqno {}", contract.getSeqno());
-        log.info("pubkey {}", contract.getPublicKey());
     }
 }
