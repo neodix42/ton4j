@@ -3,144 +3,92 @@
 ## Example of usage of JettonMinter and JettonWallet classes
 
 ### Deploy Jetton Minter
+
 ```java
-Options options = Options.builder()
-    .adminAddress(adminWallet.getWallet().getAddress())
-    .jettonContentUri("https://raw.githubusercontent.com/neodiX42/ton4j/dns-smc/1-media/neo-jetton.json")
-    .jettonWalletCodeHex(JettonWallet.JETTON_WALLET_CODE_HEX)
-    .build();
+Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+WalletV3R1 adminWallet = GenerateWallet.randomV3R1(tonlib, 2);
+WalletV3R1 wallet2 = GenerateWallet.randomV3R1(tonlib, 1);
 
-Wallet jettonMinter = new Wallet(WalletVersion.jettonMinter, options);
-JettonMinter minter = jettonMinter.create();
-log.info("jetton minter address {}", minter.getAddress().toString(true, true, true));
-minter.deploy(tonlib, adminWallet.getWallet(), Utils.toNano(0.05), adminWallet.getKeyPair());
+log.info("admin wallet address {}", adminWallet.getAddress());
+log.info("second wallet address {}", wallet2.getAddress());
 
-// show minter information
-JettonMinterData data = minter.getJettonData(tonlib);
-log.info("JettonMinterData {}", data);
-log.info("minter adminAddress {}", data.getAdminAddress().toString(true, true, true));
-// total supply equals to zero now
-log.info("minter totalSupply {}", Utils.formatNanoValue(data.getTotalSupply()));
+JettonMinter minter = JettonMinter.builder()
+        .tonlib(tonlib)
+        .adminAddress(adminWallet.getAddress())
+        .content(NftUtils.createOffChainUriCell("https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+        .jettonWalletCodeHex(WalletCodes.jettonWallet.getValue())
+        .build();
+
+log.info("jetton minter address {}", minter.getAddress());
+
+// DEPLOY MINTER
+
+WalletV3Config walletV3Config = WalletV3Config.builder()
+        .walletId(42)
+        .seqno(adminWallet.getSeqno())
+        .destination(minter.getAddress())
+        .amount(Utils.toNano(0.2))
+        .stateInit(minter.getStateInit())
+        .comment("deploy minter")
+        .build();
+
+ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+assertThat(extMessageInfo.getError().getCode()).isZero();
+log.info("deploying minter");
+minter.waitForDeployment(60);
+
+getMinterInfo(minter); // nothing minted, so zero returned
 ```
 
 ### Mint jettons
+
 ```java
-// sequential calls to mint() sum up to totalSupply;
-minter.mint(tonlib, adminWallet.getWallet(), adminWallet.getWallet().getAddress(), 
-            Utils.toNano(0.05), Utils.toNano(0.04), Utils.toNano(100500), adminWallet.getKeyPair());
+walletV3Config = WalletV3Config.builder()
+        .walletId(42)
+        .seqno(adminWallet.getSeqno())
+        .destination(minter.getAddress())
+        .amount(Utils.toNano(0.07))
+        .body(minter.createMintBody(0,
+                adminWallet.getAddress(),
+                Utils.toNano(0.07),
+                Utils.toNano(100500),
+                null,
+                null,
+                BigInteger.ONE,
+                MsgUtils.createTextMessageBody("minting"))
+        ).build();
 
-// now total supply is available
-log.info("jetton total supply {}", minter.getTotalSupply(tonlib));
+extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+assertThat(extMessageInfo.getError().getCode()).isZero();
 
-public void mint(
-    Tonlib tonlib, 
-    WalletContract adminWallet, 
-    Address destination, 
-    BigInteger walletMsgValue, 
-    BigInteger mintMsgValue, 
-    BigInteger jettonToMintAmount, 
-    TweetNaclFast.Signature.KeyPair keyPair) {
-
-    long seqno = adminWallet.getSeqno(tonlib);
-
-    ExternalMessage extMsg = adminWallet.createTransferMessage(
-        keyPair.getSecretKey(),
-        this.getAddress(),
-        walletMsgValue,
-        seqno,
-        this.createMintBody(0, destination, mintMsgValue, jettonToMintAmount)
-    );
-    
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
-}
+Utils.sleep(45, "minting...");
 
 // owner of adminWallet holds his jettons on jettonWallet
 Address adminJettonWalletAddress = minter.getJettonWalletAddress(tonlib, adminWallet.getWallet().getAddress());
 log.info("admin JettonWalletAddress {}", adminJettonWalletAddress.toString(true, true, true));
 ```
 
-### Edit minter content
-```java
-private void editMinterContent(WalletContract adminWallet, JettonMinter minter, 
-                               String newUriContent, TweetNaclFast.Signature.KeyPair keyPair) {
-
-    long seqno = adminWallet.getSeqno(tonlib);
-
-    ExternalMessage extMsg = adminWallet.createTransferMessage(
-            keyPair.getSecretKey(),
-            minter.getAddress(),
-            Utils.toNano(0.05),
-            seqno,
-            minter.createEditContentBody(newUriContent, 0));
-
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
-}
-```
-
-### Change minter owner
-```java
-private void changeMinterAdmin(WalletContract adminWallet, JettonMinter minter, 
-                               Address newAdmin, TweetNaclFast.Signature.KeyPair keyPair) {
-
-    long seqno = adminWallet.getSeqno(tonlib);
-
-    ExternalMessage extMsg = adminWallet.createTransferMessage(
-            keyPair.getSecretKey(),
-            minter.getAddress(),
-            Utils.toNano(0.05),
-            seqno,
-            minter.createChangeAdminBody(0, newAdmin));
-
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
-}
-```
-
 ### Transfer jettons
+
 ```java
-private void transfer(WalletContract admin, Address jettonWalletAddress, Address toAddress, 
-                      BigInteger jettonAmount, TweetNaclFast.Signature.KeyPair keyPair) {
-    
-    long seqno = admin.getSeqno(tonlib);
-
-    ExternalMessage extMsg = admin.createTransferMessage(
-            keyPair.getSecretKey(),
-            Address.of(jettonWalletAddress),
-            Utils.toNano(0.05),
-            seqno,
-            JettonWallet.createTransferBody(
-                    0, // queryId
-                    jettonAmount,
-                    Address.of(toAddress), // destination
-                    admin.getAddress(), // response address
-                    Utils.toNano("0.01"), // forward amount
-                    "gift".getBytes() // forward payload
-            ));
-
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
-}
-```
-
-
-### Burn jettons
-```java
-private void burn(WalletContract admin, Address jettonWalletAddress, BigInteger jettonAmount, 
-                  Address responseAddress, TweetNaclFast.Signature.KeyPair keyPair) {
-
-    long seqno = admin.getSeqno(tonlib);
-
-    ExternalMessage extMsg = admin.createTransferMessage(
-            keyPair.getSecretKey(),
-            Address.of(jettonWalletAddress),
-            Utils.toNano(0.05),
-            seqno,
-            JettonWallet.createBurnBody(
-                    0,
-                    jettonAmount,
-                    responseAddress
-            ));
-
-    tonlib.sendRawMessage(Utils.bytesToBase64(extMsg.message.toBocNew()));
-}
+walletV3Config = WalletV3Config.builder()
+        .walletId(42)
+        .seqno(adminWallet.getSeqno())
+        .destination(adminJettonWallet.getAddress())
+        .amount(Utils.toNano(0.057))
+        .body(JettonWallet.createTransferBody(
+                        0,
+                        Utils.toNano(444),
+                        wallet2.getAddress(),         // recipient
+                        adminWallet.getAddress(),     // response address
+                        null, // custom payload
+                        BigInteger.ONE, // forward amount
+                        MsgUtils.createTextMessageBody("gift") // forward payload
+                )
+        )
+        .build();
+extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+assertThat(extMessageInfo.getError().getCode()).isZero();
 ```
 
 More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/java/smartcontract) can be

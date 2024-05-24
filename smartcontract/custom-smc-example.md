@@ -185,26 +185,52 @@ Print our BoC in hex format:
 B5EE9C7241010C0100B2000114FF00F4A413F4BCF2C80B01020120020302014804050094F28308D71820D31FD31FD33F02F823BBF263ED44D0D31FD3FFD33F305152BAF2A105F901541065F910F2A2F800019320D74A96D307D402FB00E8D103A4C8CB1F12CBFFCB3FCB3FC9ED540004D03002012006070201200809001DBDC3676A268698F98E9FF98EB859FC0017BB39CED44D0D31F31D70BFF80202710A0B0022AA77ED44D0D31F31D3FF31D33F31D70B3F0010A897ED44D0D70B1F56A9826C
 ```
 
-Create CustomContract that implements WalletContract and override `createDataCell()` and `createSigningMessage()`
+Create ExampleContract that implements WalletContract and override `createDataCell()` and `createSigningMessage()`
 methods.
 
-Copy above BoC in hex format into CustomContract consturctor, see below.
+Copy above BoC in hex format into ExampleContract constructor, see below.
 
 <details>
-    <summary>CustomContract.class</summary>
+    <summary>ExampleContract.java</summary>
 
-```
-public class CustomContract implements Contract {
+```java
+@Builder
+@Getter
+public class ExampleContract implements Contract {
 
-    Options options;
-    Address address;
+    TweetNaclFast.Signature.KeyPair keyPair;
+    long initialSeqno;
+    long initialExtraField;
 
-    /**
-     * @param options Options
-     */
-    public CustomContract(Options options) {
-        this.options = options;
-        options.code = CellBuilder.beginCell().fromBoc("B5EE9C7241010C0100B2000114FF00F4A413F4BCF2C80B01020120020302014804050094F28308D71820D31FD31FD33F02F823BBF263ED44D0D31FD3FFD33FD15152BAF2A105F901541065F910F2A2F800019320D74A96D307D402FB00E8D103A4C8CB1F12CBFFCB3FCB3FC9ED540004D03002012006070201200809001DBDC3676A268698F98E9FF98EB859FC0017BB39CED44D0D31F31D70BFF80202710A0B0022AA77ED44D0D31F31D3FF31D33F31D70B3F0010A897ED44D0D70B1FFCB329CF");
+    public static class ExampleContractBuilder {
+    }
+
+    public static ExampleContractBuilder builder() {
+        return new CustomExampleContractBuilder();
+    }
+
+    private static class CustomExampleContractBuilder extends ExampleContractBuilder {
+        @Override
+        public ExampleContract build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
+            }
+
+            return super.build();
+        }
+    }
+
+    private Tonlib tonlib;
+    private long wc;
+
+    @Override
+    public Tonlib getTonlib() {
+        return tonlib;
+    }
+
+    @Override
+    public long getWorkchain() {
+        return wc;
     }
 
     @Override
@@ -213,135 +239,157 @@ public class CustomContract implements Contract {
     }
 
     @Override
-    public Options getOptions() {
-        return options;
-    }
-
-    @Override
     public Cell createDataCell() {
-        System.out.println("CustomContract createDataCell");        
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(BigInteger.ZERO, 32); // seqno
-        cell.storeBytes(getOptions().publicKey); // 256 bits
-        cell.storeUint(BigInteger.TWO, 64); // stored_x_data
-        return cell;
+        return CellBuilder.beginCell()
+                .storeUint(initialSeqno, 32) // seqno
+                .storeBytes(keyPair.getPublicKey()) // 256 bits
+                .storeUint(initialExtraField, 64) // stored_x_data
+                .endCell();
     }
 
     @Override
-    public Address getAddress() {
-        if (address = =  null) {
-            Address addr = (createStateInit()).address;
-            return addr;
-        }
-        return address;
+    public Cell createCodeCell() {
+        return CellBuilder.beginCell().fromBoc("B5EE9C7241010C0100B2000114FF00F4A413F4BCF2C80B01020120020302014804050094F28308D71820D31FD31FD33F02F823BBF263ED44D0D31FD3FFD33F305152BAF2A105F901541065F910F2A2F800019320D74A96D307D402FB00E8D103A4C8CB1F12CBFFCB3FCB3FC9ED540004D03002012006070201200809001DBDC3676A268698F98E9FF98EB859FC0017BB39CED44D0D31F31D70BFF80202710A0B0022AA77ED44D0D31F31D3FF31D33F31D70B3F0010A897ED44D0D70B1F56A9826C").endCell();
     }
 
-    @Override
-    public Cell createSigningMessage(long seqno) {
-        return createSigningMessage(seqno, 4l);
-    }
+    public Cell createTransferBody(CustomContractConfig config) {
 
-    public Cell createSigningMessage(long seqno, long extraField) {
-        System.out.println("CustomContract createSigningMessage");
+        Cell order = Message.builder()
+                .info(InternalMessageInfo.builder()
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(config.getDestination().wc)
+                                .address(config.getDestination().toBigInteger())
+                                .build())
+                        .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                        .build())
+                .body(CellBuilder.beginCell()
+                        .storeUint(0, 32)
+                        .storeString(config.getComment())
+                        .endCell())
+                .build().toCell();
 
         CellBuilder message = CellBuilder.beginCell();
 
-        message.storeUint(BigInteger.valueOf(seqno), 32); // seqno
-
-        if (seqno == 0) {
-            for (int i = 0; i < 32; i++) {
-                message.storeBit(true);
-            }
-        } else {
-            Date date = new Date();
-            long timestamp = (long) Math.floor(date.getTime() / (double) 1e3);
-            message.storeUint(BigInteger.valueOf(timestamp + 60L), 32);
-        }
-
-        message.storeUint(BigInteger.valueOf(extraField), 64); // extraField
-        return message;
+        message.storeUint(BigInteger.valueOf(config.getSeqno()), 32); // seqno
+        message.storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), 32);
+        message.storeUint(BigInteger.valueOf(config.getExtraField()), 64); // extraField
+        message.storeUint((config.getMode() == 0) ? 3 : config.getMode() & 0xff, 8);
+        message.storeRef(order);
+        return message.endCell();
     }
+
+    public Cell createDeployMessage() {
+        CellBuilder message = CellBuilder.beginCell();
+        message.storeUint(initialSeqno, 32); //seqno
+
+        for (int i = 0; i < 32; i++) { // valid-until
+            message.storeBit(true);
+        }
+        message.storeUint(initialExtraField, 64); //extra field
+        return message.endCell();
+    }
+
+    public ExtMessageInfo deploy() {
+        Cell body = createDeployMessage();
+
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .dstAddr(getAddressIntStd())
+                        .build())
+                .init(getStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                        .storeCell(body)
+                        .endCell())
+                .build();
+
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    }
+
+    public ExtMessageInfo sendTonCoins(CustomContractConfig config) {
+        Cell body = createTransferBody(config);
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .dstAddr(getAddressIntStd())
+                        .build())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                        .storeCell(body)
+                        .endCell())
+                .build();
+
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    }
+
 }
+
 ```
 
 </details>
 
-Now you are ready to deploy your custom smart contract.
+Now you are ready to deploy and use your contract.
 
 ```java
-byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
-TweetNaclFast.Signature.KeyPair keyPair=TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+Tonlib tonlib = Tonlib.builder()
+        .testnet(true)
+        .ignoreCache(false)
+        .build();
 
-Options options=Options.builder()
-    .publicKey(keyPair.getPublicKey())
-    .wc(0L)
-    .build();
+TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-CustomContract exampleContract = new CustomContract(options);
+ExampleContract exampleContract = ExampleContract.builder()
+        .tonlib(tonlib)
+        .keyPair(keyPair)
+        .build();
 
-InitExternalMessage msg = exampleContract.createInitExternalMessage(keyPair.getSecretKey());
-Address address = msg.address;
+log.info("pubkey {}", Utils.bytesToHex(exampleContract.getKeyPair().getPublicKey()));
 
-log.info("Creating new wallet in workchain {} \n"+
-"Loading private key from file new-wallet.pk\n"+
-"StateInit: {}\nnew wallet address = {}\n"+
-"(Saving address to file new-wallet.addr)\n"+
-"Non-bounceable address (for init): {}\n"+
-"Bounceable address (for later access): {}\n"+
-"signing message: {}\n"+
-"External message for initialization is {}\n"+
-"{}\n(Saved wallet creating query to file new-wallet-query.boc)"
-,options.wc,msg.stateInit.print(),
-address.toString(false),
-address.toString(true,true,false,true),
-address.toString(true,true,true,true),
-msg.signingMessage.print(),
-msg.message.print(),
-Utils.bytesToHex(msg.message.toBocNew()).toUpperCase());
+Address address = exampleContract.getAddress();
+log.info("contract address {}", address);
 
-```
+// top up new wallet using test-faucet-wallet
+BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(address.toString(true)), Utils.toNano(0.1));
+log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
-Send some toincoins to non-bouncelable address above and then upload smart contract using Tonlib
+ExtMessageInfo extMessageInfo = exampleContract.deploy();
+assertThat(extMessageInfo.getError().getCode()).isZero();
 
-```java
-Tonlib tonlib = Tonlib.builder().build();
-String base64boc = Utils.bytesToBase64(msg.message.toBocNew());
-log.info(base64boc);
-tonlib.sendRawMessage(base64boc);
-```
+exampleContract.waitForDeployment(45);
 
-Check if contract was deployed successfully
+log.info("seqno: {}", exampleContract.getSeqno());
 
-```java
-Tonlib tonlib = Tonlib.builder().build();
+RunResult result = tonlib.runMethod(address, "get_x_data");
+log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
+TvmStackEntryNumber x_data = (TvmStackEntryNumber) result.getStack().get(0);
+log.info("x_data: {}", x_data.getNumber());
 
-RunResult result = tonlib.runMethod(address,"seqno");
-TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack();
-log.info("seqno: {}", seqno.getNumber());
+result = tonlib.runMethod(address, "get_extra_field");
+log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
+TvmStackEntryNumber extra_field = (TvmStackEntryNumber) result.getStack().get(0);
+log.info("extra_field: {}", extra_field.getNumber());
 
-result=tonlib.runMethod(address, "get_x_data");
-TvmStackEntryNumber x_data=(TvmStackEntryNumber)result.getStack();
-log.info("x_data: {}", seqno.getNumber());
-
-result=tonlib.runMethod(address,"get_extra_field");
-TvmStackEntryNumber extra_field = (TvmStackEntryNumber)result.getStack();
-log.info("extra_field: {}", seqno.getNumber());
-
-// result
-seqno:1
-x_data:2
-extra_field:4
-```
-
-Transfer Toncoins
-
-```java
 Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
-BigInteger amount = Utils.toNano(2); //2 Toncoins or 2bln nano-toncoins
-long seqNumber = 1;
-ExternalMessage extMsg = exampleContract.createTransferMessage(keyPair.getSecretKey(),destinationAddress,amount,seqNumber);
-String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBocNew());
-tonlib.sendRawMessage(base64bocExtMsg);  
+
+CustomContractConfig config = CustomContractConfig.builder()
+        .seqno(exampleContract.getSeqno())
+        .destination(destinationAddress)
+        .amount(Utils.toNano(0.05))
+        .extraField(42)
+        .comment("no-way")
+        .build();
+
+extMessageInfo = exampleContract.sendTonCoins(config);
+assertThat(extMessageInfo.getError().getCode()).isZero();
+
+exampleContract.waitForBalanceChange(45);
+
+result = tonlib.runMethod(address, "get_extra_field");
+log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
+extra_field = (TvmStackEntryNumber) result.getStack().get(0);
+log.info("extra_field: {}", extra_field.getNumber());
+
+assertThat(extra_field.getNumber().longValue()).isEqualTo(42);
+
 ```
 
 More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/java/smartcontract) can be

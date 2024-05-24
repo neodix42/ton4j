@@ -509,7 +509,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                     .bounce(false)
                     .address(dstDummyAddress)
                     .amount(Utils.toNano(0.01))
-                    .comment("comment-" + i)
+//                    .comment("comment-" + i)
                     .build());
         }
         return result;

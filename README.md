@@ -59,6 +59,7 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ TL-B serialization / deserialization
 * ✅ Cell builder and cell slicer (reader)
 * ✅ Tonlib wrapper
+* ✅ Lite-client wrapper
 * ✅ Support num, cell and slice as arguments for runMethod
 * ✅ Render List, Tuple, Slice, Cell and Number results from runMethod
 * ✅ Generate or import private key, sign, encrypt and decrypt using Tonlib
@@ -66,15 +67,15 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ Send external message
 * ✅ Get block transactions
 * ✅ Deploy contracts and send external messages using Tonlib
-* ✅ Wallets - Simple (V1), V2, V3, V4 (plugins), Lockup, Highload/Highload-V3, DNS, Jetton, NFT, Payment-channels,
-  Multisig
+* ✅ Wallets - Simple (V1), V2, V3, V4 (plugins), Lockup, Highload/Highload-V3, DNS, Jetton, StableCoin, NFT,
+  Payment-channels,
+  Multisig V1
 * ✅ HashMap, HashMapE, PfxHashMap, PfxHashMapE, HashMapAug, HashMapAugE serialization / deserialization
 
 ### Todo
 
 * Support tuple and list as arguments for runMethod
 * Improve code coverage and add more integration tests
-* Add methods to store jettons metadata onchain
 * BinTree serialization / deserialization
 
 <!-- Badges -->
