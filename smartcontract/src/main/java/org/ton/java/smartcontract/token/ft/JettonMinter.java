@@ -29,7 +29,7 @@ import static java.util.Objects.isNull;
 public class JettonMinter implements Contract {
     TweetNaclFast.Signature.KeyPair keyPair;
     Address adminAddress;
-    String jettonContentUri;
+    Cell content;
     String jettonWalletCodeHex;
 
     String code;
@@ -77,7 +77,7 @@ public class JettonMinter implements Contract {
         return CellBuilder.beginCell()
                 .storeCoins(BigInteger.ZERO)
                 .storeAddress(adminAddress)
-                .storeRef(NftUtils.createOffChainUriCell(jettonContentUri))
+                .storeRef(content)
                 .storeRef(CellBuilder.beginCell().fromBoc(jettonWalletCodeHex).endCell())
                 .endCell();
     }
@@ -105,10 +105,10 @@ public class JettonMinter implements Contract {
      * @param forwardTonAmount BigInteger
      * @return Cell
      */
-    public Cell createMintBody(long queryId, Address destination, BigInteger amount,
-                               BigInteger jettonAmount, Address fromAddress, Address
-                                       responseAddress, BigInteger forwardTonAmount,
-                               Cell forwardPayload) {
+    public static Cell createMintBody(long queryId, Address destination, BigInteger amount,
+                                      BigInteger jettonAmount, Address fromAddress, Address
+                                              responseAddress, BigInteger forwardTonAmount,
+                                      Cell forwardPayload) {
         return CellBuilder.beginCell()
                 .storeUint(21, 32) // OP mint
                 .storeUint(queryId, 64)   // query_id, default 0

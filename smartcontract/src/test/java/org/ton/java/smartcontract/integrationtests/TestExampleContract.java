@@ -20,7 +20,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestCustomContract {
+public class TestExampleContract {
 
     @Test
     public void testCustomContract() throws InterruptedException {
@@ -35,26 +35,26 @@ public class TestCustomContract {
 
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        CustomContract customContract = CustomContract.builder()
+        ExampleContract exampleContract = ExampleContract.builder()
                 .tonlib(tonlib)
                 .keyPair(keyPair)
                 .build();
 
-        log.info("pubkey {}", Utils.bytesToHex(customContract.getKeyPair().getPublicKey()));
+        log.info("pubkey {}", Utils.bytesToHex(exampleContract.getKeyPair().getPublicKey()));
 
-        Address address = customContract.getAddress();
+        Address address = exampleContract.getAddress();
         log.info("contract address {}", address);
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(address.toString(true)), Utils.toNano(0.1));
         log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
-        ExtMessageInfo extMessageInfo = customContract.deploy();
+        ExtMessageInfo extMessageInfo = exampleContract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        customContract.waitForDeployment(45);
+        exampleContract.waitForDeployment(45);
 
-        log.info("seqno: {}", customContract.getSeqno());
+        log.info("seqno: {}", exampleContract.getSeqno());
 
         RunResult result = tonlib.runMethod(address, "get_x_data");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
@@ -69,17 +69,17 @@ public class TestCustomContract {
         Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
 
         CustomContractConfig config = CustomContractConfig.builder()
-                .seqno(customContract.getSeqno())
+                .seqno(exampleContract.getSeqno())
                 .destination(destinationAddress)
                 .amount(Utils.toNano(0.05))
                 .extraField(42)
                 .comment("no-way")
                 .build();
 
-        extMessageInfo = customContract.sendTonCoins(config);
+        extMessageInfo = exampleContract.sendTonCoins(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        customContract.waitForBalanceChange(45);
+        exampleContract.waitForBalanceChange(45);
 
         result = tonlib.runMethod(address, "get_extra_field");
         log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());

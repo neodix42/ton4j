@@ -30,7 +30,7 @@ public class JettonMinterStableCoin implements Contract {
     TweetNaclFast.Signature.KeyPair keyPair;
     Address adminAddress;
     Address nextAdminAddress;
-    String jettonContentUri;
+    Cell content;
     String jettonWalletCodeHex;
 
     String code;
@@ -80,7 +80,7 @@ public class JettonMinterStableCoin implements Contract {
                 .storeAddress(adminAddress)
                 .storeAddress(nextAdminAddress)
                 .storeRef(CellBuilder.beginCell().fromBoc(jettonWalletCodeHex).endCell())
-                .storeRef(NftUtils.createOffChainUriCell(jettonContentUri))
+                .storeRef(content)
 //                .storeRef(NftUtils.createOnchainDataCell(jettonContentUri, 6L))
                 .endCell();
     }

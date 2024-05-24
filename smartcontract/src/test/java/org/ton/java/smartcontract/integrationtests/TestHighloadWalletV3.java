@@ -76,22 +76,24 @@ public class TestHighloadWalletV3 extends CommonTest {
         config = HighloadV3Config.builder()
                 .walletId(42)
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
-                .body(contract.createBulkTransfer(List.of(
-                                Destination.builder()
-                                        .address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO")
-                                        .amount(Utils.toNano(0.022))
-                                        .body(CellBuilder.beginCell()
-                                                .storeUint(0, 32)
-                                                .storeString("test-comment-1")
-                                                .endCell()
-                                        ).build(),
-                                Destination.builder()
-                                        .address("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G")
-                                        .amount(Utils.toNano(0.033))
-                                        .comment("test-comment-2")
-                                        .build()
-                        ),
-                        BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+                .body(
+                        contract.createBulkTransfer(List.of(
+                                        Destination.builder()
+                                                .address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO")
+                                                .amount(Utils.toNano(0.022))
+                                                .body(CellBuilder.beginCell()
+                                                        .storeUint(0, 32)
+                                                        .storeString("test-comment-1")
+                                                        .endCell()
+                                                ).build(),
+                                        Destination.builder()
+                                                .address("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G")
+                                                .amount(Utils.toNano(0.033))
+                                                .comment("test-comment-2")
+                                                .build()
+                                ),
+                                BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId()))
+                )
                 .build();
 
         extMessageInfo = contract.sendTonCoins(config);
@@ -121,6 +123,8 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
         log.info("           raw address {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(12));
@@ -172,6 +176,8 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
         log.info("           raw address {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(12));
@@ -241,12 +247,14 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         contract.waitForDeployment(45);
 
-        Cell messageToSend = contract.createSingleTransfer(destAddress, 0.02, true);
-
         config = HighloadV3Config.builder()
                 .walletId(42)
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
-                .body(messageToSend)
+                .body(contract.createSingleTransfer(destAddress, 0.02, true,
+                        null,
+//                        MsgUtils.createTextMessageBody("ton4j")
+                        CellBuilder.beginCell().endCell()
+                ))
                 .build();
 
         extMessageInfo = contract.sendTonCoins(config);
@@ -278,6 +286,8 @@ public class TestHighloadWalletV3 extends CommonTest {
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
         log.info("           raw address {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));

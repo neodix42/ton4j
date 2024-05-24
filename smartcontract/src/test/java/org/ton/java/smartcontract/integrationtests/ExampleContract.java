@@ -20,20 +20,29 @@ import static java.util.Objects.isNull;
 
 @Builder
 @Getter
-public class CustomContract implements Contract {
+public class ExampleContract implements Contract {
 
     TweetNaclFast.Signature.KeyPair keyPair;
     long initialSeqno;
     long initialExtraField;
 
-    public static class CustomContractBuilder {
-        CustomContractBuilder() {
-            if (isNull(keyPair)) {
-                keyPair = Utils.generateSignatureKeyPair();
-            }
-        }
+    public static class ExampleContractBuilder {
     }
 
+    public static ExampleContractBuilder builder() {
+        return new CustomExampleContractBuilder();
+    }
+
+    private static class CustomExampleContractBuilder extends ExampleContractBuilder {
+        @Override
+        public ExampleContract build() {
+            if (isNull(super.keyPair)) {
+                super.keyPair = Utils.generateSignatureKeyPair();
+            }
+
+            return super.build();
+        }
+    }
 
     private Tonlib tonlib;
     private long wc;
@@ -50,7 +59,7 @@ public class CustomContract implements Contract {
 
     @Override
     public String getName() {
-        return "customContract";
+        return "exampleContract";
     }
 
     @Override

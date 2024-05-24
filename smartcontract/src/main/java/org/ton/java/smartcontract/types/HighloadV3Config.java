@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
+import org.ton.java.tlb.types.StateInit;
 
 @Builder
 @Getter
@@ -15,6 +16,7 @@ public class HighloadV3Config implements WalletConfig {
     int mode;
     int queryId;
     long createdAt;
+    StateInit stateInit;
     Cell body;
     long timeOut;
 }

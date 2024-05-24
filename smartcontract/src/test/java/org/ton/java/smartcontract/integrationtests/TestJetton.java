@@ -1,17 +1,17 @@
 package org.ton.java.smartcontract.integrationtests;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.BeforeClass;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.GenerateWallet;
+import org.ton.java.smartcontract.highload.HighloadWalletV3;
 import org.ton.java.smartcontract.token.ft.JettonMinter;
 import org.ton.java.smartcontract.token.ft.JettonWallet;
-import org.ton.java.smartcontract.types.JettonMinterData;
-import org.ton.java.smartcontract.types.WalletCodes;
-import org.ton.java.smartcontract.types.WalletV3Config;
+import org.ton.java.smartcontract.token.nft.NftUtils;
+import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.java.tonlib.Tonlib;
@@ -19,6 +19,12 @@ import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -29,17 +35,15 @@ public class TestJetton {
 
     static WalletV3R1 adminWallet;
     static WalletV3R1 wallet2;
+    static HighloadWalletV3 highloadWallet2;
     static Tonlib tonlib;
-
-    @BeforeClass
-    public static void setUpBeforeClass() throws InterruptedException {
-        tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
-        adminWallet = GenerateWallet.random(tonlib, 2);
-        wallet2 = GenerateWallet.random(tonlib, 1);
-    }
 
     @Test
     public void testJettonMinter() throws InterruptedException {
+
+        tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+        adminWallet = GenerateWallet.randomV3R1(tonlib, 2);
+        wallet2 = GenerateWallet.randomV3R1(tonlib, 1);
 
         log.info("admin wallet address {}", adminWallet.getAddress());
         log.info("second wallet address {}", wallet2.getAddress());
@@ -47,7 +51,7 @@ public class TestJetton {
         JettonMinter minter = JettonMinter.builder()
                 .tonlib(tonlib)
                 .adminAddress(adminWallet.getAddress())
-                .jettonContentUri("https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json")
+                .content(NftUtils.createOffChainUriCell("https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
                 .jettonWalletCodeHex(WalletCodes.jettonWallet.getValue())
                 .build();
 
@@ -148,6 +152,7 @@ public class TestJetton {
                                 Utils.toNano(444),
                                 wallet2.getAddress(),         // recipient
                                 adminWallet.getAddress(),     // response address
+                                null, // custom payload
                                 BigInteger.ONE, // forward amount
                                 MsgUtils.createTextMessageBody("gift") // forward payload
                         )
@@ -186,10 +191,130 @@ public class TestJetton {
     }
 
 
+    @Test
+    public void testJettonTransferWithHighloadWalletV3_800() throws InterruptedException, NoSuchAlgorithmException {
+
+        tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+
+        adminWallet = GenerateWallet.randomV3R1(tonlib, 2);
+        highloadWallet2 = GenerateWallet.randomHighloadV3R1(tonlib, 25);
+
+        // DEPLOY MINTER AND MINT JETTONS
+
+        JettonMinter minter = JettonMinter.builder()
+                .tonlib(tonlib)
+                .adminAddress(adminWallet.getAddress())
+                .content(NftUtils.createOffChainUriCell("https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+                .jettonWalletCodeHex(WalletCodes.jettonWallet.getValue())
+                .build();
+
+        log.info("jetton minter address {}", minter.getAddress());
+
+        WalletV3Config walletV3Config = WalletV3Config.builder()
+                .walletId(42)
+                .seqno(adminWallet.getSeqno())
+                .destination(minter.getAddress())
+                .amount(Utils.toNano(1.2))
+                .stateInit(minter.getStateInit())
+                .body(JettonMinter.createMintBody(0,
+                                adminWallet.getAddress(),
+                                Utils.toNano(0.1), // ton amount
+                                Utils.toNano(100500), // jetton amount
+                                null, // from address
+                                null, // response address
+                                BigInteger.ONE, // fwd amount
+                                MsgUtils.createTextMessageBody("minting") // forward payload
+                        )
+                )
+                .build();
+        ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        log.info("deploying minter and minting...");
+        minter.waitForDeployment(60);
+        Utils.sleep(10);
+
+        getMinterInfo(minter);
+
+        log.info("adminWallet balance: {}", Utils.formatNanoValue(adminWallet.getBalance()));
+
+        // TRANSFER from adminWallet to highloadWallet2 (by sending transfer request to admin's jettonWallet)
+        JettonWallet adminJettonWallet = minter.getJettonWallet(adminWallet.getAddress());
+
+        log.info("adminJettonWallet balance: {}, address: {}", Utils.formatNanoValue(adminJettonWallet.getBalance(), 6), adminJettonWallet.getAddress());
+
+        walletV3Config = WalletV3Config.builder()
+                .walletId(42)
+                .seqno(adminWallet.getSeqno())
+                .destination(adminJettonWallet.getAddress())
+                .amount(Utils.toNano(0.057))
+                .body(JettonWallet.createTransferBody(
+                                0,
+                                BigInteger.valueOf(200000), // 2 decimals
+                                highloadWallet2.getAddress(), // recipient
+                                null, // response address
+                                null, // custom payload
+                                BigInteger.ONE, // forward amount
+                                MsgUtils.createTextMessageBody("gift") // forward payload
+                        )
+                )
+                .build();
+        extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+        Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        Utils.sleep(30, "transferring 2000 jettons from adminWallet to highloadWallet2...");
+
+
+        JettonWallet highloadJettonWallet2 = minter.getJettonWallet(highloadWallet2.getAddress());
+
+        // transfer jettons from highloadWallet2 to two destinations by sending transfer request to highload's jetton wallet
+
+        HighloadV3Config highloadV3Config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+                .body(
+                        highloadWallet2.createBulkTransfer(
+                                createDummyDestinations(500, highloadJettonWallet2),
+                                BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId()))
+                )
+                .build();
+        extMessageInfo = highloadWallet2.sendTonCoins(highloadV3Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        Utils.sleep(30, "transferring to 500 recipients 2 jettons...");
+        log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
+
+        getMinterInfo(minter);
+    }
+
+
     private void getMinterInfo(JettonMinter minter) {
         JettonMinterData data = minter.getJettonData(tonlib);
         log.info("minter adminAddress {}", data.getAdminAddress());
         log.info("minter totalSupply {}", Utils.formatNanoValue(data.getTotalSupply()));
         log.info("minter jetton uri {}", data.getJettonContentUri());
+    }
+
+
+    List<Destination> createDummyDestinations(int count, JettonWallet jettonWallet) throws NoSuchAlgorithmException {
+        List<Destination> result = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            String dstDummyAddress = "0:" + Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+
+            result.add(Destination.builder()
+                    .bounce(false)
+                    .address(jettonWallet.getAddress().toBounceable())
+                    .amount(Utils.toNano(0.04))
+                    .body(JettonWallet.createTransferBody(
+                            0,
+                            BigInteger.valueOf(200), // 2 jettons, with decimals = 2
+                            Address.of(dstDummyAddress),         // recipient
+                            null,     // response address
+                            null,     // custom payload
+                            BigInteger.ONE, // forward amount
+                            null // forward payload / memo
+                    ))
+                    .build());
+        }
+        return result;
     }
 }

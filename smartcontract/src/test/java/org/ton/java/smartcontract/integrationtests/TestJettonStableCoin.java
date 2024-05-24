@@ -6,13 +6,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.GenerateWallet;
 import org.ton.java.smartcontract.token.ft.JettonMinterStableCoin;
 import org.ton.java.smartcontract.token.ft.JettonWalletStableCoin;
+import org.ton.java.smartcontract.token.nft.NftUtils;
 import org.ton.java.smartcontract.types.JettonMinterData;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV3Config;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -37,17 +38,17 @@ public class TestJettonStableCoin {
                 .testnet(true)
                 .ignoreCache(false)
                 .build();
-        adminWallet = GenerateWallet.random(tonlib, 3);
-        wallet2 = GenerateWallet.random(tonlib, 2);
+        adminWallet = GenerateWallet.randomV3R1(tonlib, 3);
+        wallet2 = GenerateWallet.randomV3R1(tonlib, 2);
     }
 
     @Test
-    public void testJettonMinterV2() {
+    public void testJettonMinterStableCoin() {
         JettonMinterStableCoin minter = JettonMinterStableCoin.builder()
                 .tonlib(tonlib)
                 .adminAddress(adminWallet.getAddress())
                 .nextAdminAddress(Address.of(NEW_ADMIN2))
-                .jettonContentUri("https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json")
+                .content(NftUtils.createOffChainUriCell("https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
                 .jettonWalletCodeHex(WalletCodes.jettonWalletStableCoin.getValue())
                 .build();
 
@@ -68,10 +69,7 @@ public class TestJettonStableCoin {
                                 null, // from address
                                 null, // response address
                                 BigInteger.ONE, // fwd amount
-                                CellBuilder.beginCell()
-                                        .storeUint(0, 32)
-                                        .storeString("gift")
-                                        .endCell() // forward payload
+                                MsgUtils.createTextMessageBody("minting") // forward payload
                         )
                 )
                 .build();
@@ -100,8 +98,8 @@ public class TestJettonStableCoin {
                                 Utils.toNano(200),
                                 wallet2.getAddress(), // recipient
                                 null, // response address
-                                Utils.toNano("0.01"), // forward amount
-                                "gift".getBytes() // forward payload
+                                BigInteger.ONE, // forward amount
+                                MsgUtils.createTextMessageBody("gift") // forward payload
                         )
                 )
                 .build();
@@ -129,7 +127,7 @@ public class TestJettonStableCoin {
                                 adminWallet.getAddress(), // recipient
                                 null, // response address
                                 Utils.toNano("0.01"), // forward amount
-                                "gift from wallet2".getBytes() // forward payload
+                                MsgUtils.createTextMessageBody("gift from wallet2") // forward payload
                         )
                 )
                 .build();
@@ -181,7 +179,7 @@ public class TestJettonStableCoin {
                                 adminWallet.getAddress(), // recipient
                                 null, // response address
                                 Utils.toNano("0.01"), // forward amount
-                                "gift from wallet2".getBytes() // forward payload
+                                MsgUtils.createTextMessageBody("gift from wallet2") // forward payload
                         )
                 )
                 .build();

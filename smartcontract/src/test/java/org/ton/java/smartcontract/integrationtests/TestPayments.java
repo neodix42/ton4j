@@ -33,8 +33,8 @@ public class TestPayments extends CommonTest {
         // The payment channel is established between two participants A and B.
         // Each has own secret key, which he does not reveal to the other.
 
-        walletA = GenerateWallet.random(tonlib, 6);
-        walletB = GenerateWallet.random(tonlib, 6);
+        walletA = GenerateWallet.randomV3R1(tonlib, 6);
+        walletB = GenerateWallet.randomV3R1(tonlib, 6);
         walletAddressA = walletA.getAddress();
         walletAddressB = walletB.getAddress();
     }

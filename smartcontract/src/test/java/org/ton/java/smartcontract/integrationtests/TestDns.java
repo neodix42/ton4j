@@ -78,7 +78,7 @@ public class TestDns extends CommonTest {
     @Test
     public void testDnsRootDeploy() throws InterruptedException {
 
-        adminWallet = GenerateWallet.random(tonlib, 1);
+        adminWallet = GenerateWallet.randomV3R1(tonlib, 1);
 
         DnsRoot dnsRootContract = DnsRoot.builder()
                 .tonlib(tonlib)
@@ -109,8 +109,8 @@ public class TestDns extends CommonTest {
     @Test
     public void testDnsCollectionItemDeploy() throws InterruptedException {
 
-        adminWallet = GenerateWallet.random(tonlib, 20);
-        buyerWallet = GenerateWallet.random(tonlib, 20);
+        adminWallet = GenerateWallet.randomV3R1(tonlib, 20);
+        buyerWallet = GenerateWallet.randomV3R1(tonlib, 20);
 
         log.info("admin wallet address {}", adminWallet.getAddress());
 //        log.info("buyer wallet address {}", buyerWallet.getAddress().toString(true, true, true));
@@ -230,7 +230,7 @@ public class TestDns extends CommonTest {
     @Test
     public void testDnsItemDeployAtGlobalCollection() throws InterruptedException {
 
-        adminWallet = GenerateWallet.random(tonlib, 5);
+        adminWallet = GenerateWallet.randomV3R1(tonlib, 5);
         log.info("admin wallet address {}", adminWallet.getAddress());
 
         Address dnsCollectionAddress = Address.of("EQDjPtM6QusgMgWfl9kMcG-EALslbTITnKcH8VZK1pnH3UZA");

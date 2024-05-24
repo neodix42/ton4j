@@ -1,19 +1,16 @@
 package org.ton.java.smartcontract;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.utils.MsgUtils;
+import org.ton.java.smartcontract.highload.HighloadWalletV3;
+import org.ton.java.smartcontract.types.HighloadQueryId;
+import org.ton.java.smartcontract.types.HighloadV3Config;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
-import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.time.Instant;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -21,35 +18,17 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class GenerateWallet {
 
-    public static WalletV3R1 random(Tonlib tonlib, long initialBalanceInToncoins) throws InterruptedException {
-        TweetNaclFast.Signature.KeyPair keyPair;
-        String predefinedSecretKey = "";
+    public static WalletV3R1 randomV3R1(Tonlib tonlib, long initialBalanceInToncoins) throws InterruptedException {
+        log.info("generating WalletV3R1 wallet...");
 
-        if (StringUtils.isEmpty(predefinedSecretKey)) {
-            keyPair = Utils.generateSignatureKeyPair();
-        } else {
-            keyPair = Utils.generateSignatureKeyPairFromSeed(Utils.hexToSignedBytes(predefinedSecretKey));
-        }
-
-        log.info("pubKey {}, prvKey {}", Utils.bytesToHex(keyPair.getPublicKey()), Utils.bytesToHex(keyPair.getSecretKey()));
-
-
-        WalletV3R1 adminWallet = WalletV3R1.builder()
+        WalletV3R1 wallet = WalletV3R1.builder()
                 .tonlib(tonlib)
-                .keyPair(keyPair)
                 .wc(0)
                 .walletId(42)
                 .build();
 
-        Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, adminWallet.getAddress(),
-                adminWallet.getStateInit(),
-                CellBuilder.beginCell()
-                        .storeUint(42L, 32) // subwallet-id
-                        .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32) // valid-until
-                        .storeUint(0, 32) // seqno
-                        .endCell()
-        );
-        Address address = msg.getInit().getAddress();
+
+        Address address = wallet.getAddress();
 
         String nonBounceableAddress = address.toNonBounceable();
         String bounceableAddress = address.toBounceable();
@@ -58,17 +37,55 @@ public class GenerateWallet {
         log.info("non-bounceable address {}", nonBounceableAddress);
         log.info("    bounceable address {}", bounceableAddress);
         log.info("           raw address {}", rawAddress);
-        log.info("pubKey: {}", Utils.bytesToHex(adminWallet.getKeyPair().getPublicKey()));
+        log.info("pubKey: {}", Utils.bytesToHex(wallet.getKeyPair().getPublicKey()));
 
 
-        if (StringUtils.isEmpty(predefinedSecretKey)) {
-            BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins));
-            log.info("new wallet balance {}", Utils.formatNanoValue(balance));
-            // deploy new wallet
-            ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
-            assertThat(extMessageInfo.getError().getCode()).isZero();
-            Utils.sleep(20);
-        }
-        return adminWallet;
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins));
+        log.info("new wallet balance {}", Utils.formatNanoValue(balance));
+
+        // deploy new wallet
+        ExtMessageInfo extMessageInfo = wallet.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        wallet.waitForDeployment(60);
+
+        return wallet;
+    }
+
+    public static HighloadWalletV3 randomHighloadV3R1(Tonlib tonlib, long initialBalanceInToncoins) throws InterruptedException {
+
+        log.info("generating HighloadWalletV3 wallet...");
+        HighloadWalletV3 wallet = HighloadWalletV3.builder()
+                .tonlib(tonlib)
+                .walletId(42)
+                .build();
+
+        String nonBounceableAddress = wallet.getAddress().toNonBounceable();
+        String bounceableAddress = wallet.getAddress().toBounceable();
+        String rawAddress = wallet.getAddress().toRaw();
+
+        log.info("non-bounceable address {}", nonBounceableAddress);
+        log.info("    bounceable address {}", bounceableAddress);
+        log.info("           raw address {}", rawAddress);
+
+        log.info("pub-key {}", Utils.bytesToHex(wallet.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(wallet.getKeyPair().getSecretKey()));
+
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins));
+        Utils.sleep(30, "topping up...");
+        log.info("highload wallet {} balance: {}", wallet.getName(), Utils.formatNanoValue(balance));
+
+        HighloadV3Config highloadV3Config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+                .build();
+
+        ExtMessageInfo extMessageInfo = wallet.deploy(highloadV3Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        wallet.waitForDeployment(45);
+
+        // highload v3 wallet deploy - end
+        return wallet;
     }
 }

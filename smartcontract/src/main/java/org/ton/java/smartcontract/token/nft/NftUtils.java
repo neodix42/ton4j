@@ -96,7 +96,7 @@ public class NftUtils {
      * @param uri
      * @return Cell
      */
-    public static Cell createOnchainDataCell(String uri, Long decimals) {
+    public static Cell createOnChainDataCell(String uri, Long decimals) {
         // https://github.com/ton-blockchain/TIPs/issues/64
         CellBuilder cell = CellBuilder.beginCell();
         cell.storeUint(ONCHAIN_CONTENT_PREFIX, 8);

@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -200,38 +199,22 @@ public class HighloadWalletV3 implements Contract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public static Cell createJettonTransferBody(long queryId, BigInteger amount, Address destination, Address responseDestination, Cell customPayload, BigInteger forwardAmount, Cell forwardPayload) {
-        return CellBuilder.beginCell()
-                .storeUint(0x0f8a7ea5, 32)
-                .storeUint(queryId, 64)
-                .storeCoins(amount)
-                .storeAddress(destination)
-                .storeAddress(nonNull(responseDestination) ? responseDestination : destination)
-                .storeRefMaybe(customPayload)
-                .storeCoins(forwardAmount)
-                .storeRefMaybe(forwardPayload)
-                .endCell();
-    }
-
-    public Cell createSingleTransfer(Address destAddress, double amount, Boolean bounce) {
-
-        CommonMsgInfoRelaxed internalMsgInfo = InternalMessageInfoRelaxed.builder()
-                .bounce(bounce)
-                .srcAddr(MsgAddressExtNone.builder().build())
-                .dstAddr(MsgAddressIntStd.builder()
-                        .workchainId(destAddress.wc)
-                        .address(destAddress.toBigInteger())
-                        .build())
-                .value(CurrencyCollection.builder().coins(Utils.toNano(amount)).build())
-                .build();
-
-        Cell innerMsg = internalMsgInfo.toCell();
+    public Cell createSingleTransfer(Address destAddress, double amount, Boolean bounce, StateInit stateInit, Cell body) {
 
         return MessageRelaxed.builder()
-                .info(internalMsgInfo)
+                .info(InternalMessageInfoRelaxed.builder()
+                        .bounce(bounce)
+                        .srcAddr(MsgAddressExtNone.builder().build())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(destAddress.wc)
+                                .address(destAddress.toBigInteger())
+                                .build())
+                        .value(CurrencyCollection.builder().coins(Utils.toNano(amount)).build())
+                        .build())
+                .init(stateInit)
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), innerMsg.hash()))
-                        .storeRef(innerMsg)
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                        .storeRef(body)
                         .endCell())
                 .build().toCell();
     }

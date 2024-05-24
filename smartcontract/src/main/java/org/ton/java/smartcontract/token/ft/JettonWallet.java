@@ -77,14 +77,14 @@ public class JettonWallet implements Contract {
     /**
      * @return Cell cell contains nft data
      */
-    public static Cell createTransferBody(long queryId, BigInteger jettonAmount, Address toAddress, Address responseAddress, BigInteger forwardAmount, Cell forwardPayload) {
+    public static Cell createTransferBody(long queryId, BigInteger jettonAmount, Address toAddress, Address responseAddress, Cell customPayload, BigInteger forwardAmount, Cell forwardPayload) {
         return CellBuilder.beginCell()
                 .storeUint(0xf8a7ea5, 32)
                 .storeUint(queryId, 64) // default
                 .storeCoins(jettonAmount)
                 .storeAddress(toAddress)
                 .storeAddress(responseAddress)
-                .storeBit(false) // null custom_payload
+                .storeRefMaybe(customPayload)
                 .storeCoins(forwardAmount) // default 0
                 .storeRefMaybe(forwardPayload) // forward_payload in ref cell
                 .endCell();

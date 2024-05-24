@@ -209,7 +209,7 @@ public class CustomContract implements Contract {
 
     @Override
     public String getName() {
-        return "customContract";
+        return "exampleContract";
     }
 
     @Override
@@ -277,9 +277,9 @@ Options options=Options.builder()
     .wc(0L)
     .build();
 
-CustomContract customContract = new CustomContract(options);
+CustomContract exampleContract = new CustomContract(options);
 
-InitExternalMessage msg = customContract.createInitExternalMessage(keyPair.getSecretKey());
+InitExternalMessage msg = exampleContract.createInitExternalMessage(keyPair.getSecretKey());
 Address address = msg.address;
 
 log.info("Creating new wallet in workchain {} \n"+
@@ -339,7 +339,7 @@ Transfer Toncoins
 Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
 BigInteger amount = Utils.toNano(2); //2 Toncoins or 2bln nano-toncoins
 long seqNumber = 1;
-ExternalMessage extMsg = customContract.createTransferMessage(keyPair.getSecretKey(),destinationAddress,amount,seqNumber);
+ExternalMessage extMsg = exampleContract.createTransferMessage(keyPair.getSecretKey(),destinationAddress,amount,seqNumber);
 String base64bocExtMsg = Utils.bytesToBase64(extMsg.message.toBocNew());
 tonlib.sendRawMessage(base64bocExtMsg);  
 ```

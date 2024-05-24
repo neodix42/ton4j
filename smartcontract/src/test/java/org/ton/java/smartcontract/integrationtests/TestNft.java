@@ -41,8 +41,8 @@ public class TestNft extends CommonTest {
 
     @BeforeClass
     public static void setUpClass() throws InterruptedException {
-        adminWallet = GenerateWallet.random(tonlib, 7);
-        nftItemBuyer = GenerateWallet.random(tonlib, 3);
+        adminWallet = GenerateWallet.randomV3R1(tonlib, 7);
+        nftItemBuyer = GenerateWallet.randomV3R1(tonlib, 3);
     }
 
     @Test
