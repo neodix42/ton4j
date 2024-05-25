@@ -155,7 +155,7 @@ public class WalletV3R2 implements Contract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public ExtMessageInfo sendTonCoins(WalletV3Config config) {
+    public ExtMessageInfo send(WalletV3Config config) {
 
         Cell body = createTransferBody(config);
 

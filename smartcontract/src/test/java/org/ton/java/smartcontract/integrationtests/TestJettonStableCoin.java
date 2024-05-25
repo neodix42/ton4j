@@ -74,7 +74,7 @@ public class TestJettonStableCoin {
                 )
                 .build();
 
-        ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+        ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(45, "minting...");
@@ -103,7 +103,7 @@ public class TestJettonStableCoin {
                         )
                 )
                 .build();
-        extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+        extMessageInfo = adminWallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "transferring 200 jettons from adminWallet to wallet2...");
@@ -132,7 +132,7 @@ public class TestJettonStableCoin {
                 )
                 .build();
 
-        extMessageInfo = wallet2.sendTonCoins(walletV3Config);
+        extMessageInfo = wallet2.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "transferring 100 jettons from wallet2 to adminWallet...");
@@ -159,7 +159,7 @@ public class TestJettonStableCoin {
                         )
                 )
                 .build();
-        extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+        extMessageInfo = adminWallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "locking jettons in jettonWallet2");
@@ -184,7 +184,7 @@ public class TestJettonStableCoin {
                 )
                 .build();
 
-        extMessageInfo = wallet2.sendTonCoins(walletV3Config);
+        extMessageInfo = wallet2.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(30, "transferring 50 jettons after lock from wallet2 to adminWallet...");

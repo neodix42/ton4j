@@ -54,7 +54,7 @@ public class TestWalletV2R2Short extends CommonTest {
                 .amount1(Utils.toNano(0.1))
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         log.info("sending to one destination");
@@ -73,7 +73,7 @@ public class TestWalletV2R2Short extends CommonTest {
                 .amount4(Utils.toNano(0.15))
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         log.info("sending to four destinations");

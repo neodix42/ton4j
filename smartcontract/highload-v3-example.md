@@ -41,7 +41,7 @@ config = HighloadV3Config.builder()
                 BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
         .build();
 
-extMessageInfo = contract.sendTonCoins(config);
+extMessageInfo = contract.send(config);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 log.info("sent 1000 messages");
 

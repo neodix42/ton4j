@@ -145,7 +145,7 @@ public class HighloadWallet implements Contract {
      *
      * @param highloadConfig HighloadConfig
      */
-    public ExtMessageInfo sendTonCoins(HighloadConfig highloadConfig) {
+    public ExtMessageInfo send(HighloadConfig highloadConfig) {
         Cell body = createTransferBody(highloadConfig);
 
         Message externalMessage = Message.builder()

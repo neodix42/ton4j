@@ -306,7 +306,7 @@ public class ExampleContract implements Contract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public ExtMessageInfo sendTonCoins(CustomContractConfig config) {
+    public ExtMessageInfo send(CustomContractConfig config) {
         Cell body = createTransferBody(config);
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -378,7 +378,7 @@ CustomContractConfig config = CustomContractConfig.builder()
         .comment("no-way")
         .build();
 
-extMessageInfo = exampleContract.sendTonCoins(config);
+extMessageInfo = exampleContract.send(config);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 
 exampleContract.waitForBalanceChange(45);

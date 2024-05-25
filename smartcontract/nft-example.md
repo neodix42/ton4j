@@ -28,7 +28,7 @@ WalletV3Config adminWalletConfig = WalletV3Config.builder()
         .stateInit(nftCollection.getStateInit())
         .build();
 
-ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+ExtMessageInfo extMessageInfo = adminWallet.send(adminWalletConfig);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 log.info("deploying NFT collection");
 ```
@@ -73,7 +73,7 @@ adminWalletConfig = WalletV3Config.builder()
         .body(body)
         .build();
 
-extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+extMessageInfo = adminWallet.send(adminWalletConfig);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 log.info("deploying NFT item #1");
 }
@@ -113,7 +113,7 @@ adminWalletConfig = WalletV3Config.builder()
         .body(body)
         .build();
 
-extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+extMessageInfo = adminWallet.send(adminWalletConfig);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 log.inf("deploying NFT sale smart-contract for nft item #1");
 ```
@@ -133,7 +133,7 @@ WalletV3Config walletV3Config = WalletV3Config.builder()
                 forwardPayload,
                 responseAddress))
         .build();
-ExtMessageInfo extMessageInfo = wallet.sendTonCoins(walletV3Config);
+ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 ```
 

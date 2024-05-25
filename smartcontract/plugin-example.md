@@ -67,7 +67,7 @@ WalletV4R1Config config = WalletV4R1Config.builder()
                 .build())
         .build();
 
-extMessageInfo = contract.sendTonCoins(config);
+extMessageInfo = contract.send(config);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 ```
 

@@ -32,7 +32,7 @@ WalletV3Config walletV3Config = WalletV3Config.builder()
         .comment("deploy minter")
         .build();
 
-ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 log.info("deploying minter");
 minter.waitForDeployment(60);
@@ -58,7 +58,7 @@ walletV3Config = WalletV3Config.builder()
                 MsgUtils.createTextMessageBody("minting"))
         ).build();
 
-extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+extMessageInfo = adminWallet.send(walletV3Config);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 
 Utils.sleep(45, "minting...");
@@ -87,7 +87,7 @@ walletV3Config = WalletV3Config.builder()
                 )
         )
         .build();
-extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+extMessageInfo = adminWallet.send(walletV3Config);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 ```
 

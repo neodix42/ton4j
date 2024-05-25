@@ -76,7 +76,7 @@ public class TestExampleContract {
                 .comment("no-way")
                 .build();
 
-        extMessageInfo = exampleContract.sendTonCoins(config);
+        extMessageInfo = exampleContract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         exampleContract.waitForBalanceChange(45);

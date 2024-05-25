@@ -56,7 +56,7 @@ WalletV3Config adminWalletConfig = WalletV3Config.builder()
         .build();
 
 //deploy
-ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+ExtMessageInfo extMessageInfo = adminWallet.send(adminWalletConfig);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 ```
 

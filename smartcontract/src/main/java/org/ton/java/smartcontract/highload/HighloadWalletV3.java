@@ -143,7 +143,7 @@ public class HighloadWalletV3 implements Contract {
     /**
      * @param highloadConfig HighloadV3Config
      */
-    public ExtMessageInfo sendTonCoins(HighloadV3Config highloadConfig) {
+    public ExtMessageInfo send(HighloadV3Config highloadConfig) {
         Address ownAddress = getAddress();
 
         Cell body = createTransferMessage(highloadConfig);

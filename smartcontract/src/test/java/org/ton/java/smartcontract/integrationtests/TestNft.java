@@ -72,7 +72,7 @@ public class TestNft extends CommonTest {
                 .stateInit(nftCollection.getStateInit())
                 .build();
 
-        ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+        ExtMessageInfo extMessageInfo = adminWallet.send(adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("deploying NFT collection");
 
@@ -95,7 +95,7 @@ public class TestNft extends CommonTest {
                 .body(body)
                 .build();
 
-        extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+        extMessageInfo = adminWallet.send(adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "deploying NFT item #1");
 
@@ -114,7 +114,7 @@ public class TestNft extends CommonTest {
                 .body(body)
                 .build();
 
-        extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+        extMessageInfo = adminWallet.send(adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(40, "deploying NFT item #2");
 
@@ -135,7 +135,7 @@ public class TestNft extends CommonTest {
                 .stateInit(marketplace.getStateInit())
                 .build();
 
-        extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+        extMessageInfo = adminWallet.send(adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "deploying nft marketplace");
 
@@ -166,7 +166,7 @@ public class TestNft extends CommonTest {
                 .body(body)
                 .build();
 
-        extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+        extMessageInfo = adminWallet.send(adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(40, "deploying NFT sale smart-contract for nft item #1");
@@ -200,7 +200,7 @@ public class TestNft extends CommonTest {
                 .build();
 
         log.info("nft-sale-2 address {}", nftSale2.getAddress().toString(true, true, true));
-        extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+        extMessageInfo = adminWallet.send(adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(40, "deploying NFT sale smart-contract for nft item #2");
@@ -230,7 +230,7 @@ public class TestNft extends CommonTest {
                 .amount(Utils.toNano(1))
                 .body(NftSale.createCancelBody(0))
                 .build();
-        extMessageInfo = adminWallet.sendTonCoins(walletV3Config);
+        extMessageInfo = adminWallet.send(walletV3Config);
 
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(35, "cancel selling of item1");
@@ -242,7 +242,7 @@ public class TestNft extends CommonTest {
                 .destination(nftSale2.getAddress())
                 .amount(Utils.toNano(1.2 + 1))
                 .build();
-        extMessageInfo = nftItemBuyer.sendTonCoins(walletV3Config);
+        extMessageInfo = nftItemBuyer.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         // after changed owner this will fail with 401 error - current nft collection is not editable, so nothing happens
@@ -284,7 +284,7 @@ public class TestNft extends CommonTest {
                 .amount(msgValue)
                 .body(NftCollection.createChangeOwnerBody(0, newOwner))
                 .build();
-        ExtMessageInfo extMessageInfo = wallet.sendTonCoins(walletV3Config);
+        ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
@@ -304,7 +304,7 @@ public class TestNft extends CommonTest {
                         royalty,
                         royaltyAddress))
                 .build();
-        ExtMessageInfo extMessageInfo = wallet.sendTonCoins(walletV3Config);
+        ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
@@ -317,7 +317,7 @@ public class TestNft extends CommonTest {
                 .amount(msgValue)
                 .body(NftCollection.createGetRoyaltyParamsBody(0))
                 .build();
-        ExtMessageInfo extMessageInfo = wallet.sendTonCoins(walletV3Config);
+        ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
@@ -336,7 +336,7 @@ public class TestNft extends CommonTest {
                         forwardPayload,
                         responseAddress))
                 .build();
-        ExtMessageInfo extMessageInfo = wallet.sendTonCoins(walletV3Config);
+        ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
@@ -348,7 +348,7 @@ public class TestNft extends CommonTest {
                 .amount(msgValue)
                 .body(NftItem.createGetStaticDataBody(queryId))
                 .build();
-        ExtMessageInfo extMessageInfo = wallet.sendTonCoins(config);
+        ExtMessageInfo extMessageInfo = wallet.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 }

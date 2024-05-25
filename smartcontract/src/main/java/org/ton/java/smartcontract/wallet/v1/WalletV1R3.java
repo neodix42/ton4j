@@ -128,7 +128,7 @@ public class WalletV1R3 implements Contract {
      *
      * @param config WalletV1R2Config
      */
-    public ExtMessageInfo sendTonCoins(WalletV1R3Config config) {
+    public ExtMessageInfo send(WalletV1R3Config config) {
 
         Cell body = createTransferBody(config);
 

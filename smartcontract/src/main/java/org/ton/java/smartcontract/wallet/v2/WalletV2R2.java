@@ -160,7 +160,7 @@ public class WalletV2R2 implements Contract {
     }
 
 
-    public ExtMessageInfo sendTonCoins(WalletV2Config config) {
+    public ExtMessageInfo send(WalletV2Config config) {
         Cell body = createTransferBody(config);
 
         Message externalMessage = Message.builder()

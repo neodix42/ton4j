@@ -281,7 +281,7 @@ public class LockupWalletV1 implements Contract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public ExtMessageInfo sendTonCoins(LockupWalletV1Config config) {
+    public ExtMessageInfo send(LockupWalletV1Config config) {
         Cell body = createTransferBody(config);
 
         Message externalMessage = Message.builder()

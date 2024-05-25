@@ -96,7 +96,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 )
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent 2 messages");
     }
@@ -149,7 +149,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                         BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent 1000 messages");
     }
@@ -202,7 +202,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                         BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent 1000 messages");
     }
@@ -257,7 +257,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 ))
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent single message");
     }
@@ -316,7 +316,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent {} messages", numberOfRecipients);
     }
@@ -371,7 +371,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent {} messages", numberOfRecipients);
     }
@@ -421,7 +421,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         log.info("sent {} messages", 1000);
     }

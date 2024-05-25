@@ -99,7 +99,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
                         .build())
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(45);
@@ -199,7 +199,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
                 .destination(Address.of(FAUCET_ADDRESS_RAW))
                 .amount(Utils.toNano(0.331)).build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         Utils.sleep(30, "sent toncoins");
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }

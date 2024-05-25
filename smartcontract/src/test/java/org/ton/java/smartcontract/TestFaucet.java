@@ -75,7 +75,7 @@ public class TestFaucet {
                 .comment("top-up from ton4j")
                 .build();
 
-        ExtMessageInfo extMessageInfo = faucet.sendTonCoins(config);
+        ExtMessageInfo extMessageInfo = faucet.send(config);
 
         if (extMessageInfo.getError().getCode() != 0) {
             throw new Error(extMessageInfo.getError().getMessage());

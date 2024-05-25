@@ -356,7 +356,7 @@ public class WalletV4R2 implements Contract {
      * @param config WalletV4R1Config
      */
 
-    public ExtMessageInfo sendTonCoins(WalletV4R1Config config) {
+    public ExtMessageInfo send(WalletV4R1Config config) {
 
         Cell body = createTransferBody(config);
 

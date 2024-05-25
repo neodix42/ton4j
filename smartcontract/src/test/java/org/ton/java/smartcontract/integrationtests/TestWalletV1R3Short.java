@@ -56,7 +56,7 @@ public class TestWalletV1R3Short extends CommonTest {
                 .comment("testNewWalletV1R2")
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         contract.waitForBalanceChange(30);

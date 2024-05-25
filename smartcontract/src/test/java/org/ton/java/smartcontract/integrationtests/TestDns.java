@@ -98,7 +98,7 @@ public class TestDns extends CommonTest {
                 .stateInit(dnsRootContract.getStateInit())
                 .build();
 
-        ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+        ExtMessageInfo extMessageInfo = adminWallet.send(adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         dnsRootContract.waitForDeployment(45);
@@ -142,7 +142,7 @@ public class TestDns extends CommonTest {
                 .build();
 
         //deploy
-        ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+        ExtMessageInfo extMessageInfo = adminWallet.send(adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         dnsCollection.waitForDeployment(60);
 
@@ -162,7 +162,7 @@ public class TestDns extends CommonTest {
                         .storeRef(CellBuilder.beginCell().storeString(dnsItem1DomainName).endCell())
                         .endCell())
                 .build();
-        extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+        extMessageInfo = adminWallet.send(adminWalletConfig);
 
 
         assertThat(extMessageInfo.getError().getCode()).isZero();
@@ -184,7 +184,7 @@ public class TestDns extends CommonTest {
                 .amount(Utils.toNano(13))
                 .build();
 
-        extMessageInfo = buyerWallet.sendTonCoins(buyerConfig);
+        extMessageInfo = buyerWallet.send(buyerConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         buyerWallet.waitForBalanceChange(45);
 
@@ -253,7 +253,7 @@ public class TestDns extends CommonTest {
                         .storeRef(CellBuilder.beginCell().storeString(dnsItem1DomainName).endCell())
                         .endCell())
                 .build();
-        ExtMessageInfo extMessageInfo = adminWallet.sendTonCoins(adminWalletConfig);
+        ExtMessageInfo extMessageInfo = adminWallet.send(adminWalletConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(30, "deploying DNS item " + dnsItem1DomainName);
 
@@ -368,7 +368,7 @@ public class TestDns extends CommonTest {
                 .body(body)
                 .build();
 
-        return ownerWallet.sendTonCoins(ownerWalletConfig);
+        return ownerWallet.send(ownerWalletConfig);
     }
 
     private ExtMessageInfo transferDnsItem(WalletV3R1 ownerWallet, Address dnsItemAddress, String newOwner) {
@@ -387,7 +387,7 @@ public class TestDns extends CommonTest {
                 )
                 .build();
 
-        return ownerWallet.sendTonCoins(ownerWalletConfig);
+        return ownerWallet.send(ownerWalletConfig);
     }
 
     private ExtMessageInfo releaseDnsItem(WalletV3R1 ownerWallet, Address dnsItemAddress, BigInteger amount) {
@@ -403,7 +403,7 @@ public class TestDns extends CommonTest {
                 .body(body)
                 .build();
 
-        return ownerWallet.sendTonCoins(ownerWalletConfig);
+        return ownerWallet.send(ownerWalletConfig);
     }
 
     private static ExtMessageInfo governDnsItem(WalletV3R1 ownerWallet, Address dnsItemAddress) {
@@ -419,7 +419,7 @@ public class TestDns extends CommonTest {
                 .body(body)
                 .build();
 
-        return ownerWallet.sendTonCoins(ownerWalletConfig);
+        return ownerWallet.send(ownerWalletConfig);
     }
 
     private static ExtMessageInfo getStaticData(WalletV3R1 ownerWallet, Address dnsItem1Address) {
@@ -431,6 +431,6 @@ public class TestDns extends CommonTest {
                 .body(DnsItem.createStaticDataBody(661))
                 .build();
 
-        return ownerWallet.sendTonCoins(ownerWalletConfig);
+        return ownerWallet.send(ownerWalletConfig);
     }
 }

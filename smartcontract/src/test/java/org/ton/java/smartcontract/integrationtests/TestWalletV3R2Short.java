@@ -88,7 +88,7 @@ public class TestWalletV3R2Short extends CommonTest {
                 .build();
 
         // transfer coins from new wallet (back to faucet)
-        extMessageInfo = contract1.sendTonCoins(config);
+        extMessageInfo = contract1.send(config);
         AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
 
         contract1.waitForBalanceChange(90);
@@ -101,7 +101,7 @@ public class TestWalletV3R2Short extends CommonTest {
                 .comment("testWalletV3R2-98")
                 .build();
 
-        extMessageInfo = contract2.sendTonCoins(config);
+        extMessageInfo = contract2.send(config);
         AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
 
         contract2.waitForBalanceChange(90);

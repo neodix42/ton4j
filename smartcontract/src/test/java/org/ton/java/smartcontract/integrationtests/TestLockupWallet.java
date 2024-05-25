@@ -87,7 +87,7 @@ public class TestLockupWallet extends CommonTest {
                 .comment("send-to-allowed-1")
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         Utils.sleep(50);
@@ -104,7 +104,7 @@ public class TestLockupWallet extends CommonTest {
                 .amount(Utils.toNano(1.5))
                 .comment("send-to-prohibited-1")
                 .build();
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(50);
 
@@ -123,7 +123,7 @@ public class TestLockupWallet extends CommonTest {
                 .amount(Utils.toNano(1.6))
                 .comment("send-to-prohibited-2")
                 .build();
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(50);
 
@@ -144,7 +144,7 @@ public class TestLockupWallet extends CommonTest {
                 .destination(Address.of("kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
                 .amount(Utils.toNano(0.5))
                 .build();
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(50);
 

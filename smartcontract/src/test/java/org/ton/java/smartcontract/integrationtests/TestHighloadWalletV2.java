@@ -115,7 +115,7 @@ public class TestHighloadWalletV2 extends CommonTest {
                 .build();
 
         // transfer coins to multiple destination as specified in options
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         log.info("sending to 10 destinations");
@@ -166,7 +166,7 @@ public class TestHighloadWalletV2 extends CommonTest {
                 .destinations(destinations)
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(highloadConfig);
+        extMessageInfo = contract.send(highloadConfig);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 

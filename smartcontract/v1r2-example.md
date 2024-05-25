@@ -40,7 +40,7 @@ WalletV1R2Config config = WalletV1R2Config.builder()
         .build();
 
 // transfer coins from new wallet (back to faucet)
-extMessageInfo = contract.sendTonCoins(config);
+extMessageInfo = contract.send(config);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 
 contract.waitForBalanceChange(45);

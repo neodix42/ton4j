@@ -112,7 +112,7 @@ public class TestPayments extends CommonTest {
                 .body(PaymentsUtils.createTopUpBalance(Utils.toNano(0), Utils.toNano(0)))
                 .build();
 
-        ExtMessageInfo extMessageInfo = walletA.sendTonCoins(config);
+        ExtMessageInfo extMessageInfo = walletA.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(35, "deploying channel A");
 
@@ -134,7 +134,7 @@ public class TestPayments extends CommonTest {
                 .body(PaymentsUtils.createTopUpBalance(channelInitState.getBalanceA(), BigInteger.ZERO))
                 .build();
 
-        extMessageInfo = walletA.sendTonCoins(config);
+        extMessageInfo = walletA.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         walletA.waitForBalanceChange(45);
@@ -147,7 +147,7 @@ public class TestPayments extends CommonTest {
                 .body(PaymentsUtils.createTopUpBalance(BigInteger.ZERO, channelInitState.getBalanceB()))
                 .build();
 
-        extMessageInfo = walletB.sendTonCoins(config);
+        extMessageInfo = walletB.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(40, "topping up from wallet B...");
 
@@ -170,7 +170,7 @@ public class TestPayments extends CommonTest {
                 .body(channelA.createInitChannel(channelInitState.getBalanceA(), channelInitState.getBalanceB()))
                 .build();
 
-        extMessageInfo = walletA.sendTonCoins(config);
+        extMessageInfo = walletA.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
         Utils.sleep(45, "initializing channel...");
 
@@ -278,7 +278,7 @@ public class TestPayments extends CommonTest {
                 .body(channelA.createCooperativeCloseChannel(signatureCloseB, channelState3).getCell())
                 .build();
 
-        extMessageInfo = walletA.sendTonCoins(config);
+        extMessageInfo = walletA.send(config);
         log.info("channel B address {}", channelB.getAddress());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 

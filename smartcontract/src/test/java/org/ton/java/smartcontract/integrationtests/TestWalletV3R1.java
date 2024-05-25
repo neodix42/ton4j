@@ -79,7 +79,7 @@ public class TestWalletV3R1 extends CommonTest {
                 .comment("testWalletV3R1")
                 .build();
 
-        extMessageInfo = contract.sendTonCoins(config);
+        extMessageInfo = contract.send(config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         contract.waitForBalanceChange(90);
