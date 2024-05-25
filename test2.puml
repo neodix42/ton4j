@@ -1,7 +1,0 @@
-@startuml
-interface org.ton.java.tlb.types.CommonMsgInfoRelaxed {
-~ Cell toCell()
-~ {static} CommonMsgInfoRelaxed deserialize(CellSlice)
-}
-
-@enduml
