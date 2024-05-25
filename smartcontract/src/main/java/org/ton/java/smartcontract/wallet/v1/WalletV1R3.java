@@ -29,7 +29,7 @@ public class WalletV1R3 implements Contract {
     TweetNaclFast.Signature.KeyPair keyPair;
     long initialSeqno;
 
-    public static class WalletV1R1Builder {
+    public static class WalletV1R3Builder {
     }
 
     public static WalletV1R3Builder builder() {
