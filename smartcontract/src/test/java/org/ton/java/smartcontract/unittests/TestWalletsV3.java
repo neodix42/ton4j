@@ -100,12 +100,12 @@ public class TestWalletsV3 {
 
         Message msg = contract.prepareMsg(config);
 
-        Address address = msg.getInit().getAddress();
+        Address address = contract.getAddress();
 
         String my = "Creating new advanced wallet in workchain " + contract.getWc() + "\n" +
                 "with unique wallet id " + contract.getWalletId() + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
-                "StateInit: " + msg.getInit().toCell().print() + "\n" +
+                "StateInit: " + contract.getStateInit().toCell().print() + "\n" +
                 "new wallet address = " + address.toString(false) + "\n" +
                 "(Saving address to file new-wallet.addr)" + "\n" +
                 "Non-bounceable address (for init): " + address.toString(true, true, false, true) + "\n" +

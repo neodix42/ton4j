@@ -9,6 +9,7 @@ import org.ton.java.address.Address;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.tlb.types.Message;
+import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -27,7 +28,9 @@ public class TestWalletsV4 {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         WalletV4R2 contract = WalletV4R2.builder()
+                .tonlib(Tonlib.builder().build())
                 .wc(0)
+                .walletId(42)
                 .keyPair(keyPair)
                 .build();
 
@@ -35,7 +38,7 @@ public class TestWalletsV4 {
         Address walletAddress = msg.getInit().getAddress();
 
         String my = "Creating new advanced wallet V4 with plugins in workchain " + contract.getWc() + "\n" +
-                "with unique wallet id " + contract.getWalletId() + "\n" +
+//                "with unique wallet id " + contract.getWalletId() + "\n" +
                 "Loading private key from file new-wallet.pk" + "\n" +
                 "StateInit: " + msg.getInit().toCell().print() + "\n" +
                 "new wallet address = " + walletAddress.toString(false) + "\n" +

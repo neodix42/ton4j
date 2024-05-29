@@ -18,6 +18,7 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -64,7 +65,7 @@ public class TestHighloadWalletV2 extends CommonTest {
         HighloadConfig config = HighloadConfig.builder()
                 .walletId(42)
                 .queryId(BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32))
-                .destinations(List.of(
+                .destinations(Arrays.asList(
                         Destination.builder()
                                 .address("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G")
                                 .amount(Utils.toNano(0.2))

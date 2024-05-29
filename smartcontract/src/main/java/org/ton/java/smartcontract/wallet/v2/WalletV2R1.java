@@ -4,7 +4,6 @@ package org.ton.java.smartcontract.wallet.v2;
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletCodes;
@@ -31,8 +30,6 @@ public class WalletV2R1 implements Contract {
     public TweetNaclFast.Signature.KeyPair keyPair;
     long initialSeqno;
     long walletId;
-    Address address;
-
 
     public static class WalletV2R1Builder {
     }

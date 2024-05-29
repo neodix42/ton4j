@@ -12,7 +12,7 @@ import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.utils.Utils;
 
-import java.util.List;
+import java.util.Arrays;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -46,7 +46,7 @@ public class TestWalletsLockup {
                 .keyPair(keyPair)
                 .lockupConfig(LockupConfig.builder()
                         .allowedDestinations(
-                                List.of("Ef9eYuD_Mwol4jAtZ0lxZmhuv_92fvwzLW1hAFbJ657_iqRP",
+                                Arrays.asList("Ef9eYuD_Mwol4jAtZ0lxZmhuv_92fvwzLW1hAFbJ657_iqRP",
                                         "kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka"))
                         .configPublicKey(Utils.bytesToHex(publicKey))
                         .build())

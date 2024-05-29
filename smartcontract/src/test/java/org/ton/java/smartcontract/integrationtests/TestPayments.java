@@ -209,8 +209,8 @@ public class TestPayments extends CommonTest {
         ChannelState channelState2 = ChannelState.builder()
                 .balanceA(Utils.toNano(0.7))
                 .balanceB(Utils.toNano(2.3))
-                .seqnoA(BigInteger.TWO)
-                .seqnoB(BigInteger.ZERO)
+                .seqnoA(BigInteger.valueOf(2))
+                .seqnoB(BigInteger.valueOf(0))
                 .build();
 
         byte[] signatureA2 = channelA.signState(channelState2);
@@ -229,8 +229,8 @@ public class TestPayments extends CommonTest {
         ChannelState channelState3 = ChannelState.builder()
                 .balanceA(Utils.toNano(1.8))
                 .balanceB(Utils.toNano(1.2))
-                .seqnoA(BigInteger.TWO)
-                .seqnoB(BigInteger.ONE)
+                .seqnoA(BigInteger.valueOf(2))
+                .seqnoB(BigInteger.valueOf(1))
                 .build();
 
         byte[] signatureB3 = channelB.signState(channelState3);

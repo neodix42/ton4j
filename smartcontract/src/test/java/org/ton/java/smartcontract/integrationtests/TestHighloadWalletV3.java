@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -77,7 +78,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                 .walletId(42)
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
                 .body(
-                        contract.createBulkTransfer(List.of(
+                        contract.createBulkTransfer(Arrays.asList(
                                         Destination.builder()
                                                 .address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO")
                                                 .amount(Utils.toNano(0.022))

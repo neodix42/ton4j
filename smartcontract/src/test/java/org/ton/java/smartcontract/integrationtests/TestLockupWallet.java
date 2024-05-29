@@ -15,7 +15,7 @@ import org.ton.java.utils.Utils;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.List;
+import java.util.Arrays;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -37,7 +37,7 @@ public class TestLockupWallet extends CommonTest {
                         // important to specify totalRestrictedValue! otherwise wallet will send to prohibited addresses
                         // can be more than total balance wallet
                         .totalRestrictedValue(Utils.toNano(5_000_000))
-                        .allowedDestinations(List.of(
+                        .allowedDestinations(Arrays.asList(
                                 TestFaucet.BOUNCEABLE,
                                 "kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
                         .build())
@@ -177,7 +177,7 @@ public class TestLockupWallet extends CommonTest {
                 .lockupConfig(LockupConfig.builder()
                         .configPublicKey(Utils.bytesToHex(sigKeyPair.getPublicKey())) // same as owner
                         .totalRestrictedValue(Utils.toNano(5_000_000))
-                        .allowedDestinations(List.of(
+                        .allowedDestinations(Arrays.asList(
                                 elector.toString(),
                                 myWallet.toString())
                         ).build())

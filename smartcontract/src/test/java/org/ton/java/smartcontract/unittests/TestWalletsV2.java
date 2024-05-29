@@ -34,6 +34,7 @@ public class TestWalletsV2 {
 
         assertThat(contract.getStateInit().getCode().getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
 
+        log.info("address {}", contract.getAddress());
         Message msg = MsgUtils.createExternalMessageWithSignedBody(contract.getKeyPair(), contract.getAddress(), contract.getStateInit(), null);
         Address address = msg.getInit().getAddress();
 
@@ -66,6 +67,7 @@ public class TestWalletsV2 {
 
         WalletV2R2 contract = WalletV2R2.builder()
                 .wc(0)
+                .walletId(42)
                 .keyPair(keyPair)
                 .build();
 
@@ -79,7 +81,7 @@ public class TestWalletsV2 {
 
         Message msg = contract.prepareExternalMsg(config);
 
-        Address address = msg.getInit().getAddress();
+        Address address = contract.getAddress();
 
         String my = "Source wallet address =  " + address.toString(false) + "\n" +
                 address.toString(true, true, true, true) + "\n" +

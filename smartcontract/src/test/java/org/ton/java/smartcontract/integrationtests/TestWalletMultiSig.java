@@ -21,6 +21,7 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -74,7 +75,7 @@ public class TestWalletMultiSig extends CommonTest {
                         .n(n)
                         .rootI(rootIndex)
                         .owners(
-                                List.of(
+                                Arrays.asList(
                                         OwnerInfo.builder()
                                                 .publicKey(ownerKeyPair.getPublicKey())
                                                 .flood(1)
@@ -138,7 +139,7 @@ public class TestWalletMultiSig extends CommonTest {
 
         // collected two more signatures
         Cell signedOrder = MultiSigWallet.addSignatures(order,
-                List.of(
+                Arrays.asList(
                         MultisigSignature.builder()
                                 .pubKeyPosition(pubkey3Index)
                                 .signature(orderSignatureUser3)
@@ -204,7 +205,7 @@ public class TestWalletMultiSig extends CommonTest {
                         .k(k)
                         .n(n)
                         .rootI(rootIndex)
-                        .owners(List.of(
+                        .owners(Arrays.asList(
                                 OwnerInfo.builder()
                                         .publicKey(ownerKeyPair.getPublicKey())
                                         .flood(1)
@@ -274,7 +275,7 @@ public class TestWalletMultiSig extends CommonTest {
 
         // collected two more signatures
         Cell signedOrder = MultiSigWallet.addSignatures(order,
-                List.of(
+                Arrays.asList(
                         MultisigSignature.builder()
                                 .pubKeyPosition(pubkey3Index)
                                 .signature(orderSignatureUser3)
@@ -307,7 +308,7 @@ public class TestWalletMultiSig extends CommonTest {
 
         // 1 2 3
         Cell query = MultiSigWallet.createQuery(ownerKeyPair,
-                List.of(
+                Arrays.asList(
                         MultisigSignature.builder()
                                 .pubKeyPosition(rootIndex)
                                 .signature(orderSignatureUser1)
@@ -326,7 +327,7 @@ public class TestWalletMultiSig extends CommonTest {
 
         // 1 2 3 5
         query = MultiSigWallet.createQuery(ownerKeyPair,
-                List.of(
+                Arrays.asList(
                         MultisigSignature.builder()
                                 .pubKeyPosition(rootIndex)
                                 .signature(orderSignatureUser1)
@@ -376,7 +377,7 @@ public class TestWalletMultiSig extends CommonTest {
                         .k(k)
                         .n(n)
                         .rootI(0)
-                        .owners(List.of(
+                        .owners(Arrays.asList(
                                 OwnerInfo.builder()
                                         .publicKey(ownerKeyPair.getPublicKey())
                                         .flood(1)
@@ -404,7 +405,7 @@ public class TestWalletMultiSig extends CommonTest {
 
         contract.waitForDeployment(45); // with empty ext msg
 
-        List<OwnerInfo> ownersPublicKeys = List.of(
+        List<OwnerInfo> ownersPublicKeys = Arrays.asList(
                 OwnerInfo.builder()
                         .publicKey(ownerKeyPair.getPublicKey())
                         .flood(0)
@@ -447,7 +448,7 @@ public class TestWalletMultiSig extends CommonTest {
                         .k(k)
                         .n(n)
                         .rootI(2) // initial root index
-                        .owners(List.of(
+                        .owners(Arrays.asList(
                                 OwnerInfo.builder()
                                         .publicKey(ownerKeyPair.getPublicKey())
                                         .flood(1)
@@ -545,7 +546,7 @@ public class TestWalletMultiSig extends CommonTest {
                         .k(k)
                         .n(n)
                         .rootI(0) // initial root index
-                        .owners(List.of(
+                        .owners(Arrays.asList(
                                 OwnerInfo.builder()
                                         .publicKey(ownerKeyPair.getPublicKey())
                                         .flood(1)
@@ -636,7 +637,7 @@ public class TestWalletMultiSig extends CommonTest {
                         .k(k)
                         .n(n)
                         .rootI(rootIndex)
-                        .owners(List.of(
+                        .owners(Arrays.asList(
                                 OwnerInfo.builder()
                                         .publicKey(ownerKeyPair.getPublicKey())
                                         .flood(1)
@@ -657,7 +658,7 @@ public class TestWalletMultiSig extends CommonTest {
                                         .publicKey(keyPair5.getPublicKey())
                                         .flood(5)
                                         .build()))
-                        .pendingQueries(List.of(
+                        .pendingQueries(Arrays.asList(
                                 PendingQuery.builder()
                                         .queryId(queryId1)
                                         .creatorI(rootIndex)
@@ -746,7 +747,7 @@ public class TestWalletMultiSig extends CommonTest {
                         .k(k)
                         .n(n)
                         .rootI(0) // initial root index
-                        .owners(List.of(
+                        .owners(Arrays.asList(
                                 OwnerInfo.builder()
                                         .publicKey(ownerKeyPair.getPublicKey())
                                         .flood(1)
@@ -776,7 +777,7 @@ public class TestWalletMultiSig extends CommonTest {
 
         log.info("owners publicKeysHex {}", contract.getPublicKeysHex());
         Cell dict1 = MultiSigWallet.createPendingQueries(
-                List.of(
+                Arrays.asList(
                         PendingQuery.builder()
                                 .queryId(queryId1)
                                 .creatorI(0)
@@ -794,7 +795,7 @@ public class TestWalletMultiSig extends CommonTest {
                 ), n);
 
         Cell dict2 = MultiSigWallet.createPendingQueries(
-                List.of(
+                Arrays.asList(
                         PendingQuery.builder()
                                 .queryId(queryId1)
                                 .creatorI(0)
@@ -836,7 +837,7 @@ public class TestWalletMultiSig extends CommonTest {
         cell.storeUint(5, 8);
         cell.storeUint(3, 8);
         cell.storeUint(0, 64);
-        cell.storeDict(createOwnersInfoDict(List.of(
+        cell.storeDict(createOwnersInfoDict(Arrays.asList(
                         OwnerInfo.builder()
                                 .publicKey(ownerKeyPair.getPublicKey())
                                 .flood(1)

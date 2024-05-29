@@ -32,8 +32,6 @@ public class WalletV2R2 implements Contract {
 
     long initialSeqno;
     long walletId;
-    Address address;
-
 
     public static class WalletV2R2Builder {
     }
