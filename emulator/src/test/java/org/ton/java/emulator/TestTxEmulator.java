@@ -17,7 +17,7 @@ import org.ton.java.tonlib.types.SmcLibraryResult;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.List;
+import java.util.Collections;
 
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -122,7 +122,7 @@ public class TestTxEmulator {
                                 .build()
                 )
 //                .lastTransLt(BigInteger.ONE)
-                .lastTransHash(BigInteger.TWO)
+                .lastTransHash(BigInteger.valueOf(2))
                 .build();
 
         log.info("shardAccount: {}", shardAccount);
@@ -134,7 +134,7 @@ public class TestTxEmulator {
 
     private static Cell getLibs() {
         SmcLibraryResult result = tonlib.getLibraries(
-                List.of("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
+                Collections.singletonList("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
         log.info("result: {}", result);
 
         TonHashMapE x = new TonHashMapE(256);

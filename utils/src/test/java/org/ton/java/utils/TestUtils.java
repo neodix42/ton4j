@@ -73,10 +73,6 @@ public class TestUtils {
 
     @Test
     public void testCrc32AsHex() {
-        byte[] data = "ABC".getBytes();
-        Long checksum = getCRC32ChecksumAsLong(data);
-        System.out.printf("CRC32C Checksum: 0x%08X\n", checksum);
-
         String crc32 = Utils.getCRC32ChecksumAsHex("ABC".getBytes());
         assertThat(crc32).isEqualTo("8839a97f");
     }

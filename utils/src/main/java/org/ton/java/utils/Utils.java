@@ -39,11 +39,11 @@ public class Utils {
     public static Long getCRC32ChecksumAsLong(byte[] bytes) {
         CRC32C crc32c = new CRC32C();
         crc32c.update(bytes, 0, bytes.length);
-        return crc32c.getValue();
+        return crc32c.getValue() & 0x00000000ffffffffL;
     }
 
     public static String getCRC32ChecksumAsHex(byte[] bytes) {
-        return Long.toHexString(getCRC32ChecksumAsLong(bytes));
+        return BigInteger.valueOf(getCRC32ChecksumAsLong(bytes)).toString(16);
     }
 
     public static byte[] getCRC32ChecksumAsBytes(byte[] bytes) {
@@ -117,7 +117,7 @@ public class Utils {
         short result = 0;
         for (int i = 0; i < 2; i++) {
             result <<= 8;
-            result |= (b[i] & 0xFF);
+            result |= (short) (b[i] & 0xFF);
         }
         return result;
     }
@@ -144,7 +144,7 @@ public class Utils {
         short result = 0;
         for (int i = 0; i < 2; i++) {
             result <<= 8;
-            result |= b[i];
+            result |= (short) b[i];
         }
         return result;
     }

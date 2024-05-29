@@ -1,232 +1,69 @@
 package org.ton.java.utils;
 
-import sun.misc.Unsafe;
+import java.util.zip.Checksum;
 
-import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+// poly 0x1EDC6F41
 
-public final class CRC32C {
-    private static final int CRC32C_POLY = 0x1EDC6F41;
-    private static final int REVERSED_CRC32C_POLY = reverse(CRC32C_POLY);
-    private static final Unsafe UNSAFE;
-    private static final int[] byteTable;
-    private static final int[][] byteTables = new int[8][256];
-    private static final int[] byteTable0 = byteTables[0];
-    private static final int[] byteTable1 = byteTables[1];
-    private static final int[] byteTable2 = byteTables[2];
-    private static final int[] byteTable3 = byteTables[3];
-    private static final int[] byteTable4 = byteTables[4];
-    private static final int[] byteTable5 = byteTables[5];
-    private static final int[] byteTable6 = byteTables[6];
-    private static final int[] byteTable7 = byteTables[7];
+public final class CRC32C implements Checksum {
 
-    static {
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            UNSAFE = (Unsafe) theUnsafe.get(null);
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to load Unsafe", e);
-        }
+    // Full provided lookup table
+    private static final int[] LOOKUP_TABLE = {
+            0x00000000, 0xf26b8303, 0xe13b70f7, 0x1350f3f4, 0xc79a971f, 0x35f1141c, 0x26a1e7e8, 0xd4ca64eb,
+            0x8ad958cf, 0x78b2dbcc, 0x6be22838, 0x9989ab3b, 0x4d43cfd0, 0xbf284cd3, 0xac78bf27, 0x5e133c24,
+            0x105ec76f, 0xe235446c, 0xf165b798, 0x030e349b, 0xd7c45070, 0x25afd373, 0x36ff2087, 0xc494a384,
+            0x9a879fa0, 0x68ec1ca3, 0x7bbcef57, 0x89d76c54, 0x5d1d08bf, 0xaf768bbc, 0xbc267848, 0x4e4dfb4b,
+            0x20bd8ede, 0xd2d60ddd, 0xc186fe29, 0x33ed7d2a, 0xe72719c1, 0x154c9ac2, 0x061c6936, 0xf477ea35,
+            0xaa64d611, 0x580f5512, 0x4b5fa6e6, 0xb93425e5, 0x6dfe410e, 0x9f95c20d, 0x8cc531f9, 0x7eaeb2fa,
+            0x30e349b1, 0xc288cab2, 0xd1d83946, 0x23b3ba45, 0xf779deae, 0x05125dad, 0x1642ae59, 0xe4292d5a,
+            0xba3a117e, 0x4851927d, 0x5b016189, 0xa96ae28a, 0x7da08661, 0x8fcb0562, 0x9c9bf696, 0x6ef07595,
+            0x417b1dbc, 0xb3109ebf, 0xa0406d4b, 0x522bee48, 0x86e18aa3, 0x748a09a0, 0x67dafa54, 0x95b17957,
+            0xcba24573, 0x39c9c670, 0x2a993584, 0xd8f2b687, 0x0c38d26c, 0xfe53516f, 0xed03a29b, 0x1f682198,
+            0x5125dad3, 0xa34e59d0, 0xb01eaa24, 0x42752927, 0x96bf4dcc, 0x64d4cecf, 0x77843d3b, 0x85efbe38,
+            0xdbfc821c, 0x2997011f, 0x3ac7f2eb, 0xc8ac71e8, 0x1c661503, 0xee0d9600, 0xfd5d65f4, 0x0f36e6f7,
+            0x61c69362, 0x93ad1061, 0x80fde395, 0x72966096, 0xa65c047d, 0x5437877e, 0x4767748a, 0xb50cf789,
+            0xeb1fcbad, 0x197448ae, 0x0a24bb5a, 0xf84f3859, 0x2c855cb2, 0xdeeedfb1, 0xcdbe2c45, 0x3fd5af46,
+            0x7198540d, 0x83f3d70e, 0x90a324fa, 0x62c8a7f9, 0xb602c312, 0x44694011, 0x5739b3e5, 0xa55230e6,
+            0xfb410cc2, 0x092a8fc1, 0x1a7a7c35, 0xe811ff36, 0x3cdb9bdd, 0xceb018de, 0xdde0eb2a, 0x2f8b6829,
+            0x82f63b78, 0x709db87b, 0x63cd4b8f, 0x91a6c88c, 0x456cac67, 0xb7072f64, 0xa457dc90, 0x563c5f93,
+            0x082f63b7, 0xfa44e0b4, 0xe9141340, 0x1b7f9043, 0xcfb5f4a8, 0x3dde77ab, 0x2e8e845f, 0xdce5075c,
+            0x92a8fc17, 0x60c37f14, 0x73938ce0, 0x81f80fe3, 0x55326b08, 0xa759e80b, 0xb4091bff, 0x466298fc,
+            0x1871a4d8, 0xea1a27db, 0xf94ad42f, 0x0b21572c, 0xdfeb33c7, 0x2d80b0c4, 0x3ed04330, 0xccbbc033,
+            0xa24bb5a6, 0x502036a5, 0x4370c551, 0xb11b4652, 0x65d122b9, 0x97baa1ba, 0x84ea524e, 0x7681d14d,
+            0x2892ed69, 0xdaf96e6a, 0xc9a99d9e, 0x3bc21e9d, 0xef087a76, 0x1d63f975, 0x0e330a81, 0xfc588982,
+            0xb21572c9, 0x407ef1ca, 0x532e023e, 0xa145813d, 0x758fe5d6, 0x87e466d5, 0x94b49521, 0x66df1622,
+            0x38cc2a06, 0xcaa7a905, 0xd9f75af1, 0x2b9cd9f2, 0xff56bd19, 0x0d3d3e1a, 0x1e6dcdee, 0xec064eed,
+            0xc38d26c4, 0x31e6a5c7, 0x22b65633, 0xd0ddd530, 0x0417b1db, 0xf67c32d8, 0xe52cc12c, 0x1747422f,
+            0x49547e0b, 0xbb3ffd08, 0xa86f0efc, 0x5a048dff, 0x8ecee914, 0x7ca56a17, 0x6ff599e3, 0x9d9e1ae0,
+            0xd3d3e1ab, 0x21b862a8, 0x32e8915c, 0xc083125f, 0x144976b4, 0xe622f5b7, 0xf5720643, 0x07198540,
+            0x590ab964, 0xab613a67, 0xb831c993, 0x4a5a4a90, 0x9e902e7b, 0x6cfbad78, 0x7fab5e8c, 0x8dc0dd8f,
+            0xe330a81a, 0x115b2b19, 0x020bd8ed, 0xf0605bee, 0x24aa3f05, 0xd6c1bc06, 0xc5914ff2, 0x37faccf1,
+            0x69e9f0d5, 0x9b8273d6, 0x88d28022, 0x7ab90321, 0xae7367ca, 0x5c18e4c9, 0x4f48173d, 0xbd23943e,
+            0xf36e6f75, 0x0105ec76, 0x12551f82, 0xe03e9c81, 0x34f4f86a, 0xc69f7b69, 0xd5cf889d, 0x27a40b9e,
+            0x79b737ba, 0x8bdcb4b9, 0x988c474d, 0x6ae7c44e, 0xbe2da0a5, 0x4c4623a6, 0x5f16d052, 0xad7d5351
+    };
 
-        for (int index = 0; index < byteTables[0].length; index++) {
-            int r = index;
-            for (int i = 0; i < Byte.SIZE; i++) {
-                if ((r & 1) != 0) {
-                    r = (r >>> 1) ^ REVERSED_CRC32C_POLY;
-                } else {
-                    r >>>= 1;
-                }
-            }
-            byteTables[0][index] = r;
-        }
+    private int crc = 0xffffffff;
 
-        for (int index = 0; index < byteTables[0].length; index++) {
-            int r = byteTables[0][index];
-            for (int k = 1; k < byteTables.length; k++) {
-                r = byteTables[0][r & 0xFF] ^ (r >>> 8);
-                byteTables[k][index] = r;
-            }
-        }
-
-        if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-            byteTable = byteTables[0];
-        } else {
-            byteTable = new int[byteTable0.length];
-            System.arraycopy(byteTable0, 0, byteTable, 0, byteTable0.length);
-            for (int[] table : byteTables) {
-                for (int index = 0; index < table.length; index++) {
-                    table[index] = reverseBytes(table[index]);
-                }
-            }
-        }
-    }
-
-    private int crc = 0xFFFFFFFF;
-
-    public CRC32C() {
-    }
-
+    @Override
     public void update(int b) {
-        crc = (crc >>> 8) ^ byteTable[(crc ^ (b & 0xFF)) & 0xFF];
+        crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b) & 0xff];
     }
 
+    @Override
     public void update(byte[] b, int off, int len) {
-        if (b == null) {
-            throw new NullPointerException();
+        for (int i = off; i < off + len; i++) {
+            crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b[i]) & 0xff];
         }
-        crc = updateBytes(crc, b, off, (off + len));
     }
 
-    public void update(ByteBuffer buffer) {
-        int pos = buffer.position();
-        int limit = buffer.limit();
-        assert (pos <= limit);
-        int rem = limit - pos;
-        if (rem <= 0) {
-            return;
-        }
-
-        if (buffer.isDirect()) {
-            crc = updateDirectByteBuffer(crc, ((sun.nio.ch.DirectBuffer) buffer).address(), pos, limit);
-        } else if (buffer.hasArray()) {
-            crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(), limit + buffer.arrayOffset());
-        } else {
-            byte[] b = new byte[Math.min(buffer.remaining(), 4096)];
-            while (buffer.hasRemaining()) {
-                int length = Math.min(buffer.remaining(), b.length);
-                buffer.get(b, 0, length);
-                update(b, 0, length);
-            }
-        }
-        buffer.position(limit);
-    }
-
-
-    public void reset() {
-        crc = 0xFFFFFFFF;
-    }
-
-
+    @Override
     public long getValue() {
-        return (~crc) & 0xFFFFFFFFL;
+        return crc ^ 0xffffffff;
     }
 
-    private static int updateBytes(int crc, byte[] b, int off, int end) {
-        if (end - off >= 8 && Unsafe.ARRAY_BYTE_INDEX_SCALE == 1) {
-            int alignLength = (8 - ((Unsafe.ARRAY_BYTE_BASE_OFFSET + off) & 0x7)) & 0x7;
-            for (int alignEnd = off + alignLength; off < alignEnd; off++) {
-                crc = (crc >>> 8) ^ byteTable[(crc ^ b[off]) & 0xFF];
-            }
 
-            if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-                crc = reverseBytes(crc);
-            }
-
-            for (; off < (end - Long.BYTES); off += Long.BYTES) {
-                int firstHalf;
-                int secondHalf;
-                if (Unsafe.ADDRESS_SIZE == 4) {
-                    firstHalf = UNSAFE.getInt(b, (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + off);
-                    secondHalf = UNSAFE.getInt(b, (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + off + Integer.BYTES);
-                } else {
-                    long value = UNSAFE.getLong(b, (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + off);
-                    if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                        firstHalf = (int) value;
-                        secondHalf = (int) (value >>> 32);
-                    } else {
-                        firstHalf = (int) (value >>> 32);
-                        secondHalf = (int) value;
-                    }
-                }
-                crc ^= firstHalf;
-                if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                    crc = byteTable7[crc & 0xFF]
-                            ^ byteTable6[(crc >>> 8) & 0xFF]
-                            ^ byteTable5[(crc >>> 16) & 0xFF]
-                            ^ byteTable4[crc >>> 24]
-                            ^ byteTable3[secondHalf & 0xFF]
-                            ^ byteTable2[(secondHalf >>> 8) & 0xFF]
-                            ^ byteTable1[(secondHalf >>> 16) & 0xFF]
-                            ^ byteTable0[secondHalf >>> 24];
-                } else {
-                    crc = byteTable0[secondHalf & 0xFF]
-                            ^ byteTable1[(secondHalf >>> 8) & 0xFF]
-                            ^ byteTable2[(secondHalf >>> 16) & 0xFF]
-                            ^ byteTable3[secondHalf >>> 24]
-                            ^ byteTable4[crc & 0xFF]
-                            ^ byteTable5[(crc >>> 8) & 0xFF]
-                            ^ byteTable6[(crc >>> 16) & 0xFF]
-                            ^ byteTable7[crc >>> 24];
-                }
-            }
-
-            if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-                crc = reverseBytes(crc);
-            }
-        }
-
-        for (; off < end; off++) {
-            crc = (crc >>> 8) ^ byteTable[(crc ^ b[off]) & 0xFF];
-        }
-
-        return crc;
-    }
-
-    private static int updateDirectByteBuffer(int crc, long address, int off, int end) {
-        if (end - off >= 8) {
-            int alignLength = (8 - (int) ((address + off) & 0x7)) & 0x7;
-            for (int alignEnd = off + alignLength; off < alignEnd; off++) {
-                crc = (crc >>> 8) ^ byteTable[(crc ^ UNSAFE.getByte(address + off)) & 0xFF];
-            }
-
-            if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-                crc = reverseBytes(crc);
-            }
-
-            for (; off <= (end - Long.BYTES); off += Long.BYTES) {
-                int firstHalf = UNSAFE.getInt(address + off);
-                int secondHalf = UNSAFE.getInt(address + off + Integer.BYTES);
-                crc ^= firstHalf;
-                if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                    crc = byteTable7[crc & 0xFF]
-                            ^ byteTable6[(crc >>> 8) & 0xFF]
-                            ^ byteTable5[(crc >>> 16) & 0xFF]
-                            ^ byteTable4[crc >>> 24]
-                            ^ byteTable3[secondHalf & 0xFF]
-                            ^ byteTable2[(secondHalf >>> 8) & 0xFF]
-                            ^ byteTable1[(secondHalf >>> 16) & 0xFF]
-                            ^ byteTable0[secondHalf >>> 24];
-                } else {
-                    crc = byteTable0[secondHalf & 0xFF]
-                            ^ byteTable1[(secondHalf >>> 8) & 0xFF]
-                            ^ byteTable2[(secondHalf >>> 16) & 0xFF]
-                            ^ byteTable3[secondHalf >>> 24]
-                            ^ byteTable4[crc & 0xFF]
-                            ^ byteTable5[(crc >>> 8) & 0xFF]
-                            ^ byteTable6[(crc >>> 16) & 0xFF]
-                            ^ byteTable7[crc >>> 24];
-                }
-            }
-
-            if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-                crc = reverseBytes(crc);
-            }
-        }
-
-        for (; off < end; off++) {
-            crc = (crc >>> 8) ^ byteTable[(crc ^ UNSAFE.getByte(address + off)) & 0xFF];
-        }
-
-        return crc;
-    }
-
-    private static int reverse(int i) {
-        return Integer.reverseBytes(Integer.reverseBytes(i) >>> 16) >>> 16;
-    }
-
-    private static int reverseBytes(int i) {
-        return (i >>> 24) | ((i >> 8) & 0xFF00) | ((i << 8) & 0xFF0000) | (i << 24);
+    @Override
+    public void reset() {
+        crc = 0xffffffff;
     }
 }
