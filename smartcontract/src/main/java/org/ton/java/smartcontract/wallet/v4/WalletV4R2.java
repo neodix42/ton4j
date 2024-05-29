@@ -112,14 +112,14 @@ public class WalletV4R2 implements Contract {
             message.storeUint(BigInteger.ZERO, 8); // op simple send
             //message.storeRef(body); ??
         } else if (config.getOperation() == 1) {
-            message.storeUint(BigInteger.ONE, 8); // deploy and install plugin
+            message.storeUint(1, 8); // deploy and install plugin
             message.storeUint(BigInteger.valueOf(config.getNewPlugin().getPluginWc()), 8);
             message.storeCoins(config.getNewPlugin().getAmount()); // plugin balance
             message.storeRef(config.getNewPlugin().getStateInit());
             message.storeRef(config.getNewPlugin().getBody());
         }
         if (config.getOperation() == 2) {
-            message.storeUint(BigInteger.TWO, 8); // install plugin
+            message.storeUint(2, 8); // install plugin
             message.storeUint(BigInteger.valueOf(config.getDeployedPlugin().getPluginAddress().wc), 8);
             message.storeBytes(config.getDeployedPlugin().getPluginAddress().hashPart);
             message.storeCoins(BigInteger.valueOf(config.getDeployedPlugin().getAmount().longValue()));

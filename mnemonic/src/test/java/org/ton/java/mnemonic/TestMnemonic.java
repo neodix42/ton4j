@@ -6,6 +6,7 @@ import org.junit.runners.JUnit4;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,21 +38,22 @@ public class TestMnemonic {
     @Test
     public void testMnemonicValidation() throws NoSuchAlgorithmException, InvalidKeyException {
 
-        assertThat(Mnemonic.isValid(List.of("audit", "magic", "blossom", "digital", "dad", "buffalo", "river", "junior", "minimum", "congress", "banner", "garage", "flag", "tuna", "onion", "pair", "balance", "spice", "reason", "gossip", "cotton", "stock", "skate", "faith"), "")).isTrue();
-        assertThat(Mnemonic.isValid(List.of("kangaroo", "hen", "toddler", "resist"), "")).isTrue();
-        assertThat(Mnemonic.isValid(List.of("disease", "adult", "device", "grit"), "")).isTrue();
+        assertThat(Mnemonic.isValid(Arrays.asList("audit", "magic", "blossom", "digital", "dad", "buffalo", "river", "junior", "minimum", "congress", "banner", "garage", "flag", "tuna", "onion", "pair", "balance", "spice", "reason", "gossip", "cotton", "stock", "skate", "faith"),
+                "")).isTrue();
+        assertThat(Mnemonic.isValid(Arrays.asList("kangaroo", "hen", "toddler", "resist"), "")).isTrue();
+        assertThat(Mnemonic.isValid(Arrays.asList("disease", "adult", "device", "grit"), "")).isTrue();
 
-        assertThat(Mnemonic.isValid(List.of("disease", "adult", "device", "grit"), "password")).isFalse(); // o
-        assertThat(Mnemonic.isValid(List.of("deal", "wrap", "runway", "possible"), "password")).isTrue();
-        assertThat(Mnemonic.isValid(List.of("deal", "wrap", "runway", "possible"), "notthepassword")).isFalse(); // o
-        assertThat(Mnemonic.isValid(List.of("deal", "wrap", "runway", "possible"), "")).isFalse(); //o
+        assertThat(Mnemonic.isValid(Arrays.asList("disease", "adult", "device", "grit"), "password")).isFalse(); // o
+        assertThat(Mnemonic.isValid(Arrays.asList("deal", "wrap", "runway", "possible"), "password")).isTrue();
+        assertThat(Mnemonic.isValid(Arrays.asList("deal", "wrap", "runway", "possible"), "notthepassword")).isFalse(); // o
+        assertThat(Mnemonic.isValid(Arrays.asList("deal", "wrap", "runway", "possible"), "")).isFalse(); //o
     }
 
     @Test
     public void testMnemonicSeed() throws NoSuchAlgorithmException, InvalidKeyException {
-        assertThat(bytesToHex(Mnemonic.toSeed(List.of("kangaroo", "hen", "toddler", "resist")))).isEqualTo("a356fc9b35cb9b463adf65b2414bbebcec1d0d0d99fc4fc14e259395c128022d");
-        assertThat(bytesToHex(Mnemonic.toSeed(List.of("disease", "adult", "device", "grit"), ""))).isEqualTo("fb1df381306619a2128295e73e05c6013211f589e8bebd602469cdf1fc04a1cb");
-        assertThat(bytesToHex(Mnemonic.toSeed(List.of("deal", "wrap", "runway", "possible"), "password"))).isEqualTo("3078a0d183d0f0e88c4f8a5979590612f230a3228912838b66bcc9e9053b2584");
+        assertThat(bytesToHex(Mnemonic.toSeed(Arrays.asList("kangaroo", "hen", "toddler", "resist")))).isEqualTo("a356fc9b35cb9b463adf65b2414bbebcec1d0d0d99fc4fc14e259395c128022d");
+        assertThat(bytesToHex(Mnemonic.toSeed(Arrays.asList("disease", "adult", "device", "grit"), ""))).isEqualTo("fb1df381306619a2128295e73e05c6013211f589e8bebd602469cdf1fc04a1cb");
+        assertThat(bytesToHex(Mnemonic.toSeed(Arrays.asList("deal", "wrap", "runway", "possible"), "password"))).isEqualTo("3078a0d183d0f0e88c4f8a5979590612f230a3228912838b66bcc9e9053b2584");
     }
 
     private String bytesToHex(byte[] raw) {
@@ -65,7 +67,7 @@ public class TestMnemonic {
 
     @Test
     public void testMnemonicSeed2() throws NoSuchAlgorithmException, InvalidKeyException {
-        byte[] key = Mnemonic.toSeed(List.of("victory", "ginger", "intact",
+        byte[] key = Mnemonic.toSeed(Arrays.asList("victory", "ginger", "intact",
                 "account", "response", "claim",
                 "fitness", "park", "educate",
                 "achieve", "index", "cupboard",
@@ -81,7 +83,7 @@ public class TestMnemonic {
     @Test
     public void testMnemonicToKeyPair() throws NoSuchAlgorithmException, InvalidKeyException {
 
-        Pair key = Mnemonic.toKeyPair(List.of("audit", "magic", "blossom", "digital", "dad", "buffalo", "river",
+        Pair key = Mnemonic.toKeyPair(Arrays.asList("audit", "magic", "blossom", "digital", "dad", "buffalo", "river",
                 "junior", "minimum", "congress", "banner", "garage", "flag", "tuna", "onion", "pair", "balance", "spice",
                 "reason", "gossip", "cotton", "stock", "skate", "faith"));
         System.out.println(bytesToHex(key.getPublicKey()));

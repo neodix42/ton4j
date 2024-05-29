@@ -21,6 +21,7 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 
@@ -257,7 +258,7 @@ public class LockupWalletV1 implements Contract {
         TvmStackEntryNumber restrictedValue = (TvmStackEntryNumber) result.getStack().get(1); // total_restricted_value
         TvmStackEntryNumber lockedValue = (TvmStackEntryNumber) result.getStack().get(2); // total_locked_value
 
-        return List.of(
+        return Arrays.asList(
                 balance.getNumber(),
                 restrictedValue.getNumber(),
                 lockedValue.getNumber()

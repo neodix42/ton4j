@@ -27,7 +27,7 @@ public class TestRealBitString {
     @Test
     public void testRealBitStringCell() {
         RealBitString bitString = new RealBitString(1023);
-        bitString.writeUint(BigInteger.TWO, 32);
+        bitString.writeUint(2, 32);
         assertThat(bitString.toRealBitString()).isEqualTo("00000000000000000000000000000010");
         assertThat(bitString.toHex()).isEqualTo("00000002");
     }
@@ -35,12 +35,12 @@ public class TestRealBitString {
     @Test
     public void testRealBitStringOutput() {
         RealBitString bitString = new RealBitString(8);
-        bitString.writeUint(BigInteger.valueOf(7), 3);
+        bitString.writeUint(7, 3);
         assertThat(bitString.toRealBitString()).isEqualTo("111");
         assertThat(bitString.toHex()).isEqualTo("F_");
 
         bitString = new RealBitString(16);
-        bitString.writeUint(BigInteger.valueOf(255), 8);
+        bitString.writeUint(255, 8);
         assertThat(bitString.toRealBitString()).isEqualTo("11111111");
         assertThat(bitString.toHex()).isEqualTo("FF");
 
@@ -177,12 +177,12 @@ public class TestRealBitString {
             bitStringA.writeCoins(BigInteger.TEN.negate());
 
             RealBitString bitString128 = new RealBitString(128);
-            BigInteger coins = BigInteger.TWO.pow(121).subtract(BigInteger.ONE); // too big amount, max 2^120-1
+            BigInteger coins = BigInteger.valueOf(2).pow(121).subtract(BigInteger.ONE); // too big amount, max 2^120-1
             bitString128.writeCoins(coins);
         });
 
         RealBitString bitString128 = new RealBitString(129);
-        BigInteger coins = BigInteger.TWO.pow(120).subtract(BigInteger.ONE);
+        BigInteger coins = BigInteger.valueOf(2).pow(120).subtract(BigInteger.ONE);
         bitString128.writeCoins(coins);
     }
 

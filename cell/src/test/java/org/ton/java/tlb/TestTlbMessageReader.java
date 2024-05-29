@@ -67,11 +67,11 @@ public class TestTlbMessageReader {
                         .build())
                 .dstAddr(MsgAddressIntStd.builder()
                         .workchainId((byte) 2)
-                        .address(BigInteger.TWO)
+                        .address(BigInteger.valueOf(2))
                         .build())
                 .value(CurrencyCollection.builder().coins(Utils.toNano(0.5)).build())
                 .createdAt(5L)
-                .createdLt(BigInteger.TWO)
+                .createdLt(BigInteger.valueOf(2))
                 .build();
 
         InternalMessageInfo loadedInternalMessageInfo = InternalMessageInfo.deserialize(CellSlice.beginParse(internalMessageInfo.toCell()));
@@ -89,15 +89,15 @@ public class TestTlbMessageReader {
                 .bounced(false)
                 .srcAddr(MsgAddressIntStd.builder()
                         .workchainId((byte) 2)
-                        .address(BigInteger.TWO)
+                        .address(BigInteger.valueOf(2))
                         .build())
                 .dstAddr(MsgAddressIntStd.builder()
                         .workchainId((byte) 2)
-                        .address(BigInteger.TWO)
+                        .address(BigInteger.valueOf(2))
                         .build())
                 .value(CurrencyCollection.builder().coins(Utils.toNano(0.5)).build())
                 .createdAt(5L)
-                .createdLt(BigInteger.TWO)
+                .createdLt(BigInteger.valueOf(2))
                 .build();
 
         InternalMessageInfo loadedMessage = InternalMessageInfo.deserialize(CellSlice.beginParse(internalMessageInfo.toCell()));
@@ -111,7 +111,7 @@ public class TestTlbMessageReader {
                 .srcAddr(MsgAddressExtNone.builder().build())
                 .dstAddr(MsgAddressIntStd.builder()
                         .workchainId((byte) 2)
-                        .address(BigInteger.TWO)
+                        .address(BigInteger.valueOf(2))
                         .build())
                 .importFee(BigInteger.TEN)
                 .build();
@@ -126,7 +126,7 @@ public class TestTlbMessageReader {
         ExternalMessageOutInfo externalMessageOutInfo = ExternalMessageOutInfo.builder()
                 .srcAddr(MsgAddressIntStd.builder()
                         .workchainId((byte) 2)
-                        .address(BigInteger.TWO)
+                        .address(BigInteger.valueOf(2))
                         .build())
                 .dstAddr(MsgAddressExtNone.builder().build())
                 .createdLt(BigInteger.TEN)

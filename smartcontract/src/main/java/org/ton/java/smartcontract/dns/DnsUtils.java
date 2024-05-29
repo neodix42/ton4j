@@ -226,7 +226,7 @@ public class DnsUtils {
             }
         }
 
-        List<String> arr = new ArrayList<>(List.of(domain.split("\\.")));
+        List<String> arr = new ArrayList<>(Arrays.asList(domain.split("\\.")));
 
         for (String part : arr) {
             if (part.isEmpty()) {

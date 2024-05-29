@@ -9,7 +9,7 @@ import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
 
 import java.math.BigInteger;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -157,7 +157,7 @@ public class TestCellSlice {
 
     @Test
     public void testCellSliceSkipBits() {
-        Cell c1 = CellBuilder.beginCell().storeBits(List.of(false, false, true, true)).endCell();
+        Cell c1 = CellBuilder.beginCell().storeBits(Arrays.asList(false, false, true, true)).endCell();
         CellSlice cs = CellSlice.beginParse(c1);
         BitString bs = cs.skipBits(2).loadBits(2);
         log.info(bs.toBitString());
@@ -196,7 +196,7 @@ public class TestCellSlice {
 
     @Test
     public void testCellSliceSkipBitsOverflow() {
-        Cell c1 = CellBuilder.beginCell().storeBits(List.of(false, false, true, true)).endCell();
+        Cell c1 = CellBuilder.beginCell().storeBits(Arrays.asList(false, false, true, true)).endCell();
 
         assertThrows(Error.class, () -> CellSlice.beginParse(c1).skipBits(6).loadBits(2));
 
@@ -210,9 +210,9 @@ public class TestCellSlice {
 
     @Test
     public void testCellSliceSkipRefs() {
-        Cell ref1 = CellBuilder.beginCell().storeBits(List.of(false, true)).endCell();
-        Cell ref2 = CellBuilder.beginCell().storeBits(List.of(true, false)).endCell();
-        Cell c1 = CellBuilder.beginCell().storeRefs(List.of(ref1, ref2)).endCell();
+        Cell ref1 = CellBuilder.beginCell().storeBits(Arrays.asList(false, true)).endCell();
+        Cell ref2 = CellBuilder.beginCell().storeBits(Arrays.asList(true, false)).endCell();
+        Cell c1 = CellBuilder.beginCell().storeRefs(Arrays.asList(ref1, ref2)).endCell();
 
         CellSlice cs1 = CellSlice.beginParse(c1);
         Cell cRef1 = cs1.loadRef();

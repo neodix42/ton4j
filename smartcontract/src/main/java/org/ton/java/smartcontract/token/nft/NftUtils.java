@@ -13,6 +13,7 @@ import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.tonlib.types.TvmStackEntrySlice;
 import org.ton.java.utils.Utils;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -32,7 +33,7 @@ public class NftUtils {
      */
     public static byte[] serializeUri(String uri) {
         try {
-            return URLEncoder.encode(uri, StandardCharsets.UTF_8).getBytes();
+            return URLEncoder.encode(uri, String.valueOf(StandardCharsets.UTF_8)).getBytes();
         } catch (Exception e) {
             throw new Error("Cannot serialize URI " + uri);
         }
@@ -43,7 +44,12 @@ public class NftUtils {
      * @return String
      */
     static String parseUri(String uri) {
-        return URLDecoder.decode(uri, StandardCharsets.UTF_8);
+        try {
+            return URLDecoder.decode(uri, String.valueOf(StandardCharsets.UTF_8));
+        } catch (UnsupportedEncodingException e) {
+            System.out.println(e.getMessage());
+            return null;
+        }
     }
 
     /**

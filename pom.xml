@@ -23,9 +23,9 @@
     </modules>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -244,12 +244,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
-                <configuration>
-                    <argLine>
-                        --add-opens java.base/java.lang=ALL-UNNAMED
-                        --add-opens java.base/java.util=ALL-UNNAMED
-                    </argLine>
-                </configuration>
+                <!--                <configuration>-->
+                <!--                    <argLine>-->
+                <!--                        &#45;&#45;add-opens java.base/java.lang=ALL-UNNAMED-->
+                <!--                        &#45;&#45;add-opens java.base/java.util=ALL-UNNAMED-->
+                <!--                    </argLine>-->
+                <!--                </configuration>-->
             </plugin>
 
             <!-- Release Deployment with the Maven Release Plugin -->

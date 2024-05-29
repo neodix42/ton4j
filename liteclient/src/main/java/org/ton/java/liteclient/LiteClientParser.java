@@ -1199,8 +1199,9 @@ public class LiteClientParser {
     }
 
     private static List<Library> readLibraries(String str) {
-        if (StringUtils.isEmpty(str))
-            return List.of(Library.builder().build());
+        if (StringUtils.isEmpty(str)) {
+            return Collections.singletonList(Library.builder().build());
+        }
 
         List<Library> allLibraries = new ArrayList<>();
 

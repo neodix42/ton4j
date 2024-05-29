@@ -52,15 +52,15 @@ public class BinTree {
 
         if (cs.loadBit()) {
             List<ShardDescr> l = new ArrayList<>();
-            if (cs.refs.size() != 0) {
+            if (!cs.refs.isEmpty()) {
                 l.addAll(deserialize(CellSlice.beginParse(cs.loadRef())));
             }
-            if (cs.refs.size() != 0) {
+            if (!cs.refs.isEmpty()) {
                 l.addAll(deserialize(CellSlice.beginParse(cs.loadRef())));
             }
             return l;
         } else {
-            return List.of(ShardDescr.deserialize(cs));
+            return Collections.singletonList(ShardDescr.deserialize(cs));
         }
     }
 }

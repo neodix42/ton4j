@@ -28,7 +28,7 @@ public class TestBitString {
     @Test
     public void testBitStringCell() {
         BitString bitString = new BitString(1023);
-        bitString.writeUint(BigInteger.TWO, 32);
+        bitString.writeUint(2, 32);
         assertThat(bitString.toBitString()).isEqualTo("00000000000000000000000000000010");
         assertThat(bitString.toHex()).isEqualTo("00000002");
     }
@@ -36,12 +36,12 @@ public class TestBitString {
     @Test
     public void testBitStringOutput() {
         BitString bitString = new BitString(8);
-        bitString.writeUint(BigInteger.valueOf(7), 3);
+        bitString.writeUint(7, 3);
         assertThat(bitString.toBitString()).isEqualTo("111");
         assertThat(bitString.toHex()).isEqualTo("F_");
 
         bitString = new BitString(16);
-        bitString.writeUint(BigInteger.valueOf(255), 8);
+        bitString.writeUint(255, 8);
         assertThat(bitString.toBitString()).isEqualTo("11111111");
         assertThat(bitString.toHex()).isEqualTo("FF");
 
@@ -54,9 +54,9 @@ public class TestBitString {
     @Test
     public void testBitStringReadUints() {
         BitString bitString = new BitString(128);
-        bitString.writeUint(BigInteger.valueOf(200), 8);
-        bitString.writeUint(BigInteger.valueOf(400), 16);
-        bitString.writeUint(BigInteger.valueOf(600000), 32);
+        bitString.writeUint(200, 8);
+        bitString.writeUint(400, 16);
+        bitString.writeUint(600000, 32);
         bitString.writeUint(new BigInteger("9000000000000"), 64);
         System.out.println(bitString);
 
@@ -178,12 +178,12 @@ public class TestBitString {
             bitStringA.writeCoins(BigInteger.TEN.negate());
 
             BitString bitString128 = new BitString(128);
-            BigInteger coins = BigInteger.TWO.pow(121).subtract(BigInteger.ONE); // too big amount, max 2^120-1
+            BigInteger coins = BigInteger.valueOf(2).pow(121).subtract(BigInteger.ONE); // too big amount, max 2^120-1
             bitString128.writeCoins(coins);
         });
 
         BitString bitString128 = new BitString(129);
-        BigInteger coins = BigInteger.TWO.pow(120).subtract(BigInteger.ONE);
+        BigInteger coins = BigInteger.valueOf(2).pow(120).subtract(BigInteger.ONE);
         bitString128.writeCoins(coins);
     }
 

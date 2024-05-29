@@ -181,12 +181,18 @@ public class RealBitString {
         String s = number.toString(2);
 
         if (s.length() != bitLength) {
-            s = "0".repeat(bitLength - s.length()) + s;
+            s = repeatZeros(bitLength - s.length()) + s;
         }
 
         for (int i = 0; i < bitLength; i++) {
             writeBit(s.charAt(i) == '1');
         }
+    }
+
+    public String repeatZeros(int count) {
+        char[] zeros = new char[count];
+        Arrays.fill(zeros, '0');
+        return new String(zeros);
     }
 
     /**
@@ -219,7 +225,7 @@ public class RealBitString {
         } else {
             if (number.signum() == -1) {
                 writeBit(true);
-                BigInteger b = BigInteger.TWO;
+                BigInteger b = BigInteger.valueOf(2);
                 BigInteger nb = b.pow(bitLength - 1);
                 writeUint(nb.add(number), bitLength - 1);
             } else {
@@ -290,10 +296,10 @@ public class RealBitString {
      */
     public void writeAddress(Address address) {
         if (isNull(address)) {
-            writeUint(BigInteger.ZERO, 2);
+            writeUint(0, 2);
         } else {
-            writeUint(BigInteger.TWO, 2);
-            writeUint(BigInteger.ZERO, 1);
+            writeUint(2, 2);
+            writeUint(0, 1);
             writeInt(BigInteger.valueOf(address.wc), 8);
             writeBytes(address.hashPart);
         }
@@ -428,7 +434,7 @@ public class RealBitString {
 
         BigInteger number = readUint(bitLength - 1);
         if (sign) {
-            BigInteger b = BigInteger.TWO;
+            BigInteger b = BigInteger.valueOf(2);
             BigInteger nb = b.pow(bitLength - 1);
             number = number.subtract(nb);
         }

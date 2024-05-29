@@ -608,7 +608,7 @@ public class TestTonlibJson {
     @Test
     public void testTonlibGetLibraries() {
         SmcLibraryResult result = tonlib.getLibraries(
-                List.of("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
+                Collections.singletonList("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
         log.info("result: {}", result);
 
         assertThat(result.getResult().get(0).getHash()).isEqualTo("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M=");

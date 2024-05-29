@@ -39,8 +39,8 @@
     </scm>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -48,10 +48,18 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
+        <!--  recompiled from source with Java 8 -->
         <dependency>
             <groupId>org.purejava</groupId>
             <artifactId>tweetnacl-java</artifactId>
+            <version>1.1.12</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/tweetnacl-java-1.1.2.jar</systemPath>
         </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>org.purejava</groupId>-->
+        <!--            <artifactId>tweetnacl-java</artifactId>-->
+        <!--        </dependency>-->
         <!-- test -->
         <dependency>
             <groupId>junit</groupId>

@@ -22,8 +22,6 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.zip.CRC32C;
-import java.util.zip.Checksum;
 
 import static java.util.Objects.nonNull;
 
@@ -39,7 +37,7 @@ public class Utils {
      * uses POLY 0x1EDC6F41
      */
     public static Long getCRC32ChecksumAsLong(byte[] bytes) {
-        Checksum crc32c = new CRC32C();
+        CRC32C crc32c = new CRC32C();
         crc32c.update(bytes, 0, bytes.length);
         return crc32c.getValue();
     }
@@ -360,7 +358,9 @@ public class Utils {
         int toPad = (binary.length() % 8) == 0 ? 0 : 8 - (binary.length() % 8);
         final StringBuilder bits = new StringBuilder(binary);
         if (toPad != 0) {
-            bits.append("0".repeat(toPad));
+            for (int i = 0; i < toPad; i++) {
+                bits.append('0');
+            }
         }
         return new BigInteger(bits.toString(), 2).toString(16);
     }
@@ -369,18 +369,30 @@ public class Utils {
         int toPad = (binary.length() % 8) == 0 ? 0 : 8 - (binary.length() % 8);
         final StringBuilder bits = new StringBuilder(binary);
         if (toPad != 0) {
-            bits.append("0".repeat(toPad));
+            for (int i = 0; i < toPad; i++) {
+                bits.append('0');
+            }
         }
         String hex = new BigInteger(bits.toString(), 2).toString(16);
         byte[] decodedHex = Hex.decodeHex(hex);
         return new String(Base64.getEncoder().encode(decodedHex));
     }
 
+    public static String repeat(String str, int count) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+
     public static String bitStringToBase64UrlSafe(String binary) throws DecoderException {
         int toPad = (binary.length() % 8) == 0 ? 0 : 8 - (binary.length() % 8);
         final StringBuilder bits = new StringBuilder(binary);
         if (toPad != 0) {
-            bits.append("0".repeat(toPad));
+            for (int i = 0; i < toPad; i++) {
+                bits.append('0');
+            }
         }
         String hex = new BigInteger(bits.toString(), 2).toString(16);
         byte[] decodedHex = Hex.decodeHex(hex);
@@ -388,7 +400,7 @@ public class Utils {
     }
 
     public static int[] bitStringToIntArray(String bitString) {
-        if (bitString.length() == 0) {
+        if (bitString.isEmpty()) {
             return new int[0];
         }
         String bin = bitString;
@@ -406,7 +418,7 @@ public class Utils {
     }
 
     public static byte[] bitStringToByteArray(String bitString) {
-        if (bitString.length() == 0) {
+        if (bitString.isEmpty()) {
             return new byte[0];
         }
         byte[] result = new byte[(byte) Math.ceil(bitString.length() / (double) 8)];
@@ -455,23 +467,9 @@ public class Utils {
     public static int dynInt(int[] data) {
         int[] tmp = new int[8];
         Utils.copy(tmp, 8 - data.length, data, 0);
-        //System.arraycopy(data, 0, tmp, 8 - data.length, data.length);
 
         return Integer.valueOf(Utils.bytesToHex(tmp), 16);
     }
-
-//    public static int[] dynamicIntBytes(BigInteger val, int sz) {
-//        byte[] tmp = new byte[8];
-//        byte[] valArray = val.toByteArray(); // test just return val.toByteArray()
-//        Arrays.fill(tmp, 0, 8 - val.toByteArray().length, (byte) 0);
-//        for (int i = 8 - valArray.length, j = 0; i < 8; i++, j++) {
-//            tmp[i] = valArray[j];
-//        }
-////        tmp = val.toByteArray();
-//        byte[] result = new byte[sz];
-//        System.arraycopy(tmp, 8 - sz, result, 0, sz);
-//        return Utils.signedBytesToUnsigned(result);
-//    }
 
     public static byte[] dynamicIntBytes(BigInteger val, int sz) {
         byte[] tmp = new byte[8];
@@ -480,7 +478,6 @@ public class Utils {
         for (int i = 8 - valArray.length, j = 0; i < 8; i++, j++) {
             tmp[i] = valArray[j];
         }
-//        tmp = val.toByteArray();
         byte[] result = new byte[sz];
         System.arraycopy(tmp, 8 - sz, result, 0, sz);
         return result;

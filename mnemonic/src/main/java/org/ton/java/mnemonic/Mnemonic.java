@@ -11,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class Mnemonic {
@@ -50,7 +51,7 @@ public class Mnemonic {
     }
 
     public static boolean isValid(List<String> mnemonic, String password) throws NoSuchAlgorithmException, InvalidKeyException {
-        if (!List.of(DEFAULT_WORDLIST).containsAll(mnemonic)) {
+        if (!Collections.singletonList(DEFAULT_WORDLIST).containsAll(mnemonic)) {
             return false;
         }
         if (!password.isEmpty() && !isPasswordNeeded(mnemonic)) {

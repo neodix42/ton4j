@@ -11,6 +11,7 @@ import java.math.BigInteger;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.assertThrows;
+import static org.ton.java.utils.Utils.getCRC32ChecksumAsLong;
 
 @RunWith(JUnit4.class)
 @Slf4j
@@ -72,13 +73,17 @@ public class TestUtils {
 
     @Test
     public void testCrc32AsHex() {
+        byte[] data = "ABC".getBytes();
+        Long checksum = getCRC32ChecksumAsLong(data);
+        System.out.printf("CRC32C Checksum: 0x%08X\n", checksum);
+
         String crc32 = Utils.getCRC32ChecksumAsHex("ABC".getBytes());
         assertThat(crc32).isEqualTo("8839a97f");
     }
 
     @Test
     public void testCrc32AsLong() {
-        Long crc32 = Utils.getCRC32ChecksumAsLong("ABC".getBytes());
+        Long crc32 = getCRC32ChecksumAsLong("ABC".getBytes());
         assertThat(crc32).isEqualTo(2285480319L);
     }
 

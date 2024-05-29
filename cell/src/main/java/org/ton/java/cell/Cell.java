@@ -668,7 +668,7 @@ public class Cell {
                 .roots(numberOfRoots)
                 .absent(absent)
                 .totalCellsSize(payload.length)
-                .rootList(List.of(rootIndex))
+                .rootList(Collections.singletonList(rootIndex))
                 .index(serializedCellLen)
                 .cellData(payload)
                 .build();

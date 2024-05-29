@@ -2,6 +2,7 @@ package org.ton.java.cell;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.bitstring.BitString;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -164,7 +165,7 @@ public class TonHashMapAug {
             return;
         }
 
-        boolean isSame = ((label.equals("0".repeat(label.length()))) || label.equals("10".repeat(label.length())));
+        boolean isSame = (label.equals(Utils.repeat("0", label.length())) || label.equals(Utils.repeat("10", label.length())));
         if (isSame) {
             builder.storeBit(true);
             builder.storeBit(true); //hml_same

@@ -29,8 +29,8 @@ public class TestBinTree {
                 .regMcSeqno(1)
                 .startLt(BigInteger.TEN)
                 .endLt(BigInteger.TEN)
-                .rootHash(BigInteger.TWO)
-                .fileHash(BigInteger.TWO)
+                .rootHash(BigInteger.valueOf(2))
+                .fileHash(BigInteger.valueOf(2))
                 .beforeSplit(true)
                 .beforeMerge(true)
                 .wantSplit(false)
@@ -47,10 +47,10 @@ public class TestBinTree {
                         .interval(43)
                         .build())
                 .feesCollected(CurrencyCollection.builder()
-                        .coins(BigInteger.TWO)
+                        .coins(BigInteger.valueOf(2))
                         .build())
                 .fundsCreated(CurrencyCollection.builder()
-                        .coins(BigInteger.TWO)
+                        .coins(BigInteger.valueOf(2))
                         .build())
                 .build();
     }
