@@ -95,7 +95,7 @@ public class WalletV1R3 implements Contract {
     }
 
     public Cell createDeployMessage() {
-        return CellBuilder.beginCell().storeUint(BigInteger.ZERO, 32).endCell();
+        return CellBuilder.beginCell().storeUint(0, 32).endCell();
     }
 
     public Cell createTransferBody(WalletV1R3Config config) {
@@ -129,32 +129,22 @@ public class WalletV1R3 implements Contract {
      * @param config WalletV1R2Config
      */
     public ExtMessageInfo send(WalletV1R3Config config) {
-
-        Cell body = createTransferBody(config);
-
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .dstAddr(getAddressIntStd())
-                        .build())
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                        .storeCell(body)
-                        .endCell())
-                .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+        return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
     }
 
     public Message prepareExternalMsg(WalletV1R3Config config) {
-        Cell body = isNull(config.getBody()) ? createTransferBody(config) : config.getBody();
+        Cell body = createTransferBody(config);
         return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
     }
 
     public ExtMessageInfo deploy() {
+        return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+    }
 
+    public Message prepareDeployMsg() {
         Cell body = createDeployMessage();
 
-        Message externalMessage = Message.builder()
+        return Message.builder()
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
@@ -164,7 +154,5 @@ public class WalletV1R3 implements Contract {
                         .storeCell(body)
                         .endCell())
                 .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 }

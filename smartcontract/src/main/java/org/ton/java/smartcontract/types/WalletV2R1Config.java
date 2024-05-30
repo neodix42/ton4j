@@ -13,7 +13,8 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
-public class WalletV2Config implements WalletConfig {
+public class WalletV2R1Config implements WalletConfig {
+    Boolean bounce;
     long seqno;
     int mode;
     long validUntil;
@@ -26,4 +27,5 @@ public class WalletV2Config implements WalletConfig {
     BigInteger amount3;
     BigInteger amount4;
     Cell body;
+    String comment;
 }

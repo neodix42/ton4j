@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.smartcontract.types.WalletV2Config;
+import org.ton.java.smartcontract.types.WalletV2R2Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v2.WalletV2R2;
 import org.ton.java.tlb.types.Message;
@@ -17,13 +17,12 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestWalletsV2 {
-
     /**
-     * test new-wallet-v2.fif
+     * >fift -s new-wallet-v2.fif 0
      */
     @Test
-    public void testNewWalletV2() {
-        byte[] publicKey = Utils.hexToSignedBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
+    public void testNewWalletV2R2() {
+        // echo "F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4" | xxd -r -p - > new-wallet.pk
         byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
@@ -32,86 +31,103 @@ public class TestWalletsV2 {
                 .keyPair(keyPair)
                 .build();
 
-        assertThat(contract.getStateInit().getCode().getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
+        String codeAsHex = contract.getStateInit().getCode().bitStringToHex();
+        String dataAsHex = contract.getStateInit().getData().bitStringToHex();
+        String rawAddress = contract.getAddress().toRaw();
 
-        log.info("address {}", contract.getAddress());
-        Message msg = MsgUtils.createExternalMessageWithSignedBody(contract.getKeyPair(), contract.getAddress(), contract.getStateInit(), null);
-        Address address = msg.getInit().getAddress();
+        assertThat(codeAsHex).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
+        assertThat(dataAsHex).isEqualTo("0000000082A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
+        assertThat(rawAddress).isEqualTo("0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd");
 
-        String my = "Creating new advanced wallet in workchain " + contract.getWc() + "\n" +
-                "Loading private key from file new-wallet.pk" + "\n" +
-                "StateInit: " + msg.getInit().toCell().print() + "\n" +
-                "new wallet address = " + address.toString(false) + "\n" +
-                "(Saving address to file new-wallet.addr)" + "\n" +
-                "Non-bounceable address (for init): " + address.toString(true, true, false, true) + "\n" +
-                "Bounceable address (for later access): " + address.toString(true, true, true, true) + "\n" +
-                "signing message: " + msg.getBody().print() + "\n" +
-                "External message for initialization is " + msg.toCell().print() + "\n" +
-                Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase() + "\n" +
-                "(Saved wallet creating query to file new-wallet-query.boc)" + "\n";
-        log.info(my);
-
-        assertThat(address.toString(false)).isEqualTo("0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd");
-
+        Message msg = contract.prepareDeployMsg();
+        // external message for serialization
         assertThat(msg.toCell().bitStringToHex()).isEqualTo("8800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A119006018BC6501587E3EF5710DADC3E58439A9C8BDDAB55067E5C128C3EC1D29255FF7E266DDE2E6639333FBC20FB35A1FE2D2C94BA0D136E6973E87306ECFF40200000001FFFFFFFF_");
+        // final boc
+        assertThat(Utils.bytesToHex(msg.toCell().toBoc(true)).toUpperCase()).isEqualTo("B5EE9C724101030100F90002D78800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A119006018BC6501587E3EF5710DADC3E58439A9C8BDDAB55067E5C128C3EC1D29255FF7E266DDE2E6639333FBC20FB35A1FE2D2C94BA0D136E6973E87306ECFF40200000001FFFFFFFF0010200C2FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED5400480000000082A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FBC8A57A12");
     }
 
     /**
-     * test wallet-v2.fif
+     * >fift -s wallet-v2.fif new-wallet 0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d 1 1
      */
     @Test
-    public void testCreateTransferMessageWalletV2() {
-        byte[] publicKey = Utils.hexToSignedBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
+    public void testCreateTransferMessageWalletV2R2WithBounce() {
         byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
         WalletV2R2 contract = WalletV2R2.builder()
                 .wc(0)
-                .walletId(42)
                 .keyPair(keyPair)
                 .build();
 
-        assertThat(contract.getStateInit().getCode().getBits().toHex()).isEqualTo("FF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F2608308D71820D31FD31F01F823BBF263ED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F800029320D74A96D307D402FB00E8D1A4C8CB1FCBFFC9ED54");
-
-        WalletV2Config config = WalletV2Config.builder()
-                .destination1(Address.of("0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd"))
-                .amount1(Utils.toNano(1))
+        WalletV2R2Config config = WalletV2R2Config.builder()
+                .destination1(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
                 .seqno(1L)
+                .amount1(Utils.toNano(1))
+                .bounce(true)
+                .validUntil(1000)
                 .build();
 
         Message msg = contract.prepareExternalMsg(config);
+        // external message for serialization
+        assertThat(msg.toCell().bitStringToHex()).isEqualTo("8800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A06F089B575DECC26124E3F4E729FF1A3CFE51AEAC3BD9943E39980533A295245D7E4DD122D3CCDA07E6E6FD9DC2C2BBBB410C143E6555E0C253781E9578CA950080000000800001F401C_");
+        // external message in BoC format
+        assertThat(Utils.bytesToHex(msg.toCell().toBoc(true)).toUpperCase()).isEqualTo("B5EE9C724101020100A50001D78800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A06F089B575DECC26124E3F4E729FF1A3CFE51AEAC3BD9943E39980533A295245D7E4DD122D3CCDA07E6E6FD9DC2C2BBBB410C143E6555E0C253781E9578CA950080000000800001F401C010068620012C72A4B1C534C0572E9E3B1C157E9FA79971A2416D7E1BA8F19AC2C4E46F006A1DCD65000000000000000000000000000004E41735C");
+    }
 
-        Address address = contract.getAddress();
+    /**
+     * >fift -s wallet-v2.fif new-wallet 0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d 1 1 -n -t 1000
+     */
+    @Test
+    public void testCreateTransferMessageWalletV2R2NoBounce() {
+        byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        String my = "Source wallet address =  " + address.toString(false) + "\n" +
-                address.toString(true, true, true, true) + "\n" +
-                "Loading private key from file new-wallet.pk" + "\n" +
-                "Transferring GR$1. to account 0QAzTo-R8c1y-DmDdovCz74k3mkI2WPVU-SOFS_F4gsbvSPI = 0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd seqno=0x0 bounce=0\n" +
-                "Body of transfer message is x{}" + "\n\n" +
-                "signing message: " + msg.getBody().print() + "\n" +
-                "resulting external message: " + msg.toCell().print() + "\n" +
-                Utils.bytesToHex(msg.toCell().toBoc()).toUpperCase() + "\n" +
-                "Query expires in 60 seconds\n" +
-                "(Saved to file wallet-query.boc)\n";
+        WalletV2R2 contract = WalletV2R2.builder()
+                .wc(0)
+                .keyPair(keyPair)
+                .build();
 
-        log.info(my);
+        WalletV2R2Config config = WalletV2R2Config.builder()
+                .destination1(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
+                .seqno(1L)
+                .amount1(Utils.toNano(1))
+                .bounce(false)
+                .validUntil(1000)
+                .build();
 
-        String fiftOutput = "Source wallet address = 0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd\n" +
-                "kQAzTo-R8c1y-DmDdovCz74k3mkI2WPVU-SOFS_F4gsbvX4N\n" +
-                "Loading private key from file new-wallet.pk\n" +
-                "Transferring GR$1. to account 0QAzTo-R8c1y-DmDdovCz74k3mkI2WPVU-SOFS_F4gsbvSPI = 0:334e8f91f1cd72f83983768bc2cfbe24de6908d963d553e48e152fc5e20b1bbd seqno=0x0 bounce=0\n" +
-                "Body of transfer message is x{}\n" +
-                "signing message: x{00000000628BFA0103}\n" +
-                " x{420019A747C8F8E6B97C1CC1BB45E167DF126F34846CB1EAA9F2470A97E2F1058DDEA1DCD6500000000000000000000000000000}\n" +
-                "resulting external message: x{8800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A059314542963BC08ADA7973158C812CA993B60B34A8A95719176AE40EE047ED672205DB7B8F7A552C821B441D54F66E93DF8DDCA6D102FF3BA5FC917A0F05CB80800000003145FD0081C_}\n" +
-                " x{420019A747C8F8E6B97C1CC1BB45E167DF126F34846CB1EAA9F2470A97E2F1058DDEA1DCD6500000000000000000000000000000}\n" +
-                "B5EE9C724101020100A50001D78800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A059314542963BC08ADA7973158C812CA993B60B34A8A95719176AE40EE047ED672205DB7B8F7A552C821B441D54F66E93DF8DDCA6D102FF3BA5FC917A0F05CB80800000003145FD0081C010068420019A747C8F8E6B97C1CC1BB45E167DF126F34846CB1EAA9F2470A97E2F1058DDEA1DCD650000000000000000000000000000018CD4CCD\n" +
-                "Query expires in 60 seconds\n" +
-                "(Saved to file wallet-query.boc)";
+        Message msg = contract.prepareExternalMsg(config);
+        // external message for serialization
+        assertThat(msg.toCell().bitStringToHex()).isEqualTo("8800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A07929F4590118FED68E4A880C580ED817E96EBBDB760E2DD942BAA5BC38AE32C0F9B0405BDF7B385E01A314224282958F180DA96443F852F85C117F0BFBB01A8400000000800001F401C_");
+        // external message in BoC format
+        assertThat(Utils.bytesToHex(msg.toCell().toBoc(true)).toUpperCase()).isEqualTo("B5EE9C724101020100A50001D78800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A07929F4590118FED68E4A880C580ED817E96EBBDB760E2DD942BAA5BC38AE32C0F9B0405BDF7B385E01A314224282958F180DA96443F852F85C117F0BFBB01A8400000000800001F401C010068420012C72A4B1C534C0572E9E3B1C157E9FA79971A2416D7E1BA8F19AC2C4E46F006A1DCD650000000000000000000000000000057DEA87E");
+    }
 
-        log.info(fiftOutput);
+    /**
+     * >fift -s wallet-v2.fif new-wallet 0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d 1 1 -t 1000 -C gift
+     */
+    @Test
+    public void testCreateTransferMessageWalletV2R2WithBounceAndComment() {
+        byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-        //different due to a variable expiration timestamp
-        //assertThat(msg.message.bits.toHex()).isEqualTo("8800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A059314542963BC08ADA7973158C812CA993B60B34A8A95719176AE40EE047ED672205DB7B8F7A552C821B441D54F66E93DF8DDCA6D102FF3BA5FC917A0F05CB80800000003145FD0081C_");
+        WalletV2R2 contract = WalletV2R2.builder()
+                .wc(0)
+                .keyPair(keyPair)
+                .build();
+
+        WalletV2R2Config config = WalletV2R2Config.builder()
+                .destination1(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
+                .seqno(1L)
+                .amount1(Utils.toNano(1))
+                .bounce(true)
+                .validUntil(1000)
+                .body(MsgUtils.createTextMessageBody("gift"))
+                .build();
+
+        Message msg = contract.prepareExternalMsg(config);
+        // external message for serialization
+        assertThat(msg.toCell().bitStringToHex()).isEqualTo("8800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A079FC2D3275DAD59B116CC6B3BE16C22CBF91798DDFA0CD29ECC3BC0DA4288008B3CAA6C728442E0B7CBDE3D3D29C9D380184A597D7808C1C3940E308BC13A38200000000800001F401C_");
+        // external message in BoC format
+        assertThat(Utils.bytesToHex(msg.toCell().toBoc(true)).toUpperCase()).isEqualTo("B5EE9C724101020100AD0001D78800669D1F23E39AE5F07306ED17859F7C49BCD211B2C7AAA7C91C2A5F8BC416377A079FC2D3275DAD59B116CC6B3BE16C22CBF91798DDFA0CD29ECC3BC0DA4288008B3CAA6C728442E0B7CBDE3D3D29C9D380184A597D7808C1C3940E308BC13A38200000000800001F401C010078620012C72A4B1C534C0572E9E3B1C157E9FA79971A2416D7E1BA8F19AC2C4E46F006A1DCD6500000000000000000000000000000000000006769667480D93246");
     }
 }

@@ -124,10 +124,14 @@ public class WalletV3R1 implements Contract {
 
 
     public ExtMessageInfo deploy() {
+        return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+    }
+
+    public Message prepareDeployMsg() {
 
         Cell body = createDeployMessage();
 
-        Message externalMessage = Message.builder()
+        return Message.builder()
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
@@ -137,29 +141,15 @@ public class WalletV3R1 implements Contract {
                         .storeCell(body)
                         .endCell())
                 .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
     public ExtMessageInfo send(WalletV3Config config) {
 
-        Cell body = createTransferBody(config);
-
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .dstAddr(getAddressIntStd())
-                        .build())
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash())) // config?
-                        .storeCell(body)
-                        .endCell())
-                .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+        return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
     }
 
     public Message prepareExternalMsg(WalletV3Config config) {
-        Cell body = isNull(config.getBody()) ? createTransferBody(config) : config.getBody();
+        Cell body = createTransferBody(config);
         return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
     }
 }
