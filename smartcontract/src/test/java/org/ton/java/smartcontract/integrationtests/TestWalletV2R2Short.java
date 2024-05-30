@@ -7,7 +7,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.TestFaucet;
-import org.ton.java.smartcontract.types.WalletV2Config;
+import org.ton.java.smartcontract.types.WalletV2R2Config;
 import org.ton.java.smartcontract.wallet.v2.WalletV2R2;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
@@ -48,7 +48,7 @@ public class TestWalletV2R2Short extends CommonTest {
         contract.waitForDeployment(20);
 
         // transfer coins from new wallet (back to faucet)
-        WalletV2Config config = WalletV2Config.builder()
+        WalletV2R2Config config = WalletV2R2Config.builder()
                 .seqno(contract.getSeqno())
                 .destination1(Address.of(TestFaucet.BOUNCEABLE))
                 .amount1(Utils.toNano(0.1))
@@ -61,7 +61,7 @@ public class TestWalletV2R2Short extends CommonTest {
         contract.waitForBalanceChange(90);
 
         //multi send
-        config = WalletV2Config.builder()
+        config = WalletV2R2Config.builder()
                 .seqno(contract.getSeqno())
                 .destination1(Address.of("EQA84DSUMyREa1Frp32wxFATnAVIXnWlYrbd3TFS1NLCbC-B"))
                 .destination2(Address.of("EQCJZ3sJnes-o86xOa4LDDug6Lpz23RzyJ84CkTMIuVCCuan"))

@@ -20,7 +20,6 @@ public class WalletV3Config implements WalletConfig {
     int mode;
     long validUntil;
     boolean bounce;
-    long createdAt;
     Address source;
     Address destination;
     BigInteger amount;

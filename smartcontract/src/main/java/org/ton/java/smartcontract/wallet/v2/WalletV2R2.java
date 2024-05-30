@@ -7,7 +7,7 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletCodes;
-import org.ton.java.smartcontract.types.WalletV2Config;
+import org.ton.java.smartcontract.types.WalletV2R2Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.ExternalMessageInfo;
@@ -109,7 +109,7 @@ public class WalletV2R2 implements Contract {
     /**
      * Creates message payload with seqno and validUntil fields
      */
-    public Cell createTransferBody(WalletV2Config config) {
+    public Cell createTransferBody(WalletV2R2Config config) {
 
         CellBuilder message = CellBuilder.beginCell();
         message.storeUint(BigInteger.valueOf(config.getSeqno()), 32);
@@ -117,22 +117,22 @@ public class WalletV2R2 implements Contract {
         message.storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), 32);
 
         if (nonNull(config.getDestination1())) {
-            Message order = MsgUtils.createInternalMessage(config.getDestination1(), config.getAmount1(), null, null);
+            Message order = MsgUtils.createInternalMessage(config.getDestination1(), config.getAmount1(), config.getStateInit(), config.getBody(), config.getBounce());
             message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination2())) {
-            Message order = MsgUtils.createInternalMessage(config.getDestination2(), config.getAmount2(), null, null);
+            Message order = MsgUtils.createInternalMessage(config.getDestination2(), config.getAmount2(), config.getStateInit(), config.getBody(), config.getBounce());
             message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination3())) {
-            Message order = MsgUtils.createInternalMessage(config.getDestination3(), config.getAmount3(), null, null);
+            Message order = MsgUtils.createInternalMessage(config.getDestination3(), config.getAmount3(), config.getStateInit(), config.getBody(), config.getBounce());
             message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination4())) {
-            Message order = MsgUtils.createInternalMessage(config.getDestination4(), config.getAmount3(), null, null);
+            Message order = MsgUtils.createInternalMessage(config.getDestination4(), config.getAmount3(), config.getStateInit(), config.getBody(), config.getBounce());
             message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
             message.storeRef(order.toCell());
         }
@@ -140,10 +140,23 @@ public class WalletV2R2 implements Contract {
         return message.endCell();
     }
 
+    public ExtMessageInfo send(WalletV2R2Config config) {
+        return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
+    }
+
+    public Message prepareExternalMsg(WalletV2R2Config config) {
+        Cell body = createTransferBody(config);
+        return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
+    }
+
     public ExtMessageInfo deploy() {
+        return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+    }
+
+    public Message prepareDeployMsg() {
         Cell body = createDeployMessage();
 
-        Message externalMessage = Message.builder()
+        return Message.builder()
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
@@ -153,29 +166,5 @@ public class WalletV2R2 implements Contract {
                         .storeCell(body)
                         .endCell())
                 .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-    }
-
-
-    public ExtMessageInfo send(WalletV2Config config) {
-        Cell body = createTransferBody(config);
-
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .dstAddr(getAddressIntStd())
-                        .build())
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                        .storeCell(body)
-                        .endCell())
-                .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-    }
-
-    public Message prepareExternalMsg(WalletV2Config config) {
-        Cell body = isNull(config.getBody()) ? createTransferBody(config) : config.getBody();
-        return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
     }
 }

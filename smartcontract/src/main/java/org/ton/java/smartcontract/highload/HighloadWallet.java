@@ -175,23 +175,24 @@ public class HighloadWallet implements Contract {
                             CellBuilder.beginCell()
                                     .storeUint(0, 32)
                                     .storeString(destination.getComment())
-                                    .endCell()).toCell();
+                                    .endCell(), true).toCell();
                 } else if (nonNull(destination.getBody())) {
-                    order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, destination.getBody()).toCell();
+                    order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, destination.getBody(), true).toCell();
                 } else {
-                    order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, null).toCell();
+                    order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, null, true).toCell();
                 }
             } else {
                 if (isNull(destination.getBody()) && nonNull(destination.getComment())) {
-                    order = MsgUtils.createNonBounceableInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null,
+                    order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null,
                             CellBuilder.beginCell()
                                     .storeUint(0, 32)
                                     .storeString(destination.getComment())
-                                    .endCell()).toCell();
+                                    .endCell(),
+                            false).toCell();
                 } else if (nonNull(destination.getBody())) {
-                    order = MsgUtils.createNonBounceableInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, destination.getBody()).toCell();
+                    order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, destination.getBody(), false).toCell();
                 } else {
-                    order = MsgUtils.createNonBounceableInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, null).toCell();
+                    order = MsgUtils.createInternalMessage(Address.of(destination.getAddress()), destination.getAmount(), null, null, false).toCell();
                 }
             }
 

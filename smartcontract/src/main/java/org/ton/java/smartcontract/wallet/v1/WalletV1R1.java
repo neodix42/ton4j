@@ -9,10 +9,7 @@ import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV1R1Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.tlb.types.CurrencyCollection;
-import org.ton.java.tlb.types.InternalMessageInfo;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MsgAddressIntStd;
+import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
@@ -92,7 +89,7 @@ public class WalletV1R1 implements Contract {
                                 .build())
                         .value(CurrencyCollection.builder().coins(config.getAmount()).build())
                         .build())
-                .init(config.getIntMsgStateInit())
+                .init(config.getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeUint(0, 32)
                         .storeString(config.getComment())
@@ -113,20 +110,30 @@ public class WalletV1R1 implements Contract {
      * @param config WalletV1R1Config
      */
     public ExtMessageInfo send(WalletV1R1Config config) {
-        Cell body = isNull(config.getBody()) ? createTransferBody(config) : config.getBody();
-        Message externalMessage = MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+        return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
     }
 
-    public Message prepareMsg(WalletV1R1Config config) {
-        Cell body = isNull(config.getBody()) ? createTransferBody(config) : config.getBody();
+    public Message prepareExternalMsg(WalletV1R1Config config) {
+        Cell body = createTransferBody(config);
         return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
     }
 
-
     public ExtMessageInfo deploy() {
+        return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+    }
+
+    public Message prepareDeployMsg() {
         Cell body = createDeployMessage();
-        Message externalMessage = MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), getStateInit(), body);
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+
+        return Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .dstAddr(getAddressIntStd())
+                        .build())
+                .init(getStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                        .storeCell(body)
+                        .endCell())
+                .build();
     }
 }

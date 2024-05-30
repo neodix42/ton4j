@@ -21,6 +21,6 @@ public class WalletV1R1Config implements WalletConfig {
     Address destination;
     BigInteger amount;
     Cell body;
-    StateInit intMsgStateInit;
+    StateInit stateInit;
     String comment; // default ""
 }
