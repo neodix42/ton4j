@@ -1,0 +1,35 @@
+name: Run Tests
+
+on: [ push,workflow_dispatch,workflow_call,pull_request ]
+
+jobs:
+  build:
+    runs-on: windows-2019
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 8
+        uses: actions/setup-java@v2
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+
+      - name: Run Cell tests
+        run: |
+          cd cell
+          mvn test
+
+      - name: Run BitString tests
+        run: |
+          cd bitstring
+          mvn test
+
+      - name: Run Address tests
+        run: |
+          cd address
+          mvn test
+
+      - name: Run Utils tests
+        run: |
+          cd utils
+          mvn test
