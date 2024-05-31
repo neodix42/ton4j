@@ -7,7 +7,7 @@
     <groupId>io.github.neodix42</groupId>
     <artifactId>top</artifactId>
     <packaging>pom</packaging>
-    <version>0.4.2</version>
+    <version>0.4.3</version>
 
     <modules>
         <module>bitstring</module>
@@ -32,7 +32,6 @@
 
         <junit.version>4.13.2</junit.version>
         <commons.version>1.15</commons.version>
-        <tweetnacl.version>1.1.2</tweetnacl.version>
         <lombok.version>1.18.24</lombok.version>
         <assertj.version>3.23.1</assertj.version>
         <logback.version>1.2.11</logback.version>
@@ -79,11 +78,7 @@
                 <artifactId>commons-codec</artifactId>
                 <version>${commons.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.purejava</groupId>
-                <artifactId>tweetnacl-java</artifactId>
-                <version>${tweetnacl.version}</version>
-            </dependency>
+
             <!-- test -->
             <dependency>
                 <groupId>junit</groupId>
