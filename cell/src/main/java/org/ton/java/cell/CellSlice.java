@@ -303,7 +303,7 @@ public class CellSlice {
     }
 
     public int getFreeBits() {
-        return bits.getFreeBits();
+        return getRestBits();
     }
 
     public int getRestBits() {
