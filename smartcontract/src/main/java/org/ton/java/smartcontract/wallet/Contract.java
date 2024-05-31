@@ -37,7 +37,7 @@ public interface Contract {
     }
 
     default MsgAddressIntStd getAddressIntStd() {
-        Address ownAddress = getStateInit().getAddress();
+        Address ownAddress = getStateInit().getAddress(getWorkchain());
         return MsgAddressIntStd.builder()
                 .workchainId(ownAddress.wc)
                 .address(ownAddress.toBigInteger())

@@ -82,12 +82,10 @@ public class WalletV2R1 implements Contract {
     }
 
     public Cell createDeployMessage() {
-        CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(0, 32);
-        for (int i = 0; i < 32; i++) { // valid-until
-            message.storeBit(true);
-        }
-        return message.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(0, 32)
+                .storeInt(-1, 32)
+                .endCell();
     }
 
     /**

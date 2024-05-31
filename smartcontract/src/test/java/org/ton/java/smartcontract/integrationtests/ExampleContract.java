@@ -103,14 +103,11 @@ public class ExampleContract implements Contract {
     }
 
     public Cell createDeployMessage() {
-        CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(initialSeqno, 32); //seqno
-
-        for (int i = 0; i < 32; i++) { // valid-until
-            message.storeBit(true);
-        }
-        message.storeUint(initialExtraField, 64); //extra field
-        return message.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(initialSeqno, 32) //seqno
+                .storeInt(-1, 32)
+                .storeUint(initialExtraField, 64) //extra field
+                .endCell();
     }
 
     public ExtMessageInfo deploy() {

@@ -126,14 +126,11 @@ public class WalletV3R2 implements Contract {
     }
 
     public Cell createDeployMessage() {
-        CellBuilder message = CellBuilder.beginCell();
-        message.storeUint(walletId, 32); //wallet-id
-
-        for (int i = 0; i < 32; i++) { // valid-until
-            message.storeBit(true);
-        }
-        message.storeUint(initialSeqno, 32); //seqno
-        return message.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(walletId, 32) //wallet-id
+                .storeInt(-1, 32)
+                .storeUint(initialSeqno, 32) //seqno
+                .endCell();
     }
 
 
