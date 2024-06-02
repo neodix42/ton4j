@@ -9,5 +9,5 @@
 
     <artifactId>tweetnacl-java-8</artifactId>
     <version>1.1.12</version>
-    <name>TON Java - tweetnacl-java-8</name>
+    <name>TON Java TweetNacl</name>
 </project>

@@ -76,7 +76,7 @@ public class WalletV4R2 implements Contract {
                 .storeUint(initialSeqno, 32)
                 .storeUint(walletId, 32)
                 .storeBytes(keyPair.getPublicKey())
-                .storeUint(BigInteger.ZERO, 1)//plugins dict empty
+                .storeUint(0, 1) //plugins dict empty
                 .endCell();
     }
 
