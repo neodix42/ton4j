@@ -1,5 +1,6 @@
 package org.ton.java.smartcontract;
 
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.java.Log;
@@ -13,10 +14,7 @@ import org.ton.java.utils.Utils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 import static java.util.Objects.nonNull;
 
@@ -34,6 +32,12 @@ public class FuncCompiler {
     String fiftAsmLibraryPath;
     String fiftSmartcontLibraryPath;
 
+    @Ignore
+    private String funcExecutable;
+    @Ignore
+    private String fiftExecutable;
+
+
     public static class FuncCompilerBuilder {
     }
 
@@ -42,8 +46,68 @@ public class FuncCompiler {
     }
 
     private static class CustomFuncCompilerBuilder extends FuncCompilerBuilder {
+        private String errorMsg = "Make sure you have fift and func installed. See https://github.com/ton-blockchain/packages for instructions.";
+        private String funcAbsolutePath;
+        private String fiftAbsolutePath;
+
         @Override
         public FuncCompiler build() {
+
+            if (StringUtils.isEmpty(super.funcExecutablePath)) {
+                System.out.println("checking if func is installed...");
+
+                try {
+                    ProcessBuilder pb = new ProcessBuilder("func", "-h").redirectErrorStream(true);
+                    Process p = pb.start();
+                    p.waitFor(5, TimeUnit.SECONDS);
+                    if (p.exitValue() != 2) {
+                        throw new Error("Cannot execute simple func command.\n" + errorMsg);
+                    }
+                    funcAbsolutePath = detectAbsolutePath("func");
+
+                    System.out.println("func found at " + funcAbsolutePath);
+                    super.funcExecutable = "func";
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new Error("Cannot execute simple func command.\n" + errorMsg);
+                }
+            } else {
+                System.out.println("using " + super.funcExecutablePath);
+                super.funcExecutable = super.funcExecutablePath;
+            }
+
+            if (StringUtils.isEmpty(super.fiftExecutablePath)) {
+                System.out.println("checking if fift is installed...");
+                try {
+                    ProcessBuilder pb = new ProcessBuilder("fift", "-h").redirectErrorStream(true);
+                    Process p = pb.start();
+                    p.waitFor(5, TimeUnit.SECONDS);
+                    if (p.exitValue() != 2) {
+                        throw new Error("Cannot execute simple fift command.\n" + errorMsg);
+                    }
+                    fiftAbsolutePath = detectAbsolutePath("fift");
+                    System.out.println("fift found at " + fiftAbsolutePath);
+                    super.fiftExecutable = "fift";
+                } catch (Exception e) {
+                    throw new Error("Cannot execute simple fift command.\n" + errorMsg);
+                }
+            } else {
+                System.out.println("using " + super.fiftExecutablePath);
+                super.fiftExecutable = super.fiftExecutablePath;
+            }
+
+            if (StringUtils.isEmpty(super.fiftAsmLibraryPath)) {
+                super.fiftAsmLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + ".." + File.separator +
+                        "lib" + File.separator + "ton" + File.separator + "bin" + File.separator + "lib";
+            }
+
+            if (StringUtils.isEmpty(super.fiftSmartcontLibraryPath)) {
+                super.fiftSmartcontLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + ".." + File.separator +
+                        "lib" + File.separator + "ton" + File.separator + "bin" + File.separator + "smartcont";
+            }
+
+            System.out.println("using FIFTPATH: " + super.fiftAsmLibraryPath + ":" + super.fiftSmartcontLibraryPath);
 
             return super.build();
         }
@@ -66,16 +130,16 @@ public class FuncCompiler {
         return Utils.bytesToHex(bocContent);
     }
 
-    public String executeFunc(String... params) throws ExecutionException, InterruptedException {
-        Pair<Process, Future<String>> result = execute("func", params);
+    private String executeFunc(String... params) throws ExecutionException, InterruptedException {
+        Pair<Process, Future<String>> result = execute(funcExecutable, params);
 
         return result.getRight().get();
     }
 
-    public String executeFift(String... params) {
+    private String executeFift(String... params) {
         String[] withInclude = new String[]{"-I", fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath};
         String[] all = ArrayUtils.addAll(withInclude, params);
-        Pair<Process, Future<String>> result = execute("fift", all);
+        Pair<Process, Future<String>> result = execute(fiftExecutable, all);
         if (nonNull(result)) {
             try {
                 return result.getRight().get();
@@ -88,7 +152,7 @@ public class FuncCompiler {
         }
     }
 
-    public Pair<Process, Future<String>> execute(String pathToBinary, String... command) {
+    private Pair<Process, Future<String>> execute(String pathToBinary, String... command) {
 
         String[] withBinaryCommand = new String[]{pathToBinary};
 
@@ -129,6 +193,22 @@ public class FuncCompiler {
         } catch (final IOException e) {
             log.info(e.getMessage());
             return null;
+        }
+    }
+
+    private static String detectAbsolutePath(String executable) {
+        try {
+            ProcessBuilder pb;
+            if (Utils.getOS() == Utils.OS.WINDOWS) {
+                pb = new ProcessBuilder("where", executable).redirectErrorStream(true);
+            } else {
+                pb = new ProcessBuilder("which", executable).redirectErrorStream(true);
+            }
+            Process p = pb.start();
+            p.waitFor(5, TimeUnit.SECONDS);
+            return IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
+        } catch (Exception e) {
+            throw new Error("Cannot detect absolute path to executable " + executable);
         }
     }
 }

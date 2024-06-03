@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 @RunWith(JUnit4.class)
 public class TestFuncCompiler {
     /**
-     * Make sure you have fift and func installed. See <a href="https://github.com/ton-blockchain/packages">packages</a> for instructions.
+     * Make sure you have fift and func installed in your system. See <a href="https://github.com/ton-blockchain/packages">packages</a> for instructions.
      * Example is based on new-wallet-v4r2.fc smart contract. You can specify path to any smart contract.
      */
     @Test
@@ -36,8 +36,10 @@ public class TestFuncCompiler {
         FuncCompiler smcFunc = FuncCompiler.builder()
 //                .contractPath("C:/stablecoin/contracts/jetton-minter.fc")
                 .contractPath(contractAbsolutePath)
-                .fiftAsmLibraryPath("C:/ProgramData/chocolatey/lib/ton/bin/lib") // todo detect automatically
-                .fiftSmartcontLibraryPath("C:/ProgramData/chocolatey/lib/ton/bin/smartcont")
+//                .fiftExecutablePath("C:/ProgramData/chocolatey/bin/fift")
+//                .funcExecutablePath("C:/ProgramData/chocolatey/bin/func")
+//                .fiftAsmLibraryPath("C:/ProgramData/chocolatey/lib/ton/bin/lib")
+//                .fiftSmartcontLibraryPath("C:/ProgramData/chocolatey/lib/ton/bin/smartcont")
                 .build();
 
         String codeCellHex = smcFunc.compile();
@@ -49,7 +51,8 @@ public class TestFuncCompiler {
                 .storeUint(42, 32) // wallet id
                 .storeBytes(keyPair.getPublicKey())
                 .storeUint(0, 1) //plugins dict empty
-                .endCell().toHex();
+                .endCell()
+                .toHex();
 
         log.info("codeCellHex {}", codeCellHex);
         log.info("dataCellHex {}", dataCellHex);
@@ -81,8 +84,8 @@ public class TestFuncCompiler {
 
         Cell deployMessageBody = CellBuilder.beginCell()
                 .storeUint(42, 32) // wallet-id
-                .storeInt(-1, 32) // valid-until
-                .storeUint(0, 32) //seqno
+                .storeInt(-1, 32)  // valid-until
+                .storeUint(0, 32)  //seqno
                 .endCell();
 
         smc.deploy(deployMessageBody);
