@@ -98,16 +98,14 @@ public class FuncCompiler {
             }
 
             if (StringUtils.isEmpty(super.fiftAsmLibraryPath)) {
-                super.fiftAsmLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + ".." + File.separator +
-                        "lib" + File.separator + "ton" + File.separator + "bin" + File.separator + "lib";
+                super.fiftAsmLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + "lib";
             }
 
             if (StringUtils.isEmpty(super.fiftSmartcontLibraryPath)) {
-                super.fiftSmartcontLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + ".." + File.separator +
-                        "lib" + File.separator + "ton" + File.separator + "bin" + File.separator + "smartcont";
+                super.fiftSmartcontLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + "smartcont";
             }
 
-            System.out.println("using FIFTPATH: " + super.fiftAsmLibraryPath + ":" + super.fiftSmartcontLibraryPath);
+            System.out.println("using fift include dirs: " + super.fiftAsmLibraryPath + ", " + super.fiftSmartcontLibraryPath);
 
             return super.build();
         }
@@ -137,7 +135,12 @@ public class FuncCompiler {
     }
 
     private String executeFift(String... params) {
-        String[] withInclude = new String[]{"-I", fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath};
+        String[] withInclude;
+        if (Utils.getOS() == Utils.OS.WINDOWS) {
+            withInclude = new String[]{"-I", "\"" + fiftAsmLibraryPath + "@" + fiftSmartcontLibraryPath + "\""};
+        } else {
+            withInclude = new String[]{"-I", "\"" + fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath + "\""};
+        }
         String[] all = ArrayUtils.addAll(withInclude, params);
         Pair<Process, Future<String>> result = execute(fiftExecutable, all);
         if (nonNull(result)) {
@@ -177,13 +180,13 @@ public class FuncCompiler {
                 p.getInputStream().close();
                 p.getErrorStream().close();
                 p.getOutputStream().close();
-                if (p.exitValue() != 0) {
+                if (p.exitValue() == 2 || p.exitValue() == 0) {
+                    return resultInput;
+                } else {
                     log.info("exit value " + p.exitValue());
                     log.info(resultInput);
                     throw new Exception("Cannot compile smart-contract.");
-
                 }
-                return resultInput;
             });
 
             executorService.shutdown();
@@ -206,7 +209,14 @@ public class FuncCompiler {
             }
             Process p = pb.start();
             p.waitFor(5, TimeUnit.SECONDS);
-            return IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
+            String output = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
+            String[] paths = output.split("\n");
+            for (String path : paths) {
+                if (path.contains("ton")) {
+                    return StringUtils.trim(path);
+                }
+            }
+            return null;
         } catch (Exception e) {
             throw new Error("Cannot detect absolute path to executable " + executable);
         }

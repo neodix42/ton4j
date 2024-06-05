@@ -596,7 +596,6 @@ public class Utils {
 
         String operSys = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
         String operArch = System.getProperty("os.arch").toLowerCase(Locale.ENGLISH);
-        System.out.println("Detected OS " + operSys + ", " + operArch);
 
         if (operSys.contains("win")) {
             if ((operArch.contains("arm")) || (operArch.contains("aarch"))) {
