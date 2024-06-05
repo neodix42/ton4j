@@ -59,7 +59,7 @@ public class FuncCompiler {
                 try {
                     ProcessBuilder pb = new ProcessBuilder("func", "-h").redirectErrorStream(true);
                     Process p = pb.start();
-                    p.waitFor(5, TimeUnit.SECONDS);
+                    p.waitFor(1, TimeUnit.SECONDS);
                     if (p.exitValue() != 2) {
                         throw new Error("Cannot execute simple func command.\n" + errorMsg);
                     }
@@ -82,7 +82,7 @@ public class FuncCompiler {
                 try {
                     ProcessBuilder pb = new ProcessBuilder("fift", "-h").redirectErrorStream(true);
                     Process p = pb.start();
-                    p.waitFor(5, TimeUnit.SECONDS);
+                    p.waitFor(1, TimeUnit.SECONDS);
                     if (p.exitValue() != 2) {
                         throw new Error("Cannot execute simple fift command.\n" + errorMsg);
                     }
@@ -98,14 +98,34 @@ public class FuncCompiler {
             }
 
             if (StringUtils.isEmpty(super.fiftAsmLibraryPath)) {
-                super.fiftAsmLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + "lib";
+                if (Utils.getOS() == Utils.OS.WINDOWS) {
+                    super.fiftAsmLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + "lib";
+                } else if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
+                    super.fiftAsmLibraryPath = "/usr/lib/fift";
+                } else { //mac
+                    if (new File("/usr/local/lib/fift").exists()) {
+                        super.fiftAsmLibraryPath = "/usr/local/lib/fift";
+                    } else if (new File("/opt/homebrew/lib/fift").exists()) {
+                        super.fiftAsmLibraryPath = "/opt/homebrew/lib/fift";
+                    }
+                }
             }
 
             if (StringUtils.isEmpty(super.fiftSmartcontLibraryPath)) {
-                super.fiftSmartcontLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + "smartcont";
+                if (Utils.getOS() == Utils.OS.WINDOWS) {
+                    super.fiftSmartcontLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + "smartcont";
+                }
+                if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
+                    super.fiftSmartcontLibraryPath = "/usr/share/ton/smartcont";
+                } else { // mac
+                    if (new File("/usr/local/share/ton/ton/smartcont").exists()) {
+                        super.fiftSmartcontLibraryPath = "/usr/local/share/ton/ton/smartcont";
+                    } else if (new File("/opt/homebrew/share/ton/ton/smartcont").exists()) {
+                        super.fiftSmartcontLibraryPath = "/opt/homebrew/share/ton/ton/smartcont";
+                    }
+                }
             }
-
-            System.out.println("using fift include dirs: " + super.fiftAsmLibraryPath + ", " + super.fiftSmartcontLibraryPath);
+            System.out.println("using include dirs: " + super.fiftAsmLibraryPath + ", " + super.fiftSmartcontLibraryPath);
 
             return super.build();
         }
@@ -139,7 +159,7 @@ public class FuncCompiler {
         if (Utils.getOS() == Utils.OS.WINDOWS) {
             withInclude = new String[]{"-I", "\"" + fiftAsmLibraryPath + "@" + fiftSmartcontLibraryPath + "\""};
         } else {
-            withInclude = new String[]{"-I", "\"" + fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath + "\""};
+            withInclude = new String[]{"-I", fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath};
         }
         String[] all = ArrayUtils.addAll(withInclude, params);
         Pair<Process, Future<String>> result = execute(fiftExecutable, all);
@@ -174,6 +194,7 @@ public class FuncCompiler {
             Future<String> future = executorService.submit(() -> {
 
                 Thread.currentThread().setName(pathToBinary);
+                p.waitFor(1, TimeUnit.SECONDS);
 
                 String resultInput = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
 
@@ -208,12 +229,16 @@ public class FuncCompiler {
                 pb = new ProcessBuilder("which", executable).redirectErrorStream(true);
             }
             Process p = pb.start();
-            p.waitFor(5, TimeUnit.SECONDS);
+            p.waitFor(1, TimeUnit.SECONDS);
             String output = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
             String[] paths = output.split("\n");
-            for (String path : paths) {
-                if (path.contains("ton")) {
-                    return StringUtils.trim(path);
+            if (paths.length == 1) {
+                return paths[0];
+            } else {
+                for (String path : paths) {
+                    if (path.contains("ton")) {
+                        return StringUtils.trim(path);
+                    }
                 }
             }
             return null;
