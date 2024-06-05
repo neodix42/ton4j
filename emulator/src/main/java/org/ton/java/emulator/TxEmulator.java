@@ -32,7 +32,7 @@ public class TxEmulator {
     private final long txEmulator;
 
     private String configBoc;
-    private int verbosityLevel;
+    private Integer verbosityLevel;
 
     public static class TxEmulatorBuilder {
     }
@@ -85,10 +85,10 @@ public class TxEmulator {
             super.txEmulator = super.txEmulatorI.transaction_emulator_create(super.configBoc, super.verbosityLevel);
 
             if (super.txEmulator == 0) {
-                throw new Error("Can't create emulator instance");
+                throw new Error("Can't create tx emulator instance");
             }
 
-            System.out.printf("Java TON Emulator configuration:\n" +
+            System.out.printf("Java TON Tx Emulator configuration:\n" +
                             "Location: %s\n" +
                             "Verbosity level: %s",
                     super.pathToEmulatorSharedLib,
