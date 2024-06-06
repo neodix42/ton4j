@@ -97,6 +97,12 @@
             <version>0.4.3</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>smartcontract</artifactId>
+            <version>0.4.3</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

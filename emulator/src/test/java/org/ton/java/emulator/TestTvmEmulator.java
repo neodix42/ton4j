@@ -1,5 +1,9 @@
 package org.ton.java.emulator;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
+import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.BeforeClass;
@@ -8,12 +12,20 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
+import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
+import org.ton.java.tlb.types.VmStack;
+import org.ton.java.tlb.types.VmStackList;
+import org.ton.java.tlb.types.VmStackValueInt;
+import org.ton.java.tlb.types.VmStackValueNull;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.SmcLibraryEntry;
 import org.ton.java.tonlib.types.SmcLibraryResult;
+import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.Collections;
 
 import static org.junit.Assert.assertNotEquals;
@@ -25,23 +37,44 @@ public class TestTvmEmulator {
 
     static TvmEmulator tvmEmulator;
     static Tonlib tonlib;
-//    static Cell config;
+    private static final Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
+
+    static WalletV3R2 contract;
 
     @BeforeClass
     public static void setUpBeforeClass() {
-
-        tonlib = Tonlib.builder().build();
-//        config = tonlib.getConfigAll(128);
-        tvmEmulator = TvmEmulator.builder()
-                .codeBoc(null)
-                .dataBoc(null)
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        log.info("pubKey {}", Utils.bytesToHex(keyPair.getPublicKey()));
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
                 .build();
+
+        contract = WalletV3R2.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42)
+                .build();
+
+        Cell code = contract.getStateInit().getCode();
+        Cell data = contract.getStateInit().getData();
+
+        tvmEmulator = TvmEmulator.builder()
+                .pathToEmulatorSharedLib("G:/libs/emulator.dll")
+                .codeBoc(code.toBase64())
+                .dataBoc(data.toBase64())
+                .verbosityLevel(1)
+                .build();
+        tvmEmulator.setDebugEnabled(true);
     }
 
     @Test
     public void testInitTvmEmulator() {
         TvmEmulatorI tvmEmulatorI = Native.load("emulator.dll", TvmEmulatorI.class);
-        long emulator = tvmEmulatorI.tvm_emulator_create("codeBoc", "dataBoc", 2);
+        long emulator = tvmEmulatorI.tvm_emulator_create(
+                contract.getStateInit().getCode().toBase64(),
+                contract.getStateInit().getData().toBase64(),
+                2);
         assertNotEquals(0, emulator);
     }
 
@@ -52,7 +85,7 @@ public class TestTvmEmulator {
 
     @Test
     public void testTvmEmulatorSetGasLimit() {
-        assertTrue(tvmEmulator.setGasLimit(BigInteger.valueOf(200000)));
+        assertTrue(tvmEmulator.setGasLimit(200000));
     }
 
     @Test
@@ -64,32 +97,84 @@ public class TestTvmEmulator {
 
     @Test
     public void testTvmEmulatorSetC7() {
-        assertTrue(tvmEmulator.setC7());
+        String address = contract.getAddress().toBounceable();
+        String randSeedHex = Utils.sha256("ABC");
+
+//        config = tonlib.getConfigAll(128);
+
+        assertTrue(tvmEmulator.setC7(address,
+                Instant.now().getEpochSecond(),
+                Utils.toNano(1).longValue(),
+                randSeedHex
+                , null
+//                , config.toBase64() // optional
+        ));
     }
 
     @Test
     public void testTvmEmulatorEmulateRunMethod() {
-        String result = tvmEmulator.emulateRunMethod();
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+        Cell code = contract.getStateInit().getCode();
+        Cell data = contract.getStateInit().getData();
+
+        String paramsBoc = CellBuilder.beginCell()
+                .storeRef(code)
+                .storeRef(data)
+//                .storeRef() // stack
+//                .storeRef() // params
+                .storeBit(false)
+                .storeBit(false)
+                .storeUint(85143, 32) // method-id - seqno
+                .endCell()
+                .toBase64();
+        String result = tvmEmulator.emulateRunMethod(0, paramsBoc, Utils.toNano(1).longValue());
+        log.info("result emulateRunMethod: {}", result);
     }
 
     @Test
     public void testTvmEmulatorRunGetMethod() {
-        String result = tvmEmulator.runGetMethod();
+        String result = tvmEmulator.runGetMethod(
+                78748, // 78748 - get_public_key
+                VmStack.builder()
+                        .depth(0)
+                        .stack(VmStackList.builder()
+                                .rest(CellBuilder.beginCell().endCell())
+                                .value(VmStackValueNull.builder().build())
+                                .build())
+                        .build()
+                        .toCell().toBase64());
+        log.info("result runGetMethod: {}", result);
+
+        GetMethodResult methodResult = gson.fromJson(result, GetMethodResult.class);
+        log.info("methodResult: {}", methodResult);
+        log.info("methodResult stack: {}", methodResult.getStack());
+
+        Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
+        log.info("cellResult {}", cellResult);
+        CellSlice sliceResult = CellSlice.beginParse(cellResult);
+        int depth = sliceResult.loadUint(24).intValue();
+        log.info("vmStack depth: {}", depth);
+        VmStackList vmStackList = VmStackList.deserialize(sliceResult);
+        log.info("vmStackList rest: {}", vmStackList.getRest());
+        log.info("vmStackList value: {}", vmStackList.getValue());
+        BigInteger pubKey = VmStackValueInt.deserialize(CellSlice.of(vmStackList.getValue().toCell())).getValue();
+        log.info("vmStackList value: {}", pubKey.toString(16)); // pubkey
     }
 
     @Test
     public void testTvmEmulatorSendExternalMessage() {
-        String result = tvmEmulator.sendExternalMessage();
+//        String result = tvmEmulator.sendExternalMessage();
     }
 
     @Test
     public void testTvmEmulatorSendInternalMessage() {
-        String result = tvmEmulator.sendInternalMessage();
+//        String result = tvmEmulator.sendInternalMessage();
     }
 
     @Test
     public void testTvmEmulatorSetPrevBlockInfo() {
-        assertTrue(tvmEmulator.setPrevBlockInfo());
+//        assertTrue(tvmEmulator.setPrevBlockInfo());
     }
 
 

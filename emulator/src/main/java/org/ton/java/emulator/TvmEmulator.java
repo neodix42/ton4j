@@ -114,7 +114,7 @@ public class TvmEmulator {
      * @return true in case of success, false in case of error
      */
     public boolean setLibs(String libsBoc) {
-        return tvmEmulatorI.tvm_emulator_set_libs(tvmEmulator, libsBoc);
+        return tvmEmulatorI.tvm_emulator_set_libraries(tvmEmulator, libsBoc);
     }
 
     /**
@@ -127,7 +127,7 @@ public class TvmEmulator {
      * @param config      Base64 encoded BoC serialized Config dictionary (Hashmap 32 ^Cell). Optional.
      * @return true in case of success, false in case of error
      */
-    public boolean setC7(String address, long unixTime, BigInteger balance, String randSeedHex, String config) {
+    public boolean setC7(String address, long unixTime, long balance, String randSeedHex, String config) {
         return tvmEmulatorI.tvm_emulator_set_c7(tvmEmulator, address, unixTime, balance, randSeedHex, config);
     }
 
@@ -147,7 +147,7 @@ public class TvmEmulator {
      * @param gasLimit Gas limit
      * @return true in case of success, false in case of error
      */
-    public boolean setGasLimit(BigInteger gasLimit) {
+    public boolean setGasLimit(long gasLimit) {
         return tvmEmulatorI.tvm_emulator_set_gas_limit(tvmEmulator, gasLimit);
     }
 
@@ -192,11 +192,11 @@ public class TvmEmulator {
      * @param len       Length of params_boc buffer
      * @param paramsBoc BoC serialized parameters, scheme: request$_ code:^Cell data:^Cell stack:^VmStack params:^[c7:^VmStack libs:^Cell] method_id:(## 32)
      * @param gasLimit  Gas limit
-     * @return Char* with first 4 bytes defining length, and the rest BoC serialized result
+     * @return String with first 4 bytes defining length, and the rest BoC serialized result
      * Scheme: result$_ exit_code:(## 32) gas_used:(## 32) stack:^VmStack
      */
-    public String emulateRunMethod(int len, String paramsBoc, BigInteger gasLimit) {
-        return tvmEmulatorI.tvm_emulator_emulate_run_method(tvmEmulator, paramsBoc, gasLimit);
+    public String emulateRunMethod(int len, String paramsBoc, long gasLimit) {
+        return tvmEmulatorI.tvm_emulator_emulate_run_method(len, paramsBoc, gasLimit);
     }
 
     /**
@@ -221,7 +221,7 @@ public class TvmEmulator {
      * "actions": "Base64 boc decoded actions cell of type (OutList n)"
      * }
      */
-    public String sendExternalMessage(int len, String messageBodyBoc) {
+    public String sendExternalMessage(String messageBodyBoc) {
         return tvmEmulatorI.tvm_emulator_send_external_message(tvmEmulator, messageBodyBoc);
     }
 
@@ -248,7 +248,7 @@ public class TvmEmulator {
      * "actions": "Base64 boc decoded actions cell of type (OutList n)"
      * }
      */
-    public String sendInternalMessage(int len, String messageBodyBoc, BigInteger amount) {
+    public String sendInternalMessage(String messageBodyBoc, BigInteger amount) {
         return tvmEmulatorI.tvm_emulator_send_internal_message(tvmEmulator, messageBodyBoc, amount);
     }
 

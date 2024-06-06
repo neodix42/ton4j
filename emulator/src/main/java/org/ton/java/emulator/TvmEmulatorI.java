@@ -32,7 +32,7 @@ public interface TvmEmulatorI extends Library {
      * @param libsBoc     Base64 encoded BoC serialized libraries dictionary (HashmapE 256 ^Cell).
      * @return true in case of success, false in case of error
      */
-    boolean tvm_emulator_set_libs(long tvmEmulator, String libsBoc);
+    boolean tvm_emulator_set_libraries(long tvmEmulator, String libsBoc);
 
     /**
      * Set c7 parameters
@@ -45,7 +45,7 @@ public interface TvmEmulatorI extends Library {
      * @param config      Base64 encoded BoC serialized Config dictionary (Hashmap 32 ^Cell). Optional.
      * @return true in case of success, false in case of error
      */
-    boolean tvm_emulator_set_c7(long tvmEmulator, String address, long unixTime, BigInteger balance, String randSeedHex, String config);
+    boolean tvm_emulator_set_c7(long tvmEmulator, String address, long unixTime, long balance, String randSeedHex, String config);
 
     /**
      * Set tuple of previous blocks (13th element of c7)
@@ -63,7 +63,7 @@ public interface TvmEmulatorI extends Library {
      * @param gasLimit    Gas limit
      * @return true in case of success, false in case of error
      */
-    boolean tvm_emulator_set_gas_limit(long tvmEmulator, BigInteger gasLimit);
+    boolean tvm_emulator_set_gas_limit(long tvmEmulator, long gasLimit);
 
     /**
      * Enable or disable TVM debug primitives
@@ -106,7 +106,7 @@ public interface TvmEmulatorI extends Library {
      * @return Char* with first 4 bytes defining length, and the rest BoC serialized result
      * Scheme: result$_ exit_code:(## 32) gas_used:(## 32) stack:^VmStack
      */
-    String tvm_emulator_emulate_run_method(long len, String paramsBoc, BigInteger gasLimit);
+    String tvm_emulator_emulate_run_method(long len, String paramsBoc, long gasLimit);
 
 
     /**

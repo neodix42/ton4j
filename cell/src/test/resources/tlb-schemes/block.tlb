@@ -913,8 +913,7 @@ vm_stk_tinyint#01 value:int64 = VmStackValue;
 vm_stk_int#0201_ value:int257 = VmStackValue;
 vm_stk_nan#02ff = VmStackValue;
 vm_stk_cell#03 cell:^Cell = VmStackValue;
-_ cell:^Cell st_bits:(## 10) end_bits:(## 10) { st_bits <= end_bits }
-  st_ref:(#<= 4) end_ref:(#<= 4) { st_ref <= end_ref } = VmCellSlice;
+_ cell:^Cell st_bits:(## 10) end_bits:(## 10) { st_bits <= end_bits } st_ref:(#<= 4) end_ref:(#<= 4) { st_ref <= end_ref } = VmCellSlice;
 vm_stk_slice#04 _:VmCellSlice = VmStackValue;
 vm_stk_builder#05 cell:^Cell = VmStackValue;
 vm_stk_cont#06 cont:VmCont = VmStackValue;
@@ -930,8 +929,7 @@ vm_stk_cons#_ {n:#} rest:^(VmStackList n) tos:VmStackValue = VmStackList (n + 1)
 vm_stk_nil#_ = VmStackList 0;
 
 _ cregs:(HashmapE 4 VmStackValue) = VmSaveList;
-gas_limits#_ remaining:int64 _:^[ max_limit:int64 cur_limit:int64 credit:int64 ]
-  = VmGasLimits;
+gas_limits#_ remaining:int64 _:^[ max_limit:int64 cur_limit:int64 credit:int64 ] = VmGasLimits;
 _ libraries:(HashmapE 256 ^Cell) = VmLibraries;
 
 vm_ctl_data$_ nargs:(Maybe uint13) stack:(Maybe VmStack) save:VmSaveList
