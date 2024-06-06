@@ -6,6 +6,7 @@ import com.google.gson.ToNumberPolicy;
 import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Lists;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,7 +19,6 @@ import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.tlb.types.VmStack;
 import org.ton.java.tlb.types.VmStackList;
 import org.ton.java.tlb.types.VmStackValueInt;
-import org.ton.java.tlb.types.VmStackValueNull;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.SmcLibraryEntry;
 import org.ton.java.tonlib.types.SmcLibraryResult;
@@ -100,36 +100,43 @@ public class TestTvmEmulator {
         String address = contract.getAddress().toBounceable();
         String randSeedHex = Utils.sha256("ABC");
 
-//        config = tonlib.getConfigAll(128);
+        Cell config = tonlib.getConfigAll(128);
 
         assertTrue(tvmEmulator.setC7(address,
                 Instant.now().getEpochSecond(),
                 Utils.toNano(1).longValue(),
                 randSeedHex
-                , null
-//                , config.toBase64() // optional
+//                , null
+                , config.toBase64() // optional
         ));
     }
 
     @Test
     public void testTvmEmulatorEmulateRunMethod() {
-        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         Cell code = contract.getStateInit().getCode();
         Cell data = contract.getStateInit().getData();
 
+        VmStack stack = VmStack.builder()
+                .depth(0)
+                .stack(VmStackList.builder()
+                        .tos(Lists.emptyList())
+                        .build())
+                .build();
+
         String paramsBoc = CellBuilder.beginCell()
                 .storeRef(code)
                 .storeRef(data)
-//                .storeRef() // stack
-//                .storeRef() // params
-                .storeBit(false)
-                .storeBit(false)
+                .storeRef(stack.toCell())
+                .storeRef(CellBuilder.beginCell()
+                        .storeRef(stack.toCell()) // c7 ^VmStack
+                        .storeRef(getLibs()) // libs ^Cell
+                        .endCell()) // params
                 .storeUint(85143, 32) // method-id - seqno
                 .endCell()
                 .toBase64();
-        String result = tvmEmulator.emulateRunMethod(0, paramsBoc, Utils.toNano(1).longValue());
-        log.info("result emulateRunMethod: {}", result);
+        String result = tvmEmulator.emulateRunMethod(1, paramsBoc, Utils.toNano(1).longValue());
+        log.info("result emulateRunMethod: {}", result); // todo - return null
     }
 
     @Test
@@ -139,8 +146,7 @@ public class TestTvmEmulator {
                 VmStack.builder()
                         .depth(0)
                         .stack(VmStackList.builder()
-                                .rest(CellBuilder.beginCell().endCell())
-                                .value(VmStackValueNull.builder().build())
+                                .tos(Lists.emptyList())
                                 .build())
                         .build()
                         .toCell().toBase64());
@@ -152,13 +158,12 @@ public class TestTvmEmulator {
 
         Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
         log.info("cellResult {}", cellResult);
-        CellSlice sliceResult = CellSlice.beginParse(cellResult);
-        int depth = sliceResult.loadUint(24).intValue();
+        VmStack stack = VmStack.deserialize(CellSlice.beginParse(cellResult));
+        int depth = stack.getDepth();
         log.info("vmStack depth: {}", depth);
-        VmStackList vmStackList = VmStackList.deserialize(sliceResult);
-        log.info("vmStackList rest: {}", vmStackList.getRest());
-        log.info("vmStackList value: {}", vmStackList.getValue());
-        BigInteger pubKey = VmStackValueInt.deserialize(CellSlice.of(vmStackList.getValue().toCell())).getValue();
+        VmStackList vmStackList = stack.getStack();
+        log.info("vmStackList: {}", vmStackList.getTos());
+        BigInteger pubKey = VmStackValueInt.deserialize(CellSlice.beginParse(vmStackList.getTos().get(0).toCell())).getValue();
         log.info("vmStackList value: {}", pubKey.toString(16)); // pubkey
     }
 

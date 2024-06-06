@@ -480,6 +480,22 @@ public class CellSlice {
         return bits.readInt(length);
     }
 
+    public BigInteger loadIntMaybe(int length) {
+        if (bits.readBit()) {
+            return bits.readInt(length);
+        } else {
+            return null;
+        }
+    }
+
+    public BigInteger loadUintMaybe(int length) {
+        if (bits.readBit()) {
+            return bits.readUint(length);
+        } else {
+            return null;
+        }
+    }
+
     public BigInteger loadUint(int length) {
         checkBitsOverflow(length);
         if (length == 0) return BigInteger.ZERO;

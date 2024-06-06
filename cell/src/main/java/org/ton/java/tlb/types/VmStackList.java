@@ -8,28 +8,42 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * vm_stk_cons#_ {n:#} rest:^(VmStackList n) tos:VmStackValue = VmStackList (n + 1);
  * vm_stk_nil#_ = VmStackList 0;
+ * vm_stk_cons#_ {n:#} rest:^(VmStackList n) tos:VmStackValue = VmStackList (n + 1);
  */
 @Builder
 @Getter
 @Setter
 @ToString
 public class VmStackList {
-    Cell rest;
-    VmStackValue value;
+    List<VmStackValue> tos;
 
     public Cell toCell() {
-        return CellBuilder.beginCell()
-                .storeRef(rest)
-                .storeCell(value.toCell())
-                .endCell();
+        Cell list = CellBuilder.beginCell().endCell();
+        int i = 0;
+        for (VmStackValue value : tos) {
+            Cell valueCell = value.toCell();
+            list = CellBuilder.beginCell()
+                    .storeRef(list)
+                    .storeCell(valueCell)
+                    .endCell();
+        }
+        return list;
     }
 
     public static VmStackList deserialize(CellSlice cs) {
+        List<VmStackValue> tos = new ArrayList<>();
+        while (cs.getRefsCount() != 0) {
+            Cell t = cs.loadRef();
+            tos.add(VmStackValue.deserialize(CellSlice.beginParse(cs)));
+            cs = CellSlice.beginParse(t);
+        }
         return VmStackList.builder()
-                .value(VmStackValue.deserialize(cs))
+                .tos(tos)
                 .build();
     }
 }

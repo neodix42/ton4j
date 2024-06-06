@@ -190,7 +190,10 @@ public class TvmEmulator {
      * Optimized version of "run get method" with all passed parameters in a single call
      *
      * @param len       Length of params_boc buffer
-     * @param paramsBoc BoC serialized parameters, scheme: request$_ code:^Cell data:^Cell stack:^VmStack params:^[c7:^VmStack libs:^Cell] method_id:(## 32)
+     * @param paramsBoc BoC serialized parameters, scheme:
+     *                  request$_
+     *                  code:^Cell data:^Cell stack:^VmStack params:^[c7:^VmStack libs:^Cell]
+     *                  method_id:(## 32)
      * @param gasLimit  Gas limit
      * @return String with first 4 bytes defining length, and the rest BoC serialized result
      * Scheme: result$_ exit_code:(## 32) gas_used:(## 32) stack:^VmStack

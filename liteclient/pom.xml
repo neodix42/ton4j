@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>liteclient</artifactId>
-    <name>TON Java Lite-client wrapper</name>
+    <name>TON Java LiteClient wrapper</name>
 
     <description>Java wrapper for lite-client executable.</description>
 

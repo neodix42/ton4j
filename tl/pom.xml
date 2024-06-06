@@ -17,7 +17,7 @@
 
 
     <artifactId>tl</artifactId>
-    <name>TON Java TL (Type Language)</name>
+    <name>TON Java TL</name>
 
     <description>Parse TL objects (todo)</description>
 
