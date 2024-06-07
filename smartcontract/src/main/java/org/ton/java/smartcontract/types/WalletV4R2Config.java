@@ -14,7 +14,7 @@ import java.math.BigInteger;
 @Getter
 @Setter
 @ToString
-public class WalletV4R1Config implements WalletConfig {
+public class WalletV4R2Config implements WalletConfig {
     long walletId;
     long seqno;
     int mode;

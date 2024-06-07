@@ -2,8 +2,6 @@ package org.ton.java.emulator;
 
 import com.sun.jna.Library;
 
-import java.math.BigInteger;
-
 public interface TvmEmulatorI extends Library {
 
     /**
@@ -161,5 +159,5 @@ public interface TvmEmulatorI extends Library {
      * "actions": "Base64 boc decoded actions cell of type (OutList n)"
      * }
      */
-    String tvm_emulator_send_internal_message(long tvmEmulator, String messageBodyBoc, BigInteger amount);
+    String tvm_emulator_send_internal_message(long tvmEmulator, String messageBodyBoc, long amount);
 }

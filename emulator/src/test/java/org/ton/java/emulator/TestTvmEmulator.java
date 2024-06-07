@@ -11,14 +11,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
-import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
-import org.ton.java.tlb.types.VmStack;
-import org.ton.java.tlb.types.VmStackList;
-import org.ton.java.tlb.types.VmStackValueInt;
+import org.ton.java.smartcontract.types.WalletV4R2Config;
+import org.ton.java.smartcontract.utils.MsgUtils;
+import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
+import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.SmcLibraryEntry;
 import org.ton.java.tonlib.types.SmcLibraryResult;
@@ -38,8 +39,7 @@ public class TestTvmEmulator {
     static TvmEmulator tvmEmulator;
     static Tonlib tonlib;
     private static final Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
-
-    static WalletV3R2 contract;
+    static WalletV4R2 contract;
 
     @BeforeClass
     public static void setUpBeforeClass() {
@@ -50,7 +50,7 @@ public class TestTvmEmulator {
                 .ignoreCache(false)
                 .build();
 
-        contract = WalletV3R2.builder()
+        contract = WalletV4R2.builder()
                 .tonlib(tonlib)
                 .keyPair(keyPair)
                 .walletId(42)
@@ -140,9 +140,37 @@ public class TestTvmEmulator {
     }
 
     @Test
-    public void testTvmEmulatorRunGetMethod() {
+    public void testTvmEmulatorRunGetMethodGetSeqNo() {
         String result = tvmEmulator.runGetMethod(
-                78748, // 78748 - get_public_key
+                85143, // seqno
+                VmStack.builder()
+                        .depth(0)
+                        .stack(VmStackList.builder()
+                                .tos(Lists.emptyList())
+                                .build())
+                        .build()
+                        .toCell().toBase64());
+        log.info("result runGetMethod: {}", result);
+
+        GetMethodResult methodResult = gson.fromJson(result, GetMethodResult.class);
+        log.info("methodResult: {}", methodResult);
+        log.info("methodResult stack: {}", methodResult.getStack());
+
+        Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
+        log.info("cellResult {}", cellResult);
+        VmStack stack = VmStack.deserialize(CellSlice.beginParse(cellResult));
+        int depth = stack.getDepth();
+        log.info("vmStack depth: {}", depth);
+        VmStackList vmStackList = stack.getStack();
+        log.info("vmStackList: {}", vmStackList.getTos());
+        BigInteger seqno = VmStackValueTinyInt.deserialize(CellSlice.beginParse(vmStackList.getTos().get(0).toCell())).getValue();
+        log.info("seqno value: {}", seqno); // pubkey
+    }
+
+    @Test
+    public void testTvmEmulatorRunGetMethodGetPubKey() {
+        String result = tvmEmulator.runGetMethod(
+                78748, // get_public_key
                 VmStack.builder()
                         .depth(0)
                         .stack(VmStackList.builder()
@@ -169,12 +197,47 @@ public class TestTvmEmulator {
 
     @Test
     public void testTvmEmulatorSendExternalMessage() {
-//        String result = tvmEmulator.sendExternalMessage();
+
+//        String address = contract.getAddress().toBounceable();
+//        String randSeedHex = Utils.sha256("ABC");
+////        Cell configAll = tonlib.getConfigAll(128);
+//
+//        assertTrue(tvmEmulator.setC7(address,
+//                Instant.now().getEpochSecond() - 300,
+//                Utils.toNano(1).longValue(),
+//                randSeedHex
+//                , null
+////                , configAll.toBase64()
+//        ));
+
+        WalletV4R2Config config = WalletV4R2Config.builder()
+                .operation(0)
+                .walletId(42)
+                .seqno(0)
+                .destination(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
+                .amount(Utils.toNano(0.331))
+                .build();
+
+        Message msg = contract.prepareExternalMsg(config);
+        String resultBoc = tvmEmulator.sendExternalMessage(msg.toCell().toBase64());
+
+        SendExternalMessageResult result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
+        log.info("result sendExternalMessage: {}", result);
     }
 
     @Test
     public void testTvmEmulatorSendInternalMessage() {
-//        String result = tvmEmulator.sendInternalMessage();
+        Cell body = CellBuilder.beginCell()
+                .storeUint(0x706c7567, 32) // op request funds
+                .endCell();
+        Message msg = MsgUtils.createInternalMessage(
+                Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d")
+                , Utils.toNano(0.1), null, body, true);
+
+        String resultBoc = tvmEmulator.sendInternalMessage(msg.toCell().toBase64(), Utils.toNano(0.11).longValue());
+
+        SendExternalMessageResult result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
+        log.info("result sendInternalMessage: {}", result);
     }
 
     @Test

@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.extern.java.Log;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
-
 import static java.util.Objects.isNull;
 
 @Log
@@ -96,7 +94,7 @@ public class TvmEmulator {
 
             System.out.printf("Java TON TVM Emulator configuration:\n" +
                             "Location: %s\n" +
-                            "Verbosity level: %s",
+                            "Verbosity level: %s\n",
                     super.pathToEmulatorSharedLib,
                     super.verbosityLevel);
             return super.build();
@@ -118,6 +116,19 @@ public class TvmEmulator {
     }
 
     /**
+     * C7 tlb-scheme:
+     * <p>
+     * smc_info#076ef1ea
+     * actions:uint16
+     * msgs_sent:uint16
+     * unixtime:uint32
+     * block_lt:uint64
+     * trans_lt:uint64
+     * rand_seed:bits256
+     * balance_remaining:CurrencyCollection
+     * myself:MsgAddressInt
+     * global_config:(Maybe Cell) = SmartContractInfo;
+     * <p>
      * Set c7 parameters
      *
      * @param address     Address of smart contract
@@ -251,7 +262,7 @@ public class TvmEmulator {
      * "actions": "Base64 boc decoded actions cell of type (OutList n)"
      * }
      */
-    public String sendInternalMessage(String messageBodyBoc, BigInteger amount) {
+    public String sendInternalMessage(String messageBodyBoc, long amount) {
         return tvmEmulatorI.tvm_emulator_send_internal_message(tvmEmulator, messageBodyBoc, amount);
     }
 
