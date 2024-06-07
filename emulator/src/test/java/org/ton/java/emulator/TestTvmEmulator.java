@@ -16,6 +16,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
+import org.ton.java.smartcontract.FuncCompiler;
 import org.ton.java.smartcontract.types.WalletV4R2Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
@@ -25,9 +26,11 @@ import org.ton.java.tonlib.types.SmcLibraryEntry;
 import org.ton.java.tonlib.types.SmcLibraryResult;
 import org.ton.java.utils.Utils;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -63,9 +66,9 @@ public class TestTvmEmulator {
                 .pathToEmulatorSharedLib("G:/libs/emulator.dll")
                 .codeBoc(code.toBase64())
                 .dataBoc(data.toBase64())
-                .verbosityLevel(1)
+                .verbosityLevel(3)
                 .build();
-        tvmEmulator.setDebugEnabled(true);
+//        tvmEmulator.setDebugEnabled(true);
     }
 
     @Test
@@ -223,6 +226,66 @@ public class TestTvmEmulator {
 
         SendExternalMessageResult result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
         log.info("result sendExternalMessage: {}", result);
+    }
+
+    @Test
+    public void testTvmEmulatorSendInternalMessageCustomContract() throws IOException, ExecutionException, InterruptedException {
+        FuncCompiler smcFunc = FuncCompiler.builder()
+                .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
+                .build();
+
+        String codeCellHex = smcFunc.compile();
+        Cell codeCell = CellBuilder.beginCell().fromBoc(codeCellHex).endCell();
+
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+        Cell dataCell = CellBuilder.beginCell()
+                .storeUint(0, 32) // seqno
+                .storeUint(42, 32) // wallet id
+                .storeBytes(keyPair.getPublicKey())
+                .storeUint(0, 1) //plugins dict empty
+                .endCell();
+
+        log.info("codeCellHex {}", codeCellHex);
+        log.info("dataCellHex {}", dataCell.toHex());
+
+
+        tvmEmulator = TvmEmulator.builder()
+                .pathToEmulatorSharedLib("G:/libs/emulator.dll")
+                .codeBoc(codeCell.toBase64())
+                .dataBoc(dataCell.toBase64())
+                .verbosityLevel(1)
+                .build();
+
+        String address = contract.getAddress().toBounceable();
+        String randSeedHex = Utils.sha256("ABC");
+        Cell configAll = tonlib.getConfigAll(128);
+
+        assertTrue(tvmEmulator.setLibs(getLibs().toBase64()));
+
+//        assertTrue(tvmEmulator.setC7(address,
+//                Instant.now().getEpochSecond(),
+//                Utils.toNano(1).longValue(),
+//                randSeedHex
+////                , null
+//                , configAll.toBase64()
+//        ));
+
+//        tvmEmulator.setGasLimit(Utils.toNano(10).longValue());
+        tvmEmulator.setDebugEnabled(true);
+
+        Cell body = CellBuilder.beginCell()
+                .storeUint(0x706c7567, 32) // op request funds
+                .endCell();
+        Message msg = MsgUtils.createInternalMessage(
+                Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d")
+                , Utils.toNano(0.1), null, body, true);
+
+        String resultBoc = tvmEmulator.sendInternalMessage(body.toBase64(), Utils.toNano(0.11).longValue());
+        log.info("resultBoc {}", resultBoc);
+        SendExternalMessageResult result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
+        log.info("result sendInternalMessage: {}", result);
+
     }
 
     @Test

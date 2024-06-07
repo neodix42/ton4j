@@ -78,7 +78,7 @@ public class TvmEmulator {
 
             super.tvmEmulatorI = Native.load(super.pathToEmulatorSharedLib, TvmEmulatorI.class);
             if (isNull(super.verbosityLevel)) {
-                super.verbosityLevel = 2;
+                super.verbosityLevel = 3;
             }
             if (isNull(super.codeBoc)) {
                 throw new Error("codeBoc is not set");

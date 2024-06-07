@@ -23,7 +23,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 public class TestExampleContract {
 
     @Test
-    public void testCustomContract() throws InterruptedException {
+    public void testExampleContract() throws InterruptedException {
         // echo "F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4" | xxd -r -p - > new-wallet.pk
         //byte[] secretKey = Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
         //TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(secretKey);

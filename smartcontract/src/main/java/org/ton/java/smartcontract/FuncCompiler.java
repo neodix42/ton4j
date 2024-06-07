@@ -14,7 +14,8 @@ import org.ton.java.utils.Utils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.nonNull;
 
@@ -137,6 +138,11 @@ public class FuncCompiler {
     public String compile() throws IOException, ExecutionException, InterruptedException {
 
         String outputFiftAsmFile = executeFunc("-W", "dummy.boc", contractPath);
+        if (!outputFiftAsmFile.contains("2 boc+>B")
+                || outputFiftAsmFile.contains("cannot generate code")
+                || outputFiftAsmFile.contains("error: undefined function")) {
+            throw new Error("Compile error: " + outputFiftAsmFile);
+        }
         outputFiftAsmFile = StringUtils.replace(outputFiftAsmFile, "2 boc+>B", "0 boc+>B");
         File file = new File(new File(contractPath).getParent() + "/dummy.fif");
 
@@ -149,9 +155,9 @@ public class FuncCompiler {
     }
 
     private String executeFunc(String... params) throws ExecutionException, InterruptedException {
-        Pair<Process, Future<String>> result = execute(funcExecutable, params);
+        Pair<Process, String> result = execute(funcExecutable, params);
 
-        return result.getRight().get();
+        return result.getRight();
     }
 
     private String executeFift(String... params) {
@@ -162,10 +168,10 @@ public class FuncCompiler {
             withInclude = new String[]{"-I", fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath};
         }
         String[] all = ArrayUtils.addAll(withInclude, params);
-        Pair<Process, Future<String>> result = execute(fiftExecutable, all);
+        Pair<Process, String> result = execute(fiftExecutable, all);
         if (nonNull(result)) {
             try {
-                return result.getRight().get();
+                return result.getRight();
             } catch (Exception e) {
                 log.info("executeFift error " + e.getMessage());
                 return null;
@@ -175,7 +181,7 @@ public class FuncCompiler {
         }
     }
 
-    private Pair<Process, Future<String>> execute(String pathToBinary, String... command) {
+    private Pair<Process, String> execute(String pathToBinary, String... command) {
 
         String[] withBinaryCommand = new String[]{pathToBinary};
 
@@ -184,39 +190,33 @@ public class FuncCompiler {
         try {
             log.info("execute: " + String.join(" ", withBinaryCommand));
 
-            ExecutorService executorService = Executors.newSingleThreadExecutor();
-
             final ProcessBuilder pb = new ProcessBuilder(withBinaryCommand).redirectErrorStream(true);
 
             pb.directory(new File(new File(contractPath).getParent()));
             Process p = pb.start();
 
-            Future<String> future = executorService.submit(() -> {
+            p.waitFor(1, TimeUnit.SECONDS);
 
-                Thread.currentThread().setName(pathToBinary);
-                p.waitFor(1, TimeUnit.SECONDS);
+            String resultInput = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
 
-                String resultInput = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
-
-                p.getInputStream().close();
-                p.getErrorStream().close();
-                p.getOutputStream().close();
-                if (p.exitValue() == 2 || p.exitValue() == 0) {
-                    return resultInput;
-                } else {
-                    log.info("exit value " + p.exitValue());
-                    log.info(resultInput);
-                    throw new Exception("Cannot compile smart-contract.");
-                }
-            });
-
-            executorService.shutdown();
-
-            return Pair.of(p, future);
+            p.getInputStream().close();
+            p.getErrorStream().close();
+            p.getOutputStream().close();
+            if (p.exitValue() == 2 || p.exitValue() == 0) {
+                return Pair.of(p, resultInput);
+            } else {
+                log.info("exit value " + p.exitValue());
+                log.info(resultInput);
+                throw new Exception("Cannot compile smart-contract.");
+            }
 
         } catch (final IOException e) {
             log.info(e.getMessage());
             return null;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
