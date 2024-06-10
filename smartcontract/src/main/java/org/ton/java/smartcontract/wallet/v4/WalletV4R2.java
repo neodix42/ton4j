@@ -10,9 +10,7 @@ import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV4R2Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.tlb.types.ExternalMessageInfo;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.StateInit;
+import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -25,6 +23,7 @@ import java.util.Deque;
 import java.util.List;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -106,8 +105,27 @@ public class WalletV4R2 implements Contract {
         message.storeUint(config.getSeqno(), 32);// msg_seqno
 
         if (config.getOperation() == 0) {
+            Cell order = Message.builder()
+                    .info(InternalMessageInfo.builder()
+                            .bounce(config.isBounce())
+                            .dstAddr(MsgAddressIntStd.builder()
+                                    .workchainId(config.getDestination().wc)
+                                    .address(config.getDestination().toBigInteger())
+                                    .build())
+                            .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                            .build())
+                    .init(config.getStateInit())
+                    .body((isNull(config.getBody()) && nonNull(config.getComment())) ?
+                            CellBuilder.beginCell()
+                                    .storeUint(0, 32)
+                                    .storeString(config.getComment())
+                                    .endCell()
+                            : config.getBody())
+                    .build().toCell();
+
             message.storeUint(BigInteger.ZERO, 8); // op simple send
-            //message.storeRef(body); ??
+            message.storeUint(config.getMode(), 8);
+            message.storeRef(order);
         } else if (config.getOperation() == 1) {
             message.storeUint(1, 8); // deploy and install plugin
             message.storeUint(BigInteger.valueOf(config.getNewPlugin().getPluginWc()), 8);
@@ -139,7 +157,7 @@ public class WalletV4R2 implements Contract {
      * Deploy wallet without any plugins.
      * One can also deploy plugin separately and later install into the wallet. See installPlugin().
      */
-    
+
     public ExtMessageInfo deploy() {
         return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
     }

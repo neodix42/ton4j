@@ -1,9 +1,22 @@
 package org.ton.java.emulator;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
 import lombok.Builder;
 import lombok.extern.java.Log;
+import org.assertj.core.util.Lists;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.tlb.types.VmStack;
+import org.ton.java.tlb.types.VmStackList;
+import org.ton.java.tlb.types.VmStackValueInt;
+import org.ton.java.tlb.types.VmStackValueTinyInt;
 import org.ton.java.utils.Utils;
+
+import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
 
@@ -33,7 +46,7 @@ public class TvmEmulator {
 
     private String codeBoc;
     private String dataBoc;
-    private Integer verbosityLevel;
+    private TvmVerbosityLevel verbosityLevel;
 
     public static class TvmEmulatorBuilder {
     }
@@ -78,7 +91,7 @@ public class TvmEmulator {
 
             super.tvmEmulatorI = Native.load(super.pathToEmulatorSharedLib, TvmEmulatorI.class);
             if (isNull(super.verbosityLevel)) {
-                super.verbosityLevel = 3;
+                super.verbosityLevel = TvmVerbosityLevel.WITH_ALL_STACK_VALUES;
             }
             if (isNull(super.codeBoc)) {
                 throw new Error("codeBoc is not set");
@@ -86,7 +99,7 @@ public class TvmEmulator {
             if (isNull(super.dataBoc)) {
                 throw new Error("dataBoc is not set");
             }
-            super.tvmEmulator = super.tvmEmulatorI.tvm_emulator_create(super.codeBoc, super.dataBoc, super.verbosityLevel);
+            super.tvmEmulator = super.tvmEmulatorI.tvm_emulator_create(super.codeBoc, super.dataBoc, super.verbosityLevel.ordinal());
 
             if (super.tvmEmulator == 0) {
                 throw new Error("Can't create emulator instance");
@@ -198,11 +211,64 @@ public class TvmEmulator {
     }
 
     /**
+     * Run get method with empty input stack
+     *
+     * @param methodId Integer method id
+     * @return Json object with error:
+     * {
+     * "success": false,
+     * "error": "Error description"
+     * }
+     * Or success:
+     * {
+     * "success": true
+     * "vm_log": "...",
+     * "vm_exit_code": 0,
+     * "stack": "Base64 encoded BoC serialized stack (VmStack)",
+     * "missing_library": null,
+     * "gas_used": 1212
+     * }
+     */
+    public String runGetMethod(int methodId) {
+        return tvmEmulatorI.tvm_emulator_run_get_method(tvmEmulator, methodId,
+                VmStack.builder()
+                        .depth(0)
+                        .stack(VmStackList.builder()
+                                .tos(Lists.emptyList())
+                                .build())
+                        .build()
+                        .toCell().toBase64());
+    }
+
+    public BigInteger runGetSeqNo() {
+        String seqNoResult = runGetMethod(85143);
+        Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
+        GetMethodResult methodResult = gson.fromJson(seqNoResult, GetMethodResult.class);
+
+        Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
+        VmStack stack = VmStack.deserialize(CellSlice.beginParse(cellResult));
+        VmStackList vmStackList = stack.getStack();
+        return VmStackValueTinyInt.deserialize(CellSlice.beginParse(vmStackList.getTos().get(0).toCell())).getValue();
+    }
+
+    public String runGetPublicKey() {
+        String pubKeyResult = runGetMethod(78748);
+        Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
+        GetMethodResult methodResult = gson.fromJson(pubKeyResult, GetMethodResult.class);
+
+        Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
+        VmStack stack = VmStack.deserialize(CellSlice.beginParse(cellResult));
+        int depth = stack.getDepth();
+        VmStackList vmStackList = stack.getStack();
+        BigInteger pubKey = VmStackValueInt.deserialize(CellSlice.beginParse(vmStackList.getTos().get(0).toCell())).getValue();
+        return pubKey.toString(16);
+    }
+
+    /**
      * Optimized version of "run get method" with all passed parameters in a single call
      *
      * @param len       Length of params_boc buffer
      * @param paramsBoc BoC serialized parameters, scheme:
-     *                  request$_
      *                  code:^Cell data:^Cell stack:^VmStack params:^[c7:^VmStack libs:^Cell]
      *                  method_id:(## 32)
      * @param gasLimit  Gas limit
@@ -265,7 +331,6 @@ public class TvmEmulator {
     public String sendInternalMessage(String messageBodyBoc, long amount) {
         return tvmEmulatorI.tvm_emulator_send_internal_message(tvmEmulator, messageBodyBoc, amount);
     }
-
 }
 
 

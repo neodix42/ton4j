@@ -223,7 +223,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
         log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
         log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy wallet-v4
@@ -245,7 +245,10 @@ public class TestWalletV4R2Plugins extends CommonTest {
                 .walletId(contract.getWalletId())
                 .seqno(contract.getSeqno())
                 .destination(Address.of(FAUCET_ADDRESS_RAW))
-                .amount(Utils.toNano(0.331)).build();
+                .mode(3)
+                .amount(Utils.toNano(0.331))
+                .comment("ton4j-v4r2-simple-send")
+                .build();
 
         contract.send(config);
     }
