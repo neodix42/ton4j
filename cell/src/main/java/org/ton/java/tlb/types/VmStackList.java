@@ -22,6 +22,12 @@ import java.util.List;
 public class VmStackList {
     List<VmStackValue> tos;
 
+    /**
+     * Also knows as serializeTuple() in ton-core web.
+     *
+     * @return Cell
+     */
+
     public Cell toCell() {
         Cell list = CellBuilder.beginCell().endCell();
         int i = 0;
@@ -35,6 +41,12 @@ public class VmStackList {
         return list;
     }
 
+    /**
+     * Also knows as parseTuple() in ton-core web.
+     *
+     * @param cs CellSlice
+     * @return VmStackList
+     */
     public static VmStackList deserialize(CellSlice cs) {
         List<VmStackValue> tos = new ArrayList<>();
         while (cs.getRefsCount() != 0) {

@@ -29,7 +29,7 @@ public class VmTuple {
     public static VmTuple deserialize(CellSlice cs) {
         return VmTuple.builder()
                 .head(VmTupleRef.deserialize(cs))
-                .tail(VmStackValue.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .tail(cs.getRefsCount() > 0 ? VmStackValue.deserialize(CellSlice.beginParse(cs.loadRef())) : null)
                 .build();
     }
 }

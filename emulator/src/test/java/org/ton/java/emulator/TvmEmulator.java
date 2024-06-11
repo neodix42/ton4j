@@ -129,7 +129,9 @@ public class TvmEmulator {
     }
 
     /**
-     * C7 tlb-scheme:
+     * Prepares the c7 tuple (virtual machine context) for a compute phase of a transaction.
+     * <p>
+     * C7 tlb-scheme FYI:
      * <p>
      * smc_info#076ef1ea
      * actions:uint16

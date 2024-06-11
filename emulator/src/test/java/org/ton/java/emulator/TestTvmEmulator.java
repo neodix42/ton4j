@@ -29,6 +29,7 @@ import org.ton.java.utils.Utils;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
@@ -140,7 +141,11 @@ public class TestTvmEmulator {
                 .storeUint(85143, 32) // method-id - seqno
                 .endCell()
                 .toBase64();
-        String result = tvmEmulator.emulateRunMethod(1, paramsBoc, Utils.toNano(1).longValue());
+
+
+        Cell c = CellBuilder.beginCell().fromBocBase64(paramsBoc).endCell();
+        log.info("c {}", c);
+        String result = tvmEmulator.emulateRunMethod(paramsBoc.length(), paramsBoc, Utils.toNano(1).longValue());
         log.info("result emulateRunMethod: {}", result); // todo - return null
     }
 
@@ -200,6 +205,58 @@ public class TestTvmEmulator {
     }
 
     @Test
+    public void testTvmEmulatorRunGetMethodGetPluginList() {
+        String stackSerialized = VmStack.builder()
+                .depth(0)
+                .stack(VmStackList.builder()
+                        .tos(Lists.emptyList())
+                        .build())
+                .build()
+                .toCell().toBase64();
+
+        String result = tvmEmulator.runGetMethod(
+                107653, // CRC-16/XMODEM of get_plugin_list
+                stackSerialized);
+        log.info("result runGetMethod: {}", result);
+
+        GetMethodResult methodResult = gson.fromJson(result, GetMethodResult.class);
+        log.info("methodResult: {}", methodResult);
+        log.info("methodResult stack: {}", methodResult.getStack());
+
+        Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
+        log.info("cellResult {}", cellResult);
+        VmStackValueTuple tuple = VmStackValueTuple.deserialize(CellSlice.beginParse(cellResult));
+        log.info("tuple {}", tuple);
+    }
+
+    @Test
+    public void testTvmEmulatorRunGetMethodIsPluginInstalled() {
+        String stackSerialized = VmStack.builder()
+                .depth(0)
+                .stack(VmStackList.builder()
+                        .tos(Arrays.asList(
+                                VmStackValueTinyInt.builder().value(BigInteger.ZERO).build(),
+                                VmStackValueTinyInt.builder().value(BigInteger.ZERO).build()))
+                        .build())
+                .build()
+                .toCell().toBase64();
+
+        String result = tvmEmulator.runGetMethod(
+                76407, // CRC-16/XMODEM of is_plugin_installed(int wc, int addr_hash)
+                stackSerialized);
+        log.info("result runGetMethod: {}", result);
+
+        GetMethodResult methodResult = gson.fromJson(result, GetMethodResult.class);
+        log.info("methodResult: {}", methodResult);
+        log.info("methodResult stack: {}", methodResult.getStack());
+
+        Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
+        log.info("cellResult {}", cellResult);
+        VmStackValueTuple tuple = VmStackValueTuple.deserialize(CellSlice.beginParse(cellResult));
+        log.info("tuple {}", tuple);
+    }
+
+    @Test
     public void testTvmEmulatorRunGetMethodGetPubKeyShortVersion() {
         log.info("contract's pubKey: {}", tvmEmulator.runGetPublicKey()); // pubkey
     }
@@ -235,7 +292,12 @@ public class TestTvmEmulator {
 
         SendExternalMessageResult result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
         log.info("result sendExternalMessage, exitCode: {}", result.getVm_exit_code());
+        log.info("result sendExternalMessage, actions: {}", result.getActions());
         log.info("seqno value: {}", tvmEmulator.runGetSeqNo());
+        OutList actions = OutList.deserialize(
+                CellSlice.beginParse(
+                        CellBuilder.beginCell().fromBocBase64(result.getActions()).endCell()));
+        log.info("parsed actions {}", actions);
     }
 
     @Test
@@ -333,6 +395,25 @@ public class TestTvmEmulator {
 
         result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
         log.info("result sendExternalMessage, exitCode: {}", result.getVm_exit_code());
+
+
+        // still to review
+        String stackSerialized = VmStack.builder()
+                .depth(2)
+                .stack(VmStackList.builder()
+                        .tos(Arrays.asList(
+                                VmStackValueTinyInt.builder().value(BigInteger.ZERO).build(),
+                                VmStackValueTinyInt.builder().value(BigInteger.TEN).build()))
+                        .build())
+                .build()
+                .toCell()
+                .toBase64();
+
+        // is_plugin_installed
+        String resultStr = tvmEmulator.runGetMethod(
+                76407, // CRC-16/XMODEM of is_plugin_installed(int wc, int addr_hash)
+                stackSerialized);
+        log.info("result runGetMethod (is_plugin_installed): {}", resultStr);
     }
 
     @Test
@@ -390,7 +471,6 @@ public class TestTvmEmulator {
         log.info("resultBoc {}", resultBoc);
         SendExternalMessageResult result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
         log.info("result sendInternalMessage, exitCode: {}", result.getVm_exit_code());
-
     }
 
     @Test
@@ -410,7 +490,17 @@ public class TestTvmEmulator {
 
     @Test
     public void testTvmEmulatorSetPrevBlockInfo() {
-//        assertTrue(tvmEmulator.setPrevBlockInfo());
+        String infoBocBase64 = "";
+        // must be tuple, below won't work
+//        BlkPrevInfo blkPrevInfo = BlkPrevInfo.builder()
+//                .prev1(ExtBlkRef.builder()
+//                        .seqno(10)
+//                        .endLt(BigInteger.valueOf(500000000))
+//                        .fileHash(BigInteger.ONE)
+//                        .rootHash(BigInteger.TEN)
+//                        .build())
+//                .build();
+        assertTrue(tvmEmulator.setPrevBlockInfo(infoBocBase64));
     }
 
 

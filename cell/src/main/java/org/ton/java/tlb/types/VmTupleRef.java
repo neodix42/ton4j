@@ -17,7 +17,7 @@ import org.ton.java.cell.CellSlice;
 @Getter
 @Setter
 @ToString
-public class VmTupleRef { // todo VmTupleRef
+public class VmTupleRef {
     VmStackValue entry;
 
     public Cell toCell() {
@@ -26,9 +26,17 @@ public class VmTupleRef { // todo VmTupleRef
                 .endCell();
     }
 
-    public static VmTupleRef deserialize(CellSlice cs) {
-        return VmTupleRef.builder()
-                .entry(VmStackValue.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .build();
+    public static VmTupleRef deserialize(CellSlice cs) { // more tests are required
+        if (cs.getRefsCount() == 0) {
+            return null;
+        } else if (cs.getRefsCount() == 1) {
+            return VmTupleRef.builder()
+                    .entry(VmStackValue.deserialize(cs))
+                    .build();
+        } else {
+            return VmTupleRef.builder()
+                    .entry(VmStackValue.deserialize(CellSlice.beginParse(cs.loadRef())))
+                    .build();
+        }
     }
 }
