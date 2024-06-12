@@ -24,16 +24,18 @@ public class VmStackValueTuple implements VmStackValue {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeUint(0x07, 8)
-                .storeUint(len, 16)
+                .storeUint(data.getValues().size(), 16)
                 .storeCell(data.toCell())
                 .endCell();
     }
 
     public static VmStackValueTuple deserialize(CellSlice cs) {
+        int magic = cs.loadUint(8).intValue();
+        int len = cs.loadUint(16).intValue();
         return VmStackValueTuple.builder()
-                .magic(cs.loadUint(8).intValue())
-                .len(cs.loadUint(16).intValue())
-                .data(VmTuple.deserialize(cs))
+                .magic(magic)
+                .len(len)
+                .data(VmTuple.deserialize(cs, len))
                 .build();
     }
 }

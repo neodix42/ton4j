@@ -22,6 +22,7 @@ import org.ton.java.smartcontract.types.WalletV4R2Config;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.BlockIdExt;
 import org.ton.java.tonlib.types.SmcLibraryEntry;
 import org.ton.java.tonlib.types.SmcLibraryResult;
 import org.ton.java.utils.Utils;
@@ -29,6 +30,7 @@ import org.ton.java.utils.Utils;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
@@ -490,17 +492,26 @@ public class TestTvmEmulator {
 
     @Test
     public void testTvmEmulatorSetPrevBlockInfo() {
-        String infoBocBase64 = "";
-        // must be tuple, below won't work
-//        BlkPrevInfo blkPrevInfo = BlkPrevInfo.builder()
-//                .prev1(ExtBlkRef.builder()
-//                        .seqno(10)
-//                        .endLt(BigInteger.valueOf(500000000))
-//                        .fileHash(BigInteger.ONE)
-//                        .rootHash(BigInteger.TEN)
-//                        .build())
-//                .build();
-        assertTrue(tvmEmulator.setPrevBlockInfo(infoBocBase64));
+        BlockIdExt lastBlock = tonlib.getLast().getLast();
+        log.info("lastBlockId: {}", lastBlock);
+
+        ArrayList<VmStackValue> stack = new ArrayList<>();
+        stack.add(VmStackValueTinyInt.builder().value(BigInteger.valueOf(lastBlock.getWorkchain())).build());
+        stack.add(VmStackValueTinyInt.builder().value(BigInteger.valueOf(lastBlock.getShard())).build());
+        stack.add(VmStackValueTinyInt.builder().value(BigInteger.valueOf(lastBlock.getSeqno())).build());
+        stack.add(VmStackValueInt.builder().value(new BigInteger(Utils.base64ToHexString(lastBlock.getRoot_hash()), 16)).build());
+        stack.add(VmStackValueInt.builder().value(new BigInteger(Utils.base64ToHexString(lastBlock.getFile_hash()), 16)).build());
+
+        VmStackValueTuple vmStackValueTuple = VmStackValueTuple.builder()
+                .data(VmTuple.builder()
+                        .values(stack)
+                        .build())
+                .build();
+
+        Cell deserializedTuple = CellBuilder.beginCell().fromBocBase64(vmStackValueTuple.toCell().toBase64()).endCell();
+        log.info("test deserialization: {}", deserializedTuple);
+
+        assertTrue(tvmEmulator.setPrevBlockInfo(vmStackValueTuple.toCell().toBase64()));
     }
 
 

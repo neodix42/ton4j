@@ -27,7 +27,10 @@ public class OutList {
         int i = 0;
         for (OutAction action : actions) {
             Cell outMsg = action.toCell();
-            list = CellBuilder.beginCell().storeRef(list).storeCell(outMsg).endCell();
+            list = CellBuilder.beginCell()
+                    .storeRef(list)
+                    .storeCell(outMsg)
+                    .endCell();
         }
         return list;
     }
