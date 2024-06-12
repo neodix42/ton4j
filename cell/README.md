@@ -7,7 +7,7 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>cell</artifactId>
-    <version>0.4.4</version>
+    <version>0.4.5</version>
 </dependency>
 ```
 
@@ -17,7 +17,7 @@
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>cell</artifactId>
-    <version>0.4.4</version>
+    <version>0.4.5</version>
 </dependency>
 ```
 
