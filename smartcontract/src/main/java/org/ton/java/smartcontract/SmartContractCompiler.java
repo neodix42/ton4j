@@ -5,19 +5,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.java.Log;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.Objects.nonNull;
 
 /**
  * Make sure you have fift and func installed. See <a href="https://github.com/ton-blockchain/packages">packages</a> for instructions.
@@ -34,9 +27,10 @@ public class SmartContractCompiler {
     String fiftSmartcontLibraryPath;
 
     @Ignore
-    private String funcExecutable;
+    private FiftRunner fiftRunner;
+
     @Ignore
-    private String fiftExecutable;
+    private FuncRunner funcRunner;
 
 
     public static class SmartContractCompilerBuilder {
@@ -47,87 +41,10 @@ public class SmartContractCompiler {
     }
 
     private static class CustomSmartContractCompilerBuilder extends SmartContractCompilerBuilder {
-        private String errorMsg = "Make sure you have fift and func installed. See https://github.com/ton-blockchain/packages for instructions.";
-        private String funcAbsolutePath;
-        private String fiftAbsolutePath;
-
         @Override
         public SmartContractCompiler build() {
-
-            if (StringUtils.isEmpty(super.funcExecutablePath)) {
-                System.out.println("checking if func is installed...");
-
-                try {
-                    ProcessBuilder pb = new ProcessBuilder("func", "-h").redirectErrorStream(true);
-                    Process p = pb.start();
-                    p.waitFor(1, TimeUnit.SECONDS);
-                    if (p.exitValue() != 2) {
-                        throw new Error("Cannot execute simple func command.\n" + errorMsg);
-                    }
-                    funcAbsolutePath = detectAbsolutePath("func");
-
-                    System.out.println("func found at " + funcAbsolutePath);
-                    super.funcExecutable = "func";
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw new Error("Cannot execute simple func command.\n" + errorMsg);
-                }
-            } else {
-                System.out.println("using " + super.funcExecutablePath);
-                super.funcExecutable = super.funcExecutablePath;
-            }
-
-            if (StringUtils.isEmpty(super.fiftExecutablePath)) {
-                System.out.println("checking if fift is installed...");
-                try {
-                    ProcessBuilder pb = new ProcessBuilder("fift", "-h").redirectErrorStream(true);
-                    Process p = pb.start();
-                    p.waitFor(1, TimeUnit.SECONDS);
-                    if (p.exitValue() != 2) {
-                        throw new Error("Cannot execute simple fift command.\n" + errorMsg);
-                    }
-                    fiftAbsolutePath = detectAbsolutePath("fift");
-                    System.out.println("fift found at " + fiftAbsolutePath);
-                    super.fiftExecutable = "fift";
-                } catch (Exception e) {
-                    throw new Error("Cannot execute simple fift command.\n" + errorMsg);
-                }
-            } else {
-                System.out.println("using " + super.fiftExecutablePath);
-                super.fiftExecutable = super.fiftExecutablePath;
-            }
-
-            if (StringUtils.isEmpty(super.fiftAsmLibraryPath)) {
-                if (Utils.getOS() == Utils.OS.WINDOWS) {
-                    super.fiftAsmLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + "lib";
-                } else if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
-                    super.fiftAsmLibraryPath = "/usr/lib/fift";
-                } else { //mac
-                    if (new File("/usr/local/lib/fift").exists()) {
-                        super.fiftAsmLibraryPath = "/usr/local/lib/fift";
-                    } else if (new File("/opt/homebrew/lib/fift").exists()) {
-                        super.fiftAsmLibraryPath = "/opt/homebrew/lib/fift";
-                    }
-                }
-            }
-
-            if (StringUtils.isEmpty(super.fiftSmartcontLibraryPath)) {
-                if (Utils.getOS() == Utils.OS.WINDOWS) {
-                    super.fiftSmartcontLibraryPath = new File(fiftAbsolutePath).getParent() + File.separator + "smartcont";
-                }
-                if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
-                    super.fiftSmartcontLibraryPath = "/usr/share/ton/smartcont";
-                } else { // mac
-                    if (new File("/usr/local/share/ton/ton/smartcont").exists()) {
-                        super.fiftSmartcontLibraryPath = "/usr/local/share/ton/ton/smartcont";
-                    } else if (new File("/opt/homebrew/share/ton/ton/smartcont").exists()) {
-                        super.fiftSmartcontLibraryPath = "/opt/homebrew/share/ton/ton/smartcont";
-                    }
-                }
-            }
-            System.out.println("using include dirs: " + super.fiftAsmLibraryPath + ", " + super.fiftSmartcontLibraryPath);
-
+            super.funcRunner = FuncRunner.builder().build();
+            super.fiftRunner = FiftRunner.builder().build();
             return super.build();
         }
     }
@@ -135,9 +52,11 @@ public class SmartContractCompiler {
     /**
      * @return code of BoC in hex
      */
-    public String compile() throws IOException, ExecutionException, InterruptedException {
+    public String compile() throws IOException {
+        System.out.println("workdir " + new File(contractPath).getParent());
 
-        String outputFiftAsmFile = executeFunc("-W", "dummy.boc", contractPath);
+        String outputFiftAsmFile = funcRunner.run(new File(contractPath).getParent(), "-W", "dummy.boc", contractPath);
+
         if (!outputFiftAsmFile.contains("2 boc+>B")
                 || outputFiftAsmFile.contains("cannot generate code")
                 || outputFiftAsmFile.contains("error: undefined function")) {
@@ -149,101 +68,9 @@ public class SmartContractCompiler {
         FileUtils.writeStringToFile(file, outputFiftAsmFile, Charset.defaultCharset());
 
         // output binary boc file
-        executeFift("-s", file.getAbsolutePath());
+        fiftRunner.run(file.getParent(), "-s", file.getAbsolutePath());
+
         byte[] bocContent = FileUtils.readFileToByteArray(new File(file.getParent() + "/dummy.boc"));
         return Utils.bytesToHex(bocContent);
-    }
-
-    private String executeFunc(String... params) throws ExecutionException, InterruptedException {
-        Pair<Process, String> result = execute(funcExecutable, params);
-
-        return result.getRight();
-    }
-
-    private String executeFift(String... params) {
-        String[] withInclude;
-        if (Utils.getOS() == Utils.OS.WINDOWS) {
-            withInclude = new String[]{"-I", "\"" + fiftAsmLibraryPath + "@" + fiftSmartcontLibraryPath + "\""};
-        } else {
-            withInclude = new String[]{"-I", fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath};
-        }
-        String[] all = ArrayUtils.addAll(withInclude, params);
-        Pair<Process, String> result = execute(fiftExecutable, all);
-        if (nonNull(result)) {
-            try {
-                return result.getRight();
-            } catch (Exception e) {
-                log.info("executeFift error " + e.getMessage());
-                return null;
-            }
-        } else {
-            return null;
-        }
-    }
-
-    private Pair<Process, String> execute(String pathToBinary, String... command) {
-
-        String[] withBinaryCommand = new String[]{pathToBinary};
-
-        withBinaryCommand = ArrayUtils.addAll(withBinaryCommand, command);
-
-        try {
-            log.info("execute: " + String.join(" ", withBinaryCommand));
-
-            final ProcessBuilder pb = new ProcessBuilder(withBinaryCommand).redirectErrorStream(true);
-
-            pb.directory(new File(new File(contractPath).getParent()));
-            Process p = pb.start();
-
-            p.waitFor(1, TimeUnit.SECONDS);
-
-            String resultInput = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
-
-            p.getInputStream().close();
-            p.getErrorStream().close();
-            p.getOutputStream().close();
-            if (p.exitValue() == 2 || p.exitValue() == 0) {
-                return Pair.of(p, resultInput);
-            } else {
-                log.info("exit value " + p.exitValue());
-                log.info(resultInput);
-                throw new Exception("Cannot compile smart-contract.");
-            }
-
-        } catch (final IOException e) {
-            log.info(e.getMessage());
-            return null;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static String detectAbsolutePath(String executable) {
-        try {
-            ProcessBuilder pb;
-            if (Utils.getOS() == Utils.OS.WINDOWS) {
-                pb = new ProcessBuilder("where", executable).redirectErrorStream(true);
-            } else {
-                pb = new ProcessBuilder("which", executable).redirectErrorStream(true);
-            }
-            Process p = pb.start();
-            p.waitFor(1, TimeUnit.SECONDS);
-            String output = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
-            String[] paths = output.split("\n");
-            if (paths.length == 1) {
-                return paths[0];
-            } else {
-                for (String path : paths) {
-                    if (path.contains("ton")) {
-                        return StringUtils.trim(path);
-                    }
-                }
-            }
-            return null;
-        } catch (Exception e) {
-            throw new Error("Cannot detect absolute path to executable " + executable);
-        }
     }
 }
