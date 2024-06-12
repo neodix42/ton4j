@@ -16,8 +16,8 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
-import org.ton.java.smartcontract.FuncCompiler;
 import org.ton.java.smartcontract.GenericSmartContract;
+import org.ton.java.smartcontract.SmartContractCompiler;
 import org.ton.java.smartcontract.types.WalletV4R2Config;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.tlb.types.*;
@@ -305,7 +305,7 @@ public class TestTvmEmulator {
     @Test
     public void testTvmEmulatorSendExternalMessageCustom() throws IOException, ExecutionException, InterruptedException {
 
-        FuncCompiler smcFunc = FuncCompiler.builder()
+        SmartContractCompiler smcFunc = SmartContractCompiler.builder()
                 .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
                 .build();
 
@@ -420,7 +420,7 @@ public class TestTvmEmulator {
 
     @Test
     public void testTvmEmulatorSendInternalMessageCustomContract() throws IOException, ExecutionException, InterruptedException {
-        FuncCompiler smcFunc = FuncCompiler.builder()
+        SmartContractCompiler smcFunc = SmartContractCompiler.builder()
                 .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
                 .build();
 

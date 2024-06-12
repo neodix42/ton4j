@@ -25,7 +25,7 @@ import static java.util.Objects.nonNull;
 @Builder
 @Getter
 @Log
-public class FuncCompiler {
+public class SmartContractCompiler {
 
     String contractPath;
     String funcExecutablePath;
@@ -39,20 +39,20 @@ public class FuncCompiler {
     private String fiftExecutable;
 
 
-    public static class FuncCompilerBuilder {
+    public static class SmartContractCompilerBuilder {
     }
 
-    public static FuncCompilerBuilder builder() {
-        return new CustomFuncCompilerBuilder();
+    public static SmartContractCompilerBuilder builder() {
+        return new CustomSmartContractCompilerBuilder();
     }
 
-    private static class CustomFuncCompilerBuilder extends FuncCompilerBuilder {
+    private static class CustomSmartContractCompilerBuilder extends SmartContractCompilerBuilder {
         private String errorMsg = "Make sure you have fift and func installed. See https://github.com/ton-blockchain/packages for instructions.";
         private String funcAbsolutePath;
         private String fiftAbsolutePath;
 
         @Override
-        public FuncCompiler build() {
+        public SmartContractCompiler build() {
 
             if (StringUtils.isEmpty(super.funcExecutablePath)) {
                 System.out.println("checking if func is installed...");
