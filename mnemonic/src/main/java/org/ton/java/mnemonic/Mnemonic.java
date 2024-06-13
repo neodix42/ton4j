@@ -11,11 +11,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 public class Mnemonic {
-    private static final String HEXES = "0123456789ABCDEF";
 
     private static final int DEFAULT_ITERATIONS = 100000;
 
@@ -51,7 +50,7 @@ public class Mnemonic {
     }
 
     public static boolean isValid(List<String> mnemonic, String password) throws NoSuchAlgorithmException, InvalidKeyException {
-        if (!Collections.singletonList(DEFAULT_WORDLIST).containsAll(mnemonic)) {
+        if (!new HashSet<>(Arrays.asList(DEFAULT_WORDLIST)).containsAll(mnemonic)) {
             return false;
         }
         if (!password.isEmpty() && !isPasswordNeeded(mnemonic)) {
