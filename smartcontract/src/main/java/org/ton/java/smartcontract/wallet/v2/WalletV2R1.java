@@ -99,22 +99,22 @@ public class WalletV2R1 implements Contract {
         message.storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), 32);
 
         if (nonNull(config.getDestination1())) {
-            Message order = MsgUtils.createInternalMessage(config.getDestination1(), config.getAmount1(), null, null, config.getBounce());
+            Message order = MsgUtils.createInternalMessage(config.getDestination1(), config.getAmount1(), config.getStateInit(), config.getBody(), config.getBounce());
             message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination2())) {
-            Message order = MsgUtils.createInternalMessage(config.getDestination2(), config.getAmount2(), null, null, config.getBounce());
+            Message order = MsgUtils.createInternalMessage(config.getDestination2(), config.getAmount2(), config.getStateInit(), config.getBody(), config.getBounce());
             message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination3())) {
-            Message order = MsgUtils.createInternalMessage(config.getDestination3(), config.getAmount3(), null, null, config.getBounce());
+            Message order = MsgUtils.createInternalMessage(config.getDestination3(), config.getAmount3(), config.getStateInit(), config.getBody(), config.getBounce());
             message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
             message.storeRef(order.toCell());
         }
         if (nonNull(config.getDestination4())) {
-            Message order = MsgUtils.createInternalMessage(config.getDestination4(), config.getAmount3(), null, null, config.getBounce());
+            Message order = MsgUtils.createInternalMessage(config.getDestination4(), config.getAmount3(), config.getStateInit(), config.getBody(), config.getBounce());
             message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
             message.storeRef(order.toCell());
         }

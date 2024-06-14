@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.tlb.types.StateInit;
 
 import java.math.BigInteger;
 
@@ -27,5 +28,6 @@ public class WalletV2R1Config implements WalletConfig {
     BigInteger amount3;
     BigInteger amount4;
     Cell body;
+    StateInit stateInit;
     String comment;
 }
