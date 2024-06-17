@@ -7,19 +7,32 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.RawMessage;
+import org.ton.java.tonlib.types.RawTransaction;
+import org.ton.java.tonlib.types.RawTransactions;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.nonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestWalletV3R2Short extends CommonTest {
+
+    @Test
+    public void testWalletV3R12() throws InterruptedException {
+        String hex = Utils.base64ToHexString("dGVzdFdhbGxldFYzUjItOTg=");
+        String str = CellSlice.beginParse(Cell.fromHex(hex)).loadSnakeString();
+        log.info("cell {}", str);
+    }
 
     @Test
     public void testWalletV3R2() throws InterruptedException {
@@ -97,7 +110,7 @@ public class TestWalletV3R2Short extends CommonTest {
                 .walletId(98)
                 .seqno(contract2.getSeqno())
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
-                .amount(Utils.toNano(0.8))
+                .amount(Utils.toNano(0.7))
                 .comment("testWalletV3R2-98")
                 .build();
 
@@ -119,6 +132,40 @@ public class TestWalletV3R2Short extends CommonTest {
         log.info("2 pubkey {}", contract2.getPublicKey());
 
         assertThat(contract1.getPublicKey()).isEqualTo(contract2.getPublicKey());
+
+        log.info("txs of wallet1");
+        RawTransactions txs = tonlib.getRawTransactions(bounceableAddress1, null, null);
+        for (RawTransaction tx : txs.getTransactions()) {
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+                log.info("{}, {} <<<<< {} : {}, comment: {} ", Utils.toUTC(tx.getUtime()),
+                        tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(),
+                        Utils.formatNanoValue(tx.getIn_msg().getValue()), CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(tx.getIn_msg().getMsg_data().getText()))).loadSnakeString());
+            }
+            if (nonNull(tx.getOut_msgs())) {
+                for (RawMessage msg : tx.getOut_msgs()) {
+                    log.info("{}, {} >>>>> {} : {}, comment: {}", Utils.toUTC(tx.getUtime()),
+                            msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(),
+                            Utils.formatNanoValue(msg.getValue()), CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(msg.getMsg_data().getText()))).loadSnakeString());
+                }
+            }
+        }
+//        CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString()).loadSnakeString()
+        log.info("txs of wallet2");
+        txs = tonlib.getRawTransactions(bounceableAddress2, null, null);
+        for (RawTransaction tx : txs.getTransactions()) {
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+                log.info("{}, {} <<<<< {} : {}, comment: {} ", Utils.toUTC(tx.getUtime()),
+                        tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(),
+                        Utils.formatNanoValue(tx.getIn_msg().getValue()), CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(tx.getIn_msg().getMsg_data().getText()))).loadSnakeString());
+            }
+            if (nonNull(tx.getOut_msgs())) {
+                for (RawMessage msg : tx.getOut_msgs()) {
+                    log.info("{}, {} >>>>> {} : {}, comment: {}", Utils.toUTC(tx.getUtime()),
+                            msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(),
+                            Utils.formatNanoValue(msg.getValue()), CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(msg.getMsg_data().getText()))).loadSnakeString());
+                }
+            }
+        }
     }
 
     /*
