@@ -7,12 +7,10 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletCodes;
-import org.ton.java.smartcontract.types.WalletV4R1Config;
+import org.ton.java.smartcontract.types.WalletV4R2Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.tlb.types.ExternalMessageInfo;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.StateInit;
+import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -25,6 +23,7 @@ import java.util.Deque;
 import java.util.List;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -95,7 +94,7 @@ public class WalletV4R2 implements Contract {
                 .endCell();
     }
 
-    public Cell createTransferBody(WalletV4R1Config config) {
+    public Cell createTransferBody(WalletV4R2Config config) {
 
         CellBuilder message = CellBuilder.beginCell();
 
@@ -106,8 +105,27 @@ public class WalletV4R2 implements Contract {
         message.storeUint(config.getSeqno(), 32);// msg_seqno
 
         if (config.getOperation() == 0) {
+            Cell order = Message.builder()
+                    .info(InternalMessageInfo.builder()
+                            .bounce(config.isBounce())
+                            .dstAddr(MsgAddressIntStd.builder()
+                                    .workchainId(config.getDestination().wc)
+                                    .address(config.getDestination().toBigInteger())
+                                    .build())
+                            .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                            .build())
+                    .init(config.getStateInit())
+                    .body((isNull(config.getBody()) && nonNull(config.getComment())) ?
+                            CellBuilder.beginCell()
+                                    .storeUint(0, 32)
+                                    .storeString(config.getComment())
+                                    .endCell()
+                            : config.getBody())
+                    .build().toCell();
+
             message.storeUint(BigInteger.ZERO, 8); // op simple send
-            //message.storeRef(body); ??
+            message.storeUint(config.getMode(), 8);
+            message.storeRef(order);
         } else if (config.getOperation() == 1) {
             message.storeUint(1, 8); // deploy and install plugin
             message.storeUint(BigInteger.valueOf(config.getNewPlugin().getPluginWc()), 8);
@@ -141,10 +159,18 @@ public class WalletV4R2 implements Contract {
      */
 
     public ExtMessageInfo deploy() {
+        return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+    }
+
+    /**
+     * Deploy wallet without any plugins.
+     * One can also deploy plugin separately and later install into the wallet. See installPlugin().
+     */
+    public Message prepareDeployMsg() {
 
         Cell body = createDeployMessage();
 
-        Message externalMessage = Message.builder()
+        return Message.builder()
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
@@ -154,9 +180,8 @@ public class WalletV4R2 implements Contract {
                         .storeCell(body)
                         .endCell())
                 .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
+
 
     public Cell createPluginStateInit(SubscriptionInfo subscriptionInfo) {
         // code = boc in hex format, result of fift commands:
@@ -194,7 +219,7 @@ public class WalletV4R2 implements Contract {
                 .endCell();
     }
 
-    public ExtMessageInfo installPlugin(Tonlib tonlib, WalletV4R1Config config) {
+    public ExtMessageInfo installPlugin(Tonlib tonlib, WalletV4R2Config config) {
 
         Address ownAddress = getAddress();
         config.setOperation(2);
@@ -204,7 +229,7 @@ public class WalletV4R2 implements Contract {
         return tonlib.sendRawMessage(extMsg.toBase64());
     }
 
-    public ExtMessageInfo uninstallPlugin(WalletV4R1Config config) {
+    public ExtMessageInfo uninstallPlugin(WalletV4R2Config config) {
 
         Address ownAddress = getAddress();
         config.setOperation(3);
@@ -350,25 +375,15 @@ public class WalletV4R2 implements Contract {
     /**
      * Sends amount of nano toncoins to destination address using auto-fetched seqno without the body and default send-mode 3
      *
-     * @param config WalletV4R1Config
+     * @param config WalletV4R2Config
      */
 
-    public ExtMessageInfo send(WalletV4R1Config config) {
+    public ExtMessageInfo send(WalletV4R2Config config) {
+        return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
+    }
 
+    public Message prepareExternalMsg(WalletV4R2Config config) {
         Cell body = createTransferBody(config);
-
-        Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .dstAddr(getAddressIntStd())
-                        .build())
-                .init(getStateInit())
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                        .storeCell(body)
-                        .endCell())
-                .build();
-
-        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-
+        return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
     }
 }

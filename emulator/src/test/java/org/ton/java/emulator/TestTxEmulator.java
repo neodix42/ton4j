@@ -34,9 +34,12 @@ public class TestTxEmulator {
     @BeforeClass
     public static void setUpBeforeClass() {
         liteClient = LiteClient.builder()
-                .pathToLiteClientBinary("G:\\Git_Projects\\ton4j\\emulator\\lite-client.exe")
+                .pathToLiteClientBinary("G:/Git_Projects/ton4j/emulator/lite-client.exe")
                 .build();
-        tonlib = Tonlib.builder().build();
+        tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .build();
         config = tonlib.getConfigAll(128);
         txEmulator = TxEmulator.builder()
                 .configBoc(config.toBase64())
@@ -44,7 +47,7 @@ public class TestTxEmulator {
     }
 
     @Test
-    public void testInitTxEmualator() {
+    public void testInitTxEmulator() {
         TxEmulatorI txEmulatorI = Native.load("emulator.dll", TxEmulatorI.class);
         long emulator = txEmulatorI.transaction_emulator_create(config.toBase64(), 2);
         assertNotEquals(0, emulator);

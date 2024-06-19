@@ -210,7 +210,7 @@ public class TestNft extends CommonTest {
 
         //sends from adminWallet to nftItem request for static data, response comes to adminWallet
         //https://github.com/ton-blockchain/token-contract/blob/main/nft/nft-item.fc#L131
-        getStaticData(adminWallet, Utils.toNano(0.088), nftItem1Address, BigInteger.valueOf(661), adminWallet.getKeyPair());
+        getStaticData(adminWallet, Utils.toNano(0.088), nftItem1Address, BigInteger.valueOf(661));
 
         // transfer nft item to nft sale smart-contract (send amount > full_price+1ton)
         transferNftItem(adminWallet, Utils.toNano(1.4), nftItem1Address, BigInteger.ZERO, nftSale1.getAddress(),
@@ -250,8 +250,7 @@ public class TestNft extends CommonTest {
                 "ton://my-nft/collection.json", "ton://my-nft/", 0.16,
                 Address.of(WALLET2_ADDRESS), adminWallet.getKeyPair());
 
-        changeNftCollectionOwner(adminWallet, Utils.toNano(0.06), nftCollection.getAddress(),
-                Address.of(WALLET2_ADDRESS), adminWallet.getKeyPair());
+        changeNftCollectionOwner(adminWallet, Utils.toNano(0.06), nftCollection.getAddress(), Address.of(WALLET2_ADDRESS));
 
         getRoyaltyParams(adminWallet, Utils.toNano(0.0777), nftCollection.getAddress());
     }
@@ -275,7 +274,7 @@ public class TestNft extends CommonTest {
     }
 
 
-    public void changeNftCollectionOwner(WalletV3R1 wallet, BigInteger msgValue, Address nftCollectionAddress, Address newOwner, TweetNaclFast.Signature.KeyPair keyPair) {
+    public void changeNftCollectionOwner(WalletV3R1 wallet, BigInteger msgValue, Address nftCollectionAddress, Address newOwner) {
 
         WalletV3Config walletV3Config = WalletV3Config.builder()
                 .walletId(42)
@@ -340,7 +339,7 @@ public class TestNft extends CommonTest {
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
-    private void getStaticData(WalletV3R1 wallet, BigInteger msgValue, Address nftItemAddress, BigInteger queryId, TweetNaclFast.Signature.KeyPair keyPair) {
+    private void getStaticData(WalletV3R1 wallet, BigInteger msgValue, Address nftItemAddress, BigInteger queryId) {
         WalletV3Config config = WalletV3Config.builder()
                 .walletId(42)
                 .seqno(wallet.getSeqno())

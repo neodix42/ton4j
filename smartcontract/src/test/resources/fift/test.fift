@@ -1,0 +1,5 @@
+#!/usr/bin/fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+."fift runner works" cr

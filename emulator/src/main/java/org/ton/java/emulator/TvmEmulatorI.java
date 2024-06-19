@@ -2,8 +2,6 @@ package org.ton.java.emulator;
 
 import com.sun.jna.Library;
 
-import java.math.BigInteger;
-
 public interface TvmEmulatorI extends Library {
 
     /**
@@ -32,7 +30,7 @@ public interface TvmEmulatorI extends Library {
      * @param libsBoc     Base64 encoded BoC serialized libraries dictionary (HashmapE 256 ^Cell).
      * @return true in case of success, false in case of error
      */
-    boolean tvm_emulator_set_libs(long tvmEmulator, String libsBoc);
+    boolean tvm_emulator_set_libraries(long tvmEmulator, String libsBoc);
 
     /**
      * Set c7 parameters
@@ -45,7 +43,7 @@ public interface TvmEmulatorI extends Library {
      * @param config      Base64 encoded BoC serialized Config dictionary (Hashmap 32 ^Cell). Optional.
      * @return true in case of success, false in case of error
      */
-    boolean tvm_emulator_set_c7(long tvmEmulator, String address, long unixTime, BigInteger balance, String randSeedHex, String config);
+    boolean tvm_emulator_set_c7(long tvmEmulator, String address, long unixTime, long balance, String randSeedHex, String config);
 
     /**
      * Set tuple of previous blocks (13th element of c7)
@@ -63,7 +61,7 @@ public interface TvmEmulatorI extends Library {
      * @param gasLimit    Gas limit
      * @return true in case of success, false in case of error
      */
-    boolean tvm_emulator_set_gas_limit(long tvmEmulator, BigInteger gasLimit);
+    boolean tvm_emulator_set_gas_limit(long tvmEmulator, long gasLimit);
 
     /**
      * Enable or disable TVM debug primitives
@@ -101,12 +99,15 @@ public interface TvmEmulatorI extends Library {
      * Optimized version of "run get method" with all passed parameters in a single call
      *
      * @param len       Length of params_boc buffer
-     * @param paramsBoc BoC serialized parameters, scheme: request$_ code:^Cell data:^Cell stack:^VmStack params:^[c7:^VmStack libs:^Cell] method_id:(## 32)
+     * @param paramsBoc BoC serialized parameters, scheme:
+     *                  request$_
+     *                  code:^Cell data:^Cell stack:^VmStack params:^[c7:^VmStack libs:^Cell]
+     *                  method_id:(## 32)
      * @param gasLimit  Gas limit
-     * @return Char* with first 4 bytes defining length, and the rest BoC serialized result
+     * @return String with first 4 bytes defining length, and the rest BoC serialized result
      * Scheme: result$_ exit_code:(## 32) gas_used:(## 32) stack:^VmStack
      */
-    String tvm_emulator_emulate_run_method(long len, String paramsBoc, BigInteger gasLimit);
+    String tvm_emulator_emulate_run_method(long len, String paramsBoc, long gasLimit);
 
 
     /**
@@ -158,5 +159,5 @@ public interface TvmEmulatorI extends Library {
      * "actions": "Base64 boc decoded actions cell of type (OutList n)"
      * }
      */
-    String tvm_emulator_send_internal_message(long tvmEmulator, String messageBodyBoc, BigInteger amount);
+    String tvm_emulator_send_internal_message(long tvmEmulator, String messageBodyBoc, long amount);
 }

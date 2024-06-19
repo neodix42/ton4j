@@ -6,11 +6,11 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.4.3</version>
+        <version>0.4.6</version>
     </parent>
 
     <artifactId>liteclient</artifactId>
-    <name>TON Java Lite-client wrapper</name>
+    <name>TON Java LiteClient wrapper</name>
 
     <description>Java wrapper for lite-client executable.</description>
 

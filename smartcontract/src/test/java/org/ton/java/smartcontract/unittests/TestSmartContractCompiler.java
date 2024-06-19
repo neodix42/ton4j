@@ -8,8 +8,8 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.FuncCompiler;
 import org.ton.java.smartcontract.GenericSmartContract;
+import org.ton.java.smartcontract.SmartContractCompiler;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
@@ -23,17 +23,17 @@ import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestFuncCompiler {
+public class TestSmartContractCompiler {
     /**
      * Make sure you have fift and func installed in your system. See <a href="https://github.com/ton-blockchain/packages">packages</a> for instructions.
      * Example is based on new-wallet-v4r2.fc smart contract. You can specify path to any smart contract.
      */
     @Test
-    public void testFuncCompiler() throws URISyntaxException, InterruptedException, IOException, ExecutionException {
+    public void testSmartContractCompiler() throws URISyntaxException, InterruptedException, IOException, ExecutionException {
 //        URL resource = FuncCompiler.class.getResource("/contracts/stablecoin/contracts/jetton-minter.fc");
-        URL resource = FuncCompiler.class.getResource("/contracts/wallets/new-wallet-v4r2.fc");
+        URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v4r2.fc");
         String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
-        FuncCompiler smcFunc = FuncCompiler.builder()
+        SmartContractCompiler smcFunc = SmartContractCompiler.builder()
 //                .contractPath("C:/stablecoin/contracts/jetton-minter.fc")
                 .contractPath(contractAbsolutePath)
 //                .fiftExecutablePath("C:/ProgramData/chocolatey/bin/fift")

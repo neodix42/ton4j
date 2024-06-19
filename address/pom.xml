@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.4.3</version>
+        <version>0.4.6</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>tweetnacl-java-8</artifactId>
-            <version>1.1.12</version>
+            <version>0.4.6</version>
             <scope>compile</scope>
         </dependency>
         <!-- test -->
@@ -80,6 +80,21 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

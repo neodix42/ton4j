@@ -27,6 +27,7 @@ public interface MsgAddress {
         int magic = cs.preloadUint(2).intValue();
         switch (magic) {
             case 0b00: {
+                cs.loadInt(2);
                 return MsgAddressExtNone.builder().build();
             }
             case 0b01: {

@@ -1,0 +1,11 @@
+#pragma version >=0.4.3;
+
+#include "stdlib.fc";
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+
+}
+
+() recv_external(slice in_msg) impure {
+    
+}

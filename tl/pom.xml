@@ -5,7 +5,7 @@
     <parent>
         <artifactId>top</artifactId>
         <groupId>io.github.neodix42</groupId>
-        <version>0.4.3</version>
+        <version>0.4.6</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -17,7 +17,7 @@
 
 
     <artifactId>tl</artifactId>
-    <name>TON Java TL (Type Language)</name>
+    <name>TON Java TL</name>
 
     <description>Parse TL objects (todo)</description>
 
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>cell</artifactId>
-            <version>0.4.3</version>
+            <version>0.4.6</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

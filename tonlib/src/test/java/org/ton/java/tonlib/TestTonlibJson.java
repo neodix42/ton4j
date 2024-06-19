@@ -8,14 +8,15 @@ import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.mnemonic.Mnemonic;
+import org.ton.java.tlb.types.ConfigParams8;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
@@ -46,6 +47,23 @@ public class TestTonlibJson {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         tonlib = Tonlib.builder().build();
+    }
+
+    @Test
+    public void testIssue13() {
+        Tonlib tonlib = Tonlib.builder().build();
+        Address address = Address.of("EQA870ez59EjeBmDNWBaQhvUTeGRKeJYJbJ_quKgCT__UjWr");
+        RawTransactions txs = tonlib.getRawTransactions(address.toString(false), null, null);
+        for (RawTransaction tx : txs.getTransactions()) {
+            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+                log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
+            }
+            if (nonNull(tx.getOut_msgs())) {
+                for (RawMessage msg : tx.getOut_msgs()) {
+                    log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
+                }
+            }
+        }
     }
 
     @Test
@@ -529,15 +547,18 @@ public class TestTonlibJson {
         log.info("return stake: {} ", Utils.formatNanoValue(returnStake.longValue()));
     }
 
-    @Ignore
     @Test
     public void testTonlibMyLocalTon() {
         Tonlib tonlib = Tonlib.builder()
                 .verbosityLevel(VerbosityLevel.DEBUG)
-                .pathToGlobalConfig("G:\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\my-ton-global.config.json")
+                .pathToGlobalConfig("G:/Git_Projects/MyLocalTon/myLocalTon/genesis/db/my-ton-global.config.json")
                 .ignoreCache(true)
                 .build();
 
+        BlockIdExt blockIdExt = tonlib.getMasterChainInfo().getLast();
+        Cell cellConfig8 = tonlib.getConfigParam(blockIdExt, 8);
+        ConfigParams8 config8 = ConfigParams8.deserialize(CellSlice.beginParse(cellConfig8));
+        log.info("config 8: {}", config8);
         RunResult seqno = tonlib.runMethod(Address.of("-1:CF624357217E2C9D2F4F5CA65F82FCBD16949FA00F46CA51358607BEF6D2CB53"), "seqno");
         log.info("seqno RunResult {}", seqno);
         FullAccountState accountState1 = tonlib.getAccountState(Address.of("-1:85cda44e9838bf5a8c6d1de95c3e22b92884ae70ee1b550723a92a8ca0df3321"));
