@@ -78,6 +78,15 @@ You can use each submodule individually. Click the module below to get more deta
 * Improve code coverage and add more integration tests
 * BinTree serialization / deserialization
 
+## Support ton4j development
+If you want to speed up ton4j development and thus change its priority in my backlog, you are welcome to donate some toncoins:
+
+```UQBguBMWc_wUA8pJjC-A9JbTJFzb7lbFbbkiFYajA33-U9YU```
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=neodiX42/ton4j&type=Date)](https://star-history.com/#neodiX42/ton4j&Date)
+
 <!-- Badges -->
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/smartcontract
