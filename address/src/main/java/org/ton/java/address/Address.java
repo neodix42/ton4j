@@ -61,11 +61,7 @@ public class Address {
 
             String hex = arr[1];
             if (hex.length() != 64) {
-                if (hex.length() == 63) {
-                    hex = "0" + hex;
-                } else {
-                    throw new Error("Invalid address hex " + address);
-                }
+                throw new Error("Invalid address hex " + address);
             }
 
             isUserFriendly = false;

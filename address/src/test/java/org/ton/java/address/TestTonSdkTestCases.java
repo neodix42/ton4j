@@ -273,4 +273,42 @@ public class TestTonSdkTestCases {
         log.info("input parameters:");
         log.info("  address: {}", address.toBounceable());
     }
+
+    @Test(expected = Error.class)
+    public void testAddress11() {
+
+        TonSdkTestCases tonSdkTestCases = gson.fromJson(fileContentWithUseCases, TonSdkTestCases.class);
+
+        String testId = "address-11";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        Address address = Address.of((String) testCase.getInput().get("bounceableUrlSafe"));
+
+        log.info("input parameters:");
+        log.info("  address: {}", address.toBounceable());
+    }
+
+    @Test(expected = Error.class)
+    public void testAddress12() {
+
+        TonSdkTestCases tonSdkTestCases = gson.fromJson(fileContentWithUseCases, TonSdkTestCases.class);
+
+        String testId = "address-12";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        Address address = Address.of((String) testCase.getInput().get("bounceableUrlSafe"));
+
+        log.info("input parameters:");
+        log.info("  address: {}", address.toBounceable());
+    }
 }
