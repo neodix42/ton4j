@@ -1,6 +1,6 @@
 # Tonlib module
 
-Java Tonlib library uses JNA to access methods in native Tonlib shared library.
+Java Tonlib library uses JNA to access methods in native Tonlib shared library. How does one get the shared Tonlib library?
 
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
