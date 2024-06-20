@@ -305,6 +305,32 @@ public class LiteClient {
         return execute(command).getRight().get();
     }
 
+    /**
+     * @param address  base64 or raw
+     * @param blockId  in format (-1,8000000000000000,20301335):root-hash:file-hash
+     * @param methodId method name, e.g. seqno
+     * @param params   space separated params
+     * @return lite-client output
+     */
+    public String executeRunMethod(String address, String blockId, String methodId, String params) throws Exception {
+        final String command = String.format("runmethod %s %s %s %s", address, blockId, methodId, params);
+        log.info(command);
+        return execute(command).getRight().get();
+    }
+
+    /**
+     * @param address  base64 or raw
+     * @param blockId  ResultLastBlock
+     * @param methodId method name, e.g. seqno
+     * @param params   space separated params
+     * @return lite-client output
+     */
+    public String executeRunMethod(String address, ResultLastBlock blockId, String methodId, String params) throws Exception {
+        final String command = String.format("runmethod %s %s %s %s", address, blockId.getFullBlockSeqno(), methodId, params);
+        log.info(command);
+        return execute(command).getRight().get();
+    }
+
     public String executeSendfile(String absolutePathFile) throws Exception {
         final String command = "sendfile " + absolutePathFile;
         Pair<Process, Future<String>> result = execute(command);

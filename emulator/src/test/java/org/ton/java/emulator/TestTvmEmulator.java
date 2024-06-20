@@ -33,7 +33,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.ExecutionException;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -303,7 +302,7 @@ public class TestTvmEmulator {
     }
 
     @Test
-    public void testTvmEmulatorSendExternalMessageCustom() throws IOException, ExecutionException, InterruptedException {
+    public void testTvmEmulatorSendExternalMessageCustom() throws IOException {
 
         SmartContractCompiler smcFunc = SmartContractCompiler.builder()
                 .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
@@ -419,7 +418,7 @@ public class TestTvmEmulator {
     }
 
     @Test
-    public void testTvmEmulatorSendInternalMessageCustomContract() throws IOException, ExecutionException, InterruptedException {
+    public void testTvmEmulatorSendInternalMessageCustomContract() throws IOException {
         SmartContractCompiler smcFunc = SmartContractCompiler.builder()
                 .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
                 .build();

@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.ton.java.liteclient.api.ResultLastBlock;
 import org.ton.java.liteclient.api.ResultListBlockTransactions;
@@ -50,10 +49,35 @@ public class LiteClientTest {
         assertThat(liteClient.executeLast()).isNotNull().contains("last masterchain block is").contains("server time is");
     }
 
-    @Ignore
+
     @Test
-    public void testRunmethod() throws Exception {
-        final String result = liteClient.executeRunMethod("EQBdFkus6WRkJ1PP6z24Fw5C6E1YKet_nSJ6K1H7HHuOdwMC", "seqno", "");
+    public void testRunMethod() throws Exception {
+        final String result = liteClient.executeRunMethod("EQDCJVrezD71y-KPcTIG-YeKNj4naeiR7odpQgVA1uDsZqPC", "seqno", "");
+        log.info(result);
+        assertThat(result).contains("arguments").contains("result");
+    }
+
+    @Test
+    public void testRunMethodWithBlockId() throws Exception {
+        final String result = liteClient.executeRunMethod("EQDCJVrezD71y-KPcTIG-YeKNj4naeiR7odpQgVA1uDsZqPC",
+                "(-1,8000000000000000,20301499):070D07EB64D36CCA2D8D20AA644489637059C150E2CD466247C25B4997FB8CD9:D7D7271D466D52D0A98771F9E8DCAA06E43FCE01C977AACD9DE9DAD9A9F9A424",
+                "seqno", "");
+        log.info(result);
+        assertThat(result).contains("arguments").contains("result");
+    }
+
+    @Test
+    public void testRunMethodWithResultBlockId() throws Exception {
+        ResultLastBlock blockId = ResultLastBlock.builder()
+                .wc(-1L)
+                .shard("8000000000000000")
+                .seqno(BigInteger.valueOf(20301499))
+                .rootHash("070D07EB64D36CCA2D8D20AA644489637059C150E2CD466247C25B4997FB8CD9")
+                .fileHash("D7D7271D466D52D0A98771F9E8DCAA06E43FCE01C977AACD9DE9DAD9A9F9A424")
+                .build();
+        final String result = liteClient.executeRunMethod("EQDCJVrezD71y-KPcTIG-YeKNj4naeiR7odpQgVA1uDsZqPC",
+                blockId,
+                "seqno", "");
         log.info(result);
         assertThat(result).contains("arguments").contains("result");
     }

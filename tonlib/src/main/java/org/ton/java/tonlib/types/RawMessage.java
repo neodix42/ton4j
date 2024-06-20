@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.apache.commons.codec.binary.Hex;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.utils.Utils;
 
 import java.io.Serializable;
@@ -65,6 +67,14 @@ public class RawMessage implements Serializable {
             return Hex.encodeHexString(Utils.base64ToString(msg_data.getBody()).getBytes());
         } else {
             return Hex.encodeHexString(Utils.base64ToString(msg_data.getText()).getBytes());
+        }
+    }
+
+    public String getComment() {
+        if (nonNull(msg_data.getText())) {
+            return CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(msg_data.getText()))).loadSnakeString();
+        } else {
+            return "";
         }
     }
 }

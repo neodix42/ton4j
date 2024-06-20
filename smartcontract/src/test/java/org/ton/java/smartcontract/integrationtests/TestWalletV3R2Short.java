@@ -139,30 +139,29 @@ public class TestWalletV3R2Short extends CommonTest {
             if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
                 log.info("{}, {} <<<<< {} : {}, comment: {} ", Utils.toUTC(tx.getUtime()),
                         tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(),
-                        Utils.formatNanoValue(tx.getIn_msg().getValue()), CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(tx.getIn_msg().getMsg_data().getText()))).loadSnakeString());
+                        Utils.formatNanoValue(tx.getIn_msg().getValue()), tx.getIn_msg().getComment());
             }
             if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
                     log.info("{}, {} >>>>> {} : {}, comment: {}", Utils.toUTC(tx.getUtime()),
                             msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(),
-                            Utils.formatNanoValue(msg.getValue()), CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(msg.getMsg_data().getText()))).loadSnakeString());
+                            Utils.formatNanoValue(msg.getValue()), msg.getComment());
                 }
             }
         }
-//        CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString()).loadSnakeString()
         log.info("txs of wallet2");
         txs = tonlib.getRawTransactions(bounceableAddress2, null, null);
         for (RawTransaction tx : txs.getTransactions()) {
             if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
                 log.info("{}, {} <<<<< {} : {}, comment: {} ", Utils.toUTC(tx.getUtime()),
                         tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(),
-                        Utils.formatNanoValue(tx.getIn_msg().getValue()), CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(tx.getIn_msg().getMsg_data().getText()))).loadSnakeString());
+                        Utils.formatNanoValue(tx.getIn_msg().getValue()), tx.getIn_msg().getComment());
             }
             if (nonNull(tx.getOut_msgs())) {
                 for (RawMessage msg : tx.getOut_msgs()) {
                     log.info("{}, {} >>>>> {} : {}, comment: {}", Utils.toUTC(tx.getUtime()),
                             msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(),
-                            Utils.formatNanoValue(msg.getValue()), CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(msg.getMsg_data().getText()))).loadSnakeString());
+                            Utils.formatNanoValue(msg.getValue()), msg.getComment());
                 }
             }
         }

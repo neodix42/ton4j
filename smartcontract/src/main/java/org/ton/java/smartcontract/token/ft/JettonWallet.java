@@ -1,6 +1,5 @@
 package org.ton.java.smartcontract.token.ft;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.address.Address;
@@ -19,13 +18,10 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
-import static java.util.Objects.isNull;
-
 @Builder
 @Getter
 public class JettonWallet implements Contract {
 
-    TweetNaclFast.Signature.KeyPair keyPair;
     Address address;
 
     public static class JettonWalletBuilder {
@@ -38,9 +34,7 @@ public class JettonWallet implements Contract {
     private static class CustomJettonWalletBuilder extends JettonWalletBuilder {
         @Override
         public JettonWallet build() {
-            if (isNull(super.keyPair)) {
-                super.keyPair = Utils.generateSignatureKeyPair();
-            }
+
             return super.build();
         }
     }
