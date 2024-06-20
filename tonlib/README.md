@@ -2,6 +2,13 @@
 
 Java Tonlib library uses JNA to access methods in native Tonlib shared library.
 
+Since this is Java Tonlib wrapper around the native binary, you have to specify path to the library, see the example below.
+
+You can get the latest tonlib library by:
+
+* downloading it from the official TON Github release page [here](https://github.com/ton-blockchain/ton/releases).
+* by installing precompiled binaries, see instructions [here](https://github.com/ton-blockchain/packages).
+
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
 ```xml
@@ -27,14 +34,13 @@ Java Tonlib library uses JNA to access methods in native Tonlib shared library.
 ## Constructor, getLast, lookupBlock, getBlockHeader, getShards
 
 ```java
-// constructor
-Tonlib(String pathToTonlibSharedLib,  // path to native Tonlib shared library
-        int verbosityLevel,           // values from 0 to 4, where 0 - output is suppresed, 4 - debug level output; default - true
-        boolean testnet,              // switch between testnet and mainnet; default - true (testnet)
-        boolean keystoreInMemory,     // switch for keystore location; default - false (keystore in local disk)
-        String keystorePath)          // path to a keystore; default - current directory (.)
-
-Tonlib tonlib=Tonlib.builder().build(); // if path of Tonlib shared library is not specified Tonlib, the module tries to find one in local dir or java.library.path. 
+// builder
+Tonlib tonlib = Tonlib.builder()
+        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
+        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .verbosityLevel(VerbosityLevel.FATAL)
+        .testnet(true)
+        .build();
 
 // lookupBlock
 BlockIdExt fullblock = tonlib.lookupBlock(304479,-1,-9223372036854775808L,0,0);
@@ -62,19 +68,24 @@ Shards(type=blocks.shards,shards=[BlockIdExt(type=ton.blockIdExt,workchain=0,sha
 ## Get all block transactions
 
 ```java
-Tonlib tonlib=Tonlib.builder().build();
+Tonlib tonlib = Tonlib.builder()
+        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
+        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .verbosityLevel(VerbosityLevel.FATAL)
+        .testnet(true)
+        .build();
 
 //lookupBlock
 BlockIdExt fullblock = tonlib.lookupBlock(444699, -1, -9223372036854775808L, 0, 0);
 log.info(fullblock.toString());
 
-Map<String, RawTransactions> txs=tonlib.getAllBlockTransactions(fullblock,100,null);
-for(Map.Entry<String, RawTransactions> entry:txs.entrySet()){
-  for(RawTransaction tx:((RawTransactions)entry.getValue()).getTransactions()){
-    if((tx.getIn_msg()!=null) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))){
+Map<String, RawTransactions> txs = tonlib.getAllBlockTransactions(fullblock,100,null);
+for(Map.Entry<String, RawTransactions> entry: txs.entrySet()){
+  for(RawTransaction tx: ((RawTransactions)entry.getValue()).getTransactions()){
+    if((nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))){
       log.info("{} <<<<< {} : {} ", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(),tx.getIn_msg().getValueToncoins(9));
     }
-    if(tx.getOut_msgs()!=null){
+    if(nonNull(tx.getOut_msgs()){
       for(RawMessage msg:tx.getOut_msgs()){
         log.info("{} >>>>> {} : {} ",msg.getSource().getAccount_address(),msg.getDestination().getAccount_address(),msg.getValue());
       }
@@ -103,18 +114,24 @@ Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF<<<<<Ef99gz58SExDexFVJteOSZcPDxF
 ## Get transactions by address
 
 ```java
-Tonlib tonlib = Tonlib.builder().build();
+Tonlib tonlib = Tonlib.builder()
+        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
+        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .verbosityLevel(VerbosityLevel.FATAL)
+        .testnet(true)
+        .build();
+
 Address address = Address.of(MY_TESTNET_VALIDATOR_ADDR);
 log.info("address: " + address.toString(true));
 RawTransactions rawTransactions = tonlib.getRawTransactions(address.toString(false),null,null);
 log.info("total txs: {}", rawTransactions.getTransactions().size());
 
 for(RawTransaction tx:rawTransactions.getTransactions()){
-  if((tx.getIn_msg()!=null)&&(!tx.getIn_msg().getSource().getAccount_address().equals(""))){
+  if((nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))){
   log.info("{}, {} <<<<< {} : {} ",Utils.toUTC(tx.getUtime()),tx.getIn_msg().getSource().getAccount_address(),tx.getIn_msg().getDestination().getAccount_address(),tx.getIn_msg().getValueToncoins(9));
 }
-if(tx.getOut_msgs()!=null){
-  for(RawMessage msg:tx.getOut_msgs()){
+if(nonNull(tx.getOut_msgs())){
+  for(RawMessage msg: tx.getOut_msgs()){
   log.info("{}, {} >>>>> {} : {} ",Utils.toUTC(tx.getUtime()),msg.getSource().getAccount_address(),msg.getDestination().getAccount_address(),msg.getValue());
 }
 
@@ -137,10 +154,15 @@ total txs:10
 ## Get accountHelper state, balance
 
 ```java
-Tonlib tonlib = Tonlib.builder().build();
+Tonlib tonlib = Tonlib.builder()
+        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
+        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .verbosityLevel(VerbosityLevel.FATAL)
+        .testnet(true)
+        .build();
 
 Address addr = Address.of("kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E");
-log.info("address: "+addr.toString(true));
+log.info("address: " + addr.toString(true));
 
 AccountAddressOnly accountAddressOnly=AccountAddressOnly.builder()
     .account_address(addr.toString(true))
@@ -148,7 +170,7 @@ AccountAddressOnly accountAddressOnly=AccountAddressOnly.builder()
 FullAccountState account = tonlib.getAccountState(accountAddressOnly);
 
 log.info(account.toString());
-log.info("balance: {}",account.getBalance());
+log.info("balance: {}", account.getBalance());
 
 // result
 address:kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E
@@ -159,13 +181,18 @@ balance:4995640997
 ## Encrypt/decrypt with mnemonic
 
 ```java
-Tonlib tonlib = Tonlib.builder().build();
+Tonlib tonlib = Tonlib.builder()
+        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
+        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .verbosityLevel(VerbosityLevel.FATAL)
+        .testnet(true)
+        .build();
 
 String base64mnemonic = Utils.stringToBase64("centring moist twopenny bursary could carbarn abide flirt ground shoelace songster isomeric pis strake jittery penguin gab guileful lierne salivary songbird shore verbal measures");
 
 String dataToEncrypt = Utils.stringToBase64("ABC");
 Data encrypted = tonlib.encrypt(dataToEncrypt,base64mnemonic);
-log.info("encrypted {}",encrypted.getBytes());
+log.info("encrypted {}", encrypted.getBytes());
 
 Data decrypted = tonlib.decrypt(encrypted.getBytes(),base64mnemonic);
 String dataDecrypted = Utils.base64ToString(decrypted.getBytes());
@@ -177,14 +204,19 @@ assertThat("ABC").isEqualTo(dataDecrypted);
 Get seqno
 
 ```java
-Tonlib tonlib = Tonlib.builder().build();
+Tonlib tonlib = Tonlib.builder()
+        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
+        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .verbosityLevel(VerbosityLevel.FATAL)
+        .testnet(true)
+        .build();
 Address address = Address.of("kQB7wRCSr02IwL1nOxkEipop3goYb4oN6ZehZMS2jImwyS1t");
 RunResult result = tonlib.runMethod(address,"seqno");
 
 log.info("gas_used {}, exit_code {} ",result.getGas_used(),result.getExit_code());
 
 TvmStackEntryNumber seqno=(TvmStackEntryNumber)result.getStack().get(0);
-log.info("seqno: {}",eqno.getNumber());
+log.info("seqno: {}", eqno.getNumber());
 
 // result 
 gas_used 505,exit_code 0
@@ -195,7 +227,7 @@ Retrieve past_election_ids
 
 ```java
 Address address=Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
-RunResult result = tonlib.runMethod(address,"past_election_ids");
+RunResult result = tonlib.runMethod(address, "past_election_ids");
 TvmStackEntryList listResult = (TvmStackEntryList)result.getStack().get(0);
 
 for(Object o:listResult.getList().getElements()){
@@ -223,19 +255,24 @@ Use as array of strings:
 * [slice, 0x80C11AAFA0014 ] // BoC in hex
 
 ```java
-Tonlib tonlib = Tonlib.builder().build();
+Tonlib tonlib = Tonlib.builder()
+        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
+        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .verbosityLevel(VerbosityLevel.FATAL)
+        .testnet(true)
+        .build();
 
 Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
 RunResult result = tonlib.runMethod(address,"compute_returned_stake",null);
-log.info("result: {}",result);
+log.info("result: {}", result);
 assertThat(result.getExit_code()).isEqualTo(2); // error since compute_returned_stake requires an argument
 
 Deque<String> stack=new ArrayDeque<>();
 address = Address.of(TESTNET_VALIDATOR_ADDR);
-stack.offer("[num, "+address.toDecimal()+"]");
+stack.offer("[num, " + address.toDecimal()+"]");
 
 result = tonlib.runMethod(address,"compute_returned_stake",stack);
-log.info("result: {} ",result);
+log.info("result: {} ", result);
 ```
 
 More examples in [TestTonlibJson](../tonlib/src/test/java/org/ton/java/tonlib/TestTonlibJson.java) and
