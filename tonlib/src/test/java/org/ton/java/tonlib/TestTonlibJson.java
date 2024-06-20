@@ -52,18 +52,8 @@ public class TestTonlibJson {
     @Test
     public void testIssue13() {
         Tonlib tonlib = Tonlib.builder().build();
-        Address address = Address.of("EQA870ez59EjeBmDNWBaQhvUTeGRKeJYJbJ_quKgCT__UjWr");
-        RawTransactions txs = tonlib.getRawTransactions(address.toString(false), null, null);
-        for (RawTransaction tx : txs.getTransactions()) {
-            if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
-                log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), Utils.formatNanoValue(tx.getIn_msg().getValue()));
-            }
-            if (nonNull(tx.getOut_msgs())) {
-                for (RawMessage msg : tx.getOut_msgs()) {
-                    log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), Utils.formatNanoValue(msg.getValue()));
-                }
-            }
-        }
+        BlockIdExt block = tonlib.getLast().getLast();
+        log.info("block {}", block);
     }
 
     @Test
