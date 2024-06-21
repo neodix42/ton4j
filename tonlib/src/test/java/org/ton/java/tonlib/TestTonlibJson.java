@@ -46,7 +46,7 @@ public class TestTonlibJson {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        tonlib = Tonlib.builder().build();
+        tonlib = Tonlib.builder().ignoreCache(false).build();
     }
 
     @Test
@@ -524,7 +524,7 @@ public class TestTonlibJson {
     @Test
     public void testTonlibRunMethodComputeReturnedStake() {
         Address elector = Address.of(ELECTOR_ADDRESSS);
-        RunResult result = tonlib.runMethod(elector, "compute_returned_stake", null);
+        RunResult result = tonlib.runMethod(elector, "compute_returned_stake", new ArrayDeque<>());
         log.info("result: {}", result);
         assertThat(result.getExit_code()).isEqualTo(2); // error since compute_returned_stake requires an argument
 
@@ -600,12 +600,28 @@ public class TestTonlibJson {
 
     @Test
     public void testTonlibStateAndStatus() {
-        int i = 0;
+
         FullAccountState accountState1 = tonlib.getAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
-        log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState1.getBalance(), accountState1);
+        log.info("FullAccountState {}", accountState1);
 
         RawAccountState accountState2 = tonlib.getRawAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
-        log.info("{} with balance {} and code [{}]: {}", "EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq", i, accountState2.getBalance(), accountState2);
+        log.info("RawAccountState {}", accountState2);
+
+        BlockIdExt blockId = BlockIdExt.builder()
+                .workchain(-1)
+                .shard(-9223372036854775808L)
+                .seqno(27894542)
+                .root_hash("akLZC86Ve0IPDW2HGhSCKKz7RkJk1yAgl34qMpo1RlE=")
+                .file_hash("KjJvOENNPc39inKO2cOce0s/fUX9Nv8/qdS1VFj2yw0=")
+                .build();
+
+        log.info("input blockId {}", blockId);
+
+        FullAccountState accountState1AtBlock = tonlib.getAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"), blockId);
+        log.info("accountState1AtBlock {}", accountState1AtBlock);
+
+        RawAccountState accountState2AtBlock = tonlib.getRawAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"), blockId);
+        log.info("RawAccountStateAtBlock {}", accountState2AtBlock);
 
         String accountState1Status = tonlib.getRawAccountStatus(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
         log.info("==========================================");

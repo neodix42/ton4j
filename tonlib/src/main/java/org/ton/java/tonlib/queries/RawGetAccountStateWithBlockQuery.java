@@ -11,9 +11,9 @@ import org.ton.java.tonlib.types.BlockIdExt;
 @Setter
 @Getter
 @ToString
-public class WithBlockQuery extends ExtraQuery {
+public class RawGetAccountStateWithBlockQuery extends ExtraQuery {
     @SerializedName(value = "@type")
     final String type = "withBlock";
     BlockIdExt id;
-    LoadContractQuery function;
+    GetRawAccountStateQuery function;
 }

@@ -666,6 +666,40 @@ public class Tonlib {
         }
     }
 
+    public RawAccountState getRawAccountState(Address address, BlockIdExt blockId) {
+        synchronized (gson) {
+
+            if (StringUtils.isEmpty(blockId.getRoot_hash())) { // retrieve hashes
+                blockId = lookupBlock(blockId.getSeqno(), blockId.getWorkchain(), blockId.getShard(),0 );
+                if (StringUtils.isEmpty(blockId.getRoot_hash())) {
+                    throw new Error("Cannot lookup block for hashes by seqno. Probably block not in db. Try to specify block's root and file hashes manually in base64 format.");
+                }
+                System.out.println("got hashes "+blockId);
+            }
+
+            AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+                    .account_address(address.toString(false))
+                    .build();
+
+            GetRawAccountStateQueryOnly getAccountStateQuery = GetRawAccountStateQueryOnly.builder()
+                    .account_address(accountAddressOnly)
+                    .build();
+
+            RawGetAccountStateOnlyWithBlockQuery rawGetAccountStateOnlyWithBlockQuery = RawGetAccountStateOnlyWithBlockQuery.builder()
+                    .id(blockId)
+                    .function(getAccountStateQuery)
+                    .build();
+
+            String result = syncAndRead(gson.toJson(rawGetAccountStateOnlyWithBlockQuery));
+
+            if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
+                throw new Error ("Cannot getRawAccountState, error" + result);
+            }
+
+            return gson.fromJson(result, RawAccountState.class);
+        }
+    }
+
     /**
      * Returns status of an address
      *
@@ -734,6 +768,43 @@ public class Tonlib {
         }
     }
 
+    public FullAccountState getAccountState(Address address, BlockIdExt blockId) {
+        synchronized (gson) {
+
+            synchronized (gson) {
+
+                if (StringUtils.isEmpty(blockId.getRoot_hash())) { // retrieve hashes
+                    blockId = lookupBlock(blockId.getSeqno(), blockId.getWorkchain(), blockId.getShard(),0 );
+                    if (StringUtils.isEmpty(blockId.getRoot_hash())) {
+                        throw new Error("Cannot lookup block for hashes by seqno. Probably block not in db. Try to specify block's root and file hashes manually in base64 format.");
+                    }
+                    System.out.println("got hashes "+blockId);
+                }
+
+                AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
+                        .account_address(address.toString(false))
+                        .build();
+
+                GetAccountStateQueryOnly getAccountStateQuery = GetAccountStateQueryOnly.builder()
+                        .account_address(accountAddressOnly)
+                        .build();
+
+                GetAccountStateOnlyWithBlockQuery getAccountStateOnlyWithBlockQuery = GetAccountStateOnlyWithBlockQuery.builder()
+                        .id(blockId)
+                        .function(getAccountStateQuery)
+                        .build();
+
+                String result = syncAndRead(gson.toJson(getAccountStateOnlyWithBlockQuery));
+
+                if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
+                    throw new Error ("Cannot getAccountState, error" + result);
+                }
+
+                return gson.fromJson(result, FullAccountState.class);
+            }
+        }
+    }
+
     /**
      * Returns account status by address.
      *
@@ -742,6 +813,25 @@ public class Tonlib {
      */
     public String getAccountStatus(Address address) {
         RawAccountState state = getRawAccountState(address);
+        if (nonNull(state) && StringUtils.isEmpty(state.getCode())) {
+            if (StringUtils.isEmpty(state.getFrozen_hash())) {
+                return "uninitialized";
+            } else {
+                return "frozen";
+            }
+        } else {
+            return "active";
+        }
+    }
+
+    /**
+     * Returns account status by address and blockId.
+     *
+     * @param address Address
+     * @return String - uninitialized, frozen or active.
+     */
+    public String getAccountStatus(Address address, BlockIdExt blockId) {
+        RawAccountState state = getRawAccountState(address, blockId);
         if (nonNull(state) && StringUtils.isEmpty(state.getCode())) {
             if (StringUtils.isEmpty(state.getFrozen_hash())) {
                 return "uninitialized";
@@ -762,7 +852,6 @@ public class Tonlib {
 
             String result = syncAndRead(gson.toJson(configParamQuery));
             ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
-            System.out.println(Utils.bytesToHex(Utils.base64ToBytes(ci.getConfig().getBytes())));
             return CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes())).endCell();
         }
     }
@@ -775,12 +864,10 @@ public class Tonlib {
                     .build();
 
             String result = syncAndRead(gson.toJson(configParamQuery));
-            System.out.println(result);
             ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
             return CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes())).endCell();
         }
     }
-
 
     public long loadContract(AccountAddressOnly address) {
         synchronized (gson) {
@@ -793,6 +880,10 @@ public class Tonlib {
             return gson.fromJson(result, LoadContract.class).getId();
         }
     }
+
+    /**
+     * loads contract by seqno within master chain and shard -9223372036854775808
+     */
     public long loadContract(AccountAddressOnly address, long seqno) {
         synchronized (gson) {
             BlockIdExt fullBlock;
@@ -807,12 +898,40 @@ public class Tonlib {
                     .account_address(address)
                     .build();
 
-            WithBlockQuery withBlockQuery = WithBlockQuery.builder()
+            LoadContractWithBlockQuery loadContractWithBlockQuery = LoadContractWithBlockQuery.builder()
                            .id(fullBlock)
                     .function(loadContractQuery)
                     .build();
 
-            String result = syncAndRead(gson.toJson(withBlockQuery));
+            String result = syncAndRead(gson.toJson(loadContractWithBlockQuery));
+
+            return gson.fromJson(result, LoadContract.class).getId();
+        }
+    }
+
+    /**
+     * load contract by blockId
+     * @param address contract's address
+     * @param blockId BlockIdExt
+     * @return contract's id
+     */
+    public long loadContract(AccountAddressOnly address, BlockIdExt blockId) {
+        synchronized (gson) {
+
+            if (StringUtils.isEmpty(blockId.getRoot_hash())) {
+                blockId = lookupBlock(blockId.getSeqno(),blockId.getWorkchain(),blockId.getShard(),0 );
+            }
+
+            LoadContractQuery loadContractQuery = LoadContractQuery.builder()
+                    .account_address(address)
+                    .build();
+
+            LoadContractWithBlockQuery loadContractWithBlockQuery = LoadContractWithBlockQuery.builder()
+                    .id(blockId)
+                    .function(loadContractQuery)
+                    .build();
+
+            String result = syncAndRead(gson.toJson(loadContractWithBlockQuery));
 
             return gson.fromJson(result, LoadContract.class).getId();
         }
@@ -820,6 +939,36 @@ public class Tonlib {
 
     public RunResult runMethod(Address contractAddress, String methodName) {
         long contractId = loadContract(AccountAddressOnly.builder().account_address(contractAddress.toString(false)).build());
+        if (contractId == -1) {
+            System.err.println("cannot load contract " + AccountAddressOnly.builder().account_address(contractAddress.toString(false)));
+            return null;
+        } else {
+            return runMethod(contractId, methodName, null);
+        }
+    }
+
+    /**
+     * executes runMethod at specified blockId
+     */
+    public RunResult runMethod(Address contractAddress, String methodName, BlockIdExt blockId) {
+        long contractId = loadContract(AccountAddressOnly.builder()
+                .account_address(contractAddress.toString(false)).build(),
+                blockId);
+        if (contractId == -1) {
+            System.err.println("cannot load contract " + AccountAddressOnly.builder().account_address(contractAddress.toString(false)));
+            return null;
+        } else {
+            return runMethod(contractId, methodName, null);
+        }
+    }
+
+    /**
+     * executes runMethod by seqno within master chain and shard -9223372036854775808
+     */
+    public RunResult runMethod(Address contractAddress, String methodName, long seqno) {
+        long contractId = loadContract(AccountAddressOnly.builder()
+                        .account_address(contractAddress.toString(false)).build(),
+                seqno);
         if (contractId == -1) {
             System.err.println("cannot load contract " + AccountAddressOnly.builder().account_address(contractAddress.toString(false)));
             return null;
