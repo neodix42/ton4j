@@ -7,7 +7,7 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>mnemonic</artifactId>
-    <version>0.4.6</version>
+    <version>0.4.7</version>
 </dependency>
 ```
 
@@ -18,7 +18,7 @@
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>mnemonic</artifactId>
-    <version>0.4.6</version>
+    <version>0.4.7</version>
 </dependency>
 ```
 

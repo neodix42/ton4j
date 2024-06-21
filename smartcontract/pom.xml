@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.4.6</version>
+        <version>0.4.7</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -85,7 +85,7 @@
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>tweetnacl-java-8</artifactId>
-            <version>0.4.6</version>
+            <version>0.4.7</version>
             <scope>compile</scope>
         </dependency>
         <!-- test -->
