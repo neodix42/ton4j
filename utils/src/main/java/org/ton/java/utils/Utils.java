@@ -3,6 +3,7 @@ package org.ton.java.utils;
 import com.iwebpp.crypto.TweetNaclFast;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -23,11 +24,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.nonNull;
-
 public class Utils {
     private static final String HEXES = "0123456789ABCDEF";
     private static final long BLN1 = 1000000000L;
+    private static final BigInteger BI_BLN1 = BigInteger.valueOf(BLN1);
+    private static final BigDecimal BD_BLN1 = BigDecimal.valueOf(BLN1);
 
     public enum OS {
         WINDOWS, WINDOWS_ARM, LINUX, LINUX_ARM, MAC, MAC_ARM64, UNKNOWN
@@ -237,9 +238,47 @@ public class Utils {
         }
     }
 
+    public static byte[] sha1AsArray(byte[] bytes) {
+        try {
+            final MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            return digest.digest(bytes);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public static byte[] md5AsArray(byte[] bytes) {
+        try {
+            final MessageDigest digest = MessageDigest.getInstance("MD5");
+            return digest.digest(bytes);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public static String md5(byte[] bytes) {
+        try {
+            final MessageDigest digest = MessageDigest.getInstance("MD5");
+            final byte[] hash = digest.digest(bytes);
+            return Utils.bytesToHex(hash);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     public static String sha256(byte[] bytes) {
         try {
             final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            final byte[] hash = digest.digest(bytes);
+            return Utils.bytesToHex(hash);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public static String sha1(byte[] bytes) {
+        try {
+            final MessageDigest digest = MessageDigest.getInstance("SHA-1");
             final byte[] hash = digest.digest(bytes);
             return Utils.bytesToHex(hash);
         } catch (NoSuchAlgorithmException ex) {
@@ -630,22 +669,22 @@ public class Utils {
     }
 
     public static BigInteger toNano(long toncoins) {
+        checkToncoinsOverflow(BigInteger.valueOf(toncoins).multiply(BI_BLN1));
         return BigInteger.valueOf(toncoins * BLN1);
     }
 
     public static BigInteger toNano(String toncoins) {
-        if (nonNull(toncoins)) {
-            if (toncoins.matches("^\\d*\\.\\d+|\\d+\\.\\d*$")) {
-                return new BigDecimal(toncoins).multiply(BigDecimal.valueOf(BLN1)).toBigInteger();
-            } else {
-                return new BigInteger(toncoins).multiply(BigInteger.valueOf(BLN1));
-            }
+        checkToncoinsOverflow(new BigDecimal(toncoins).multiply(BD_BLN1).toBigInteger());
+
+        if (toncoins.matches("^\\d*\\.\\d+|\\d+\\.\\d*$")) {
+            return new BigDecimal(toncoins).multiply(BigDecimal.valueOf(BLN1)).toBigInteger();
         } else {
-            throw new Error("Amount is null");
+            return new BigInteger(toncoins).multiply(BigInteger.valueOf(BLN1));
         }
     }
 
     public static BigInteger toNano(double toncoins) {
+        checkToncoinsOverflow(new BigDecimal(toncoins).multiply(BigDecimal.valueOf(BLN1)).toBigInteger());
         if (BigDecimal.valueOf(toncoins).scale() > 9) {
             throw new Error("Round the number to 9 decimals first");
         }
@@ -653,6 +692,7 @@ public class Utils {
     }
 
     public static BigInteger toNano(float toncoins) {
+        checkToncoinsOverflow(new BigDecimal(toncoins).multiply(BigDecimal.valueOf(BLN1)).toBigInteger());
         if (BigDecimal.valueOf(toncoins).scale() > 9) {
             throw new Error("Round the number to 9 decimals first");
         }
@@ -660,38 +700,79 @@ public class Utils {
     }
 
     public static BigInteger toNano(BigDecimal toncoins) {
+        checkToncoinsOverflow(toncoins.multiply(BigDecimal.valueOf(BLN1)).toBigInteger());
         if (toncoins.scale() > 9) {
             throw new Error("Round the number to 9 decimals first");
         }
         return toncoins.multiply(BigDecimal.valueOf(BLN1)).toBigInteger();
     }
 
-    public static BigDecimal fromNano(long toncoins) {
-        return new BigDecimal(toncoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.CEILING);
+    public static BigDecimal fromNano(BigInteger nanoCoins) {
+        checkToncoinsOverflow(nanoCoins);
+        return new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP);
     }
 
-    public static BigDecimal fromNano(long toncoins, int scale) {
-        return new BigDecimal(toncoins).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.CEILING);
+    public static BigDecimal fromNano(String nanoCoins) {
+        checkToncoinsOverflow(new BigInteger(nanoCoins));
+        return new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP);
     }
 
-    public static String formatNanoValue(String value) {
-        return String.format("%,.9f", new BigDecimal(value).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.CEILING));
+    public static BigDecimal fromNano(long nanoCoins) {
+        checkToncoinsOverflow(BigInteger.valueOf(nanoCoins));
+        return new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP);
     }
 
-    public static String formatNanoValue(long value) {
-        return String.format("%,.9f", new BigDecimal(value).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.CEILING));
+    public static BigDecimal fromNano(long nanoCoins, int scale) {
+        checkToncoinsOverflow(BigInteger.valueOf(nanoCoins));
+        return new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.HALF_UP);
     }
 
-    public static String formatNanoValue(BigInteger value) {
-        return String.format("%,.9f", new BigDecimal(value).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.CEILING));
+    public static String formatCoins(BigDecimal toncoins) {
+        checkToncoinsOverflow(toncoins.multiply(BigDecimal.valueOf(BLN1)).toBigInteger());
+        if (toncoins.scale() > 9) {
+            throw new Error("Round the number to 9 decimals first");
+        }
+        return String.format("%,.9f", toncoins.multiply(BigDecimal.valueOf(BLN1)));
     }
 
-    public static String formatNanoValue(String value, int scale) {
-        return String.format("%,." + scale + "f", new BigDecimal(value).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.CEILING));
+    public static String formatCoins(String toncoins) {
+        BigInteger nano = toNano(toncoins);
+        return formatNanoValue(nano);
     }
 
-    public static String formatNanoValue(BigInteger value, int scale) {
-        return String.format("%,." + scale + "f", new BigDecimal(value).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.CEILING));
+    public static String formatCoins(BigDecimal toncoins, int scale) {
+        BigInteger nano = toNano(toncoins);
+        return formatNanoValue(nano, scale);
+    }
+
+    public static String formatCoins(String toncoins, int scale) {
+        BigInteger nano = toNano(toncoins);
+        return formatNanoValue(nano, scale);
+    }
+
+    public static String formatNanoValue(String nanoCoins) {
+        checkToncoinsOverflow(new BigInteger(nanoCoins));
+        return String.format("%,.9f", new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP));
+    }
+
+    public static String formatNanoValue(long nanoCoins) {
+        checkToncoinsOverflow(BigInteger.valueOf(nanoCoins));
+        return String.format("%,.9f", new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP));
+    }
+
+    public static String formatNanoValue(BigInteger nanoCoins) {
+        checkToncoinsOverflow(nanoCoins);
+        return String.format("%,.9f", new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP));
+    }
+
+    public static String formatNanoValue(String nanoCoins, int scale) {
+        checkToncoinsOverflow(new BigInteger(nanoCoins));
+        return String.format("%,." + scale + "f", new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.HALF_UP));
+    }
+
+    public static String formatNanoValue(BigInteger nanoCoins, int scale) {
+        checkToncoinsOverflow(nanoCoins);
+        return String.format("%,." + scale + "f", new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.HALF_UP));
     }
 
     public static void sleep(long seconds) {
@@ -753,5 +834,16 @@ public class Utils {
 
     public static int unsignedByteToInt(byte x) {
         return x & 0x00ff;
+    }
+
+    private static void checkToncoinsOverflow(BigInteger amount) {
+        int bytesSize = (int) Math.ceil((amount.bitLength() / (double) 8));
+        if (bytesSize >= 16) {
+            throw new Error("Value is too big. Maximum value 2^120-1");
+        }
+    }
+
+    public static String generateString(int length, String character) {
+        return RandomStringUtils.random(length, character);
     }
 }
