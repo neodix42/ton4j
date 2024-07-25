@@ -82,7 +82,7 @@ public class TestJetton {
                 .seqno(adminWallet.getSeqno())
                 .destination(minter.getAddress())
                 .amount(Utils.toNano(0.07))
-                .body(minter.createMintBody(0,
+                .body(JettonMinter.createMintBody(0,
                         adminWallet.getAddress(),
                         Utils.toNano(0.07),
                         Utils.toNano(100500),

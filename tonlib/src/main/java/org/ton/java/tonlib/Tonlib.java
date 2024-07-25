@@ -825,6 +825,16 @@ public class Tonlib {
     }
 
     /**
+     * Returns account status by address.
+     *
+     * @param address Address
+     * @return String - uninitialized, frozen or active.
+     */
+    public String getAccountBalance(Address address) {
+        return getRawAccountState(address).getBalance();
+    }
+
+    /**
      * Returns account status by address and blockId.
      *
      * @param address Address
@@ -843,6 +853,9 @@ public class Tonlib {
         }
     }
 
+    public String getAccountBalance(Address address, BlockIdExt blockId) {
+        return getRawAccountState(address, blockId).getBalance();
+    }
 
     public Cell getConfigAll(int mode) {
         synchronized (gson) {

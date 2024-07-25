@@ -63,25 +63,23 @@ public class TestJettonStableCoin {
                 .amount(Utils.toNano(1.2))
                 .stateInit(minter.getStateInit())
                 .body(JettonMinterStableCoin.createMintBody(0,
-                                adminWallet.getAddress(),
-                                Utils.toNano(0.1), // ton amount
-                                Utils.toNano(100500), // jetton amount
-                                null, // from address
-                                null, // response address
-                                BigInteger.ONE, // fwd amount
-                                MsgUtils.createTextMessageBody("minting") // forward payload
-                        )
-                )
-                .build();
+                        adminWallet.getAddress(),
+                        Utils.toNano(0.1), // ton amount
+                        Utils.toNano(100500), // jetton amount
+                        null, // from address
+                        null, // response address
+                        BigInteger.ONE, // fwd amount
+                        MsgUtils.createTextMessageBody("minting")) // forward payload
+                ).build();
 
         ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(45, "minting...");
+        Utils.sleep(60, "minting...");
 
         getMinterInfoV2(minter);
 
-        assertThat(minter.getJettonData(tonlib).getTotalSupply().longValue()).isNotEqualTo(0);
+        assertThat(minter.getJettonData().getTotalSupply().longValue()).isNotEqualTo(0);
 
         // TRANSFER from adminWallet to wallet2 (by sending transfer request to admin's jettonWallet)
         JettonWalletStableCoin adminJettonWallet = minter.getJettonWallet(adminWallet.getAddress());
@@ -101,8 +99,7 @@ public class TestJettonStableCoin {
                                 BigInteger.ONE, // forward amount
                                 MsgUtils.createTextMessageBody("gift") // forward payload
                         )
-                )
-                .build();
+                ).build();
         extMessageInfo = adminWallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
@@ -129,8 +126,7 @@ public class TestJettonStableCoin {
                                 Utils.toNano("0.01"), // forward amount
                                 MsgUtils.createTextMessageBody("gift from wallet2") // forward payload
                         )
-                )
-                .build();
+                ).build();
 
         extMessageInfo = wallet2.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
@@ -157,8 +153,7 @@ public class TestJettonStableCoin {
                                         0,
                                         3) // cant send and receive
                         )
-                )
-                .build();
+                ).build();
         extMessageInfo = adminWallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
@@ -174,15 +169,13 @@ public class TestJettonStableCoin {
                 .destination(jettonWallet2.getAddress())
                 .amount(Utils.toNano(0.057))
                 .body(JettonWalletStableCoin.createTransferBody(
-                                0,
-                                Utils.toNano(50),
-                                adminWallet.getAddress(), // recipient
-                                null, // response address
-                                Utils.toNano("0.01"), // forward amount
-                                MsgUtils.createTextMessageBody("gift from wallet2") // forward payload
-                        )
-                )
-                .build();
+                        0,
+                        Utils.toNano(50),
+                        adminWallet.getAddress(), // recipient
+                        null, // response address
+                        Utils.toNano("0.01"), // forward amount
+                        MsgUtils.createTextMessageBody("gift from wallet2")) // forward payload
+                ).build();
 
         extMessageInfo = wallet2.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
@@ -199,7 +192,7 @@ public class TestJettonStableCoin {
     }
 
     private void getMinterInfoV2(JettonMinterStableCoin minter) {
-        JettonMinterData data = minter.getJettonData(tonlib);
+        JettonMinterData data = minter.getJettonData();
         log.info("minter adminAddress {}", data.getAdminAddress());
         log.info("minter totalSupply {}", Utils.formatNanoValue(data.getTotalSupply(), 6));
         log.info("minter jetton uri {}", data.getJettonContentUri());

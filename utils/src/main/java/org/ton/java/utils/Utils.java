@@ -770,6 +770,15 @@ public class Utils {
         return String.format("%,." + scale + "f", new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.HALF_UP));
     }
 
+    public static String formatJettonValue(String jettons, int decimals, int scale) {
+        return String.format("%,." + scale + "f", new BigDecimal(jettons).divide(BigDecimal.valueOf(Math.pow(10, decimals))), scale, RoundingMode.HALF_UP);
+    }
+
+    public static String formatJettonValue(BigInteger jettons, int decimals, int scale) {
+//        return String.format("%,.2f", new BigDecimal(jettons));
+        return String.format("%,." + scale + "f", new BigDecimal(jettons).divide(BigDecimal.valueOf(Math.pow(10, decimals))), scale, RoundingMode.HALF_UP);
+    }
+
     public static String formatNanoValue(BigInteger nanoCoins, int scale) {
         checkToncoinsOverflow(nanoCoins);
         return String.format("%,." + scale + "f", new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), scale, RoundingMode.HALF_UP));

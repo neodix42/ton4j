@@ -23,6 +23,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -31,7 +32,7 @@ public class JettonMinter implements Contract {
     Address adminAddress;
     Cell content;
     String jettonWalletCodeHex;
-
+    Address customAddress;
     String code;
 
     public static class JettonMinterBuilder {
@@ -74,12 +75,21 @@ public class JettonMinter implements Contract {
      */
     @Override
     public Cell createDataCell() {
-        return CellBuilder.beginCell()
-                .storeCoins(BigInteger.ZERO)
-                .storeAddress(adminAddress)
-                .storeRef(content)
-                .storeRef(CellBuilder.beginCell().fromBoc(jettonWalletCodeHex).endCell())
-                .endCell();
+        if (StringUtils.isNotEmpty(code)) {
+            return CellBuilder.beginCell()
+                    .storeCoins(BigInteger.ZERO)
+                    .storeAddress(adminAddress)
+                    .storeRef(content)
+                    .storeRef(CellBuilder.beginCell().fromBoc(code).endCell())
+                    .endCell();
+        } else {
+            return CellBuilder.beginCell()
+                    .storeCoins(BigInteger.ZERO)
+                    .storeAddress(adminAddress)
+                    .storeRef(content)
+                    .storeRef(CellBuilder.beginCell().fromBoc(jettonWalletCodeHex).endCell())
+                    .endCell();
+        }
     }
 
     @Override
@@ -161,7 +171,12 @@ public class JettonMinter implements Contract {
      * @return JettonData
      */
     public JettonMinterData getJettonData(Tonlib tonlib) {
-        RunResult result = tonlib.runMethod(getAddress(), "get_jetton_data"); // minter
+        RunResult result;
+        if (nonNull(customAddress)) {
+            result = tonlib.runMethod(customAddress, "get_jetton_data");
+        } else {
+            result = tonlib.runMethod(getAddress(), "get_jetton_data");
+        }
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_jetton_data, returned an exit code " + result.getExit_code());
@@ -198,9 +213,12 @@ public class JettonMinter implements Contract {
     }
 
     public BigInteger getTotalSupply(Tonlib tonlib) {
-        Address myAddress = this.getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "get_jetton_data");
-
+        RunResult result;
+        if (nonNull(customAddress)) {
+            result = tonlib.runMethod(customAddress, "get_jetton_data");
+        } else {
+            result = tonlib.runMethod(getAddress(), "get_jetton_data");
+        }
         if (result.getExit_code() != 0) {
             throw new Error("method get_jetton_data, returned an exit code " + result.getExit_code());
         }
@@ -221,7 +239,13 @@ public class JettonMinter implements Contract {
 
         stack.offer("[slice, " + cell.endCell().toHex(true) + "]");
 
-        RunResult result = tonlib.runMethod(getAddress(), "get_wallet_address", stack);
+        RunResult result;
+
+        if (nonNull(customAddress)) {
+            result = tonlib.runMethod(customAddress, "get_wallet_address", stack);
+        } else {
+            result = tonlib.runMethod(getAddress(), "get_wallet_address", stack);
+        }
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_wallet_address, returned an exit code " + result.getExit_code());

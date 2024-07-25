@@ -23,6 +23,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -32,7 +33,7 @@ public class JettonMinterStableCoin implements Contract {
     Address nextAdminAddress;
     Cell content;
     String jettonWalletCodeHex;
-
+    Address customAddress;
     String code;
 
     public static class JettonMinterStableCoinBuilder {
@@ -75,14 +76,26 @@ public class JettonMinterStableCoin implements Contract {
      */
     @Override
     public Cell createDataCell() {
-        return CellBuilder.beginCell()
-                .storeCoins(BigInteger.ZERO)
-                .storeAddress(adminAddress)
-                .storeAddress(nextAdminAddress)
-                .storeRef(CellBuilder.beginCell().fromBoc(jettonWalletCodeHex).endCell())
-                .storeRef(content)
+        if (StringUtils.isNotEmpty(code)) {
+            System.out.println("Using custom JettonMinter");
+            return CellBuilder.beginCell()
+                    .storeCoins(BigInteger.ZERO)
+                    .storeAddress(adminAddress)
+                    .storeAddress(nextAdminAddress)
+                    .storeRef(CellBuilder.beginCell().fromBoc(code).endCell())
+                    .storeRef(content)
 //                .storeRef(NftUtils.createOnchainDataCell(jettonContentUri, 6L))
-                .endCell();
+                    .endCell();
+        } else {
+            return CellBuilder.beginCell()
+                    .storeCoins(BigInteger.ZERO)
+                    .storeAddress(adminAddress)
+                    .storeAddress(nextAdminAddress)
+                    .storeRef(CellBuilder.beginCell().fromBoc(WalletCodes.jettonMinterStableCoin.getValue()).endCell())
+                    .storeRef(content)
+//                .storeRef(NftUtils.createOnchainDataCell(jettonContentUri, 6L))
+                    .endCell();
+        }
     }
 
     @Override
@@ -94,8 +107,8 @@ public class JettonMinterStableCoin implements Contract {
                     endCell();
         }
         return CellBuilder.beginCell().
-                fromBoc(WalletCodes.jettonMinterStableCoin.getValue()).
-                endCell();
+                fromBoc(WalletCodes.jettonMinterStableCoin.getValue())
+                .endCell();
     }
 
     /**
@@ -190,8 +203,13 @@ public class JettonMinterStableCoin implements Contract {
     /**
      * @return JettonData
      */
-    public JettonMinterData getJettonData(Tonlib tonlib) {
-        RunResult result = tonlib.runMethod(getAddress(), "get_jetton_data"); // minter
+    public JettonMinterData getJettonData() {
+        RunResult result;
+        if (nonNull(customAddress)) {
+            result = tonlib.runMethod(customAddress, "get_jetton_data");
+        } else {
+            result = tonlib.runMethod(getAddress(), "get_jetton_data");
+        }
 
         if (result.getExit_code() != 0) {
             throw new Error("method get_jetton_data, returned an exit code " + result.getExit_code());
@@ -225,12 +243,12 @@ public class JettonMinterStableCoin implements Contract {
                 .build();
     }
 
-    public BigInteger getTotalSupply(Tonlib tonlib) {
-        Address myAddress = this.getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "get_jetton_data");
-
-        if (result.getExit_code() != 0) {
-            throw new Error("method get_jetton_data, returned an exit code " + result.getExit_code());
+    public BigInteger getTotalSupply() {
+        RunResult result;
+        if (nonNull(customAddress)) {
+            result = tonlib.runMethod(customAddress, "get_jetton_data"); // minter
+        } else {
+            result = tonlib.runMethod(getAddress(), "get_jetton_data"); // minter
         }
 
         TvmStackEntryNumber totalSupplyNumber = (TvmStackEntryNumber) result.getStack().get(0);
@@ -245,8 +263,12 @@ public class JettonMinterStableCoin implements Contract {
 
         stack.offer("[slice, " + cell.endCell().toHex(true) + "]");
 
-        RunResult result = tonlib.runMethod(getAddress(), "get_wallet_address", stack);
-
+        RunResult result;
+        if (nonNull(customAddress)) {
+            result = tonlib.runMethod(customAddress, "get_wallet_address", stack);
+        } else {
+            result = tonlib.runMethod(getAddress(), "get_wallet_address", stack);
+        }
         if (result.getExit_code() != 0) {
             throw new Error("method get_wallet_address, returned an exit code " + result.getExit_code());
         }
