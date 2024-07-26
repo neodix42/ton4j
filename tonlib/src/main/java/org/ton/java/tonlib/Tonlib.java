@@ -831,7 +831,11 @@ public class Tonlib {
      * @return String - uninitialized, frozen or active.
      */
     public String getAccountBalance(Address address) {
-        return getRawAccountState(address).getBalance();
+        String balance = getRawAccountState(address).getBalance();
+        if (balance.equals("-1")) {
+            return "0";
+        }
+        return balance;
     }
 
     /**

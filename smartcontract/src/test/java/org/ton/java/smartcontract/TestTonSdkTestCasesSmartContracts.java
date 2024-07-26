@@ -11,16 +11,22 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.smartcontract.token.ft.JettonMinterStableCoin;
+import org.ton.java.smartcontract.token.ft.JettonWalletStableCoin;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.types.WalletV4R2Config;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.tlb.types.Message;
+import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.nio.charset.Charset;
 
@@ -546,5 +552,226 @@ public class TestTonSdkTestCasesSmartContracts {
                 .build();
         Message sendMsg = contract.prepareExternalMsg(config);
         assertThat(sendMsg.toCell().toHex(true).toUpperCase()).isEqualTo(expectedBocAsHex);
+    }
+
+    @Test
+    public void testSmartContracts14() {
+
+        String testId = "smartcontracts-14";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        String usdtMasterContractAddress = testCase.getInput().get("usdtMasterContractAddress").toString();
+        BigDecimal amountToncoinsToJettonWallet = new BigDecimal(testCase.getInput().get("amountToncoinsToJettonWallet").toString());
+        BigInteger amountNanoUsdt = new BigInteger(testCase.getInput().get("amountNanoUsdt").toString());
+        BigInteger forwardAmountNanocoins = new BigInteger(testCase.getInput().get("forwardAmountNanocoins").toString());
+        String forwardComment = testCase.getInput().get("forwardComment").toString();
+
+        // careful - mainnet
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(false)
+                .ignoreCache(false)
+                .build();
+
+        Address usdtMasterAddress = Address.of(usdtMasterContractAddress);
+
+        //64 bytes private key of your wallet, top it up before using
+        byte[] secretKey = Utils.hexToSignedBytes("add");
+
+        //use when you have 64 bytes private key
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSecretKey(secretKey);
+
+        //use when you have 32 bytes private key
+        //TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+
+        // create random wallet
+        WalletV3R2 randomDestinationWallet = WalletV3R2.builder()
+                .keyPair(Utils.generateSignatureKeyPair())
+                .walletId(42)
+                .build();
+
+        // use your wallet
+        WalletV3R2 myWallet = WalletV3R2.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42)
+                .build();
+
+        String nonBounceableAddress = myWallet.getAddress().toNonBounceable();
+        String bounceableAddress = myWallet.getAddress().toBounceable();
+        String rawAddress = myWallet.getAddress().toRaw();
+
+        log.info("non-bounceable address: {}", nonBounceableAddress);
+        log.info("    bounceable address: {}", bounceableAddress);
+        log.info("    raw address: {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(myWallet.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(myWallet.getKeyPair().getSecretKey()));
+
+        String status = tonlib.getAccountStatus(Address.of(bounceableAddress));
+        log.info("account status {}", status);
+
+        String balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
+        log.info("account balance {}", Utils.formatNanoValue(balance));
+
+        // myWallet.deploy();
+        // myWallet.waitForDeployment(30);
+
+        // get usdt jetton master (minter) address
+        JettonMinterStableCoin usdtMasterWallet = JettonMinterStableCoin.builder()
+                .tonlib(tonlib)
+                .customAddress(usdtMasterAddress)
+                .build();
+
+        log.info("usdt total supply: {}", Utils.formatJettonValue(usdtMasterWallet.getTotalSupply(), 6, 2));
+
+        // get my JettonWallet the one that holds my jettons (USDT) tokens
+        JettonWalletStableCoin myJettonWallet = usdtMasterWallet.getJettonWallet(myWallet.getAddress());
+        log.info("my jettonWallet balance: {}", Utils.formatJettonValue(myJettonWallet.getBalance(), 6, 2));
+
+        // send my jettons to external address
+        WalletV3Config walletV3Config = WalletV3Config.builder()
+                .walletId(42)
+                .seqno(myWallet.getSeqno())
+                .destination(myJettonWallet.getAddress())
+                .amount(Utils.toNano(amountToncoinsToJettonWallet))
+                .body(JettonWalletStableCoin.createTransferBody(
+                        0,
+                        amountNanoUsdt,                          // jettons to send
+                        randomDestinationWallet.getAddress(),    // recipient
+                        null,                                    // response address
+                        forwardAmountNanocoins,                  // forward amount
+                        MsgUtils.createTextMessageBody(forwardComment))
+                ).build();
+        ExtMessageInfo extMessageInfo = myWallet.send(walletV3Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        Utils.sleep(90, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());
+
+        BigInteger expectedBalanceOfNanocoinsAtRandomAddress = new BigInteger(testCase.getExpectedOutput().get("balanceOfNanocoinsAtRandomAddress").toString());
+        BigInteger expectedBalanceOfJettonsAtRandomAddress = new BigInteger(testCase.getExpectedOutput().get("balanceOfJettonsAtRandomAddress").toString());
+
+        BigInteger balanceOfDestinationWallet = new BigInteger(tonlib.getAccountBalance(randomDestinationWallet.getAddress()));
+        log.info("balanceOfDestinationWallet in toncoins: {}", balanceOfDestinationWallet);
+
+        JettonWalletStableCoin randomJettonWallet = usdtMasterWallet.getJettonWallet(randomDestinationWallet.getAddress());
+        BigInteger balanceOfJettonWallet = randomJettonWallet.getBalance();
+        log.info("balanceOfJettonWallet in jettons: {}", Utils.formatJettonValue(balanceOfJettonWallet, 6, 2));
+
+        assertThat(balanceOfDestinationWallet).isEqualTo(expectedBalanceOfNanocoinsAtRandomAddress);
+        assertThat(balanceOfJettonWallet).isEqualTo(expectedBalanceOfJettonsAtRandomAddress);
+    }
+
+    @Test
+    public void testSmartContracts15() {
+
+        String testId = "smartcontracts-15";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        String usdtMasterContractAddress = testCase.getInput().get("usdtMasterContractAddress").toString();
+        BigDecimal amountToncoinsToJettonWallet = new BigDecimal(testCase.getInput().get("amountToncoinsToJettonWallet").toString());
+        BigInteger amountNanoUsdt = new BigInteger(testCase.getInput().get("amountNanoUsdt").toString());
+        BigInteger forwardAmountNanocoins = new BigInteger(testCase.getInput().get("forwardAmountNanocoins").toString());
+
+        // careful - mainnet
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(false)
+                .ignoreCache(false)
+                .build();
+
+        Address usdtMasterAddress = Address.of(usdtMasterContractAddress);
+
+        //64 bytes private key of your wallet, top it up before using
+        byte[] secretKey = Utils.hexToSignedBytes("add");
+
+        //use when you have 64 bytes private key
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSecretKey(secretKey);
+
+        //use when you have 32 bytes private key
+        //TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+
+        // create random wallet
+        WalletV4R2 randomDestinationWallet = WalletV4R2.builder()
+                .keyPair(Utils.generateSignatureKeyPair())
+                .walletId(42)
+                .build();
+
+        // use your wallet
+        WalletV4R2 myWallet = WalletV4R2.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42)
+                .build();
+
+        String nonBounceableAddress = myWallet.getAddress().toNonBounceable();
+        String bounceableAddress = myWallet.getAddress().toBounceable();
+        String rawAddress = myWallet.getAddress().toRaw();
+
+        log.info("non-bounceable address: {}", nonBounceableAddress);
+        log.info("    bounceable address: {}", bounceableAddress);
+        log.info("    raw address: {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(myWallet.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(myWallet.getKeyPair().getSecretKey()));
+
+        String status = tonlib.getAccountStatus(Address.of(bounceableAddress));
+        log.info("account status {}", status);
+
+        String balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
+        log.info("account balance {}", Utils.formatNanoValue(balance));
+
+        // myWallet.deploy();
+        // myWallet.waitForDeployment(30);
+
+        // get usdt jetton master (minter) address
+        JettonMinterStableCoin usdtMasterWallet = JettonMinterStableCoin.builder()
+                .tonlib(tonlib)
+                .customAddress(usdtMasterAddress)
+                .build();
+
+        log.info("usdt total supply: {}", Utils.formatJettonValue(usdtMasterWallet.getTotalSupply(), 6, 2));
+
+        // get my JettonWallet the one that holds my jettons (USDT) tokens
+        JettonWalletStableCoin myJettonWallet = usdtMasterWallet.getJettonWallet(myWallet.getAddress());
+        log.info("my jettonWallet balance: {}", Utils.formatJettonValue(myJettonWallet.getBalance(), 6, 2));
+
+        // send my jettons to external address
+        WalletV4R2Config walletV4Config = WalletV4R2Config.builder()
+                .walletId(42)
+                .seqno(myWallet.getSeqno())
+                .destination(myJettonWallet.getAddress())
+                .amount(Utils.toNano(amountToncoinsToJettonWallet))
+                .body(JettonWalletStableCoin.createTransferBody(
+                        0,
+                        amountNanoUsdt,                          // jettons to send
+                        randomDestinationWallet.getAddress(),    // recipient
+                        null,                                    // response address
+                        forwardAmountNanocoins,                  // forward amount
+                        null)                                    // forward payload
+                ).build();
+        ExtMessageInfo extMessageInfo = myWallet.send(walletV4Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        Utils.sleep(90, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());
+
+        BigInteger expectedBalanceOfNanocoinsAtRandomAddress = new BigInteger(testCase.getExpectedOutput().get("balanceOfNanocoinsAtRandomAddress").toString());
+        BigInteger expectedBalanceOfJettonsAtRandomAddress = new BigInteger(testCase.getExpectedOutput().get("balanceOfJettonsAtRandomAddress").toString());
+
+        BigInteger balanceOfDestinationWallet = new BigInteger(tonlib.getAccountBalance(randomDestinationWallet.getAddress()));
+        log.info("balanceOfDestinationWallet in toncoins: {}", balanceOfDestinationWallet);
+
+        JettonWalletStableCoin randomJettonWallet = usdtMasterWallet.getJettonWallet(randomDestinationWallet.getAddress());
+        BigInteger balanceOfJettonWallet = randomJettonWallet.getBalance();
+        log.info("balanceOfJettonWallet in jettons: {}", Utils.formatJettonValue(balanceOfJettonWallet, 6, 2));
+
+        assertThat(balanceOfDestinationWallet).isEqualTo(expectedBalanceOfNanocoinsAtRandomAddress);
+        assertThat(balanceOfJettonWallet).isEqualTo(expectedBalanceOfJettonsAtRandomAddress);
     }
 }
