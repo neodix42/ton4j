@@ -251,7 +251,9 @@ public class TestHighloadWalletV3 extends CommonTest {
         config = HighloadV3Config.builder()
                 .walletId(42)
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
-                .body(contract.createSingleTransfer(destAddress, 0.02, true,
+                .body(contract.createSingleTransfer(destAddress,
+                        Utils.toNano(0.02),
+                        true,
                         null,
 //                        MsgUtils.createTextMessageBody("ton4j")
                         CellBuilder.beginCell().endCell()

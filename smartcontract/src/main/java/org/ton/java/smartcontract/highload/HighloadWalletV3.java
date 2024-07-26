@@ -199,7 +199,7 @@ public class HighloadWalletV3 implements Contract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public Cell createSingleTransfer(Address destAddress, double amount, Boolean bounce, StateInit stateInit, Cell body) {
+    public Cell createSingleTransfer(Address destAddress, BigInteger amount, Boolean bounce, StateInit stateInit, Cell body) {
 
         return MessageRelaxed.builder()
                 .info(InternalMessageInfoRelaxed.builder()
@@ -209,7 +209,7 @@ public class HighloadWalletV3 implements Contract {
                                 .workchainId(destAddress.wc)
                                 .address(destAddress.toBigInteger())
                                 .build())
-                        .value(CurrencyCollection.builder().coins(Utils.toNano(amount)).build())
+                        .value(CurrencyCollection.builder().coins(amount).build())
                         .build())
                 .init(stateInit)
                 .body(CellBuilder.beginCell()
@@ -333,7 +333,7 @@ public class HighloadWalletV3 implements Contract {
 
         if (isNull(enclosedMessages)) {
             return ActionSendMsg.builder()
-                    .mode(destination.getMode())
+                    .mode((destination.getMode() == 0) ? 3 : destination.getMode())
                     .outMsg(MessageRelaxed.builder()
                             .info(InternalMessageInfoRelaxed.builder()
                                     .bounce(destination.isBounce())
@@ -351,13 +351,12 @@ public class HighloadWalletV3 implements Contract {
                                             .storeUint(0, 32) // 0 opcode means we have a comment
                                             .storeString(destination.getComment())
                                             .endCell() :
-                                    destination.getBody()
-                            )
+                                    destination.getBody())
                             .build())
                     .build();
         } else {
             return ActionSendMsg.builder()
-                    .mode(3)
+                    .mode((destination.getMode() == 0) ? 3 : destination.getMode())
                     .outMsg(MessageRelaxed.builder()
                             .info(InternalMessageInfoRelaxed.builder()
                                     .dstAddr(getAddressIntStd())
@@ -369,6 +368,5 @@ public class HighloadWalletV3 implements Contract {
                             .build())
                     .build();
         }
-
     }
 }

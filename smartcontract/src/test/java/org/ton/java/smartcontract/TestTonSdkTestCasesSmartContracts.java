@@ -6,16 +6,16 @@ import com.google.gson.ToNumberPolicy;
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.smartcontract.highload.HighloadWalletV3;
 import org.ton.java.smartcontract.token.ft.JettonMinterStableCoin;
 import org.ton.java.smartcontract.token.ft.JettonWalletStableCoin;
-import org.ton.java.smartcontract.types.WalletCodes;
-import org.ton.java.smartcontract.types.WalletV3Config;
-import org.ton.java.smartcontract.types.WalletV4R2Config;
+import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
@@ -29,6 +29,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -773,5 +779,185 @@ public class TestTonSdkTestCasesSmartContracts {
 
         assertThat(balanceOfDestinationWallet).isEqualTo(expectedBalanceOfNanocoinsAtRandomAddress);
         assertThat(balanceOfJettonWallet).isEqualTo(expectedBalanceOfJettonsAtRandomAddress);
+    }
+
+    @Test
+    public void testSmartContracts16() throws InterruptedException, NoSuchAlgorithmException {
+
+        String testId = "smartcontracts-16";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .build();
+
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+        HighloadWalletV3 contract = HighloadWalletV3.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42)
+                .build();
+
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
+        String rawAddress = contract.getAddress().toRaw();
+
+        log.info("non-bounceable address {}", nonBounceableAddress);
+        log.info("    bounceable address {}", bounceableAddress);
+        log.info("           raw address {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigDecimal amountTonCoins = new BigDecimal(testCase.getInput().get("amountToncoins").toString());
+        Boolean bounceFlag = (Boolean) testCase.getInput().get("bounceFlag");
+        int sendMode = Integer.parseInt(testCase.getInput().get("sendMode").toString());
+
+        BigInteger expectedNanoCoinsAtRandomAddress = new BigInteger(testCase.getExpectedOutput().get("nanocoinsAtRandomAddress").toString());
+
+
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+        Utils.sleep(30, "topping up...");
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        HighloadV3Config config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+                .build();
+
+        ExtMessageInfo extMessageInfo = contract.deploy(config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+
+        String singleRandomAddress = "0:" + Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+        config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+                .body(contract.createSingleTransfer(
+                        Address.of(singleRandomAddress),
+                        Utils.toNano(amountTonCoins),
+                        bounceFlag,
+                        null,
+                        CellBuilder.beginCell().endCell()))
+                .mode(sendMode)
+                .build();
+
+        extMessageInfo = contract.send(config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        Utils.sleep(60, "sending toncoins...");
+
+        BigInteger balanceOfDestinationWallet = new BigInteger(tonlib.getAccountBalance(Address.of(singleRandomAddress)));
+        log.info("balanceOfDestinationWallet in nanocoins: {}", balanceOfDestinationWallet);
+        assertThat(balanceOfDestinationWallet).isEqualTo(expectedNanoCoinsAtRandomAddress);
+    }
+
+    @Test
+    public void testSmartContracts17() throws InterruptedException, NoSuchAlgorithmException {
+
+        String testId = "smartcontracts-17";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .build();
+
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+        HighloadWalletV3 contract = HighloadWalletV3.builder()
+                .tonlib(tonlib)
+                .keyPair(keyPair)
+                .walletId(42)
+                .build();
+
+        String nonBounceableAddress = contract.getAddress().toNonBounceable();
+        String bounceableAddress = contract.getAddress().toBounceable();
+        String rawAddress = contract.getAddress().toRaw();
+
+        log.info("non-bounceable address {}", nonBounceableAddress);
+        log.info("    bounceable address {}", bounceableAddress);
+        log.info("           raw address {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+
+        BigDecimal amountTonCoins = new BigDecimal(testCase.getInput().get("amountToncoins").toString());
+        Boolean bounceFlag = (Boolean) testCase.getInput().get("bounceFlag");
+        int sendMode = Integer.parseInt(testCase.getInput().get("sendMode").toString());
+
+        String expectedHighLoadWalletCodeBocAsHexWithCrc = testCase.getExpectedOutput().get("highLoadWalletCodeBocAsHexWithCrc").toString();
+        BigInteger expectedTotalSumOfToncoinAtAll50Addresses = new BigInteger(testCase.getExpectedOutput().get("totalSumOfToncoinsAt50Addresses").toString());
+
+
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
+        Utils.sleep(30, "topping up...");
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        HighloadV3Config config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+                .build();
+
+        ExtMessageInfo extMessageInfo = contract.deploy(config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+
+        List<Destination> dummyDestinations = createDummyDestinations(50, amountTonCoins, bounceFlag, sendMode);
+        config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+                .body(contract.createBulkTransfer(
+                        dummyDestinations,
+                        BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+                .mode(sendMode)
+                .build();
+
+        extMessageInfo = contract.send(config);
+        AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        Utils.sleep(120, "sending toncoins...");
+
+        BigInteger totalSum = BigInteger.ZERO;
+        for (Destination destination : dummyDestinations) {
+            BigInteger balanceOfDestinationWallet = new BigInteger(tonlib.getAccountBalance(Address.of(destination.getAddress())));
+            log.info("{} : {}", destination.getAddress(), balanceOfDestinationWallet);
+            totalSum = totalSum.add(balanceOfDestinationWallet);
+            log.info("totalSum {}", totalSum);
+        }
+
+        assertThat(WalletCodes.highloadV3.getValue()).isEqualTo(expectedHighLoadWalletCodeBocAsHexWithCrc);
+        assertThat(totalSum).isEqualTo(expectedTotalSumOfToncoinAtAll50Addresses);
+    }
+
+    List<Destination> createDummyDestinations(int count, BigDecimal amount, Boolean bounceFlag, int sendMode) throws NoSuchAlgorithmException {
+        List<Destination> result = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            String dstDummyAddress = "0:" + Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+
+            result.add(Destination.builder()
+                    .mode(sendMode)
+                    .bounce(bounceFlag)
+                    .address(dstDummyAddress)
+                    .amount(Utils.toNano(amount))
+                    .comment("comment-" + i)
+                    .build());
+        }
+        return result;
     }
 }
