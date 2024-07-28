@@ -197,7 +197,7 @@ public class TestJetton {
         tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
         adminWallet = GenerateWallet.randomV3R1(tonlib, 2);
-        highloadWallet2 = GenerateWallet.randomHighloadV3R1(tonlib, 25);
+        highloadWallet2 = GenerateWallet.randomHighloadV3R1(tonlib, 55);
 
         // DEPLOY MINTER AND MINT JETTONS
 
@@ -219,7 +219,7 @@ public class TestJetton {
                 .body(JettonMinter.createMintBody(0,
                                 adminWallet.getAddress(),
                                 Utils.toNano(0.1), // ton amount
-                                Utils.toNano(100500), // jetton amount
+                                BigInteger.valueOf(100500_00), // jetton amount
                                 null, // from address
                                 null, // response address
                                 BigInteger.ONE, // fwd amount
@@ -240,7 +240,7 @@ public class TestJetton {
         // TRANSFER from adminWallet to highloadWallet2 (by sending transfer request to admin's jettonWallet)
         JettonWallet adminJettonWallet = minter.getJettonWallet(adminWallet.getAddress());
 
-        log.info("adminJettonWallet balance: {}, address: {}", Utils.formatNanoValue(adminJettonWallet.getBalance(), 6), adminJettonWallet.getAddress());
+        log.info("adminJettonWallet balance: {}, address: {}", Utils.formatNanoValue(adminJettonWallet.getBalance(), 2), adminJettonWallet.getAddress());
 
         walletV3Config = WalletV3Config.builder()
                 .walletId(42)
@@ -249,7 +249,7 @@ public class TestJetton {
                 .amount(Utils.toNano(0.057))
                 .body(JettonWallet.createTransferBody(
                                 0,
-                                BigInteger.valueOf(200000), // 2 decimals
+                                BigInteger.valueOf(2000_00), // 2 decimals
                                 highloadWallet2.getAddress(), // recipient
                                 null, // response address
                                 null, // custom payload
@@ -273,14 +273,14 @@ public class TestJetton {
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
                 .body(
                         highloadWallet2.createBulkTransfer(
-                                createDummyDestinations(500, highloadJettonWallet2),
+                                createDummyDestinations(800, highloadJettonWallet2),
                                 BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId()))
                 )
                 .build();
         extMessageInfo = highloadWallet2.send(highloadV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "transferring to 500 recipients 2 jettons...");
+        Utils.sleep(30, "transferring to 800 recipients 2 jettons...");
         log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
 
         getMinterInfo(minter);
@@ -303,15 +303,15 @@ public class TestJetton {
             result.add(Destination.builder()
                     .bounce(false)
                     .address(jettonWallet.getAddress().toBounceable())
-                    .amount(Utils.toNano(0.04))
+                    .amount(Utils.toNano(0.06))
                     .body(JettonWallet.createTransferBody(
                             0,
-                            BigInteger.valueOf(200), // 2 jettons, with decimals = 2
+                            BigInteger.valueOf(2_00), // 2 jettons, with decimals = 2
                             Address.of(dstDummyAddress),         // recipient
                             null,     // response address
                             null,     // custom payload
                             BigInteger.ONE, // forward amount
-                            null // forward payload / memo
+                            MsgUtils.createTextMessageBody("test sdk") // forward payload / memo
                     ))
                     .build());
         }

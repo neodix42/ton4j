@@ -212,7 +212,7 @@ public class JettonMinter implements Contract {
                 .build();
     }
 
-    public BigInteger getTotalSupply(Tonlib tonlib) {
+    public BigInteger getTotalSupply() {
         RunResult result;
         if (nonNull(customAddress)) {
             result = tonlib.runMethod(customAddress, "get_jetton_data");

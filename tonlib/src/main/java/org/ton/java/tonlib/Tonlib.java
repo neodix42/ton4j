@@ -828,14 +828,14 @@ public class Tonlib {
      * Returns account status by address.
      *
      * @param address Address
-     * @return String - uninitialized, frozen or active.
+     * @return BigInteger returned balance
      */
-    public String getAccountBalance(Address address) {
+    public BigInteger getAccountBalance(Address address) {
         String balance = getRawAccountState(address).getBalance();
         if (balance.equals("-1")) {
-            return "0";
+            return BigInteger.ZERO;
         }
-        return balance;
+        return new BigInteger(balance);
     }
 
     /**

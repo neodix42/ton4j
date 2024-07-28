@@ -13,10 +13,13 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.highload.HighloadWalletV3;
+import org.ton.java.smartcontract.token.ft.JettonMinter;
 import org.ton.java.smartcontract.token.ft.JettonMinterStableCoin;
+import org.ton.java.smartcontract.token.ft.JettonWallet;
 import org.ton.java.smartcontract.token.ft.JettonWalletStableCoin;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.utils.MsgUtils;
+import org.ton.java.smartcontract.wallet.ContractUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.tlb.types.Message;
@@ -33,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,6 +49,8 @@ public class TestTonSdkTestCasesSmartContracts {
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
     String fileContentWithUseCases = IOUtils.toString(new URL(numbersTestFileUrl), Charset.defaultCharset());
     TonSdkTestCases tonSdkTestCases = gson.fromJson(fileContentWithUseCases, TonSdkTestCases.class);
+
+    private List<Address> globalDummyDestinations = new ArrayList<>();
 
     public TestTonSdkTestCasesSmartContracts() throws IOException {
     }
@@ -620,7 +626,7 @@ public class TestTonSdkTestCasesSmartContracts {
         String status = tonlib.getAccountStatus(Address.of(bounceableAddress));
         log.info("account status {}", status);
 
-        String balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
+        BigInteger balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
         log.info("account balance {}", Utils.formatNanoValue(balance));
 
         // myWallet.deploy();
@@ -660,7 +666,7 @@ public class TestTonSdkTestCasesSmartContracts {
         BigInteger expectedBalanceOfNanocoinsAtRandomAddress = new BigInteger(testCase.getExpectedOutput().get("balanceOfNanocoinsAtRandomAddress").toString());
         BigInteger expectedBalanceOfJettonsAtRandomAddress = new BigInteger(testCase.getExpectedOutput().get("balanceOfJettonsAtRandomAddress").toString());
 
-        BigInteger balanceOfDestinationWallet = new BigInteger(tonlib.getAccountBalance(randomDestinationWallet.getAddress()));
+        BigInteger balanceOfDestinationWallet = tonlib.getAccountBalance(randomDestinationWallet.getAddress());
         log.info("balanceOfDestinationWallet in toncoins: {}", balanceOfDestinationWallet);
 
         JettonWalletStableCoin randomJettonWallet = usdtMasterWallet.getJettonWallet(randomDestinationWallet.getAddress());
@@ -730,7 +736,7 @@ public class TestTonSdkTestCasesSmartContracts {
         String status = tonlib.getAccountStatus(Address.of(bounceableAddress));
         log.info("account status {}", status);
 
-        String balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
+        BigInteger balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
         log.info("account balance {}", Utils.formatNanoValue(balance));
 
         // myWallet.deploy();
@@ -770,7 +776,7 @@ public class TestTonSdkTestCasesSmartContracts {
         BigInteger expectedBalanceOfNanocoinsAtRandomAddress = new BigInteger(testCase.getExpectedOutput().get("balanceOfNanocoinsAtRandomAddress").toString());
         BigInteger expectedBalanceOfJettonsAtRandomAddress = new BigInteger(testCase.getExpectedOutput().get("balanceOfJettonsAtRandomAddress").toString());
 
-        BigInteger balanceOfDestinationWallet = new BigInteger(tonlib.getAccountBalance(randomDestinationWallet.getAddress()));
+        BigInteger balanceOfDestinationWallet = tonlib.getAccountBalance(randomDestinationWallet.getAddress());
         log.info("balanceOfDestinationWallet in toncoins: {}", balanceOfDestinationWallet);
 
         JettonWalletStableCoin randomJettonWallet = usdtMasterWallet.getJettonWallet(randomDestinationWallet.getAddress());
@@ -855,7 +861,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
         Utils.sleep(60, "sending toncoins...");
 
-        BigInteger balanceOfDestinationWallet = new BigInteger(tonlib.getAccountBalance(Address.of(singleRandomAddress)));
+        BigInteger balanceOfDestinationWallet = tonlib.getAccountBalance(Address.of(singleRandomAddress));
         log.info("balanceOfDestinationWallet in nanocoins: {}", balanceOfDestinationWallet);
         assertThat(balanceOfDestinationWallet).isEqualTo(expectedNanoCoinsAtRandomAddress);
     }
@@ -935,7 +941,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
         BigInteger totalSum = BigInteger.ZERO;
         for (Destination destination : dummyDestinations) {
-            BigInteger balanceOfDestinationWallet = new BigInteger(tonlib.getAccountBalance(Address.of(destination.getAddress())));
+            BigInteger balanceOfDestinationWallet = tonlib.getAccountBalance(Address.of(destination.getAddress()));
             log.info("{} : {}", destination.getAddress(), balanceOfDestinationWallet);
             totalSum = totalSum.add(balanceOfDestinationWallet);
             log.info("totalSum {}", totalSum);
@@ -943,6 +949,200 @@ public class TestTonSdkTestCasesSmartContracts {
 
         assertThat(WalletCodes.highloadV3.getValue()).isEqualTo(expectedHighLoadWalletCodeBocAsHexWithCrc);
         assertThat(totalSum).isEqualTo(expectedTotalSumOfToncoinAtAll50Addresses);
+    }
+
+    @Test
+    public void testSmartContracts18() throws InterruptedException, NoSuchAlgorithmException {
+
+        String testId = "smartcontracts-18";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .build();
+
+        HighloadWalletV3 highloadWalletV3 = HighloadWalletV3.builder()
+                .tonlib(tonlib)
+                .keyPair(Utils.generateSignatureKeyPair())
+                .walletId(42)
+                .build();
+
+        String nonBounceableAddress = highloadWalletV3.getAddress().toNonBounceable();
+        String bounceableAddress = highloadWalletV3.getAddress().toBounceable();
+        String rawAddress = highloadWalletV3.getAddress().toRaw();
+
+        log.info("non-bounceable address {}", nonBounceableAddress);
+        log.info("    bounceable address {}", bounceableAddress);
+        log.info("           raw address {}", rawAddress);
+        log.info("pub-key {}", Utils.bytesToHex(highloadWalletV3.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(highloadWalletV3.getKeyPair().getSecretKey()));
+
+        String neojMasterContractAddress = testCase.getInput().get("neojFeucetMasterContractAddress").toString();
+        BigDecimal amountToncoinsToJettonWallet = new BigDecimal(testCase.getInput().get("amountToncoinsToJettonWallet").toString());
+        BigInteger amountNanoNeoj = new BigInteger(testCase.getInput().get("amountNeoj").toString());
+        BigInteger forwardAmountNanocoins = new BigInteger(testCase.getInput().get("forwardAmountNanocoins").toString());
+
+        String forwardComment = testCase.getInput().get("forwardComment").toString();
+        Boolean bounceFlag = (Boolean) testCase.getInput().get("bounceFlag");
+        int sendMode = Integer.parseInt(testCase.getInput().get("sendMode").toString());
+
+        BigInteger expectedNeojAtRandomAddress = new BigInteger(testCase.getExpectedOutput().get("neojAtRandomAddress").toString());
+
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+        log.info("new wallet {} toncoins balance: {}", highloadWalletV3.getName(), Utils.formatNanoValue(balance));
+
+        // top up new wallet with NEOJ using test-jetton-faucet-wallet
+        balance = TestJettonFaucet.topUpContractWithNeoj(tonlib, Address.of(nonBounceableAddress), BigInteger.valueOf(100));
+        log.info("new wallet {} jetton balance: {}", highloadWalletV3.getName(), Utils.formatJettonValue(balance, 2, 2));
+
+        HighloadV3Config config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+                .build();
+
+        ExtMessageInfo extMessageInfo = highloadWalletV3.deploy(config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        highloadWalletV3.waitForDeployment(60);
+
+        String singleRandomAddress = "0:" + Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+
+        JettonMinter jettonMinterWallet = JettonMinter.builder()
+                .tonlib(tonlib)
+                .customAddress(Address.of(neojMasterContractAddress))
+                .build();
+
+        JettonWallet myJettonWallet = jettonMinterWallet.getJettonWallet(highloadWalletV3.getAddress());
+
+        config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+                .body(highloadWalletV3.createBulkTransfer(
+                        Collections.singletonList(
+                                Destination.builder()
+                                        .bounce(bounceFlag)
+                                        .address(myJettonWallet.getAddress().toBounceable())
+                                        .amount(Utils.toNano(amountToncoinsToJettonWallet))
+                                        .body(JettonWallet.createTransferBody(
+                                                0,
+                                                amountNanoNeoj,
+                                                Address.of(singleRandomAddress),      // recipient
+                                                myJettonWallet.getAddress(),          // response address
+                                                null,                                 // custom payload
+                                                forwardAmountNanocoins,               // forward amount
+                                                MsgUtils.createTextMessageBody(forwardComment) // forward payload
+                                        )).build()),
+                        BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())
+                )).mode(sendMode)
+                .build();
+
+        extMessageInfo = highloadWalletV3.send(config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        Utils.sleep(60, "sending jettons...");
+
+        JettonWallet randomJettonWallet = jettonMinterWallet.getJettonWallet(Address.of(singleRandomAddress));
+        BigInteger jettonBalance = randomJettonWallet.getBalance();
+        log.info("balanceOfDestinationWallet in jettons: {}", jettonBalance);
+        assertThat(jettonBalance).isEqualTo(expectedNeojAtRandomAddress);
+    }
+
+    @Test
+    public void testSmartContracts19() throws InterruptedException, NoSuchAlgorithmException {
+
+        String testId = "smartcontracts-19";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        Tonlib tonlib = Tonlib.builder()
+                .testnet(true)
+                .ignoreCache(false)
+                .build();
+
+        HighloadWalletV3 highloadWalletV3 = HighloadWalletV3.builder()
+                .tonlib(tonlib)
+                .keyPair(Utils.generateSignatureKeyPair())
+                .walletId(42)
+                .build();
+
+        String nonBounceableAddress = highloadWalletV3.getAddress().toNonBounceable();
+        String bounceableAddress = highloadWalletV3.getAddress().toBounceable();
+
+        log.info("highloadWalletV3 address {}", bounceableAddress);
+
+        String neojMasterContractAddress = testCase.getInput().get("neojFeucetMasterContractAddress").toString();
+        BigDecimal amountToncoinsToJettonWallet = new BigDecimal(testCase.getInput().get("amountToncoinsToJettonWallet").toString());
+        BigInteger amountNanoNeoj = new BigInteger(testCase.getInput().get("amountNeoj").toString());
+        BigInteger forwardAmountNanocoins = new BigInteger(testCase.getInput().get("forwardAmountNanocoins").toString());
+
+        Boolean bounceFlag = (Boolean) testCase.getInput().get("bounceFlag");
+        int sendMode = Integer.parseInt(testCase.getInput().get("sendMode").toString());
+
+        BigInteger expectedTotalSumOfJettonsAt300Addresses = new BigInteger(testCase.getExpectedOutput().get("totalSumOfJettonsAt300Addresses").toString());
+
+        // top up new wallet using test-faucet-wallet
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(20));
+        log.info("new wallet {} toncoins balance: {}", highloadWalletV3.getName(), Utils.formatNanoValue(balance));
+
+        // top up new wallet with NEOJ using test-jetton-faucet-wallet
+        balance = TestJettonFaucet.topUpContractWithNeoj(tonlib, Address.of(nonBounceableAddress), expectedTotalSumOfJettonsAt300Addresses);
+        log.info("new wallet {} jetton balance: {}", highloadWalletV3.getName(), Utils.formatJettonValue(balance, 2, 2));
+
+        HighloadV3Config config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+                .build();
+
+        ExtMessageInfo extMessageInfo = highloadWalletV3.deploy(config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        highloadWalletV3.waitForDeployment(60);
+
+        JettonMinter jettonMinterWallet = JettonMinter.builder()
+                .tonlib(tonlib)
+                .customAddress(Address.of(neojMasterContractAddress))
+                .build();
+
+        JettonWallet myHighLoadJettonWallet = jettonMinterWallet.getJettonWallet(highloadWalletV3.getAddress());
+
+        List<Destination> dummyDestinations = createDummyJettonDestinations(300, myHighLoadJettonWallet.getAddress(),
+                amountToncoinsToJettonWallet, amountNanoNeoj, forwardAmountNanocoins, bounceFlag, sendMode);
+
+        config = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+                .body(highloadWalletV3.createBulkTransfer(
+                        dummyDestinations,
+                        BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())
+                )).mode(sendMode)
+                .build();
+
+        extMessageInfo = highloadWalletV3.send(config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        Utils.sleep(2 * 60, "bulk sending jettons...");
+
+        BigInteger totalSum = BigInteger.ZERO;
+        for (Address destination : globalDummyDestinations) {
+            log.info("retrieving jetton balance of {}", destination);
+            BigInteger jettonBalanceOfDestinationWallet = ContractUtils.getJettonBalance(tonlib, Address.of(neojMasterContractAddress), destination);
+            log.info("{} : {}", destination.toBounceable(), jettonBalanceOfDestinationWallet);
+            totalSum = totalSum.add(jettonBalanceOfDestinationWallet);
+            log.info("totalSum {}", totalSum);
+        }
+
+        assertThat(totalSum).isEqualTo(expectedTotalSumOfJettonsAt300Addresses);
     }
 
     List<Destination> createDummyDestinations(int count, BigDecimal amount, Boolean bounceFlag, int sendMode) throws NoSuchAlgorithmException {
@@ -957,6 +1157,33 @@ public class TestTonSdkTestCasesSmartContracts {
                     .amount(Utils.toNano(amount))
                     .comment("comment-" + i)
                     .build());
+        }
+        return result;
+    }
+
+    List<Destination> createDummyJettonDestinations(int count, Address jettonWallet, BigDecimal amount,
+                                                    BigInteger amountJettons, BigInteger forwardAmountNanocoins,
+                                                    Boolean bounceFlag, int sendMode) throws NoSuchAlgorithmException {
+        List<Destination> result = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            String dstDummyAddress = "0:" + Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+            globalDummyDestinations.add(Address.of(dstDummyAddress));
+            result.add(
+                    Destination.builder()
+                            .mode(sendMode)
+                            .bounce(bounceFlag)
+                            .address(jettonWallet.toBounceable())
+                            .amount(Utils.toNano(amount))
+                            .body(JettonWallet.createTransferBody(
+                                    0,
+                                    amountJettons,
+                                    Address.of(dstDummyAddress),          // recipient
+                                    jettonWallet,                         // response address
+                                    null,                                 // custom payload
+                                    forwardAmountNanocoins,               // forward amount
+                                    MsgUtils.createTextMessageBody("test-sdk-" + i) // forward payload
+                            )).build()
+            );
         }
         return result;
     }

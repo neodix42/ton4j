@@ -32,16 +32,7 @@ public class TestFaucet {
     public static String BOUNCEABLE = "kQC1Kha6NzVQHfGZl1UOftTEF1TuUB3tioQQiM5CeLZt5A_F";
 
     public static BigInteger topUpContract(Tonlib tonlib, Address destinationAddress, BigInteger amount) throws InterruptedException {
-        byte[] secretKey = Utils.hexToSignedBytes(SECRET_KEY);
-        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
-
-//        Options options = Options.builder()
-//                .publicKey(keyPair.getPublicKey())
-//                .secretKey(keyPair.getSecretKey())
-//                .wc(0L)
-//                .build();
-//
-//        WalletV1ContractR3 faucet = new Wallet(WalletVersion.V1R3, options).create();
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY));
 
         WalletV1R3 faucet = WalletV1R3.builder()
                 .tonlib(tonlib)
@@ -72,7 +63,7 @@ public class TestFaucet {
                 .seqno(faucet.getSeqno())
                 .destination(destinationAddress)
                 .amount(amount)
-                .comment("top-up from ton4j")
+                .comment("top-up from ton4j faucet")
                 .build();
 
         ExtMessageInfo extMessageInfo = faucet.send(config);
@@ -83,7 +74,7 @@ public class TestFaucet {
 
         ContractUtils.waitForBalanceChange(tonlib, destinationAddress, 60);
 
-        return ContractUtils.getBalance(tonlib, destinationAddress);
+        return tonlib.getAccountBalance(destinationAddress);
     }
 
     @Test

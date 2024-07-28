@@ -3,6 +3,8 @@ package org.ton.java.smartcontract.wallet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
+import org.ton.java.smartcontract.token.ft.JettonMinter;
+import org.ton.java.smartcontract.token.ft.JettonWallet;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
@@ -32,7 +34,7 @@ public class ContractUtils {
 
     public static void waitForBalanceChange(Tonlib tonlib, Address address, int timeoutSeconds) {
         System.out.println("waiting for balance change up to " + timeoutSeconds + " sec");
-        BigInteger initialBalance = getBalance(tonlib, address);
+        BigInteger initialBalance = tonlib.getAccountBalance(address);
         int i = 0;
         do {
             if (++i * 2 >= timeoutSeconds) {
@@ -40,10 +42,35 @@ public class ContractUtils {
             }
             Utils.sleep(2);
         }
-        while (initialBalance.equals(getBalance(tonlib, address)));
+        while (initialBalance.equals(tonlib.getAccountBalance(address)));
     }
 
-    public static BigInteger getBalance(Tonlib tonlib, Address address) {
-        return new BigInteger(tonlib.getAccountState(address).getBalance());
+    public static void waitForJettonBalanceChange(Tonlib tonlib, Address jettonMinter, Address address, int timeoutSeconds) {
+        System.out.println("waiting for jetton balance change up to " + timeoutSeconds + " sec");
+        BigInteger initialBalance = getJettonBalance(tonlib, jettonMinter, address);
+        int i = 0;
+        do {
+            if (++i * 2 >= timeoutSeconds) {
+                throw new Error("Balance was not changed within specified timeout.");
+            }
+            Utils.sleep(2);
+        }
+        while (initialBalance.equals(getJettonBalance(tonlib, jettonMinter, address)));
+    }
+
+    public static BigInteger getJettonBalance(Tonlib tonlib, Address jettonMinter, Address destinationAddress) {
+
+        try {
+            JettonMinter jettonMinterWallet = JettonMinter.builder()
+                    .tonlib(tonlib)
+                    .customAddress(jettonMinter)
+                    .build();
+
+            JettonWallet jettonWallet = jettonMinterWallet.getJettonWallet(destinationAddress);
+
+            return jettonWallet.getBalance();
+        } catch (Exception e) {
+            return new BigInteger("-1");
+        }
     }
 }

@@ -79,7 +79,7 @@ public class TestJettonStableCoinMainnet {
         String status = tonlib.getAccountStatus(Address.of(bounceableAddress));
         log.info("account status {}", status);
 
-        String balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
+        BigInteger balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
         log.info("account balance {}", Utils.formatNanoValue(balance));
 
         // myWallet.deploy();
@@ -116,7 +116,7 @@ public class TestJettonStableCoinMainnet {
 
         Utils.sleep(90, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());
 
-        BigInteger balanceOfDestinationWallet = new BigInteger(tonlib.getAccountBalance(randomDestinationWallet.getAddress()));
+        BigInteger balanceOfDestinationWallet = tonlib.getAccountBalance(randomDestinationWallet.getAddress());
         log.info("balanceOfDestinationWallet in toncoins: {}", balanceOfDestinationWallet);
         assertThat(balanceOfDestinationWallet).isEqualTo(BigInteger.ONE);
 
@@ -175,7 +175,7 @@ public class TestJettonStableCoinMainnet {
         String status = tonlib.getAccountStatus(Address.of(bounceableAddress));
         log.info("account status {}", status);
 
-        String balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
+        BigInteger balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
         log.info("account balance {}", Utils.formatNanoValue(balance));
 
 //        myWallet.deploy();
@@ -212,7 +212,7 @@ public class TestJettonStableCoinMainnet {
 
         Utils.sleep(120, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());
 
-        BigInteger balanceOfDestinationWallet = new BigInteger(tonlib.getAccountBalance(randomDestinationWallet.getAddress()));
+        BigInteger balanceOfDestinationWallet = tonlib.getAccountBalance(randomDestinationWallet.getAddress());
         log.info("balanceOfDestinationWallet in toncoins: {}", balanceOfDestinationWallet);
 
         JettonWalletStableCoin randomJettonWallet = usdtMasterWallet.getJettonWallet(randomDestinationWallet.getAddress());

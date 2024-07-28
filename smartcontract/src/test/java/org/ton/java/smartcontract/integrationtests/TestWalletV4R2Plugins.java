@@ -83,7 +83,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
 
         Utils.sleep(30);
 
-        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(ContractUtils.getBalance(tonlib, beneficiaryAddress)));
+        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
 
         WalletV4R2Config config = WalletV4R2Config.builder()
                 .seqno(contract.getSeqno())
@@ -104,7 +104,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
 
         Utils.sleep(45);
 
-        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(ContractUtils.getBalance(tonlib, beneficiaryAddress)));
+        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
 
         // create and deploy plugin -- end
 
@@ -131,7 +131,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
 
         ContractUtils.waitForDeployment(tonlib, beneficiaryAddress, 90); // no need?
 
-        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(ContractUtils.getBalance(tonlib, beneficiaryAddress)));
+        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
 
         Utils.sleep(30, "wait for seqno update");
 
@@ -153,7 +153,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
 
         ContractUtils.waitForDeployment(tonlib, subscriptionInfo.getBeneficiary(), 90);
 
-        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(ContractUtils.getBalance(tonlib, subscriptionInfo.getBeneficiary())));
+        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(subscriptionInfo.getBeneficiary())));
 
         Utils.sleep(30);
 
