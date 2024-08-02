@@ -16,7 +16,7 @@ jobs:
 
       - name: Compile all
         run: |
-          mvn clean install -skipTests
+          mvn clean install -DskipTests
 
       - name: Run Utils tests
         run: |
