@@ -14,14 +14,18 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
 
-      - name: Run Address tests
+      - name: Compile all
         run: |
-          cd address
-          mvn test
+          mvn clean install -skipTests
 
       - name: Run Utils tests
         run: |
           cd utils
+          mvn test
+
+      - name: Run Address tests
+        run: |
+          cd address
           mvn test
 
       - name: Run BitString tests
