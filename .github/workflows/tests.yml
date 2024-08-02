@@ -14,6 +14,11 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
 
+      - name: Run Address tests
+        run: |
+          cd address
+          mvn test
+
       - name: Run Utils tests
         run: |
           cd utils
@@ -27,9 +32,4 @@ jobs:
       - name: Run Cell tests
         run: |
           cd cell
-          mvn test
-
-      - name: Run Address tests
-        run: |
-          cd address
           mvn test
