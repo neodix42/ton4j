@@ -16,7 +16,6 @@ public class CellBuilder {
 
     private CellBuilder() {
         cell = new Cell();
-//        super();
     }
 
     private CellBuilder(int bitSize) {
