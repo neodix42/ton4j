@@ -8,6 +8,9 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+/**
+ * Ordinary Hashmap (Patricia Tree), with fixed length keys.
+ */
 public class TonHashMap {
 
     public HashMap<Object, Object> elements;

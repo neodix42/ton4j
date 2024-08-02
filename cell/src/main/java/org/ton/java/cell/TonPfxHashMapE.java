@@ -7,17 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * TonPfxHashMapE with the fixed length keys.
+ * With comparison to TonPfxHashMap, TonPfxHashMapE may be empty.
+ * The first bit of it is a flag that indicates the emptiness.
+ */
 public class TonPfxHashMapE extends TonPfxHashMap {
 
-    /**
-     * TonPfxHashMapE with the fixed length keys.
-     * With comparison to TonPfxHashMap, TonPfxHashMapE may be empty.
-     * The first bit of it is a flag that indicates the emptiness.
-     * Notice, all keys should be of the same size. If you have keys of different size - align them.
-     * Duplicates are not allowed.
-     *
-     * @param keySize key size in bits
-     */
     public TonPfxHashMapE(int keySize) {
         super(keySize);
     }

@@ -56,6 +56,12 @@ public class CellBuilder {
         return this;
     }
 
+    public CellBuilder storeBits(String bits) {
+        checkBitsOverflow(bits.length());
+        cell.bits.writeBits(bits);
+        return this;
+    }
+
     public CellBuilder storeBits(Boolean[] arrayBits) {
         checkBitsOverflow(arrayBits.length);
         cell.bits.writeBitArray(arrayBits);

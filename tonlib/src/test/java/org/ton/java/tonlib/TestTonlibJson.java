@@ -174,9 +174,9 @@ public class TestTonlibJson {
     public void testTonlibGetTxsByAddress() {
         Address address = Address.of(TON_FOUNDATION);
 
-        log.info("address: " + address.toString(true));
+        log.info("address: " + address.toBounceable());
 
-        RawTransactions rawTransactions = tonlib.getRawTransactions(address.toString(false), null, null);
+        RawTransactions rawTransactions = tonlib.getRawTransactions(address.toRaw(), null, null);
 
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
@@ -198,9 +198,9 @@ public class TestTonlibJson {
     public void testTonlibGetTxsWithLimitByAddress() {
         Address address = Address.of(TON_FOUNDATION);
 
-        log.info("address: " + address.toString(true));
+        log.info("address: " + address.toBounceable());
 
-        RawTransactions rawTransactions = tonlib.getRawTransactions(address.toString(false), null, null, 3);
+        RawTransactions rawTransactions = tonlib.getRawTransactions(address.toRaw(), null, null, 3);
 
         for (RawTransaction tx : rawTransactions.getTransactions()) {
             if (nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
@@ -222,9 +222,9 @@ public class TestTonlibJson {
     public void testTonlibGetAllTxsByAddress() {
         Address address = Address.of("EQAL66-DGwFvP046ysD_o18wvwt-0A6_aJoVmQpVNIqV_ZvK");
 
-        log.info("address: " + address.toString(true));
+        log.info("address: " + address.toBounceable());
 
-        RawTransactions rawTransactions = tonlib.getAllRawTransactions(address.toString(false), null, null, 51);
+        RawTransactions rawTransactions = tonlib.getAllRawTransactions(address.toRaw(), null, null, 51);
 
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
@@ -246,9 +246,9 @@ public class TestTonlibJson {
     public void testTonlibGetAllTxsByAddressWithMemo() {
         Address address = Address.of("EQCQxq9F4-RSaO-ya7q4CF26yyCaQNY98zgD5ys3ZbbiZdUy");
 
-        log.info("address: " + address.toString(true));
+        log.info("address: " + address.toBounceable());
 
-        RawTransactions rawTransactions = tonlib.getAllRawTransactions(address.toString(false), null, null, 10);
+        RawTransactions rawTransactions = tonlib.getAllRawTransactions(address.toRaw(), null, null, 10);
 
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
@@ -291,7 +291,7 @@ public class TestTonlibJson {
 
         log.info("address: " + address.toString(true));
 
-        RawTransactions rawTransactions = tonlib.getAllRawTransactions(address.toString(false), null, null, 3);
+        RawTransactions rawTransactions = tonlib.getAllRawTransactions(address.toRaw(), null, null, 3);
 
         log.info("total txs: {}", rawTransactions.getTransactions().size());
 
@@ -379,10 +379,10 @@ public class TestTonlibJson {
     @Test
     public void testTonlibRawAccountState() {
         Address addr = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
-        log.info("address: " + addr.toString(true));
+        log.info("address: " + addr.toBounceable());
 
         AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
-                .account_address(addr.toString(true))
+                .account_address(addr.toBounceable())
                 .build();
 
         RawAccountState accountState = tonlib.getRawAccountState(accountAddressOnly);
@@ -399,10 +399,10 @@ public class TestTonlibJson {
                 .build();
 
         Address addr = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
-        log.info("address: " + addr.toString(true));
+        log.info("address: " + addr.toBounceable());
 
         AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
-                .account_address(addr.toString(true))
+                .account_address(addr.toBounceable())
                 .build();
 
         FullAccountState accountState = tonlib.getAccountState(accountAddressOnly);
@@ -420,7 +420,7 @@ public class TestTonlibJson {
                 .build();
 
         Address addr = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
-        log.info("address: " + addr.toString(true));
+        log.info("address: " + addr.toBounceable());
 
         BlockIdExt blockId = tonlib.lookupBlock(39047069, -1, -9223372036854775808L, 0, 0);
         FullAccountState accountState = tonlib.getAccountState(addr, blockId);

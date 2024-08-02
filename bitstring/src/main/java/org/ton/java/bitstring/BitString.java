@@ -150,6 +150,11 @@ public class BitString implements Bits<Boolean> {
         array.addLast(b);
     }
 
+    public void writeBits(String b) {
+        for (Character c : b.toCharArray()) {
+            array.addLast(c == '1');
+        }
+    }
 
     /**
      * Write bit and increase cursor

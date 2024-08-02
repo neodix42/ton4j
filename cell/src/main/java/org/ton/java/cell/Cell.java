@@ -22,34 +22,39 @@ import static org.ton.java.cell.CellType.UNKNOWN;
  */
 public class Cell {
 
-    public static final int ORDINARY_CELL_TYPE = -0x01;
-    public static final int PRUNED_CELL_TYPE = 0x01;
-    public static final int LIBRARY_CELL_TYPE = 0x02;
-    public static final int MERKLE_PROOF_CELL_TYPE = 0x03;
-    public static final int MERKLE_UPDATE_CELL_TYPE = 0x04;
-    public static final int UNKNOWN_CELL_TYPE = 0xFF;
-
     BitString bits;
     List<Cell> refs = new ArrayList<>();
 
-    public CellType type;
+    private CellType type;
     private int[] refsIndexes;
 
     String hash;
 
     public int index;
-    public boolean special;
+    private boolean exotic;
     public LevelMask levelMask;
 
-    public List<String> hashes = new ArrayList<>(); // todo private
-    public List<Integer> depths = new ArrayList<>(); // todo private
+    private List<String> hashes = new ArrayList<>();
+    private List<Integer> depths = new ArrayList<>();
 
     public BitString getBits() {
         return bits;
     }
 
+    public boolean isExotic() {
+        return exotic;
+    }
+
     public List<Cell> getRefs() {
         return new ArrayList<>(refs);
+    }
+
+    public List<String> getHashes() {
+        return new ArrayList<>(hashes);
+    }
+
+    public List<Integer> getDepths() {
+        return new ArrayList<>(depths);
     }
 
     @Override
@@ -68,14 +73,14 @@ public class Cell {
 
     public Cell() {
         this.bits = new BitString();
-        this.special = false;
+        this.exotic = false;
         this.type = ORDINARY;
         this.levelMask = new LevelMask(0);
     }
 
     public Cell(int bitSize) {
         this.bits = new BitString(bitSize);
-        this.special = false;
+        this.exotic = false;
         this.type = ORDINARY;
         this.levelMask = resolveMask();
     }
@@ -84,7 +89,7 @@ public class Cell {
         this.bits = new BitString(bits.getLength());
         this.bits.writeBitString(bits.clone());
         this.refs = new ArrayList<>(refs);
-        this.special = false;
+        this.exotic = false;
         this.type = ORDINARY;
         this.levelMask = new LevelMask(0);
     }
@@ -93,25 +98,25 @@ public class Cell {
         this.bits = new BitString(bits.getLength());
         this.bits.writeBitString(bits.clone());
         this.refs = new ArrayList<>(refs);
-        this.special = false;
+        this.exotic = false;
         this.type = toCellType(cellType);
         this.levelMask = new LevelMask(0);
     }
 
-    public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, LevelMask levelMask) {
+    public Cell(BitString bits, int bitSize, List<Cell> refs, boolean exotic, LevelMask levelMask) {
         this.bits = new BitString(bitSize);
         this.bits.writeBitString(bits);
         this.refs = new ArrayList<>(refs);
-        this.special = special;
+        this.exotic = exotic;
         this.type = ORDINARY;
         this.levelMask = levelMask;
     }
 
-    public Cell(BitString bits, int bitSize, List<Cell> refs, boolean special, CellType cellType) {
+    public Cell(BitString bits, int bitSize, List<Cell> refs, boolean exotic, CellType cellType) {
         this.bits = new BitString(bitSize);
         this.bits.writeBitString(bits);
         this.refs = new ArrayList<>(refs);
-        this.special = special;
+        this.exotic = exotic;
         this.type = cellType;
         this.levelMask = resolveMask();
     }
@@ -298,7 +303,7 @@ public class Cell {
         for (Cell refCell : this.refs) {
             c.refs.add(refCell.clone());
         }
-        c.special = this.special;
+        c.exotic = this.exotic;
         c.type = this.type;
         c.levelMask = this.levelMask.clone();
         c.hashes = new ArrayList<>(this.hashes);
@@ -521,6 +526,22 @@ public class Cell {
         return Utils.bytesToHex(toBoc(withCrc));
     }
 
+    public String toHex(boolean withCrc, boolean withIndex) {
+        return Utils.bytesToHex(toBoc(withCrc, withIndex));
+    }
+
+    public String toHex(boolean withCrc, boolean withIndex, boolean withCacheBits) {
+        return Utils.bytesToHex(toBoc(withCrc, withIndex, withCacheBits));
+    }
+
+    public String toHex(boolean withCrc, boolean withIndex, boolean withCacheBits, boolean withTopHash) {
+        return Utils.bytesToHex(toBoc(withCrc, withIndex, withCacheBits, withTopHash));
+    }
+
+    public String toHex(boolean withCrc, boolean withIndex, boolean withCacheBits, boolean withTopHash, boolean withIntHashes) {
+        return Utils.bytesToHex(toBoc(withCrc, withIndex, withCacheBits, withTopHash, withIntHashes));
+    }
+
     /**
      * BoC to hex
      *
@@ -566,13 +587,13 @@ public class Cell {
         return Utils.hexToSignedBytes(hashes.get(hashIndex));
     }
 
-    byte[] getRefsDescriptor(int lvl) {
+    public byte[] getRefsDescriptor(int lvl) {
         byte[] d1 = new byte[1];
-        d1[0] = (byte) (isNull(refs) ? 0 : refs.size() + ((special ? 1 : 0) * 8) + lvl * 32);
+        d1[0] = (byte) (isNull(refs) ? 0 : refs.size() + ((exotic ? 1 : 0) * 8) + lvl * 32);
         return d1;
     }
 
-    byte[] getBitsDescriptor() {
+    public byte[] getBitsDescriptor() {
         int bitsLength = bits.getLength();
         byte d3 = (byte) (Math.floor((double) bitsLength / 8) * 2);
         if ((bitsLength % 8) != 0) {
@@ -603,6 +624,15 @@ public class Cell {
     public byte[] toBoc(boolean withCRC, boolean withIdx) {
         return toBoc(withCRC, withIdx, false, false, false);
     }
+
+    public byte[] toBoc(boolean withCRC, boolean withIdx, boolean withCacheBits) {
+        return toBoc(withCRC, withIdx, withCacheBits, false, false);
+    }
+
+    public byte[] toBoc(boolean withCRC, boolean withIdx, boolean withCacheBits, boolean withTopHash) {
+        return toBoc(withCRC, withIdx, withCacheBits, withTopHash, false);
+    }
+
 
     // taken from pytoniq - beautiful!
     private Map<Cell, Integer> order(Map<Cell, Integer> result) {
@@ -771,7 +801,6 @@ public class Cell {
 
         for (Cell ref : refs) {
             data = Utils.concatBytes(data, Utils.dynamicIntBytes(BigInteger.valueOf(ref.index), refIndexSzBytes));
-//            data = Utils.concatBytes(data, sortedCells);
         }
         return data;
     }
@@ -787,7 +816,7 @@ public class Cell {
             if (hashIndex != prunedHashIndex) {
                 int off = 2 + 32 * prunedHashIndex + hashIndex * 2;
                 byte[] dst = new byte[2];
-                System.arraycopy(getDataBytes(), off, dst, 0, 2); // review
+                System.arraycopy(getDataBytes(), off, dst, 0, 2);
                 return Utils.bytesToIntX(dst);
             }
         }
@@ -809,7 +838,7 @@ public class Cell {
 
 
     public CellType getCellType() {
-        if (!special) {
+        if (!exotic) {
             return ORDINARY;
         }
 
@@ -818,8 +847,9 @@ public class Cell {
         }
 
         BitString clonedBits = bits.clone();
-        switch (clonedBits.readUint(8).intValue()) {
-            case ORDINARY_CELL_TYPE: {
+        CellType cellType = toCellType(clonedBits.readUint(8).intValue());
+        switch (cellType) {
+            case ORDINARY: {
                 if (bits.getLength() >= 288) {
                     //int msk = clonedBits.readUint(8).intValue();
                     LevelMask msk = new LevelMask(clonedBits.readUint(8).intValue());
@@ -830,17 +860,17 @@ public class Cell {
                     }
                 }
             }
-            case MERKLE_PROOF_CELL_TYPE: {
+            case MERKLE_PROOF: {
                 if ((refs.size() == 1) && (bits.getLength() == 280)) {
                     return CellType.MERKLE_PROOF;
                 }
             }
-            case MERKLE_UPDATE_CELL_TYPE: {
+            case MERKLE_UPDATE: {
                 if ((refs.size() == 1) && (bits.getLength() == 552)) {
                     return CellType.MERKLE_UPDATE;
                 }
             }
-            case LIBRARY_CELL_TYPE: {
+            case LIBRARY: {
                 if (bits.getLength() == (8 + 256)) {
                     return CellType.LIBRARY;
                 }

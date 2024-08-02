@@ -58,7 +58,6 @@ public class TestJettonFaucet {
                 .seqno(adminWallet.getSeqno())
                 .destination(adminJettonWallet.getAddress())
                 .amount(Utils.toNano(0.06))
-//                .bounce(false)
                 .body(JettonWallet.createTransferBody(
                         0,
                         jettonsAmount,
@@ -75,7 +74,6 @@ public class TestJettonFaucet {
             throw new Error(extMessageInfo.getError().getMessage());
         }
 
-//        ContractUtils.waitForBalanceChange(tonlib, adminWallet.getAddress(), 60);
         ContractUtils.waitForJettonBalanceChange(tonlib, Address.of(FAUCET_MASTER_ADDRESS), adminWallet.getAddress(), 60);
         Utils.sleep(10);
         return ContractUtils.getJettonBalance(tonlib, Address.of(FAUCET_MASTER_ADDRESS), destinationAddress);

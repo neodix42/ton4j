@@ -8,17 +8,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+/**
+ * A special case of a dictionary with
+ * variable-length keys is that of a prefix code, where the keys cannot be prefixes
+ * of each other. Values in such dictionaries may occur only in the leaves of a
+ * Patricia tree.
+ */
 public class TonPfxHashMap extends TonHashMap {
 
-    /**
-     * HashMap with the fixed length keys.
-     * With comparison to TonHashMap, TonHashMapE may be empty.
-     * The first bit of it is a flag that indicates the emptiness.
-     * Notice, all keys should be of the same size. If you have keys of different size - align them.
-     * Duplicates are not allowed.
-     *
-     * @param keySize key size in bits
-     */
     public TonPfxHashMap(int keySize) {
         super(keySize);
     }

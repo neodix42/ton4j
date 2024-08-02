@@ -300,7 +300,7 @@ public class TestTonSdkTestCasesSmartContracts {
         String bocAsHex = testCase.getExpectedOutput().get("bocAsHexWithCrc").toString();
 
         assertThat(WalletCodes.V4R2.getValue()).isEqualTo(bocAsHex);
-//        assertThat(WalletV4R2.builder().build().createCodeCell().toHex().toUpperCase()).isEqualTo(bocAsHex);
+        assertThat(WalletV4R2.builder().build().createCodeCell().toHex().toUpperCase()).isEqualTo(bocAsHex);
     }
 
     @Test
@@ -948,6 +948,7 @@ public class TestTonSdkTestCasesSmartContracts {
         }
 
         assertThat(WalletCodes.highloadV3.getValue()).isEqualTo(expectedHighLoadWalletCodeBocAsHexWithCrc);
+//        assertThat(contract.createCodeCell().toHex()).isEqualTo(expectedHighLoadWalletCodeBocAsHexWithCrc);
         assertThat(totalSum).isEqualTo(expectedTotalSumOfToncoinAtAll50Addresses);
     }
 

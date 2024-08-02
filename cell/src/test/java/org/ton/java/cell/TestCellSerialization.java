@@ -1,11 +1,15 @@
 package org.ton.java.cell;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
+import org.ton.java.bitstring.BitString;
 import org.ton.java.utils.Utils;
+
+import java.math.BigInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -123,9 +127,9 @@ public class TestCellSerialization {
         log.info("c1 hex        {}", c1.bitStringToHex());
         assertThat(c1.bitStringToHex()).isEqualTo("8000002_");
 
-        log.info("hashes " + c1.hashes.size());
-        log.info("hashes(1) " + c1.hashes.get(0));
-        log.info("depth " + c1.depths.size());
+        log.info("hashes " + c1.getHashes().size());
+        log.info("hashes(1) " + c1.getHashes().get(0));
+        log.info("depth " + c1.getDepths().size());
         log.info("hash old " + Utils.bytesToHex(c1.hash()));
         log.info("hash new " + Utils.bytesToHex(c1.getHash()));
 
@@ -169,6 +173,9 @@ public class TestCellSerialization {
 
         //c1.refs.add(c4);
 
+
+        log.info("boc hashes {}", c1_more.getHashes().size());
+        log.info("boc depths {}", c1_more.getDepths().get(0));
 
         log.info("c1_more " + c1_more.toHex());
         log.info("c2_more " + c2_more.toHex());
@@ -251,13 +258,75 @@ public class TestCellSerialization {
 
     @Test
     public void testCellSerializationNew() {
-        Cell c2 = CellBuilder.beginCell().storeUint(42, 7).endCell();
-        log.info("c2 {}", c2.print());
-        byte[] boc = c2.toBoc(true);
-        log.info("boc {}", boc);
+        BitString bs = new BitString(2);
+        bs.writeBits("01");
 
-        Cell c = CellBuilder.beginCell().fromBoc(boc).endCell();
-        log.info("int {}", CellSlice.beginParse(c).loadUint(7));
-        assertThat(CellSlice.beginParse(c).loadUint(7)).isEqualTo(42);
+        Cell cell = CellBuilder.beginCell()
+                .storeBitString(bs)
+                .storeUint(5, 32)
+                .storeUint(6, 31)
+                .storeBit(true)
+                .endCell();
+        log.info("cell1 {}", cell.print());
+        byte[] boc = cell.toBoc(true);
+        log.info("boc {}", boc);
+        log.info("boc {}", cell.toHex(true));
+        log.info("boc hash {}", Utils.bytesToHex(cell.getHash()));
+        log.info("boc hashes {}", cell.getHashes().size());
+        log.info("boc depths {}", cell.getDepths().get(0));
+        assertThat(StringUtils.trim(cell.print())).isEqualTo("x{40000001400000036_}");
+        assertThat(cell.toHex(true)).isEqualTo("b5ee9c7241010101000b0000114000000140000003603c39fda2");
+    }
+
+    @Test
+    public void testCellSerializationWithRef() {
+
+        Cell cell1 = CellBuilder.beginCell()
+                .storeBytes(new byte[]{65, 66, 67})
+                .storeUint(new BigInteger("538bd272cc81b9d5f470a18a946cbb8fb621ca57593836014e0f12fd5d34942f", 16), 256)
+                .storeString("test sdk")
+                .endCell();
+
+        Cell cell2 = CellBuilder.beginCell()
+                .storeInt(new BigInteger("568E7E73CDA9C3D5FF8641E77EED4EE65EDB702EA100290F2E7A043771C9CA5A", 16), 256)
+                .storeCoins(Utils.toNano("2.56"))
+                .storeAddress(Address.of("0QAljlSWOKaYCuXTx2OCr9P08y40SC2vw3UeM1hYnI3gDY7I"))
+                .storeRef(cell1)
+                .endCell();
+
+        log.info("cell2 {}", cell2.print());
+        byte[] boc = cell2.toBoc(true);
+        log.info("boc {}", cell2.toHex(true));
+        log.info("boc {}", cell2.toHex(false, true));
+        log.info("boc {}", cell2.toHex(true, true));
+        log.info("boc hash {}", Utils.bytesToHex(cell2.getHash()));
+        log.info("boc hashes {}", cell2.getHashes().size());
+        log.info("boc depths {}", cell2.getDepths().get(0));
+        assertThat(StringUtils.trim(cell2.print())).isEqualTo("x{568E7E73CDA9C3D5FF8641E77EED4EE65EDB702EA100290F2E7A043771C9CA5A4989680008004B1CA92C714D3015CBA78EC7055FA7E9E65C68905B5F86EA3C66B0B1391BC01B_}\n" +
+                " x{414243538BD272CC81B9D5F470A18A946CBB8FB621CA57593836014E0F12FD5D34942F746573742073646B}");
+        assertThat(cell2.toHex(true, false)).isEqualTo("b5ee9c7241010201007600018b568e7e73cda9c3d5ff8641e77eed4ee65edb702ea100290f2e7a043771c9ca5a4989680008004b1ca92c714d3015cba78ec7055fa7e9e65c68905b5f86ea3c66b0b1391bc01b010056414243538bd272cc81b9d5f470a18a946cbb8fb621ca57593836014e0f12fd5d34942f746573742073646bd55ad0db");
+        assertThat(cell2.toHex(false, true)).isEqualTo("b5ee9c7281010201007600492d018b568e7e73cda9c3d5ff8641e77eed4ee65edb702ea100290f2e7a043771c9ca5a4989680008004b1ca92c714d3015cba78ec7055fa7e9e65c68905b5f86ea3c66b0b1391bc01b010056414243538bd272cc81b9d5f470a18a946cbb8fb621ca57593836014e0f12fd5d34942f746573742073646b");
+        assertThat(cell2.toHex(true, true)).isEqualTo("b5ee9c72c1010201007600492d018b568e7e73cda9c3d5ff8641e77eed4ee65edb702ea100290f2e7a043771c9ca5a4989680008004b1ca92c714d3015cba78ec7055fa7e9e65c68905b5f86ea3c66b0b1391bc01b010056414243538bd272cc81b9d5f470a18a946cbb8fb621ca57593836014e0f12fd5d34942f746573742073646b69facb32");
+    }
+
+    @Test
+    public void testCellDepthBitsRefsDescriptor() {
+        Cell c1 = CellBuilder.beginCell().storeBit(true).endCell();
+        Cell c2 = CellBuilder.beginCell().storeBytes(new int[]{23}).storeRef(c1).endCell();
+        Cell c3 = CellBuilder.beginCell().storeAddress(null).storeRef(c2).endCell(); // addr_none$00
+        Cell c4 = CellBuilder.beginCell().storeCoins(BigInteger.ZERO).storeRef(c3).endCell();
+        Cell c5 = CellBuilder.beginCell()
+                .storeBytes(new int[]{45, 67})
+                .storeRef(c4)
+                .storeRef(c3)
+                .storeRef(c2)
+                .storeRef(c1)
+                .endCell();
+        log.info("print {}", c5.print());
+        log.info("boc {}", c5.toHex(true));
+        log.info("boc {}", Utils.bytesToHex(c5.getHash()));
+        log.info("depth {}", c5.getDepths().get(0));
+        log.info("refsDescriptor {}", Utils.bytesToHex(c5.getRefsDescriptor(0)));
+        log.info("bitsDescriptor {}", Utils.bytesToHex(c5.getBitsDescriptor()));
     }
 }

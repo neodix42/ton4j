@@ -7,17 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * TonHashMapE with the fixed length keys.
+ * With comparison to TonHashMap, TonHashMapE may be empty.
+ * The first bit of it is a flag that indicates the emptiness.
+ * Notice, all keys should be of the same size. If you have keys of different size - align them.
+ * Duplicates are not allowed.
+ */
 public class TonHashMapE extends TonHashMap {
 
-    /**
-     * TonHashMapE with the fixed length keys.
-     * With comparison to TonHashMap, TonHashMapE may be empty.
-     * The first bit of it is a flag that indicates the emptiness.
-     * Notice, all keys should be of the same size. If you have keys of different size - align them.
-     * Duplicates are not allowed.
-     *
-     * @param keySize key size in bits
-     */
     public TonHashMapE(int keySize) {
         super(keySize);
     }
