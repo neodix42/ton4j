@@ -14,9 +14,9 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
 
-      - name: Run Cell tests
+      - name: Run Utils tests
         run: |
-          cd cell
+          cd utils
           mvn test
 
       - name: Run BitString tests
@@ -24,12 +24,12 @@ jobs:
           cd bitstring
           mvn test
 
+      - name: Run Cell tests
+        run: |
+          cd cell
+          mvn test
+
       - name: Run Address tests
         run: |
           cd address
-          mvn test
-
-      - name: Run Utils tests
-        run: |
-          cd utils
           mvn test
