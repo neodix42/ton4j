@@ -3,6 +3,7 @@ package org.ton.java.cell;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -52,10 +53,13 @@ public class TestBocDeserealization {
     @Test
     public void testBocDeserializationAllConfig() throws IOException {
         String newBlockOutput = IOUtils.toString(Objects.requireNonNull(getClass().getResourceAsStream("/allconfig-boc-as-hex.txt")), StandardCharsets.UTF_8);
+        String cellOutput = IOUtils.toString(Objects.requireNonNull(getClass().getResourceAsStream("/allconfig-cell-print.txt")), StandardCharsets.UTF_8);
         Cell cell = CellBuilder.beginCell().fromBoc(newBlockOutput).endCell();
         log.info("CellType {}", cell.getCellType());
         log.info(cell.print());
         log.info(Utils.bytesToHex(cell.toBoc(true)));
+
+        assertThat(StringUtils.trim(cell.print())).isEqualTo(cellOutput);
     }
 
 

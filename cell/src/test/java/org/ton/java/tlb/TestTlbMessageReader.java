@@ -25,7 +25,12 @@ public class TestTlbMessageReader {
         InternalMessageInfo internalMessageInfo = InternalMessageInfo.deserialize(CellSlice.beginParse(c));
         log.info("internalMessage {}", internalMessageInfo);
         assertThat(internalMessageInfo.getIHRDisabled()).isTrue();
+        assertThat(internalMessageInfo.getBounce()).isTrue();
+        assertThat(internalMessageInfo.getBounced()).isFalse();
+        assertThat(internalMessageInfo.getSrcAddr().toAddress().toRaw()).isEqualTo("0:5fa635ee512bcbf2aeb8060d2a247157ae8d60b7cd4b1438cd270f595a26c2f1");
+        assertThat(internalMessageInfo.getDstAddr().toAddress().toRaw()).isEqualTo("-1:44128d9bdbec5de661c7e0b80393cbae2b9aabdb4f82cfecd1b34082388dc978");
         assertThat(internalMessageInfo.getValue().getCoins()).isEqualTo(BigInteger.valueOf(9980893000L));
+        assertThat(internalMessageInfo.getIHRFee()).isEqualTo(BigInteger.ZERO);
         assertThat(internalMessageInfo.getFwdFee()).isEqualTo(BigInteger.valueOf(9406739L));
         assertThat(internalMessageInfo.getCreatedAt()).isEqualTo(1684018284L);
         assertThat(internalMessageInfo.getCreatedLt()).isEqualTo(BigInteger.valueOf(37621510000006L));
