@@ -811,6 +811,17 @@ public class Utils {
         return result;
     }
 
+    public static String int2ip(long ip) {
+        if ((ip < 0) && (ip + Math.pow(2, 32) > Math.pow(2, 31))) {
+            ip = (long) (ip + Math.pow(2, 32));
+        }
+        return ((ip >> 24) & 0xFF) + "." +
+                ((ip >> 16) & 0xFF) + "." +
+                ((ip >> 8) & 0xFF) + "." +
+                (ip & 0xFF);
+        
+    }
+
     public static int[] reverseIntArray(int[] in) {
         int[] temp = in.clone();
         for (int i = 0; i < temp.length / 2; i++) {

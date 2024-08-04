@@ -71,7 +71,7 @@ public class TestHashMap {
         log.info("serialized cell: \n{}", cell.print());
 
         log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
-        
+
         log.info("cell hash ref0 {}", Utils.bytesToHex(cell.getRefs().get(0).hash()));
         log.info("cell hash ref1 {}", Utils.bytesToHex(cell.getRefs().get(1).hash()));
 

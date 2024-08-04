@@ -2,7 +2,6 @@ package org.ton.java.tonlib;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParser;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
 import lombok.Builder;
@@ -14,6 +13,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.tonlib.queries.*;
 import org.ton.java.tonlib.types.*;
+import org.ton.java.tonlib.types.globalconfig.*;
 import org.ton.java.utils.Utils;
 
 import java.io.InputStream;
@@ -62,6 +62,8 @@ public class Tonlib {
      * if not specified and pathToGlobalConfig is filled then pathToGlobalConfig is used;
      */
     private String globalConfigAsString;
+
+    private TonGlobalConfig globalConfig;
     /**
      * Valid values are:<br>
      * 0 - FATAL<br>
@@ -83,6 +85,8 @@ public class Tonlib {
 
     private String keystorePath;
 
+    private Integer liteServerIndex;
+
     /**
      * Default value 5
      */
@@ -98,9 +102,8 @@ public class Tonlib {
 
     private final long tonlib;
 
-    private boolean synced;
-
     RunResultParser runResultParser;
+
     LibraryResultParser libraryResultParser;
 
     public static class TonlibBuilder {
@@ -151,6 +154,10 @@ public class Tonlib {
                     super.keystorePath = ".";
                 }
 
+                if (isNull(super.liteServerIndex)) {
+                    super.liteServerIndex = -1;
+                }
+
                 super.keystorePath = super.keystorePath.replace("\\", "/");
 
                 if (super.receiveRetryTimes == 0) {
@@ -165,11 +172,10 @@ public class Tonlib {
                     super.ignoreCache = true;
                 }
 
-                super.synced = false;
                 super.runResultParser = new RunResultParser();
                 super.libraryResultParser = new LibraryResultParser();
 
-                String configData;
+                String originalGlobalConfig;
                 if (isNull(super.pathToGlobalConfig)) {
 
                     if (isNull(super.globalConfigAsString)) {
@@ -181,20 +187,34 @@ public class Tonlib {
                             super.pathToGlobalConfig = "global-config.json (integrated resource)";
                             config = Tonlib.class.getClassLoader().getResourceAsStream("global-config.json");
                         }
-                        configData = Utils.streamToString(config);
+                        originalGlobalConfig = Utils.streamToString(config);
 
                         if (nonNull(config)) {
                             config.close();
                         }
                     } else {
-                        configData = super.globalConfigAsString;
+                        originalGlobalConfig = super.globalConfigAsString;
                     }
+                } else if (nonNull(super.globalConfig)) {
+                    originalGlobalConfig = gson.toJson(super.globalConfig);
                 } else {
                     if (Files.exists(Paths.get(super.pathToGlobalConfig))) {
-                        configData = new String(Files.readAllBytes(Paths.get(super.pathToGlobalConfig)));
+                        originalGlobalConfig = new String(Files.readAllBytes(Paths.get(super.pathToGlobalConfig)));
                     } else {
                         throw new RuntimeException("Global config is not found in path: " + super.pathToGlobalConfig);
                     }
+                }
+
+                TonGlobalConfig globalConfigInternal = gson.fromJson(originalGlobalConfig, TonGlobalConfig.class);
+
+                if (super.liteServerIndex != -1) {
+                    if (super.liteServerIndex > globalConfigInternal.getLiteservers().length - 1) {
+                        throw new RuntimeException("Specified lite-server index is greater than total number of lite-servers in config.");
+                    }
+                    LiteServers[] liteServers = globalConfigInternal.getLiteservers();
+                    LiteServers[] newLiteServers = new LiteServers[1];
+                    newLiteServers[0] = liteServers[super.liteServerIndex];
+                    globalConfigInternal.setLiteservers(newLiteServers);
                 }
 
                 super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
@@ -207,6 +227,10 @@ public class Tonlib {
                                 "Keystore path: %s\n" +
                                 "Path to global config: %s\n" +
                                 "Global config as string: %s\n" +
+                                "lite-servers found: %s\n" +
+                                "dht-nodes found: %s\n" +
+                                "init-block seqno: %s\n" +
+                                "%s\n" +
                                 "Ignore cache: %s\n" +
                                 "Testnet: %s\n" +
                                 "Receive timeout: %s seconds\n" +
@@ -219,49 +243,59 @@ public class Tonlib {
                         super.pathToGlobalConfig,
                         (super.globalConfigAsString != null && super.globalConfigAsString.length() > 33) ?
                                 super.globalConfigAsString.substring(0, 33) : "",
+                        globalConfigInternal.getLiteservers().length,
+                        globalConfigInternal.getDht().getStatic_nodes().getNodes().length,
+                        globalConfigInternal.getValidator().getInit_block().getSeqno(),
+                        (super.liteServerIndex == -1) ? "using lite-servers: all" : "using lite-server at index: " + super.liteServerIndex + " (" + Utils.int2ip(globalConfigInternal.getLiteservers()[0].getIp()) + ")",
                         super.ignoreCache,
                         super.testnet,
                         super.receiveTimeout,
                         super.receiveRetryTimes);
 
+                // set verbosity
                 VerbosityLevelQuery verbosityLevelQuery = VerbosityLevelQuery.builder().new_verbosity_level(super.verbosityLevel.ordinal()).build();
-
                 super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(verbosityLevelQuery));
+                super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
 
-                String result = super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
-                System.out.println("set verbosityLevel result: " + result);
-
-                String initTemplate = Utils.streamToString(Tonlib.class.getClassLoader().getResourceAsStream("init.json"));
-
-                String dataQuery = JsonParser.parseString(configData).getAsJsonObject().toString();
-
-                String q = initTemplate.replace("CFG_PLACEHOLDER", dataQuery);
-                q = q.replace("IGNORE_CACHE", super.ignoreCache.toString());
-                if (super.keystoreInMemory) {
-                    String keystoreMemory = " 'keystore_type': { '@type': 'keyStoreTypeInMemory' }";
-                    q = q.replace("KEYSTORE_TYPE", keystoreMemory);
-                } else {
-                    String keystoreDirectory = "'keystore_type': {'@type': 'keyStoreTypeDirectory', 'directory': '.' } ";
-                    if (super.keystorePath.equals(".")) {
-                        q = q.replace("KEYSTORE_TYPE", keystoreDirectory);
-                    } else {
-                        q = q.replace("KEYSTORE_TYPE", keystoreDirectory.replace(".", super.keystorePath));
-                    }
-                }
-
-                String setupQueryQ = JsonParser.parseString(q).getAsJsonObject().toString();
-
-                super.tonlibJson.tonlib_client_json_send(super.tonlib, setupQueryQ);
-
-                result = super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
-                System.out.println("set tonlib configuration result " + result);
+                initTonlibConfig(globalConfigInternal);
 
             } catch (Exception e) {
                 throw new RuntimeException("Error creating tonlib instance: " + e.getMessage());
             }
             return super.build();
         }
+
+        private void initTonlibConfig(TonGlobalConfig tonGlobalConfig) {
+
+            TonlibSetup tonlibSetup = TonlibSetup.builder()
+                    .type("init")
+                    .options(TonlibOptions.builder()
+                            .type("options")
+                            .config(TonlibConfig.builder()
+                                    .type("config")
+                                    .config(gson.toJson(tonGlobalConfig))
+                                    .use_callbacks_for_network(false)
+                                    .blockchain_name("")
+                                    .ignore_cache(true)
+                                    .build())
+                            .keystore_type(
+                                    super.keystoreInMemory ?
+                                            KeyStoreTypeMemory.builder()
+                                                    .type("keyStoreTypeInMemory")
+                                                    .build()
+                                            :
+                                            KeyStoreTypeDirectory.builder()
+                                                    .type("keyStoreTypeDirectory")
+                                                    .directory(super.keystorePath.equals(".") ? "." : super.keystorePath)
+                                                    .build())
+                            .build())
+                    .build();
+
+            super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(tonlibSetup));
+            super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
+        }
     }
+
 
     public void destroy() {
         tonlibJson.tonlib_client_json_destroy(tonlib);

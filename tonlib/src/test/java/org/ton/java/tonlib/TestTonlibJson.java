@@ -2,10 +2,10 @@ package org.ton.java.tonlib;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParser;
 import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -18,6 +18,7 @@ import org.ton.java.cell.CellSlice;
 import org.ton.java.mnemonic.Mnemonic;
 import org.ton.java.tlb.types.ConfigParams8;
 import org.ton.java.tonlib.types.*;
+import org.ton.java.tonlib.types.globalconfig.*;
 import org.ton.java.utils.Utils;
 
 import java.io.IOException;
@@ -25,7 +26,10 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.Map;
 
 import static java.util.Objects.nonNull;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -38,14 +42,12 @@ public class TestTonlibJson {
     public static final String TON_FOUNDATION = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
     public static final String ELECTOR_ADDRESSS = "-1:3333333333333333333333333333333333333333333333333333333333333333";
 
-    public String INIT_TEMPLATE = Utils.streamToString(Objects.requireNonNull(TestTonlibJson.class.getClassLoader().getResourceAsStream("init.json")));
-
     Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
     static Tonlib tonlib;
 
     @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
+    public static void setUpBeforeClass() {
         tonlib = Tonlib.builder().ignoreCache(false).build();
     }
 
@@ -66,20 +68,138 @@ public class TestTonlibJson {
 
         assert nonNull(testConfig);
 
-        String data = Utils.streamToString(testConfig);
+        String globalConfigJson = Utils.streamToString(testConfig);
         testConfig.close();
 
-        assert nonNull(data);
+        assert nonNull(globalConfigJson);
 
-        String dataQuery = JsonParser.parseString(data).getAsJsonObject().toString();
+        TonlibSetup tonlibSetup = TonlibSetup.builder()
+                .type("init")
+                .options(TonlibOptions.builder()
+                        .type("options")
+                        .config(TonlibConfig.builder()
+                                .type("config")
+                                .config(globalConfigJson)
+                                .use_callbacks_for_network(false)
+                                .blockchain_name("")
+                                .ignore_cache(true)
+                                .build())
+                        .keystore_type(
+                                KeyStoreTypeDirectory.builder()
+                                        .type("keyStoreTypeDirectory")
+                                        .directory(".")
+                                        .build())
+                        .build())
+                .build();
 
-        String q = INIT_TEMPLATE.replace("CFG_PLACEHOLDER", dataQuery).replace("KEYSTORE_TYPE", KEYSTORE_MEMORY);
-        q = q.replace("IGNORE_CACHE", "true");
-        String setupQueryQ = JsonParser.parseString(q).getAsJsonObject().toString();
 
-        tonlibJson.tonlib_client_json_send(tonlib, setupQueryQ);
+        tonlibJson.tonlib_client_json_send(tonlib, gs.toJson(tonlibSetup));
         String result = tonlibJson.tonlib_client_json_receive(tonlib, 10.0);
         assertThat(result).isNotBlank();
+    }
+
+    @Test
+    public void testGlobalConfigJsonParser() throws IOException {
+
+        InputStream testConfig = TestTonlibJson.class.getClassLoader().getResourceAsStream("testnet-global.config.json");
+        String configStr = Utils.streamToString(testConfig);
+        assert testConfig != null;
+        testConfig.close();
+        TonGlobalConfig globalConfig = gs.fromJson(configStr, TonGlobalConfig.class);
+        log.info("config object: {}", globalConfig);
+
+        log.info("lite-servers found {}", globalConfig.getLiteservers().length);
+        log.info("dht-servers found {}", globalConfig.getDht().getStatic_nodes().getNodes().length);
+        log.info("hard-forks found {}", globalConfig.getValidator().getHardforks().length);
+
+        log.info("parsed config object back to json {}", gs.toJson(globalConfig));
+
+        Tonlib tonlib1 = Tonlib.builder()
+                .globalConfigAsString(gs.toJson(globalConfig))
+                .ignoreCache(false)
+                .build();
+
+        log.info("last {}", tonlib1.getLast());
+    }
+
+    @Test
+    public void testManualGlobalConfig() {
+
+        TonGlobalConfig testnetGlobalConfig = TonGlobalConfig.builder()
+                .liteservers(ArrayUtils.toArray(
+                        LiteServers.builder()
+                                .ip(1495755568)
+                                .port(4695)
+                                .id(LiteServerId.builder()
+                                        .type("pub.ed25519")
+                                        .key("cZpMFqy6n0Lsu8x/z2Jq0wh/OdM1WAVJJKSb2CvDECQ=")
+                                        .build())
+                                .build(),
+                        LiteServers.builder()
+                                .ip(1468571697)
+                                .port(27787)
+                                .id(LiteServerId.builder()
+                                        .type("pub.ed25519")
+                                        .key("Y/QVf6G5VDiKTZOKitbFVm067WsuocTN8Vg036A4zGk=")
+                                        .build())
+                                .build()))
+                .validator(Validator.builder()
+                        .type("validator.config.global")
+                        .zero_state(BlockInfo.builder()
+                                .file_hash("Z+IKwYS54DmmJmesw/nAD5DzWadnOCMzee+kdgSYDOg=")
+                                .root_hash("gj+B8wb/AmlPk1z1AhVI484rhrUpgSr2oSFIh56VoSg=")
+                                .workchain(-1)
+                                .seqno(0)
+                                .shard(-9223372036854775808L)
+                                .build())
+                        .hardforks(ArrayUtils.toArray(
+                                BlockInfo.builder()
+                                        .file_hash("jF3RTD+OyOoP+OI9oIjdV6M8EaOh9E+8+c3m5JkPYdg=")
+                                        .root_hash("6JSqIYIkW7y8IorxfbQBoXiuY3kXjcoYgQOxTJpjXXA=")
+                                        .workchain(-1)
+                                        .seqno(5141579)
+                                        .shard(-9223372036854775808L)
+                                        .build(),
+                                BlockInfo.builder()
+                                        .file_hash("WrNoMrn5UIVPDV/ug/VPjYatvde8TPvz5v1VYHCLPh8=")
+                                        .root_hash("054VCNNtUEwYGoRe1zjH+9b1q21/MeM+3fOo76Vcjes=")
+                                        .workchain(-1)
+                                        .seqno(5172980)
+                                        .shard(-9223372036854775808L)
+                                        .build(),
+                                BlockInfo.builder()
+                                        .file_hash("xRaxgUwgTXYFb16YnR+Q+VVsczLl6jmYwvzhQ/ncrh4=")
+                                        .root_hash("SoPLqMe9Dz26YJPOGDOHApTSe5i0kXFtRmRh/zPMGuI=")
+                                        .workchain(-1)
+                                        .seqno(5176527)
+                                        .shard(-9223372036854775808L)
+                                        .build()
+                        )).build())
+                .build();
+        log.info("config object: {}", testnetGlobalConfig);
+
+        log.info("lite-servers found {}", testnetGlobalConfig.getLiteservers().length);
+
+        log.info("parsed config object back to json {}", gs.toJson(testnetGlobalConfig));
+
+        Tonlib tonlib1 = Tonlib.builder()
+                .globalConfig(testnetGlobalConfig)
+                .ignoreCache(false)
+                .build();
+
+        log.info("last {}", tonlib1.getLast());
+    }
+
+    @Test
+    public void testTonlibUsingGlobalConfigLiteServerByIndex() {
+
+        Tonlib tonlib1 = Tonlib.builder()
+                .ignoreCache(false)
+                .testnet(true)
+                .liteServerIndex(1)
+                .build();
+
+        log.info("last {}", tonlib1.getLast());
     }
 
     @Test
