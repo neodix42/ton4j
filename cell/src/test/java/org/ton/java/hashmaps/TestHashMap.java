@@ -88,7 +88,7 @@ public class TestHashMap {
     }
 
     @Test
-    @Ignore  // TODO fails HashMapE serialization with one entry
+    //@Ignore  // TODO fails HashMapE serialization with one entry
     public void testHashMapDeserializationOneEntry() {
         int keySizeX = 9;
         TonHashMap x = new TonHashMap(keySizeX);
@@ -101,6 +101,19 @@ public class TestHashMap {
         );
 
         log.info("serialized cellX {}", cellX.print());
+
+        CellSlice cs = CellSlice.beginParse(cellX);
+        TonHashMap сx2 = cs.loadDict(keySizeX,
+                k -> k.readUint(keySizeX),
+                v -> CellSlice.beginParse(v).loadUint(3));
+
+        assertThat((Integer) сx2.elements.entrySet().size()).isEqualTo((Integer) 1);
+        log.info("Deserialized hashmap length: {}", сx2.elements.entrySet().size());
+
+        for (Map.Entry<Object, Object> entry : сx2.elements.entrySet()) {
+            assertThat((BigInteger) entry.getKey()).isEqualTo(100L);
+            assertThat((BigInteger) entry.getValue()).isEqualTo((byte) 1);
+        }
     }
 
     @Test

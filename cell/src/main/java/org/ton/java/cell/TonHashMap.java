@@ -91,6 +91,11 @@ public class TonHashMap {
      * @return array either leaf or empty leaf or [left,right] fork
      */
     List<Object> splitTree(List<Object> arr) {
+        if (arr.size() == 1) {
+            // Return a structure that represents a leaf node
+            return Arrays.asList(arr.get(0));
+        }
+
         List<Object> left = new ArrayList<>();
         List<Object> right = new ArrayList<>();
 
@@ -132,6 +137,11 @@ public class TonHashMap {
 
         if (arr.size() == 0) {
             return arr;
+        }
+
+        if (arr.size() == 1 && arr.get(0) instanceof Node) {
+            // This is a leaf node (single element case)
+            return Arrays.asList("", m, arr.get(0));
         }
 
         if (!(arr.get(0) instanceof String)) {
