@@ -4,8 +4,11 @@ import org.ton.java.bitstring.BitString;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -55,22 +58,18 @@ public class TonHashMap {
         key.writeBitString(l);
         if (key.toBitString().length() == keySize) {
             Cell value = CellBuilder.beginCell().storeSlice(edge).endCell();
-            List<Node> newList = new ArrayList<>(nodes);
-            newList.add(new Node(key, value));
-            return newList;
+            nodes.add(new Node(key, value));
+            return nodes;
         }
 
-        AtomicInteger i = new AtomicInteger();
-        return edge.refs.stream().map(c -> {
-            CellSlice forkEdge = CellSlice.beginParse(c);
+        for (int j = 0; j < edge.refs.size(); j++) {
+            CellSlice forkEdge = CellSlice.beginParse(edge.refs.get(j));
             BitString forkKey = key.clone();
-            forkKey.writeBit(i.get() != 0);
-            i.getAndIncrement();
-            return deserializeEdge(forkEdge, keySize, forkKey);
-        }).reduce(new ArrayList<>(), (x, y) -> {
-            x.addAll(y);
-            return x;
-        });
+            forkKey.writeBit(j != 0);
+            nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
+        }
+        return nodes;
+
     }
 
     /**
@@ -85,74 +84,76 @@ public class TonHashMap {
     }
 
     /**
-     * Read the keys in array and return binary tree in the form of nested array
+     * Read the keys in array and return binary tree in the form of Patrcia Tree Node
      *
-     * @param arr array which contains {key:Cell, value:Cell}
-     * @return array either leaf or empty leaf or [left,right] fork
+     * @param nodes list which contains nodes
+     * @return tree node
      */
-    List<Object> splitTree(List<Object> arr) {
-        List<Object> left = new ArrayList<>();
-        List<Object> right = new ArrayList<>();
+    PatriciaTreeNode splitTree(List<Node> nodes) {
+        List<Node> left = new ArrayList<>();
+        List<Node> right = new ArrayList<>();
 
-        for (Object a : arr) {
-            BitString key = ((Node) a).key;
-            Cell value = ((Node) a).value;
-            boolean lr = key.readBit();
+        for (Node node : nodes) {
+            boolean lr = node.key.readBit();
 
             if (lr) {
-                right.add(new Node(key, value));
+                right.add(node);
             } else {
-                left.add(new Node(key, value));
+                left.add(node);
             }
         }
 
-        if (left.size() > 1) {
-            left = splitTree(left);
-        }
+        PatriciaTreeNode leftNode = left.size() > 1
+                ? splitTree(left)
+                : left.isEmpty()
+                    ? null
+                    : new PatriciaTreeNode("", 0, left.get(0), null, null);
+        PatriciaTreeNode rightNode = right.size() > 1
+                ? splitTree(right)
+                : right.isEmpty()
+                    ? null
+                    : new PatriciaTreeNode("", 0, right.get(0), null, null);
 
-        if (right.size() > 1) {
-            right = splitTree(right);
-        }
-
-        if (left.isEmpty() && right.isEmpty()) {
-            return new ArrayList<>();
-        }
-        return new ArrayList<>(Arrays.asList(left, right));
+        return new PatriciaTreeNode("", keySize, null, leftNode, rightNode);
     }
 
     /**
-     * Flatten binary tree (by cutting empty branches) if possible:
-     * [[], [[left,right]]] flatten to ["1", m, left, right]
+     * Flatten binary tree (by cutting empty branches) if possible
      *
-     * @param arr array which contains uncut tree
-     * @param m   maximal possible length of prefix
-     * @return {array} [prefix, maximal possible length of prefix, left branch tree, right branch tree]
+     * @param node tree node
+     * @param m    maximal possible length of prefix
+     * @return flattened tree node
      */
-    List<Object> flatten(List<Object> arr, int m) {
-
-        if (arr.size() == 0) {
-            return arr;
+    PatriciaTreeNode flatten(PatriciaTreeNode node, int m) {
+        if (node == null) {
+            return null;
         }
 
-        if (!(arr.get(0) instanceof String)) {
-            arr.addAll(0, Arrays.asList("", m));
+        if (node.maxPrefixLength == 0) {
+            node.maxPrefixLength = m;
         }
 
-        if (arr.size() == 3) {
-            return arr;
+        if (node.leafNode != null) {
+            return node;
         }
 
-        if (((ArrayList<?>) arr.get(2)).size() == 0) { // left empty
-            return flatten(Arrays.asList(arr.get(0) + "1", arr.get(1), ((ArrayList<?>) arr.get(3)).get(0), ((ArrayList<?>) arr.get(3)).get(1)), m);
-        } else if (((ArrayList<?>) arr.get(3)).size() == 0) { // right empty
-            return flatten(Arrays.asList(arr.get(0) + "0", arr.get(1), ((ArrayList<?>) arr.get(2)).get(0), ((ArrayList<?>) arr.get(2)).get(1)), m);
+        PatriciaTreeNode left = node.left;
+        PatriciaTreeNode right = node.right;
+
+        if (left == null) {
+            return right.leafNode != null
+                    ? new PatriciaTreeNode(node.prefix + "1", m, right.leafNode, right.left, right.right)
+                    : flatten(new PatriciaTreeNode(node.prefix + "1", m, null, right.left, right.right), m);
+        } else if (right == null) {
+            return left.leafNode != null
+                    ? new PatriciaTreeNode(node.prefix + "0", m, left.leafNode, left.left, left.right)
+                    : flatten(new PatriciaTreeNode(node.prefix + "0", m, null, left.left, left.right), m);
         } else {
-            return new ArrayList<>(Arrays.asList(
-                    arr.get(0),
-                    arr.get(1),
-                    flatten((ArrayList) arr.get(2), m - ((String) arr.get(0)).length() - 1),
-                    flatten((ArrayList) arr.get(3), m - ((String) arr.get(0)).length() - 1)
-            ));
+            node.prefix = node.prefix;
+            node.maxPrefixLength = m;
+            node.left = flatten(left, m - node.prefix.length() - 1);
+            node.right = flatten(right, m - node.prefix.length() - 1);
+            return node;
         }
     }
 
@@ -208,45 +209,44 @@ public class TonHashMap {
      * hm_edge#_ {n:#} {X:Type} {l:#} {m:#} label:(HmLabel ~l n)
      * {n = (~m) + l} node:(HashmapNode m X) = Hashmap n X;
      *
-     * @param se      List<Object> which contains [label as "0" and "1" string, maximal possible size of label, leaf or left fork, right fork]
+     * @param node    tree node which contains [label as "0" and "1" string, maximal possible size of label, leaf or left fork, right fork]
      * @param builder Cell to which edge will be serialized
      */
-    void serialize_edge(List<Object> se, CellBuilder builder) {
-        if (se.size() == 0) {
+    void serialize_edge(PatriciaTreeNode node, CellBuilder builder) {
+        if (node == null) {
             return;
         }
-        if (se.size() == 3) { // contains leaf
-            Node node = (Node) se.get(2);
-            BitString bs = node.key.readBits(node.key.getUsedBits());
-            se.set(0, bs.toBitString());
-            serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            builder.storeCell(node.value);
+        if (node.leafNode != null) { // contains leaf
+            BitString bs = node.leafNode.key.readBits(node.leafNode.key.getUsedBits());
+            node.prefix = bs.toBitString();
+            serialize_label(node.prefix, node.maxPrefixLength, builder);
+            builder.storeCell(node.leafNode.value);
         } else { // contains fork
-            serialize_label((String) se.get(0), (Integer) se.get(1), builder);
+            serialize_label(node.prefix, node.maxPrefixLength, builder);
             CellBuilder leftCell = CellBuilder.beginCell();
-            serialize_edge((List<Object>) se.get(2), leftCell);
+            serialize_edge(node.left, leftCell);
             CellBuilder rightCell = CellBuilder.beginCell();
-            serialize_edge((List<Object>) se.get(3), rightCell);
+            serialize_edge(node.right, rightCell);
             builder.storeRef(leftCell.endCell());
             builder.storeRef(rightCell.endCell());
         }
     }
 
     public Cell serialize(Function<Object, BitString> keyParser, Function<Object, Cell> valueParser) {
-        List<Object> se = new ArrayList<>();
+        List<Node> nodes = new ArrayList<>();
         for (Map.Entry<Object, Object> entry : elements.entrySet()) {
             BitString key = keyParser.apply(entry.getKey());
             Cell value = valueParser.apply(entry.getValue());
-            se.add(new Node(key, value));
+            nodes.add(new Node(key, value));
         }
 
-        if (se.isEmpty()) {
+        if (nodes.isEmpty()) {
             throw new Error("TonHashMap does not support empty dict. Consider using TonHashMapE");
         }
 
-        List<Object> s = flatten(splitTree(se), keySize);
+        PatriciaTreeNode root = flatten(splitTree(nodes), keySize);
         CellBuilder b = CellBuilder.beginCell();
-        serialize_edge(s, b);
+        serialize_edge(root, b);
 
         return b.endCell();
     }
