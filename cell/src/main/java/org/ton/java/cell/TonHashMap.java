@@ -90,6 +90,10 @@ public class TonHashMap {
      * @return tree node
      */
     PatriciaTreeNode splitTree(List<Node> nodes) {
+        if (nodes.size() == 1) {
+            return new PatriciaTreeNode("", 0, nodes.get(0), null, null);
+        }
+
         List<Node> left = new ArrayList<>();
         List<Node> right = new ArrayList<>();
 
@@ -141,15 +145,10 @@ public class TonHashMap {
         PatriciaTreeNode right = node.right;
 
         if (left == null) {
-            return right.leafNode != null
-                    ? new PatriciaTreeNode(node.prefix + "1", m, right.leafNode, right.left, right.right)
-                    : flatten(new PatriciaTreeNode(node.prefix + "1", m, null, right.left, right.right), m);
+            return flatten(new PatriciaTreeNode(node.prefix + "1", m, null, right.left, right.right), m);
         } else if (right == null) {
-            return left.leafNode != null
-                    ? new PatriciaTreeNode(node.prefix + "0", m, left.leafNode, left.left, left.right)
-                    : flatten(new PatriciaTreeNode(node.prefix + "0", m, null, left.left, left.right), m);
+            return flatten(new PatriciaTreeNode(node.prefix + "0", m, null, left.left, left.right), m);
         } else {
-            node.prefix = node.prefix;
             node.maxPrefixLength = m;
             node.left = flatten(left, m - node.prefix.length() - 1);
             node.right = flatten(right, m - node.prefix.length() - 1);
