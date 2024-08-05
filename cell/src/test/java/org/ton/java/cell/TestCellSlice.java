@@ -761,7 +761,14 @@ public class TestCellSlice {
                         k -> k.readUint(dictKeySize),
                         v -> CellSlice.beginParse(v).loadUint(3)
                 );
-        assertThat(loadedDict.elements.size()).isEqualTo(0);
+        assertThat(loadedDict.elements.size()).isEqualTo(1);
+        int j = 1;
+        for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+            log.info("key {}, value {}", entry.getKey(), entry.getValue());
+            assertThat((BigInteger) entry.getKey()).isEqualTo(100 * j);
+            assertThat((BigInteger) entry.getValue()).isEqualTo(j);
+            j++;
+        }
     }
 
     // test coins big numbers
