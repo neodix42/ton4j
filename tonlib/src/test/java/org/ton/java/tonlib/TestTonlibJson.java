@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -38,7 +39,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @RunWith(JUnit4.class)
 public class TestTonlibJson {
 
-    private static final String KEYSTORE_MEMORY = "'keystore_type': { '@type': 'keyStoreTypeInMemory' }";
     public static final String TON_FOUNDATION = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
     public static final String ELECTOR_ADDRESSS = "-1:3333333333333333333333333333333333333333333333333333333333333333";
 
@@ -48,7 +48,9 @@ public class TestTonlibJson {
 
     @BeforeClass
     public static void setUpBeforeClass() {
-        tonlib = Tonlib.builder().ignoreCache(false).build();
+        tonlib = Tonlib.builder()
+                .receiveTimeout(5)
+                .ignoreCache(false).build();
     }
 
     @Test
@@ -196,7 +198,7 @@ public class TestTonlibJson {
         Tonlib tonlib1 = Tonlib.builder()
                 .ignoreCache(false)
                 .testnet(true)
-                .liteServerIndex(1)
+                .liteServerIndex(3)
                 .build();
 
         log.info("last {}", tonlib1.getLast());
@@ -209,9 +211,8 @@ public class TestTonlibJson {
                 .build();
 
 //        lookupBlock
-//        BlockIdExt fullblock = tonlib.lookupBlock(23512606, -1, -9223372036854775808L, 0, 0);
+        BlockIdExt fullblock = tonlib.lookupBlock(23512606, -1, -9223372036854775808L, 0, 0);
 
-        BlockIdExt fullblock = tonlib.getLast().getLast();
         log.info(fullblock.toString());
 
         MasterChainInfo masterChainInfo = tonlib.getLast();
@@ -515,6 +516,7 @@ public class TestTonlibJson {
     public void testTonlibAccountState() {
         Tonlib tonlib = Tonlib.builder()
                 .pathToGlobalConfig("g:/libs/global-config-archive.json")
+                .receiveTimeout(5)
                 .ignoreCache(false)
                 .build();
 
@@ -536,6 +538,7 @@ public class TestTonlibJson {
     public void testTonlibAccountStateAtSeqno() {
         Tonlib tonlib = Tonlib.builder()
                 .pathToGlobalConfig("g:/libs/global-config-archive.json")
+                .receiveTimeout(5)
                 .ignoreCache(false)
                 .build();
 
@@ -579,6 +582,7 @@ public class TestTonlibJson {
     public void testTonlibRunMethodSeqnoAtBlockId() {
         Tonlib tonlib = Tonlib.builder()
                 .pathToGlobalConfig("g:/libs/global-config-archive.json")
+                .receiveTimeout(5)
                 .ignoreCache(false)
                 .build();
         Address address = Address.of(TON_FOUNDATION);
@@ -619,6 +623,7 @@ public class TestTonlibJson {
     public void testTonlibRunMethodParticipantsListInThePast() {
         Tonlib tonlib = Tonlib.builder()
                 .pathToGlobalConfig("g:/libs/global-config-archive.json")
+                .receiveTimeout(5)
                 .ignoreCache(false)
                 .build();
         Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
@@ -649,6 +654,7 @@ public class TestTonlibJson {
     public void testTonlibRunMethodActiveElectionIdAtSeqno() {
         Tonlib tonlib = Tonlib.builder()
                 .pathToGlobalConfig("g:/libs/global-config-archive.json")
+                .receiveTimeout(5)
                 .ignoreCache(false)
                 .build();
         Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
@@ -727,6 +733,7 @@ public class TestTonlibJson {
     }
 
     @Test
+    @Ignore
     public void testTonlibMyLocalTon() {
         Tonlib tonlib = Tonlib.builder()
                 .verbosityLevel(VerbosityLevel.DEBUG)

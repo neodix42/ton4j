@@ -351,6 +351,26 @@ public class TestUtils {
         ip = -1468571697;
         log.info("ip {}", int2ip(ip));
         assertThat(int2ip(ip)).isEqualTo("168.119.95.207");
-    }
 
+        ip = 1592601963; // testnet [0] - 94.237.45.107
+        log.info("ip {}", int2ip(ip));
+
+        ip = 1162057690; // testnet [1] - 69.67.151.218
+        log.info("ip {}", int2ip(ip));
+
+        ip = -1304477830; // testnet [2] - 178.63.63.122
+        log.info("ip {}", int2ip(ip));
+
+        ip = 1495755568; // testnet [3] - 89.39.107.48
+        log.info("ip {}", int2ip(ip));
+
+        ip = 84478511; // mainnet [0] - 5.9.10.47
+        log.info("ip {}", int2ip(ip));
+
+        ip = 84478479; // mainnet [1] - 5.9.10.15
+        log.info("ip {}", int2ip(ip));
+
+        ip = -2018135749; // mainnet [2] - 135.181.177.59
+        log.info("ip {}", int2ip(ip));
+    }
 }

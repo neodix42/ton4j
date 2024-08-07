@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract.unittests;
+package org.ton.java.smartcontract.integrationtests;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;

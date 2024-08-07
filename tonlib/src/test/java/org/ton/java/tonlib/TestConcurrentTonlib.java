@@ -25,7 +25,7 @@ public class TestConcurrentTonlib {
 
     @Test
     @ThreadCount(10)
-    public void testTonlibRunMethod1() throws InterruptedException {
+    public void testTonlibRunMethod() throws InterruptedException {
         log.info("tonlib instance {}", tonlib);
         MasterChainInfo last = tonlib.getLast();
         log.info("last: {}", last);
