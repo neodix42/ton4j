@@ -1,12 +1,15 @@
 package org.ton.java.hashmaps;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.cell.*;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonHashMap;
+import org.ton.java.cell.TonHashMapE;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -88,7 +91,6 @@ public class TestHashMap {
     }
 
     @Test
-    @Ignore  // TODO fails HashMapE serialization with one entry
     public void testHashMapDeserializationOneEntry() {
         int keySizeX = 9;
         TonHashMap x = new TonHashMap(keySizeX);

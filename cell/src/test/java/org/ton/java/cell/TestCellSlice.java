@@ -1,7 +1,6 @@
 package org.ton.java.cell;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -674,7 +673,6 @@ public class TestCellSlice {
 
         assertThat(cs0.loadUint(8)).isEqualTo(10);
 
-//        assertThat(cs0.loadCoins()).isEqualTo(new BigInteger("12345"));
         assertThat(cs0.preloadCoins()).isEqualTo(new BigInteger("12345"));
         assertThat(cs0.loadCoins()).isEqualTo(new BigInteger("12345"));
         assertThat(cs0.loadUint(8)).isEqualTo(20);
@@ -736,11 +734,7 @@ public class TestCellSlice {
         assertThat(cs0.loadInt(8)).isEqualTo(-30);
     }
 
-    /**
-     * TODO fix dict with one entry
-     */
     @Test
-    @Ignore
     public void testCellSliceWithCellWithDictOneEntry() {
         int dictKeySize = 9;
         TonHashMap x = new TonHashMap(dictKeySize);
@@ -767,7 +761,7 @@ public class TestCellSlice {
                         k -> k.readUint(dictKeySize),
                         v -> CellSlice.beginParse(v).loadUint(3)
                 );
-        assertThat(loadedDict.elements.size()).isEqualTo(2);
+        assertThat(loadedDict.elements.size()).isEqualTo(1);
         int j = 1;
         for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
             log.info("key {}, value {}", entry.getKey(), entry.getValue());
