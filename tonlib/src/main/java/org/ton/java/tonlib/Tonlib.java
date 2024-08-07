@@ -428,11 +428,7 @@ public class Tonlib {
                             break outterloop;
                         }
                     } else if (response.contains("\"@extra\"")) {
-                        String queryExtraId = StringUtils.substringBetween(query, "@extra\":\"", "\"}");
-                        String responseExtraId = StringUtils.substringBetween(response, "@extra\":\"", "\"}");
-                        if (queryExtraId.equals(responseExtraId)) {
-                            break outterloop;
-                        }
+                        break outterloop;
                     }
 
                     if (response.contains(" : duplicate message\"")) {
