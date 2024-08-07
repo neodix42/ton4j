@@ -81,38 +81,6 @@ public class TonPfxHashMap extends TonHashMap {
         }
     }
 
-    /**
-     * Serialize PfxHashMap edge
-     * hm_edge#_ {n:#} {X:Type} {l:#} {m:#} label:(HmLabel ~l n)
-     * {n = (~m) + l} node:(HashmapNode m X) = Hashmap n X;
-     *
-     * @param se      List<Object> which contains [label as "0" and "1" string, maximal possible size of label, leaf or left fork, right fork]
-     * @param builder Cell to which edge will be serialized
-     */
-    void serialize_edge(List<Object> se, CellBuilder builder) {
-        if (se.size() == 0) {
-            return;
-        }
-
-        if (se.size() == 3) { // contains leaf
-            Node node = (Node) se.get(2);
-            BitString bs = node.key.readBits(node.key.getUsedBits());
-            se.set(0, bs.toBitString());
-            serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            builder.storeBit(false); //pfx feature
-            builder.storeCell(node.value);
-        } else { // contains fork
-            serialize_label((String) se.get(0), (Integer) se.get(1), builder);
-            builder.storeBit(true); //pfx feature
-            CellBuilder leftCell = CellBuilder.beginCell();
-            serialize_edge((List<Object>) se.get(2), leftCell);
-            CellBuilder rightCell = CellBuilder.beginCell();
-            serialize_edge((List<Object>) se.get(3), rightCell);
-            builder.storeRef(leftCell.endCell());
-            builder.storeRef(rightCell.endCell());
-        }
-    }
-
     public Cell serialize(Function<Object, BitString> keyParser, Function<Object, Cell> valueParser) {
         List<Node> nodes = new ArrayList<>();
         for (Map.Entry<Object, Object> entry : elements.entrySet()) {

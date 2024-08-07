@@ -72,12 +72,6 @@ You can use each submodule individually. Click the module below to get more deta
   Multisig V1
 * ✅ HashMap, HashMapE, PfxHashMap, PfxHashMapE, HashMapAug, HashMapAugE serialization / deserialization
 
-### Todo
-
-* Support tuple and list as arguments for runMethod
-* Improve code coverage and add more integration tests
-* BinTree serialization / deserialization
-
 ## Support ton4j development
 If you want to speed up ton4j development and thus change its priority in my backlog, you are welcome to donate some toncoins:
 
