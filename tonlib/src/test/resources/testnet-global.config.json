@@ -1,11 +1,80 @@
 {
   "liteservers": [
     {
+      "ip": 1592601963,
+      "port": 13833,
+      "id": {
+        "@type": "pub.ed25519",
+        "key": "QpVqQiv1u3nCHuBR3cg3fT6NqaFLlnLGbEgtBRukDpU="
+      }
+    },
+    {
+      "ip": 1162057690,
+      "port": 35939,
+      "id": {
+        "@type": "pub.ed25519",
+        "key": "97y55AkdzXWyyVuOAn+WX6p66XTNs2hEGG0jFUOkCIo="
+      }
+    },
+    {
+      "ip": -1304477830,
+      "port": 20700,
+      "id": {
+        "@type": "pub.ed25519",
+        "key": "dGLlRRai3K9FGkI0dhABmFHMv+92QEVrvmTrFf5fbqA="
+      }
+    },
+    {
       "ip": 1495755568,
       "port": 4695,
       "id": {
         "@type": "pub.ed25519",
         "key": "cZpMFqy6n0Lsu8x/z2Jq0wh/OdM1WAVJJKSb2CvDECQ="
+      }
+    },
+    {
+      "ip": -1468571697,
+      "port": 27787,
+      "provided": "Beavis",
+      "id": {
+        "@type": "pub.ed25519",
+        "key": "Y/QVf6G5VDiKTZOKitbFVm067WsuocTN8Vg036A4zGk="
+      }
+    },
+    {
+      "ip": -1468575011,
+      "port": 51088,
+      "provided": "Beavis",
+      "id": {
+        "@type": "pub.ed25519",
+        "key": "Sy5ghr3EahQd/1rDayzZXt5+inlfF+7kLfkZDJcU/ek="
+      }
+    },
+    {
+      "ip": 1844203537,
+      "port": 37537,
+      "provided": "Neo",
+      "id": {
+        "@type": "pub.ed25519",
+        "key": "K1F7zEe0ETf+SwkefLS56hJE8x42sjCVsBJJuaY7nEA="
+      }
+    },
+    {
+      "ip": 1844203589,
+      "port": 34411,
+      "provided": "Neo",
+      "id": {
+        "@type": "pub.ed25519",
+        "key": "pOpRRpIxDuMRm1qFUPpvVjD62vo8azkO0npw4FPcW/I="
+      }
+    },
+    {
+      "ip": 1047529523,
+      "port": 37649,
+      "provided": "Neo",
+      "id": {
+        "@type": "pub.ed25519",
+        "key": "pRf2sAa7d+Chl8gDclWOMtthtxjKnLYeAIzk869mMvA="
       }
     }
   ],

@@ -38,7 +38,7 @@ public class TonHashMapAugE extends TonHashMapAug {
                           Function<Object, Object> valueParser,
                           Function<Object, Object> extraParser,
                           BiFunction<Object, Object, Object> forkExtra) {
-        List<Object> se = new ArrayList<>();
+        List<Node> nodes = new ArrayList<>();
         for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
             BitString key = keyParser.apply(entry.getKey());
             Cell value = (Cell) valueParser.apply(entry.getValue().getLeft());
@@ -47,15 +47,15 @@ public class TonHashMapAugE extends TonHashMapAug {
                     .storeSlice(CellSlice.beginParse(value))
                     .storeSlice(CellSlice.beginParse(extra))
                     .endCell();
-            se.add(new Node(key, both));
+            nodes.add(new Node(key, both));
         }
 
-        if (se.isEmpty()) {
+        if (nodes.isEmpty()) {
             return CellBuilder.beginCell().storeBit(false).endCell();
         } else {
-            List<Object> s = flatten(splitTree(se), keySize);
+            PatriciaTreeNode root = flatten(splitTree(nodes), keySize);
             CellBuilder b = CellBuilder.beginCell();
-            serialize_edge(s, b, forkExtra);
+            serialize_edge(root, b, forkExtra);
 
             return CellBuilder.beginCell()
                     .storeBit(true)

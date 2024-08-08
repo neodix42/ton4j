@@ -5,7 +5,6 @@ import org.ton.java.bitstring.BitString;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
@@ -25,24 +24,19 @@ public class TonPfxHashMap extends TonHashMap {
         BitString l = deserializeLabel(edge, keySize - key.toBitString().length());
         key.writeBitString(l);
         boolean pfx = edge.loadBit(); // pfx feature
-        if (pfx == false) {
+        if (!pfx) {
             Cell value = CellBuilder.beginCell().storeSlice(edge).endCell();
-            List<Node> newList = new ArrayList<>(nodes);
-            newList.add(new Node(key, value));
-            return newList;
+            nodes.add(new Node(key, value));
+            return nodes;
         }
 
-        AtomicInteger i = new AtomicInteger();
-        return edge.refs.stream().map(c -> {
-            CellSlice forkEdge = CellSlice.beginParse(c);
+        for (int j = 0; j < edge.refs.size(); j++) {
+            CellSlice forkEdge = CellSlice.beginParse(edge.refs.get(j));
             BitString forkKey = key.clone();
-            forkKey.writeBit(i.get() != 0);
-            i.getAndIncrement();
-            return deserializeEdge(forkEdge, keySize, forkKey);
-        }).reduce(new ArrayList<>(), (x, y) -> {
-            x.addAll(y);
-            return x;
-        });
+            forkKey.writeBit(j != 0);
+            nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
+        }
+        return nodes;
     }
 
 
@@ -62,48 +56,46 @@ public class TonPfxHashMap extends TonHashMap {
      * hm_edge#_ {n:#} {X:Type} {l:#} {m:#} label:(HmLabel ~l n)
      * {n = (~m) + l} node:(HashmapNode m X) = Hashmap n X;
      *
-     * @param se      List<Object> which contains [label as "0" and "1" string, maximal possible size of label, leaf or left fork, right fork]
+     * @param node    tree node which contains [label as "0" and "1" string, maximal possible size of label, leaf or left fork, right fork]
      * @param builder Cell to which edge will be serialized
      */
-    void serialize_edge(List<Object> se, CellBuilder builder) {
-        if (se.size() == 0) {
+    void serialize_edge(PatriciaTreeNode node, CellBuilder builder) {
+        if (node == null) {
             return;
         }
-
-        if (se.size() == 3) { // contains leaf
-            Node node = (Node) se.get(2);
-            BitString bs = node.key.readBits(node.key.getUsedBits());
-            se.set(0, bs.toBitString());
-            serialize_label((String) se.get(0), (Integer) se.get(1), builder);
+        if (node.leafNode != null) { // contains leaf
+            BitString bs = node.leafNode.key.readBits(node.leafNode.key.getUsedBits());
+            node.prefix = bs.toBitString();
+            serialize_label(node.prefix, node.maxPrefixLength, builder);
             builder.storeBit(false); //pfx feature
-            builder.storeCell(node.value);
+            builder.storeCell(node.leafNode.value);
         } else { // contains fork
-            serialize_label((String) se.get(0), (Integer) se.get(1), builder);
+            serialize_label(node.prefix, node.maxPrefixLength, builder);
             builder.storeBit(true); //pfx feature
             CellBuilder leftCell = CellBuilder.beginCell();
-            serialize_edge((List<Object>) se.get(2), leftCell);
+            serialize_edge(node.left, leftCell);
             CellBuilder rightCell = CellBuilder.beginCell();
-            serialize_edge((List<Object>) se.get(3), rightCell);
+            serialize_edge(node.right, rightCell);
             builder.storeRef(leftCell.endCell());
             builder.storeRef(rightCell.endCell());
         }
     }
 
     public Cell serialize(Function<Object, BitString> keyParser, Function<Object, Cell> valueParser) {
-        List<Object> se = new ArrayList<>();
+        List<Node> nodes = new ArrayList<>();
         for (Map.Entry<Object, Object> entry : elements.entrySet()) {
             BitString key = keyParser.apply(entry.getKey());
             Cell value = valueParser.apply(entry.getValue());
-            se.add(new Node(key, value));
+            nodes.add(new Node(key, value));
         }
 
-        if (se.isEmpty()) {
+        if (nodes.isEmpty()) {
             throw new Error("TonPfxHashMap does not support empty dict. Consider using TonPfxHashMapE");
         }
 
-        List<Object> s = flatten(splitTree(se), keySize);
+        PatriciaTreeNode root = flatten(splitTree(nodes), keySize);
         CellBuilder b = CellBuilder.beginCell();
-        serialize_edge(s, b);
+        serialize_edge(root, b);
 
         return b.endCell();
     }

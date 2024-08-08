@@ -12,6 +12,7 @@ import java.math.BigInteger;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.ton.java.utils.Utils.getCRC32ChecksumAsLong;
+import static org.ton.java.utils.Utils.int2ip;
 
 @RunWith(JUnit4.class)
 @Slf4j
@@ -320,7 +321,56 @@ public class TestUtils {
     @Test
     public void testReverseLong() {
         long l = 0x27e7c64a;
-        log.info("reversed " + Long.toHexString(Long.reverseBytes(l)));
+        log.info("reversed {}", Long.toHexString(Long.reverseBytes(l)));
     }
 
+    /**
+     * bash
+     * IP=185.86.79.9;
+     * IPNUM=0; for (( i=0 ; i<4 ; ++i )); do  ((IPNUM=$IPNUM+${IP%%.*}*$((256**$((3-${i})))))); IP=${IP#*.}; done
+     * [ $IPNUM -gt $((2**31)) ] && IPNUM=$(($IPNUM - $((2**32))))
+     * echo $IPNUM
+     */
+    @Test
+    public void testLongIpToString() {
+        long ip = 1495755568;
+        log.info("ip {}", int2ip(ip));
+        assertThat(int2ip(ip)).isEqualTo("89.39.107.48");
+
+        ip = -1062731775;
+        log.info("ip {}", int2ip(ip));
+
+        ip = -1185526007;
+        log.info("ip {}", int2ip(ip));
+        assertThat(int2ip(ip)).isEqualTo("185.86.79.9");
+
+        ip = -1952265919;
+        log.info("ip {}", int2ip(ip));
+        assertThat(int2ip(ip)).isEqualTo("139.162.201.65");
+
+        ip = -1468571697;
+        log.info("ip {}", int2ip(ip));
+        assertThat(int2ip(ip)).isEqualTo("168.119.95.207");
+
+        ip = 1592601963; // testnet [0] - 94.237.45.107
+        log.info("ip {}", int2ip(ip));
+
+        ip = 1162057690; // testnet [1] - 69.67.151.218
+        log.info("ip {}", int2ip(ip));
+
+        ip = -1304477830; // testnet [2] - 178.63.63.122
+        log.info("ip {}", int2ip(ip));
+
+        ip = 1495755568; // testnet [3] - 89.39.107.48
+        log.info("ip {}", int2ip(ip));
+
+        ip = 84478511; // mainnet [0] - 5.9.10.47
+        log.info("ip {}", int2ip(ip));
+
+        ip = 84478479; // mainnet [1] - 5.9.10.15
+        log.info("ip {}", int2ip(ip));
+
+        ip = -2018135749; // mainnet [2] - 135.181.177.59
+        log.info("ip {}", int2ip(ip));
+    }
 }
