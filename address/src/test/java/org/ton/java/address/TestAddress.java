@@ -86,6 +86,7 @@ public class TestAddress {
             Address.of("bad_input");
             Address.of("kf_8uRo6OBbQ97jCx2EIuKm8Wmt6Vb15-KsQHFLbKSMiYInz");
             Address.of("ov_8uRo6OBbQ97jCx2EIuKm8Wmt6Vb15-KsQHFLbKSMiYMg3");
+            Address.of("0:8uRo6OBbQ97jCx2EIuKm8Wmt6Vb15:KsQHFLbKSMiYMg3");
         });
     }
 
