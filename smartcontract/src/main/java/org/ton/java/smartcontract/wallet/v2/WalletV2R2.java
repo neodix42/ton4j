@@ -31,7 +31,6 @@ public class WalletV2R2 implements Contract {
     public TweetNaclFast.Signature.KeyPair keyPair;
 
     long initialSeqno;
-    long walletId;
 
     public static class WalletV2R2Builder {
     }

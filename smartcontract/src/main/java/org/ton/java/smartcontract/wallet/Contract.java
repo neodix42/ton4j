@@ -128,7 +128,7 @@ public interface Contract {
         return getTonlib().getAllRawTransactions(getAddress().toBounceable(), BigInteger.ZERO, null, 20).getTransactions();
     }
 
-    default Message prepareDeployMessage() {
+    default Message prepareDeployMsg() {
         throw new Error("not implemented");
     }
 
