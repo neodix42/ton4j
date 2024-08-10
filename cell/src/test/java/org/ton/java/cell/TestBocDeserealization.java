@@ -60,9 +60,8 @@ public class TestBocDeserealization {
         log.info(Utils.bytesToHex(cell.toBoc(true)));
 
         String actual = StringUtils.trim(cell.print());
-        String expected = StringUtils.replaceChars(cellOutput, "\r\n", "\n");
 
-        assertThat(actual).isEqualTo(expected);
+        assertThat(actual).isEqualTo(cellOutput);
     }
 
 
