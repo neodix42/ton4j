@@ -13,6 +13,18 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public class TestEncryption {
 
     @Test
+    public void testMd5() {
+        String md5 = Utils.md5("ABC".getBytes());
+        assertThat(md5).isEqualTo("902fbdd2b1df0c4f70b4a5d23525e932");
+    }
+
+    @Test
+    public void testSha1() {
+        String sha1 = Utils.sha1("ABC".getBytes());
+        assertThat(sha1).isEqualTo("3c01bdbb26f358bab27f267924aa2c9a03fcfdb8");
+    }
+
+    @Test
     public void testSha256() {
         String sha256 = Utils.sha256("ABC");
         assertThat(sha256).isEqualTo("b5d4045c3f466fa91fe2cc6abe79232a1a57cdf104f7a26e716e0a1e2789df78");

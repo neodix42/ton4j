@@ -234,6 +234,24 @@ public class TestBitString {
     }
 
     @Test
+    public void testBitStringByArrayAndSize() {
+        BitString bs = new BitString(new byte[]{7, 7, 7, 7}, 32);
+        assertThat(bs.toBitString()).isEqualTo("00000111000001110000011100000111");
+        assertThat(Utils.bytesToHex(bs.toByteArray())).isEqualTo("07070707");
+        assertThat(bs.toHex()).isEqualTo("07070707");
+
+        bs = new BitString(new byte[]{-126, 7, 7, 7}, 16);
+        assertThat(bs.toBitString()).isEqualTo("1000001000000111");
+        assertThat(Utils.bytesToHex(bs.toUnsignedByteArray())).isEqualTo("8207");
+        assertThat(bs.toHex()).isEqualTo("8207");
+
+        bs = new BitString(new byte[]{-128, 0, 0, 0}, 2);
+        assertThat(bs.toBitString()).isEqualTo("10");
+        assertThat(Utils.bytesToHex(bs.toByteArray())).isEqualTo("80");
+        assertThat(bs.toHex()).isEqualTo("A_");
+    }
+
+    @Test
     public void testBitStringAll() {
         BitString bitString = new BitString(1023);
         bitString.writeInt(BigInteger.valueOf(-200), 16);

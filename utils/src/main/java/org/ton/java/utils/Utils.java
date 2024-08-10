@@ -17,7 +17,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -205,8 +204,6 @@ public class Utils {
 
     public static String sha256(int[] bytes) {
         byte[] converted = new byte[bytes.length];
-        Byte[] a;
-
         for (int i = 0; i < bytes.length; i++) {
             converted[i] = (byte) (bytes[i] & 0xff);
         }
@@ -289,7 +286,7 @@ public class Utils {
     public static String bitsToDec(boolean[] bits) {
         StringBuilder s = new StringBuilder();
         for (boolean b : bits) {
-            s.append(b ? "1" : "0");
+            s.append(b ? '1' : '0');
         }
         return new BigInteger(s.toString(), 2).toString(10);
     }
@@ -297,7 +294,7 @@ public class Utils {
     public static String bitsToHex(boolean[] bits) {
         StringBuilder s = new StringBuilder();
         for (boolean b : bits) {
-            s.append(b ? "1" : "0");
+            s.append(b ? '1' : '0');
         }
         return new BigInteger(s.toString(), 2).toString(16);
     }
@@ -442,11 +439,11 @@ public class Utils {
         if (bitString.isEmpty()) {
             return new int[0];
         }
-        String bin = bitString;
-        int[] result = new int[(int) Math.ceil(bin.length() / (double) 8)];
+        int sz = bitString.length();
+        int[] result = new int[(sz + 7) / 8];
 
-        for (int i = 0; i < bin.length(); i++) {
-            if (bin.charAt(i) == '1') {
+        for (int i = 0; i < sz; i++) {
+            if (bitString.charAt(i) == '1') {
                 result[(i / 8)] |= 1 << (7 - (i % 8));
             } else {
                 result[(i / 8)] &= ~(1 << (7 - (i % 8)));
@@ -460,13 +457,14 @@ public class Utils {
         if (bitString.isEmpty()) {
             return new byte[0];
         }
-        byte[] result = new byte[(byte) Math.ceil(bitString.length() / (double) 8)];
+        int sz = bitString.length();
+        byte[] result = new byte[(sz + 7) / 8];
 
-        for (int i = 0; i < bitString.length(); i++) {
+        for (int i = 0; i < sz; i++) {
             if (bitString.charAt(i) == '1') {
-                result[(i / 8)] |= 1 << (7 - (i % 8));
+                result[(i / 8)] |= (byte) (1 << (7 - (i % 8)));
             } else {
-                result[(i / 8)] &= ~(1 << (7 - (i % 8)));
+                result[(i / 8)] &= (byte) ~(1 << (7 - (i % 8)));
             }
         }
 
@@ -513,7 +511,6 @@ public class Utils {
     public static byte[] dynamicIntBytes(BigInteger val, int sz) {
         byte[] tmp = new byte[8];
         byte[] valArray = val.toByteArray(); // test just return val.toByteArray()
-        Arrays.fill(tmp, 0, 8 - val.toByteArray().length, (byte) 0);
         for (int i = 8 - valArray.length, j = 0; i < 8; i++, j++) {
             tmp[i] = valArray[j];
         }
@@ -549,11 +546,9 @@ public class Utils {
     }
 
     private static int[] hexStringToIntArray(String s) {
-        String hex = s;
-        int[] result = new int[hex.length() / 2];
-        int j = 0;
-        for (String str : hex.split("(?<=\\G.{2})")) {
-            result[j++] = Integer.parseInt(str, 16);
+        int[] result = new int[s.length() / 2];
+        for (int i = 0; i < s.length(); i += 2) {
+            result[i / 2] = Integer.parseInt(s.substring(i, i + 2), 16);
         }
         return result;
     }
@@ -775,7 +770,6 @@ public class Utils {
     }
 
     public static String formatJettonValue(BigInteger jettons, int decimals, int scale) {
-//        return String.format("%,.2f", new BigDecimal(jettons));
         return String.format("%,." + scale + "f", new BigDecimal(jettons).divide(BigDecimal.valueOf(Math.pow(10, decimals))), scale, RoundingMode.HALF_UP);
     }
 
@@ -786,7 +780,6 @@ public class Utils {
 
     public static void sleep(long seconds) {
         try {
-            //  System.out.println("pause " + seconds + " seconds");
             TimeUnit.SECONDS.sleep(seconds);
         } catch (Throwable e) {
             System.out.println(e.getMessage());
@@ -803,8 +796,14 @@ public class Utils {
     }
 
     public static int ip2int(String address) {
+        String[] parts = address.split(Pattern.quote("."));
+
+        if (parts.length != 4) {
+            throw new Error("Invalid IP address format.");
+        }
+
         int result = 0;
-        for (String part : address.split(Pattern.quote("."))) {
+        for (String part : parts) {
             result = result << 8;
             result |= Integer.parseInt(part);
         }
@@ -823,23 +822,25 @@ public class Utils {
     }
 
     public static int[] reverseIntArray(int[] in) {
-        int[] temp = in.clone();
-        for (int i = 0; i < temp.length / 2; i++) {
-            int t = temp[i];
-            temp[i] = temp[temp.length - i - 1];
-            temp[temp.length - i - 1] = t;
+        int i = 0, j = in.length - 1;
+        while (i < j) {
+            int tmp = in[i];
+            in[i] = in[j];
+            in[j] = tmp;
+            i++; j--;
         }
-        return temp;
+        return in;
     }
 
     public static byte[] reverseByteArray(byte[] in) {
-        byte[] temp = in.clone();
-        for (int i = 0; i < temp.length / 2; i++) {
-            byte t = temp[i];
-            temp[i] = temp[temp.length - i - 1];
-            temp[temp.length - i - 1] = t;
+        int i = 0, j = in.length - 1;
+        while (i < j) {
+            byte tmp = in[i];
+            in[i] = in[j];
+            in[j] = tmp;
+            i++; j--;
         }
-        return temp;
+        return in;
     }
 
     public static long unsignedIntToLong(int x) {

@@ -36,37 +36,39 @@ public class Address {
             throw new IllegalArgumentException("Address is null");
         }
 
-        if (!address.contains(":")) {
-            if (address.contains("-") || address.contains("_")) {
+        if (address.indexOf(':') == -1) {
+            if (address.indexOf('-') != -1 || address.indexOf('_') != -1) {
                 isUrlSafe = true;
                 //convert to unsafe URL
-                address = address.replace("-", "+").replace("_", "/");
+                address = address.replace('-', '+').replace('_', '/');
             } else {
                 isUrlSafe = false;
             }
         }
 
-        if (address.indexOf(':') > -1) {
-            String[] arr = address.split(":");
+        int colonIndex = address.indexOf(':');
+        if (colonIndex != -1) {
 
-            if (arr.length != 2) {
+            if (colonIndex != address.lastIndexOf(':')) {
                 throw new Error("Invalid address " + address);
             }
 
-            byte wcInternal = Byte.parseByte(arr[0]);
+            String wcPart = address.substring(0, colonIndex);
+            String hexPart = address.substring(colonIndex + 1);
+
+            byte wcInternal = Byte.parseByte(wcPart);
 
             if (wcInternal != 0 && wcInternal != -1) {
                 throw new Error("Invalid address wc " + address);
             }
 
-            String hex = arr[1];
-            if (hex.length() != 64) {
+            if (hexPart.length() != 64) {
                 throw new Error("Invalid address hex " + address);
             }
 
             isUserFriendly = false;
             wc = wcInternal;
-            hashPart = Utils.hexToSignedBytes(hex);
+            hashPart = Utils.hexToSignedBytes(hexPart);
             isTestOnly = false;
             isBounceable = false;
         } else {
@@ -206,7 +208,7 @@ public class Address {
             byte[] addr = new byte[34];
             byte[] addressWithChecksum = new byte[36];
             addr[0] = (byte) tag;
-            addr[1] = (byte) wc;
+            addr[1] = wc;
 
             System.arraycopy(hashPart, 0, addr, 2, 32);
 

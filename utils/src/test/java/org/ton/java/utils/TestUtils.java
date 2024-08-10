@@ -13,6 +13,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.ton.java.utils.Utils.getCRC32ChecksumAsLong;
 import static org.ton.java.utils.Utils.int2ip;
+import static org.ton.java.utils.Utils.ip2int;
 
 @RunWith(JUnit4.class)
 @Slf4j
@@ -196,6 +197,18 @@ public class TestUtils {
     }
 
     @Test
+    public void testBinaryStringToIntArray() {
+        int[] converted = Utils.bitStringToIntArray("101010011");
+        assertThat(converted).isEqualTo(new int[] { 169, 128 });
+
+        int[] converted2 = Utils.bitStringToIntArray("111010101");
+        assertThat(converted2).isEqualTo(new int[] { 234, 128 });
+
+        int[] converted3 = Utils.bitStringToIntArray("100001001");
+        assertThat(converted3).isEqualTo(new int[] { 132, 128 });
+    }
+
+    @Test
     public void testHex() {
         assertThat(Utils.bytesToHex("Hello, World!".getBytes())).isEqualTo("48656c6c6f2c20576f726c6421");
         assertThat(Utils.bytesToHex("TON".getBytes())).isEqualTo("544f4e");
@@ -372,5 +385,53 @@ public class TestUtils {
 
         ip = -2018135749; // mainnet [2] - 135.181.177.59
         log.info("ip {}", int2ip(ip));
+    }
+
+    @Test
+    public void testStringIpToInt() {
+        String ip = "89.39.107.48";
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(1495755568);
+
+        ip = "185.86.79.9";
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(-1185526007);
+
+        ip = "139.162.201.65";
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(-1952265919);
+
+        ip = "168.119.95.207";
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(-1468571697);
+
+        ip = "94.237.45.107"; // testnet [0] - 94.237.45.107
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(1592601963);
+
+        ip = "69.67.151.218"; // testnet [1] - 69.67.151.218
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(1162057690);
+
+        ip = "178.63.63.122"; // testnet [2] - 178.63.63.122
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(-1304477830);
+
+        ip = "89.39.107.48"; // testnet [3] - 89.39.107.48
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(1495755568);
+
+        ip = "5.9.10.47"; // mainnet [0] - 5.9.10.47
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(84478511);
+
+        ip = "5.9.10.15"; // mainnet [1] - 5.9.10.15
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(84478479);
+
+        ip = "135.181.177.59"; // mainnet [2] - 135.181.177.59
+        log.info("ip {}", ip2int(ip));
+        assertThat(ip2int(ip)).isEqualTo(-2018135749);
+
     }
 }
