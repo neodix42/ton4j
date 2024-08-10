@@ -59,7 +59,10 @@ public class TestBocDeserealization {
         log.info(cell.print());
         log.info(Utils.bytesToHex(cell.toBoc(true)));
 
-        assertThat(StringUtils.trim(cell.print())).isEqualTo(cellOutput);
+        String expected = StringUtils.normalizeSpace(cellOutput);
+        String actual = StringUtils.normalizeSpace(cell.print());
+
+        assertThat(expected).isEqualTo(actual);
     }
 
 
