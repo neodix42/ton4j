@@ -4,7 +4,9 @@ package org.ton.java.smartcontract.wallet;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.smartcontract.types.WalletConfig;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R1;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tlb.types.StateInit;
 import org.ton.java.tonlib.Tonlib;
@@ -124,5 +126,13 @@ public interface Contract {
 
     default List<RawTransaction> getTransactions() {
         return getTonlib().getAllRawTransactions(getAddress().toBounceable(), BigInteger.ZERO, null, 20).getTransactions();
+    }
+
+    default Message prepareDeployMessage() {
+        throw new Error("not implemented");
+    }
+
+    default Message prepareExternalMsg(WalletConfig config) {
+        throw new Error("not implemented");
     }
 }

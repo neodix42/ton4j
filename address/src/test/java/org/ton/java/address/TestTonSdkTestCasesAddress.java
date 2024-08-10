@@ -17,14 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestTonSdkTestCases {
+public class TestTonSdkTestCasesAddress {
 
     public static final String addressTestFileUrl = "https://raw.githubusercontent.com/neodix42/ton-sdk-test-cases/main/address.json";
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
 
     String fileContentWithUseCases = IOUtils.toString(new URL(addressTestFileUrl), Charset.defaultCharset());
 
-    public TestTonSdkTestCases() throws IOException {
+    public TestTonSdkTestCasesAddress() throws IOException {
     }
 
     @Test
