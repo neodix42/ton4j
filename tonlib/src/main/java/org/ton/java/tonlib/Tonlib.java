@@ -41,9 +41,9 @@ public class Tonlib {
      * <br>
      * Java Tonlib looking for following filenames in above locations:<br>
      * <ul>
-     *     <li>tonlibjson.so and tonlibjson-arm.so</li>
-     *     <li>tonlibjson.dll and tonlibjson-arm.dll</li>
-     *     <li>tonlibjson.dylib and tonlibjson-arm.dylib</li>
+     *     <li>tonlibjson-linux-x86_64.so and tonlibjson-linux-arm64.so</li>
+     *     <li>tonlibjson.dll and tonlibjson-arm64.dll</li>
+     *     <li>tonlibjson-max-x86-64.dylib and tonlibjson-mac_arm64.dylib</li>
      *  <ul>
      */
     private String pathToTonlibSharedLib;
@@ -130,22 +130,22 @@ public class Tonlib {
                 String tonlibName;
                 switch (Utils.getOS()) {
                     case LINUX:
-                        tonlibName = "tonlibjson.so";
+                        tonlibName = "tonlibjson-linux-x86_64.so";
                         break;
                     case LINUX_ARM:
-                        tonlibName = "tonlibjson-arm.so";
+                        tonlibName = "tonlibjson-linux-arm64.so";
                         break;
                     case WINDOWS:
                         tonlibName = "tonlibjson.dll";
                         break;
                     case WINDOWS_ARM:
-                        tonlibName = "tonlibjson-arm.dll";
+                        tonlibName = "tonlibjson-arm64.dll";
                         break;
                     case MAC:
-                        tonlibName = "tonlibjson.dylib";
+                        tonlibName = "tonlibjson-mac-x86-64.dylib";
                         break;
                     case MAC_ARM64:
-                        tonlibName = "tonlibjson-arm.dylib";
+                        tonlibName = "tonlibjson-mac-arm64.dylib";
                         break;
                     default:
                         throw new Error("Operating system is not supported!");

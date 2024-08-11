@@ -17,8 +17,8 @@ public class TestTonlibBuilder {
     public void testTonlibBuilderWindows() {
         if (SystemUtils.IS_OS_WINDOWS) {
             Tonlib tonlib = Tonlib.builder()
-                    .pathToTonlibSharedLib("G:\\tonlibjson.dll")
-                    .pathToGlobalConfig("G:\\testnet-global.config.json")
+                    .pathToTonlibSharedLib("G:/tonlibjson.dll")
+                    .pathToGlobalConfig("G:/testnet-global.config.json")
                     .verbosityLevel(VerbosityLevel.FATAL)
                     .build();
             assertThat(tonlib.getLast()).isNotNull();
@@ -29,7 +29,7 @@ public class TestTonlibBuilder {
     public void testTonlibBuilderWindowsIntegratedLib() {
         if (SystemUtils.IS_OS_WINDOWS) {
             Tonlib tonlib = Tonlib.builder()
-                    .pathToGlobalConfig("G:\\testnet-global.config.json")
+                    .pathToGlobalConfig("G:/testnet-global.config.json")
                     .verbosityLevel(VerbosityLevel.FATAL)
                     .build();
             assertThat(tonlib.getLast()).isNotNull();
@@ -40,8 +40,8 @@ public class TestTonlibBuilder {
     public void testTonlibBuilderWindowsIntegratedConfig() {
         if (SystemUtils.IS_OS_WINDOWS) {
             Tonlib tonlib = Tonlib.builder()
-                    .pathToTonlibSharedLib("G:\\tonlibjson.dll")
-                    .keystorePath("G:\\")
+                    .pathToTonlibSharedLib("G:/tonlibjson.dll")
+                    .keystorePath("G:/")
                     .verbosityLevel(VerbosityLevel.FATAL)
                     .build();
             assertThat(tonlib.getLast()).isNotNull();
@@ -88,7 +88,7 @@ public class TestTonlibBuilder {
     public void testTonlibBuilderUbuntu() {
         if (SystemUtils.IS_OS_LINUX) {
             Tonlib tonlib = Tonlib.builder()
-                    .pathToTonlibSharedLib("/mnt/tonlibjson.so")
+                    .pathToTonlibSharedLib("/mnt/tonlibjson-linux-x86_64.so")
                     .pathToGlobalConfig("/mnt/testnet-global.config.json")
                     .verbosityLevel(VerbosityLevel.FATAL)
                     .build();
@@ -110,7 +110,7 @@ public class TestTonlibBuilder {
     public void testTonlibBuilderUbuntuIntegratedConfig() {
         if (SystemUtils.IS_OS_LINUX) {
             Tonlib tonlib = Tonlib.builder()
-                    .pathToTonlibSharedLib("/mnt/tonlibjson.so")
+                    .pathToTonlibSharedLib("/mnt/tonlibjson-linux-x86_64.so")
                     .build();
             assertThat(tonlib.getLast()).isNotNull();
         }

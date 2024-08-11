@@ -35,7 +35,7 @@ public class TvmEmulator {
      * <br>
      * Java Tonlib looking for following filenames in above locations:<br>
      * <ul>
-     *     <li>libemulator-linux-x86-64.so and libemulator-linux-arm64.so</li>
+     *     <li>libemulator-linux-x86_64.so and libemulator-linux-arm64.so</li>
      *     <li>emulator.dll and emulator-arm.dll</li>
      *     <li>libemulator-mac-x86-64.dylib and libemulator-mac-arm64.dylib</li>
      *  <ul>
@@ -62,7 +62,7 @@ public class TvmEmulator {
             Utils.OS os = Utils.getOS();
             switch (os) {
                 case LINUX:
-                    emulatorName = "libemulator-linux-x86-64.so";
+                    emulatorName = "libemulator-linux-x86_64.so";
                     break;
                 case LINUX_ARM:
                     emulatorName = "libemulator-linux-arm64.so";

@@ -557,7 +557,7 @@ public class TestTonlibJson {
     public void testTonlibKeystorePath() {
         Tonlib tonlib = Tonlib.builder()
                 .keystoreInMemory(false)
-                .keystorePath("D://")
+                .keystorePath("D:/")
                 .verbosityLevel(VerbosityLevel.INFO)
                 .build();
         Address address = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
