@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static java.util.Objects.isNull;
+import static org.ton.java.utils.Utils.leftPadBytes;
 
 /**
  * Implements BitString where each bit is actually a Boolean variable in memory.
@@ -40,7 +41,7 @@ public class BitString implements Bits<Boolean> {
             array = new ArrayDeque<>(0);
             initialLength = 0;
         } else {
-            byte[] bits = Utils.leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
+            byte[] bits = leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
 
             array = new ArrayDeque<>(bits.length);
             for (byte bit : bits) { // whole length
@@ -65,7 +66,7 @@ public class BitString implements Bits<Boolean> {
             array = new ArrayDeque<>(0);
             initialLength = 0;
         } else {
-            byte[] bits = Utils.leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
+            byte[] bits = leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
             array = new ArrayDeque<>(bits.length);
             for (int i = 0; i < size; i++) { // specified length
                 if (bits[i] == (byte) '1') {
