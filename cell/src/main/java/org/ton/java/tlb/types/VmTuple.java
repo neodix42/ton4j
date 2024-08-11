@@ -24,7 +24,7 @@ public class VmTuple {
 
     public Cell toCell() {
         List<VmStackValue> pValues = new ArrayList<>(values);
-        if (pValues.size() == 0) {
+        if (pValues.isEmpty()) {
             return CellBuilder.beginCell().endCell();
         }
 
@@ -39,7 +39,7 @@ public class VmTuple {
     public static Cell toCell(List<VmStackValue> pValues) {
         List<VmStackValue> lValues = new ArrayList<>(pValues);
 
-        if (lValues.size() == 0) {
+        if (lValues.isEmpty()) {
             return CellBuilder.beginCell().endCell();
         }
 

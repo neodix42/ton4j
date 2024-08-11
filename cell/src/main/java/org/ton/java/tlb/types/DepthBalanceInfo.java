@@ -7,8 +7,8 @@ import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.utils.Utils;
 
-import static org.ton.java.utils.Utils.log2;
 
 @Builder
 @Getter
@@ -23,7 +23,7 @@ public class DepthBalanceInfo {
 
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeUint(depth, (int) Math.ceil(log2((depth))))
+                .storeUint(depth, Utils.log2Ceil(depth))
                 .storeCell(currencies.toCell()).endCell();
     }
 

@@ -30,7 +30,6 @@ public class VmStackList {
 
     public Cell toCell() {
         Cell list = CellBuilder.beginCell().endCell();
-        int i = 0;
         for (VmStackValue value : tos) {
             Cell valueCell = value.toCell();
             list = CellBuilder.beginCell()

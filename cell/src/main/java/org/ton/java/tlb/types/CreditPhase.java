@@ -26,7 +26,7 @@ public class CreditPhase {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeCoinsMaybe(dueFeesCollected)
-                .storeSlice(CellSlice.beginParse(((CurrencyCollection) credit).toCell()))
+                .storeSlice(CellSlice.beginParse(credit.toCell()))
                 .endCell();
     }
 

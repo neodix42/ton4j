@@ -40,7 +40,7 @@ public class BitString implements Bits<Boolean> {
             array = new ArrayDeque<>(0);
             initialLength = 0;
         } else {
-            byte[] bits = leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
+            byte[] bits = Utils.leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
 
             array = new ArrayDeque<>(bits.length);
             for (byte bit : bits) { // whole length
@@ -65,7 +65,7 @@ public class BitString implements Bits<Boolean> {
             array = new ArrayDeque<>(0);
             initialLength = 0;
         } else {
-            byte[] bits = leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
+            byte[] bits = Utils.leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
             array = new ArrayDeque<>(bits.length);
             for (int i = 0; i < size; i++) { // specified length
                 if (bits[i] == (byte) '1') {
@@ -80,18 +80,6 @@ public class BitString implements Bits<Boolean> {
         }
     }
 
-    private byte[] leftPadBytes(byte[] bits, int sz, char c) {
-        if (sz <= bits.length) {
-            return bits;
-        }
-
-        int diff = sz - bits.length;
-        byte[] b = new byte[diff + bits.length];
-        Arrays.fill(b, 0, diff, (byte) c);
-        System.arraycopy(bits, 0, b, diff, bits.length);
-
-        return b;
-    }
 
     /**
      * Create BitString limited by length

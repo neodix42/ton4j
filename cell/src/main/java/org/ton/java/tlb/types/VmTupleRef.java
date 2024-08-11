@@ -35,7 +35,7 @@ public class VmTupleRef implements VmStackValue {
         }
         if (len == 1) {
             return CellBuilder.beginCell()
-                    .storeRef(((VmStackValue) values.get(0)).toCell())
+                    .storeRef(values.get(0).toCell())
                     .endCell();
         }
         return CellBuilder.beginCell()
@@ -44,12 +44,12 @@ public class VmTupleRef implements VmStackValue {
     }
 
     public static Cell toCell(List<VmStackValue> pValues) {
-        if (pValues.size() == 0) {
+        if (pValues.isEmpty()) {
             return CellBuilder.beginCell().endCell();
         }
         if (pValues.size() == 1) {
             return CellBuilder.beginCell()
-                    .storeRef(((VmStackValue) pValues.get(0)).toCell())
+                    .storeRef(pValues.get(0).toCell())
                     .endCell();
         }
         return CellBuilder.beginCell()

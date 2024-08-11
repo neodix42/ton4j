@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -519,8 +520,8 @@ public class Utils {
         return result;
     }
 
-    public static int log2(int val) {
-        return (int) Math.ceil(Math.log(val) / Math.log(2));
+    public static int log2Ceil(int val) {
+        return Integer.SIZE - Integer.numberOfLeadingZeros(val - 1);
     }
 
 
@@ -866,5 +867,30 @@ public class Utils {
 
     public static String generateString(int length, String character) {
         return RandomStringUtils.random(length, character);
+    }
+
+    public static byte[] leftPadBytes(byte[] bits, int sz, char c) {
+        if (sz <= bits.length) {
+            return bits;
+        }
+
+        int diff = sz - bits.length;
+        byte[] b = new byte[sz];
+        Arrays.fill(b, 0, diff, (byte) c);
+        System.arraycopy(bits, 0, b, diff, bits.length);
+
+        return b;
+    }
+
+    public static byte[] rightPadBytes(byte[] bits, int sz, char c) {
+        if (sz <= bits.length) {
+            return bits;
+        }
+
+        byte[] b = new byte[sz];
+        System.arraycopy(bits, 0, b, 0, bits.length);
+        Arrays.fill(b, bits.length, sz, (byte) c);
+
+        return b;
     }
 }
