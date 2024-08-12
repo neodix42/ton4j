@@ -6,6 +6,7 @@ import org.ton.java.tlb.types.Boc;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -812,7 +813,7 @@ public class Cell {
 
     private byte[] getDataBytes() {
         if ((bits.getLength() % 8) > 0) {
-            byte[] a = bits.toBitString().getBytes();
+            byte[] a = bits.toBitString().getBytes(StandardCharsets.UTF_8);
             int sz = a.length;
             byte[] b = new byte[sz + 1];
 

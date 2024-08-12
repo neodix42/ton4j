@@ -13,6 +13,7 @@ import org.ton.java.liteclient.exception.ParsingError;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,19 +50,19 @@ public class LiteClientParser {
             return null;
         }
 
-        if (StringUtils.contains(stdout, "adnl query timeout")) {
+        if (StringUtils.indexOf(stdout, "adnl query timeout") != -1) {
             log.info("Blockchain node is not ready");
             return null;
         }
 
-        if (StringUtils.contains(stdout, "server appears to be out of sync")) {
+        if (StringUtils.indexOf(stdout, "server appears to be out of sync") != -1) {
             log.info("Blockchain node is out of sync");
         }
 
         try {
 
             String last = stdout.replace(EOL, SPACE);
-            Long craetedAt = Long.parseLong(sb(last, "created at ", OPEN).trim());
+            Long createdAt = Long.parseLong(sb(last, "created at ", OPEN).trim());
             String fullBlockSeqno = sb(last, "last masterchain block is ", SPACE).trim();
             String shortBlockSeqno = OPEN + sb(fullBlockSeqno, OPEN, CLOSE) + CLOSE;
             String rootHashId = sb(fullBlockSeqno, ":", ":");
@@ -71,12 +72,12 @@ public class LiteClientParser {
             Long wc = Long.parseLong(sb(shortBlockSeqno, OPEN, ","));
             Long secondsAgo = -1L;
             if (last.contains("seconds ago")) {
-                String craetedAtStr = sb(last, "created at ", "seconds ago");
-                secondsAgo = Long.parseLong(sb(craetedAtStr, OPEN, SPACE).trim());
+                String createdAtStr = sb(last, "created at ", "seconds ago");
+                secondsAgo = Long.parseLong(sb(createdAtStr, OPEN, SPACE).trim());
             }
 
             return ResultLastBlock.builder()
-                    .createdAt(craetedAt)
+                    .createdAt(createdAt)
                     .seqno(pureBlockSeqno)
                     .rootHash(rootHashId)
                     .fileHash(fileHashId)
@@ -101,7 +102,6 @@ public class LiteClientParser {
         try {
 
             String last = stdout.replace(EOL, SPACE);
-
             String fullBlockSeqno = last.substring(last.indexOf("saved to disk") + 13).trim();
             String shortBlockSeqno = OPEN + sb(fullBlockSeqno, OPEN, CLOSE) + CLOSE;
             String rootHashId = sb(fullBlockSeqno, ":", ":");
@@ -620,11 +620,11 @@ public class LiteClientParser {
         List<Transaction> txs = new ArrayList<>();
         List<String> txsList = LiteClientParser.findStringBlocks(content, "transaction:(");
         if (!txsList.isEmpty()) {
-            txs = txsList.stream().map(x -> LiteClientParser.parseTransaction(x, includeMessageBody)).collect(Collectors.toList());
-            return txs;
-        } else {
-            return txs;
+            txs = txsList.stream()
+                    .map(x -> LiteClientParser.parseTransaction(x, includeMessageBody))
+                    .collect(Collectors.toList());
         }
+        return txs;
     }
 
     private static OutMsgDescr parseOutMsgDescr(String outMsgDescr, Boolean includeMessageBody) {
@@ -754,23 +754,25 @@ public class LiteClientParser {
                     .build();
         }
         String[] bodyCells = bodyContent.split("x\\{");
-        ArrayList<String> cells = new ArrayList<>(Arrays.asList(bodyCells));
-        ArrayList<String> cleanedCells = cleanCells(cells);
+        List<String> cells = new ArrayList<>(Arrays.asList(bodyCells));
+        List<String> cleanedCells = cleanCells(cells);
 
         return Body.builder()
                 .cells(cleanedCells)
                 .build();
     }
 
-    private static ArrayList<String> cleanCells(ArrayList<String> cells) {
-        ArrayList<String> cleanCells = new ArrayList<>();
-        if (!isNull(cells) && cells.size() > 0) {
-            cells.remove(0);
-            cells.stream().filter(s -> s.replace(")", "").replace(" ", "").replace("}", "").length() > 0).forEach(s -> {
-                cleanCells.add(s.replace(")", "").replace(" ", "").replace("}", ""));
-            });
+    private static List<String> cleanCells(List<String> cells) {
+        if (cells == null || cells.isEmpty()) {
+            return new ArrayList<>();
         }
-        return cleanCells;
+
+        cells.remove(0);
+
+        return cells.stream()
+                .map(s -> s.replaceAll("[)} ]", ""))
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
     }
 
     private static Init parseInit(String initContent) {
@@ -783,15 +785,15 @@ public class LiteClientParser {
         }
         String code = sbb(initContent, "code:(");
         String[] codeCells = isNull(code) ? new String[0] : code.split("x\\{");
-        ArrayList<String> cleanedCodeCells = cleanCells(new ArrayList<>(Arrays.asList(codeCells)));
+        List<String> cleanedCodeCells = cleanCells(new ArrayList<>(Arrays.asList(codeCells)));
 
         String data = sbb(initContent, "data:(");
         String[] dataCells = isNull(data) ? new String[0] : data.split("x\\{");
-        ArrayList<String> cleanedDataCells = cleanCells(new ArrayList<>(Arrays.asList(dataCells)));
+        List<String> cleanedDataCells = cleanCells(new ArrayList<>(Arrays.asList(dataCells)));
 
         String library = sbb(initContent, "library:(");
         String[] libraryCells = isNull(library) ? new String[0] : library.split("x\\{");
-        ArrayList<String> cleanedLibraryCells = cleanCells(new ArrayList<>(Arrays.asList(libraryCells)));
+        List<String> cleanedLibraryCells = cleanCells(new ArrayList<>(Arrays.asList(libraryCells)));
 
         return Init.builder()
                 .code(cleanedCodeCells)
@@ -911,11 +913,9 @@ public class LiteClientParser {
             origStatus = convertAccountStatus(origStatus);
             endStatus = convertAccountStatus(endStatus);
 
-            //String inMsgField = sb(transaction, "in_msg:", "))))") + ")))"; // small hack
             String inMsgField = sbb(transaction, "in_msg:"); // small hack
             Message inMsg = parseInMessage(inMsgField, includeMessageBody);
 
-            //String outMsgsField = sb(transaction, "out_msgs:", "))))))") + ")))"; // small hack
             String outMsgsField = sbb(transaction, "out_msgs:");
             List<Message> outMsgs = parseOutMessages(outMsgsField, includeMessageBody);
 
@@ -1163,7 +1163,7 @@ public class LiteClientParser {
 
         List<Currency> otherCurrencies = new ArrayList<>();
 
-        if (nonNull(str) && str.contains("node:(hmn_fork")) {
+        if (str.contains("node:(hmn_fork")) {
             // exist extra currencies
             List<String> currenciesLeft = findStringBlocks(str, "left:(hm_edge");
             List<String> currenciesRight = findStringBlocks(str, "right:(hm_edge");
@@ -1175,7 +1175,7 @@ public class LiteClientParser {
                 for (String cur : currencies) {
                     Byte len = parseByteSpace(cur, "len:");
                     String label = sb(cur, "s:", CLOSE);
-                    if (!StringUtils.isEmpty(label)) {
+                    if (StringUtils.isNotEmpty(label)) {
                         label = label.substring(1);
                     }
                     if (!isNull(len)) {
@@ -1214,9 +1214,8 @@ public class LiteClientParser {
 
             if (!libraries.isEmpty()) {
                 for (String lib : libraries) {
-                    //Byte len = parseByteSpace(cur, "len:");
                     String label = sb(lib, "s:", CLOSE);
-                    if (!StringUtils.isEmpty(label)) {
+                    if (StringUtils.isNotEmpty(label)) {
                         label = label.substring(1);
                     }
                     String type = sb(lib, "value:(", SPACE);
@@ -1224,7 +1223,7 @@ public class LiteClientParser {
 
                     String raw = sbb(lib, "root:(");
                     String[] rawCells = isNull(raw) ? new String[0] : raw.split("x\\{");
-                    ArrayList<String> rawLibrary = cleanCells(new ArrayList<>(Arrays.asList(rawCells)));
+                    List<String> rawLibrary = cleanCells(new ArrayList<>(Arrays.asList(rawCells)));
 
                     Library library = Library.builder()
                             .label(label)
@@ -1300,9 +1299,6 @@ public class LiteClientParser {
                 .build();
     }
 
-    public static String sb(String str, String from, String to) {
-        return StringUtils.substringBetween(str, from, to);
-    }
 
     private static BigDecimal parseBigDecimalSpace(String str, String from) {
         try {
@@ -1390,101 +1386,6 @@ public class LiteClientParser {
         return isNull(result) ? null : Byte.parseByte(result);
     }
 
-    /**
-     * Finds matching closing bracket in string starting with pattern
-     */
-    public static int findPosOfClosingBracket(String str, String pattern) {
-        int i;
-        int openBracketIndex = pattern.indexOf(OPEN);
-        int index = str.indexOf(pattern) + openBracketIndex;
-
-        ArrayDeque<Integer> st = new ArrayDeque<>();
-
-        for (i = index; i < str.length(); i++) {
-            if (str.charAt(i) == '(') {
-                st.push((int) str.charAt(i));
-            } else if (str.charAt(i) == ')') {
-                if (st.isEmpty()) {
-                    return i;
-                }
-                st.pop();
-                if (st.isEmpty()) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Finds single string-block starting with pattern and ending with CLOSE
-     */
-    public static String sbb(String str, String pattern) {
-        if (isNull(str) || !str.contains(pattern))
-            return null;
-
-        int openindex = str.indexOf(pattern) + pattern.indexOf(OPEN);
-        int closeIndex = LiteClientParser.findPosOfClosingBracket(str, pattern);
-        if (closeIndex == -1) {
-            return null;
-        }
-        return str.substring(openindex, closeIndex + 1).trim();
-    }
-
-    /**
-     * Finds multiple string-blocks starting with pattern and ending with CLOSE
-     */
-    public static List<String> findStringBlocks(String str, String pattern) {
-        List<String> result = new ArrayList<>();
-
-        if (isNull(str) || !str.contains(pattern))
-            return result;
-
-        int fromIndex = 0;
-        int foundIndex = str.indexOf(pattern, fromIndex);
-
-        while (foundIndex != -1) {
-            foundIndex += pattern.indexOf(OPEN);
-            String foundPattern = sbb(str.substring(fromIndex), pattern);
-            if (nonNull(foundPattern)) {
-                result.add(foundPattern);
-                fromIndex = foundIndex + foundPattern.length();
-                foundIndex = str.indexOf(pattern, fromIndex);
-            } else {
-                foundIndex = -1;
-            }
-        }
-        return result;
-    }
-
-    /**
-     * copy of the method findStringBlocks() but additionally prepends result with label value
-     */
-    public static List<String> findLeafsWithLabel(String str, String pattern) {
-        List<String> result = new ArrayList<>();
-
-        if (isNull(str) || !str.contains(pattern))
-            return result;
-
-        int fromIndex = 0;
-        int foundIndex = str.indexOf(pattern, fromIndex);
-
-        while (foundIndex != -1) {
-            foundIndex += pattern.indexOf(OPEN);
-            String foundPattern = sbb(str.substring(fromIndex), pattern);
-            if (nonNull(foundPattern)) {
-                result.add(str.substring(foundIndex - 150, foundIndex) + foundPattern);
-                fromIndex = foundIndex + foundPattern.length();
-                foundIndex = str.indexOf(pattern, fromIndex);
-            } else {
-                foundIndex = -1;
-            }
-        }
-
-        return result;
-    }
-
-
     public static LiteClientAccountState parseGetAccount(String stdout) {
 
         if (isNull(stdout)) {
@@ -1538,11 +1439,11 @@ public class LiteClientParser {
 
             String code = sbb(state, "code:(");
             String[] codeCells = isNull(code) ? new String[0] : code.split("x\\{");
-            ArrayList<String> stateAccountCode = cleanCells(new ArrayList<>(Arrays.asList(codeCells)));
+            List<String> stateAccountCode = cleanCells(new ArrayList<>(Arrays.asList(codeCells)));
 
             String data = sbb(state, "data:(");
             String[] dataCells = isNull(data) ? new String[0] : data.split("x\\{");
-            ArrayList<String> stateAccountData = cleanCells(new ArrayList<>(Arrays.asList(dataCells)));
+            List<String> stateAccountData = cleanCells(new ArrayList<>(Arrays.asList(dataCells)));
 
             String stateAccountLibrary = sbb(state, "library:(");
             List<Library> libraries = readLibraries(stateAccountLibrary);
@@ -1577,7 +1478,7 @@ public class LiteClientParser {
 
     public static long parseRunMethodSeqno(String stdout) {
         try {
-            return Long.parseLong(StringUtils.substringBetween(stdout, "result:  [", "]").trim());
+            return Long.parseLong(sb(stdout, "result:  [", "]").trim());
         } catch (Exception e) {
             return -1L;
         }
@@ -1592,7 +1493,7 @@ public class LiteClientParser {
             return Collections.emptyList();
         }
 
-        String result = StringUtils.substringBetween(stdout, "result:  [ (", ") ]");
+        String result = sb(stdout, "result:  [ (", ") ]");
 
         result = result.replace("] [", ",");
         result = result.replace("[", "");
@@ -1600,7 +1501,7 @@ public class LiteClientParser {
         String[] participants = result.split(",");
 
         List<ResultListParticipants> participantsList = new ArrayList<>();
-        if (result.length() == 0) {
+        if (result.isEmpty()) {
             return participantsList;
         }
         for (String participant : participants) {
@@ -1625,10 +1526,191 @@ public class LiteClientParser {
                     .build();
         }
 
-        String result = StringUtils.substringBetween(stdout, "result:  [", "]");
+        String result = sb(stdout, "result:  [", "]");
 
         return ResultComputeReturnStake.builder()
                 .stake(new BigDecimal(result.trim()))
                 .build();
+    }
+
+    private static String sb(String str, String from, String to) {
+        if (str == null || from == null || to == null) {
+            return null;
+        }
+
+        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
+        byte[] fromBytes = from.getBytes(StandardCharsets.UTF_8);
+        byte[] toBytes = to.getBytes(StandardCharsets.UTF_8);
+
+        int startIndex = indexOf(bytes, fromBytes, 0);
+        if (startIndex == -1) {
+            return null;
+        }
+        startIndex += fromBytes.length;
+
+        int endIndex = indexOf(bytes, toBytes, startIndex);
+        if (endIndex == -1) {
+            return null;
+        }
+
+        byte[] resultBytes = Arrays.copyOfRange(bytes, startIndex, endIndex);
+        return new String(resultBytes, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Finds single string-block starting with pattern and ending with CLOSE
+     */
+    private static String sbb(String str, String pattern) {
+        if (str == null || pattern == null || !str.contains(pattern)) {
+            return null;
+        }
+
+        byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
+        byte[] patternBytes = pattern.getBytes(StandardCharsets.UTF_8);
+
+        int patternIndex = indexOf(strBytes, patternBytes, 0);
+        int patternOpenIndex = indexOf(patternBytes, OPEN.getBytes(StandardCharsets.UTF_8), 0);
+        if (patternIndex == -1) {
+            return null;
+        }
+
+        int openIndex = patternIndex + patternOpenIndex;
+        int closeIndex = findPosOfClosingBracket(strBytes, patternIndex);
+
+        if (closeIndex == -1) {
+            return null;
+        }
+
+        return new String(strBytes, openIndex, closeIndex - openIndex + 1, StandardCharsets.UTF_8).trim();
+    }
+
+    /**
+     * Finds matching closing bracket in string starting with pattern
+     */
+    private static int findPosOfClosingBracket(byte[] strBytes, int patternIndex) {
+        Deque<Integer> stack = new ArrayDeque<>();
+
+        for (int i = patternIndex; i < strBytes.length; i++) {
+            if (strBytes[i] == (byte) '(') {
+                stack.push(i);
+            } else if (strBytes[i] == (byte) ')') {
+                if (stack.isEmpty()) {
+                    return i;
+                }
+                stack.pop();
+                if (stack.isEmpty()) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Finds multiple string-blocks starting with pattern and ending with CLOSE
+     */
+    private static List<String> findStringBlocks(String str, String pattern) {
+        List<String> result = new ArrayList<>();
+
+        if (isNull(str) || !str.contains(pattern))
+            return result;
+
+        byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
+        byte[] patternBytes = pattern.getBytes(StandardCharsets.UTF_8);
+
+        int fromIndex = 0;
+        int patternIndex = indexOf(strBytes, patternBytes, fromIndex);
+
+        while (patternIndex != -1) {
+            byte[] tmp = Arrays.copyOfRange(strBytes, patternIndex, patternIndex + patternBytes.length);
+            int openCharIndex = indexOf(tmp, OPEN.getBytes(StandardCharsets.UTF_8), 0);
+            int openIndex = patternIndex + openCharIndex;
+            if (openIndex == -1) {
+                break;
+            }
+            int closeIndex = findPosOfClosingBracket(strBytes, patternIndex);
+
+            if (closeIndex != -1) {
+                result.add(new String(Arrays.copyOfRange(strBytes, openIndex, closeIndex + 1)));
+                fromIndex = closeIndex + 1;
+                patternIndex = indexOf(strBytes, patternBytes, fromIndex);
+            } else {
+                break;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * copy of the method findStringBlocks() but additionally prepends result with label value
+     */
+    private static List<String> findLeafsWithLabel(String str, String pattern) {
+        List<String> result = new ArrayList<>();
+
+        if (isNull(str) || !str.contains(pattern))
+            return result;
+
+        byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
+        byte[] patternBytes = pattern.getBytes(StandardCharsets.UTF_8);
+
+
+        int fromIndex = 0;
+        final int dataToAddLen = 150;
+        int patternIndex = indexOf(strBytes, patternBytes, fromIndex);
+
+        while (patternIndex != -1) {
+            byte[] tmp = Arrays.copyOfRange(strBytes, patternIndex, patternIndex + pattern.length());
+            int openCharIndex = indexOf(tmp, OPEN.getBytes(StandardCharsets.UTF_8), 0);
+            int openIndex = patternIndex + openCharIndex;
+
+            if (openIndex == -1) {
+                break;
+            }
+            int closeIndex = findPosOfClosingBracket(strBytes, patternIndex);
+
+            if (closeIndex != -1) {
+                int start = Math.max(patternIndex - dataToAddLen, 0);
+                byte[] beforePattern = Arrays.copyOfRange(strBytes, start, patternIndex);
+                byte[] foundPattern = Arrays.copyOfRange(strBytes, patternIndex, closeIndex + 1);
+
+                result.add(new String(beforePattern) + new String(foundPattern));
+                fromIndex = closeIndex + 1;
+                patternIndex = indexOf(strBytes, patternBytes, fromIndex);
+            } else {
+                break;
+            }
+        }
+        return result;
+    }
+
+    private static int indexOf(byte[] array, byte[] target, int fromIndex) {
+        if (target.length == 0) {
+            return fromIndex;
+        }
+        if (target.length > array.length) {
+            return -1;
+        }
+
+        int[] a = new int[256];
+        for (int i = 0; i < target.length; i++) {
+            a[target[i] & 0xFF] = i;
+        }
+
+        int m = target.length;
+        int n = array.length;
+
+        int s = fromIndex;
+        while (s <= n - m) {
+            int j = m - 1;
+            while (j >= 0 && target[j] == array[s + j]) {
+                j--;
+            }
+            if (j < 0) {
+                return s;
+            } else {
+                s += Math.max(1, j - a[array[s + j] & 0xFF]);
+            }
+        }
+        return -1;
     }
 }

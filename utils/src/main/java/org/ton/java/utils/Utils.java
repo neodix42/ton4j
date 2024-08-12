@@ -21,10 +21,12 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Utils {
+    private static final Logger log = Logger.getLogger(Utils.class.getName());
     private static final String HEXES = "0123456789ABCDEF";
     private static final long BLN1 = 1000000000L;
     private static final BigInteger BI_BLN1 = BigInteger.valueOf(BLN1);
@@ -783,16 +785,16 @@ public class Utils {
         try {
             TimeUnit.SECONDS.sleep(seconds);
         } catch (Throwable e) {
-            System.out.println(e.getMessage());
+            log.info(e.getMessage());
         }
     }
 
     public static void sleep(long seconds, String text) {
         try {
-            System.out.println("pause " + seconds + " seconds, " + text);
+            log.info(String.format("pause %s seconds, %s", seconds, text));
             TimeUnit.SECONDS.sleep(seconds);
         } catch (Throwable e) {
-            System.out.println(e.getMessage());
+            log.info(e.getMessage());
         }
     }
 

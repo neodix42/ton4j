@@ -17,6 +17,7 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,10 +53,6 @@ public class LiteClient {
      * Ignored if pathToGlobalConfig is not null.
      */
     private boolean testnet;
-
-//    private LiteClient() {
-//
-//    }
 
     public static class LiteClientBuilder {
     }
@@ -415,7 +412,7 @@ public class LiteClient {
         if (nonNull(result)) {
             return result.getRight().get();
         } else {
-            return null;
+            return "";
         }
     }
 
@@ -425,7 +422,7 @@ public class LiteClient {
         if (nonNull(result)) {
             return result.getRight().get();
         } else {
-            return null;
+            return "";
         }
     }
 
@@ -435,7 +432,7 @@ public class LiteClient {
         if (nonNull(result)) {
             return result.getRight().get();
         } else {
-            return null;
+            return "";
         }
     }
 
@@ -446,7 +443,7 @@ public class LiteClient {
             return foundShardsInBlock;
         } catch (Exception e) {
             log.info("Error retrieving shards from the block " + e.getMessage());
-            return null;
+            return new ArrayList<>();
         }
     }
 
@@ -482,7 +479,7 @@ public class LiteClient {
                     return resultInput;
 
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.info(e.getMessage());
                     return null;
                 }
             });
