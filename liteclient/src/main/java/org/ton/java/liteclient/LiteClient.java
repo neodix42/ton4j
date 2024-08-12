@@ -412,7 +412,7 @@ public class LiteClient {
         if (nonNull(result)) {
             return result.getRight().get();
         } else {
-            return "";
+            return null;
         }
     }
 
@@ -422,7 +422,7 @@ public class LiteClient {
         if (nonNull(result)) {
             return result.getRight().get();
         } else {
-            return "";
+            return null;
         }
     }
 
@@ -432,7 +432,7 @@ public class LiteClient {
         if (nonNull(result)) {
             return result.getRight().get();
         } else {
-            return "";
+            return null;
         }
     }
 
@@ -443,7 +443,7 @@ public class LiteClient {
             return foundShardsInBlock;
         } catch (Exception e) {
             log.info("Error retrieving shards from the block " + e.getMessage());
-            return new ArrayList<>();
+            return null;
         }
     }
 

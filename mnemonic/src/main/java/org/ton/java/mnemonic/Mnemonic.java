@@ -116,9 +116,7 @@ public class Mnemonic {
     public static List<String> generate(int wordCount, String password) throws NoSuchAlgorithmException, InvalidKeyException {
         List<String> mnemonic;
         SecureRandom rnd = SecureRandom.getInstanceStrong();
-        long c = 0;
         while (true) {
-            c++;
             mnemonic = new ArrayList<>();
             for (int i = 0; i < wordCount; i++) {
                 mnemonic.add(DEFAULT_WORDLIST[rnd.nextInt(DEFAULT_WORDLIST.length)]);
