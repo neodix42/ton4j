@@ -6,6 +6,7 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 import static java.util.Objects.isNull;
 
@@ -14,7 +15,7 @@ import static java.util.Objects.isNull;
  * Interestingly, but this solution loses to Deque<Boolean> array solution from memory footprint allocation.
  */
 public class RealBitString {
-
+    private static final Logger log = Logger.getLogger(RealBitString.class.getName());
     byte[] array;
     public int writeCursor;
     public int readCursor;
@@ -625,7 +626,7 @@ public class RealBitString {
 //            writeCursor = saveWriteCursor;
 
             if (!foundEndBit) {
-                System.err.println(Arrays.toString(arr) + ", " + fulfilledBytes);
+                log.info((Arrays.toString(arr) + ", " + fulfilledBytes));
                 throw new Error("Incorrect TopUppedArray");
             }
         }

@@ -3,6 +3,7 @@ package org.ton.java.smartcontract.token.ft;
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.java.Log;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
@@ -27,6 +28,7 @@ import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
+@Log
 public class JettonMinter implements Contract {
     TweetNaclFast.Signature.KeyPair keyPair;
     Address adminAddress;
@@ -95,7 +97,7 @@ public class JettonMinter implements Contract {
     @Override
     public Cell createCodeCell() {
         if (StringUtils.isNotEmpty(code)) {
-            System.out.println("Using custom JettonMinter");
+            log.info("Using custom JettonMinter");
             return CellBuilder.beginCell().
                     fromBoc(code).
                     endCell();
@@ -195,7 +197,7 @@ public class JettonMinter implements Contract {
         String jettonContentUri = null;
         try {
             jettonContentUri = NftUtils.parseOffChainUriCell(jettonContentCell);
-        } catch (Exception e) {
+        } catch (Error e) {
             //todo
         }
 

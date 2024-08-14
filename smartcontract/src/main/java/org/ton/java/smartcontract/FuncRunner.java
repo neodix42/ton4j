@@ -33,7 +33,7 @@ public class FuncRunner {
         @Override
         public FuncRunner build() {
             if (StringUtils.isEmpty(super.funcExecutablePath)) {
-                System.out.println("checking if func is installed...");
+                log.info("checking if func is installed...");
 
                 String errorMsg = "Make sure you have fift and func installed. See https://github.com/ton-blockchain/packages for instructions.";
                 try {
@@ -45,15 +45,15 @@ public class FuncRunner {
                     }
                     String funcAbsolutePath = detectAbsolutePath();
 
-                    System.out.println("func found at " + funcAbsolutePath);
+                    log.info("func found at " + funcAbsolutePath);
                     super.funcExecutable = "func";
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.info(e.getMessage());
                     throw new Error("Cannot execute simple func command.\n" + errorMsg);
                 }
             } else {
-                System.out.println("using " + super.funcExecutablePath);
+                log.info("using " + super.funcExecutablePath);
                 super.funcExecutable = super.funcExecutablePath;
             }
             return super.build();
@@ -63,7 +63,11 @@ public class FuncRunner {
     public String run(String workdir, String... params) {
         Pair<Process, String> result = Executor.execute(funcExecutable, workdir, params);
 
-        return result.getRight();
+        if (result != null && result.getRight() != null) {
+            return result.getRight();
+        }
+
+        return "";
     }
 
     private static String detectAbsolutePath() {
@@ -89,7 +93,7 @@ public class FuncRunner {
             }
             return null;
         } catch (Exception e) {
-            throw new Error("Cannot detect absolute path to executable func");
+            throw new Error("Cannot detect absolute path to executable func " + e.getMessage());
         }
     }
 }

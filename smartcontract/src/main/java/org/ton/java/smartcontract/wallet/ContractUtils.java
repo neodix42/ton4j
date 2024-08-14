@@ -1,6 +1,7 @@
 package org.ton.java.smartcontract.wallet;
 
 
+import lombok.extern.java.Log;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.token.ft.JettonMinter;
@@ -10,6 +11,7 @@ import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
+@Log
 public class ContractUtils {
 
     public static long getSeqno(Tonlib tonlib, Address address) {
@@ -21,7 +23,7 @@ public class ContractUtils {
     }
 
     public static void waitForDeployment(Tonlib tonlib, Address address, int timeoutSeconds) {
-        System.out.println("waiting for deployment up to " + timeoutSeconds + " sec");
+        log.info("waiting for deployment up to " + timeoutSeconds + " sec");
         int i = 0;
         do {
             if (++i * 2 >= timeoutSeconds) {
@@ -33,7 +35,7 @@ public class ContractUtils {
     }
 
     public static void waitForBalanceChange(Tonlib tonlib, Address address, int timeoutSeconds) {
-        System.out.println("waiting for balance change up to " + timeoutSeconds + " sec");
+        log.info("waiting for balance change up to " + timeoutSeconds + " sec");
         BigInteger initialBalance = tonlib.getAccountBalance(address);
         int i = 0;
         do {
@@ -46,7 +48,7 @@ public class ContractUtils {
     }
 
     public static void waitForJettonBalanceChange(Tonlib tonlib, Address jettonMinter, Address address, int timeoutSeconds) {
-        System.out.println("waiting for jetton balance change up to " + timeoutSeconds + " sec");
+        log.info("waiting for jetton balance change up to " + timeoutSeconds + " sec");
         BigInteger initialBalance = getJettonBalance(tonlib, jettonMinter, address);
         int i = 0;
         do {
@@ -69,7 +71,7 @@ public class ContractUtils {
             JettonWallet jettonWallet = jettonMinterWallet.getJettonWallet(destinationAddress);
 
             return jettonWallet.getBalance();
-        } catch (Exception e) {
+        } catch (Error e) {
             return new BigInteger("-1");
         }
     }

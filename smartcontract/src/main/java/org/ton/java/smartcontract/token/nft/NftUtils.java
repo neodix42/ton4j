@@ -1,5 +1,6 @@
 package org.ton.java.smartcontract.token.nft;
 
+import lombok.extern.java.Log;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
@@ -19,6 +20,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+@Log
 public class NftUtils {
 
 
@@ -47,7 +49,7 @@ public class NftUtils {
         try {
             return URLDecoder.decode(uri, String.valueOf(StandardCharsets.UTF_8));
         } catch (UnsupportedEncodingException e) {
-            System.out.println(e.getMessage());
+            log.info(e.getMessage());
             return null;
         }
     }

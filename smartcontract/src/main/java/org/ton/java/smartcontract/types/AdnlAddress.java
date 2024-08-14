@@ -26,7 +26,7 @@ public class AdnlAddress {
     }
 
     public AdnlAddress(String anyForm) {
-        if ((isNull(anyForm)) || (anyForm.length() == 0)) {
+        if ((isNull(anyForm)) || (anyForm.isEmpty())) {
             throw new Error("Invalid address");
         }
         if ((anyForm.length() != 64)) {

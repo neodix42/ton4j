@@ -119,13 +119,13 @@ public class LiteClient {
                     }
                 }
 
-                System.out.printf("Java Lite-Client configuration:\n" +
+                log.info(String.format("Java Lite-Client configuration:\n" +
                                 "Location: %s\n" +
                                 "Path to global config: %s\n" +
                                 "Testnet: %s%n",
                         super.pathToLiteClientBinary,
                         super.pathToGlobalConfig,
-                        super.testnet);
+                        super.testnet));
 
             } catch (Exception e) {
                 throw new RuntimeException("Error creating lite-client instance: " + e.getMessage());

@@ -238,7 +238,7 @@ public class Tonlib {
                 super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
                 super.tonlib = super.tonlibJson.tonlib_client_json_create();
 
-                System.out.printf("Java Tonlib configuration:\n" +
+                log.info(String.format("Java Tonlib configuration:\n" +
                                 "Location: %s\n" +
                                 "Verbosity level: %s (%s)\n" +
                                 "Keystore in memory: %s\n" +
@@ -268,7 +268,7 @@ public class Tonlib {
                         super.ignoreCache,
                         super.testnet,
                         super.receiveTimeout,
-                        super.receiveRetryTimes);
+                        super.receiveRetryTimes));
 
                 // set verbosity
                 VerbosityLevelQuery verbosityLevelQuery = VerbosityLevelQuery.builder().new_verbosity_level(super.verbosityLevel.ordinal()).build();
@@ -278,7 +278,7 @@ public class Tonlib {
                 initTonlibConfig(globalConfigCurrent);
 
                 if (super.usingAllLiteServers) {
-                    System.out.println("Using lite-server at index: " + (super.liteServerIndex) + " (" + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp()) + ")");
+                    log.info("Using lite-server at index: " + (super.liteServerIndex) + " (" + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp()) + ")");
                 }
 
             } catch (Exception e) {
@@ -368,7 +368,7 @@ public class Tonlib {
         int retry = 0;
         while (isNull(result)) {
             if (retry > 0) {
-                System.out.println("retry " + retry);
+                log.info("retry " + retry);
             }
             if (++retry > receiveRetryTimes) {
                 throw new Error("Error in tonlib.receive(), " + receiveRetryTimes + " times was not able retrieve result from lite-server.");
@@ -399,7 +399,7 @@ public class Tonlib {
 //                    }
 
                     if (response.contains("error")) {
-                        System.out.println(response);
+                        log.info(response);
 
                         if (++retry > receiveRetryTimes) {
 //                            System.out.println("Last response: " + response);
@@ -415,7 +415,7 @@ public class Tonlib {
                             newLiteServers[0] = liteServers[retry % originalGlobalConfigInternal.getLiteservers().length];
                             globalConfigCurrent.setLiteservers(newLiteServers);
 
-                            System.out.println("Trying next lite-server at index: " + (retry % originalGlobalConfigInternal.getLiteservers().length) + " (" + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp()) + ")");
+                            log.info("Trying next lite-server at index: " + (retry % originalGlobalConfigInternal.getLiteservers().length) + " (" + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp()) + ")");
 
                             reinitTonlibConfig(globalConfigCurrent);
                             //repeat request
@@ -443,7 +443,7 @@ public class Tonlib {
                         if (sync.getSync_state().getTo_seqno() != 0) {
                             pct = (sync.getSync_state().getCurrent_seqno() * 100) / (double) sync.getSync_state().getTo_seqno();
                         }
-                        System.out.println("Synchronized: " + String.format("%.2f%%", pct));
+                        log.info("Synchronized: " + String.format("%.2f%%", pct));
                     }
                     if (isNull(response)) {
                         throw new RuntimeException("Error in waitForSyncDone(), response is null.");
@@ -455,7 +455,7 @@ public class Tonlib {
                     response = receive();
                 }
                 if (response.contains("error")) {
-                    System.out.println(response);
+                    log.info(response);
 
                     if (++retry > receiveRetryTimes) {
                         throw new Error("Error in tonlib.receive(), " + receiveRetryTimes + " times was not able retrieve result from lite-server.");
@@ -805,7 +805,7 @@ public class Tonlib {
                 if (StringUtils.isEmpty(blockId.getRoot_hash())) {
                     throw new Error("Cannot lookup block for hashes by seqno. Probably block not in db. Try to specify block's root and file hashes manually in base64 format.");
                 }
-                System.out.println("got hashes "+blockId);
+                log.info("got hashes " + blockId);
             }
 
             AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
@@ -909,7 +909,7 @@ public class Tonlib {
                     if (StringUtils.isEmpty(blockId.getRoot_hash())) {
                         throw new Error("Cannot lookup block for hashes by seqno. Probably block not in db. Try to specify block's root and file hashes manually in base64 format.");
                     }
-                    System.out.println("got hashes "+blockId);
+                    log.info("got hashes " + blockId);
                 }
 
                 AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()

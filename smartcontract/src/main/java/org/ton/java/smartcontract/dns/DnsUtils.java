@@ -29,7 +29,7 @@ public class DnsUtils {
      * @return BigInteger
      */
     static BigInteger categoryToInt(String category) {
-        if ((isNull(category)) || (category.length() == 0)) {
+        if ((isNull(category)) || (category.isEmpty())) {
             return BigInteger.ZERO;
         }
 
