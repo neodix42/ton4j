@@ -39,7 +39,7 @@ public class LevelMask {
             return 0;
         }
 
-        return (int) Math.ceil(Math.log(number + 1) / Math.log(2));
+        return Integer.SIZE - Integer.numberOfLeadingZeros(number);
     }
 
     public static int calculateOnesBits(int number) {

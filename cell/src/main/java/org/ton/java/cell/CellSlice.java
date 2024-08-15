@@ -162,10 +162,10 @@ public class CellSlice {
         TonHashMap x = new TonHashMap(n);
         x.deserialize(this, keyParser, valueParser);
 
-        if (refs.size() != 0) {
+        if (!refs.isEmpty()) {
             refs.remove(0);
         }
-        if (refs.size() != 0) {
+        if (!refs.isEmpty()) {
             refs.remove(0);
         }
 
@@ -179,10 +179,10 @@ public class CellSlice {
         TonHashMapAug x = new TonHashMapAug(n);
         x.deserialize(this, keyParser, valueParser, extraParser);
 
-        if (refs.size() != 0) {
+        if (!refs.isEmpty()) {
             refs.remove(0);
         }
-        if (refs.size() != 0) {
+        if (!refs.isEmpty()) {
             refs.remove(0);
         }
 
@@ -439,7 +439,7 @@ public class CellSlice {
      * @return String
      */
     public String loadSnakeString() {
-        List<Integer> result = new ArrayList<>();
+        StringBuilder s = new StringBuilder();
         checkBitsOverflow(bits.getLength()); // bitsLeft
         CellSlice ref = this.clone();
 
@@ -447,12 +447,10 @@ public class CellSlice {
             try {
                 BitString bitString = ref.loadBits(ref.bits.getLength());
 
-                int[] uintArray = bitString.toUintArray();
-                List<Integer> resultList = new ArrayList<>(uintArray.length);
-                for (int value : uintArray) {
-                    resultList.add(value);
+                byte[] uintArray = bitString.toByteArray();
+                for (byte value : uintArray) {
+                    s.append((char) value);
                 }
-                result.addAll(resultList);
 
                 if (ref.refs.size() > 1) {
                     throw new Error("more than one ref, it is not snake string");
@@ -468,7 +466,7 @@ public class CellSlice {
             ref = null;
         }
 
-        return result.stream().map(m -> new String(new byte[]{m.byteValue()})).collect(Collectors.joining());
+        return s.toString();
     }
 
     public BitString loadBits(int length) {

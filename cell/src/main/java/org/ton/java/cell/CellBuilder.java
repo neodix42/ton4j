@@ -5,6 +5,7 @@ import org.ton.java.bitstring.BitString;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static java.util.Objects.isNull;
@@ -219,7 +220,7 @@ public class CellBuilder {
     }
 
     public CellBuilder storeSnakeString(String str) {
-        byte[] strBytes = str.getBytes();
+        byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
         Cell c = f(127 - 4, strBytes);
         return this.storeSlice(CellSlice.beginParse(c));
     }

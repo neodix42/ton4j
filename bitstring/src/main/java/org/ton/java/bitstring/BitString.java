@@ -40,7 +40,7 @@ public class BitString implements Bits<Boolean> {
             array = new ArrayDeque<>(0);
             initialLength = 0;
         } else {
-            byte[] bits = leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
+            byte[] bits = Utils.leftPadBytes(Utils.bytesToBitString(bytes).getBytes(StandardCharsets.UTF_8), bytes.length * 8, '0');
 
             array = new ArrayDeque<>(bits.length);
             for (byte bit : bits) { // whole length
@@ -65,7 +65,7 @@ public class BitString implements Bits<Boolean> {
             array = new ArrayDeque<>(0);
             initialLength = 0;
         } else {
-            byte[] bits = leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
+            byte[] bits = Utils.leftPadBytes(Utils.bytesToBitString(bytes).getBytes(StandardCharsets.UTF_8), bytes.length * 8, '0');
             array = new ArrayDeque<>(bits.length);
             for (int i = 0; i < size; i++) { // specified length
                 if (bits[i] == (byte) '1') {
@@ -80,18 +80,6 @@ public class BitString implements Bits<Boolean> {
         }
     }
 
-    private byte[] leftPadBytes(byte[] bits, int sz, char c) {
-        if (sz <= bits.length) {
-            return bits;
-        }
-
-        int diff = sz - bits.length;
-        byte[] b = new byte[diff + bits.length];
-        Arrays.fill(b, 0, diff, (byte) c);
-        System.arraycopy(bits, 0, b, diff, bits.length);
-
-        return b;
-    }
 
     /**
      * Create BitString limited by length
@@ -212,7 +200,7 @@ public class BitString implements Bits<Boolean> {
             throw new Error("bitLength is too small for number, got number=" + number + ", bitLength=" + bitLength);
         }
 
-        byte[] s = number.toString(2).getBytes();
+        byte[] s = number.toString(2).getBytes(StandardCharsets.UTF_8);
 
         if (s.length != bitLength) {
             s = repeatZerosAndMerge(bitLength - s.length, s);
@@ -640,7 +628,7 @@ public class BitString implements Bits<Boolean> {
             return new byte[0];
         }
 
-        byte[] bin = getBitString().getBytes();
+        byte[] bin = getBitString().getBytes(StandardCharsets.UTF_8);
         int sz = bin.length;
         byte[] result = new byte[(sz + 7) / 8];
 
@@ -660,7 +648,7 @@ public class BitString implements Bits<Boolean> {
             return new int[0];
         }
 
-        byte[] bin = getBitString().getBytes();
+        byte[] bin = getBitString().getBytes(StandardCharsets.UTF_8);
         int sz = bin.length;
         int[] result = new int[(sz + 7) / 8];
 

@@ -24,9 +24,6 @@ public class TransactionDescription {
         } else if (description instanceof TransactionDescriptionOrdinary) {
             c.storeUint(0b000, 3);
             c.storeSlice(CellSlice.beginParse(((TransactionDescriptionOrdinary) description).toCell()));
-        } else if (description instanceof TransactionDescriptionOrdinary) {
-            c.storeUint(0b000, 3);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionOrdinary) description).toCell()));
         }
         return c.endCell();
     }

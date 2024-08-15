@@ -18,22 +18,21 @@ public class BinTree {
     }
 
     public Cell toCell() {
-        if (list.size() == 0) {
+        if (list.isEmpty()) {
             return CellBuilder.beginCell().endCell();
         }
         return addToBinTree(list, null);
     }
 
     private static Cell addToBinTree(Deque<ShardDescr> cells, Cell left) {
-        CellBuilder c = CellBuilder.beginCell();
-        if (cells.size() >= 1) {
+        if (!cells.isEmpty()) {
             CellBuilder cb = CellBuilder.beginCell();
             cb.storeBit(true);
             cb.storeRef(CellBuilder.beginCell()
                     .storeBit(false)
                     .storeCell(isNull(left) ? cells.pop().toCell() : left)
                     .endCell());
-            if (cells.size() != 0) {
+            if (!cells.isEmpty()) {
                 cb.storeRef(addToBinTree(cells, cells.pop().toCell()));
             }
             return cb.endCell();

@@ -38,7 +38,7 @@ public class FiftRunner {
         @Override
         public FiftRunner build() {
             if (StringUtils.isEmpty(super.fiftExecutablePath)) {
-                System.out.println("checking if fift is installed...");
+                log.info("checking if fift is installed...");
                 String errorMsg = "Make sure you have fift and func installed. See https://github.com/ton-blockchain/packages for instructions.";
                 try {
                     ProcessBuilder pb = new ProcessBuilder("fift", "-h").redirectErrorStream(true);
@@ -48,13 +48,13 @@ public class FiftRunner {
                         throw new Error("Cannot execute simple fift command.\n" + errorMsg);
                     }
                     fiftAbsolutePath = detectAbsolutePath();
-                    System.out.println("fift found at " + fiftAbsolutePath);
+                    log.info("fift found at " + fiftAbsolutePath);
                     super.fiftExecutable = "fift";
                 } catch (Exception e) {
                     throw new Error("Cannot execute simple fift command.\n" + errorMsg);
                 }
             } else {
-                System.out.println("using " + super.fiftExecutablePath);
+                log.info("using " + super.fiftExecutablePath);
                 super.fiftExecutable = super.fiftExecutablePath;
             }
 
@@ -86,7 +86,7 @@ public class FiftRunner {
                     }
                 }
             }
-            System.out.println("using include dirs: " + super.fiftAsmLibraryPath + ", " + super.fiftSmartcontLibraryPath);
+            log.info("using include dirs: " + super.fiftAsmLibraryPath + ", " + super.fiftSmartcontLibraryPath);
 
             return super.build();
         }
@@ -136,7 +136,7 @@ public class FiftRunner {
             }
             return null;
         } catch (Exception e) {
-            throw new Error("Cannot detect absolute path to executable " + "fift");
+            throw new Error("Cannot detect absolute path to executable fift " + e.getMessage());
         }
     }
 }

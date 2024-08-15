@@ -1,12 +1,12 @@
 package org.ton.java.cell;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.bitstring.BitString;
 import org.ton.java.tlb.types.Boc;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -237,7 +237,7 @@ public class Cell {
                     depth = refDepth;
                 }
             }
-            if (refs.size() > 0) {
+            if (!refs.isEmpty()) {
                 depth++;
                 if (depth >= 1024) {
                     throw new Error("depth is more than max depth (1023)");
@@ -359,9 +359,6 @@ public class Cell {
             BitString bss = new BitString(ba.length);
             bss.writeBitArray(ba);
 
-//            BitString f = new BitString(bss.getBitString().length());
-//            f.writeBitString(bss);
-
             return CellBuilder.beginCell().storeBitString(bss).endCell();
         } catch (Exception e) {
             throw new Error("Cannot convert hex BitString to Cell. Error " + e.getMessage());
@@ -482,7 +479,7 @@ public class Cell {
      */
     public String print(String indent) {
         StringBuilder s = new StringBuilder(indent + "x{" + bits.toHex() + "}\n");
-        if (nonNull(refs) && refs.size() > 0) {
+        if (nonNull(refs) && !refs.isEmpty()) {
             for (Cell i : refs) {
                 if (nonNull(i)) {
                     s.append(i.print(indent + " "));
@@ -493,12 +490,11 @@ public class Cell {
     }
 
     public String print() {
-        String indent = "";
-        StringBuilder s = new StringBuilder(indent + "x{" + bits.toHex() + "}\n");
-        if (nonNull(refs) && refs.size() > 0) {
+        StringBuilder s = new StringBuilder("x{" + bits.toHex() + "}\n");
+        if (nonNull(refs) && !refs.isEmpty()) {
             for (Cell i : refs) {
                 if (nonNull(i)) {
-                    s.append(i.print(indent + " "));
+                    s.append(i.print(" "));
                 }
             }
         }
@@ -509,7 +505,6 @@ public class Cell {
      * Saves BoC to file
      */
     public void toFile(String filename, boolean withCrc) {
-
         byte[] boc = toBoc(withCrc);
         try {
             Files.write(Paths.get(filename), boc);
@@ -595,7 +590,7 @@ public class Cell {
 
     public byte[] getBitsDescriptor() {
         int bitsLength = bits.getLength();
-        byte d3 = (byte) (Math.floor((double) bitsLength / 8) * 2);
+        byte d3 = (byte) ((bitsLength / 8) * 2);
         if ((bitsLength % 8) != 0) {
             d3++;
         }
@@ -636,9 +631,7 @@ public class Cell {
 
     // taken from pytoniq - beautiful!
     private Map<Cell, Integer> order(Map<Cell, Integer> result) {
-        if (result.containsKey(this)) {
-            result.remove(this);
-        }
+        result.remove(this);
         result.put(this, null);
         for (Cell ref : this.refs) {
             ref.order(result);
@@ -667,7 +660,7 @@ public class Cell {
         }
 
         BigInteger cellsNum = BigInteger.valueOf(indexed.size());
-        int cellsLen = (int) Math.floor((double) (cellsNum.bitLength() + 7) / 8);
+        int cellsLen = (cellsNum.bitLength() + 7) >> 3;
 
         byte[] payload = new byte[0];
         List<BigInteger> serializedCellLen = new ArrayList<>();
@@ -677,10 +670,9 @@ public class Cell {
             serializedCellLen.add(BigInteger.valueOf(serializeResult.length));
         }
 
-//        System.out.println(Utils.bytesToHex(payload));
         // bytes needed to store len of payload
-        int sizeBits = Utils.log2(payload.length + 1);
-        int sizeBytes = (int) Math.ceil((double) sizeBits / 8);
+        int sizeBits = Utils.log2Ceil(payload.length + 1);
+        int sizeBytes = (sizeBits + 7) / 8;
 
         int numberOfRoots = 1;
         int absent = 0;
@@ -707,14 +699,12 @@ public class Cell {
     }
 
     private List<Cell> flattenIndex(List<Cell> src, boolean hasTopHash, boolean hasIntHashes) {
-
         List<Cell> pending = src;
         Map<String, Cell> allCells = new HashMap<>();
         Map<String, Cell> notPermCells = new HashMap<>();
-
         Deque<String> sorted = new ArrayDeque<>();
 
-        while (pending.size() > 0) {
+        while (!pending.isEmpty()) {
             List<Cell> cells = new ArrayList<>(pending);
             pending = new ArrayList<>();
 
@@ -731,7 +721,7 @@ public class Cell {
         }
 
         Map<String, Boolean> tempMark = new HashMap<>();
-        while (notPermCells.size() > 0) {
+        while (!notPermCells.isEmpty()) {
             for (String key : notPermCells.keySet()) {
                 visit(key, allCells, notPermCells, tempMark, sorted);
                 break;
@@ -739,7 +729,6 @@ public class Cell {
         }
 
         Map<String, Integer> indexes = new HashMap<>();
-
         Deque<String> tmpSorted = new ArrayDeque<>(sorted);
         int len = tmpSorted.size();
         for (int i = 0; i < len; i++) {
@@ -789,7 +778,6 @@ public class Cell {
 
     private byte[] serialize(int refIndexSzBytes) {
         byte[] body = Utils.unsignedBytesToSigned(CellSlice.beginParse(this).loadSlice(this.bits.getLength()));
-//        byte[] body1 = getDataBytes();
         byte[] descriptors = getDescriptors(levelMask.getMask());
         byte[] data = Utils.concatBytes(descriptors, body);
 
@@ -825,12 +813,19 @@ public class Cell {
 
     private byte[] getDataBytes() {
         if ((bits.getLength() % 8) > 0) {
-            String s = bits.toBitString();
-            s = s + "1";
-            if ((s.length() % 8) > 0) {
-                s = s + StringUtils.repeat("0", 8 - (s.length() % 8));
+            byte[] a = bits.toBitString().getBytes(StandardCharsets.UTF_8);
+            int sz = a.length;
+            byte[] b = new byte[sz + 1];
+
+            System.arraycopy(a, 0, b, 0, sz);
+            b[sz] = (byte) '1';
+
+            int mod = b.length % 8;
+            if (mod > 0) {
+                b = Utils.rightPadBytes(b, b.length + (8 - mod), '0');
             }
-            return Utils.bitStringToByteArray(s);
+
+            return Utils.bitStringToByteArray(new String(b));
         } else {
             return bits.toByteArray();
         }
@@ -851,9 +846,7 @@ public class Cell {
         switch (cellType) {
             case ORDINARY: {
                 if (bits.getLength() >= 288) {
-                    //int msk = clonedBits.readUint(8).intValue();
                     LevelMask msk = new LevelMask(clonedBits.readUint(8).intValue());
-//                    byte msk = levelMask;
                     int lvl = msk.getLevel();
                     if ((lvl > 0) && (lvl <= 3) && (bits.getLength() >= 16 + (256 + 16) * msk.apply(lvl - 1).getHashIndex() + 1)) {
                         return CellType.PRUNED_BRANCH;

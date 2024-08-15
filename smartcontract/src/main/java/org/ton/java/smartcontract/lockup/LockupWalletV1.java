@@ -167,7 +167,7 @@ public class LockupWalletV1 implements Contract {
         );
         cell.storeDict(cellDict);
 
-        cell.storeCoins(isNull(lockupConfig.getTotalLockedalue()) ? BigInteger.ZERO : lockupConfig.getTotalLockedalue());
+        cell.storeCoins(isNull(lockupConfig.getTotalLockedValue()) ? BigInteger.ZERO : lockupConfig.getTotalLockedValue());
         cell.storeBit(false);               // empty locked dict
         cell.storeCoins(isNull(lockupConfig.getTotalRestrictedValue()) ? BigInteger.ZERO : lockupConfig.getTotalRestrictedValue());
         cell.storeBit(false);               // empty restricted dict

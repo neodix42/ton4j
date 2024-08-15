@@ -23,5 +23,5 @@ public class LockupConfig {
     public List<String> allowedDestinations;
 
     public BigInteger totalRestrictedValue;
-    public BigInteger totalLockedalue;
+    public BigInteger totalLockedValue;
 }
