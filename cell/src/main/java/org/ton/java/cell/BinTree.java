@@ -77,8 +77,8 @@ public class BinTree {
     }
 
     public static BinTree deserialize(CellSlice cs) {
-        if (cs.isExotic()) {
-            return new BinTree();
+        if (cs.bits.getLength() == 0 || cs.isExotic()) {
+            return null;
         }
 
         if (cs.loadBit()) {
