@@ -63,7 +63,6 @@ public class TestBinTree {
         ShardDescr shardDescr4 = createShardDescr(4);
         ShardDescr shardDescr5 = createShardDescr(5);
 
-
         Deque<ShardDescr> cells = new ArrayDeque<>();
         cells.add(shardDescr1);
         cells.add(shardDescr2);
@@ -71,10 +70,9 @@ public class TestBinTree {
         cells.add(shardDescr4);
         cells.add(shardDescr5);
 
+        Cell c = BinTree.fromDeque(cells).toCell();
 
-        Cell c = new BinTree(cells).toCell();
-
-        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c));
+        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c)).toList();
 
         for (ShardDescr cc : bt) {
             log.info("ShardDescr: {}", cc);
@@ -84,9 +82,41 @@ public class TestBinTree {
     }
 
     @Test
+    public void testBinTree() {
+        ShardDescr shardDescr1 = createShardDescr(1);
+        ShardDescr shardDescr2 = createShardDescr(2);
+        ShardDescr shardDescr3 = createShardDescr(3);
+        ShardDescr shardDescr4 = createShardDescr(4);
+        ShardDescr shardDescr5 = createShardDescr(5);
+
+        Deque<ShardDescr> cells = new ArrayDeque<>();
+        cells.add(shardDescr1);
+        cells.add(shardDescr2);
+        cells.add(shardDescr3);
+        cells.add(shardDescr4);
+        cells.add(shardDescr5);
+
+        Cell c = BinTree.fromDeque(cells).toCell();
+
+        log.info("ShardDescr: {}", c);
+
+        BinTree tree = BinTree.deserialize(CellSlice.beginParse(c));
+        assertThat(tree).isNotNull();
+
+        List<ShardDescr> deserializedTree = tree.toList();
+        for (ShardDescr cc : tree.toList()) {
+            log.info("ShardDescr: {}", cc);
+        }
+
+        assertThat(deserializedTree.size()).isEqualTo(5);
+    }
+
+    @Test
     public void testBinTreeEmpty() {
         Deque<ShardDescr> cells = new ArrayDeque<>();
-        Cell c = new BinTree(cells).toCell();
+        BinTree tree = BinTree.fromDeque(cells);
+
+        assertThat(tree).isEqualTo(null);
     }
 
 
@@ -97,9 +127,9 @@ public class TestBinTree {
         Deque<ShardDescr> cells = new ArrayDeque<>();
         cells.add(shardDescr1);
 
-        Cell c = new BinTree(cells).toCell();
+        Cell c = BinTree.fromDeque(cells).toCell();
 
-        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c));
+        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c)).toList();
 
         for (ShardDescr cc : bt) {
             log.info("ShardDescr: {}", cc);
@@ -117,9 +147,9 @@ public class TestBinTree {
         cells.add(shardDescr1);
         cells.add(shardDescr2);
 
-        Cell c = new BinTree(cells).toCell();
+        Cell c = BinTree.fromDeque(cells).toCell();
 
-        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c));
+        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c)).toList();
 
         for (ShardDescr cc : bt) {
             log.info("ShardDescr: {}", cc);
@@ -139,11 +169,11 @@ public class TestBinTree {
         cells.add(shardDescr2);
         cells.add(shardDescr3);
 
-        Cell c = new BinTree(cells).toCell();
+        Cell c = BinTree.fromDeque(cells).toCell();
 
         log.info("ShardDescr: {}", c);
 
-        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c));
+        List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c)).toList();
 
         for (ShardDescr cc : bt) {
             log.info("ShardDescr: {}", cc);
