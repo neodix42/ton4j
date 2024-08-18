@@ -42,7 +42,7 @@ public class McStateExtra {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeUint(0xcc26, 16)
-                .storeDict(shardHashes.toCell())
+                .storeCell(shardHashes.toCell())
                 .storeCell(configParams.toCell())
                 .storeRef(info.toCell())
                 .storeCell(globalBalance.toCell())

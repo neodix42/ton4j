@@ -40,7 +40,7 @@ public class McBlockExtra {
         return CellBuilder.beginCell()
                 .storeUint(0xcca5, 32)
                 .storeBit(keyBlock)
-                .storeDict(shardHashes.toCell())
+                .storeCell(shardHashes.toCell())
 //                .storeCell(shardFees.toCell())
                 .storeDict(shardFees.serialize(
                         k -> CellBuilder.beginCell().storeUint((Long) k, 96).endCell().getBits(),
