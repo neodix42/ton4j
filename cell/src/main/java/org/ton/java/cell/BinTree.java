@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-import static java.util.Objects.isNull;
-
 public class BinTree {
     ShardDescr value;
     BinTree left;
@@ -42,28 +40,27 @@ public class BinTree {
         if (this.value == null && this.left == null && this.right == null) {
             return CellBuilder.beginCell().endCell();
         }
-        List<ShardDescr> listView = this.toList();
-        return addToBinTree(listView, null);
+        return addToBinTree(this);
     }
 
-    private static Cell addToBinTree(List<ShardDescr> cells, Cell left) {
-        if (!cells.isEmpty()) {
-            CellBuilder cb = CellBuilder.beginCell();
+    private static Cell addToBinTree(BinTree tree) {
+        CellBuilder cb = CellBuilder.beginCell();
+        if (tree.value != null) {
             cb.storeBit(true);
             cb.storeRef(CellBuilder.beginCell()
                     .storeBit(false)
-                    .storeCell(isNull(left) ? cells.remove(0).toCell() : left)
+                    .storeCell(tree.value.toCell())
                     .endCell());
-            if (!cells.isEmpty()) {
-                cb.storeRef(addToBinTree(cells, cells.remove(0).toCell()));
+            if (tree.left != null && tree.left.value != null) {
+                cb.storeRef(addToBinTree(tree.left));
             }
-            return cb.endCell();
+            if (tree.right != null && tree.right.value != null) {
+                cb.storeRef(addToBinTree(tree.right));
+            }
         } else {
-            CellBuilder cb = CellBuilder.beginCell();
             cb.storeBit(false);
-            cb.storeCell(left);
-            return cb.endCell();
         }
+        return cb.endCell();
     }
 
     public static BinTree deserialize(CellSlice cs) {
@@ -72,7 +69,13 @@ public class BinTree {
         }
 
         BinTree root = new BinTree();
-        if (cs.loadBit() || !cs.refs.isEmpty()) {
+        if (cs.loadBit()) {
+            if (!cs.refs.isEmpty()) {
+                CellSlice internalCs = CellSlice.beginParse(cs.loadRef());
+                if (!internalCs.loadBit()) {
+                    root.value = ShardDescr.deserialize(internalCs);
+                }
+            }
             if (!cs.refs.isEmpty()) {
                 root.left = deserialize(CellSlice.beginParse(cs.loadRef()));
             }

@@ -126,19 +126,19 @@ public class TestBinTree {
         Cell cRoot = root.toCell();
 
         BinTree tree = BinTree.deserialize(CellSlice.beginParse(cRootFromDeque));
-        BinTree rootFromCell = BinTree.deserialize(CellSlice.beginParse(cRoot));
+        BinTree node = BinTree.deserialize(CellSlice.beginParse(cRoot));
         assertThat(tree).isNotNull();
-        assertThat(root).isNotNull();
+        assertThat(node).isNotNull();
 
         List<ShardDescr> deserializedTree = tree.toList();
-        List<ShardDescr> deserializedRoot = rootFromCell.toList();
+        List<ShardDescr> deserializedNode = node.toList();
         for (int i = 0; i < 10; i++) {
-            assertThat(deserializedRoot.get(i).getSeqNo()).isEqualTo(deserializedTree.get(i).getSeqNo());
+            assertThat(deserializedNode.get(i).getSeqNo()).isEqualTo(deserializedTree.get(i).getSeqNo());
             printLog(deserializedTree.get(i));
         }
 
         assertThat(deserializedTree.size()).isEqualTo(10);
-        assertThat(deserializedRoot.size()).isEqualTo(10);
+        assertThat(deserializedNode.size()).isEqualTo(10);
     }
 
     @Test
