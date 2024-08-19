@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+import static java.util.Objects.isNull;
+
 public class BinTree {
     ShardDescr value;
     BinTree left;
@@ -37,65 +39,50 @@ public class BinTree {
     }
 
     public Cell toCell() {
-        return toCellHelper(this);
-    }
-
-    private Cell toCellHelper(BinTree node) {
-        if (node == null || node.value == null) {
+        if (this.value == null && this.left == null && this.right == null) {
             return CellBuilder.beginCell().endCell();
         }
-
-        CellBuilder cb = CellBuilder.beginCell();
-        cb.storeBit(true);
-        cb.storeRef(CellBuilder.beginCell()
-                .storeBit(false)
-                .storeCell(node.value.toCell())
-                .endCell());
-
-        if (node.left != null || node.right != null) {
-            cb.storeRef(addToBinTree(node.left, node.right));
-        }
-
-        return cb.endCell();
+        List<ShardDescr> listView = this.toList();
+        return addToBinTree(listView, null);
     }
 
-    private Cell addToBinTree(BinTree left, BinTree right) {
-        if (right != null) {
+    private static Cell addToBinTree(List<ShardDescr> cells, Cell left) {
+        if (!cells.isEmpty()) {
             CellBuilder cb = CellBuilder.beginCell();
             cb.storeBit(true);
             cb.storeRef(CellBuilder.beginCell()
                     .storeBit(false)
-                    .storeCell(left != null ? toCellHelper(left) : CellBuilder.beginCell().endCell())
+                    .storeCell(isNull(left) ? cells.remove(0).toCell() : left)
                     .endCell());
-            cb.storeRef(toCellHelper(right));
+            if (!cells.isEmpty()) {
+                cb.storeRef(addToBinTree(cells, cells.remove(0).toCell()));
+            }
             return cb.endCell();
         } else {
             CellBuilder cb = CellBuilder.beginCell();
-            cb.storeCell(left != null ? toCellHelper(left) : CellBuilder.beginCell().endCell());
+            cb.storeBit(false);
+            cb.storeCell(left);
             return cb.endCell();
         }
     }
 
     public static BinTree deserialize(CellSlice cs) {
-        if (cs.bits.getLength() == 0 || cs.isExotic()) {
+        if (cs.isExotic() || cs.bits.getLength() == 0) {
             return null;
         }
 
-        if (cs.loadBit()) {
-            BinTree left = null;
-            BinTree right = null;
-
+        BinTree root = new BinTree();
+        if (cs.loadBit() || !cs.refs.isEmpty()) {
             if (!cs.refs.isEmpty()) {
-                left = deserialize(CellSlice.beginParse(cs.loadRef()));
+                root.left = deserialize(CellSlice.beginParse(cs.loadRef()));
             }
             if (!cs.refs.isEmpty()) {
-                right = deserialize(CellSlice.beginParse(cs.loadRef()));
+                root.right = deserialize(CellSlice.beginParse(cs.loadRef()));
             }
-
-            return new BinTree(null, left, right);
+            return root;
         } else {
-            ShardDescr value = ShardDescr.deserialize(cs);
-            return new BinTree(value);
+            root.value = ShardDescr.deserialize(cs);
+            return root;
         }
     }
 
