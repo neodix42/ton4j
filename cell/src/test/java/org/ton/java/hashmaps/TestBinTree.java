@@ -21,9 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestBinTree {
-    private void printLog(Object o) {
-        log.info("ShardDescr: {}", o);
-    }
 
     @Test
     public void testBinTreeDeque() {
@@ -174,16 +171,16 @@ public class TestBinTree {
         return buildTree(shardDescrArr, 0, size - 1);
     }
 
-    private BinTree buildTree(ShardDescr[] shardDescrs, int start, int end) {
+    private BinTree buildTree(ShardDescr[] shardDescrArr, int start, int end) {
         if (start > end) {
             return null;
         }
 
         int mid = (start + end) / 2;
-        ShardDescr value = shardDescrs[mid];
+        ShardDescr value = shardDescrArr[mid];
 
-        BinTree left = buildTree(shardDescrs, start, mid - 1);
-        BinTree right = buildTree(shardDescrs, mid + 1, end);
+        BinTree left = buildTree(shardDescrArr, start, mid - 1);
+        BinTree right = buildTree(shardDescrArr, mid + 1, end);
 
         return new BinTree(value, left, right);
     }
@@ -220,5 +217,9 @@ public class TestBinTree {
                         .coins(BigInteger.valueOf(2))
                         .build())
                 .build();
+    }
+
+    private void printLog(Object o) {
+        log.info("ShardDescr: {}", o);
     }
 }
