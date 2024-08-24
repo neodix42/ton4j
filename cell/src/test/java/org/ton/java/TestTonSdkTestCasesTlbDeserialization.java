@@ -88,10 +88,10 @@ public class TestTonSdkTestCasesTlbDeserialization {
         Cell c = CellBuilder.beginCell().fromBoc(bocAsHex).endCell();
         ExternalMessageInfo externalMessageInfo = ExternalMessageInfo.deserialize(CellSlice.beginParse(c));
         log.info("ExternalMessageInfo {}", externalMessageInfo);
-
-        Boolean ihrDisabled = Boolean.valueOf(testCase.getExpectedOutput().get("ihrDisabled").toString());
-        Boolean bounce = Boolean.valueOf(testCase.getExpectedOutput().get("bounce").toString());
-        Boolean bounced = Boolean.valueOf(testCase.getExpectedOutput().get("bounced").toString());
-        String sourceAddress = testCase.getExpectedOutput().get("sourceAddress").toString();
+// todo
+//        Boolean ihrDisabled = Boolean.valueOf(testCase.getExpectedOutput().get("ihrDisabled").toString());
+//        Boolean bounce = Boolean.valueOf(testCase.getExpectedOutput().get("bounce").toString());
+//        Boolean bounced = Boolean.valueOf(testCase.getExpectedOutput().get("bounced").toString());
+//        String sourceAddress = testCase.getExpectedOutput().get("sourceAddress").toString();
     }
 }
