@@ -57,7 +57,7 @@ public class DnsUtils {
     public static Cell createAdnlAddressRecord(AdnlAddress adnlAddress) {
         return CellBuilder.beginCell()
                 .storeUint(0xad01, 16) // https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L821
-                .storeBytes(adnlAddress.getBytes())
+                .storeBytes(adnlAddress.getClonedBytes())
                 .storeUint(0, 8)
                 .endCell();
     }
@@ -116,7 +116,7 @@ public class DnsUtils {
             throw new Error("Invalid dns record value prefix");
         }
         byte[] bytes = Arrays.copyOfRange(cell.getBits().toByteArray(), 2, 2 + 32);
-        return new AdnlAddress(bytes);
+        return AdnlAddress.of(bytes);
     }
 
     /**

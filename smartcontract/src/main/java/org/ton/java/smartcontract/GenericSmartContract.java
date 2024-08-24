@@ -74,16 +74,14 @@ public class GenericSmartContract implements Contract {
 
     public Message prepareDeployMsg(Cell deployMessageBody) {
 
-        Cell body = deployMessageBody;
-
         return Message.builder()
                 .info(ExternalMessageInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                        .storeCell(body)
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployMessageBody.hash()))
+                        .storeCell(deployMessageBody)
                         .endCell())
                 .build();
     }
