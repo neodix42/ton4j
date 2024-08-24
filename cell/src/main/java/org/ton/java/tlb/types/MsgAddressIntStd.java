@@ -25,7 +25,6 @@ import static java.util.Objects.nonNull;
 public class MsgAddressIntStd implements MsgAddressInt {
     int magic;
     Anycast anycast;
-    int addrLen;
     byte workchainId;
     BigInteger address;
 

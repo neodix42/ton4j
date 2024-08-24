@@ -51,12 +51,11 @@ public class BlockIdExtShardIdent {
     }
 
     public static BlockIdExtShardIdent deserialize(CellSlice cs) {
-        BlockIdExtShardIdent blockIdExtShardIdent = BlockIdExtShardIdent.builder()
+        return BlockIdExtShardIdent.builder()
                 .shardId(ShardIdent.deserialize(cs))
                 .seqno(cs.loadUint(32).longValue())
                 .rootHash(cs.loadUint(256))
                 .fileHash(cs.loadUint(256))
                 .build();
-        return blockIdExtShardIdent;
     }
 }

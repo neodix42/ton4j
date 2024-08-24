@@ -17,13 +17,16 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Utils {
+    private static final Logger log = Logger.getLogger(Utils.class.getName());
     private static final String HEXES = "0123456789ABCDEF";
     private static final long BLN1 = 1000000000L;
     private static final BigInteger BI_BLN1 = BigInteger.valueOf(BLN1);
@@ -519,8 +522,8 @@ public class Utils {
         return result;
     }
 
-    public static int log2(int val) {
-        return (int) Math.ceil(Math.log(val) / Math.log(2));
+    public static int log2Ceil(int val) {
+        return Integer.SIZE - Integer.numberOfLeadingZeros(val - 1);
     }
 
 
@@ -782,16 +785,16 @@ public class Utils {
         try {
             TimeUnit.SECONDS.sleep(seconds);
         } catch (Throwable e) {
-            System.out.println(e.getMessage());
+            log.info(e.getMessage());
         }
     }
 
     public static void sleep(long seconds, String text) {
         try {
-            System.out.println("pause " + seconds + " seconds, " + text);
+            log.info(String.format("pause %s seconds, %s", seconds, text));
             TimeUnit.SECONDS.sleep(seconds);
         } catch (Throwable e) {
-            System.out.println(e.getMessage());
+            log.info(e.getMessage());
         }
     }
 
@@ -866,5 +869,30 @@ public class Utils {
 
     public static String generateString(int length, String character) {
         return RandomStringUtils.random(length, character);
+    }
+
+    public static byte[] leftPadBytes(byte[] bits, int sz, char c) {
+        if (sz <= bits.length) {
+            return bits;
+        }
+
+        int diff = sz - bits.length;
+        byte[] b = new byte[sz];
+        Arrays.fill(b, 0, diff, (byte) c);
+        System.arraycopy(bits, 0, b, diff, bits.length);
+
+        return b;
+    }
+
+    public static byte[] rightPadBytes(byte[] bits, int sz, char c) {
+        if (sz <= bits.length) {
+            return bits;
+        }
+
+        byte[] b = new byte[sz];
+        System.arraycopy(bits, 0, b, 0, bits.length);
+        Arrays.fill(b, bits.length, sz, (byte) c);
+
+        return b;
     }
 }

@@ -10,6 +10,8 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+import static java.util.Objects.isNull;
+
 @Builder
 @Getter
 @Setter
@@ -23,7 +25,7 @@ import java.math.BigInteger;
  */
 public class ShardIdent {
     long magic;
-    long prefixBits;
+    int prefixBits;
     int workchain;
     BigInteger shardPrefix;
 
@@ -44,15 +46,70 @@ public class ShardIdent {
     public static ShardIdent deserialize(CellSlice cs) {
         long magic = cs.loadUint(2).longValue();
         assert (magic == 0b00) : "ShardIdent: magic not equal to 0b00, found 0b" + Long.toBinaryString(magic);
-        ShardIdent s = ShardIdent.builder()
+        return ShardIdent.builder()
                 .magic(0L)
-                .prefixBits(cs.loadUint(6).longValue())
+                .prefixBits(cs.loadUint(6).intValue())
                 .workchain(cs.loadInt(32).intValue())
                 .shardPrefix(cs.loadUint(64))
                 .build();
-        return s;
     }
 
-    // todo ConvertShardIdentToShard from tonutils.go
+    public BigInteger convertShardIdentToShard() {
+        if (isNull(shardPrefix)) {
+            throw new Error("Shard prefix is null, should be in range 0..60");
+        }
+        if (shardPrefix.compareTo(BigInteger.valueOf(60)) > 0) {
+            return shardPrefix;
+        }
+        return BigInteger.valueOf(2).multiply(shardPrefix).add(BigInteger.ONE).shiftLeft(63 - prefixBits);
+    }
 
+    public BigInteger getParent() {
+        BigInteger shard = convertShardIdentToShard();
+        BigInteger x = lowerBit64(shard);
+
+        BigInteger a = shard.subtract(x);
+        BigInteger b = x.shiftLeft(1);
+        if (b.longValue() < 0) {
+            return a.or(b);
+        } else {
+            return BigInteger.valueOf(a.longValue() | b.longValue());
+        }
+    }
+
+    public BigInteger getChildRight() {
+        BigInteger shard = convertShardIdentToShard();
+        BigInteger x = lowerBit64(shard).shiftRight(1);
+        return shard.add(x);
+    }
+
+    public BigInteger getChildLeft() {
+        BigInteger shard = convertShardIdentToShard();
+        BigInteger x = lowerBit64(shard).shiftRight(1);
+        return shard.subtract(x);
+    }
+
+    private BigInteger lowerBit64(BigInteger x) {
+        return x.and(bitsNegate64(x));
+    }
+
+    public BigInteger bitsNegate64(BigInteger x) {
+        // Create a mask for 64 bits (all bits set to 1)
+        BigInteger mask = new BigInteger("FFFFFFFFFFFFFFFF", 16);
+        // Apply bitwise NOT using the mask to emulate 64-bit unsigned behavior
+        return x.not().and(mask).add(BigInteger.ONE);
+    }
+
+    public static BigInteger ROOT() {
+
+        return BigInteger.ONE.shiftLeft(63);
+    }
+
+    public static ShardIdent convertShardToShardIdent(String shard, int workchain) {
+
+        return ShardIdent.builder()
+                .workchain(workchain)
+                .shardPrefix(new BigInteger(shard, 16))
+                .build();
+    }
 }

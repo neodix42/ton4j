@@ -10,9 +10,9 @@ import org.ton.java.cell.CellSlice;
 
 public interface BlockCreateStats {
 
-    public Cell toCell();
+    Cell toCell();
 
-    public static BlockCreateStats deserialize(CellSlice cs) {
+    static BlockCreateStats deserialize(CellSlice cs) {
         long magic = cs.loadUint(8).longValue();
         if (magic == 0x17) {
             return BlockCreateStatsOrdinary.deserialize(cs);

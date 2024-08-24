@@ -46,6 +46,7 @@ public class Executor {
             log.info(e.getMessage());
             return null;
         } catch (Exception e) {
+            log.info(e.getMessage());
             throw new RuntimeException(e);
         }
     }

@@ -1,66 +1,110 @@
 package org.ton.java.cell;
 
 import org.ton.java.tlb.types.ShardDescr;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 
-import java.util.*;
-
-import static java.util.Objects.isNull;
-
-/**
- * not finished
- */
 public class BinTree {
+    ShardDescr value;
+    BinTree left;
+    BinTree right;
 
-    private Deque<ShardDescr> list;
+    public BinTree() {}
 
-    public BinTree(Deque<ShardDescr> list) {
-        this.list = new ArrayDeque<>(list);
+    public BinTree(ShardDescr value) {
+        this.value = value;
+    }
+
+    public BinTree(ShardDescr value, BinTree left, BinTree right) {
+        this.value = value;
+        this.left = left;
+        this.right = right;
+    }
+
+    public static BinTree fromDeque(Deque<ShardDescr> cells) {
+        return buildTree(cells);
+    }
+
+    private static BinTree buildTree(Deque<ShardDescr> cells) {
+        if (cells.isEmpty()) {
+            return null;
+        }
+        ShardDescr value = cells.pop();
+        BinTree left = buildTree(cells);
+        BinTree right = buildTree(cells);
+        return new BinTree(value, left, right);
     }
 
     public Cell toCell() {
-        if (list.size() == 0) {
+        if (this.value == null && this.left == null && this.right == null) {
             return CellBuilder.beginCell().endCell();
         }
-        return addToBinTree(list, null);
+        return addToBinTree(this);
     }
 
-    private static Cell addToBinTree(Deque<ShardDescr> cells, Cell left) {
-        CellBuilder c = CellBuilder.beginCell();
-        if (cells.size() >= 1) {
-            CellBuilder cb = CellBuilder.beginCell();
+    private static Cell addToBinTree(BinTree tree) {
+        CellBuilder cb = CellBuilder.beginCell();
+        if (tree.value != null) {
             cb.storeBit(true);
             cb.storeRef(CellBuilder.beginCell()
                     .storeBit(false)
-                    .storeCell(isNull(left) ? cells.pop().toCell() : left)
+                    .storeCell(tree.value.toCell())
                     .endCell());
-            if (cells.size() != 0) {
-                cb.storeRef(addToBinTree(cells, cells.pop().toCell()));
+            if (tree.left != null && tree.left.value != null) {
+                cb.storeRef(addToBinTree(tree.left));
             }
-            return cb.endCell();
+            if (tree.right != null && tree.right.value != null) {
+                cb.storeRef(addToBinTree(tree.right));
+            }
         } else {
-            CellBuilder cb = CellBuilder.beginCell();
             cb.storeBit(false);
-            cb.storeCell(left);
-            return cb.endCell();
+        }
+        return cb.endCell();
+    }
+
+    public static BinTree deserialize(CellSlice cs) {
+        if (cs.isExotic() || cs.bits.getLength() == 0) {
+            return null;
+        }
+
+        BinTree root = new BinTree();
+        if (cs.loadBit()) {
+            if (!cs.refs.isEmpty()) {
+                CellSlice internalCs = CellSlice.beginParse(cs.loadRef());
+                if (!internalCs.loadBit()) {
+                    root.value = ShardDescr.deserialize(internalCs);
+                }
+            }
+            if (!cs.refs.isEmpty()) {
+                root.left = deserialize(CellSlice.beginParse(cs.loadRef()));
+            }
+            if (!cs.refs.isEmpty()) {
+                root.right = deserialize(CellSlice.beginParse(cs.loadRef()));
+            }
+            return root;
+        } else {
+            root.value = ShardDescr.deserialize(cs);
+            return root;
         }
     }
 
-    public static List<ShardDescr> deserialize(CellSlice cs) {
-        if (cs.isExotic()) {
-            return Collections.emptyList();
+    public List<ShardDescr> toList() {
+        List<ShardDescr> list = new ArrayList<>();
+        addToList(this, list);
+        return list;
+    }
+
+    private void addToList(BinTree node, List<ShardDescr> list) {
+        if (node == null) {
+            return;
         }
 
-        if (cs.loadBit()) {
-            List<ShardDescr> l = new ArrayList<>();
-            if (!cs.refs.isEmpty()) {
-                l.addAll(deserialize(CellSlice.beginParse(cs.loadRef())));
-            }
-            if (!cs.refs.isEmpty()) {
-                l.addAll(deserialize(CellSlice.beginParse(cs.loadRef())));
-            }
-            return l;
-        } else {
-            return Collections.singletonList(ShardDescr.deserialize(cs));
+        if (node.value != null) {
+            list.add(node.value);
         }
+
+        addToList(node.left, list);
+        addToList(node.right, list);
     }
 }

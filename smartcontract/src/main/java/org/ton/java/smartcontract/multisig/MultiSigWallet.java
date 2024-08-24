@@ -3,6 +3,7 @@ package org.ton.java.smartcontract.multisig;
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.java.Log;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
 import org.ton.java.cell.*;
@@ -21,6 +22,7 @@ import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
+@Log
 public class MultiSigWallet implements Contract {
 
     //https://github.com/akifoq/multisig/blob/master/multisig-code.fc
@@ -138,7 +140,6 @@ public class MultiSigWallet implements Contract {
         for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
             CellSlice cSlice = CellSlice.beginParse((Cell) entry.getValue());
             BigInteger pubKey = cSlice.loadUint(256);
-            long flood = cSlice.loadUint(8).longValue();
             publicKeys.add(pubKey);
         }
         return publicKeys;
@@ -446,7 +447,7 @@ public class MultiSigWallet implements Contract {
             Cell ref = cs.loadRef();
             while (nonNull(ref)) {
                 byte[] sig = CellSlice.beginParse(ref).loadBytes(512);
-                System.out.println("sig " + Utils.bytesToHex(signature));
+                log.info("sig " + Utils.bytesToHex(signature));
                 if (sig == signature) {
                     throw new Error("Your signature is already presented");
                 }
@@ -468,7 +469,7 @@ public class MultiSigWallet implements Contract {
 
         byte[] signature = signCell(keyPair, o.endCell());
 
-        System.out.println("sig " + Utils.bytesToHex(signature));
+        log.info("sig " + Utils.bytesToHex(signature));
 
 //        checkIfSignatureExists(order, signature);
 

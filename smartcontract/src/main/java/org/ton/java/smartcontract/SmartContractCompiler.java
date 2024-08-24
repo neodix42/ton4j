@@ -53,7 +53,7 @@ public class SmartContractCompiler {
      * @return code of BoC in hex
      */
     public String compile() throws IOException {
-        System.out.println("workdir " + new File(contractPath).getParent());
+        log.info("workdir " + new File(contractPath).getParent());
 
         String outputFiftAsmFile = funcRunner.run(new File(contractPath).getParent(), "-W", "dummy.boc", contractPath);
 

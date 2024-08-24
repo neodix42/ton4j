@@ -88,11 +88,11 @@ public class TxEmulator {
                 throw new Error("Can't create tx emulator instance");
             }
 
-            System.out.printf("Java TON Tx Emulator configuration:\n" +
+            log.info(String.format("Java TON Tx Emulator configuration:\n" +
                             "Location: %s\n" +
                             "Verbosity level: %s",
                     super.pathToEmulatorSharedLib,
-                    super.verbosityLevel);
+                    super.verbosityLevel));
             return super.build();
         }
     }

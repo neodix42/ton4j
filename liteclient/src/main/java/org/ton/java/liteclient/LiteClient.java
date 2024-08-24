@@ -17,6 +17,7 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,10 +53,6 @@ public class LiteClient {
      * Ignored if pathToGlobalConfig is not null.
      */
     private boolean testnet;
-
-//    private LiteClient() {
-//
-//    }
 
     public static class LiteClientBuilder {
     }
@@ -122,13 +119,13 @@ public class LiteClient {
                     }
                 }
 
-                System.out.printf("Java Lite-Client configuration:\n" +
+                log.info(String.format("Java Lite-Client configuration:\n" +
                                 "Location: %s\n" +
                                 "Path to global config: %s\n" +
                                 "Testnet: %s%n",
                         super.pathToLiteClientBinary,
                         super.pathToGlobalConfig,
-                        super.testnet);
+                        super.testnet));
 
             } catch (Exception e) {
                 throw new RuntimeException("Error creating lite-client instance: " + e.getMessage());
@@ -482,7 +479,7 @@ public class LiteClient {
                     return resultInput;
 
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.info(e.getMessage());
                     return null;
                 }
             });

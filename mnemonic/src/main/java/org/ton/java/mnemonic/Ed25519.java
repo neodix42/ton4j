@@ -16,7 +16,6 @@ public class Ed25519 {
     }
 
     public static byte[] publicKey(byte[] privateKey) throws NoSuchAlgorithmException {
-        SecureRandom rnd = SecureRandom.getInstanceStrong();
         byte[] publicKey = new byte[KEY_SIZE];
         org.bouncycastle.math.ec.rfc8032.Ed25519.generatePublicKey(privateKey, 0, publicKey, 0);
         return publicKey;

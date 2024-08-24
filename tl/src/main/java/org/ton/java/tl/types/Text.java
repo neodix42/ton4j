@@ -28,7 +28,7 @@ public class Text {
     private int chunksNum = 1;
 
     public Cell toCell() {
-        if (value.length() == 0) {
+        if (value.isEmpty()) {
             return CellBuilder.beginCell().storeUint(0, 8).endCell();
         }
         if (maxFirstChunkSize > MaxTextChunkSize) {

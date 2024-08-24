@@ -1,6 +1,5 @@
 package org.ton.java.bitstring;
 
-import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.utils.Utils;
 
@@ -40,7 +39,7 @@ public class BitString implements Bits<Boolean> {
             array = new ArrayDeque<>(0);
             initialLength = 0;
         } else {
-            byte[] bits = leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
+            byte[] bits = Utils.leftPadBytes(Utils.bytesToBitString(bytes).getBytes(StandardCharsets.UTF_8), bytes.length * 8, '0');
 
             array = new ArrayDeque<>(bits.length);
             for (byte bit : bits) { // whole length
@@ -65,7 +64,7 @@ public class BitString implements Bits<Boolean> {
             array = new ArrayDeque<>(0);
             initialLength = 0;
         } else {
-            byte[] bits = leftPadBytes(Utils.bytesToBitString(bytes).getBytes(), bytes.length * 8, '0');
+            byte[] bits = Utils.leftPadBytes(Utils.bytesToBitString(bytes).getBytes(StandardCharsets.UTF_8), bytes.length * 8, '0');
             array = new ArrayDeque<>(bits.length);
             for (int i = 0; i < size; i++) { // specified length
                 if (bits[i] == (byte) '1') {
@@ -80,18 +79,6 @@ public class BitString implements Bits<Boolean> {
         }
     }
 
-    private byte[] leftPadBytes(byte[] bits, int sz, char c) {
-        if (sz <= bits.length) {
-            return bits;
-        }
-
-        int diff = sz - bits.length;
-        byte[] b = new byte[diff + bits.length];
-        Arrays.fill(b, 0, diff, (byte) c);
-        System.arraycopy(bits, 0, b, diff, bits.length);
-
-        return b;
-    }
 
     /**
      * Create BitString limited by length
@@ -212,22 +199,15 @@ public class BitString implements Bits<Boolean> {
             throw new Error("bitLength is too small for number, got number=" + number + ", bitLength=" + bitLength);
         }
 
-        byte[] s = number.toString(2).getBytes();
-
-        if (s.length != bitLength) {
-            s = repeatZerosAndMerge(bitLength - s.length, s);
-        }
+        boolean[] bits = new boolean[bitLength];
 
         for (int i = 0; i < bitLength; i++) {
-            writeBit(s[i] == (byte) '1');
+            bits[bitLength - 1 - i] = number.testBit(i);
         }
-    }
 
-    private byte[] repeatZerosAndMerge(int count, byte[] s) {
-        byte[] a = new byte[count + s.length];
-        Arrays.fill(a, 0, count, (byte) '0');
-        System.arraycopy(s, 0, a, count, s.length);
-        return a;
+        for (boolean bit : bits) {
+            writeBit(bit);
+        }
     }
 
     /**
@@ -260,8 +240,7 @@ public class BitString implements Bits<Boolean> {
         } else {
             if (number.signum() == -1) {
                 writeBit(true);
-                BigInteger b = BigInteger.valueOf(2);
-                BigInteger nb = b.pow(bitLength - 1);
+                BigInteger nb = BigInteger.ONE.shiftLeft(bitLength - 1);
                 writeUint(nb.add(number), bitLength - 1);
             } else {
                 writeBit(false);
@@ -371,8 +350,9 @@ public class BitString implements Bits<Boolean> {
      * @param anotherBitString BitString
      */
     public void writeBitString(BitString anotherBitString) {
-        for (Boolean b : anotherBitString.array) {
-            writeBit(anotherBitString.readBit());
+        Deque<Boolean> bits = anotherBitString.array;
+        for (boolean bit : bits) {
+            writeBit(bit);
         }
     }
 
@@ -414,10 +394,13 @@ public class BitString implements Bits<Boolean> {
      * @return BitString with length of read bits from original Bitstring
      */
     public BitString readBits() {
-        BitString result = new BitString(array.size());
-        for (int i = 0; i < array.size(); i++) {
+        int sz = array.size();
+        BitString result = new BitString(sz);
+
+        for (int i = 0; i < sz; i++) {
             result.writeBit(readBit());
         }
+
         return result;
     }
 
@@ -433,14 +416,32 @@ public class BitString implements Bits<Boolean> {
         }
 
         BitString cloned = clone();
-        StringBuilder s = new StringBuilder();
+        int bytesNeeded = (bitLength + 7) / 8;
+        byte[] bytes = new byte[bytesNeeded];
+
+        int bitIndex = 0;
+        int byteIndex = 0;
 
         for (int i = 0; i < bitLength; i++) {
-            Boolean b = cloned.readBit();
-            s.append(b ? 1 : 0);
+            Boolean bit = cloned.readBit();
+            if (bit) {
+                bytes[byteIndex] |= (byte) (1 << (7 - bitIndex));
+            }
+
+            bitIndex++;
+            if (bitIndex == 8) {
+                bitIndex = 0;
+                byteIndex++;
+            }
         }
 
-        return new BigInteger(s.toString(), 2);
+        BigInteger bigInteger = new BigInteger(1, bytes);
+        int excessBits = bytesNeeded * 8 - bitLength;
+        if (excessBits > 0) {
+            bigInteger = bigInteger.shiftRight(excessBits);
+        }
+
+        return bigInteger;
     }
 
     /**
@@ -454,13 +455,33 @@ public class BitString implements Bits<Boolean> {
             throw new Error("Incorrect bitLength");
         }
 
-        StringBuilder s = new StringBuilder();
+        int bytesNeeded = (bitLength + 7) / 8;
+        byte[] bytes = new byte[bytesNeeded];
+
+        int bitIndex = 0;
+        int byteIndex = 0;
+
         for (int i = 0; i < bitLength; i++) {
-            Boolean b = readBit();
-            s.append(b ? 1 : 0);
+            Boolean bit = readBit();
+            if (bit) {
+                bytes[byteIndex] |= (byte) (1 << (7 - bitIndex));
+            }
+
+            bitIndex++;
+            if (bitIndex == 8) {
+                bitIndex = 0;
+                byteIndex++;
+            }
         }
 
-        return new BigInteger(s.toString(), 2);
+        BigInteger bigInteger = new BigInteger(1, bytes);
+
+        int excessBits = bytesNeeded * 8 - bitLength;
+        if (excessBits > 0) {
+            bigInteger = bigInteger.shiftRight(excessBits);
+        }
+
+        return bigInteger;
     }
 
     /**
@@ -476,14 +497,13 @@ public class BitString implements Bits<Boolean> {
 
         Boolean sign = readBit();
         if (bitLength == 1) {
-            return sign ? new BigInteger("-1") : BigInteger.ZERO;
+            return sign != null && sign ? BigInteger.valueOf(-1) : BigInteger.ZERO;
         }
 
         BigInteger number = readUint(bitLength - 1);
         if (sign) {
-            BigInteger b = BigInteger.valueOf(2);
-            BigInteger nb = b.pow(bitLength - 1);
-            number = number.subtract(nb);
+            BigInteger maxValue = BigInteger.ONE.shiftLeft(bitLength - 1);
+            number = number.subtract(maxValue);
         }
 
         return number;
@@ -527,12 +547,12 @@ public class BitString implements Bits<Boolean> {
             readBits(2);
             return null;
         }
-        readBits(2);
-        readBits(1);
+        readBits(3);
+
         int workchain = readInt(8).intValue();
         BigInteger hashPart = readUint(256);
+        String address = String.format("%d:%064x", workchain, hashPart);
 
-        String address = workchain + ":" + String.format("%64s", hashPart.toString(16)).replace(' ', '0');
         return Address.of(address);
     }
 
@@ -562,11 +582,15 @@ public class BitString implements Bits<Boolean> {
      */
     public String toBitString() {
         BitString cloned = clone();
-        StringBuilder s = new StringBuilder();
-        for (Boolean b : cloned.array) {
-            s.append(b ? '1' : '0');
+        Deque<Boolean> deque = cloned.array;
+        char[] chars = new char[deque.size()];
+
+        int i = 0;
+        for (Boolean b : deque) {
+            chars[i++] = b ? '1' : '0';
         }
-        return s.toString();
+
+        return new String(chars);
     }
 
     public int getLength() {
@@ -577,11 +601,14 @@ public class BitString implements Bits<Boolean> {
      * @return BitString from current position to writeCursor
      */
     public String getBitString() {
-        StringBuilder s = new StringBuilder();
+        char[] chars = new char[array.size()];
+
+        int i = 0;
         for (Boolean b : array) {
-            s.append(b ? '1' : '0');
+            chars[i++] = b ? '1' : '0';
         }
-        return s.toString();
+
+        return new String(chars);
     }
 
     public int[] toUnsignedByteArray() {
@@ -640,7 +667,7 @@ public class BitString implements Bits<Boolean> {
             return new byte[0];
         }
 
-        byte[] bin = getBitString().getBytes();
+        byte[] bin = getBitString().getBytes(StandardCharsets.UTF_8);
         int sz = bin.length;
         byte[] result = new byte[(sz + 7) / 8];
 
@@ -660,7 +687,7 @@ public class BitString implements Bits<Boolean> {
             return new int[0];
         }
 
-        byte[] bin = getBitString().getBytes();
+        byte[] bin = getBitString().getBytes(StandardCharsets.UTF_8);
         int sz = bin.length;
         int[] result = new int[(sz + 7) / 8];
 

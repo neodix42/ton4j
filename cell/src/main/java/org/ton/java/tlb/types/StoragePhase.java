@@ -29,7 +29,7 @@ public class StoragePhase {
         return CellBuilder.beginCell()
                 .storeCoins(storageFeesCollected)
                 .storeCoinsMaybe(storageFeesDue)
-                .storeSlice(CellSlice.beginParse(((AccStatusChange) statusChange).toCell()))
+                .storeSlice(CellSlice.beginParse(statusChange.toCell()))
                 .endCell();
     }
 

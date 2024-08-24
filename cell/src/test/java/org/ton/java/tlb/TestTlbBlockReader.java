@@ -16,14 +16,6 @@ import java.math.BigInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * block#11ef55aa
- * global_id:int32
- * info:^BlockInfo
- * value_flow:^ValueFlow
- * state_update:^(MERKLE_UPDATE ShardState)
- * extra:^BlockExtra = Block;
- */
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestTlbBlockReader {

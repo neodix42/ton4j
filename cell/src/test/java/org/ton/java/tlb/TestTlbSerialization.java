@@ -31,6 +31,7 @@ public class TestTlbSerialization {
         Cell serializedStorageInfo = storageInfo.toCell();
 
         log.info("serializedStorageInfo Cell {}", serializedStorageInfo.print());
+        log.info("serializedStorageInfo Cell {}", serializedStorageInfo.toHex());
         log.info("serializedStorageInfo Struct {}", storageInfo);
     }
 }

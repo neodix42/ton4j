@@ -5,7 +5,7 @@
     <parent>
         <artifactId>top</artifactId>
         <groupId>io.github.neodix42</groupId>
-        <version>0.5.1</version>
+        <version>0.5.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>cell</artifactId>
-            <version>0.5.1</version>
+            <version>0.5.3</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
