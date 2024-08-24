@@ -20,7 +20,7 @@
         <module>tl</module>
         <module>emulator</module>
         <module>liteclient</module>
-        <module>tweetnacl-java</module>
+        <module>tweetnacl-java-8</module>
     </modules>
 
     <properties>
