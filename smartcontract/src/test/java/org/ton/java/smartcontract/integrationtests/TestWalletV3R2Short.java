@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestWalletV3R2Short extends CommonTest {
 
     @Test
-    public void testWalletV3R12() throws InterruptedException {
+    public void testWalletV3R12() {
         String hex = Utils.base64ToHexString("dGVzdFdhbGxldFYzUjItOTg=");
         String str = CellSlice.beginParse(Cell.fromHex(hex)).loadSnakeString();
         log.info("cell {}", str);

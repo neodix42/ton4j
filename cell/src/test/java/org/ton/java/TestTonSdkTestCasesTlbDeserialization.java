@@ -11,6 +11,7 @@ import org.junit.runners.JUnit4;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.InternalMessageInfo;
 
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class TestTonSdkTestCasesTlbDeserialization {
 
         String bocAsHex = testCase.getInput().get("bocAsHex").toString();
 
-        Cell c = CellBuilder.beginCell().fromBoc("b5ee9c724101020100860001b36800bf4c6bdca25797e55d700c1a5448e2af5d1ac16f9a9628719a4e1eb2b44d85e33fd104a366f6fb17799871f82e00e4f2eb8ae6aaf6d3e0b3fb346cd0208e23725e14094ba15d20071f12260000446ee17a9b0cc8c028d8c001004d8002b374733831aac3455708e8f1d2c7f129540b982d3a5de8325bf781083a8a3d2a04a7f943813277f3ea").endCell();
+        Cell c = CellBuilder.beginCell().fromBoc(bocAsHex).endCell();
         InternalMessageInfo internalMessageInfo = InternalMessageInfo.deserialize(CellSlice.beginParse(c));
         log.info("internalMessage {}", internalMessageInfo);
 
@@ -69,5 +70,28 @@ public class TestTonSdkTestCasesTlbDeserialization {
         assertThat(internalMessageInfo.getFwdFee()).isEqualTo(fwdFee);
         assertThat(internalMessageInfo.getCreatedLt()).isEqualTo(createdLt);
         assertThat(internalMessageInfo.getCreatedAt()).isEqualTo(createdAt.longValue());
+    }
+
+    @Test
+    public void testTlbDeserialization2() {
+
+        String testId = "tlb-deserialization-2";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        String bocAsHex = testCase.getInput().get("bocAsHex").toString();
+
+        Cell c = CellBuilder.beginCell().fromBoc(bocAsHex).endCell();
+        ExternalMessageInfo externalMessageInfo = ExternalMessageInfo.deserialize(CellSlice.beginParse(c));
+        log.info("ExternalMessageInfo {}", externalMessageInfo);
+
+        Boolean ihrDisabled = Boolean.valueOf(testCase.getExpectedOutput().get("ihrDisabled").toString());
+        Boolean bounce = Boolean.valueOf(testCase.getExpectedOutput().get("bounce").toString());
+        Boolean bounced = Boolean.valueOf(testCase.getExpectedOutput().get("bounced").toString());
+        String sourceAddress = testCase.getExpectedOutput().get("sourceAddress").toString();
     }
 }

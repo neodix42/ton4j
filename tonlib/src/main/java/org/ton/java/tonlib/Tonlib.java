@@ -388,23 +388,12 @@ public class Tonlib {
             outterloop:
             do {
                 do {
-//                    if (nonNull(response) && !response.contains("syncStateInProgress") && !response.contains("\"@type\":\"ok\"")) {
-//
-//                        if (++retry > receiveRetryTimes) {
-//                            System.out.println("Last response: " + response);
-//                            break outterloop;
-//                        }
-//
-//                        tonlibJson.tonlib_client_json_send(tonlib, query);
-//                    }
 
                     if (response.contains("error")) {
                         log.info(response);
 
                         if (++retry > receiveRetryTimes) {
-//                            System.out.println("Last response: " + response);
                             throw new Error("Error in tonlib.receive(), " + receiveRetryTimes + " times was not able retrieve result from lite-server.");
-//                            break outterloop;
                         }
 
                         if (usingAllLiteServers) {
