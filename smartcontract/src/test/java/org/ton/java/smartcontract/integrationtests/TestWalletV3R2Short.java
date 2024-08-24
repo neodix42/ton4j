@@ -7,8 +7,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellSlice;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
@@ -26,13 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestWalletV3R2Short extends CommonTest {
-
-    @Test
-    public void testWalletV3R12() throws InterruptedException {
-        String hex = Utils.base64ToHexString("dGVzdFdhbGxldFYzUjItOTg=");
-        String str = CellSlice.beginParse(Cell.fromHex(hex)).loadSnakeString();
-        log.info("cell {}", str);
-    }
 
     @Test
     public void testWalletV3R2() throws InterruptedException {

@@ -297,7 +297,7 @@ public class Tonlib {
                                     .config(gson.toJson(tonGlobalConfig))
                                     .use_callbacks_for_network(false)
                                     .blockchain_name("")
-                                    .ignore_cache(true)
+                                    .ignore_cache(super.ignoreCache)
                                     .build())
                             .keystore_type(
                                     super.keystoreInMemory ?
@@ -339,7 +339,7 @@ public class Tonlib {
                                 .config(gson.toJson(tonGlobalConfig))
                                 .use_callbacks_for_network(false)
                                 .blockchain_name("")
-                                .ignore_cache(true)
+                                .ignore_cache(ignoreCache)
                                 .build())
                         .keystore_type(
                                 keystoreInMemory ?
@@ -1271,6 +1271,10 @@ public class Tonlib {
 
             return gson.fromJson(result, QueryFees.class);
         }
+    }
+
+    public QueryFees estimateFees(String destinationAddress, String body) {
+        return  estimateFees(destinationAddress,body, null,null,true   );
     }
 
     /**

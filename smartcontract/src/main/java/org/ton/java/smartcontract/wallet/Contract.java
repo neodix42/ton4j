@@ -135,4 +135,27 @@ public interface Contract {
     default Message prepareExternalMsg(WalletConfig config) {
         throw new Error("not implemented");
     }
+
+    default BigInteger getGasFees() {
+        switch (getName()) {
+            case "V1R1":
+                return BigInteger.valueOf(40000); // 0.00004 toncoins
+            case "V1R2":
+                return BigInteger.valueOf(40000);
+            case "V1R3":
+                return BigInteger.valueOf(40000);
+            case "V2R1":
+                return BigInteger.valueOf(40000);
+            case "V2R2":
+                return BigInteger.valueOf(40000);
+            case "V3R1":
+                return BigInteger.valueOf(40000);
+            case "V3R2":
+                return BigInteger.valueOf(40000);
+            case "V4R2":
+                return BigInteger.valueOf(310000);
+            default:
+                throw new Error("Unknown wallet version");
+        }
+    }
 }

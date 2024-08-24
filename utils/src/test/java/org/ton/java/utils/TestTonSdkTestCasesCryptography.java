@@ -164,7 +164,7 @@ public class TestTonSdkTestCasesCryptography {
     }
 
     @Test
-    public void testCryptography5() throws IOException {
+    public void testCryptography5() {
 
         String testId = "cryptography-5";
         // select particular test case by category name and test id
