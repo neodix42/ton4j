@@ -29,7 +29,7 @@ public class ShardHashes {
         return ShardHashes.builder()
                 .shardHashes(cs.loadDictE(32,
                         k -> k.readInt(32),
-                        v -> BinTree.deserialize(CellSlice.beginParse(cs.loadRef()))))
+                        v -> BinTree.deserialize(CellSlice.beginParse(v))))
                 .build();
     }
 
