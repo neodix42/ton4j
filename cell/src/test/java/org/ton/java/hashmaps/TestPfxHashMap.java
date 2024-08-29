@@ -62,7 +62,9 @@ public class TestPfxHashMap {
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
-        log.info("serialized cell {}", cell.print());
+        log.info("serialized cell: \n{}", cell.print());
+        log.info("serialized boc: \n{}", cell.toHex());
+        log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
 
         CellSlice cs = CellSlice.beginParse(cell);
         TonPfxHashMap dex = cs.loadDictPfx(dictKeySize,

@@ -5,11 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonHashMap;
-import org.ton.java.cell.TonHashMapE;
+import org.ton.java.cell.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -72,7 +68,7 @@ public class TestHashMap {
         );
 
         log.info("serialized cell: \n{}", cell.print());
-
+        log.info("serialized boc: \n{}", cell.toHex());
         log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
 
         log.info("cell hash ref0 {}", Utils.bytesToHex(cell.getRefs().get(0).hash()));
@@ -91,18 +87,20 @@ public class TestHashMap {
     }
 
     @Test
-    public void testHashMapDeserializationOneEntry() {
+    public void testHashMapSerializationOneEntry() {
         int keySizeX = 9;
         TonHashMap x = new TonHashMap(keySizeX);
 
         x.elements.put(100L, (byte) 1);
 
-        Cell cellX = x.serialize(
+        Cell cell = x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, keySizeX).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
-        log.info("serialized cellX {}", cellX.print());
+        log.info("serialized cell: \n{}", cell.print());
+        log.info("serialized boc: \n{}", cell.toHex());
+        log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
     }
 
     @Test

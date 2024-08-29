@@ -28,7 +28,7 @@ public class TestTlbBlockReader {
         log.info("blockInfo {}", blockInfo);
         assertThat(blockInfo.getEndLt()).isEqualTo(1000012);
         assertThat(blockInfo.getGenValidatorListHashShort()).isEqualTo(4113611331L);
-        assertThat(blockInfo.getPrefRef().getPrev1().getFileHash()).isEqualTo("5ab4d36de07ce24d78ddc0c37a776ebea7728d08bc5d720cf7ab662a4ffb23e0");
+        assertThat(blockInfo.getPrevRef().getPrev1().getFileHash()).isEqualTo("5ab4d36de07ce24d78ddc0c37a776ebea7728d08bc5d720cf7ab662a4ffb23e0");
     }
 
     @Test

@@ -67,8 +67,8 @@ public class BlockInfo {
     long prevKeyBlockSeqno;
     GlobalVersion globalVersion;
     ExtBlkRef masterRef;
-    BlkPrevInfo prefRef;
-    BlkPrevInfo prefVertRef;
+    BlkPrevInfo prevRef;
+    BlkPrevInfo prevVertRef;
 
     private String getMagic() {
         return Long.toHexString(magic);
@@ -105,9 +105,9 @@ public class BlockInfo {
         if (notMaster) {
             result.storeRef(masterRef.toCell());
         }
-        result.storeRef(prefRef.toCell(afterMerge));
+        result.storeRef(prevRef.toCell(afterMerge));
         if (vertSeqnoIncr) {
-            result.storeRef(prefVertRef.toCell(afterMerge));
+            result.storeRef(prevVertRef.toCell(afterMerge));
         }
 
         return result.endCell();
@@ -142,8 +142,8 @@ public class BlockInfo {
                 .build();
         blockInfo.setGlobalVersion(((blockInfo.getFlags() & 0x1L) == 0x1L) ? GlobalVersion.deserialize(cs) : null);
         blockInfo.setMasterRef(blockInfo.isNotMaster() ? ExtBlkRef.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
-        blockInfo.setPrefRef(loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), blockInfo.isAfterMerge()));
-        blockInfo.setPrefVertRef(blockInfo.isVertSeqnoIncr() ? loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), blockInfo.isAfterMerge()) : null);
+        blockInfo.setPrevRef(loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), blockInfo.isAfterMerge()));
+        blockInfo.setPrevVertRef(blockInfo.isVertSeqnoIncr() ? loadBlkPrevInfo(CellSlice.beginParse(cs.loadRef()), blockInfo.isAfterMerge()) : null);
         return blockInfo;
     }
 

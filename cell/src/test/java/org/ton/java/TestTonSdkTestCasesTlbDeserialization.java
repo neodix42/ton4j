@@ -11,6 +11,7 @@ import org.junit.runners.JUnit4;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.tlb.types.Block;
 import org.ton.java.tlb.types.ExternalMessageInfo;
 import org.ton.java.tlb.types.InternalMessageInfo;
 
@@ -88,10 +89,90 @@ public class TestTonSdkTestCasesTlbDeserialization {
         Cell c = CellBuilder.beginCell().fromBoc(bocAsHex).endCell();
         ExternalMessageInfo externalMessageInfo = ExternalMessageInfo.deserialize(CellSlice.beginParse(c));
         log.info("ExternalMessageInfo {}", externalMessageInfo);
-// todo
-//        Boolean ihrDisabled = Boolean.valueOf(testCase.getExpectedOutput().get("ihrDisabled").toString());
-//        Boolean bounce = Boolean.valueOf(testCase.getExpectedOutput().get("bounce").toString());
-//        Boolean bounced = Boolean.valueOf(testCase.getExpectedOutput().get("bounced").toString());
-//        String sourceAddress = testCase.getExpectedOutput().get("sourceAddress").toString();
+
+        String expectedSourceAddress = testCase.getExpectedOutput().get("sourceAddress").toString();
+        String expectedDestinationAddress = testCase.getExpectedOutput().get("destinationAddress").toString();
+        Long expectedImportFee = Long.parseLong(testCase.getExpectedOutput().get("importFee").toString());
+
+        assertThat(externalMessageInfo.getSrcAddr().toString()).isEqualTo(expectedSourceAddress);
+        assertThat(externalMessageInfo.getDstAddr().toAddress().toRaw()).isEqualTo(expectedDestinationAddress);
+        assertThat(externalMessageInfo.getImportFee().longValue()).isEqualTo(expectedImportFee);
+    }
+
+    @Test
+    public void testTlbDeserialization3() {
+
+        String testId = "tlb-deserialization-3";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        String bocAsHex = testCase.getInput().get("bocAsHex").toString();
+
+        Cell c = CellBuilder.beginCell().fromBoc(bocAsHex).endCell();
+        Block block = Block.deserialize(CellSlice.beginParse(c));
+        log.info("block {}", block);
+
+        Boolean notMaster = Boolean.valueOf(testCase.getExpectedOutput().get("notMaster").toString());
+        Long seqno = Long.parseLong(testCase.getExpectedOutput().get("seqno").toString());
+        Integer prevRef_prev1_seqno = Integer.parseInt(testCase.getExpectedOutput().get("prevRef_prev1_seqno").toString());
+
+        assertThat(block.getBlockInfo().isNotMaster()).isEqualTo(notMaster);
+        assertThat(block.getBlockInfo().getSeqno()).isEqualTo(seqno);
+        assertThat(block.getBlockInfo().getPrevRef().getPrev1().getSeqno()).isEqualTo(prevRef_prev1_seqno);
+    }
+
+    @Test
+    public void testTlbDeserialization4() {
+
+        String testId = "tlb-deserialization-4";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        String bocAsHex = testCase.getInput().get("bocAsHex").toString();
+
+        Cell c = CellBuilder.beginCell().fromBoc(bocAsHex).endCell();
+        Block block = Block.deserialize(CellSlice.beginParse(c));
+        log.info("block {}", block);
+
+        Boolean notMaster = Boolean.valueOf(testCase.getExpectedOutput().get("notMaster").toString());
+        Long genuTime = Long.parseLong(testCase.getExpectedOutput().get("genuTime").toString());
+        Long startLt = Long.parseLong(testCase.getExpectedOutput().get("startLt").toString());
+        Long endLt = Long.parseLong(testCase.getExpectedOutput().get("endLt").toString());
+        Long genCatchainSeqno = Long.parseLong(testCase.getExpectedOutput().get("genCatchainSeqno").toString());
+
+        assertThat(block.getBlockInfo().isNotMaster()).isEqualTo(notMaster);
+        assertThat(block.getBlockInfo().getGenuTime()).isEqualTo(genuTime);
+        assertThat(block.getBlockInfo().getStartLt().longValue()).isEqualTo(startLt);
+        assertThat(block.getBlockInfo().getEndLt().longValue()).isEqualTo(endLt);
+        assertThat(block.getBlockInfo().getGenCatchainSeqno()).isEqualTo(genCatchainSeqno);
+    }
+
+    @Test
+    public void testTlbDeserialization5() {
+
+        String testId = "tlb-deserialization-5";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        String bocAsHex = testCase.getInput().get("bocAsHex").toString();
+
+        Cell c = CellBuilder.beginCell().fromBoc(bocAsHex).endCell();
+        Block block = Block.deserialize(CellSlice.beginParse(c));
+        log.info("block {}", block);
+
+        BigInteger valueFlow_fromPrevBlk_Coins = new BigInteger(testCase.getExpectedOutput().get("valueFlow_fromPrevBlk_Coins").toString());
+        assertThat(block.getValueFlow().getFromPrevBlk().getCoins()).isEqualTo(valueFlow_fromPrevBlk_Coins);
     }
 }
