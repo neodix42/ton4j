@@ -162,12 +162,12 @@ public class TestHashMapE {
 
         CellSlice cs = CellSlice.beginParse(cell);
 
-        TonHashMap loadedDict = cs.loadDictE(16,
+        TonHashMapE loadedDict = cs.loadDictE(16,
                 k -> k.readUint(16),
                 v -> CellSlice.beginParse(v).loadUint(16)
         );
 
-        log.info("Deserialized hashmap from cell {}", loadedDict);
+        log.info("Deserialized hashmap from cell {}, count {}", loadedDict, loadedDict.elements.size());
 
         // serialize
         loadedDict.serialize(

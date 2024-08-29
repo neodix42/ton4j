@@ -4,11 +4,7 @@ import org.ton.java.bitstring.BitString;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -110,13 +106,13 @@ public class TonHashMap {
         PatriciaTreeNode leftNode = left.size() > 1
                 ? splitTree(left)
                 : left.isEmpty()
-                    ? null
-                    : new PatriciaTreeNode("", 0, left.get(0), null, null);
+                ? null
+                : new PatriciaTreeNode("", 0, left.get(0), null, null);
         PatriciaTreeNode rightNode = right.size() > 1
                 ? splitTree(right)
                 : right.isEmpty()
-                    ? null
-                    : new PatriciaTreeNode("", 0, right.get(0), null, null);
+                ? null
+                : new PatriciaTreeNode("", 0, right.get(0), null, null);
 
         return new PatriciaTreeNode("", keySize, null, leftNode, rightNode);
     }
@@ -307,5 +303,26 @@ public class TonHashMap {
         }
         sb.append(")");
         return sb.toString();
+    }
+
+
+    public Object getKeyByIndex(long index) {
+        long i = 0;
+        for (Map.Entry<Object, Object> entry : elements.entrySet()) {
+            if (i++ == index) {
+                return entry.getKey();
+            }
+        }
+        throw new Error("key not found at index " + index);
+    }
+
+    public Object getValueByIndex(long index) {
+        long i = 0;
+        for (Map.Entry<Object, Object> entry : elements.entrySet()) {
+            if (i++ == index) {
+                return entry.getValue();
+            }
+        }
+        throw new Error("value not found at index " + index);
     }
 }

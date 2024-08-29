@@ -5,11 +5,7 @@ import org.ton.java.bitstring.BitString;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -281,5 +277,35 @@ public class TonHashMapAug {
         }
         sb.append(")");
         return sb.toString();
+    }
+
+    public Object getKeyByIndex(long index) {
+        long i = 0;
+        for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
+            if (i == index) {
+                return entry.getKey();
+            }
+        }
+        throw new Error("key not found at index " + index);
+    }
+
+    public Object getValueByIndex(long index) {
+        long i = 0;
+        for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
+            if (i++ == index) {
+                return entry.getValue().getLeft();
+            }
+        }
+        throw new Error("value not found at index " + index);
+    }
+
+    public Object getEdgeByIndex(long index) {
+        long i = 0;
+        for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
+            if (i++ == index) {
+                return entry.getValue().getRight();
+            }
+        }
+        throw new Error("edge not found at index " + index);
     }
 }

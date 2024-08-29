@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.bitstring.BitString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -25,11 +26,11 @@ public class TestPfxHashMap {
 
         CellSlice cs = CellSlice.beginParse(cell);
         TonPfxHashMap dict = cs.loadDictPfx(267,
-                k -> k.readAddress(),
+                BitString::readAddress,
                 v -> true
         );
 
-        log.info("pfx-hashmap dict {}", dict);
+        log.info("pfx-hashmap dict {}, count {}", dict, dict.elements.size());
 
         assertThat(dict.elements.size()).isEqualTo(3);
     }

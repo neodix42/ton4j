@@ -85,7 +85,7 @@ public class TestHashMapAugE {
                 e -> CellSlice.beginParse(e).loadUint(32)
         );
 
-        log.info("Deserialized hashmap from cell {}", loadedDict);
+        log.info("Deserialized hashmapAugE from cell {}, count {}", loadedDict, loadedDict.elements.size());
     }
 
     @Test
@@ -101,7 +101,7 @@ public class TestHashMapAugE {
                 e -> CellSlice.beginParse(e).loadUint(32)
         );
 
-        log.info("Deserialized hashmap from cell {}", loadedDict);
+        log.info("Deserialized hashmapAugE from cell {}, count {}", loadedDict, loadedDict.elements.size());
     }
 
     @Test
@@ -117,6 +117,7 @@ public class TestHashMapAugE {
                 e -> CellSlice.beginParse(e).loadUint(32)
         );
 
-        log.info("Deserialized hashmap from cell {}", loadedDict);
+        log.info("Deserialized hashmapAugE from cell {}, count {}", loadedDict, loadedDict.elements.size());
+
     }
 }

@@ -5,7 +5,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.cell.*;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonHashMap;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -32,7 +35,7 @@ public class TestHashMap {
         TonHashMap x = cs.loadDict(64,
                 k -> k.readUint(64),
                 v -> CellSlice.beginParse(v).loadUint(8));
-        log.info("Deserialized hashmap from cell {}", x);
+        log.info("Deserialized hashmap from cell {}, count {}", x, x.elements.size());
 
         int i = 0;
         // traverse deserialized hashmap
@@ -153,7 +156,7 @@ public class TestHashMap {
                 k -> k.readInt(32),
                 v -> v);
 
-        log.info("Deserialized hashmap from cell {}", dex);
+        log.info("Deserialized hashmap from cell {}, count {}", dex, dex.elements.size());
 
         int i = 0;
         // traverse deserialized hashmap
@@ -183,7 +186,7 @@ public class TestHashMap {
         for (int i = 0; i < 3; i++) {
 
 
-            TonHashMapE dex = cs1.loadDictE(256,
+            TonHashMap dex = cs1.loadDict(256,
                     k -> k.readUint(256),
                     v -> CellSlice.beginParse(v).loadUint(32)
             );
@@ -193,8 +196,7 @@ public class TestHashMap {
             for (Map.Entry<Object, Object> entry : dex.elements.entrySet()) {
 
                 Address dictAddr = Address.of("0:" + ((BigInteger) entry.getKey()).toString(16));
-                String dictAddrStr = dictAddr.toString(true, false, true, false);
-                log.info("d {}", dictAddrStr);
+                String dictAddrStr = dictAddr.toBounceable();
 
                 assertThat(dictAddrStr).isEqualTo("EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N");
             }
