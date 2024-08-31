@@ -4,11 +4,9 @@ import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.java.address.Address;
-import org.ton.java.cell.TonHashMap;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.WalletV5Config;
-import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.smartcontract.wallet.v5.WalletActions;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
 import org.ton.java.tlb.types.ActionSendMsg;
@@ -16,7 +14,6 @@ import org.ton.java.tlb.types.CurrencyCollection;
 import org.ton.java.tlb.types.InternalMessageInfoRelaxed;
 import org.ton.java.tlb.types.MessageRelaxed;
 import org.ton.java.tlb.types.MsgAddressIntStd;
-import org.ton.java.tlb.types.OutAction;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
@@ -44,9 +41,11 @@ public class TestWalletV5Extensions extends CommonTest {
     @Test
     public void test() throws InterruptedException, NoSuchAlgorithmException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        TonHashMapE initExtensions = new TonHashMapE(10);
         WalletV5 contract = WalletV5.builder()
                 .isSignatureAllowed(true)
                 .tonlib(tonlib)
+                .extensions(initExtensions)
                 .keyPair(keyPair)
                 .walletId(42)
                 .build();
@@ -64,6 +63,7 @@ public class TestWalletV5Extensions extends CommonTest {
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         // deploy wallet-v5
+        // TODO... breaks on this call
         ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
@@ -74,7 +74,7 @@ public class TestWalletV5Extensions extends CommonTest {
         log.info("seqno: {}", walletCurrentSeqno);
         log.info("walletId: {}", contract.getWalletId());
         log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey()));
-        log.info("extensionsList: {}", contract.getExtensionsList());
+        log.info("extensionsList: {}", contract.getRawExtensions());
 
         // add extension -- start
         WalletV5Config config = WalletV5Config.builder()

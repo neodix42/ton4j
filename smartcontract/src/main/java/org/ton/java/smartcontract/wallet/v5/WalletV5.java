@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -77,17 +76,16 @@ public class WalletV5 implements Contract {
 
     @Override
     public Cell createDataCell() {
-        if (extensions == null) {
-            extensions = new TonHashMapE(0);
-        }
         return CellBuilder.beginCell()
                 .storeBit(isSignatureAllowed)
-                .storeUint(seqno, SIZE_SEQNO)
-                .storeUint(walletId, SIZE_WALLET_ID)
+                .storeUint(seqno, 32)
+                .storeUint(walletId, 32)
                 .storeBytes(keyPair.getPublicKey())
-                .storeDict(extensions.serialize(
-                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
-                        v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()))
+                .storeUint(0, 1) // empty extensions dict
+//                .storeDict(extensions.serialize(
+//                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
+//                        v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()
+//                ))
                 .endCell();
     }
 
@@ -108,24 +106,34 @@ public class WalletV5 implements Contract {
     }
 
     public Message prepareDeployMsg() {
-        Cell body = createDeployMessage();
+        Cell body = CellBuilder.beginCell()
+                .storeUint(walletId, 32)
+                .storeInt(-1, 32)
+                .storeUint(seqno, 32)
+                .endCell();
+
+        Cell signedBody = CellBuilder.beginCell()
+                .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                .storeRef(body)
+                .endCell();
+        Address ownAddress = getAddress();
+
         return Message.builder()
                 .info(ExternalMessageInfo.builder()
-                        .dstAddr(getAddressIntStd())
+                        .dstAddr(MsgAddressIntStd.builder()
+                                .workchainId(ownAddress.wc)
+                                .address(ownAddress.toBigInteger())
+                                .build())
                         .build())
-                .init(getStateInit())
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                        .storeCell(body)
-                        .endCell())
+                .body(signedBody)
                 .build();
     }
 
     public Cell createDeployMessage() {
         return CellBuilder.beginCell()
                 .storeUint(walletId, 32)
-                .storeInt(-1, 32)
-                .storeUint(seqno, 32)
+//                .storeUint(seqno, 32)
+                .storeUint(3, 8)
                 .endCell();
     }
 
@@ -139,14 +147,12 @@ public class WalletV5 implements Contract {
     }
 
     public Cell createTransferBody(WalletV5Config config) {
-        CellBuilder message = CellBuilder.beginCell();
-
-        message.storeUint(config.getWalletId(), SIZE_WALLET_ID);
-        message.storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), SIZE_VALID_UNTIL);
-        message.storeUint(config.getSeqno(), SIZE_SEQNO);
-        message.storeCell(storeWalletActions(config.getExtensions()));
-
-        return message.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(config.getWalletId(), SIZE_WALLET_ID)
+                .storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), SIZE_VALID_UNTIL)
+                .storeUint(config.getSeqno(), SIZE_SEQNO)
+                .storeCell(storeWalletActions(config.getExtensions()))
+                .endCell();
     }
 
     private Cell storeWalletActions(WalletActions walletActions) {
@@ -216,21 +222,21 @@ public class WalletV5 implements Contract {
         return r;
     }
 
-    public List<WalletActions> getExtensionsList() {
-        List<WalletActions> r = new ArrayList<>();
-        Address myAddress = getAddress();
-        RunResult result = tonlib.runMethod(myAddress, "get_extensions");
-        TvmStackEntryList list = (TvmStackEntryList) result.getStack().get(0);
-        for (Object o : list.getList().getElements()) {
-            TvmStackEntryTuple t = (TvmStackEntryTuple) o;
-            TvmTuple tuple = t.getTuple();
-            // todo.. getExtension type
-            TvmStackEntryNumber addr = (TvmStackEntryNumber) tuple.getElements().get(1); // 32 bytes
-            r.add(WalletActions.builder()
-//                    .walletAddress(Address.of(addr.getNumber().toString(16)))
-//                    .type("")
-                    .build());
-        }
-        return r;
-    }
+    // todo.. introduce List<? extends deserialization type>
+//    public List<WalletActions> getExtensionsList() {
+//        List<WalletActions> r = new ArrayList<>();
+//        Address myAddress = getAddress();
+//        RunResult result = tonlib.runMethod(myAddress, "get_extensions");
+//        TvmStackEntryList list = (TvmStackEntryList) result.getStack().get(0);
+//        for (Object o : list.getList().getElements()) {
+//            TvmStackEntryTuple t = (TvmStackEntryTuple) o;
+//            TvmTuple tuple = t.getTuple();
+//            TvmStackEntryNumber addr = (TvmStackEntryNumber) tuple.getElements().get(1); // 32 bytes
+//            r.add(WalletActions.builder()
+////                    .walletAddress(Address.of(addr.getNumber().toString(16)))
+////                    .type("")
+//                    .build());
+//        }
+//        return r;
+//    }
 }
