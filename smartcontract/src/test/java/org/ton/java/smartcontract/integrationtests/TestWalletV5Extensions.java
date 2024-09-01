@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.ton.java.address.Address;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.types.HighloadQueryId;
+import org.ton.java.smartcontract.types.HighloadV3Config;
 import org.ton.java.smartcontract.types.WalletV5Config;
 import org.ton.java.smartcontract.wallet.v5.WalletActions;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
@@ -62,9 +64,25 @@ public class TestWalletV5Extensions extends CommonTest {
 //        BigInteger b = contract.getBalance();
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
+
+        HighloadV3Config conf = HighloadV3Config.builder()
+                .walletId(42)
+                .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+                .build();
+
+        WalletV5Config conf_2 = WalletV5Config.builder()
+                .signatureAllowed(true)
+                .seqno(contract.getSeqno())
+                .walletId(42)
+                .extensions(WalletActions.builder()
+                        .outSendMessageAction(createDummyActionSendMessages(50))
+                        .extendedActions(createDummyExtendedActions(10, WalletActions.Action.ADD_EXTENSION))
+                        .build())
+                .build();
+
         // deploy wallet-v5
         // TODO... breaks on this call
-        ExtMessageInfo extMessageInfo = contract.deploy();
+        ExtMessageInfo extMessageInfo = contract.deploy(conf);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         contract.waitForDeployment(30);

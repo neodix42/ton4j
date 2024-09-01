@@ -8,6 +8,7 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.TonHashMapE;
+import org.ton.java.smartcontract.types.HighloadV3Config;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV5Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
@@ -81,11 +82,10 @@ public class WalletV5 implements Contract {
                 .storeUint(seqno, 32)
                 .storeUint(walletId, 32)
                 .storeBytes(keyPair.getPublicKey())
-                .storeUint(0, 1) // empty extensions dict
-//                .storeDict(extensions.serialize(
-//                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
-//                        v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()
-//                ))
+                .storeDict(extensions.serialize(
+                        k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
+                        v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()
+                ))
                 .endCell();
     }
 
@@ -101,39 +101,67 @@ public class WalletV5 implements Contract {
      * One can be installed later into the wallet. See addExtension().
      */
 
-    public ExtMessageInfo deploy() {
-        return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+    public ExtMessageInfo deploy(WalletV5Config conf) {
+        return tonlib.sendRawMessage(prepareDeployMsg(conf).toCell().toBase64());
     }
 
-    public Message prepareDeployMsg() {
-        Cell body = CellBuilder.beginCell()
-                .storeUint(walletId, 32)
-                .storeInt(-1, 32)
-                .storeUint(seqno, 32)
-                .endCell();
-
-        Cell signedBody = CellBuilder.beginCell()
-                .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                .storeRef(body)
-                .endCell();
-        Address ownAddress = getAddress();
+    public Message prepareDeployMsg(WalletV5Config conf) {
+        Cell body = createTransferBody(conf);
 
         return Message.builder()
                 .info(ExternalMessageInfo.builder()
+                        .dstAddr(getAddressIntStd())
+                        .build())
+                .init(getStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                        .storeCell(body)
+                        .endCell())
+                .build();
+    }
+
+    public ExtMessageInfo deploy(HighloadV3Config config) {
+        Address ownAddress = getAddress();
+        Cell cell = CellBuilder.beginCell().endCell();
+        if (isNull(config.getBody())) {
+            //dummy deploy msg
+            cell = MessageRelaxed.builder()
+                    .info(InternalMessageInfoRelaxed.builder()
+                            .dstAddr(MsgAddressIntStd.builder()
+                                    .workchainId(ownAddress.wc)
+                                    .address(ownAddress.toBigInteger())
+                                    .build())
+                            .createdAt((config.getCreatedAt() == 0) ? Instant.now().getEpochSecond() - 60 : config.getCreatedAt())
+                            .build())
+                    .build().toCell();
+        }
+        Cell innerMsg = createTransferMessage(cell);
+
+        Message externalMessage = Message.builder()
+                .info(ExternalMessageInfo.builder()
+                        .srcAddr(MsgAddressExtNone.builder().build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(ownAddress.wc)
                                 .address(ownAddress.toBigInteger())
                                 .build())
                         .build())
-                .body(signedBody)
+                .init(getStateInit())
+                .body(CellBuilder.beginCell()
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), innerMsg.hash()))
+                        .storeRef(innerMsg)
+                        .endCell())
                 .build();
+
+        return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public Cell createDeployMessage() {
+    public Cell createTransferMessage(Cell cell) {
         return CellBuilder.beginCell()
+                .storeBit(true) // signature flag
                 .storeUint(walletId, 32)
-//                .storeUint(seqno, 32)
-                .storeUint(3, 8)
+                .storeUint(seqno, 32)
+                .storeUint(3, 8) // mode
+                .storeRef(cell) // ref cell same as highload wallet-v3
                 .endCell();
     }
 
@@ -157,33 +185,62 @@ public class WalletV5 implements Contract {
 
     private Cell storeWalletActions(WalletActions walletActions) {
         CellBuilder cb = CellBuilder.beginCell();
+
         if (ObjectUtils.isNotEmpty(walletActions.outSendMessageAction)) {
-            while (ObjectUtils.isNotEmpty(walletActions.outSendMessageAction)) {
-                cb.storeRefMaybe(walletActions.outSendMessageAction.remove(0).toCell());
-            }
-        }
-        else {
+            Cell outSendMessageTree = createActionTree(walletActions.outSendMessageAction);
+            cb.storeRef(outSendMessageTree);
+        } else {
             cb.storeBit(false);
         }
+
         if (ObjectUtils.isNotEmpty(walletActions.extendedActions)) {
-            while (ObjectUtils.isNotEmpty(walletActions.extendedActions)) {
-                cb.storeBit(true);
-                cb.storeCell(storeExtendedActions(walletActions.extendedActions));
-            }
-        }
-        else {
+            cb.storeBit(true);
+            Cell extendedActionTree = createActionTree(walletActions.extendedActions);
+            cb.storeRef(extendedActionTree);
+        } else {
             cb.storeBit(false);
         }
 
         return cb.endCell();
     }
 
-    private Cell storeExtendedActions(List<WalletActions.ExtendedAction> extendedActions) {
-        CellBuilder cb = CellBuilder.beginCell();
-        while (ObjectUtils.isNotEmpty(extendedActions)) {
-            cb.storeRef(extendedActions.remove(0).toCell());
+    private Cell createActionTree(List<?> actions) {
+        if (actions.size() <= 4) {
+            return createLeafCell(actions, 0, actions.size());
+        }
+        return createTreeRecursive(actions, 0, actions.size());
+    }
+
+    private Cell createTreeRecursive(List<?> actions, int start, int end) {
+        if (end - start <= 4) {
+            return createLeafCell(actions, start, end);
         }
 
+        CellBuilder cb = CellBuilder.beginCell();
+        int itemsPerSubtree = (end - start + 3) / 4;
+
+        for (int i = 0; i < 4; i++) {
+            int subStart = start + i * itemsPerSubtree;
+            int subEnd = Math.min(subStart + itemsPerSubtree, end);
+            if (subStart < end) {
+                Cell subTree = createTreeRecursive(actions, subStart, subEnd);
+                cb.storeRef(subTree);
+            }
+        }
+
+        return cb.endCell();
+    }
+
+    private Cell createLeafCell(List<?> actions, int start, int end) {
+        CellBuilder cb = CellBuilder.beginCell();
+        for (int i = start; i < end; i++) {
+            Object action = actions.get(i);
+            if (action instanceof ActionSendMsg) {
+                cb.storeRef(((ActionSendMsg) action).toCell());
+            } else if (action instanceof WalletActions.ExtendedAction) {
+                cb.storeRef(((WalletActions.ExtendedAction) action).toCell());
+            }
+        }
         return cb.endCell();
     }
 
