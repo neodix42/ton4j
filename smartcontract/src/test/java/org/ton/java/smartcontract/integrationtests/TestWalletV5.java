@@ -24,7 +24,7 @@ import java.util.UUID;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
-public class TestWalletV5Extensions extends CommonTest {
+public class TestWalletV5 extends CommonTest {
 //        TonHashMapE x = new TonHashMapE(10);
 //        Address addr1 = Address.of("0:2cf55953e92efbeadab7ba725c3f93a0b23f842cbba72d7b8e6f510a70e422e3");
 //        Address addr2 = Address.of("0:0000000000000000000000000000000000000000000000000000000000000000");

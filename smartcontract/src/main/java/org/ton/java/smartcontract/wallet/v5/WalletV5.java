@@ -114,11 +114,10 @@ public class WalletV5 implements Contract {
                         .dstAddr(getAddressIntStd())
                         .build())
                 .init(getStateInit())
-//                .body(CellBuilder.beginCell()
-//                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-//                        .storeCell(body)
-//                        .endCell())
-                .body(body)
+                .body(CellBuilder.beginCell()
+                        .storeCell(body)
+                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                        .endCell())
                 .build();
     }
 
@@ -132,7 +131,7 @@ public class WalletV5 implements Contract {
     }
 
     public Cell createTransferBody(WalletV5Config config) {
-        Cell body = CellBuilder.beginCell()
+        return CellBuilder.beginCell()
                 .storeUint(0x7369676e, 32)
                 .storeUint(config.getWalletId(), SIZE_WALLET_ID)
                 .storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), SIZE_VALID_UNTIL)
@@ -140,10 +139,6 @@ public class WalletV5 implements Contract {
 //                .storeCell(storeWalletActions(config.getExtensions())) // innerRequest
                 .storeBit(false) // for now empty
                 .endCell();
-
-        return CellBuilder.beginCell()
-                .storeCell(body)
-                .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash())).endCell();
     }
 
     private Cell storeWalletActions(WalletActions walletActions) {
