@@ -1,20 +1,13 @@
 package org.ton.java.smartcontract.unittests;
+
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.TonHashMapE;
-import org.ton.java.smartcontract.types.WalletV5Config;
-import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
-import org.ton.java.tlb.types.CurrencyCollection;
-import org.ton.java.tlb.types.InternalMessageInfo;
 import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
@@ -43,11 +36,12 @@ public class TestWalletV5 {
         String dataAsHex = contract.getStateInit().getData().bitStringToHex();
         String rawAddress = contract.getAddress().toRaw();
 
+//        assertEquals(WalletCodes.V5.getValue(), contract.getStateInit().getCode().toHex(false).toUpperCase()); // fails because of wrong index order during boc serialization
         assertEquals("FF00F4A413F4BCF2C80B", codeAsHex);
         assertEquals("0000000000000015C150592A1E837F605564A974F639C5F2B558DB013FE060D540BD70A5A68F697DA_", dataAsHex);
         assertEquals("0:b259c80bc59f10f0a4dbe703c6311b2d259e12ed074f3ce9d7c285b20c7a50ef", rawAddress);
 
-        Message msg = contract.prepareDeployMsg();
+        Message msg = contract.prepareDeployMsg(); // todo
         log.info(msg.toString());
 
         // external message for serialization

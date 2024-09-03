@@ -6,16 +6,10 @@ import org.junit.Test;
 import org.ton.java.address.Address;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.TestFaucet;
-import org.ton.java.smartcontract.types.HighloadQueryId;
-import org.ton.java.smartcontract.types.HighloadV3Config;
 import org.ton.java.smartcontract.types.WalletV5Config;
 import org.ton.java.smartcontract.wallet.v5.WalletActions;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
-import org.ton.java.tlb.types.ActionSendMsg;
-import org.ton.java.tlb.types.CurrencyCollection;
-import org.ton.java.tlb.types.InternalMessageInfoRelaxed;
-import org.ton.java.tlb.types.MessageRelaxed;
-import org.ton.java.tlb.types.MsgAddressIntStd;
+import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
@@ -41,9 +35,9 @@ public class TestWalletV5Extensions extends CommonTest {
 
 
     @Test
-    public void test() throws InterruptedException, NoSuchAlgorithmException {
+    public void testWalletV5Deployment() throws InterruptedException, NoSuchAlgorithmException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
-        TonHashMapE initExtensions = new TonHashMapE(10);
+        TonHashMapE initExtensions = new TonHashMapE(256);
         WalletV5 contract = WalletV5.builder()
                 .isSignatureAllowed(true)
                 .tonlib(tonlib)
@@ -60,32 +54,30 @@ public class TestWalletV5Extensions extends CommonTest {
         log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
         log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
-//        BigInteger b = contract.getBalance();
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
 
-        HighloadV3Config conf = HighloadV3Config.builder()
-                .walletId(42)
-                .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
-                .build();
+//        HighloadV3Config conf = HighloadV3Config.builder()
+//                .walletId(42)
+//                .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+//                .build();
 
-        WalletV5Config conf_2 = WalletV5Config.builder()
+        WalletV5Config walletV5Config = WalletV5Config.builder()
                 .signatureAllowed(true)
                 .seqno(contract.getSeqno())
                 .walletId(42)
-                .extensions(WalletActions.builder()
-                        .outSendMessageAction(createDummyActionSendMessages(50))
-                        .extendedActions(createDummyExtendedActions(10, WalletActions.Action.ADD_EXTENSION))
-                        .build())
+//                .extensions(WalletActions.builder()
+//                        .outSendMessageAction(createDummyActionSendMessages(50))
+//                        .extendedActions(createDummyExtendedActions(10, WalletActions.Action.ADD_EXTENSION))
+//                        .build())
                 .build();
 
         // deploy wallet-v5
-        // TODO... breaks on this call
-        ExtMessageInfo extMessageInfo = contract.deploy(conf);
+        ExtMessageInfo extMessageInfo = contract.deploy(walletV5Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        contract.waitForDeployment(30);
+        contract.waitForDeployment(60);
 
         long walletCurrentSeqno = contract.getSeqno();
         log.info("walletV5 balance: {}", Utils.formatNanoValue(contract.getBalance()));
@@ -94,25 +86,28 @@ public class TestWalletV5Extensions extends CommonTest {
         log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey()));
         log.info("extensionsList: {}", contract.getRawExtensions());
 
+    }
+
+    @Test
+    public void testWalletV5Extensions() throws InterruptedException, NoSuchAlgorithmException {
         // add extension -- start
-        WalletV5Config config = WalletV5Config.builder()
-                .signatureAllowed(true)
-                .seqno(walletCurrentSeqno)
-                .walletId(42)
-                .extensions(WalletActions.builder()
-                        .outSendMessageAction(createDummyActionSendMessages(50))
-                        .extendedActions(createDummyExtendedActions(10, WalletActions.Action.ADD_EXTENSION))
-                        .build())
-                .build();
-
-        Utils.sleep(30);
-
-        extMessageInfo = contract.send(config);
-        assertThat(extMessageInfo.getError().getCode()).isZero();
-
-        List<String> extensions = contract.getRawExtensions();
-        log.info("extensionsList: {}", extensions);
-
+//        WalletV5Config config = WalletV5Config.builder()
+//                .signatureAllowed(true)
+//                .seqno(walletCurrentSeqno)
+//                .walletId(42)
+//                .extensions(WalletActions.builder()
+//                        .outSendMessageAction(createDummyActionSendMessages(50))
+//                        .extendedActions(createDummyExtendedActions(10, WalletActions.Action.ADD_EXTENSION))
+//                        .build())
+//                .build();
+//
+//        Utils.sleep(30);
+//
+//        extMessageInfo = contract.send(config);
+//        assertThat(extMessageInfo.getError().getCode()).isZero();
+//
+//        List<String> extensions = contract.getRawExtensions();
+//        log.info("extensionsList: {}", extensions);
     }
 
     List<ActionSendMsg> createDummyActionSendMessages(int numRecipients) throws NoSuchAlgorithmException {

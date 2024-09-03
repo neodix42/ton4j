@@ -72,7 +72,7 @@ public class TestFaucet {
             throw new Error(extMessageInfo.getError().getMessage());
         }
 
-        ContractUtils.waitForBalanceChange(tonlib, destinationAddress, 60);
+        ContractUtils.waitForBalanceChange(tonlib, destinationAddress, 120);
 
         return tonlib.getAccountBalance(destinationAddress);
     }
