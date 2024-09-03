@@ -31,10 +31,10 @@ public enum WalletCodes {
         this.value = value;
     }
 
-    public static WalletCodes getKeyByValue(String value) {
+    public static String getKeyByValue(String value) {
         for (WalletCodes v : WalletCodes.values()) {
-            if (v.getValue().equals(value)) {
-                return v;
+            if (v.getValue().equals(value.toUpperCase())) {
+                return v.name();
             }
         }
         return null;

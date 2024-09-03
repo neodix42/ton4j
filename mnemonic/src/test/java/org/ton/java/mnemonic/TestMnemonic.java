@@ -1,9 +1,12 @@
 package org.ton.java.mnemonic;
 
+import com.iwebpp.crypto.TweetNaclFast;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.utils.Utils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -88,5 +91,42 @@ public class TestMnemonic {
                 "reason", "gossip", "cotton", "stock", "skate", "faith"));
         System.out.println(bytesToHex(key.getPublicKey()));
         System.out.println(bytesToHex(key.getSecretKey()));
+    }
+
+    @Test
+    public void testSigning() {
+
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        System.out.println("pubKey: " + bytesToHex(keyPair.getPublicKey()));
+        System.out.println("prvKey: " + bytesToHex(keyPair.getSecretKey()));
+        String testMsg = "ABC";
+
+        // Using bouncy castle Ed25519 from Mnemonic module
+        byte[] signature = Ed25519.sign(keyPair.getSecretKey(), testMsg.getBytes(StandardCharsets.UTF_8));
+        System.out.println("sig: " + bytesToHex(signature));
+
+
+        // Using TweetNaclFast from TweetNacl-java-8 module
+        byte[] signature2 = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), testMsg.getBytes(StandardCharsets.UTF_8));
+        System.out.println("sig: " + bytesToHex(signature2));
+
+        assertThat(signature).isEqualTo(signature2);
+    }
+
+    @Test
+    public void testVerification() {
+
+        String signature = "e189001b6c1afcb13a7f2f3e6cee5b0f40834fd1d5302c09389c0fbb99fe342de71af4db21b137bf4ff0cd967a8a22f5ed8d4a857f3e8ea55ba14460259d2202";
+        String pubKey = "d86009539b964dc57dc0feb7bd478356161c578459e747e0bf7d3d0bf7a290dd";
+        String prvKey = "7f8c3387483e25f1ee0dcb36b190ab2996c6aa4824d5bee55fb9b83274e8cedad86009539b964dc57dc0feb7bd478356161c578459e747e0bf7d3d0bf7a290dd";
+
+        System.out.println("pubKey: " + pubKey);
+        System.out.println("prvKey: " + prvKey);
+        String testMsg = "ABC";
+
+        // Using bouncy castle Ed25519 from Mnemonic module
+        boolean result = Ed25519.verify(Utils.hexToSignedBytes(pubKey), testMsg.getBytes(StandardCharsets.UTF_8), Utils.hexToSignedBytes(signature));
+        System.out.println("result: " + result);
+
     }
 }

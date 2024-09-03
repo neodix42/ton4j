@@ -1203,6 +1203,17 @@ public class Tonlib {
         return seqno.getNumber().longValue();
     }
 
+    public BigInteger getPublicKey(Address address) {
+        RunResult result = runMethod(address, "get_public_key");
+        if (result.getExit_code() != 0) {
+            throw new Error("can't get result by executing get_public_key method, exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryNumber pubKey = (TvmStackEntryNumber) result.getStack().get(0);
+
+        return pubKey.getNumber();
+    }
+
     /**
      * Generic method to call get_subwallet_id method of a contract. There is no check if get_subwallet_id method exists.
      *

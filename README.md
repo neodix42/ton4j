@@ -50,6 +50,7 @@ You can use each submodule individually. Click the module below to get more deta
 * [Mnemonic](mnemonic/README.md) - helpful methods for generating deterministic keys for TON blockchain.
 * [Emulator](emulator/README.md) - wrapper for using with external precompiled emulator shared library.
 * [Liteclient](liteclient/README.md) - wrapper for using with external precompiled lite-client binary.
+* [TonConnect](tonconnect/README.md) - implementation of Ton Connect standard.
 * [Utils](utils/README.md) - create private and public keys, convert data, etc.
 
 ### Features

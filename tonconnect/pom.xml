@@ -2,18 +2,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>top</artifactId>
         <groupId>io.github.neodix42</groupId>
+        <artifactId>top</artifactId>
         <version>0.5.3</version>
     </parent>
 
-    <modelVersion>4.0.0</modelVersion>
+    <artifactId>tonconnect</artifactId>
+    <name>TON Java TonConnect</name>
 
-    <artifactId>mnemonic</artifactId>
-    <name>TON Java Mnemonic</name>
-
-    <description>Help quickly generate and part TON compatible mnemonics.</description>
+    <description>TonConnect implementation.</description>
 
     <url>https://github.com/neodiX42/ton4j</url>
 
@@ -45,19 +44,36 @@
     <dependencies>
         <dependency>
             <groupId>io.github.neodix42</groupId>
-            <artifactId>utils</artifactId>
+            <artifactId>cell</artifactId>
             <version>${project.parent.version}</version>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.78.1</version>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>utils</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>mnemonic</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>smartcontract</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
         </dependency>
         <!-- test -->
         <dependency>
@@ -66,8 +82,19 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>tonlib</artifactId>
+            <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

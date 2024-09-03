@@ -22,6 +22,10 @@ public class Address {
     public boolean isTestOnly;
     public boolean isUserFriendly;
     public boolean isBounceable;
+    /**
+     * More details <a href="https://docs.ton.org/learn/overviews/addresses#bounceable-vs-non-bounceable-addresses">bounceable-vs-non-bounceable-addresses</a>
+     */
+    public boolean isWallet;
     public boolean isUrlSafe;
 
     public AddressType addressType; // todo
@@ -71,6 +75,7 @@ public class Address {
             hashPart = Utils.hexToSignedBytes(hexPart);
             isTestOnly = false;
             isBounceable = false;
+            isWallet = true;
         } else {
             isUserFriendly = true;
             Address parseResult = parseFriendlyAddress(address);
@@ -78,6 +83,7 @@ public class Address {
             hashPart = parseResult.hashPart;
             isTestOnly = parseResult.isTestOnly;
             isBounceable = parseResult.isBounceable;
+            isWallet = parseResult.isWallet;
         }
     }
 
@@ -282,6 +288,7 @@ public class Address {
         parsedAddress.hashPart = hashPart;
         parsedAddress.isTestOnly = isTestOnly;
         parsedAddress.isBounceable = isBounceable;
+        parsedAddress.isWallet = !isBounceable;
         parsedAddress.addressType = AddressType.STD_ADDRESS;
 
         return parsedAddress;
