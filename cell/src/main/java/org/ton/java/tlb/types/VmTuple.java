@@ -31,8 +31,8 @@ public class VmTuple {
         VmStackValue v = pValues.get(pValues.size() - 1);
         pValues.remove(pValues.size() - 1);
         return CellBuilder.beginCell()
-                .storeCell(VmTupleRef.toCell(pValues))
-                .storeRef(v.toCell())
+                .storeCell(VmTupleRef.toCell(pValues)) // head
+                .storeRef(v.toCell())                  // tail
                 .endCell();
     }
 
@@ -46,8 +46,8 @@ public class VmTuple {
         VmStackValue v = lValues.get(lValues.size() - 1);
         lValues.remove(lValues.size() - 1);
         return CellBuilder.beginCell()
-                .storeCell(VmTupleRef.toCell(lValues))
-                .storeRef(v.toCell())
+                .storeCell(VmTupleRef.toCell(lValues)) // head
+                .storeRef(v.toCell())                  // tail
                 .endCell();
     }
 
@@ -57,7 +57,7 @@ public class VmTuple {
         }
 
         ArrayList<VmStackValue> ar = new ArrayList<>();
-        ar.add((VmStackValue) VmTupleRef.deserialize(cs, len - 1));
+        ar.add((VmStackValue) VmTupleRef.deserialize(cs, len - 1).getValues().get(0));
         ar.add(cs.getRefsCount() > 0 ? VmStackValue.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
 
         return VmTuple.builder()

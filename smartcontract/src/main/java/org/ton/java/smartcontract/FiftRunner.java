@@ -39,7 +39,7 @@ public class FiftRunner {
         public FiftRunner build() {
             if (StringUtils.isEmpty(super.fiftExecutablePath)) {
                 log.info("checking if fift is installed...");
-                String errorMsg = "Make sure you have fift and func installed. See https://github.com/ton-blockchain/packages for instructions.";
+                String errorMsg = "Make sure you have fift installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.fiftExecutablePath().";
                 try {
                     ProcessBuilder pb = new ProcessBuilder("fift", "-h").redirectErrorStream(true);
                     Process p = pb.start();

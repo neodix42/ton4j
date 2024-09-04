@@ -36,8 +36,7 @@ import java.util.Collections;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -62,6 +61,13 @@ public class TestTvmEmulator {
                 .keyPair(keyPair)
                 .walletId(42)
                 .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         Cell code = contract.getStateInit().getCode();
         Cell data = contract.getStateInit().getData();
@@ -107,14 +113,13 @@ public class TestTvmEmulator {
         String address = contract.getAddress().toBounceable();
         String randSeedHex = Utils.sha256("ABC");
 
-        Cell config = tonlib.getConfigAll(128);
+        Cell config = tonlib.getConfigAll(128); // 128 - all config
 
         assertTrue(tvmEmulator.setC7(address,
                 Instant.now().getEpochSecond(),
-                Utils.toNano(1).longValue(),
-                randSeedHex
-//                , null
-                , config.toBase64() // optional
+                Utils.toNano(1).longValue(), // smc balance
+                randSeedHex,
+                config.toBase64() // optional
         ));
     }
 
@@ -137,16 +142,17 @@ public class TestTvmEmulator {
                 .storeRef(stack.toCell())
                 .storeRef(CellBuilder.beginCell()
                         .storeRef(stack.toCell()) // c7 ^VmStack
-                        .storeRef(getLibs()) // libs ^Cell
-                        .endCell()) // params
+                        .storeRef(getLibs())      // libs ^Cell
+                        .endCell())
                 .storeUint(85143, 32) // method-id - seqno
                 .endCell()
                 .toBase64();
 
 
-        Cell c = CellBuilder.beginCell().fromBocBase64(paramsBoc).endCell();
-        log.info("c {}", c);
-        String result = tvmEmulator.emulateRunMethod(paramsBoc.length(), paramsBoc, Utils.toNano(1).longValue());
+//        Cell c = CellBuilder.beginCell().fromBocBase64(paramsBoc).endCell();
+//        log.info("cellPrint {}", c.print());
+        long gasLimit = Utils.toNano(1).longValue();
+        String result = tvmEmulator.emulateRunMethod(paramsBoc.length(), paramsBoc, gasLimit);
         log.info("result emulateRunMethod: {}", result); // todo - return null
     }
 
@@ -162,7 +168,7 @@ public class TestTvmEmulator {
         log.info("methodResult stack: {}", methodResult.getStack());
 
         Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
-        log.info("cellResult {}", cellResult);
+//        log.info("cellResult {}", cellResult);
         VmStack stack = VmStack.deserialize(CellSlice.beginParse(cellResult));
         int depth = stack.getDepth();
         log.info("vmStack depth: {}", depth);
@@ -184,7 +190,7 @@ public class TestTvmEmulator {
                 VmStack.builder()
                         .depth(0)
                         .stack(VmStackList.builder()
-                                .tos(Lists.emptyList())
+                                .tos(Collections.emptyList())
                                 .build())
                         .build()
                         .toCell().toBase64());
@@ -206,17 +212,22 @@ public class TestTvmEmulator {
     }
 
     @Test
+    public void testTvmEmulatorRunGetMethodGetPubKeyShortVersion() {
+        log.info("contract's pubKey: {}", tvmEmulator.runGetPublicKey()); // pubkey
+    }
+
+    @Test
     public void testTvmEmulatorRunGetMethodGetPluginList() {
         String stackSerialized = VmStack.builder()
                 .depth(0)
                 .stack(VmStackList.builder()
-                        .tos(Lists.emptyList())
+                        .tos(Collections.emptyList())
                         .build())
                 .build()
                 .toCell().toBase64();
 
         String result = tvmEmulator.runGetMethod(
-                107653, // CRC-16/XMODEM of get_plugin_list
+                107653, // CRC-16/XMODEM of "get_plugin_list"
                 stackSerialized);
         log.info("result runGetMethod: {}", result);
 
@@ -225,7 +236,7 @@ public class TestTvmEmulator {
         log.info("methodResult stack: {}", methodResult.getStack());
 
         Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
-        log.info("cellResult {}", cellResult);
+        log.info("cellResult {}", cellResult.print());
         VmStackValueTuple tuple = VmStackValueTuple.deserialize(CellSlice.beginParse(cellResult));
         log.info("tuple {}", tuple);
     }
@@ -252,14 +263,9 @@ public class TestTvmEmulator {
         log.info("methodResult stack: {}", methodResult.getStack());
 
         Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
-        log.info("cellResult {}", cellResult);
+        log.info("cellResult {}", cellResult.print());
         VmStackValueTuple tuple = VmStackValueTuple.deserialize(CellSlice.beginParse(cellResult));
         log.info("tuple {}", tuple);
-    }
-
-    @Test
-    public void testTvmEmulatorRunGetMethodGetPubKeyShortVersion() {
-        log.info("contract's pubKey: {}", tvmEmulator.runGetPublicKey()); // pubkey
     }
 
     @Test
@@ -283,7 +289,7 @@ public class TestTvmEmulator {
                 .walletId(42)
                 .seqno(0)
                 .destination(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
-                .amount(Utils.toNano(0.331))
+                .amount(Utils.toNano(0.124))
                 .build();
 
         assertTrue(tvmEmulator.setLibs(getLibs().toBase64()));
@@ -293,12 +299,27 @@ public class TestTvmEmulator {
 
         SendExternalMessageResult result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
         log.info("result sendExternalMessage, exitCode: {}", result.getVm_exit_code());
-        log.info("result sendExternalMessage, actions: {}", result.getActions());
+//        log.info("result sendExternalMessage, actions: {}", result.getActions());
         log.info("seqno value: {}", tvmEmulator.runGetSeqNo());
-        OutList actions = OutList.deserialize(
-                CellSlice.beginParse(
-                        CellBuilder.beginCell().fromBocBase64(result.getActions()).endCell()));
+        OutList actions = OutList.deserialize(CellSlice.beginParse(
+                CellBuilder.beginCell().fromBocBase64(result.getActions()).endCell()));
         log.info("parsed actions {}", actions);
+
+        assertEquals(1, tvmEmulator.runGetSeqNo().longValue());
+
+        // send one more time
+        config = WalletV4R2Config.builder()
+                .operation(0)
+                .walletId(42)
+                .seqno(1)
+                .destination(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
+                .amount(Utils.toNano(0.123))
+                .build();
+
+        msg = contract.prepareExternalMsg(config);
+        tvmEmulator.sendExternalMessage(msg.getBody().toBase64());
+
+        assertEquals(2, tvmEmulator.runGetSeqNo().longValue());
     }
 
     @Test
@@ -319,7 +340,7 @@ public class TestTvmEmulator {
                 .storeUint(0, 32)  // seqno
                 .storeUint(42, 32) // wallet id
                 .storeBytes(keyPair.getPublicKey())
-                .storeUint(0, 1)   //plugins dict empty
+                .storeBit(false)   //plugins dict empty
                 .endCell();
 
         log.info("codeCellHex {}", codeCellHex);
@@ -364,7 +385,9 @@ public class TestTvmEmulator {
                 .build();
 
         assertTrue(tvmEmulator.setLibs(getLibs().toBase64()));
+
         Cell transferBody = createTransferBody(config);
+
         Cell signedBody = CellBuilder.beginCell()
                 .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash()))
                 .storeCell(transferBody)
@@ -385,6 +408,7 @@ public class TestTvmEmulator {
                 .build();
 
         assertTrue(tvmEmulator.setLibs(getLibs().toBase64()));
+
         transferBody = createTransferBody(config);
         signedBody = CellBuilder.beginCell()
                 .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash()))
@@ -525,14 +549,12 @@ public class TestTvmEmulator {
             Cell lib = Cell.fromBocBase64(cellLibBoc);
             log.info("cell lib {}", lib.toHex());
             x.elements.put(1L, lib);
-            x.elements.put(2L, lib); // 2nd because of the bug in hashmap/e
         }
 
-        Cell dictLibs = x.serialize(
+        return x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeRef((Cell) v).endCell()
         );
-        return dictLibs;
     }
 
     private Cell createTransferBody(WalletV4R2Config config) {
