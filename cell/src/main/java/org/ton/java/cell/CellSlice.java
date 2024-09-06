@@ -8,7 +8,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.nonNull;
 
@@ -521,7 +520,7 @@ public class CellSlice {
             return result;
         } catch (Throwable e) {
             bits = savedBits;
-            throw e;
+            return BigInteger.ZERO;
         }
     }
 

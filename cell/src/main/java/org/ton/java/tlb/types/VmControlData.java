@@ -11,7 +11,7 @@ import org.ton.java.cell.CellSlice;
 import java.math.BigInteger;
 
 /**
- * cp:(Maybe int16) = VmControlData;
+ * vm_ctl_data$_ nargs:(Maybe uint13) stack:(Maybe VmStack) save:VmSaveList cp:(Maybe int16) = VmControlData;
  */
 @Builder
 @Getter
@@ -35,7 +35,7 @@ public class VmControlData {
     public static VmControlData deserialize(CellSlice cs) {
         return VmControlData.builder()
                 .nargs(cs.loadUintMaybe(13))
-                .stack(VmStack.deserialize(cs)) // maybe
+                .stack(cs.loadBit() ? VmStack.deserialize(cs) : null)
                 .save(VmSaveList.deserialize(cs))
                 .cp(cs.loadIntMaybe(16))
                 .build();

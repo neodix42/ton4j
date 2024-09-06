@@ -28,6 +28,7 @@ public class TestWalletV3R1 extends CommonTest {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         WalletV3R1 contract = WalletV3R1.builder()
+                .tonlib(tonlib)
                 .keyPair(keyPair)
                 .walletId(42)
                 .build();
@@ -45,8 +46,8 @@ public class TestWalletV3R1 extends CommonTest {
                         .endCell());
         Address address = msg.getInit().getAddress();
 
-        String nonBounceableAddress = address.toString(true, true, false, true);
-        String bounceableAddress = address.toString(true, true, true, true);
+        String nonBounceableAddress = address.toNonBounceable();
+        String bounceableAddress = address.toBounceable();
 
         String my = "Creating new wallet in workchain " + contract.getWc() + "\n";
         my = my + "Loading private key from file new-wallet.pk" + "\n";
@@ -69,11 +70,12 @@ public class TestWalletV3R1 extends CommonTest {
         ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(msg.toCell().toBase64());
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        contract.waitForDeployment(20);
+        contract.waitForDeployment(40);
 
         // try to transfer coins from new wallet (back to faucet)
         WalletV3Config config = WalletV3Config.builder()
                 .seqno(contract.getSeqno())
+                .walletId(42)
                 .destination(Address.of(TestFaucet.BOUNCEABLE))
                 .amount(Utils.toNano(0.8))
                 .comment("testWalletV3R1")

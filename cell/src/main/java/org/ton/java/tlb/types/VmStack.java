@@ -27,9 +27,10 @@ public class VmStack {
     }
 
     public static VmStack deserialize(CellSlice cs) {
+        int depth = cs.loadUint(24).intValue();
         return VmStack.builder()
-                .depth(cs.loadUint(24).intValue())
-                .stack(VmStackList.deserialize(cs))
+                .depth(depth)
+                .stack(VmStackList.deserialize(cs, depth))
                 .build();
     }
 }

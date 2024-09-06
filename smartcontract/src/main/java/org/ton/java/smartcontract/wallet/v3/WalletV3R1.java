@@ -22,6 +22,7 @@ import static java.util.Objects.nonNull;
 @Builder
 @Getter
 public class WalletV3R1 implements Contract {
+
     TweetNaclFast.Signature.KeyPair keyPair;
     long initialSeqno;
     long walletId;
@@ -30,7 +31,7 @@ public class WalletV3R1 implements Contract {
     }
 
     public static WalletV3R1Builder builder() {
-        return new WalletV3R1.CustomWalletV3R1Builder();
+        return new CustomWalletV3R1Builder();
     }
 
     private static class CustomWalletV3R1Builder extends WalletV3R1Builder {
@@ -70,11 +71,11 @@ public class WalletV3R1 implements Contract {
 
     @Override
     public Cell createDataCell() {
-        CellBuilder cell = CellBuilder.beginCell();
-        cell.storeUint(initialSeqno, 32);
-        cell.storeUint(walletId, 32);
-        cell.storeBytes(keyPair.getPublicKey());
-        return cell.endCell();
+        return CellBuilder.beginCell()
+                .storeUint(initialSeqno, 32)
+                .storeUint(walletId, 32)
+                .storeBytes(keyPair.getPublicKey())
+                .endCell();
     }
 
 
@@ -146,7 +147,6 @@ public class WalletV3R1 implements Contract {
     }
 
     public ExtMessageInfo send(WalletV3Config config) {
-
         return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
     }
 

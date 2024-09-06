@@ -99,7 +99,7 @@ public class Address {
         isUserFriendly = address.isUserFriendly;
         isBounceable = address.isBounceable;
         isUrlSafe = address.isUrlSafe;
-
+        isWallet = address.isWallet;
     }
 
     public static Address of(String address) {
@@ -138,6 +138,7 @@ public class Address {
         addr.hashPart = hashCrc;
         addr.isTestOnly = isTestOnly;
         addr.isBounceable = isBounceable;
+        addr.isWallet = !isBounceable;
         return addr;
     }
 

@@ -329,4 +329,52 @@ public class TestCellSerialization {
         log.info("refsDescriptor {}", Utils.bytesToHex(c5.getRefsDescriptor(0)));
         log.info("bitsDescriptor {}", Utils.bytesToHex(c5.getBitsDescriptor()));
     }
+
+    @Test
+    public void testPrunedBranchCell() {
+        Cell c = CellBuilder.beginCell()
+                .storeUint(1, 8) // Pruned Cell Type
+                .storeUint(1, 8)
+                .storeUint(123456, 256)
+                .storeUint(1, 16)
+                .endCell();
+
+        log.info("c levelMask {}, maxLevel {}", c.resolveMask(), c.getMaxLevel());
+
+        Cell pb = new Cell(c.getBits(), c.getBits().getLength(), c.getRefs(), true, CellType.PRUNED_BRANCH);
+        pb.calculateHashes();
+        log.info("pb levelMask {}, maxLevel {}", pb.resolveMask(), pb.getMaxLevel());
+
+        Cell pbm = CellBuilder.beginCell().fromBoc(c.toHex()).cellType(CellType.PRUNED_BRANCH).endCell();
+        log.info("pbm levelMask {}, maxLevel {}", pbm.resolveMask(), pbm.getMaxLevel());
+
+        Cell cc = CellBuilder.beginCell().storeUint(1, 1).storeRef(pbm).endCell();
+
+        log.info("cc levelMask {}, maxLevel {}", cc.resolveMask(), cc.getMaxLevel());
+        log.info("cc {}", Cell.fromBoc(cc.toHex(true, true)).print());
+        log.info("cc levelMask {}, maxLevel {}", cc.resolveMask(), cc.getMaxLevel());
+    }
+
+    @Test
+    public void testMerkleProofCell() {
+        Cell mc = CellBuilder.beginCell().storeUint(1, 1).endCell();
+        log.info("child level {}", mc.resolveMask());
+
+        Cell c = CellBuilder.beginCell()
+                .storeUint(3, 8) // Merkle Proof Cell Type
+                .storeBytes(mc.getHash())
+                .storeUint(mc.getDepths().get(0), 16)
+                .storeRef(mc)
+                .endCell();
+        Cell pb = new Cell(c.getBits(), c.getBitLength(), c.getRefs(), true, CellType.MERKLE_PROOF);
+        pb.calculateHashes();
+        log.info("merkle proof levelMask {}, maxLevel {}", pb.resolveMask(), pb.getMaxLevel());
+
+        Cell pbm = CellBuilder.beginCell().fromBoc(c.toHex()).cellType(CellType.MERKLE_PROOF).endCell();
+        log.info("pbm levelMask {}, maxLevel {}", pbm.resolveMask(), pbm.getMaxLevel());
+
+        Cell cc = CellBuilder.beginCell().storeUint(1, 1).storeRef(pb).endCell();
+        log.info("cc {}", cc.toHex());
+        log.info("cc levelMask {}, maxLevel {}", cc.resolveMask(), cc.getMaxLevel());
+    }
 }

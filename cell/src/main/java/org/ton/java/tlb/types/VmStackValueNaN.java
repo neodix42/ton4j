@@ -16,7 +16,7 @@ import org.ton.java.cell.CellSlice;
 @Setter
 @ToString
 public class VmStackValueNaN implements VmStackValue {
-    int value;
+    int magic;
 
     @Override
     public Cell toCell() {
@@ -27,7 +27,7 @@ public class VmStackValueNaN implements VmStackValue {
 
     public static VmStackValueNaN deserialize(CellSlice cs) {
         return VmStackValueNaN.builder()
-                .value(cs.loadUint(16).intValue())
+                .magic(cs.loadUint(16).intValue())
                 .build();
     }
 }

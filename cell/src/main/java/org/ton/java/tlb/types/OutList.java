@@ -24,12 +24,11 @@ public class OutList {
 
     public Cell toCell() {
         Cell list = CellBuilder.beginCell().endCell();
-        int i = 0;
         for (OutAction action : actions) {
-            Cell outMsg = action.toCell();
+            Cell outAction = action.toCell();
             list = CellBuilder.beginCell()
                     .storeRef(list)
-                    .storeCell(outMsg)
+                    .storeCell(outAction)
                     .endCell();
         }
         return list;
@@ -39,8 +38,7 @@ public class OutList {
         List<OutAction> actions = new ArrayList<>();
         while (cs.getRefsCount() != 0) {
             Cell t = cs.loadRef();
-            OutAction action = OutAction.deserialize(CellSlice.beginParse(cs));
-            actions.add(action);
+            actions.add(OutAction.deserialize(CellSlice.beginParse(cs)));
             cs = CellSlice.beginParse(t);
         }
         return OutList.builder()
