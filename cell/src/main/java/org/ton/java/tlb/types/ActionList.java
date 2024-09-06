@@ -13,10 +13,6 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
-/**
- * action_list_extended$_ {m:#} {n:#}
- * action:ExtendedAction prev:^(ActionList n m) = ActionList n (m+1);
- */
 public class ActionList {
     List<ExtendedAction> actions;
 

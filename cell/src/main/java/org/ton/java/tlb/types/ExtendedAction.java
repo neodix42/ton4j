@@ -22,16 +22,13 @@ public class ExtendedAction {
     public Cell toCell() {
         CellBuilder cb = CellBuilder.beginCell();
 
-        // prefix code == magic
-        cb.storeUint(0x6578746e, 32);
-
         if (actionType == 2) {
             cb.storeUint(2, 8).storeAddress(dstAddress);
         }
-        if (actionType == 3) {
+        else if (actionType == 3) {
             cb.storeUint(3, 8).storeAddress(dstAddress);
         }
-        if (actionType == 4) {
+        else {
             cb.storeUint(4, 8).storeBit(isSigAllowed);
         }
 

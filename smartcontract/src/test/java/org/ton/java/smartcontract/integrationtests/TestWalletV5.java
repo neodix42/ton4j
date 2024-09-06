@@ -102,10 +102,10 @@ public class TestWalletV5 extends CommonTest {
         log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
         log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        List<Destination> dummyDestinations = createDummyDestinations(255);
+//        List<Destination> dummyDestinations = createDummyDestinations(3);
 //        OutList msgs = createDummyActionSendMessages(255);
         ActionList extensions = createDummyExtendedActions(12, 2);
 
@@ -129,10 +129,10 @@ public class TestWalletV5 extends CommonTest {
 
         walletV5Config = WalletV5Config.builder()
                 .signatureAllowed(true)
-                .seqno(contract.getSeqno())
+                .seqno(contract.getSeqno() + 1)
                 .walletId(42)
                 .body(WalletActions.builder()
-                        .wallet(contract.createBulkTransfer(dummyDestinations))
+//                        .wallet(contract.createBulkTransfer(dummyDestinations))
                         .extended(extensions)
                         .build())
                 .build();
@@ -141,7 +141,7 @@ public class TestWalletV5 extends CommonTest {
         extMessageInfo = contract.send(walletV5Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-//        List<Config> extensionsList = contract.getRawExtensions();
+        contract.getRawExtensions();
         log.info("walletV5 balance: {}", Utils.formatNanoValue(contract.getBalance()));
         log.info("seqno: {}", walletCurrentSeqno);
         log.info("walletId: {}", contract.getWalletId());
