@@ -9,16 +9,19 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@ToString
-@Builder
-@Getter
 /**
+ * <pre>
  * block_id_ext$_
  *   shard_id:ShardIdent
  *   seq_no:uint32
  *   root_hash:bits256
  *   file_hash:bits256 = BlockIdExt;
+ *   </pre>
  */
+@ToString
+@Builder
+@Getter
+
 public class BlockIdExtShardIdent {
     //    int workchain;
 //    long shard;

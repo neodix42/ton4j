@@ -14,17 +14,20 @@ import java.math.BigInteger;
 
 import static java.util.Objects.nonNull;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * _ split_depth:(Maybe (## 5))
  *   special:(Maybe TickTock)
  *   code:(Maybe ^Cell)
  *   data:(Maybe ^Cell)
  *   library:(Maybe ^Cell) = StateInit;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class StateInit {
     BigInteger depth;
     TickTock tickTock;

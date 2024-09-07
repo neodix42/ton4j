@@ -9,14 +9,16 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.utils.Utils;
 
-
+/**
+ * <pre>
+ * depth_balance$_ split_depth:(#<= 30) balance:CurrencyCollection = DepthBalanceInfo;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * depth_balance$_ split_depth:(#<= 30) balance:CurrencyCollection = DepthBalanceInfo;
- */
+
 public class DepthBalanceInfo {
     int depth;
     CurrencyCollection currencies;

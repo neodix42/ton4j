@@ -8,13 +8,16 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * action_set_code#ad4de08e new_code:^Cell = OutAction;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- action_set_code#ad4de08e new_code:^Cell = OutAction;
- */
+
 public class ActionSetCode implements OutAction {
     long magic;
     Cell newCode;

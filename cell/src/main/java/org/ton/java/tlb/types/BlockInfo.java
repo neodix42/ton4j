@@ -10,11 +10,8 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * block_info#9bc7a987
  *   version:uint32
  *   not_master:(## 1)
@@ -42,7 +39,13 @@ import java.math.BigInteger;
  *   prev_ref:^(BlkPrevInfo after_merge)
  *   prev_vert_ref:vert_seqno_incr?^(BlkPrevInfo 0)
  *   = BlockInfo;
+ *   <pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class BlockInfo {
     long magic;
     long version;

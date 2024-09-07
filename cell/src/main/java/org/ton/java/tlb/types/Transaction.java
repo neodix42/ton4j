@@ -11,11 +11,8 @@ import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * transaction$0111
  *   account_addr:bits256
  *   lt:uint64
@@ -32,7 +29,13 @@ import java.math.BigInteger;
  *   total_fees:CurrencyCollection
  *   state_update:^(HASH_UPDATE Account)
  *   description:^TransactionDescr = Transaction;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class Transaction {
     int magic;
     BigInteger accountAddr;

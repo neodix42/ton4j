@@ -10,11 +10,8 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * shard_state#9023afe2
  *   global_id:int32
  *   shard_id:ShardIdent
@@ -34,7 +31,13 @@ import java.math.BigInteger;
  *     master_ref:(Maybe BlkMasterInfo) ]
  *   custom:(Maybe ^McStateExtra)
  *   = ShardStateUnsplit;
+ * </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class ShardStateUnsplit {
     long magic;
     int globalId;

@@ -8,15 +8,18 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * </pre>
+ * fsm_none$0 = FutureSplitMerge;
+ * fsm_split$10 split_utime:uint32 interval:uint32 = FutureSplitMerge;
+ * fsm_merge$11 merge_utime:uint32 interval:uint32 = FutureSplitMerge;
+ * <pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- fsm_none$0 = FutureSplitMerge;
- fsm_split$10 split_utime:uint32 interval:uint32 = FutureSplitMerge;
- fsm_merge$11 merge_utime:uint32 interval:uint32 = FutureSplitMerge;
- */
+
 public class FutureSplitMerge {
     int flag;
     long splitUTime;

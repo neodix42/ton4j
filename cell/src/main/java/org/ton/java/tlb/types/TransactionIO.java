@@ -9,16 +9,19 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * ^[
  *   in_msg:(Maybe ^(Message Any))
  *   out_msgs:(HashmapE 15 ^(Message Any))
  *  ]
+ *  </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class TransactionIO {
     Message in;
     TonHashMapE out;

@@ -11,12 +11,15 @@ import java.math.BigInteger;
 
 import static java.util.Objects.nonNull;
 
+/**
+ * <pre>
+ * addr_extern$01 len:(## 9) external_address:(bits len) = MsgAddressExt;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
-/**
- * addr_extern$01 len:(## 9) external_address:(bits len) = MsgAddressExt;
- */
+
 public class MsgAddressExternal implements MsgAddressExt {
     int magic;
     int len;

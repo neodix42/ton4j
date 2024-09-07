@@ -8,14 +8,15 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * msg_export_imm$010 out_msg:^MsgEnvelope
+ * transaction:^Transaction reimport:^InMsg = OutMsg;
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- msg_export_imm$010 out_msg:^MsgEnvelope
- transaction:^Transaction reimport:^InMsg = OutMsg;
- */
+
 public class OutMsgImm implements OutMsg {
     int magic;
     MsgEnvelope msg;

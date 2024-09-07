@@ -10,17 +10,20 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * msg_discard_tr$111
+ * in_msg:^MsgEnvelope
+ * transaction_id:uint64
+ * fwd_fee:Grams
+ * proof_delivered:^Cell = InMsg;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- msg_discard_tr$111
- in_msg:^MsgEnvelope
- transaction_id:uint64
- fwd_fee:Grams
- proof_delivered:^Cell = InMsg;
- */
+
 public class InMsgDiscardTr implements InMsg {
     MsgEnvelope inMsg;
     BigInteger transactionId;

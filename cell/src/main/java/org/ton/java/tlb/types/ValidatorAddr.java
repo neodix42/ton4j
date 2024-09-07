@@ -10,13 +10,14 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * validator_addr#73 public_key:SigPubKey weight:uint64 adnl_addr:bits256 = ValidatorDescr;
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * validator_addr#73 public_key:SigPubKey weight:uint64 adnl_addr:bits256 = ValidatorDescr;
- */
+
 public class ValidatorAddr implements ValidatorDescr {
     int magic;
     //    SigPubKeyED25519 publicKey;

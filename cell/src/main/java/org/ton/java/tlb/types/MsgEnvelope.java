@@ -10,11 +10,8 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * interm_addr_regular$0 use_dest_bits:(#<= 96) = IntermediateAddress;
  * interm_addr_simple$10 workchain_id:int8 addr_pfx:uint64 = IntermediateAddress;
  * interm_addr_ext$11 workchain_id:int32 addr_pfx:uint64 = IntermediateAddress;
@@ -24,7 +21,13 @@ import java.math.BigInteger;
  *   next_addr:IntermediateAddress
  *   fwd_fee_remaining:Grams
  *   msg:^(Message Any) = MsgEnvelope;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class MsgEnvelope {
     int magic;
     IntermediateAddress currAddr;

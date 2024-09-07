@@ -10,16 +10,19 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * storage_info$_
+ * used:StorageUsed
+ * last_paid:uint32
+ * due_payment:(Maybe Grams) = StorageInfo;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * storage_info$_
- *   used:StorageUsed
- *   last_paid:uint32
- *   due_payment:(Maybe Grams) = StorageInfo;
- */
+
 public class StorageInfo {
     StorageUsed storageUsed;
     long lastPaid;

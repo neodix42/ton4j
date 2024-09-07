@@ -5,6 +5,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 
 /**
+ * <pre>
  * int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
  * src:MsgAddress
  * dest:MsgAddressInt
@@ -13,8 +14,9 @@ import org.ton.java.cell.CellSlice;
  * fwd_fee:Grams
  * created_lt:uint64
  * created_at:uint32 = CommonMsgInfoRelaxed;
- * <p>
+ *
  * ext_out_msg_info$11 src:MsgAddress dest:MsgAddressExt created_lt:uint64 created_at:uint32 = CommonMsgInfoRelaxed;
+ * </pre>
  */
 
 

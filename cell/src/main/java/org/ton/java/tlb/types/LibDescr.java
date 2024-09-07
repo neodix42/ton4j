@@ -9,14 +9,17 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMap;
 
+/**
+ * <pre>
+ * shared_lib_descr$00 lib:^Cell publishers:(Hashmap 256 True)
+ * = LibDescr;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- shared_lib_descr$00 lib:^Cell publishers:(Hashmap 256 True)
- = LibDescr;
- */
+
 public class LibDescr {
     long magic;
     Cell lib;

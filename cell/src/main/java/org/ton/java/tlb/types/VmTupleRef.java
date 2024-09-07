@@ -12,9 +12,11 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * <pre>
  * vm_tupref_nil$_ = VmTupleRef 0;
  * vm_tupref_single$_ entry:^VmStackValue = VmTupleRef 1;
  * vm_tupref_any$_ {n:#} ref:^(VmTuple (n + 2)) = VmTupleRef (n + 2);
+ * </pre>
  */
 @Builder
 @Getter

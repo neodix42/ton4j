@@ -8,16 +8,19 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * anycast_info$_
  *  depth:(#<= 30) { depth >= 1 }
  *  rewrite_pfx:(bits depth)
  *  = Anycast;
+ *  </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class Anycast {
     int depth; // 5 bits
     byte rewritePfx;

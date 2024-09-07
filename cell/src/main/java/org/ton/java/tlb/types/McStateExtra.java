@@ -7,15 +7,11 @@ import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonHashMapE;
 
 import static java.util.Objects.isNull;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * masterchain_state_extra#cc26
  *   shard_hashes:ShardHashes
  *   config:ConfigParams
@@ -27,7 +23,13 @@ import static java.util.Objects.isNull;
  *      block_create_stats:(flags . 0)?BlockCreateStats ]
  *   global_balance:CurrencyCollection
  * = McStateExtra;
+ * </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class McStateExtra {
     long magic;
     ShardHashes shardHashes;

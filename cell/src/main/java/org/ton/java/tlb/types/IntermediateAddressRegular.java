@@ -8,7 +8,9 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 
 /**
+ * <pre>
  * interm_addr_regular$0 use_dest_bits:(#<= 96) = IntermediateAddress;
+ * </pre>
  */
 @Builder
 @Getter

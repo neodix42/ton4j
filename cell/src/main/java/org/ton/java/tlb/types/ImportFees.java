@@ -10,15 +10,18 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * import_fees$_
+ * fees_collected:Grams
+ * value_imported:CurrencyCollection = ImportFees;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * import_fees$_
- * fees_collected:Grams
- * value_imported:CurrencyCollection = ImportFees;
- */
+
 
 public class ImportFees {
     BigInteger feesCollected;

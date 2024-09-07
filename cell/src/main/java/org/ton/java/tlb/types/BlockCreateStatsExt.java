@@ -10,7 +10,9 @@ import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapAugE;
 
 /**
+ * <pre>
  * block_create_stats_ext#34 counters:(HashmapAugE 256 CreatorStats uint32) = BlockCreateStats;
+ * </pre>
  */
 
 @Builder

@@ -8,14 +8,17 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * msg_export_new$001 out_msg:^MsgEnvelope
+ * transaction:^Transaction = OutMsg;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- msg_export_new$001 out_msg:^MsgEnvelope
- transaction:^Transaction = OutMsg;
- */
+
 public class OutMsgNew implements OutMsg {
     int magic;
     MsgEnvelope outMsg;

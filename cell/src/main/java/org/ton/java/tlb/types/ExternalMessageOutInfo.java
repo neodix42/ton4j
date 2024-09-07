@@ -12,18 +12,21 @@ import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
 
+/**
+ * <pre>
+ * ext_out_msg_info$11
+ * src:MsgAddressInt
+ * dest:MsgAddressExt
+ * created_lt:uint64 - default zero
+ * created_at:uint32 - default zero
+ * = CommonMsgInfo;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- ext_out_msg_info$11
- src:MsgAddressInt
- dest:MsgAddressExt
- created_lt:uint64 - default zero
- created_at:uint32 - default zero
- = CommonMsgInfo;
- */
+
 public class ExternalMessageOutInfo implements CommonMsgInfo {
     long magic;
     MsgAddressInt srcAddr;

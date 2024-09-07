@@ -11,14 +11,17 @@ import org.ton.java.cell.CellSlice;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * <pre>
+ * out_list_empty$_ = OutList 0;
+ * out_list$_ {n:#} prev:^(OutList n) action:OutAction = OutList (n + 1);
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * out_list_empty$_ = OutList 0;
- * out_list$_ {n:#} prev:^(OutList n) action:OutAction = OutList (n + 1);
- */
+
 public class OutList {
     List<OutAction> actions;
 

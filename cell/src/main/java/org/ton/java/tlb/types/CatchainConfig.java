@@ -6,7 +6,6 @@ import org.ton.java.cell.CellSlice;
 
 public interface CatchainConfig {
 
-
     Cell toCell();
 
     static CatchainConfig deserialize(CellSlice cs) {

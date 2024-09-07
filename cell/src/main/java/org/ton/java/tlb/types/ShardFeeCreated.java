@@ -8,13 +8,16 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * _ fees:CurrencyCollection create:CurrencyCollection = ShardFeeCreated;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- *_ fees:CurrencyCollection create:CurrencyCollection = ShardFeeCreated;
- */
+
 public class ShardFeeCreated {
 
     CurrencyCollection fees;

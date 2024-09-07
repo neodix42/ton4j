@@ -12,19 +12,20 @@ import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
 
+/**
+ * ext_in_msg_info$10
+ * src:MsgAddressExt
+ * dest:MsgAddressInt
+ * import_fee:Grams - default zero
+ * = CommonMsgInfo;
+ * <p>
+ * import_fee - default BigInteger.ZERO
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- ext_in_msg_info$10
- src:MsgAddressExt
- dest:MsgAddressInt
- import_fee:Grams - default zero
- = CommonMsgInfo;
 
- import_fee - default BigInteger.ZERO
- */
 public class ExternalMessageInfo implements CommonMsgInfo {
     long magic;
     MsgAddressExt srcAddr;

@@ -8,16 +8,19 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * block_signatures#11
+ * validator_info:ValidatorBaseInfo
+ * pure_signatures:BlockSignaturesPure
+ * = BlockSignatures;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- block_signatures#11
- validator_info:ValidatorBaseInfo
- pure_signatures:BlockSignaturesPure
- = BlockSignatures;
- */
+
 public class BlockSignatures {
     int magic;
     ValidatorBaseInfo validatorBaseInfo;

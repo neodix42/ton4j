@@ -13,8 +13,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * <pre>
  * vm_tuple_nil$_ = VmTuple 0;
  * vm_tuple_tcons$_ {n:#} head:(VmTupleRef n) tail:^VmStackValue = VmTuple (n + 1);
+ * </pre>
  */
 @Builder
 @Getter

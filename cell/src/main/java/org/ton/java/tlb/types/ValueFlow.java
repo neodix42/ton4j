@@ -8,11 +8,8 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * value_flow#b8e48dfb
  *  ^[
  *   from_prev_blk:CurrencyCollection
@@ -28,7 +25,13 @@ import org.ton.java.cell.CellSlice;
  *   created:CurrencyCollection
  *   minted:CurrencyCollection
  *   ] = ValueFlow;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class ValueFlow {
     long magic;
     CurrencyCollection fromPrevBlk;

@@ -8,13 +8,14 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * action_send_msg#0ec3c86d mode:(## 8) out_msg:^(MessageRelaxed Any) = OutAction;
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- action_send_msg#0ec3c86d mode:(## 8) out_msg:^(MessageRelaxed Any) = OutAction;
- */
+
 public class ActionSendMsg implements OutAction {
     long magic;
     int mode;

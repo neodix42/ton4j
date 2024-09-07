@@ -10,11 +10,8 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  *   gas_used:(VarUInteger 7)
  *   gas_limit:(VarUInteger 7)
  *   gas_credit:(Maybe (VarUInteger 3))
@@ -24,7 +21,13 @@ import java.math.BigInteger;
  *   vm_steps:uint32
  *   vm_init_state_hash:bits256
  *   vm_final_state_hash:bits256
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class ComputePhaseVMDetails {
     BigInteger gasUsed;
     BigInteger gasLimit;

@@ -4,13 +4,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.ton.java.cell.*;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonHashMapAugE;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * masterchain_block_extra#cca5
  *   key_block:(## 1)
  *   shard_hashes:ShardHashes // _ (HashmapE 32 ^(BinTree ShardDescr)) = ShardHashes;
@@ -22,7 +22,13 @@ import org.ton.java.cell.*;
  *    ]
  *   config:key_block?ConfigParams
  * = McBlockExtra;
+ * </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class McBlockExtra {
     long magic;
     boolean keyBlock;

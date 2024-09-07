@@ -10,16 +10,19 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * tr_phase_storage$_ storage_fees_collected:Grams
  *   storage_fees_due:(Maybe Grams)
  *   status_change:AccStatusChange
  *   = TrStoragePhase;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class StoragePhase {
     BigInteger storageFeesCollected;
     BigInteger storageFeesDue;

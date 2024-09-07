@@ -11,11 +11,8 @@ import org.ton.java.cell.TonHashMapAugE;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * ...
  *   ^[ flags:(## 16) { flags <= 1 }
  *      validator_info:ValidatorInfo
@@ -25,7 +22,13 @@ import java.math.BigInteger;
  *      block_create_stats:(flags . 0)?BlockCreateStats ]
  *   ....
  * = McStateExtra;
+ * </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class McStateExtraInfo {
     BigInteger flags;
     ValidatorInfo validatorInfo;

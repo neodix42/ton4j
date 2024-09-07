@@ -11,11 +11,8 @@ import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * validators_ext#12
  *   utime_since:uint32
  *   utime_until:uint32
@@ -23,7 +20,13 @@ import java.math.BigInteger;
  *   main:(## 16) { main <= total } { main >= 1 }
  *   total_weight:uint64
  *   list:(HashmapE 16 ValidatorDescr) = ValidatorSet;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class ValidatorsExt implements ValidatorSet {
     long magic;
     long uTimeSince;

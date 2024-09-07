@@ -10,17 +10,20 @@ import org.ton.java.cell.CellSlice;
 
 import static java.util.Objects.isNull;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * message$_ {X:Type}
  *   info:CommonMsgInfo
  *   init:(Maybe (Either StateInit ^StateInit)) - default storeBit(false)
  *   body:(Either X ^X)  - default storeBit(false)
  *   = Message X;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class Message {
     CommonMsgInfo info;
     StateInit init;

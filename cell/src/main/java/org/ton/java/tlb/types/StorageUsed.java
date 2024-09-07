@@ -11,16 +11,19 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * storage_used$_
  *   cells:(VarUInteger 7)
  *   bits:(VarUInteger 7)
  *   public_cells:(VarUInteger 7) = StorageUsed;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class StorageUsed {
     BigInteger bitsUsed;
     BigInteger cellsUsed;

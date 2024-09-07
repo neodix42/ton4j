@@ -8,13 +8,16 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * _ key:Bool blk_ref:ExtBlkRef = KeyExtBlkRef;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * _ key:Bool blk_ref:ExtBlkRef = KeyExtBlkRef;
- */
+
 public class KeyExtBlkRef {
     boolean key;
     ExtBlkRef blkRef;

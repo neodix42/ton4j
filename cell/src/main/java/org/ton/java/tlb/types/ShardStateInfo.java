@@ -11,18 +11,21 @@ import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  *   ^[ overload_history:uint64
  *     underload_history:uint64
  *     total_balance:CurrencyCollection
  *     total_validator_fees:CurrencyCollection
  *     libraries:(HashmapE 256 LibDescr)
  *     master_ref:(Maybe BlkMasterInfo) ]
+ * </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class ShardStateInfo {
 
     BigInteger overloadHistory;

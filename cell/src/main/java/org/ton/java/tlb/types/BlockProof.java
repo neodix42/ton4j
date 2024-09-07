@@ -8,16 +8,19 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * block_proof#c3
  * proof_for:BlockIdExt
  * root:^Cell
  * signatures:(Maybe ^BlockSignatures) = BlockProof;
+ * </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class BlockProof {
     int magic;
     BlockIdExtShardIdent proofFor;

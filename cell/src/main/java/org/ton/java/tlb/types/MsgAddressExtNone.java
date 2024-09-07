@@ -7,12 +7,15 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * addr_none$00 = MsgAddressExt;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
-/**
- * addr_none$00 = MsgAddressExt;
- */
+
 public class MsgAddressExtNone implements MsgAddressExt {
     int magic;
 

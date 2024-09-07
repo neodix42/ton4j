@@ -10,13 +10,17 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * ed25519_signature#5 R:bits256 s:bits256 = CryptoSignatureSimple;  // 516 bits
+ * _ CryptoSignatureSimple = CryptoSignature;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- ed25519_signature#5 R:bits256 s:bits256 = CryptoSignatureSimple;  // 516 bits
- _ CryptoSignatureSimple = CryptoSignature; */
+
 public class CryptoSignature {
     int magic;
     BigInteger r;

@@ -10,16 +10,19 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * tr_phase_bounce_ok$1
  *   msg_size:StorageUsedShort
  *   msg_fees:Grams
  *   fwd_fees:Grams = TrBouncePhase;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class BouncePhaseOk implements BouncePhase {
     int magic;
     StorageUsedShort msgSize;
