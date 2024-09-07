@@ -162,7 +162,7 @@ public class TestTvmEmulator {
     @Test
     public void testTvmEmulatorRunGetMethodGetSeqNo() {
         String result = tvmEmulator.runGetMethod(
-                85143 // seqno
+                Utils.calculateMethodId("seqno")
         );
         log.info("result runGetMethod: {}", result);
 
@@ -189,7 +189,7 @@ public class TestTvmEmulator {
     @Test
     public void testTvmEmulatorRunGetMethodGetPubKey() {
         String result = tvmEmulator.runGetMethod(
-                78748, // get_public_key
+                Utils.calculateMethodId("get_public_key"),
                 VmStack.builder()
                         .depth(0)
                         .stack(VmStackList.builder()
@@ -233,7 +233,7 @@ public class TestTvmEmulator {
                 .toCell().toBase64();
 
         String result = tvmEmulator.runGetMethod(
-                107653, // CRC-16/XMODEM of "get_plugin_list"
+                Utils.calculateMethodId("get_plugin_list"),
                 stackSerialized);
         log.info("result runGetMethod: {}", result);
 
@@ -260,7 +260,7 @@ public class TestTvmEmulator {
                 .toCell().toBase64();
 
         String result = tvmEmulator.runGetMethod(
-                76407, // CRC-16/XMODEM of is_plugin_installed(int wc, int addr_hash)
+                Utils.calculateMethodId("is_plugin_installed"),
                 stackSerialized);
         log.info("result runGetMethod: {}", result);
 
@@ -454,7 +454,7 @@ public class TestTvmEmulator {
 
         // is_plugin_installed
         String resultStr = tvmEmulator.runGetMethod(
-                76407, // CRC-16/XMODEM of is_plugin_installed(int wc, int addr_hash)
+                Utils.calculateMethodId("is_plugin_installed"),
                 stackSerialized);
         log.info("result runGetMethod (is_plugin_installed): {}", resultStr); // should be no
         GetMethodResult methodResult = gson.fromJson(resultStr, GetMethodResult.class);
@@ -480,7 +480,7 @@ public class TestTvmEmulator {
                 .toCell().toBase64();
 
         String resultStr2 = tvmEmulator.runGetMethod(
-                107653, // CRC-16/XMODEM of "get_plugin_list"
+                Utils.calculateMethodId("get_plugin_list"),
                 stackSerialized);
         log.info("result runGetMethod: {}", resultStr2);
 
@@ -568,7 +568,7 @@ public class TestTvmEmulator {
                 .toCell().toBase64();
 
         String resultStr3 = tvmEmulator.runGetMethod(
-                107653, // CRC-16/XMODEM of "get_plugin_list"
+                Utils.calculateMethodId("get_plugin_list"),
                 stackSerialized);
         log.info("result runGetMethod: {}", resultStr3);
 
@@ -601,7 +601,7 @@ public class TestTvmEmulator {
 
         log.info("is installed ????");
         resultStr = tvmEmulator.runGetMethod(
-                76407, // CRC-16/XMODEM of is_plugin_installed(int wc, int addr_hash)
+                Utils.calculateMethodId("is_plugin_installed"),
                 stackSerialized);
         log.info("result runGetMethod (is_plugin_installed) 2: {}", resultStr);
         methodResult = gson.fromJson(resultStr, GetMethodResult.class);
