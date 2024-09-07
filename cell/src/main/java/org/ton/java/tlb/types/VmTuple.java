@@ -9,17 +9,20 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
+ * <pre>
  * vm_tuple_nil$_ = VmTuple 0;
  * vm_tuple_tcons$_ {n:#} head:(VmTupleRef n) tail:^VmStackValue = VmTuple (n + 1);
+ * </pre>
  */
 @Builder
 @Getter
 @Setter
 @ToString
-public class VmTuple {
+public class VmTuple implements VmStackValue {
     List<VmStackValue> values;
 
     public Cell toCell() {
@@ -31,33 +34,48 @@ public class VmTuple {
         VmStackValue v = pValues.get(pValues.size() - 1);
         pValues.remove(pValues.size() - 1);
         return CellBuilder.beginCell()
-                .storeCell(VmTupleRef.toCell(pValues))
+                .storeCell(VmTupleRef.toCellS(pValues))
                 .storeRef(v.toCell())
                 .endCell();
     }
 
-    public static Cell toCell(List<VmStackValue> pValues) {
-        List<VmStackValue> lValues = new ArrayList<>(pValues);
+    public static Cell toCell(List<VmTuple> pValues) {
+        List<VmTuple> lValues = new ArrayList<>(pValues);
 
         if (lValues.isEmpty()) {
             return CellBuilder.beginCell().endCell();
         }
 
-        VmStackValue v = lValues.get(lValues.size() - 1);
+        VmTuple v = lValues.get(lValues.size() - 1);
         lValues.remove(lValues.size() - 1);
         return CellBuilder.beginCell()
                 .storeCell(VmTupleRef.toCell(lValues))
+                .storeRef(((VmStackValue) v).toCell())
+                .endCell();
+    }
+
+    public static Cell toCellS(List<VmStackValue> pValues) {
+        List<VmStackValue> lValues = new ArrayList<>(pValues);
+
+        if (lValues.isEmpty()) {
+            return CellBuilder.beginCell()
+                    .endCell();
+        }
+
+        VmStackValue v = lValues.get(lValues.size() - 1);
+        lValues.remove(lValues.size() - 1);
+        return CellBuilder.beginCell()
+                .storeCell(VmTupleRef.toCellS(lValues))
                 .storeRef(v.toCell())
                 .endCell();
     }
 
     public static VmTuple deserialize(CellSlice cs, int len) {
         if (len == 0) {
-            return VmTuple.builder().build();
+            return VmTuple.builder().values(Collections.emptyList()).build();
         }
 
-        ArrayList<VmStackValue> ar = new ArrayList<>();
-        ar.add((VmStackValue) VmTupleRef.deserialize(cs, len - 1));
+        ArrayList<VmStackValue> ar = new ArrayList<>(VmTupleRef.deserialize(cs, len - 1).getValues());
         ar.add(cs.getRefsCount() > 0 ? VmStackValue.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
 
         return VmTuple.builder()

@@ -5,8 +5,10 @@ import org.ton.java.cell.CellSlice;
 
 
 /**
+ * <pre>
  * addr_none$00 = MsgAddressExt;
  * addr_extern$01 len:(## 9) external_address:(bits len) = MsgAddressExt;
+ * </pre>
  */
 public interface MsgAddressExt extends MsgAddress {
 

@@ -8,15 +8,18 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * trans_storage$0001
+ *    storage_ph:TrStoragePhase
+ *   = TransactionDescr;
+ *   </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * trans_storage$0001
- *    storage_ph:TrStoragePhase
- *   = TransactionDescr;
- */
+
 public class TransactionDescriptionStorage {
     int magic;
     StoragePhase storagePhase;

@@ -10,13 +10,16 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * capabilities#c4 version:uint32 capabilities:uint64 = GlobalVersion;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * capabilities#c4 version:uint32 capabilities:uint64 = GlobalVersion;
- */
+
 public class GlobalVersion {
     long magic;
     long version;

@@ -8,13 +8,16 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * tr_phase_bounce_negfunds$00 = TrBouncePhase;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * tr_phase_bounce_negfunds$00 = TrBouncePhase;
- */
+
 public class BouncePhaseNegFounds implements BouncePhase {
     int magic;
 

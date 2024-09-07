@@ -8,11 +8,8 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * trans_merge_install$0111
  *   split_info:SplitMergeInfo
  *   prepare_transaction:^Transaction
@@ -22,7 +19,13 @@ import org.ton.java.cell.CellSlice;
  *   action:(Maybe ^TrActionPhase)
  *   aborted:Bool destroyed:Bool
  *   = TransactionDescr;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class TransactionDescriptionMergeInstall {
     int magic;
     SplitMergeInfo splitInfo;

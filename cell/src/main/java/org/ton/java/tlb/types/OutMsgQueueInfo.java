@@ -6,15 +6,18 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.*;
 
+/**
+ * <pre>
+ * _ (HashmapAugE 352 EnqueuedMsg uint64) = OutMsgQueue;
+ * _ (HashmapE 96 ProcessedUpto) = ProcessedInfo; // key is [ shard:uint64 mc_seqno:uint32 ]
+ * _ (HashmapE 320 IhrPendingSince) = IhrPendingInfo;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- // _ (HashmapAugE 352 EnqueuedMsg uint64) = OutMsgQueue;
- // _ (HashmapE 96 ProcessedUpto) = ProcessedInfo; // key is [ shard:uint64 mc_seqno:uint32 ]
- // _ (HashmapE 320 IhrPendingSince) = IhrPendingInfo;
- */
+
 
 public class OutMsgQueueInfo {
     TonHashMapAugE outMsgQueue;

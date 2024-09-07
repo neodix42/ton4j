@@ -10,13 +10,14 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * _ key:Bool max_end_lt:uint64 = KeyMaxLt;
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * _ key:Bool max_end_lt:uint64 = KeyMaxLt;
- */
+
 public class KeyMaxLt {
     BigInteger endLt;
     int seqno;

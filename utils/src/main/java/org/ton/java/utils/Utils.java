@@ -180,6 +180,12 @@ public class Utils {
         return crc;
     }
 
+    public static int calculateMethodId(String methodName) {
+        int l = Utils.getCRC16ChecksumAsInt(methodName.getBytes());
+        l = (l & 0xffff) | 0x10000;
+        return l;
+    }
+
     public static String getCRC16ChecksumAsHex(byte[] bytes) {
         return bytesToHex(getCRC16ChecksumAsBytes(bytes));
     }
@@ -821,7 +827,7 @@ public class Utils {
                 ((ip >> 16) & 0xFF) + "." +
                 ((ip >> 8) & 0xFF) + "." +
                 (ip & 0xFF);
-        
+
     }
 
     public static int[] reverseIntArray(int[] in) {
@@ -830,7 +836,8 @@ public class Utils {
             int tmp = in[i];
             in[i] = in[j];
             in[j] = tmp;
-            i++; j--;
+            i++;
+            j--;
         }
         return in;
     }
@@ -841,7 +848,8 @@ public class Utils {
             byte tmp = in[i];
             in[i] = in[j];
             in[j] = tmp;
-            i++; j--;
+            i++;
+            j--;
         }
         return in;
     }

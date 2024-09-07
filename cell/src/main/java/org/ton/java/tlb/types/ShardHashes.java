@@ -6,13 +6,16 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.*;
 
+/**
+ * <pre>
+ * _ (HashmapE 32 ^(BinTree ShardDescr)) = ShardHashes;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * _ (HashmapE 32 ^(BinTree ShardDescr)) = ShardHashes;
- */
+
 public class ShardHashes {
 
     TonHashMapE shardHashes;

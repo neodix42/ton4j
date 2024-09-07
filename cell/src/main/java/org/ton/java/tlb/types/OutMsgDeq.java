@@ -10,14 +10,17 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * msg_export_deq$1100 out_msg:^MsgEnvelope
+ * import_block_lt:uint63 = OutMsg;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- msg_export_deq$1100 out_msg:^MsgEnvelope
- import_block_lt:uint63 = OutMsg;
- */
+
 public class OutMsgDeq implements OutMsg {
     int magic;
     MsgEnvelope outMsg;

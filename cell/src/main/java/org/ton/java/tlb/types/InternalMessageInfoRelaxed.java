@@ -13,24 +13,27 @@ import java.math.BigInteger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+/**
+ * <pre>
+ * int_msg_info$0
+ * ihr_disabled:Bool - default true
+ * bounce:Bool - default true
+ * bounced:Bool - default false
+ * src:MsgAddress
+ * dest:MsgAddressInt
+ * value:CurrencyCollection - default zero
+ * ihr_fee:Grams  - default zero
+ * fwd_fee:Grams - default zero
+ * created_lt:uint64 - default zero
+ * created_at:uint32 - default zero
+ * = CommonMsgInfoRelaxed;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- int_msg_info$0
- ihr_disabled:Bool - default true
- bounce:Bool - default true
- bounced:Bool - default false
- src:MsgAddress
- dest:MsgAddressInt
- value:CurrencyCollection - default zero
- ihr_fee:Grams  - default zero
- fwd_fee:Grams - default zero
- created_lt:uint64 - default zero
- created_at:uint32 - default zero
- = CommonMsgInfoRelaxed;
- */
+
 public class InternalMessageInfoRelaxed implements CommonMsgInfoRelaxed {
     long magic; // must be 0
     Boolean iHRDisabled;

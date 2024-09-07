@@ -10,17 +10,20 @@ import org.ton.java.cell.CellSlice;
 
 import static java.util.Objects.isNull;
 
+/**
+ * <pre>
+ * message$_ {X:Type}
+ * info:CommonMsgInfoRelaxed
+ * init:(Maybe (Either StateInit ^StateInit)) - default storeBit(false)
+ * body:(Either X ^X) - default storeBit(false)
+ * = MessageRelaxed X;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- message$_ {X:Type}
- info:CommonMsgInfoRelaxed
- init:(Maybe (Either StateInit ^StateInit)) - default storeBit(false)
- body:(Either X ^X) - default storeBit(false)
- = MessageRelaxed X;
- */
+
 public class MessageRelaxed {
     CommonMsgInfoRelaxed info;
     StateInit init;

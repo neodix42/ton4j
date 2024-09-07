@@ -12,16 +12,18 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * <pre>
  * vm_tupref_nil$_ = VmTupleRef 0;
  * vm_tupref_single$_ entry:^VmStackValue = VmTupleRef 1;
  * vm_tupref_any$_ {n:#} ref:^(VmTuple (n + 2)) = VmTupleRef (n + 2);
+ * </pre>
  */
 @Builder
 @Getter
 @Setter
 @ToString
 public class VmTupleRef implements VmStackValue {
-    List<VmStackValue> values;
+    List<VmTuple> values;
 
 
     @Override
@@ -35,7 +37,7 @@ public class VmTupleRef implements VmStackValue {
         }
         if (len == 1) {
             return CellBuilder.beginCell()
-                    .storeRef(values.get(0).toCell())
+                    .storeRef(((VmStackValue) values.get(0)).toCell())
                     .endCell();
         }
         return CellBuilder.beginCell()
@@ -43,7 +45,7 @@ public class VmTupleRef implements VmStackValue {
                 .endCell();
     }
 
-    public static Cell toCell(List<VmStackValue> pValues) {
+    public static Cell toCell(List<VmTuple> pValues) {
         if (pValues.isEmpty()) {
             return CellBuilder.beginCell().endCell();
         }
@@ -57,16 +59,31 @@ public class VmTupleRef implements VmStackValue {
                 .endCell();
     }
 
-    public static VmTuple deserialize(CellSlice cs, int len) { // more tests are required
-        if (cs.getRefsCount() == 0) {
-            return VmTuple.builder().build();
-        } else if (cs.getRefsCount() == 1) {
+    public static Cell toCellS(List<VmStackValue> pValues) {
+        if (pValues.isEmpty()) {
+            return CellBuilder.beginCell().endCell();
+        }
+        if (pValues.size() == 1) {
+            return CellBuilder.beginCell()
+                    .storeRef(pValues.get(0).toCell())
+                    .endCell();
+        }
+        return CellBuilder.beginCell()
+                .storeRef(VmTuple.toCellS(pValues))
+                .endCell();
+    }
+
+    public static VmTuple deserialize(CellSlice cs, int len) {
+        if (len == 0) {
+            return VmTuple.builder()
+                    .values(Collections.emptyList())
+                    .build();
+        } else if (len == 1) {
             return VmTuple.builder()
                     .values(Collections.singletonList(VmStackValue.deserialize(CellSlice.beginParse(cs.loadRef()))))
                     .build();
         }
 
         return VmTuple.deserialize(CellSlice.beginParse(cs.loadRef()), len);
-
     }
 }

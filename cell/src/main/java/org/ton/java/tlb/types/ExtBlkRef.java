@@ -10,17 +10,20 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * ext_blk_ref$_
  * end_lt:uint64
  * seq_no:uint32
  * root_hash:bits256
  * file_hash:bits256 = ExtBlkRef;
+ * </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class ExtBlkRef {
     BigInteger endLt;
     int seqno;

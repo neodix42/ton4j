@@ -10,11 +10,8 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * tr_phase_action$_
  *   success:Bool
  *   valid:Bool
@@ -31,7 +28,13 @@ import java.math.BigInteger;
  *   action_list_hash:bits256
  *   tot_msg_size:StorageUsedShort
  *   = TrActionPhase;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class ActionPhase {
     boolean success;
     boolean valid;

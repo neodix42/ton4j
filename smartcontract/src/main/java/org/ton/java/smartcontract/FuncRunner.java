@@ -35,7 +35,7 @@ public class FuncRunner {
             if (StringUtils.isEmpty(super.funcExecutablePath)) {
                 log.info("checking if func is installed...");
 
-                String errorMsg = "Make sure you have fift and func installed. See https://github.com/ton-blockchain/packages for instructions.";
+                String errorMsg = "Make sure you have func installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.funcExecutablePath().";
                 try {
                     ProcessBuilder pb = new ProcessBuilder("func", "-h").redirectErrorStream(true);
                     Process p = pb.start();

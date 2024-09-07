@@ -18,22 +18,17 @@ import static org.ton.java.cell.CellType.UNKNOWN;
 
 /**
  * Implements Cell class, where BitString having elements of Boolean type.
- * Later will be supporting BitString where each element will be stored as one bit in memory.
  */
 public class Cell {
 
     BitString bits;
     List<Cell> refs = new ArrayList<>();
-
     private CellType type;
     private int[] refsIndexes;
-
     String hash;
-
     public int index;
     private boolean exotic;
     public LevelMask levelMask;
-
     private List<String> hashes = new ArrayList<>();
     private List<Integer> depths = new ArrayList<>();
 
@@ -163,9 +158,8 @@ public class Cell {
             }
             return new LevelMask(mask);
         } else if (this.type == CellType.PRUNED_BRANCH) {
-            // prunned branch doesn't have refs
             if (!refs.isEmpty()) {
-                throw new Error("Pruned branch must not has refs");
+                throw new Error("Pruned branch must not have refs");
             }
             BitString bs = bits.clone();
             bs.readUint8();
@@ -201,7 +195,7 @@ public class Cell {
             if (!levelMask.isSignificant(li)) {
                 continue;
             }
-            if (li < hashIndexOffset) {
+            if (hashIndex < hashIndexOffset) {
                 hashIndex++;
                 continue;
             }
@@ -210,13 +204,13 @@ public class Cell {
             byte[] hash = new byte[0];
             hash = Utils.concatBytes(hash, dsc);
             if (hashIndex == hashIndexOffset) {
-                if ((li != 0) && (type == CellType.PRUNED_BRANCH)) {
-                    throw new Error("neither pruned nor 0");
+                if (!((li == 0) || (type == CellType.PRUNED_BRANCH))) {
+                    throw new Error("invalid cell");
                 }
                 byte[] data = getDataBytes();
                 hash = Utils.concatBytes(hash, data);
             } else {
-                if ((li != 0) && (type == CellType.PRUNED_BRANCH)) {
+                if (!((li != 0) && (type != CellType.PRUNED_BRANCH))) {
                     throw new Error("neither pruned nor 0");
                 }
                 off = hashIndex - hashIndexOffset - 1;
@@ -255,6 +249,10 @@ public class Cell {
             hashes.add(Utils.sha256(hash));
             hashIndex++;
         }
+    }
+
+    void setCellType(CellType pCellType) {
+        type = pCellType;
     }
 
     /**
@@ -597,7 +595,7 @@ public class Cell {
         return new byte[]{d3};
     }
 
-    int getMaxLevel() {
+    public int getMaxLevel() {
         //TODO level calculation differ for exotic cells
         int maxLevel = 0;
         for (Cell i : refs) {

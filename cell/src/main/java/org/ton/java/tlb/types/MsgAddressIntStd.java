@@ -13,15 +13,17 @@ import java.math.BigInteger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-@Builder
-@Getter
-@Setter
 /**
+ * <pre>
  * addr_std$10 anycast:(Maybe Anycast)  workchain_id:int8 address:bits256  = MsgAddressInt;
  *
  * anycast - default is storeBit(false)
- *
+ * </pre>
  */
+@Builder
+@Getter
+@Setter
+
 public class MsgAddressIntStd implements MsgAddressInt {
     int magic;
     Anycast anycast;

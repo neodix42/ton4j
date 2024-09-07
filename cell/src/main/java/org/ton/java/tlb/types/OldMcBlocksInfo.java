@@ -11,13 +11,16 @@ import org.ton.java.cell.TonHashMapAugE;
 
 import static java.util.Objects.isNull;
 
+/**
+ * <pre>
+ * _ (HashmapAugE 32 KeyExtBlkRef KeyMaxLt) = OldMcBlocksInfo;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * _ (HashmapAugE 32 KeyExtBlkRef KeyMaxLt) = OldMcBlocksInfo;
- */
+
 public class OldMcBlocksInfo {
     TonHashMapAugE list;
 

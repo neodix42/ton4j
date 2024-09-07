@@ -10,16 +10,19 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * </pre>
+ * account_descr$_
+ * account:^Account
+ * last_trans_hash:bits256
+ * last_trans_lt:uint64 = ShardAccount;
+ * <pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * account_descr$_
- *   account:^Account
- *   last_trans_hash:bits256
- *   last_trans_lt:uint64 = ShardAccount;
- */
+
 public class ShardAccount {
     Account account;
     BigInteger lastTransHash;

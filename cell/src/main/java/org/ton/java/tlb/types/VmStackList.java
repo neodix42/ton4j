@@ -9,6 +9,7 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -41,20 +42,21 @@ public class VmStackList {
     }
 
     /**
-     * Also knows as parseTuple() in ton-core web.
+     * Also known as parseTuple() in ton-core web.
      *
      * @param cs CellSlice
      * @return VmStackList
      */
-    public static VmStackList deserialize(CellSlice cs) {
-        List<VmStackValue> tos = new ArrayList<>();
-        while (cs.getRefsCount() != 0) {
-            Cell t = cs.loadRef();
-            tos.add(VmStackValue.deserialize(CellSlice.beginParse(cs)));
-            cs = CellSlice.beginParse(t);
+    public static VmStackList deserialize(CellSlice cs, int depth) {
+
+        if (depth == 0) {
+            return VmStackList.builder().tos(Collections.emptyList()).build();
         }
+
+        List<VmStackValue> ar1 = new ArrayList<>(deserialize(CellSlice.beginParse(cs.loadRef()), depth - 1).getTos());
+        ar1.add(VmStackValue.deserialize(cs));
         return VmStackList.builder()
-                .tos(tos)
+                .tos(ar1)
                 .build();
     }
 }

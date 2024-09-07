@@ -11,17 +11,20 @@ import org.ton.java.cell.TonHashMapAug;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * acc_trans#5
  *  account_addr:bits256
  *  transactions:(HashmapAug 64 ^Transaction CurrencyCollection)
  *  state_update:^(HASH_UPDATE Account)
  *  = AccountBlock;
+ *  </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class AccountBlock {
     long magic;
     BigInteger addr;

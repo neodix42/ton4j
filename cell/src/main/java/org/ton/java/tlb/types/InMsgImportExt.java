@@ -8,15 +8,18 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * msg_import_ext$000
+ * msg:^(Message Any)
+ * transaction:^Transaction  = InMsg;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * msg_import_ext$000
- *  msg:^(Message Any)
- *  transaction:^Transaction  = InMsg;
- */
+
 public class InMsgImportExt implements InMsg {
     Message msg;
     Transaction transaction;

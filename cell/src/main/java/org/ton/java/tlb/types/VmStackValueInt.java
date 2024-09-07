@@ -24,15 +24,15 @@ public class VmStackValueInt implements VmStackValue {
     @Override
     public Cell toCell() {
         return CellBuilder.beginCell()
-                .storeUint(0x0201, 16)
-                .storeUint(value, 256)
+                .storeUint(0x0100, 15)
+                .storeInt(value, 257)
                 .endCell();
     }
 
     public static VmStackValueInt deserialize(CellSlice cs) {
         return VmStackValueInt.builder()
-                .magic(cs.loadUint(16).intValue())
-                .value(cs.loadUint(256))
+                .magic(cs.loadUint(15).intValue())
+                .value(cs.loadInt(257))
                 .build();
     }
 }

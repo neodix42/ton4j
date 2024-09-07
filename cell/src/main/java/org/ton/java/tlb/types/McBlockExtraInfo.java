@@ -11,15 +11,18 @@ import org.ton.java.cell.TonHashMapE;
 
 import static java.util.Objects.isNull;
 
+/**
+ * <pre>
+ * prev_blk_signatures:(HashmapE 16 CryptoSignaturePair)
+ * recover_create_msg:(Maybe ^InMsg)
+ * mint_msg:(Maybe ^InMsg)
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * prev_blk_signatures:(HashmapE 16 CryptoSignaturePair)
- * recover_create_msg:(Maybe ^InMsg)
- * mint_msg:(Maybe ^InMsg)
- */
+
 public class McBlockExtraInfo {
     TonHashMapE prevBlkSignatures;
     InMsg recoverCreateMsg;

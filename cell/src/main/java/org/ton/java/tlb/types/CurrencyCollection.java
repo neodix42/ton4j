@@ -13,14 +13,17 @@ import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
 
+/**
+ * <pre>
+ * extra_currencies$_ dict:(HashmapE 32 (VarUInteger 32)) = ExtraCurrencyCollection;
+ * currencies$_ grams:Grams other:ExtraCurrencyCollection = CurrencyCollection;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * extra_currencies$_ dict:(HashmapE 32 (VarUInteger 32)) = ExtraCurrencyCollection;
- * currencies$_ grams:Grams other:ExtraCurrencyCollection = CurrencyCollection;
- */
+
 public class CurrencyCollection {
     BigInteger coins;
     TonHashMapE extraCurrencies;

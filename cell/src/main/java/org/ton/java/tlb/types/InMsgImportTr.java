@@ -10,16 +10,19 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * msg_import_tr$101
  *  in_msg:^MsgEnvelope
  *  out_msg:^MsgEnvelope
  *  transit_fee:Grams = InMsg;
+ *  </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class InMsgImportTr implements InMsg {
     MsgEnvelope inMsg;
     MsgEnvelope outMsg;

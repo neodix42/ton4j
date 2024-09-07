@@ -10,11 +10,8 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * shard_descr#b
  *   seq_no:uint32
  *   reg_mc_seqno:uint32
@@ -56,7 +53,13 @@ import java.math.BigInteger;
  *   split_merge_at:FutureSplitMerge
  *   ^[ fees_collected:CurrencyCollection
  *      funds_created:CurrencyCollection ] = ShardDescr;
+ * </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class ShardDescr {
     long magic;
     long seqNo;

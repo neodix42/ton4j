@@ -9,18 +9,21 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMap;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * validators#11
  *   utime_since:uint32
  *   utime_until:uint32
  *   total:(## 16)
  *   main:(## 16) { main <= total } { main >= 1 }
  *   list:(Hashmap 16 ValidatorDescr) = ValidatorSet;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class Validators implements ValidatorSet {
     int magic;
     long uTimeSince;

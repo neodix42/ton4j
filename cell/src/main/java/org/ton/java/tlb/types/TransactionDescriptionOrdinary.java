@@ -8,11 +8,8 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * trans_ord$0000
  *   credit_first:Bool
  *   storage_ph:(Maybe TrStoragePhase)
@@ -23,7 +20,13 @@ import org.ton.java.cell.CellSlice;
  *   bounce:(Maybe TrBouncePhase)
  *   destroyed:Bool
  *   = TransactionDescr;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class TransactionDescriptionOrdinary {
     int magic;
     boolean creditFirst;

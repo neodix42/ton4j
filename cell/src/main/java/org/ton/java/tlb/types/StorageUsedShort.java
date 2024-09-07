@@ -10,15 +10,18 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * storage_used_short$_
+ *   cells:(VarUInteger 7)
+ *   bits:(VarUInteger 7) = StorageUsedShort;
+ *   </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * storage_used_short$_
- *   cells:(VarUInteger 7)
- *   bits:(VarUInteger 7) = StorageUsedShort;
- */
+
 public class StorageUsedShort {
     BigInteger cells;
     BigInteger bits;

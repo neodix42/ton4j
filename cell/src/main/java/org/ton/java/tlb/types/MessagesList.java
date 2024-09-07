@@ -14,7 +14,7 @@ import static java.util.Objects.isNull;
 @Setter
 @ToString
 public class MessagesList {
-    TonHashMapE list; //dict 15
+    TonHashMapE list;
 
     public static MessagesList deserialize(CellSlice cs) {
         if (isNull(cs)) {

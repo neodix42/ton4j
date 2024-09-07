@@ -4,8 +4,10 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 
 /**
+ * <pre>
  * block_create_stats#17 counters:(HashmapE 256 CreatorStats) = BlockCreateStats;
  * block_create_stats_ext#34 counters:(HashmapAugE 256 CreatorStats uint32) = BlockCreateStats;
+ * </pre>
  */
 
 public interface BlockCreateStats {

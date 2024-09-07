@@ -10,17 +10,20 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * account_storage$_
  *     last_trans_lt:uint64
  *     balance:CurrencyCollection
  *     state:AccountState
  *   = AccountStorage;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class AccountStorage {
     String accountStatus;
     BigInteger lastTransactionLt;

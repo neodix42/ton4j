@@ -6,7 +6,6 @@ import com.google.gson.ToNumberPolicy;
 import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.util.Lists;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,7 +17,9 @@ import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.GenericSmartContract;
 import org.ton.java.smartcontract.SmartContractCompiler;
+import org.ton.java.smartcontract.types.NewPlugin;
 import org.ton.java.smartcontract.types.WalletV4R2Config;
+import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
@@ -36,8 +37,8 @@ import java.util.Collections;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.ton.java.smartcontract.wallet.v4.WalletV4R2.createPluginDataCell;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -50,8 +51,11 @@ public class TestTvmEmulator {
 
     @BeforeClass
     public static void setUpBeforeClass() {
-        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+
         log.info("pubKey {}", Utils.bytesToHex(keyPair.getPublicKey()));
+        log.info("prvKey {}", Utils.bytesToHex(keyPair.getSecretKey()));
         tonlib = Tonlib.builder()
                 .testnet(true)
                 .ignoreCache(false)
@@ -62,6 +66,14 @@ public class TestTvmEmulator {
                 .keyPair(keyPair)
                 .walletId(42)
                 .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("rawAddress: {}", walletAddress.toRaw());
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
         Cell code = contract.getStateInit().getCode();
         Cell data = contract.getStateInit().getData();
@@ -107,53 +119,50 @@ public class TestTvmEmulator {
         String address = contract.getAddress().toBounceable();
         String randSeedHex = Utils.sha256("ABC");
 
-        Cell config = tonlib.getConfigAll(128);
+        Cell config = tonlib.getConfigAll(128); // 128 - all config
 
         assertTrue(tvmEmulator.setC7(address,
                 Instant.now().getEpochSecond(),
-                Utils.toNano(1).longValue(),
-                randSeedHex
-//                , null
-                , config.toBase64() // optional
+                Utils.toNano(1).longValue(), // smc balance
+                randSeedHex,
+                config.toBase64() // optional
         ));
     }
 
     @Test
     public void testTvmEmulatorEmulateRunMethod() {
 
-        Cell code = contract.getStateInit().getCode();
-        Cell data = contract.getStateInit().getData();
-
         VmStack stack = VmStack.builder()
                 .depth(0)
                 .stack(VmStackList.builder()
-                        .tos(Lists.emptyList())
+                        .tos(Collections.emptyList())
                         .build())
                 .build();
 
-        String paramsBoc = CellBuilder.beginCell()
-                .storeRef(code)
-                .storeRef(data)
+        String paramsBocBase64 = CellBuilder.beginCell()
+                .storeRef(contract.getStateInit().getCode())
+                .storeRef(contract.getStateInit().getData())
                 .storeRef(stack.toCell())
                 .storeRef(CellBuilder.beginCell()
                         .storeRef(stack.toCell()) // c7 ^VmStack
-                        .storeRef(getLibs()) // libs ^Cell
-                        .endCell()) // params
+                        .storeRef(getLibs())      // libs ^Cell
+                        .endCell())
                 .storeUint(85143, 32) // method-id - seqno
                 .endCell()
                 .toBase64();
 
 
-        Cell c = CellBuilder.beginCell().fromBocBase64(paramsBoc).endCell();
-        log.info("c {}", c);
-        String result = tvmEmulator.emulateRunMethod(paramsBoc.length(), paramsBoc, Utils.toNano(1).longValue());
-        log.info("result emulateRunMethod: {}", result); // todo - return null
+        Cell c = CellBuilder.beginCell().fromBocBase64(paramsBocBase64).endCell();
+        log.info("cellPrint {}", c.print());
+        long gasLimit = Utils.toNano(1).longValue();
+        String result = tvmEmulator.emulateRunMethod(paramsBocBase64.length(), paramsBocBase64, gasLimit); // todo why null
+        log.info("result emulateRunMethod: {}", result);
     }
 
     @Test
     public void testTvmEmulatorRunGetMethodGetSeqNo() {
         String result = tvmEmulator.runGetMethod(
-                85143 // seqno
+                Utils.calculateMethodId("seqno")
         );
         log.info("result runGetMethod: {}", result);
 
@@ -162,7 +171,7 @@ public class TestTvmEmulator {
         log.info("methodResult stack: {}", methodResult.getStack());
 
         Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
-        log.info("cellResult {}", cellResult);
+//        log.info("cellResult {}", cellResult);
         VmStack stack = VmStack.deserialize(CellSlice.beginParse(cellResult));
         int depth = stack.getDepth();
         log.info("vmStack depth: {}", depth);
@@ -180,11 +189,11 @@ public class TestTvmEmulator {
     @Test
     public void testTvmEmulatorRunGetMethodGetPubKey() {
         String result = tvmEmulator.runGetMethod(
-                78748, // get_public_key
+                Utils.calculateMethodId("get_public_key"),
                 VmStack.builder()
                         .depth(0)
                         .stack(VmStackList.builder()
-                                .tos(Lists.emptyList())
+                                .tos(Collections.emptyList())
                                 .build())
                         .build()
                         .toCell().toBase64());
@@ -200,9 +209,17 @@ public class TestTvmEmulator {
         int depth = stack.getDepth();
         log.info("vmStack depth: {}", depth);
         VmStackList vmStackList = stack.getStack();
-        log.info("vmStackList: {}", vmStackList.getTos());
-        BigInteger pubKey = VmStackValueInt.deserialize(CellSlice.beginParse(vmStackList.getTos().get(0).toCell())).getValue();
+        log.info("vmStackList: {}", vmStackList.getTos()); // ok
+        VmStackValue stackValue = VmStackValue.deserialize(CellSlice.beginParse(vmStackList.getTos().get(0).toCell()));
+        log.info("stackValue value: {}", stackValue);
+        BigInteger pubKey = VmStackValueInt.deserialize(CellSlice.beginParse(stackValue.toCell())).getValue();
         log.info("vmStackList value: {}", pubKey.toString(16)); // pubkey
+
+    }
+
+    @Test
+    public void testTvmEmulatorRunGetMethodGetPubKeyShortVersion() {
+        log.info("contract's pubKey: {}", tvmEmulator.runGetPublicKey()); // pubkey
     }
 
     @Test
@@ -210,13 +227,13 @@ public class TestTvmEmulator {
         String stackSerialized = VmStack.builder()
                 .depth(0)
                 .stack(VmStackList.builder()
-                        .tos(Lists.emptyList())
+                        .tos(Collections.emptyList())
                         .build())
                 .build()
                 .toCell().toBase64();
 
         String result = tvmEmulator.runGetMethod(
-                107653, // CRC-16/XMODEM of get_plugin_list
+                Utils.calculateMethodId("get_plugin_list"),
                 stackSerialized);
         log.info("result runGetMethod: {}", result);
 
@@ -225,7 +242,7 @@ public class TestTvmEmulator {
         log.info("methodResult stack: {}", methodResult.getStack());
 
         Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
-        log.info("cellResult {}", cellResult);
+        log.info("cellResult {}", cellResult.print());
         VmStackValueTuple tuple = VmStackValueTuple.deserialize(CellSlice.beginParse(cellResult));
         log.info("tuple {}", tuple);
     }
@@ -243,7 +260,7 @@ public class TestTvmEmulator {
                 .toCell().toBase64();
 
         String result = tvmEmulator.runGetMethod(
-                76407, // CRC-16/XMODEM of is_plugin_installed(int wc, int addr_hash)
+                Utils.calculateMethodId("is_plugin_installed"),
                 stackSerialized);
         log.info("result runGetMethod: {}", result);
 
@@ -252,14 +269,9 @@ public class TestTvmEmulator {
         log.info("methodResult stack: {}", methodResult.getStack());
 
         Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
-        log.info("cellResult {}", cellResult);
+        log.info("cellResult {}", cellResult.print());
         VmStackValueTuple tuple = VmStackValueTuple.deserialize(CellSlice.beginParse(cellResult));
         log.info("tuple {}", tuple);
-    }
-
-    @Test
-    public void testTvmEmulatorRunGetMethodGetPubKeyShortVersion() {
-        log.info("contract's pubKey: {}", tvmEmulator.runGetPublicKey()); // pubkey
     }
 
     @Test
@@ -283,7 +295,7 @@ public class TestTvmEmulator {
                 .walletId(42)
                 .seqno(0)
                 .destination(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
-                .amount(Utils.toNano(0.331))
+                .amount(Utils.toNano(0.124))
                 .build();
 
         assertTrue(tvmEmulator.setLibs(getLibs().toBase64()));
@@ -293,12 +305,27 @@ public class TestTvmEmulator {
 
         SendExternalMessageResult result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
         log.info("result sendExternalMessage, exitCode: {}", result.getVm_exit_code());
-        log.info("result sendExternalMessage, actions: {}", result.getActions());
+//        log.info("result sendExternalMessage, actions: {}", result.getActions());
         log.info("seqno value: {}", tvmEmulator.runGetSeqNo());
-        OutList actions = OutList.deserialize(
-                CellSlice.beginParse(
-                        CellBuilder.beginCell().fromBocBase64(result.getActions()).endCell()));
+        OutList actions = OutList.deserialize(CellSlice.beginParse(
+                CellBuilder.beginCell().fromBocBase64(result.getActions()).endCell()));
         log.info("parsed actions {}", actions);
+
+        assertEquals(1, tvmEmulator.runGetSeqNo().longValue());
+
+        // send one more time
+        config = WalletV4R2Config.builder()
+                .operation(0)
+                .walletId(42)
+                .seqno(1)
+                .destination(Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d"))
+                .amount(Utils.toNano(0.123))
+                .build();
+
+        msg = contract.prepareExternalMsg(config);
+        tvmEmulator.sendExternalMessage(msg.getBody().toBase64());
+
+        assertEquals(2, tvmEmulator.runGetSeqNo().longValue());
     }
 
     @Test
@@ -319,11 +346,15 @@ public class TestTvmEmulator {
                 .storeUint(0, 32)  // seqno
                 .storeUint(42, 32) // wallet id
                 .storeBytes(keyPair.getPublicKey())
-                .storeUint(0, 1)   //plugins dict empty
+                .storeBit(false)   //plugins dict empty
                 .endCell();
 
         log.info("codeCellHex {}", codeCellHex);
         log.info("dataCellHex {}", dataCell.toHex());
+
+        Address address = StateInit.builder().code(codeCell).data(dataCell).build().getAddress();
+        log.info("addressRaw {}", address.toRaw());
+        log.info("addressBounceable {}", address.toBounceable());
 
         tvmEmulator = TvmEmulator.builder()
                 .pathToEmulatorSharedLib("G:/libs/emulator.dll")
@@ -364,7 +395,9 @@ public class TestTvmEmulator {
                 .build();
 
         assertTrue(tvmEmulator.setLibs(getLibs().toBase64()));
+
         Cell transferBody = createTransferBody(config);
+
         Cell signedBody = CellBuilder.beginCell()
                 .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash()))
                 .storeCell(transferBody)
@@ -385,6 +418,7 @@ public class TestTvmEmulator {
                 .build();
 
         assertTrue(tvmEmulator.setLibs(getLibs().toBase64()));
+
         transferBody = createTransferBody(config);
         signedBody = CellBuilder.beginCell()
                 .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash()))
@@ -398,13 +432,21 @@ public class TestTvmEmulator {
         log.info("result sendExternalMessage, exitCode: {}", result.getVm_exit_code());
 
 
-        // still to review
+        // is plugin installed - answer no
+        Address beneficiaryAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+        log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
+        log.info("beneficiaryAddress (raw): {}", beneficiaryAddress.toRaw());
+
+
+//        BigInteger addr = new BigInteger("106857336580611253476560029380260470526545417460249276654115413311849265711416");
+//        log.info("ha {}", addr);
+//        log.info("ha {}", beneficiaryAddress.toBigInteger());
         String stackSerialized = VmStack.builder()
                 .depth(2)
                 .stack(VmStackList.builder()
                         .tos(Arrays.asList(
                                 VmStackValueTinyInt.builder().value(BigInteger.ZERO).build(),
-                                VmStackValueTinyInt.builder().value(BigInteger.TEN).build()))
+                                VmStackValueInt.builder().value(address.toBigInteger()).build()))
                         .build())
                 .build()
                 .toCell()
@@ -412,9 +454,167 @@ public class TestTvmEmulator {
 
         // is_plugin_installed
         String resultStr = tvmEmulator.runGetMethod(
-                76407, // CRC-16/XMODEM of is_plugin_installed(int wc, int addr_hash)
+                Utils.calculateMethodId("is_plugin_installed"),
                 stackSerialized);
-        log.info("result runGetMethod (is_plugin_installed): {}", resultStr);
+        log.info("result runGetMethod (is_plugin_installed): {}", resultStr); // should be no
+        GetMethodResult methodResult = gson.fromJson(resultStr, GetMethodResult.class);
+//        log.info("methodResult: {}", methodResult);
+        log.info("methodResult stack: {}", methodResult.getStack());
+
+        Cell cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
+        log.info("cellResult {}", cellResult.print());
+        VmStack stack = VmStack.deserialize(CellSlice.beginParse(cellResult));
+        int depth = stack.getDepth();
+        log.info("vmStack depth: {}", depth);
+        VmStackList vmStackList = stack.getStack();
+        log.info("vmStackList: {}", vmStackList.getTos()); // should be empty
+
+
+        // get plugin list - first time - result - empty
+        stackSerialized = VmStack.builder()
+                .depth(0)
+                .stack(VmStackList.builder()
+                        .tos(Collections.emptyList())
+                        .build())
+                .build()
+                .toCell().toBase64();
+
+        String resultStr2 = tvmEmulator.runGetMethod(
+                Utils.calculateMethodId("get_plugin_list"),
+                stackSerialized);
+        log.info("result runGetMethod: {}", resultStr2);
+
+        methodResult = gson.fromJson(resultStr2, GetMethodResult.class);
+        log.info("methodResult: {}", methodResult);
+        log.info("methodResult stack: {}", methodResult.getStack());
+
+        cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
+        log.info("cellResult {}", cellResult.print());
+        VmStackValueTuple tuple = VmStackValueTuple.deserialize(CellSlice.beginParse(cellResult));
+        log.info("get_plugin_list first result tuple {}", tuple); // no plugins yet, should be empty
+
+
+        // install plugin
+        log.info("installing plugin");
+        SubscriptionInfo subscriptionInfo = SubscriptionInfo.builder()
+                .beneficiary(beneficiaryAddress)
+                .subscriptionFee(Utils.toNano(0.11))
+                .period(60)
+                .startTime(0)
+                .timeOut(30)
+                .lastPaymentTime(0)
+                .lastRequestTime(0)
+                .failedAttempts(0)
+                .subscriptionId(12345)
+                .build();
+
+        //log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
+
+        StateInit pluginStateInit = StateInit.builder()
+                .code(CellBuilder.beginCell().fromBoc("B5EE9C7241020F01000262000114FF00F4A413F4BCF2C80B0102012002030201480405036AF230DB3C5335A127A904F82327A128A90401BC5135A0F823B913B0F29EF800725210BE945387F0078E855386DB3CA4E2F82302DB3C0B0C0D0202CD06070121A0D0C9B67813F488DE0411F488DE0410130B048FD6D9E05E8698198FD201829846382C74E2F841999E98F9841083239BA395D497803F018B841083AB735BBED9E702984E382D9C74688462F863841083AB735BBED9E70156BA4E09040B0A0A080269F10FD22184093886D9E7C12C1083239BA39384008646582A803678B2801FD010A65B5658F89659FE4B9FD803FC1083239BA396D9E40E0A04F08E8D108C5F0C708210756E6B77DB3CE00AD31F308210706C7567831EB15210BA8F48305324A126A904F82326A127A904BEF27109FA4430A619F833D078D721D70B3F5260A11BBE8E923036F82370708210737562732759DB3C5077DE106910581047103645135042DB3CE0395F076C2232821064737472BA0A0A0D09011A8E897F821064737472DB3CE0300A006821B39982100400000072FB02DE70F8276F118010C8CB055005CF1621FA0214F40013CB6912CB1F830602948100A032DEC901FB000030ED44D0FA40FA40FA00D31FD31FD31FD31FD31FD307D31F30018021FA443020813A98DB3C01A619F833D078D721D70B3FA070F8258210706C7567228018C8CB055007CF165004FA0215CB6A12CB1F13CB3F01FA02CB00C973FB000E0040C8500ACF165008CF165006FA0214CB1F12CB1FCB1FCB1FCB1FCB07CB1FC9ED54005801A615F833D020D70B078100D1BA95810088D721DED307218100DDBA028100DEBA12B1F2E047D33F30A8AB0FE5855AB4").endCell())
+                .data(
+                        createPluginDataCell(
+                                address,
+                                subscriptionInfo.getBeneficiary(),
+                                subscriptionInfo.getSubscriptionFee(),
+                                subscriptionInfo.getPeriod(),
+                                subscriptionInfo.getStartTime(),
+                                subscriptionInfo.getTimeOut(),
+                                subscriptionInfo.getLastPaymentTime(),
+                                subscriptionInfo.getLastRequestTime(),
+                                subscriptionInfo.getFailedAttempts(),
+                                subscriptionInfo.getSubscriptionId()))
+                .build();
+
+        log.info("plugin address Bounceable: {}", pluginStateInit.getAddress().toBounceable());
+        log.info("plugin address Raw: {}", pluginStateInit.getAddress().toRaw());
+
+        config = WalletV4R2Config.builder()
+                .seqno(2)
+                .operation(1) // deploy and install plugin
+                .walletId(42)
+                .newPlugin(NewPlugin.builder()
+                        .secretKey(keyPair.getSecretKey())
+                        .seqno(2)
+                        .pluginWc(address.wc) // reuse wc of the wallet
+                        .amount(Utils.toNano(0.1)) // initial plugin balance, will be taken from wallet-v4
+                        .stateInit(pluginStateInit.toCell())
+                        .body(CellBuilder.beginCell()
+                                .storeUint(new BigInteger("706c7567", 16).add(new BigInteger("80000000", 16)), 32) //OP
+                                .endCell())
+                        .build())
+                .build();
+
+        transferBody = createTransferBody(config);
+        signedBody = CellBuilder.beginCell()
+                .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash()))
+                .storeCell(transferBody)
+                .endCell();
+        log.info("install plugin extMsg {}", signedBody.toHex());
+
+        resultBoc = tvmEmulator.sendExternalMessage(signedBody.toBase64());
+
+        result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
+        log.info("result deploy plugin sendExternalMessage, exitCode: {}", result.getVm_exit_code());
+
+
+        // get plugin list - second time - result one entry
+        stackSerialized = VmStack.builder()
+                .depth(0)
+                .stack(VmStackList.builder()
+                        .tos(Collections.emptyList())
+                        .build())
+                .build()
+                .toCell().toBase64();
+
+        String resultStr3 = tvmEmulator.runGetMethod(
+                Utils.calculateMethodId("get_plugin_list"),
+                stackSerialized);
+        log.info("result runGetMethod: {}", resultStr3);
+
+        methodResult = gson.fromJson(resultStr3, GetMethodResult.class);
+        log.info("get_plugin_list methodResult: {}", methodResult);
+        log.info("get_plugin_list methodResult stack: {}", methodResult.getStack());
+
+        cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
+        log.info("get_plugin_list second cellResult {}", cellResult.print());
+        stack = VmStack.deserialize(CellSlice.beginParse(cellResult));
+        depth = stack.getDepth();
+        log.info("vmStack depth: {}", depth);
+        vmStackList = stack.getStack();
+        log.info("get_plugin_list second result vmStackList: {}", vmStackList.getTos()); // should be one entry with plugin address
+        // plugin with address 38034472829642612572964913615375954737329097997866829358853605638742012097504
+        //extract plugin addresses
+
+        // is_plugin_installed - with parameters [] - answer yes
+
+        stackSerialized = VmStack.builder()
+                .depth(2)
+                .stack(VmStackList.builder()
+                        .tos(Arrays.asList(
+                                VmStackValueInt.builder().value(BigInteger.ZERO).build(),
+                                VmStackValueInt.builder().value(new BigInteger("38034472829642612572964913615375954737329097997866829358853605638742012097504")).build()))
+                        .build())
+                .build()
+                .toCell()
+                .toBase64();
+
+        log.info("is installed ????");
+        resultStr = tvmEmulator.runGetMethod(
+                Utils.calculateMethodId("is_plugin_installed"),
+                stackSerialized);
+        log.info("result runGetMethod (is_plugin_installed) 2: {}", resultStr);
+        methodResult = gson.fromJson(resultStr, GetMethodResult.class);
+//        log.info("methodResult: {}", methodResult);
+        log.info("methodResult stack: {}", methodResult.getStack());
+
+        cellResult = CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
+        log.info("cellResult {}", cellResult.print());
+        stack = VmStack.deserialize(CellSlice.beginParse(cellResult));
+        depth = stack.getDepth();
+        log.info("vmStack depth: {}", depth);
+        vmStackList = stack.getStack();
+        log.info("vmStackList: {}", vmStackList.getTos());
     }
 
     @Test
@@ -508,7 +708,7 @@ public class TestTvmEmulator {
                 .build();
 
         Cell deserializedTuple = CellBuilder.beginCell().fromBocBase64(vmStackValueTuple.toCell().toBase64()).endCell();
-        log.info("test deserialization: {}", deserializedTuple);
+        log.info("test deserialization: {}", deserializedTuple.print());
 
         assertTrue(tvmEmulator.setPrevBlockInfo(vmStackValueTuple.toCell().toBase64()));
     }
@@ -525,14 +725,12 @@ public class TestTvmEmulator {
             Cell lib = Cell.fromBocBase64(cellLibBoc);
             log.info("cell lib {}", lib.toHex());
             x.elements.put(1L, lib);
-            x.elements.put(2L, lib); // 2nd because of the bug in hashmap/e
         }
 
-        Cell dictLibs = x.serialize(
+        return x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeRef((Cell) v).endCell()
         );
-        return dictLibs;
     }
 
     private Cell createTransferBody(WalletV4R2Config config) {
@@ -592,5 +790,19 @@ public class TestTvmEmulator {
         }
 
         return message.endCell();
+    }
+
+    @Test
+    public void testTvmEmulatorParsePluginListResultWithOneEntry() {
+
+        String bocBase64 = "te6cckEBBgEARgADDAAAAQcAAgECAwAAAgYHAAIEBQACAAASAQAAAAAAAAAAAEQCAFQWv62UIb68RxRkPHIBa4xGgl2dhv3r6zAHZjygzHPgkqH6lg";
+        Cell cell = CellBuilder.beginCell().fromBocBase64(bocBase64).endCell();
+        log.info("cell print: {}", cell.print());
+        log.info("cell boc: {}", cell.toHex());
+
+        VmStack stack = VmStack.deserialize(CellSlice.beginParse(cell));
+        log.info("vmStack depth: {}", stack.getDepth());
+        VmStackList vmStackList = stack.getStack();
+        log.info("vmStackList: {}", vmStackList.getTos());
     }
 }

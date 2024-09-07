@@ -8,17 +8,20 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * validator_info$_
+ * validator_list_hash_short:uint32
+ * catchain_seqno:uint32
+ * nx_cc_updated:Bool
+ * = ValidatorInfo;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- validator_info$_
- validator_list_hash_short:uint32
- catchain_seqno:uint32
- nx_cc_updated:Bool
- = ValidatorInfo;
- */
+
 public class ValidatorInfo {
     long validatorListHashShort;
     long catchainSeqno;

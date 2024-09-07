@@ -6,7 +6,6 @@ import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
 import lombok.Builder;
 import lombok.extern.java.Log;
-import org.assertj.core.util.Lists;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -17,6 +16,7 @@ import org.ton.java.tlb.types.VmStackValueTinyInt;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
+import java.util.Collections;
 
 import static java.util.Objects.isNull;
 
@@ -236,14 +236,14 @@ public class TvmEmulator {
                 VmStack.builder()
                         .depth(0)
                         .stack(VmStackList.builder()
-                                .tos(Lists.emptyList())
+                                .tos(Collections.emptyList())
                                 .build())
                         .build()
                         .toCell().toBase64());
     }
 
     public BigInteger runGetSeqNo() {
-        String seqNoResult = runGetMethod(85143);
+        String seqNoResult = runGetMethod(Utils.calculateMethodId("seqno"));
         Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
         GetMethodResult methodResult = gson.fromJson(seqNoResult, GetMethodResult.class);
 
@@ -254,7 +254,7 @@ public class TvmEmulator {
     }
 
     public String runGetPublicKey() {
-        String pubKeyResult = runGetMethod(78748);
+        String pubKeyResult = runGetMethod(Utils.calculateMethodId("get_public_key"));
         Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
         GetMethodResult methodResult = gson.fromJson(pubKeyResult, GetMethodResult.class);
 

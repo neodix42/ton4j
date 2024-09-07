@@ -10,13 +10,14 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * validator#53 public_key:SigPubKey weight:uint64 = ValidatorDescr;
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * validator#53 public_key:SigPubKey weight:uint64 = ValidatorDescr;
- */
+
 public class Validator implements ValidatorDescr {
     long magic;
     //SigPubKeyED25519 publicKey;

@@ -10,13 +10,16 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * processed_upto$_ last_msg_lt:uint64 last_msg_hash:bits256 = ProcessedUpto;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- processed_upto$_ last_msg_lt:uint64 last_msg_hash:bits256 = ProcessedUpto;
- */
+
 
 public class ProcessedUpto {
     BigInteger lastMsgLt;

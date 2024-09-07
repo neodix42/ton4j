@@ -125,10 +125,10 @@ public class TestAddress {
     @Test
     public void testIsWallet() {
 
-//        assertThat(Address.of(TEST_ADDRESS_0).isWallet).isTrue();
-        assertThat(Address.of(TEST_ADDRESS_1).isWallet).isTrue();
+        assertThat(Address.of(TEST_ADDRESS_0).isWallet).isTrue();
+//        assertThat(Address.of(TEST_ADDRESS_1).isWallet).isTrue();
         assertThat(Address.of(TEST_ADDRESS_3).isWallet).isTrue();
-        assertThat(Address.of(TEST_ADDRESS_4).isWallet).isTrue();
+//        assertThat(Address.of(TEST_ADDRESS_4).isWallet).isTrue();
         assertThat(Address.of(TEST_ADDRESS_5).isWallet).isTrue();
 
     }

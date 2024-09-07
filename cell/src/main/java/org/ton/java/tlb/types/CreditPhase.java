@@ -10,15 +10,18 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * tr_phase_credit$_
+ *  due_fees_collected:(Maybe Grams)
+ *  credit:CurrencyCollection = TrCreditPhase;
+ *  </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * tr_phase_credit$_
- *  due_fees_collected:(Maybe Grams)
- *  credit:CurrencyCollection = TrCreditPhase;
- */
+
 public class CreditPhase {
     BigInteger dueFeesCollected;
     CurrencyCollection credit;

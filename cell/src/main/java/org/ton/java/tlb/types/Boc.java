@@ -13,6 +13,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 /**
+ * <pre>
  * serialized_boc#b5ee9c72
  * has_idx:(## 1)
  * has_crc32c:(## 1)
@@ -29,6 +30,7 @@ import java.util.List;
  * cell_data:(tot_cells_size * [ uint8 ])
  * crc32c:has_crc32c?uint32
  * = BagOfCells;
+ * </pre>
  */
 @Builder
 @Getter

@@ -10,17 +10,20 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * msg_export_deq_short$1101
+ * msg_env_hash:bits256
+ * next_workchain:int32
+ * next_addr_pfx:uint64
+ * import_block_lt:uint64 = OutMsg;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- msg_export_deq_short$1101
- msg_env_hash:bits256
- next_workchain:int32
- next_addr_pfx:uint64
- import_block_lt:uint64 = OutMsg;
- */
+
 public class OutMsgDeqShort implements OutMsg {
     int magic;
     BigInteger msgEnvHash;

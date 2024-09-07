@@ -8,18 +8,21 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * block#11ef55aa
  *   global_id:int32
  *   info:^BlockInfo
  *   value_flow:^ValueFlow
  *   state_update:^(MERKLE_UPDATE ShardState)
  *   extra:^BlockExtra = Block;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class Block {
     long magic;
     int globalId;

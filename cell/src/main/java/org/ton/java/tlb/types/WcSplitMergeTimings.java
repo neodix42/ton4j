@@ -8,16 +8,19 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * wc_split_merge_timings#0
+ * split_merge_delay:uint32 split_merge_interval:uint32
+ * min_split_merge_interval:uint32 max_split_merge_delay:uint32
+ * = WcSplitMergeTimings;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- wc_split_merge_timings#0
- split_merge_delay:uint32 split_merge_interval:uint32
- min_split_merge_interval:uint32 max_split_merge_delay:uint32
- = WcSplitMergeTimings;
- */
+
 public class WcSplitMergeTimings {
     int magic;
     long splitMergeDelay;

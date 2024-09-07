@@ -10,17 +10,20 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * msg_import_ihr$010
  *  msg:^(Message Any)
  *  transaction:^Transaction
  *  ihr_fee:Grams
  *  proof_created:^Cell = InMsg;
+ *  </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 
 // msg_export_new extends InMsg
 

@@ -9,13 +9,16 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapAugE;
 
+/**
+ * <pre>
+ * _ (HashmapAugE 256 OutMsg CurrencyCollection) = OutMsgDescr;
+ * </pre>
+ */
+
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * _ (HashmapAugE 256 OutMsg CurrencyCollection) = OutMsgDescr;
- */
 
 public class OutMsgDescr {
     TonHashMapAugE outMsg;

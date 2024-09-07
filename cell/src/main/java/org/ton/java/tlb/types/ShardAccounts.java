@@ -9,13 +9,16 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapAugE;
 
+/**
+ * <pre>
+ * _ (HashmapAugE 256 ShardAccount DepthBalanceInfo) = ShardAccounts;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * _ (HashmapAugE 256 ShardAccount DepthBalanceInfo) = ShardAccounts;
- */
+
 public class ShardAccounts {
     TonHashMapAugE shardAccounts;
 

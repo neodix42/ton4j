@@ -309,16 +309,16 @@ public class WalletV4R2 implements Contract {
         }
     }
 
-    public Cell createPluginDataCell(Address wallet,
-                                     Address beneficiary,
-                                     BigInteger amount,
-                                     long period,
-                                     long startTime,
-                                     long timeOut,
-                                     long lastPaymentTime,
-                                     long lastRequestTime,
-                                     long failedAttempts,
-                                     long subscriptionId) {
+    public static Cell createPluginDataCell(Address wallet,
+                                            Address beneficiary,
+                                            BigInteger amount,
+                                            long period,
+                                            long startTime,
+                                            long timeOut,
+                                            long lastPaymentTime,
+                                            long lastRequestTime,
+                                            long failedAttempts,
+                                            long subscriptionId) {
 
         return CellBuilder.beginCell()
                 .storeAddress(wallet)

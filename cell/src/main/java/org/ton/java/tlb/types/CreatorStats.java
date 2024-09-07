@@ -8,13 +8,16 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * creator_info#4 mc_blocks:Counters shard_blocks:Counters = CreatorStats;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- creator_info#4 mc_blocks:Counters shard_blocks:Counters = CreatorStats;
- */
+
 public class CreatorStats {
 
     long magic;

@@ -13,16 +13,19 @@ import java.math.BigInteger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-@Builder
-@Getter
-@Setter
 /**
+ * <pre>
  * addr_var$11
  *   anycast:(Maybe Anycast)
  *   addr_len:(## 9)
  *   workchain_id:int32
  *   address:(bits addr_len) = MsgAddressInt;
+ *   </pre>
  */
+@Builder
+@Getter
+@Setter
+
 public class MsgAddressIntVar implements MsgAddressInt {
     int magic;
     Anycast anycast;

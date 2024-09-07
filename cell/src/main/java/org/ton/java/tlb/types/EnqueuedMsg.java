@@ -10,13 +10,16 @@ import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * _ enqueued_lt:uint64 out_msg:^MsgEnvelope = EnqueuedMsg;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- _ enqueued_lt:uint64 out_msg:^MsgEnvelope = EnqueuedMsg;
- */
+
 public class EnqueuedMsg implements InMsg {
     BigInteger enqueuedLt;
     MsgEnvelope outMsg;

@@ -9,13 +9,14 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapAugE;
 
+/**
+ * _ (HashmapAugE 256 InMsg ImportFees) = InMsgDescr;
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- * _ (HashmapAugE 256 InMsg ImportFees) = InMsgDescr;
- */
+
 
 public class InMsgDescr {
     TonHashMapAugE inMsg;

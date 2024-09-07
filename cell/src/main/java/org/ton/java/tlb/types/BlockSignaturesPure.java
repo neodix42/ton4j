@@ -11,14 +11,17 @@ import org.ton.java.cell.TonHashMapE;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * block_signatures_pure#_ sig_count:uint32 sig_weight:uint64
+ * signatures:(HashmapE 16 CryptoSignaturePair) = BlockSignaturesPure;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- block_signatures_pure#_ sig_count:uint32 sig_weight:uint64
- signatures:(HashmapE 16 CryptoSignaturePair) = BlockSignaturesPure;
- */
+
 public class BlockSignaturesPure {
     long sigCount;
     BigInteger sigWeight;

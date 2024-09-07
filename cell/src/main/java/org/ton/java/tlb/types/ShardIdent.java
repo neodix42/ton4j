@@ -12,17 +12,20 @@ import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * shard_ident$00
  *  shard_pfx_bits:(#<= 60)
  *  workchain_id:int32
  *  shard_prefix:uint64
  *  = ShardIdent;
+ *  </pre>
  */
+@Builder
+@Getter
+@Setter
+@ToString
+
 public class ShardIdent {
     long magic;
     int prefixBits;

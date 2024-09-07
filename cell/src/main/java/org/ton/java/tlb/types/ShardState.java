@@ -8,15 +8,18 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * split_state#5f327da5
+ * left:^ShardStateUnsplit
+ * right:^ShardStateUnsplit = ShardState;
+ * </pre>
+ */
 @Builder
 @Getter
 @Setter
 @ToString
-/**
- *   split_state#5f327da5
- *   left:^ShardStateUnsplit
- *   right:^ShardStateUnsplit = ShardState;
- */
+
 public class ShardState {
 
     long magic;

@@ -48,6 +48,11 @@ public class CellBuilder {
         return this;
     }
 
+    public CellBuilder cellType(CellType cellType) {
+        cell.setCellType(cellType);
+        return this;
+    }
+
     public CellBuilder storeBits(List<Boolean> arrayBits) {
         checkBitsOverflow(arrayBits.size());
         for (Boolean bit : arrayBits) {
