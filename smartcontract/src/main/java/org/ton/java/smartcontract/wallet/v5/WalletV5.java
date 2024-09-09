@@ -12,20 +12,15 @@ import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV5Config;
+import org.ton.java.smartcontract.types.WalletV5InnerRequest;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.tlb.types.ActionSendMsg;
-import org.ton.java.tlb.types.ConfigParams1;
-import org.ton.java.tlb.types.CurrencyCollection;
-import org.ton.java.tlb.types.ExternalMessageInfo;
-import org.ton.java.tlb.types.InternalMessageInfoRelaxed;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MessageRelaxed;
-import org.ton.java.tlb.types.MsgAddressIntStd;
-import org.ton.java.tlb.types.OutAction;
-import org.ton.java.tlb.types.OutList;
+import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.*;
+import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.RunResult;
+import org.ton.java.tonlib.types.TvmStackEntryCell;
+import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -53,12 +48,13 @@ public class WalletV5 implements Contract {
     private static final int PREFIX_SIGNED_INTERNAL = 0x73696E74;
     private static final int PREFIX_EXTENSION_ACTION = 0x6578746e;
 
-    long seqno;
+    TweetNaclFast.Signature.KeyPair keyPair;
+    long initialSeqno;
     long walletId;
-    int subWalletNumber;
+
+    long validUntil;
     TonHashMapE extensions;
     boolean isSigAuthAllowed;
-    TweetNaclFast.Signature.KeyPair keyPair;
 
     private Tonlib tonlib;
     private long wc;
@@ -95,11 +91,21 @@ public class WalletV5 implements Contract {
         return "V5";
     }
 
+    /**
+     * <pre>
+     * contract_state$_
+     *   is_signature_allowed:(## 1)
+     *   seqno:# wallet_id:(## 32)
+     *   public_key:(## 256)
+     *   extensions_dict:(HashmapE 256 int1)
+     *   = ContractState;
+     * </pre>
+     */
     @Override
     public Cell createDataCell() {
         return CellBuilder.beginCell()
                 .storeBit(isSigAuthAllowed)
-                .storeUint(seqno, 32)
+                .storeUint(initialSeqno, 32)
                 .storeUint(walletId, 32)
                 .storeBytes(keyPair.getPublicKey())
                 .storeDict(extensions.serialize(
@@ -125,12 +131,21 @@ public class WalletV5 implements Contract {
      * One can be installed later into the wallet. See addExtension().
      */
 
+    public ExtMessageInfo deploy() {
+        return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+    }
+
+    /**
+     * Deploy wallet without any extensions.
+     * One can be installed later into the wallet. See addExtension().
+     */
+
     public ExtMessageInfo deploy(WalletV5Config conf) {
         return tonlib.sendRawMessage(prepareExternalMsg(conf).toCell().toBase64());
     }
 
-    public Message prepareDeployMsg(WalletV5Config conf) {
-        Cell body = createExternalTransferBody(conf);
+    public Message prepareDeployMsg() {
+        Cell body = createDeployMsg();
 
         return Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -159,14 +174,37 @@ public class WalletV5 implements Contract {
                 .build();
     }
 
+    /**
+     * <pre>
+     * signed_request$_             // 32 (opcode from outer)
+     *   wallet_id:    #            // 32
+     *   valid_until:  #            // 32
+     *   msg_seqno:    #            // 32
+     *   inner:        InnerRequest //
+     *   signature:    bits512      // 512
+     *   = SignedRequest;
+     * </pre>
+     */
+    private Cell createDeployMsg() {
+        return CellBuilder.beginCell()
+                .storeUint(PREFIX_SIGNED_EXTERNAL, 32)
+                .storeUint(walletId, SIZE_WALLET_ID)
+                .storeUint((validUntil == 0) ? Instant.now().getEpochSecond() + 60 : validUntil, SIZE_VALID_UNTIL)
+                .storeUint(0, SIZE_SEQNO)
+                .storeDict(extensions.serialize(
+                        k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
+                        v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()
+                ))
+                .endCell();
+    }
+
     private Cell createExternalTransferBody(WalletV5Config config) {
         return CellBuilder.beginCell()
                 .storeUint(config.getOp() == 0 ? PREFIX_SIGNED_EXTERNAL : config.getOp(), 32)
                 .storeUint(config.getWalletId(), SIZE_WALLET_ID)
                 .storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), SIZE_VALID_UNTIL)
                 .storeUint(config.getSeqno(), SIZE_SEQNO)
-                .storeCell(config.getBody().toCell()) // innerRequest
-                .storeBit(config.isSignatureAllowed()) // for now empty
+                .storeCell(config.getBody()) // innerRequest
                 .endCell();
     }
 
@@ -189,7 +227,7 @@ public class WalletV5 implements Contract {
         return CellBuilder.beginCell()
                 .storeUint(PREFIX_SIGNED_EXTERNAL, 32)
                 .storeUint(config.getQueryId(), 64)
-                .storeCell(config.getBody().toCell()) // innerRequest
+                .storeCell(config.getBody()) // innerRequest
                 .storeBit(config.isSignatureAllowed())
                 .endCell();
     }
@@ -208,7 +246,7 @@ public class WalletV5 implements Contract {
         return OutList.builder().actions(Collections.singletonList(action)).build();
     }
 
-    public OutList createBulkTransfer(List<Destination> recipients) {
+    public WalletV5InnerRequest createBulkTransfer(List<Destination> recipients) {
         if (recipients.size() > 255) {
             throw new IllegalArgumentException("Maximum number of recipients should be less than 255");
         }
@@ -218,8 +256,11 @@ public class WalletV5 implements Contract {
             messages.add(convertDestinationToOutAction(recipient));
         }
 
-        return OutList.builder()
-                .actions(messages)
+        return WalletV5InnerRequest.builder()
+                .outActions(OutList.builder()
+                        .actions(messages)
+                        .build())
+                .hasOtherActions(false)
                 .build();
     }
 

@@ -6,7 +6,9 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Builder
@@ -29,16 +31,16 @@ public class ActionList {
     }
 
     // todo...
-//    public static ActionList deserialize(CellSlice cs) {
-//        List<ExtendedAction> actions = new ArrayList<>();
-//        while (cs.getRefsCount() != 0) {
-//            Cell t = cs.loadRef();
+    public static ActionList deserialize(CellSlice cs) {
+        List<ExtendedAction> actions = new ArrayList<>();
+        while (cs.getRefsCount() != 0) {
+            Cell t = cs.loadRef();
 //            ExtendedAction action = ExtendedAction.deserialize(CellSlice.beginParse(cs));
 //            actions.add(action);
-//            cs = CellSlice.beginParse(t);
-//        }
-//        return ActionList.builder()
-//                .actions(actions)
-//                .build();
-//    }
+            cs = CellSlice.beginParse(t);
+        }
+        return ActionList.builder()
+                .actions(actions)
+                .build();
+    }
 }
