@@ -19,7 +19,7 @@ import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryCell;
+import org.ton.java.tonlib.types.TvmStackEntryList;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
 
@@ -294,36 +294,42 @@ public class WalletV5 implements Contract {
 // --------------------------------------------------------------------------------------------------
 
     public long getWalletId() {
-        RunResult result = tonlib.runMethod(getAddress(), "get_subwallet_id");
+        RunResult result = tonlib.runMethod(getAddress(), Utils.calculateMethodId("get_subwallet_id"));
         TvmStackEntryNumber subWalletId = (TvmStackEntryNumber) result.getStack().get(0);
         return subWalletId.getNumber().longValue();
     }
 
     public byte[] getPublicKey() {
-        RunResult result = tonlib.runMethod(getAddress(), "get_public_key");
+        RunResult result = tonlib.runMethod(getAddress(), Utils.calculateMethodId("get_public_key"));
         TvmStackEntryNumber pubKey = (TvmStackEntryNumber) result.getStack().get(0);
         return pubKey.getNumber().toByteArray();
     }
 
     public boolean getIsSignatureAuthAllowed() {
-        RunResult result = tonlib.runMethod(getAddress(), "is_signature_allowed");
+        RunResult result = tonlib.runMethod(getAddress(), Utils.calculateMethodId("is_signature_allowed"));
         TvmStackEntryNumber signatureAllowed = (TvmStackEntryNumber) result.getStack().get(0);
         return signatureAllowed.getNumber().longValue() != 0;
     }
 
-    public List<ConfigParams1> getRawExtensions() {
-        List<String> r = new ArrayList<>();
-        RunResult result = tonlib.runMethod(getAddress(), "get_extensions");
-        TvmStackEntryCell tvmStackEntryCell = (TvmStackEntryCell) result.getStack().get(0);
-        String base64Msg = tvmStackEntryCell.getCell().getBytes();
+    public TonHashMapE getRawExtensions() {
+        RunResult result = tonlib.runMethod(getAddress(), Utils.calculateMethodId("get_extensions"));
+        TvmStackEntryList tvmStackEntryList = (TvmStackEntryList) result.getStack().get(0);
+        if (tvmStackEntryList.getList().getElements().isEmpty()) {
+            return new TonHashMapE(256);
+        }
+        String base64Msg = (String) tvmStackEntryList.getList().getElements().get(0);
         Cell cell = Cell.fromBocBase64(base64Msg);
         CellSlice cs = CellSlice.beginParse(cell);
-        List<ConfigParams1> l = new ArrayList<>();
-        // todo... how to convert
-        while (!cs.isSliceEmpty()) {
-            l.add(ConfigParams1.deserialize(cs));
-        }
-        System.out.println(l);
+
+        return cs.loadDictE(256,
+                k -> k.readUint(256),
+                v -> PrecompiledSmc.deserialize(CellSlice.beginParse(v)));
+
+//        // todo... how to convert
+//        while (!cs.isSliceEmpty()) {
+//            l.add(ConfigParams1.deserialize(cs));
+//        }
+//        System.out.println(l);
 //        try {
 //            TvmStackEntryList list = (TvmStackEntryList) result.getStack().get(0);
 //            for (Object o : list.getList().getElements()) {
@@ -343,6 +349,6 @@ public class WalletV5 implements Contract {
 //        catch (Exception e) {
 //
 //        }
-        return l;
+//        return l;
     }
 }

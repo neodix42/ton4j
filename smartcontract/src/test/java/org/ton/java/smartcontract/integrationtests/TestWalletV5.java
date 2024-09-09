@@ -66,6 +66,12 @@ public class TestWalletV5 extends CommonTest {
         contract.waitForDeployment(60);
 
         assertThat(contract.getSeqno()).isEqualTo(1);
+
+        log.info("walletId {}", contract.getWalletId());
+        log.info("publicKey {}", Utils.bytesToHex(contract.getPublicKey()));
+        log.info("isSignatureAuthAllowed {}", contract.getIsSignatureAuthAllowed());
+        log.info("extensions {}", contract.getRawExtensions());
+
     }
 
     /**
