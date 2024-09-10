@@ -14,6 +14,7 @@ import org.ton.java.smartcontract.types.WalletV5InnerRequest;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
 import org.ton.java.tlb.types.ActionList;
 import org.ton.java.tlb.types.ExtendedAction;
+import org.ton.java.tlb.types.ExtendedActionType;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
@@ -247,7 +248,7 @@ public class TestWalletV5 extends CommonTest {
                 .body(contract.manageExtensions(ActionList.builder()
                                 .actions(Collections.singletonList(
                                         ExtendedAction.builder()
-                                                .actionType(2)
+                                                .actionType(ExtendedActionType.ADD_EXTENSION)
                                                 .address(Address.of(addr2))
                                                 .build()))
                                 .build())
@@ -297,11 +298,11 @@ public class TestWalletV5 extends CommonTest {
         Cell extensions = contract.manageExtensions(ActionList.builder()
                         .actions(Arrays.asList(
                                 ExtendedAction.builder()
-                                        .actionType(2)
+                                        .actionType(ExtendedActionType.ADD_EXTENSION)
                                         .address(Address.of(addr2))
                                         .build(),
                                 ExtendedAction.builder()
-                                        .actionType(2)
+                                        .actionType(ExtendedActionType.ADD_EXTENSION)
                                         .address(Address.of(addr3))
                                         .build()))
                         .build())
@@ -468,10 +469,9 @@ public class TestWalletV5 extends CommonTest {
         Cell extensionsToRemove = contract.manageExtensions(ActionList.builder()
                         .actions(Collections.singletonList(
                                 ExtendedAction.builder()
-                                        .actionType(3)
+                                        .actionType(ExtendedActionType.REMOVE_EXTENSION)
                                         .address(Address.of(addr2))
-                                        .build()
-                        ))
+                                        .build()))
                         .build())
                 .toCell();
 
@@ -479,6 +479,90 @@ public class TestWalletV5 extends CommonTest {
                 .seqno(1)
                 .walletId(42)
                 .body(extensionsToRemove)
+                .build();
+
+        extMessageInfo = contract.send(walletV5Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        Utils.sleep(15);
+
+        log.info("extensions {}", contract.getRawExtensions());
+        assertThat(contract.getRawExtensions().elements.size()).isEqualTo(2);
+    }
+
+    /**
+     * <pre>
+     * On deployment installs two extensions, then sends a single request to:
+     * - delete one extension,
+     * - add one extension
+     * - do a simple transfer.
+     * </pre>
+     */
+    @Test
+    public void testWalletV5DeployWithTwoExtensionsAndDeleteOneExtensionAndSendTransfer() throws InterruptedException {
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+        // initial extensions
+        TonHashMapE initExtensions = new TonHashMapE(256);
+        initExtensions.elements.put(addr1.toBigInteger(), true);
+        initExtensions.elements.put(addr2.toBigInteger(), false);
+
+        WalletV5 contract = WalletV5.builder()
+                .tonlib(tonlib)
+                .walletId(42)
+                .isSigAuthAllowed(true)
+                .keyPair(keyPair)
+                .extensions(initExtensions)
+                .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String nonBounceableAddress = walletAddress.toNonBounceable();
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet-v5
+        ExtMessageInfo extMessageInfo = contract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+
+        assertThat(contract.getSeqno()).isEqualTo(1);
+
+        log.info("walletId {}", contract.getWalletId());
+        log.info("publicKey {}", Utils.bytesToHex(contract.getPublicKey()));
+        log.info("isSignatureAuthAllowed {}", contract.getIsSignatureAuthAllowed());
+        log.info("extensions {}", contract.getRawExtensions());
+
+        assertThat(contract.getRawExtensions().elements.size()).isEqualTo(2);
+
+        Cell transferAndManageExtensions = contract.createBulkTransferAndManageExtensions(
+                        Collections.singletonList(Destination.builder() // transfer
+                                .bounce(false)
+                                .address(addr1.toBounceable())
+                                .amount(Utils.toNano(0.0001))
+                                .build()),
+                        ActionList.builder() // manage extensions
+                                .actions(Arrays.asList(
+                                        ExtendedAction.builder()
+                                                .actionType(ExtendedActionType.REMOVE_EXTENSION)
+                                                .address(Address.of(addr2))
+                                                .build(),
+                                        ExtendedAction.builder()
+                                                .actionType(ExtendedActionType.ADD_EXTENSION)
+                                                .address(Address.of(addr3))
+                                                .build()))
+                                .build())
+                .toCell();
+
+        WalletV5Config walletV5Config = WalletV5Config.builder()
+                .seqno(1)
+                .walletId(42)
+                .body(transferAndManageExtensions)
                 .build();
 
         extMessageInfo = contract.send(walletV5Config);
@@ -533,7 +617,7 @@ public class TestWalletV5 extends CommonTest {
                 .body(contract.manageExtensions(ActionList.builder()
                                 .actions(Collections.singletonList(
                                         ExtendedAction.builder()
-                                                .actionType(4)
+                                                .actionType(ExtendedActionType.SET_SIGNATURE_AUTH_FLAG)
                                                 .isSignatureAllowed(false)
                                                 .build()))
                                 .build())

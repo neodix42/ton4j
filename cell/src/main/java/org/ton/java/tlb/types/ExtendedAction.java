@@ -10,16 +10,16 @@ import org.ton.java.cell.CellSlice;
 @Builder
 @Data
 public class ExtendedAction {
-    int actionType; // 2 - add extension, 3 - remove extension, 4 - change signature allowed flag
+    ExtendedActionType actionType;
     Address address;
     Boolean isSignatureAllowed;
 
     public Cell toCell() {
         CellBuilder cb = CellBuilder.beginCell();
 
-        if (actionType == 2) {
+        if (actionType == ExtendedActionType.ADD_EXTENSION) {
             cb.storeUint(2, 8).storeAddress(address);
-        } else if (actionType == 3) {
+        } else if (actionType == ExtendedActionType.REMOVE_EXTENSION) {
             cb.storeUint(3, 8).storeAddress(address);
         } else {
             cb.storeUint(4, 8).storeBit(isSignatureAllowed);
@@ -32,7 +32,7 @@ public class ExtendedAction {
         ExtendedAction extendedAction = ExtendedAction.builder().build();
         int actionType = cs.loadUint(8).intValue();
         if ((actionType == 2) || (actionType == 3)) {
-            extendedAction.setActionType(actionType);
+            extendedAction.setActionType(ExtendedActionType.getExtensionType(actionType));
             extendedAction.setAddress(cs.loadAddress());
         } else if (actionType == 4) {
             extendedAction.setIsSignatureAllowed(cs.loadBit());

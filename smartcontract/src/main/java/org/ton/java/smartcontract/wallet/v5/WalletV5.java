@@ -10,7 +10,6 @@ import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV5Config;
 import org.ton.java.smartcontract.types.WalletV5InnerRequest;
-import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
@@ -20,7 +19,6 @@ import org.ton.java.utils.Utils;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Objects.isNull;
@@ -33,10 +31,6 @@ public class WalletV5 implements Contract {
     private static final int SIZE_SEQNO = 32;
     private static final int SIZE_WALLET_ID = 32;
     private static final int SIZE_VALID_UNTIL = 32;
-
-    private static final int ADD_EXTENSION = 2;
-    private static final int REMOVE_EXTENSION = 3;
-    private static final int SIG_AUTH = 4;
 
     private static final int PREFIX_SIGNED_EXTERNAL = 0x7369676E;
     private static final int PREFIX_SIGNED_INTERNAL = 0x73696E74;
@@ -220,13 +214,6 @@ public class WalletV5 implements Contract {
                 .endCell();
     }
 
-    public ExtMessageInfo addExtension(WalletV5Config config) {
-        config.setOp(PREFIX_EXTENSION_ACTION);
-        Cell body = createExternalTransferBody(config);
-        Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
-        return tonlib.sendRawMessage(msg.toCell().toBase64());
-    }
-
     public WalletV5InnerRequest manageExtensions(ActionList actionList) {
 
         return WalletV5InnerRequest.builder()
@@ -234,37 +221,6 @@ public class WalletV5 implements Contract {
                 .hasOtherActions(true)
                 .otherActions(actionList)
                 .build();
-    }
-
-    public ExtMessageInfo addExtensionInternal(WalletV5Config config) {
-        config.setOp(PREFIX_SIGNED_INTERNAL);
-        Cell body = createActionTransferBody(config);
-        Message msg = MsgUtils.createInternalMessage(getAddress(), config.getAmount(), getStateInit(), body, config.isBounce());
-        return tonlib.sendRawMessage(msg.toCell().toBase64());
-    }
-
-
-    private Cell createActionTransferBody(WalletV5Config config) {
-        return CellBuilder.beginCell()
-                .storeUint(PREFIX_SIGNED_EXTERNAL, 32)
-                .storeUint(config.getQueryId(), 64)
-                .storeCell(config.getBody()) // innerRequest
-                .storeBit(config.isSignatureAllowed())
-                .endCell();
-    }
-
-    public OutList createSingleTransfer(String address, BigInteger amount, Boolean bounce, String comment, Cell body) {
-        Destination recipient = Destination.builder()
-                .address(address)
-                .amount(amount)
-                .bounce(bounce)
-                .comment(comment)
-                .body(body)
-                .build();
-
-        OutAction action = convertDestinationToOutAction(recipient);
-
-        return OutList.builder().actions(Collections.singletonList(action)).build();
     }
 
     public WalletV5InnerRequest createBulkTransfer(List<Destination> recipients) {
@@ -283,6 +239,35 @@ public class WalletV5 implements Contract {
                         .build())
                 .hasOtherActions(false)
                 .build();
+    }
+
+    public WalletV5InnerRequest createBulkTransferAndManageExtensions(List<Destination> recipients, ActionList actionList) {
+        if (recipients.size() > 255) {
+            throw new IllegalArgumentException("Maximum number of recipients should be less than 255");
+        }
+
+        List<OutAction> messages = new ArrayList<>();
+        for (Destination recipient : recipients) {
+            messages.add(convertDestinationToOutAction(recipient));
+        }
+
+        if (actionList.getActions().size() == 0) {
+
+            return WalletV5InnerRequest.builder()
+                    .outActions(OutList.builder()
+                            .actions(messages)
+                            .build())
+                    .hasOtherActions(false)
+                    .build();
+        } else {
+            return WalletV5InnerRequest.builder()
+                    .outActions(OutList.builder()
+                            .actions(messages)
+                            .build())
+                    .hasOtherActions(true)
+                    .otherActions(actionList)
+                    .build();
+        }
     }
 
     private OutAction convertDestinationToOutAction(Destination destination) {

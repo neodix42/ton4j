@@ -15,7 +15,6 @@ public class WalletV5Config implements WalletConfig {
     long validUntil;
     long createdAt;
     boolean bounce;
-    //    WalletActions body;
     Cell body;
     boolean signatureAllowed;
     BigInteger amount;
