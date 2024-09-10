@@ -125,24 +125,16 @@ public class WalletV5 implements Contract {
 
     /**
      * Deploy wallet without any extensions.
-     * One can be installed later into the wallet. See addExtension().
+     * One can be installed later into the wallet.
      */
 
     public ExtMessageInfo deploy() {
         return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
     }
 
-    /**
-     * Deploy wallet without any extensions.
-     * One can be installed later into the wallet. See addExtension().
-     */
-
-    public ExtMessageInfo deploy(WalletV5Config conf) {
-        return tonlib.sendRawMessage(prepareExternalMsg(conf).toCell().toBase64());
-    }
-
     public Message prepareDeployMsg() {
         Cell body = createDeployMsg();
+        byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
 
         return Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -151,13 +143,14 @@ public class WalletV5 implements Contract {
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeCell(body)
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                        .storeBytes(signature)
                         .endCell())
                 .build();
     }
 
     public Message prepareExternalMsg(WalletV5Config config) {
         Cell body = createExternalTransferBody(config);
+        byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
 
         return Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -166,7 +159,7 @@ public class WalletV5 implements Contract {
                 .init(getStateInit())
                 .body(CellBuilder.beginCell()
                         .storeCell(body)
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                        .storeBytes(signature)
                         .endCell())
                 .build();
     }
@@ -206,12 +199,29 @@ public class WalletV5 implements Contract {
 
     private Cell createExternalTransferBody(WalletV5Config config) {
         return CellBuilder.beginCell()
-                .storeUint(config.getOp() == 0 ? PREFIX_SIGNED_EXTERNAL : config.getOp(), 32)
+                .storeUint(PREFIX_SIGNED_EXTERNAL, 32)
                 .storeUint(config.getWalletId(), SIZE_WALLET_ID)
                 .storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), SIZE_VALID_UNTIL)
                 .storeUint(config.getSeqno(), SIZE_SEQNO)
                 .storeCell(config.getBody()) // innerRequest
                 .endCell();
+    }
+
+    public Cell createInternalTransferBody(WalletV5Config config) {
+        return CellBuilder.beginCell()
+                .storeUint(PREFIX_SIGNED_INTERNAL, 32)
+                .storeUint(config.getWalletId(), SIZE_WALLET_ID)
+                .storeUint((config.getValidUntil() == 0) ? Instant.now().getEpochSecond() + 60 : config.getValidUntil(), SIZE_VALID_UNTIL)
+                .storeUint(config.getSeqno(), SIZE_SEQNO)
+                .storeCell(config.getBody()) // innerRequest
+                .endCell();
+    }
+
+    public Cell createInternalSignedlBody(WalletV5Config config) {
+        Cell body = createInternalTransferBody(config);
+        byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
+
+        return CellBuilder.beginCell().storeCell(body).storeBytes(signature).endCell();
     }
 
     public WalletV5InnerRequest manageExtensions(ActionList actionList) {
