@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -11,33 +9,44 @@ import org.ton.java.cell.CellSlice;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Objects.nonNull;
+
+/**
+ * <pre>
+ * // Extended actions in W5:
+ * action_list_basic$_ {n:#} actions:^(OutList n) = ActionList n 0;
+ * action_list_extended$_ {m:#} {n:#} action:ExtendedAction prev:^(ActionList n m) = ActionList n (m+1);
+ * </pre>
+ */
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class ActionList {
     List<ExtendedAction> actions;
 
     public Cell toCell() {
-        Cell list = CellBuilder.beginCell().endCell();
+
+        Cell list = null;
         for (ExtendedAction action : actions) {
             Cell cell = action.toCell();
             list = CellBuilder.beginCell()
-                    .storeRef(list)
                     .storeCell(cell)
+                    .storeRefMaybe(list)
                     .endCell();
         }
         return list;
     }
 
-    // todo...
     public static ActionList deserialize(CellSlice cs) {
         List<ExtendedAction> actions = new ArrayList<>();
+        actions.add(ExtendedAction.deserialize(CellSlice.beginParse(cs)));
+
         while (cs.getRefsCount() != 0) {
-            Cell t = cs.loadRef();
-//            ExtendedAction action = ExtendedAction.deserialize(CellSlice.beginParse(cs));
-//            actions.add(action);
-            cs = CellSlice.beginParse(t);
+            Cell t = cs.loadMaybeRefX();
+            if (nonNull(t)) {
+                ExtendedAction action = ExtendedAction.deserialize(CellSlice.beginParse(t));
+                actions.add(action);
+                cs = CellSlice.beginParse(t);
+            }
         }
         return ActionList.builder()
                 .actions(actions)

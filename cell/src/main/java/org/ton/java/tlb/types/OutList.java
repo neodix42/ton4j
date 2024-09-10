@@ -1,15 +1,15 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.util.Objects.isNull;
 
 /**
  * <pre>
@@ -18,15 +18,16 @@ import java.util.List;
  * </pre>
  */
 @Builder
-@Getter
-@Setter
-@ToString
-
+@Data
 public class OutList {
     List<OutAction> actions;
 
     public Cell toCell() {
+        if (isNull(actions)) {
+            return null;
+        }
         Cell list = CellBuilder.beginCell().endCell();
+
         for (OutAction action : actions) {
             Cell outAction = action.toCell();
             list = CellBuilder.beginCell()

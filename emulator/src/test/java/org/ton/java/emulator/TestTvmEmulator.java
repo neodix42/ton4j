@@ -805,4 +805,51 @@ public class TestTvmEmulator {
         VmStackList vmStackList = stack.getStack();
         log.info("vmStackList: {}", vmStackList.getTos());
     }
+
+    @Test
+    public void testTvmEmulatorWalletV5() throws IOException {
+
+        SmartContractCompiler smcFunc = SmartContractCompiler.builder()
+                .contractPath("G:/smartcontracts/new-wallet-v5.fc")
+                .build();
+
+        String codeCellHex = smcFunc.compile();
+        Cell codeCell = CellBuilder.beginCell().fromBoc(codeCellHex).endCell();
+
+        byte[] publicKey = Utils.hexToSignedBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
+        byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+
+        Cell dataCell = CellBuilder.beginCell()
+                .storeBit(true)
+                .storeUint(0, 32)
+                .storeUint(42, 32)
+                .storeBytes(keyPair.getPublicKey())
+                .storeBit(false)
+                .endCell();
+
+        log.info("codeCellHex {}", codeCellHex);
+        log.info("dataCellHex {}", dataCell.toHex());
+
+        Address address = StateInit.builder().code(codeCell).data(dataCell).build().getAddress();
+        log.info("addressRaw {}", address.toRaw());
+        log.info("addressBounceable {}", address.toBounceable());
+
+        tvmEmulator = TvmEmulator.builder()
+                .pathToEmulatorSharedLib("G:/libs/emulator.dll")
+                .codeBoc(codeCell.toBase64())
+                .dataBoc(dataCell.toBase64())
+                .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
+                .build();
+
+        tvmEmulator.setDebugEnabled(true);
+
+        assertTrue(tvmEmulator.setLibs(getLibs().toBase64()));
+
+        // todo
+        // String resultBoc = tvmEmulator.sendExternalMessage(signedBody.toBase64());
+
+//        SendExternalMessageResult result = gson.fromJson(resultBoc, SendExternalMessageResult.class);
+//        log.info("result sendExternalMessage, exitCode: {}", result.getVm_exit_code());
+    }
 }

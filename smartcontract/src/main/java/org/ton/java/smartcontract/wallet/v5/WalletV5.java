@@ -5,10 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonHashMapE;
+import org.ton.java.cell.*;
 import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV5Config;
@@ -17,10 +14,7 @@ import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryList;
-import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
@@ -103,16 +97,25 @@ public class WalletV5 implements Contract {
      */
     @Override
     public Cell createDataCell() {
-        return CellBuilder.beginCell()
-                .storeBit(isSigAuthAllowed)
-                .storeUint(initialSeqno, 32)
-                .storeUint(walletId, 32)
-                .storeBytes(keyPair.getPublicKey())
-                .storeDict(extensions.serialize(
-                        k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
-                        v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()
-                ))
-                .endCell();
+        if (isNull(extensions)) {
+            return CellBuilder.beginCell()
+                    .storeBit(isSigAuthAllowed)
+                    .storeUint(initialSeqno, 32)
+                    .storeUint(walletId, 32)
+                    .storeBytes(keyPair.getPublicKey())
+                    .storeBit(false) // empty extensions dict
+                    .endCell();
+        } else {
+            return CellBuilder.beginCell()
+                    .storeBit(isSigAuthAllowed)
+                    .storeUint(initialSeqno, 32)
+                    .storeUint(walletId, 32)
+                    .storeBytes(keyPair.getPublicKey())
+                    .storeDict(extensions.serialize(
+                            k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
+                            v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()))
+                    .endCell();
+        }
     }
 
     @Override
@@ -186,16 +189,25 @@ public class WalletV5 implements Contract {
      * </pre>
      */
     private Cell createDeployMsg() {
-        return CellBuilder.beginCell()
-                .storeUint(PREFIX_SIGNED_EXTERNAL, 32)
-                .storeUint(walletId, SIZE_WALLET_ID)
-                .storeUint((validUntil == 0) ? Instant.now().getEpochSecond() + 60 : validUntil, SIZE_VALID_UNTIL)
-                .storeUint(0, SIZE_SEQNO)
-                .storeDict(extensions.serialize(
-                        k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
-                        v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()
-                ))
-                .endCell();
+        if (isNull(extensions)) {
+            return CellBuilder.beginCell()
+                    .storeUint(PREFIX_SIGNED_EXTERNAL, 32)
+                    .storeUint(walletId, SIZE_WALLET_ID)
+                    .storeUint((validUntil == 0) ? Instant.now().getEpochSecond() + 60 : validUntil, SIZE_VALID_UNTIL)
+                    .storeUint(0, SIZE_SEQNO)
+                    .storeBit(false) // empty extensions dict
+                    .endCell();
+        } else {
+            return CellBuilder.beginCell()
+                    .storeUint(PREFIX_SIGNED_EXTERNAL, 32)
+                    .storeUint(walletId, SIZE_WALLET_ID)
+                    .storeUint((validUntil == 0) ? Instant.now().getEpochSecond() + 60 : validUntil, SIZE_VALID_UNTIL)
+                    .storeUint(0, SIZE_SEQNO)
+                    .storeDict(extensions.serialize(
+                            k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
+                            v -> CellBuilder.beginCell().storeBit((Boolean) v).endCell()))
+                    .endCell();
+        }
     }
 
     private Cell createExternalTransferBody(WalletV5Config config) {
@@ -213,6 +225,15 @@ public class WalletV5 implements Contract {
         Cell body = createExternalTransferBody(config);
         Message msg = MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
         return tonlib.sendRawMessage(msg.toCell().toBase64());
+    }
+
+    public WalletV5InnerRequest manageExtensions(ActionList actionList) {
+
+        return WalletV5InnerRequest.builder()
+                .outActions(OutList.builder().build())
+                .hasOtherActions(true)
+                .otherActions(actionList)
+                .build();
     }
 
     public ExtMessageInfo addExtensionInternal(WalletV5Config config) {
@@ -311,44 +332,18 @@ public class WalletV5 implements Contract {
         return signatureAllowed.getNumber().longValue() != 0;
     }
 
-    public TonHashMapE getRawExtensions() {
+    public TonHashMap getRawExtensions() {
         RunResult result = tonlib.runMethod(getAddress(), Utils.calculateMethodId("get_extensions"));
-        TvmStackEntryList tvmStackEntryList = (TvmStackEntryList) result.getStack().get(0);
-        if (tvmStackEntryList.getList().getElements().isEmpty()) {
-            return new TonHashMapE(256);
+        if (result.getStack().get(0) instanceof TvmStackEntryList) {
+            return new TonHashMap(256);
         }
-        String base64Msg = (String) tvmStackEntryList.getList().getElements().get(0);
-        Cell cell = Cell.fromBocBase64(base64Msg);
-        CellSlice cs = CellSlice.beginParse(cell);
+        TvmStackEntryCell tvmStackEntryCell = (TvmStackEntryCell) result.getStack().get(0);
 
-        return cs.loadDictE(256,
+        String base64Msg = tvmStackEntryCell.getCell().getBytes();
+        CellSlice cs = CellSlice.beginParse(Cell.fromBocBase64(base64Msg));
+
+        return cs.loadDict(256,
                 k -> k.readUint(256),
-                v -> PrecompiledSmc.deserialize(CellSlice.beginParse(v)));
-
-//        // todo... how to convert
-//        while (!cs.isSliceEmpty()) {
-//            l.add(ConfigParams1.deserialize(cs));
-//        }
-//        System.out.println(l);
-//        try {
-//            TvmStackEntryList list = (TvmStackEntryList) result.getStack().get(0);
-//            for (Object o : list.getList().getElements()) {
-//                TvmStackEntryTuple t = (TvmStackEntryTuple) o;
-//                TvmTuple tuple = t.getTuple();
-//                TvmStackEntryNumber wc = (TvmStackEntryNumber) tuple.getElements().get(0); // 1 byte
-//                TvmStackEntryNumber addr = (TvmStackEntryNumber) tuple.getElements().get(1); // 32 bytes
-//                r.add(wc.getNumber() + ":" + addr.getNumber().toString(16).toUpperCase());
-//            }
-//            TvmStackEntryCell cell = (TvmStackEntryCell) result.getStack().get(0);
-//            for (Object o : cell) {
-//                TvmStackEntryTuple t = (TvmStackEntryTuple) o;
-//                TvmTuple tuple = t.getTuple();
-//                r.add(tuple.toString());
-//            }
-//        }
-//        catch (Exception e) {
-//
-//        }
-//        return l;
+                v -> v);
     }
 }

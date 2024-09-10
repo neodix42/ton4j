@@ -5,13 +5,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.WalletV5Config;
+import org.ton.java.smartcontract.types.WalletV5InnerRequest;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
-import org.ton.java.tlb.types.*;
+import org.ton.java.tlb.types.ActionList;
+import org.ton.java.tlb.types.ExtendedAction;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
@@ -19,10 +21,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -31,7 +30,6 @@ public class TestWalletV5 extends CommonTest {
     private static final Address addr1 = Address.of("0QAN9Y278BrYMcbsKKFL4GqvwkIqaIQiSyriFbZDR00zxblI");
     private static final Address addr2 = Address.of("0QCb9KbERyZigZQaeMMF0gjFTJ7cgqeM1wqs4a5ZT3I-Z02R");
     private static final Address addr3 = Address.of("0QBCS04SJWAaSk4AvGD2vg7AHwEU8fH4b4UN0SfNot6rTmBD");
-
 
     /**
      * Wallet V5 deploy
@@ -42,10 +40,9 @@ public class TestWalletV5 extends CommonTest {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
         WalletV5 contract = WalletV5.builder()
                 .tonlib(tonlib)
-                .isSigAuthAllowed(true)
                 .walletId(42)
                 .keyPair(keyPair)
-                .extensions(new TonHashMapE(256))
+                .isSigAuthAllowed(true)
                 .build();
 
         Address walletAddress = contract.getAddress();
@@ -71,7 +68,6 @@ public class TestWalletV5 extends CommonTest {
         log.info("publicKey {}", Utils.bytesToHex(contract.getPublicKey()));
         log.info("isSignatureAuthAllowed {}", contract.getIsSignatureAuthAllowed());
         log.info("extensions {}", contract.getRawExtensions());
-
     }
 
     /**
@@ -83,10 +79,9 @@ public class TestWalletV5 extends CommonTest {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
         WalletV5 contract = WalletV5.builder()
                 .tonlib(tonlib)
-                .isSigAuthAllowed(true)
                 .walletId(42)
                 .keyPair(keyPair)
-                .extensions(new TonHashMapE(256))
+                .isSigAuthAllowed(true)
                 .build();
 
         Address walletAddress = contract.getAddress();
@@ -132,10 +127,9 @@ public class TestWalletV5 extends CommonTest {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
         WalletV5 contract = WalletV5.builder()
                 .tonlib(tonlib)
-                .isSigAuthAllowed(true)
                 .walletId(42)
                 .keyPair(keyPair)
-                .extensions(new TonHashMapE(256))
+                .isSigAuthAllowed(true)
                 .build();
 
         Address walletAddress = contract.getAddress();
@@ -158,34 +152,203 @@ public class TestWalletV5 extends CommonTest {
         long newSeq = contract.getSeqno();
         assertThat(newSeq).isEqualTo(1);
 
-        Cell extMsgWith3Mgs = contract.createBulkTransfer(createDummyDestinations(255)).toCell();
+        Cell extMsg = contract.createBulkTransfer(createDummyDestinations(255)).toCell();
 
         WalletV5Config walletV5Config = WalletV5Config.builder()
                 .seqno(newSeq)
                 .walletId(42)
-                .body(extMsgWith3Mgs)
+                .body(extMsg)
                 .build();
 
         extMessageInfo = contract.send(walletV5Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 
+    /**
+     * Transfer to 0 recipient.
+     * Without Library and Without Extensions and without OtherActions.
+     */
     @Test
-    public void testWalletV5Extensions() throws InterruptedException, NoSuchAlgorithmException {
+    public void testWalletV5SimpleTransfer0() throws InterruptedException {
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        WalletV5 contract = WalletV5.builder()
+                .tonlib(tonlib)
+                .walletId(42)
+                .keyPair(keyPair)
+                .isSigAuthAllowed(true)
+                .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String nonBounceableAddress = walletAddress.toNonBounceable();
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet-v5
+        ExtMessageInfo extMessageInfo = contract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+
+        long newSeq = contract.getSeqno();
+        assertThat(newSeq).isEqualTo(1);
+
+        WalletV5Config walletV5Config = WalletV5Config.builder()
+                .seqno(newSeq)
+                .walletId(42)
+                .body(contract.createBulkTransfer(Collections.emptyList()).toCell())
+                .build();
+
+        extMessageInfo = contract.send(walletV5Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+    }
+
+    /**
+     * Deploy without extension and then add an extension.
+     */
+    @Test
+    public void testWalletV5DeployOneExtension() throws InterruptedException {
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        WalletV5 contract = WalletV5.builder()
+                .tonlib(tonlib)
+                .isSigAuthAllowed(true)
+                .walletId(42)
+                .keyPair(keyPair)
+                .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String nonBounceableAddress = walletAddress.toNonBounceable();
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet-v5
+        ExtMessageInfo extMessageInfo = contract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+
+        long newSeq = contract.getSeqno();
+        assertThat(newSeq).isEqualTo(1);
+
+        WalletV5Config walletV5Config = WalletV5Config.builder()
+                .seqno(newSeq)
+                .walletId(42)
+                .body(contract.manageExtensions(ActionList.builder()
+                                .actions(Collections.singletonList(
+                                        ExtendedAction.builder()
+                                                .actionType(2)
+                                                .address(Address.of(addr2))
+                                                .build()))
+                                .build())
+                        .toCell())
+                .build();
+
+        extMessageInfo = contract.send(walletV5Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        Utils.sleep(15);
+        log.info("extensions {}", contract.getRawExtensions());
+        assertThat(contract.getRawExtensions().elements.size()).isEqualTo(1);
+    }
+
+    /**
+     * Deploy without extension and then add two extensions.
+     */
+    @Test
+    public void testWalletV5DeployTwoExtensions() throws InterruptedException {
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        WalletV5 contract = WalletV5.builder()
+                .tonlib(tonlib)
+                .walletId(42)
+                .keyPair(keyPair)
+                .isSigAuthAllowed(true)
+                .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String nonBounceableAddress = walletAddress.toNonBounceable();
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet-v5
+        ExtMessageInfo extMessageInfo = contract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+
+        long newSeq = contract.getSeqno();
+        assertThat(newSeq).isEqualTo(1);
+
+        Cell extensions = contract.manageExtensions(ActionList.builder()
+                        .actions(Arrays.asList(
+                                ExtendedAction.builder()
+                                        .actionType(2)
+                                        .address(Address.of(addr2))
+                                        .build(),
+                                ExtendedAction.builder()
+                                        .actionType(2)
+                                        .address(Address.of(addr3))
+                                        .build()))
+                        .build())
+                .toCell();
+
+        // test WalletV5InnerRequest de/serialization
+        WalletV5InnerRequest walletV5InnerRequest = WalletV5InnerRequest.deserialize(CellSlice.beginParse(extensions));
+        log.info("walletV5InnerRequest (deserialized) {}", walletV5InnerRequest);
+        log.info("walletV5InnerRequest (serialized)   {}", walletV5InnerRequest.toCell().toHex());
+
+        WalletV5Config walletV5Config = WalletV5Config.builder()
+                .seqno(newSeq)
+                .walletId(42)
+                .body(extensions)
+                .build();
+
+        extMessageInfo = contract.send(walletV5Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        Utils.sleep(15);
+        log.info("extensions {}", contract.getRawExtensions());
+        assertThat(contract.getRawExtensions().elements.size()).isEqualTo(2);
+    }
+
+    @Test
+    public void testWalletV5GetExtensionsResult() {
+        Cell cell = Cell.fromBoc("b5ee9c72010101010024000043a0137e94d888e4cc5032834f1860ba4118a993db9054f19ae1559c35cb29ee47ccf8");
+        CellSlice cs = CellSlice.beginParse(cell);
+
+        log.info("e {}", cs.loadDict(256,
+                k -> k.readUint(256),
+                v -> v));
+    }
+
+    @Test
+    public void testWalletV5DeployWithOneExtension() throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        // initial extensions map
+        // initial extensions
         TonHashMapE initExtensions = new TonHashMapE(256);
-//        initExtensions.elements.put(addr1.toBigInteger(), true);
-//        initExtensions.elements.put(addr2.toBigInteger(), true);
-//        initExtensions.elements.put(addr3.toBigInteger(), false);
+        initExtensions.elements.put(addr1.toBigInteger(), true);
 
         WalletV5 contract = WalletV5.builder()
-                .isSigAuthAllowed(true)
                 .tonlib(tonlib)
-                .extensions(initExtensions)
-                .keyPair(keyPair)
                 .walletId(42)
+                .isSigAuthAllowed(true)
+                .keyPair(keyPair)
+                .extensions(initExtensions)
                 .build();
 
         Address walletAddress = contract.getAddress();
@@ -199,42 +362,195 @@ public class TestWalletV5 extends CommonTest {
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-//        List<Destination> dummyDestinations = createDummyDestinations(3);
-//        OutList msgs = createDummyActionSendMessages(255);
-        ActionList extensions = createDummyExtendedActions(12, 2);
-
-        WalletV5Config walletV5Config = WalletV5Config.builder()
-                .signatureAllowed(false)
-                .seqno(contract.getSeqno())
-                .walletId(42)
-                .body(null)
-                .build();
-
         // deploy wallet-v5
-        ExtMessageInfo extMessageInfo = contract.deploy(walletV5Config);
+        ExtMessageInfo extMessageInfo = contract.deploy();
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
         contract.waitForDeployment(60);
 
-        long walletCurrentSeqno = contract.getSeqno();
+        assertThat(contract.getSeqno()).isEqualTo(1);
 
-        walletV5Config = WalletV5Config.builder()
-                .signatureAllowed(true)
-                .seqno(contract.getSeqno() + 1)
+        log.info("walletId {}", contract.getWalletId());
+        log.info("publicKey {}", Utils.bytesToHex(contract.getPublicKey()));
+        log.info("isSignatureAuthAllowed {}", contract.getIsSignatureAuthAllowed());
+        log.info("extensions {}", contract.getRawExtensions());
+        assertThat(contract.getRawExtensions().elements.size()).isEqualTo(1);
+    }
+
+    @Test
+    public void testWalletV5DeployWithThreeExtensions() throws InterruptedException {
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+        // initial extensions
+        TonHashMapE initExtensions = new TonHashMapE(256);
+        initExtensions.elements.put(addr1.toBigInteger(), true);
+        initExtensions.elements.put(addr2.toBigInteger(), true);
+        initExtensions.elements.put(addr3.toBigInteger(), false);
+
+        WalletV5 contract = WalletV5.builder()
+                .tonlib(tonlib)
                 .walletId(42)
-                .body(null)
+                .isSigAuthAllowed(true)
+                .keyPair(keyPair)
+                .extensions(initExtensions)
                 .build();
 
+        Address walletAddress = contract.getAddress();
+
+        String nonBounceableAddress = walletAddress.toNonBounceable();
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet-v5
+        ExtMessageInfo extMessageInfo = contract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+
+        assertThat(contract.getSeqno()).isEqualTo(1);
+
+        log.info("walletId {}", contract.getWalletId());
+        log.info("publicKey {}", Utils.bytesToHex(contract.getPublicKey()));
+        log.info("isSignatureAuthAllowed {}", contract.getIsSignatureAuthAllowed());
+        log.info("extensions {}", contract.getRawExtensions());
+        assertThat(contract.getRawExtensions().elements.size()).isEqualTo(3);
+    }
+
+    @Test
+    public void testWalletV5DeployWithThreeExtensionsAndDeleteOne() throws InterruptedException {
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+        // initial extensions
+        TonHashMapE initExtensions = new TonHashMapE(256);
+        initExtensions.elements.put(addr1.toBigInteger(), true);
+        initExtensions.elements.put(addr2.toBigInteger(), true);
+        initExtensions.elements.put(addr3.toBigInteger(), false);
+
+        WalletV5 contract = WalletV5.builder()
+                .tonlib(tonlib)
+                .walletId(42)
+                .isSigAuthAllowed(true)
+                .keyPair(keyPair)
+                .extensions(initExtensions)
+                .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String nonBounceableAddress = walletAddress.toNonBounceable();
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet-v5
+        ExtMessageInfo extMessageInfo = contract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+
+        assertThat(contract.getSeqno()).isEqualTo(1);
+
+        log.info("walletId {}", contract.getWalletId());
+        log.info("publicKey {}", Utils.bytesToHex(contract.getPublicKey()));
+        log.info("isSignatureAuthAllowed {}", contract.getIsSignatureAuthAllowed());
+        log.info("extensions {}", contract.getRawExtensions());
+
+        assertThat(contract.getRawExtensions().elements.size()).isEqualTo(3);
+
+        Cell extensionsToRemove = contract.manageExtensions(ActionList.builder()
+                        .actions(Collections.singletonList(
+                                ExtendedAction.builder()
+                                        .actionType(3)
+                                        .address(Address.of(addr2))
+                                        .build()
+                        ))
+                        .build())
+                .toCell();
+
+        WalletV5Config walletV5Config = WalletV5Config.builder()
+                .seqno(1)
+                .walletId(42)
+                .body(extensionsToRemove)
+                .build();
 
         extMessageInfo = contract.send(walletV5Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
+        Utils.sleep(15);
 
-        contract.getRawExtensions();
-        log.info("walletV5 balance: {}", Utils.formatNanoValue(contract.getBalance()));
-        log.info("seqno: {}", walletCurrentSeqno);
-        log.info("walletId: {}", contract.getWalletId());
-        log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey()));
-//        log.info("extensionsList: {}", extensionsList);
+        log.info("extensions {}", contract.getRawExtensions());
+        assertThat(contract.getRawExtensions().elements.size()).isEqualTo(2);
+    }
+
+    /**
+     * Deploy without extension and modify is signature auth allowed flag
+     */
+    @Test
+    public void testWalletV5ModifySignatureAuthAllowed() throws InterruptedException {
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        WalletV5 contract = WalletV5.builder()
+                .tonlib(tonlib)
+                .isSigAuthAllowed(true)
+                .walletId(42)
+                .keyPair(keyPair)
+                .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String nonBounceableAddress = walletAddress.toNonBounceable();
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet-v5
+        ExtMessageInfo extMessageInfo = contract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+
+        long newSeq = contract.getSeqno();
+        assertThat(newSeq).isEqualTo(1);
+
+        log.info("walletId {}", contract.getWalletId());
+        log.info("publicKey {}", Utils.bytesToHex(contract.getPublicKey()));
+        log.info("isSignatureAuthAllowed {}", contract.getIsSignatureAuthAllowed());
+        log.info("extensions {}", contract.getRawExtensions());
+
+        WalletV5Config walletV5Config = WalletV5Config.builder()
+                .seqno(newSeq)
+                .walletId(42)
+                .body(contract.manageExtensions(ActionList.builder()
+                                .actions(Collections.singletonList(
+                                        ExtendedAction.builder()
+                                                .actionType(4)
+                                                .isSignatureAllowed(false)
+                                                .build()))
+                                .build())
+                        .toCell())
+                .build();
+
+        extMessageInfo = contract.send(walletV5Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        Utils.sleep(15);
+
+        log.info("walletId {}", contract.getWalletId());
+        log.info("publicKey {}", Utils.bytesToHex(contract.getPublicKey()));
+        log.info("isSignatureAuthAllowed {}", contract.getIsSignatureAuthAllowed());
+        log.info("extensions {}", contract.getRawExtensions());
+
+        // Signature Auth flag is not changed, since - only_extension_can_change_signature_mode, error 146
+        assertThat(contract.getIsSignatureAuthAllowed()).isTrue();
     }
 
     List<Destination> createDummyDestinations(int count) throws NoSuchAlgorithmException {
@@ -250,52 +566,5 @@ public class TestWalletV5 extends CommonTest {
                     .build());
         }
         return result;
-    }
-
-    OutList createDummyActionSendMessages(int numRecipients) throws NoSuchAlgorithmException {
-        List<OutAction> actionSendMsgs = new ArrayList<>();
-        for (int i = 0; i < numRecipients; i++) {
-            Address destinationAddress = Address.of("0:" + Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8))));
-            ActionSendMsg actionSendMsg = ActionSendMsg.builder()
-                    .mode(3)
-                    .outMsg(MessageRelaxed.builder()
-                            .info(InternalMessageInfoRelaxed.builder()
-                                    .bounce(true)
-                                    .dstAddr(MsgAddressIntStd.builder()
-                                            .workchainId(destinationAddress.wc)
-                                            .address(destinationAddress.toBigInteger())
-                                            .build())
-                                    .value(CurrencyCollection.builder()
-                                            .coins(Utils.toNano(0.0001))
-                                            .build())
-                                    .build())
-                            .body(CellBuilder.beginCell()
-                                    .storeUint(0, 32) // 0 opcode means we have a comment
-                                    .storeString("Dummy comment wallet-v5. Message id: " + (i + 1))
-                                    .endCell())
-                            .build())
-                    .build();
-            actionSendMsgs.add(actionSendMsg);
-        }
-
-        return OutList.builder()
-                .actions(actionSendMsgs)
-                .build();
-    }
-
-    ActionList createDummyExtendedActions(int numExtensions, int actionType) throws NoSuchAlgorithmException {
-        List<ExtendedAction> extendedActions = new ArrayList<>();
-        for (int i = 0; i < numExtensions; i++) {
-            Address destinationAddress = Address.of("0:" + Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8))));
-            ExtendedAction extendedAction = ExtendedAction.builder()
-                    .actionType(actionType)
-                    .dstAddress(destinationAddress)
-                    .build();
-            extendedActions.add(extendedAction);
-        }
-
-        return ActionList.builder()
-                .actions(extendedActions)
-                .build();
     }
 }

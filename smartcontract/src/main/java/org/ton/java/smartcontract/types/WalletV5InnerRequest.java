@@ -1,14 +1,14 @@
 package org.ton.java.smartcontract.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.types.ActionList;
 import org.ton.java.tlb.types.OutList;
+
+import static java.util.Objects.nonNull;
 
 /**
  * <pre>
@@ -16,10 +16,7 @@ import org.ton.java.tlb.types.OutList;
  * </pre>
  */
 @Builder
-@Getter
-@Setter
-@ToString
-
+@Data
 public class WalletV5InnerRequest {
 
     OutList outActions;
@@ -42,10 +39,19 @@ public class WalletV5InnerRequest {
     }
 
     public static WalletV5InnerRequest deserialize(CellSlice cs) {
-        return WalletV5InnerRequest.builder()
-                .outActions(OutList.deserialize(CellSlice.beginParse(cs.loadMaybeRefX())))
-                .hasOtherActions(cs.loadBit())
-                .otherActions(ActionList.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .build();
+        if (nonNull(cs.preloadMaybeRefX())) {
+            return WalletV5InnerRequest.builder()
+                    .outActions(OutList.deserialize(CellSlice.beginParse(cs.loadMaybeRefX())))
+                    .hasOtherActions(cs.loadBit())
+                    .otherActions(ActionList.deserialize(CellSlice.beginParse(cs)))
+                    .build();
+        } else {
+            cs.loadBit();
+            return WalletV5InnerRequest.builder()
+                    .outActions(OutList.builder().build())
+                    .hasOtherActions(cs.loadBit())
+                    .otherActions(ActionList.deserialize(CellSlice.beginParse(cs)))
+                    .build();
+        }
     }
 }
