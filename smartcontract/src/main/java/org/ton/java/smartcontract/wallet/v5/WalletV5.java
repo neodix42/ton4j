@@ -224,6 +224,21 @@ public class WalletV5 implements Contract {
         return CellBuilder.beginCell().storeCell(body).storeBytes(signature).endCell();
     }
 
+    public Cell createInternalExtensionTransferBody(BigInteger queryId, Cell body) {
+        return CellBuilder.beginCell()
+                .storeUint(PREFIX_EXTENSION_ACTION, 32)
+                .storeUint(queryId, 64)
+                .storeCell(body) // innerRequest
+                .endCell();
+    }
+
+    public Cell createInternalExtensionSignedlBody(BigInteger queryId, Cell body) {
+        Cell body1 = createInternalExtensionTransferBody(queryId, body);
+        byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body1.hash());
+
+        return CellBuilder.beginCell().storeCell(body).storeBytes(signature).endCell();
+    }
+
     public WalletV5InnerRequest manageExtensions(ActionList actionList) {
 
         return WalletV5InnerRequest.builder()
