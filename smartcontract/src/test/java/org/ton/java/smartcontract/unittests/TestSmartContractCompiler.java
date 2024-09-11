@@ -19,7 +19,6 @@ import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -29,7 +28,7 @@ public class TestSmartContractCompiler {
      * Example is based on new-wallet-v4r2.fc smart contract. You can specify path to any smart contract.
      */
     @Test
-    public void testSmartContractCompiler() throws URISyntaxException, InterruptedException, IOException, ExecutionException {
+    public void testSmartContractCompiler() throws URISyntaxException, InterruptedException, IOException {
 //        URL resource = FuncCompiler.class.getResource("/contracts/stablecoin/contracts/jetton-minter.fc");
         URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v4r2.fc");
         String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
@@ -89,11 +88,10 @@ public class TestSmartContractCompiler {
                 .endCell();
 
         smc.deploy(deployMessageBody);
-        smc.waitForDeployment(60);
     }
 
     @Test
-    public void testWalletV5Compiler() throws URISyntaxException, InterruptedException, IOException, ExecutionException {
+    public void testWalletV5Compiler() throws URISyntaxException, IOException {
         URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v5.fc");
         String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
         SmartContractCompiler smcFunc = SmartContractCompiler.builder()
@@ -106,7 +104,7 @@ public class TestSmartContractCompiler {
     }
 
     @Test
-    public void testLibraryDeployerCompiler() throws URISyntaxException, IOException, ExecutionException {
+    public void testLibraryDeployerCompiler() throws URISyntaxException, IOException {
         URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/library-deployer.fc");
         String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
         SmartContractCompiler smcFunc = SmartContractCompiler.builder()

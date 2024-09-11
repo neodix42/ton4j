@@ -1,9 +1,7 @@
 package org.ton.java.smartcontract.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -12,9 +10,7 @@ import org.ton.java.tlb.types.OutList;
 import java.math.BigInteger;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 /**
  * internal_transfer#ae42e5a4 {n:#} query_id:uint64 actions:^(OutList n) = InternalMsgBody n;
  */

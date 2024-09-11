@@ -1,17 +1,13 @@
 package org.ton.java.smartcontract.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
 import java.math.BigInteger;
 import java.util.List;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class LockupConfig {
     /**
      * Creation of new locked/restricted packages is only allowed by owner of this (second) public key

@@ -7,26 +7,28 @@ import org.ton.java.utils.Utils;
 
 import static java.util.Objects.isNull;
 
+/**
+ * <pre>
+ * If not specified then emulator shared library must be located in:
+ * <ul>
+ * <li><code>jna.library.path</code> User-customizable path</li>
+ * <li><code>jna.platform.library.path</code> Platform-specific paths</li>
+ * <li>On OSX, ~/Library/Frameworks, /Library/Frameworks, and /System/Library/Frameworks will be searched for a framework with a name corresponding to that requested. Absolute paths to frameworks are also accepted, either ending at the framework name (sans ".framework") or the full path to the framework shared library (e.g. CoreServices.framework/CoreServices).</li>
+ * <li>Context class loader classpath. Deployed native libraries may be installed on the classpath under ${os-prefix}/LIBRARY_FILENAME, where ${os-prefix} is the OS/Arch prefix returned by Platform.getNativeLibraryResourcePrefix(). If bundled in a jar file, the resource will be extracted to jna.tmpdir for loading, and later removed.</li>
+ * </ul>
+ *
+ * Java Tonlib looking for following filenames in above locations:<br>
+ * <ul>
+ *     <li>libemulator-linux-x86-64.so and libemulator-linux-arm64.so</li>
+ *     <li>emulator.dll and emulator-arm.dll</li>
+ *     <li>libemulator-mac-x86-64.dylib and libemulator-mac-arm64.dylib</li>
+ *  <ul>
+ * </pre>
+ */
 @Log
 @Builder
 public class TxEmulator {
 
-    /**
-     * If not specified then emulator shared library must be located in:<br>
-     * <ul>
-     * <li><code>jna.library.path</code> User-customizable path</li>
-     * <li><code>jna.platform.library.path</code> Platform-specific paths</li>
-     * <li>On OSX, ~/Library/Frameworks, /Library/Frameworks, and /System/Library/Frameworks will be searched for a framework with a name corresponding to that requested. Absolute paths to frameworks are also accepted, either ending at the framework name (sans ".framework") or the full path to the framework shared library (e.g. CoreServices.framework/CoreServices).</li>
-     * <li>Context class loader classpath. Deployed native libraries may be installed on the classpath under ${os-prefix}/LIBRARY_FILENAME, where ${os-prefix} is the OS/Arch prefix returned by Platform.getNativeLibraryResourcePrefix(). If bundled in a jar file, the resource will be extracted to jna.tmpdir for loading, and later removed.</li>
-     * </ul>
-     * <br>
-     * Java Tonlib looking for following filenames in above locations:<br>
-     * <ul>
-     *     <li>libemulator-linux-x86-64.so and libemulator-linux-arm64.so</li>
-     *     <li>emulator.dll and emulator-arm.dll</li>
-     *     <li>libemulator-mac-x86-64.dylib and libemulator-mac-arm64.dylib</li>
-     *  <ul>
-     */
     private String pathToEmulatorSharedLib;
     private final TxEmulatorI txEmulatorI;
     private final long txEmulator;

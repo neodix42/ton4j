@@ -1,8 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -18,13 +17,9 @@ import java.math.BigInteger;
  *   file_hash:bits256 = BlockIdExt;
  *   </pre>
  */
-@ToString
 @Builder
-@Getter
-
+@Data
 public class BlockIdExtShardIdent {
-    //    int workchain;
-//    long shard;
     ShardIdent shardId;
     long seqno;
     public BigInteger rootHash;

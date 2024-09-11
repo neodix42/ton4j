@@ -1,20 +1,16 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 /**
- vm_stk_cont#06 cont:VmCont = VmStackValue;
+ * vm_stk_cont#06 cont:VmCont = VmStackValue;
  */
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class VmStackValueCont implements VmStackValue {
     int magic;
     VmCont cont;

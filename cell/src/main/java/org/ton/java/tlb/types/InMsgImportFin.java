@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -19,13 +17,7 @@ import java.math.BigInteger;
  *   </pre>
  */
 @Builder
-@Getter
-@Setter
-@ToString
-
-
-// msg_export_new extends InMsg
-
+@Data
 public class InMsgImportFin implements InMsg {
     MsgEnvelope inMsg;
     Transaction transaction;

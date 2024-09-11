@@ -1,18 +1,19 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.CellSlice;
 
+/**
+ * <pre>
+ * ed25519_pubkey#8e81278a pubkey:bits256 = SigPubKey;  // 288 bits
+ * </pre>
+ */
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class SigPubKeyED25519 {
-    long magic;     // `tlb:"#8e81278a"`
-    byte[] key;     // `tlb:"bits 256"`
+    long magic;
+    byte[] key;
 
     private String getMagic() {
         return Long.toHexString(magic);

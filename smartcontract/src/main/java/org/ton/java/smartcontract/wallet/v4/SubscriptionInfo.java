@@ -1,17 +1,13 @@
 package org.ton.java.smartcontract.wallet.v4;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.address.Address;
 
 import java.math.BigInteger;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class SubscriptionInfo {
     Address walletAddress;
     Address beneficiary;

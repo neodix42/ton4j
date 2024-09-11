@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -11,16 +9,15 @@ import org.ton.java.cell.CellSlice;
 import java.math.BigInteger;
 
 /**
+ * <pre>
  * validator_addr#73 public_key:SigPubKey weight:uint64 adnl_addr:bits256 = ValidatorDescr;
+ * </pre>
  */
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 
 public class ValidatorAddr implements ValidatorDescr {
     int magic;
-    //    SigPubKeyED25519 publicKey;
     SigPubKey publicKey;
     BigInteger weight;
     BigInteger adnlAddr;

@@ -1,9 +1,9 @@
 package org.ton.java.smartcontract;
 
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -11,9 +11,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class TonSdkTestCases implements Serializable {
     private Map<String, TestCase> testCases;
 

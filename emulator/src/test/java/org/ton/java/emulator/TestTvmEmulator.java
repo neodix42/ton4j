@@ -30,6 +30,9 @@ import org.ton.java.utils.Utils;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -807,10 +810,12 @@ public class TestTvmEmulator {
     }
 
     @Test
-    public void testTvmEmulatorWalletV5() throws IOException {
+    public void testTvmEmulatorWalletV5() throws IOException, URISyntaxException {
 
+        URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v5.fc");
+        String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
         SmartContractCompiler smcFunc = SmartContractCompiler.builder()
-                .contractPath("G:/smartcontracts/new-wallet-v5.fc")
+                .contractPath(contractAbsolutePath)
                 .build();
 
         String codeCellHex = smcFunc.compile();

@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -19,9 +17,7 @@ import java.math.BigInteger;
  * </pre>
  */
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 
 public class MerkleUpdate {
     //    ShardState oldOne;

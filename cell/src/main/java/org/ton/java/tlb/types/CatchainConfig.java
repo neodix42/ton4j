@@ -3,7 +3,6 @@ package org.ton.java.tlb.types;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 
-
 public interface CatchainConfig {
 
     Cell toCell();

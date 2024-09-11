@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -12,9 +10,7 @@ import org.ton.java.cell.CellSlice;
  * vmc_until$110000 body:^VmCont after:^VmCont = VmCont;
  */
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class VmcWhileCond implements VmCont {
     long magic;
     VmCont cond;

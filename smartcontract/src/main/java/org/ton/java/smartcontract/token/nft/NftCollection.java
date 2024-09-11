@@ -1,7 +1,7 @@
 package org.ton.java.smartcontract.token.nft;
 
 import com.iwebpp.crypto.TweetNaclFast;
-import lombok.Builder;
+import lombok.Builder;import lombok.Data;
 import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;

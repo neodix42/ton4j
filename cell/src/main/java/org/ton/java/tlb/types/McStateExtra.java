@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -26,10 +24,7 @@ import static java.util.Objects.isNull;
  * </pre>
  */
 @Builder
-@Getter
-@Setter
-@ToString
-
+@Data
 public class McStateExtra {
     long magic;
     ShardHashes shardHashes;

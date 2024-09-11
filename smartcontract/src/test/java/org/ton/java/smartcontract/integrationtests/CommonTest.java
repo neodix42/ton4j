@@ -9,7 +9,6 @@ import org.ton.java.tonlib.Tonlib;
 @Slf4j
 @RunWith(JUnit4.class)
 public class CommonTest {
-
     static Tonlib tonlib;
 
     @BeforeClass

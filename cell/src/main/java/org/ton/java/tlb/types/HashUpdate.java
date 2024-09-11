@@ -1,23 +1,24 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 import java.math.BigInteger;
 
+/**
+ * <pre>
+ * update_hashes#72 {X:Type} old_hash:bits256 new_hash:bits256 = HASH_UPDATE X;
+ * </pre>
+ */
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class HashUpdate {
-    int magic; //  `tlb:"#72"`
-    BigInteger oldHash; // `tlb:"bits 256"`
-    BigInteger newHash; // `tlb:"bits 256"`
+    int magic;
+    BigInteger oldHash;
+    BigInteger newHash;
 
     private String getMagic() {
         return Long.toHexString(magic);

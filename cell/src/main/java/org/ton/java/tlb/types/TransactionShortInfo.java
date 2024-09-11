@@ -1,16 +1,12 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
 import java.math.BigInteger;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class TransactionShortInfo {
     BigInteger lt;
     BigInteger hash;

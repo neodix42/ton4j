@@ -16,7 +16,6 @@ import org.ton.java.cell.CellSlice;
  */
 
 // msg_export_new extends InMsg
-
 public interface InMsg {
 
     public Cell toCell();

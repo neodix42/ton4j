@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -14,13 +12,9 @@ import java.math.BigInteger;
  * validator#53 public_key:SigPubKey weight:uint64 = ValidatorDescr;
  */
 @Builder
-@Getter
-@Setter
-@ToString
-
+@Data
 public class Validator implements ValidatorDescr {
     long magic;
-    //SigPubKeyED25519 publicKey;
     SigPubKey publicKey;
     BigInteger weight;
 

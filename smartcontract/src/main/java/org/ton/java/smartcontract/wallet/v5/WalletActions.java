@@ -14,7 +14,8 @@ public class WalletActions {
     OutList wallet;
     ActionList extended;
 
-    public static class WalletActionsBuilder {}
+    public static class WalletActionsBuilder {
+    }
 
     public static WalletActionsBuilder builder() {
         return new CustomWalletActionsBuilder();

@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -12,10 +10,7 @@ import org.ton.java.cell.CellSlice;
  * action_reserve_currency#36e6b809 mode:(## 8) currency:CurrencyCollection = OutAction;
  */
 @Builder
-@Getter
-@Setter
-@ToString
-
+@Data
 public class ActionReserveCurrency implements OutAction {
     long magic;
     int mode;

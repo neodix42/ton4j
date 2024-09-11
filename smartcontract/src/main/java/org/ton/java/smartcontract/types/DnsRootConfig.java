@@ -2,9 +2,7 @@ package org.ton.java.smartcontract.types;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
@@ -12,9 +10,7 @@ import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import java.math.BigInteger;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class DnsRootConfig implements WalletConfig {
     int wc;
     long seqno;

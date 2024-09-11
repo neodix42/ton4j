@@ -1,18 +1,14 @@
 package org.ton.java.smartcontract.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 
 import java.math.BigInteger;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class DnsCollectionConfig implements WalletConfig {
     long seqno;
     int mode;

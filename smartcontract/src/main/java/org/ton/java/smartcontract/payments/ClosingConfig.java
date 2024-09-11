@@ -1,6 +1,6 @@
 package org.ton.java.smartcontract.payments;
 
-import lombok.Builder;
+import lombok.Builder;import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 

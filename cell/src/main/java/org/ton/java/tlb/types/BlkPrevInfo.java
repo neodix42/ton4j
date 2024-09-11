@@ -1,17 +1,13 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class BlkPrevInfo {
     ExtBlkRef prev1;
     ExtBlkRef prev2; // pointer  https://github.com/xssnick/tonutils-go/blob/46dbf5f820af066ab10c5639a508b4295e5aa0fb/tlb/block.go#L136

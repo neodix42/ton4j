@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.*;
 
 /**
@@ -12,10 +10,7 @@ import org.ton.java.cell.*;
  * </pre>
  */
 @Builder
-@Getter
-@Setter
-@ToString
-
+@Data
 public class ShardHashes {
 
     TonHashMapE shardHashes;

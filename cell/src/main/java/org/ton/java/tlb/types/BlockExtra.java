@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.ton.java.cell.Cell;
@@ -13,19 +11,20 @@ import org.ton.java.cell.TonHashMapAugE;
 
 import java.math.BigInteger;
 
-@Builder
-@Getter
-@Setter
-@ToString
 /**
+ * <pre>
  * block_extra
- *   in_msg_descr:^InMsgDescr
- *   out_msg_descr:^OutMsgDescr
- *   account_blocks:^ShardAccountBlocks // _ (HashmapAugE 256 AccountBlock CurrencyCollection) = ShardAccountBlocks;
- *   rand_seed:bits256
- *   created_by:bits256
- *   custom:(Maybe ^McBlockExtra) = BlockExtra;
+ * in_msg_descr:^InMsgDescr
+ * out_msg_descr:^OutMsgDescr
+ * account_blocks:^ShardAccountBlocks // _ (HashmapAugE 256 AccountBlock CurrencyCollection) = ShardAccountBlocks;
+ * rand_seed:bits256
+ * created_by:bits256
+ * custom:(Maybe ^McBlockExtra) = BlockExtra;
+ * </pre>
  */
+@Builder
+@Data
+
 public class BlockExtra {
     InMsgDescr inMsgDesc;
     OutMsgDescr outMsgDesc;

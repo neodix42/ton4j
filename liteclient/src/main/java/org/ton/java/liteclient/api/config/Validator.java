@@ -1,6 +1,6 @@
 package org.ton.java.liteclient.api.config;
 
-import lombok.Builder;
+import lombok.Builder;import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -9,9 +9,7 @@ import java.io.Serializable;
 import java.math.BigInteger;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class Validator implements Serializable {
     String publicKey;
     String adnlAddress;

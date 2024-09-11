@@ -1,18 +1,14 @@
 package org.ton.java.tl.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 /**
  * ton_api.tl
  * db.block.info#4ac6e727

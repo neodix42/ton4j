@@ -10,9 +10,7 @@ import org.ton.java.cell.CellSlice;
  * interm_addr_ext$11    workchain_id:int32 addr_pfx:uint64 = IntermediateAddress;
  * </pre>
  */
-
 public interface IntermediateAddress {
-
     Cell toCell();
 
     static IntermediateAddress deserialize(CellSlice cs) {

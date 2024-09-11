@@ -1,6 +1,5 @@
 package org.ton.java.tonconnect;
 
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
@@ -8,6 +7,7 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.mnemonic.Ed25519;
 import org.ton.java.tlb.types.StateInit;
+import org.ton.java.utils.Utils;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -29,7 +29,7 @@ public class TonConnect {
         } else {
             publicKeyBytes = Hex.decodeHex(account.getPublicKey());
         }
-        byte[] signature = Base64.decode(tonProof.getSignature());
+        byte[] signature = Utils.base64ToBytes(tonProof.getSignature());
         byte[] messageForSigning = createMessageForSigning(tonProof, account.getAddress());
 
         return Ed25519.verify(publicKeyBytes, messageForSigning, signature);

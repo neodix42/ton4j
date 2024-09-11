@@ -1,6 +1,6 @@
 package org.ton.java.liteclient.api;
 
-import lombok.Builder;
+import lombok.Builder;import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 

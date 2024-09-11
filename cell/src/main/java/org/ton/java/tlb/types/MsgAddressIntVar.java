@@ -1,8 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -23,9 +22,7 @@ import static java.util.Objects.nonNull;
  *   </pre>
  */
 @Builder
-@Getter
-@Setter
-
+@Data
 public class MsgAddressIntVar implements MsgAddressInt {
     int magic;
     Anycast anycast;

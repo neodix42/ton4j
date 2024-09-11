@@ -1,9 +1,7 @@
 package org.ton.java.smartcontract.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
@@ -12,9 +10,7 @@ import org.ton.java.tlb.types.StateInit;
 import java.math.BigInteger;
 
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class WalletV4R2Config implements WalletConfig {
     long walletId;
     long seqno;

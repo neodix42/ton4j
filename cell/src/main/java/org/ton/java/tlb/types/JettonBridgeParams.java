@@ -3,9 +3,7 @@ package org.ton.java.tlb.types;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 
-
 public interface JettonBridgeParams {
-
     Cell toCell();
 
     static JettonBridgeParams deserialize(CellSlice cs) {

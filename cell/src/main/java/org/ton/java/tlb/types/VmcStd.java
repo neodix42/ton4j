@@ -1,9 +1,7 @@
 package org.ton.java.tlb.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -12,9 +10,7 @@ import org.ton.java.cell.CellSlice;
  * vmc_std$00 cdata:VmControlData code:VmCellSlice = VmCont;
  */
 @Builder
-@Getter
-@Setter
-@ToString
+@Data
 public class VmcStd implements VmCont {
     long magic;
     VmControlData cdata;

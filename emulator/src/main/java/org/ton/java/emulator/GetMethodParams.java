@@ -1,6 +1,6 @@
 package org.ton.java.emulator;
 
-import lombok.Builder;
+import lombok.Builder;import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
