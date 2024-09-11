@@ -66,6 +66,10 @@ public interface Contract {
      */
     Cell createDataCell();
 
+    default Cell createLibraryCell() {
+        return null;
+    }
+
     /**
      * Message StateInit consists of initial contract code, data and address in a blockchain
      *
@@ -75,6 +79,7 @@ public interface Contract {
         return StateInit.builder()
                 .code(createCodeCell())
                 .data(createDataCell())
+                .lib(createLibraryCell())
                 .build();
     }
 

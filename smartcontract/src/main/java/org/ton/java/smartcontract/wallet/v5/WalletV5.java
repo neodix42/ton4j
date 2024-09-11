@@ -47,6 +47,8 @@ public class WalletV5 implements Contract {
     private Tonlib tonlib;
     private long wc;
 
+    private boolean deployAsLibrary;
+
     public static class WalletV5Builder {
     }
 
@@ -114,9 +116,29 @@ public class WalletV5 implements Contract {
 
     @Override
     public Cell createCodeCell() {
-        return CellBuilder.beginCell()
-                .fromBoc(WalletCodes.V5.getValue())
-                .endCell();
+        if (!deployAsLibrary) {
+            return CellBuilder.beginCell()
+                    .fromBoc(WalletCodes.V5R1.getValue())
+                    .endCell();
+        } else {
+            return CellBuilder.beginCell()
+                    .storeUint(2, 8)
+                    .storeBytes(CellBuilder.beginCell()
+                            .fromBoc(WalletCodes.V5R1.getValue())
+                            .endCell().getHash())
+                    .setExotic(true)
+                    .cellType(CellType.LIBRARY)
+                    .endCell();
+        }
+    }
+
+    @Override
+    public StateInit getStateInit() {
+        return StateInit.builder()
+                .code(createCodeCell())
+                .data(createDataCell())
+//                .lib(createLibraryCell())
+                .build();
     }
 
     public ExtMessageInfo send(WalletV5Config config) {

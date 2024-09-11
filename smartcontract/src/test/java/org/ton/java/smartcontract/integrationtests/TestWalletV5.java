@@ -577,7 +577,8 @@ public class TestWalletV5 extends CommonTest {
     }
 
     /**
-     * Deploy without extension and modify is signature auth allowed flag
+     * Disallow signature authentication.
+     * Deploy without extension and modify is signature auth allowed flag.
      */
     @Test
     public void testWalletV5ModifySignatureAuthAllowed() throws InterruptedException {
@@ -794,7 +795,7 @@ public class TestWalletV5 extends CommonTest {
 
 
         BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32);
-        
+
         WalletV3Config walletV3Config = WalletV3Config.builder()
                 .seqno(1)
                 .walletId(43)
@@ -815,6 +816,214 @@ public class TestWalletV5 extends CommonTest {
                 .build();
 
         extMessageInfo = contractV3.send(walletV3Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+    }
+
+    /**
+     * Test removal of extensions from other extension.
+     */
+    @Test
+    public void testWalletV5ManageExtensionsFromExtension() throws InterruptedException {
+
+        // create a wallet v3r1 that will be an extension
+
+        WalletV3R1 contractV3 = WalletV3R1.builder()
+                .tonlib(tonlib)
+                .walletId(43)
+                .build();
+
+        Address walletAddressV3 = contractV3.getAddress();
+
+        String nonBounceableAddress = walletAddressV3.toNonBounceable();
+        String bounceableAddress = walletAddressV3.toBounceable();
+        log.info("bounceableAddress v3: {}", bounceableAddress);
+        log.info("pub key: {}", Utils.bytesToHex(contractV3.getKeyPair().getPublicKey()));
+        log.info("prv key: {}", Utils.bytesToHex(contractV3.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
+        log.info("walletId {} new wallet v3 {} balance: {}", contractV3.getWalletId(), contractV3.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet v3
+        ExtMessageInfo extMessageInfo = contractV3.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        contractV3.waitForDeployment(60);
+
+
+        // create wallet v5 with initial extension (which is v3r1 wallet)
+        TonHashMapE initExtensions = new TonHashMapE(256);
+        initExtensions.elements.put(contractV3.getAddress().toBigInteger(), true);
+        initExtensions.elements.put(addr1.toBigInteger(), true);
+        initExtensions.elements.put(addr2.toBigInteger(), false);
+
+        TweetNaclFast.Signature.KeyPair keyPairV5 = Utils.generateSignatureKeyPair();
+        WalletV5 contractV5 = WalletV5.builder()
+                .tonlib(tonlib)
+                .walletId(42)
+                .keyPair(keyPairV5)
+                .isSigAuthAllowed(true)
+                .extensions(initExtensions) // assign wallet v3r1 as extension of wallet v5r1
+                .build();
+
+        Address walletAddressV5 = contractV5.getAddress();
+
+        nonBounceableAddress = walletAddressV5.toNonBounceable();
+        bounceableAddress = walletAddressV5.toBounceable();
+        log.info("bounceableAddress v5: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contractV5.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contractV5.getKeyPair().getSecretKey()));
+
+        balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
+        log.info("new wallet v5 {} balance: {}", contractV5.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet v5
+        extMessageInfo = contractV5.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contractV5.waitForDeployment(60);
+        log.info("extensions {}", contractV5.getRawExtensions());
+        assertThat(contractV5.getRawExtensions().elements.size()).isEqualTo(3);
+
+        BigInteger queryId = BigInteger.valueOf(Instant.now().getEpochSecond() + 5 * 60L << 32);
+
+        WalletV3Config walletV3Config = WalletV3Config.builder()
+                .seqno(1)
+                .walletId(43)
+                .destination(contractV5.getAddress())
+                .amount(Utils.toNano(0.017))
+                .body(contractV5.createInternalExtensionTransferBody(queryId, contractV5.manageExtensions(ActionList.builder()
+                        .actions(Collections.singletonList(
+                                ExtendedAction.builder()
+                                        .actionType(ExtendedActionType.REMOVE_EXTENSION)
+                                        .address(Address.of(addr2))
+                                        .build()))
+                        .build()).toCell()))
+                .build();
+
+        extMessageInfo = contractV3.send(walletV3Config);
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        Utils.sleep(20);
+        log.info("extensions {}", contractV5.getRawExtensions());
+        assertThat(contractV5.getRawExtensions().elements.size()).isEqualTo(2);
+    }
+
+    /**
+     * Wallet V5 deploy
+     * Without Library and Without Extensions.
+     */
+    @Test
+    public void testWalletV5DeploymentAsLibrary() throws InterruptedException {
+
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        WalletV5 contract = WalletV5.builder()
+                .tonlib(tonlib)
+                .walletId(42)
+                .keyPair(keyPair)
+                .isSigAuthAllowed(true)
+                .deployAsLibrary(true)
+                .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String nonBounceableAddress = walletAddress.toNonBounceable();
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet-v5
+        ExtMessageInfo extMessageInfo = contract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+    }
+
+    /**
+     * Use wallet v5 as library.
+     * See TestLibraryDeployer.java for library deployment.
+     */
+    @Test
+    public void testWalletV5DeployAsLibrary() throws InterruptedException {
+
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        WalletV5 contract = WalletV5.builder()
+                .tonlib(tonlib)
+                .walletId(42)
+                .keyPair(keyPair)
+                .isSigAuthAllowed(true)
+                .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String nonBounceableAddress = walletAddress.toNonBounceable();
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet-v5
+        ExtMessageInfo extMessageInfo = contract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+        Utils.sleep(15, "takes longer...");
+        assertThat(contract.getSeqno()).isEqualTo(1);
+
+        log.info("walletId {}", contract.getWalletId());
+        log.info("publicKey {}", Utils.bytesToHex(contract.getPublicKey()));
+        log.info("isSignatureAuthAllowed {}", contract.getIsSignatureAuthAllowed());
+        log.info("extensions {}", contract.getRawExtensions());
+    }
+
+    /**
+     * Transfer to 1 recipient.
+     * With Library and Without Extensions and without OtherActions.
+     */
+    @Test
+    public void testWalletV5SimpleTransfer1WhenDeployedAsLibrary() throws InterruptedException {
+        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+        WalletV5 contract = WalletV5.builder()
+                .tonlib(tonlib)
+                .walletId(42)
+                .keyPair(keyPair)
+                .isSigAuthAllowed(true)
+                .deployAsLibrary(true)
+                .build();
+
+        Address walletAddress = contract.getAddress();
+
+        String nonBounceableAddress = walletAddress.toNonBounceable();
+        String bounceableAddress = walletAddress.toBounceable();
+        log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+        // deploy wallet-v5
+        ExtMessageInfo extMessageInfo = contract.deploy();
+        assertThat(extMessageInfo.getError().getCode()).isZero();
+
+        contract.waitForDeployment(60);
+
+        long newSeq = contract.getSeqno();
+        assertThat(newSeq).isEqualTo(1);
+
+        WalletV5Config walletV5Config = WalletV5Config.builder()
+                .seqno(newSeq)
+                .walletId(42)
+                .body(contract.createBulkTransfer(Collections.singletonList(Destination.builder()
+                        .bounce(false)
+                        .address(addr1.toBounceable())
+                        .amount(Utils.toNano(0.0001))
+                        .build())).toCell())
+                .build();
+
+        extMessageInfo = contract.send(walletV5Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
     }
 

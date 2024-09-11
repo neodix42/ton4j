@@ -53,6 +53,11 @@ public class CellBuilder {
         return this;
     }
 
+    public CellBuilder setExotic(boolean exotic) {
+        cell.setExotic(exotic);
+        return this;
+    }
+
     public CellBuilder storeBits(List<Boolean> arrayBits) {
         checkBitsOverflow(arrayBits.size());
         for (Boolean bit : arrayBits) {

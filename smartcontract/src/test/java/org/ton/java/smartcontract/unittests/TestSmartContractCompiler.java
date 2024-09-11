@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract.integrationtests;
+package org.ton.java.smartcontract.unittests;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
@@ -95,6 +95,19 @@ public class TestSmartContractCompiler {
     @Test
     public void testWalletV5Compiler() throws URISyntaxException, InterruptedException, IOException, ExecutionException {
         URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v5.fc");
+        String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
+        SmartContractCompiler smcFunc = SmartContractCompiler.builder()
+                .contractPath(contractAbsolutePath)
+                .build();
+
+        String codeCellHex = smcFunc.compile();
+
+        log.info("codeCellHex {}", codeCellHex);
+    }
+
+    @Test
+    public void testLibraryDeployerCompiler() throws URISyntaxException, IOException, ExecutionException {
+        URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/library-deployer.fc");
         String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
         SmartContractCompiler smcFunc = SmartContractCompiler.builder()
                 .contractPath(contractAbsolutePath)

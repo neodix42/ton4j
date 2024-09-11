@@ -27,7 +27,7 @@ public class Cell {
     private int[] refsIndexes;
     String hash;
     public int index;
-    private boolean exotic;
+    public boolean exotic;
     public LevelMask levelMask;
     private List<String> hashes = new ArrayList<>();
     private List<Integer> depths = new ArrayList<>();
@@ -253,6 +253,10 @@ public class Cell {
 
     void setCellType(CellType pCellType) {
         type = pCellType;
+    }
+
+    void setExotic(boolean pExotic) {
+        exotic = pExotic;
     }
 
     /**
