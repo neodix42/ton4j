@@ -9,7 +9,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>lite-client</artifactId>
-    <version>0.5.4</version>
+    <version>0.5.5</version>
 </dependency>
 ```
 
@@ -20,7 +20,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>lite-client</artifactId>
-    <version>0.5.4</version>
+    <version>0.5.5</version>
 </dependency>
 ```
 
