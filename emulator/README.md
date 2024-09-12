@@ -5,7 +5,6 @@ Java Emulator wrapper uses JNA to access methods in native emulator shared libra
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
 ```xml
-
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>emulator</artifactId>
@@ -23,7 +22,7 @@ Java Emulator wrapper uses JNA to access methods in native emulator shared libra
 </dependency>
 ```
 
-## Simply usage
+## Usage
 
 ```java
 Tonlib tonlib=Tonlib.builder().build(); // we need tonlib to get network config

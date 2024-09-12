@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.extern.java.Log;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.ton.java.fift.FiftRunner;
+import org.ton.java.func.FuncRunner;
 import org.ton.java.utils.Utils;
 
 import java.io.File;

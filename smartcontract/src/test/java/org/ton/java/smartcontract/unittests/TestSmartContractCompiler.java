@@ -5,17 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.GenericSmartContract;
 import org.ton.java.smartcontract.SmartContractCompiler;
-import org.ton.java.smartcontract.TestFaucet;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -77,17 +73,17 @@ public class TestSmartContractCompiler {
         log.info("    raw address: {}", rawAddress);
         log.info("pub-key {}", Utils.bytesToHex(smc.getKeyPair().getPublicKey()));
         log.info("prv-key {}", Utils.bytesToHex(smc.getKeyPair().getSecretKey()));
-
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
-        log.info("new wallet {} balance: {}", smc.getName(), Utils.formatNanoValue(balance));
-
-        Cell deployMessageBody = CellBuilder.beginCell()
-                .storeUint(42, 32) // wallet-id
-                .storeInt(-1, 32)  // valid-until
-                .storeUint(0, 32)  //seqno
-                .endCell();
-
-        smc.deploy(deployMessageBody);
+//
+//        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+//        log.info("new wallet {} balance: {}", smc.getName(), Utils.formatNanoValue(balance));
+//
+//        Cell deployMessageBody = CellBuilder.beginCell()
+//                .storeUint(42, 32) // wallet-id
+//                .storeInt(-1, 32)  // valid-until
+//                .storeUint(0, 32)  //seqno
+//                .endCell();
+//
+//        smc.deploy(deployMessageBody);
     }
 
     @Test

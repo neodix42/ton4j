@@ -7,7 +7,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 ```xml
 <dependency>
     <groupId>io.github.neodix42</groupId>
-    <artifactId>lite-client</artifactId>
+    <artifactId>fift</artifactId>
     <version>0.5.5</version>
 </dependency>
 ```
@@ -17,7 +17,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 ```xml
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
-    <artifactId>lite-client</artifactId>
+    <artifactId>fift</artifactId>
     <version>0.5.5</version>
 </dependency>
 ```
@@ -25,17 +25,17 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 ## Usage
 
 ```java
-LiteClient liteClient=LiteClient.builder()
-        .pathToLiteClientBinary(pathToLiteClient)
-        .testnet(true)
-        .pathToGlobalConfig(pathToGlobalConfig)
-        .build();
+URL resource = TestFiftRunner.class.getResource("/test.fift");
+File fiftFile = Paths.get(resource.toURI()).toFile();
+String absolutePath = fiftFile.getAbsolutePath();
 
-        String stdout=liteClient.executeLast();
+FiftRunner fiftRunner = FiftRunner.builder().build();
 
+String result = fiftRunner.run(fiftFile.getParent(), "-s", absolutePath);
+log.info("output: {}", result);
 ```
 
-More examples in [LiteClientTest](../liteclient/src/test/java/org/ton/java/liteclient/LiteClientTest.java) class.
+More examples in [TestFiftRunner](../fift/src/test/java/org/ton/java/fift/TestFiftRunner.java) class.
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/tonlib

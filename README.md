@@ -11,7 +11,6 @@ found [here](https://github.com/ton-blockchain/ton/actions).
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
 ```xml
-
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
@@ -22,7 +21,6 @@ found [here](https://github.com/ton-blockchain/ton/actions).
 ## Jitpack [![JitPack][jitpack-svg]][jitpack]
 
 ```xml
-
 <repositories>
     <repository>
         <id>jitpack.io</id>
@@ -32,7 +30,6 @@ found [here](https://github.com/ton-blockchain/ton/actions).
 ```
 
 ```xml
-
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>ton4j</artifactId>
@@ -50,6 +47,8 @@ You can use each submodule individually. Click the module below to get more deta
 * [Mnemonic](mnemonic/README.md) - helpful methods for generating deterministic keys for TON blockchain.
 * [Emulator](emulator/README.md) - wrapper for using with external precompiled emulator shared library.
 * [Liteclient](liteclient/README.md) - wrapper for using with external precompiled lite-client binary.
+* [Fift](fift/README.md) - wrapper for using with external precompiled fift binary.
+* [Func](func/README.md) - wrapper for using with external precompiled func binary.
 * [TonConnect](tonconnect/README.md) - implementation of Ton Connect standard.
 * [Utils](utils/README.md) - create private and public keys, convert data, etc.
 

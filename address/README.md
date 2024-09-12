@@ -3,7 +3,6 @@
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
 ```xml
-
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>address</artifactId>

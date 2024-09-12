@@ -12,7 +12,6 @@ You can get the latest tonlib library by:
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
 ```xml
-
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>tonlib</artifactId>
@@ -23,7 +22,6 @@ You can get the latest tonlib library by:
 ## Jitpack
 
 ```xml
-
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>tonlib</artifactId>

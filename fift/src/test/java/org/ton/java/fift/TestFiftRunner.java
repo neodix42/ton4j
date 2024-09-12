@@ -1,10 +1,9 @@
-package org.ton.java.smartcontract.unittests;
+package org.ton.java.fift;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.smartcontract.FiftRunner;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -21,7 +20,7 @@ public class TestFiftRunner {
     @Test
     public void testFiftRunner() throws URISyntaxException {
 
-        URL resource = TestFiftRunner.class.getResource("/fift/test.fift");
+        URL resource = TestFiftRunner.class.getResource("/test.fift");
         File fiftFile = Paths.get(resource.toURI()).toFile();
         String absolutePath = fiftFile.getAbsolutePath();
 

@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract;
+package org.ton.java.func;
 
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import lombok.Builder;

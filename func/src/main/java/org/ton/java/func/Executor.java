@@ -1,4 +1,4 @@
-package org.ton.java.smartcontract;
+package org.ton.java.func;
 
 import lombok.extern.java.Log;
 import org.apache.commons.io.IOUtils;

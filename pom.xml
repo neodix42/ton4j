@@ -22,6 +22,8 @@
         <module>liteclient</module>
         <module>tweetnacl-java-8</module>
         <module>tonconnect</module>
+        <module>fift</module>
+        <module>func</module>
     </modules>
 
     <properties>

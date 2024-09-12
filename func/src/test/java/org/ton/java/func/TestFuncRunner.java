@@ -1,10 +1,9 @@
-package org.ton.java.smartcontract.unittests;
+package org.ton.java.func;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.smartcontract.FuncRunner;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -20,7 +19,7 @@ public class TestFuncRunner {
     @Test
     public void testFuncRunner() throws URISyntaxException {
 
-        URL resource = TestFuncRunner.class.getResource("/func/test.fc");
+        URL resource = TestFuncRunner.class.getResource("/test.fc");
         File funcFile = Paths.get(resource.toURI()).toFile();
         String absolutePath = funcFile.getAbsolutePath();
 
