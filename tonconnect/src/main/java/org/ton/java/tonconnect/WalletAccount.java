@@ -9,7 +9,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-class WalletAccount {
+public class WalletAccount {
     private String address;
     private String publicKey;
     private int chain;

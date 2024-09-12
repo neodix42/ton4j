@@ -9,7 +9,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-class Domain {
+public class Domain {
     private int lengthBytes;
     private String value;
 }

@@ -97,5 +97,11 @@
             <artifactId>commons-io</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>fift</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

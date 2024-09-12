@@ -9,7 +9,7 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-class TonProof {
+public class TonProof {
     private long timestamp;
     private Domain domain;
     private String signature; // Base64UrlSafe
