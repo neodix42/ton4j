@@ -22,6 +22,7 @@ import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.ContractUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
+import org.ton.java.smartcontract.wallet.v5.WalletV5;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -50,7 +51,7 @@ public class TestTonSdkTestCasesSmartContracts {
     String fileContentWithUseCases = IOUtils.toString(new URL(numbersTestFileUrl), Charset.defaultCharset());
     TonSdkTestCases tonSdkTestCases = gson.fromJson(fileContentWithUseCases, TonSdkTestCases.class);
 
-    private List<Address> globalDummyDestinations = new ArrayList<>();
+    private final List<Address> globalDummyDestinations = new ArrayList<>();
 
     public TestTonSdkTestCasesSmartContracts() throws IOException {
     }
@@ -284,7 +285,6 @@ public class TestTonSdkTestCasesSmartContracts {
         Message sendMsg = contract.prepareExternalMsg(config);
         assertThat(sendMsg.toCell().toHex(true).toUpperCase()).isEqualTo(expectedBocAsHex);
     }
-
 
     @Test
     public void testSmartContracts7() {
@@ -1145,6 +1145,112 @@ public class TestTonSdkTestCasesSmartContracts {
 
         assertThat(totalSum).isEqualTo(expectedTotalSumOfJettonsAt300Addresses);
     }
+
+
+    @Test
+    public void testSmartContracts20() {
+
+        String testId = "smartcontracts-20";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        String bocAsHex = testCase.getExpectedOutput().get("bocAsHexWithCrc").toString();
+
+        assertThat(WalletCodes.V5R1.getValue()).isEqualTo(bocAsHex);
+//        assertThat(WalletV4R2.builder().build().createCodeCell().toHex().toUpperCase()).isEqualTo(bocAsHex);
+    }
+
+    @Test
+    public void testSmartContracts21() {
+
+        String testId = "smartcontracts-21";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        String privateKey = testCase.getInput().get("privateKey").toString();
+        Long walletId = (Long) testCase.getInput().get("walletId");
+        Boolean allowAuthSignature = (Boolean) testCase.getInput().get("allowAuthSignature");
+
+        byte[] secretKey = Utils.hexToSignedBytes(privateKey);
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+
+        WalletV5 contract = WalletV5.builder()
+                .walletId(walletId)
+                .keyPair(keyPair)
+                .isSigAuthAllowed(allowAuthSignature)
+                .build();
+
+        String expectedRawAddress = (String) testCase.getExpectedOutput().get("rawAddress");
+        String expectedBocAsHex = (String) testCase.getExpectedOutput().get("externalMessageBocAsHexWithCrc");
+
+        String rawAddress = contract.getAddress().toRaw();
+        assertThat(rawAddress).isEqualTo(expectedRawAddress);
+
+        Message msg = contract.prepareDeployMsg();
+
+        assertThat(msg.toCell().toHex(true).toUpperCase()).isEqualTo(expectedBocAsHex);
+    }
+
+    @Test
+    public void testSmartContracts22() {
+
+        String testId = "smartcontracts-22";
+        TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
+
+        String description = testCase.getDescription();
+
+        log.info("testId: {}", testId);
+        log.info("description: {}", description);
+
+        String privateKey = testCase.getInput().get("privateKey").toString();
+        Long workchain = (Long) testCase.getInput().get("workchain");
+        String destinationAddress = testCase.getInput().get("destinationAddress").toString();
+        Long walletId = (Long) testCase.getInput().get("walletId");
+        Long seqno = (Long) testCase.getInput().get("seqNo");
+        BigDecimal amountTonCoins = new BigDecimal(testCase.getInput().get("amountTonCoins").toString());
+        Boolean bounceFlag = (Boolean) testCase.getInput().get("bounceFlag");
+        Boolean allowAuthSignature = (Boolean) testCase.getInput().get("allowAuthSignature");
+        Long validUntil = (Long) testCase.getInput().get("validUntil");
+        Long sendMode = (Long) testCase.getInput().get("sendMode");
+        String comment = testCase.getInput().get("comment").toString();
+
+        byte[] secretKey = Utils.hexToSignedBytes(privateKey);
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+
+        WalletV5 contract = WalletV5.builder()
+                .wc(workchain)
+                .keyPair(keyPair)
+                .walletId(walletId)
+                .isSigAuthAllowed(allowAuthSignature)
+                .build();
+
+        String expectedBocAsHex = (String) testCase.getExpectedOutput().get("externalMessageBocAsHexWithCrc");
+
+        WalletV5Config walletV5Config = WalletV5Config.builder()
+                .seqno(seqno)
+                .walletId(walletId)
+                .body(contract.createBulkTransfer(Collections.singletonList(Destination.builder()
+                        .bounce(bounceFlag)
+                        .address(destinationAddress)
+                        .amount(Utils.toNano(amountTonCoins))
+                        .comment(comment)
+                        .mode(sendMode.intValue())
+                        .build())).toCell())
+                .validUntil(validUntil)
+                .build();
+
+        Message sendMsg = contract.prepareExternalMsg(walletV5Config);
+        assertThat(sendMsg.toCell().toHex(true)).isEqualTo(expectedBocAsHex);
+    }
+
 
     List<Destination> createDummyDestinations(int count, BigDecimal amount, Boolean bounceFlag, int sendMode) throws NoSuchAlgorithmException {
         List<Destination> result = new ArrayList<>();

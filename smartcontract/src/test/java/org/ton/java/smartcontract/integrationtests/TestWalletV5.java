@@ -17,6 +17,7 @@ import org.ton.java.smartcontract.wallet.v5.WalletV5;
 import org.ton.java.tlb.types.ActionList;
 import org.ton.java.tlb.types.ExtendedAction;
 import org.ton.java.tlb.types.ExtendedActionType;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
@@ -42,6 +43,8 @@ public class TestWalletV5 extends CommonTest {
     @Test
     public void testWalletV5Deployment() throws InterruptedException {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+//        byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+//        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
         WalletV5 contract = WalletV5.builder()
                 .tonlib(tonlib)
                 .walletId(42)
@@ -80,6 +83,8 @@ public class TestWalletV5 extends CommonTest {
      */
     @Test
     public void testWalletV5SimpleTransfer1() throws InterruptedException {
+//        byte[] secretKey = Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+//        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
         WalletV5 contract = WalletV5.builder()
                 .tonlib(tonlib)
@@ -93,6 +98,7 @@ public class TestWalletV5 extends CommonTest {
         String nonBounceableAddress = walletAddress.toNonBounceable();
         String bounceableAddress = walletAddress.toBounceable();
         log.info("bounceableAddress: {}", bounceableAddress);
+        log.info("rawAddress: {}", walletAddress.toRaw());
         log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
         log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
@@ -112,11 +118,17 @@ public class TestWalletV5 extends CommonTest {
                 .seqno(newSeq)
                 .walletId(42)
                 .body(contract.createBulkTransfer(Collections.singletonList(Destination.builder()
-                        .bounce(false)
-                        .address(addr1.toBounceable())
-                        .amount(Utils.toNano(0.0001))
+                        .bounce(true)
+                        .address("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d")
+                        .mode(3)
+                        .amount(Utils.toNano(0.05))
+                        .comment("gift")
                         .build())).toCell())
+//                .validUntil(1753376922)
                 .build();
+
+        Message msg = contract.prepareExternalMsg(walletV5Config);
+        log.info("msg {}", msg.toCell().toHex());
 
         extMessageInfo = contract.send(walletV5Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();

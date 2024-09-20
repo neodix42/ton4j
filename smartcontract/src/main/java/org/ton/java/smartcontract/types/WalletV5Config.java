@@ -13,7 +13,6 @@ public class WalletV5Config implements WalletConfig {
     long walletId;
     long seqno;
     long validUntil;
-    long createdAt;
     boolean bounce;
     Cell body;
     boolean signatureAllowed;
