@@ -199,6 +199,12 @@ public class CellSlice {
         }
     }
 
+    public TonHashMap parseDict(int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
+        TonHashMap hashMap = new TonHashMap(n);
+        hashMap.deserialize(CellSlice.beginParse(this), keyParser, valueParser);
+        return hashMap;
+    }
+
     /**
      * Returns only value and extra of all edges, without extras of fork-nodes.
      */
@@ -217,6 +223,12 @@ public class CellSlice {
     }
 
     public TonPfxHashMap loadDictPfx(int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
+        TonPfxHashMap x = new TonPfxHashMap(n);
+        x.deserialize(this, keyParser, valueParser);
+        return x;
+    }
+
+    public TonPfxHashMap parseDictPfx(int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
         TonPfxHashMap x = new TonPfxHashMap(n);
         x.deserialize(this, keyParser, valueParser);
         return x;

@@ -245,7 +245,7 @@ public class TestCellSlice {
 
         Cell cellDict = CellBuilder.beginCell()
                 .storeUint(10, 5)
-                .storeDict(dict)
+                .storeDictInLine(dict)
                 .storeRef(CellBuilder.beginCell().storeUint(7, 8).endCell())
                 .endCell();
 
@@ -316,22 +316,22 @@ public class TestCellSlice {
         x.elements.put(100L, (byte) 1);
         x.elements.put(200L, (byte) 2);
 
-        Cell dict = x.serialize(
+        Cell dictCell = x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
-        log.info("cell dict bits length: {}", dict.bits.getUsedBits());
+        log.info("cell dict bits length: {}", dictCell.bits.getUsedBits());
 
-        Cell cellDict = CellBuilder.beginCell()
+        Cell cellWithDict = CellBuilder.beginCell()
                 .storeUint(10, 5)
-                .storeDict(dict)
+                .storeDictInLine(dictCell)
                 .storeRef(CellBuilder.beginCell().storeUint(7, 8).endCell())
                 .endCell();
 
-        log.info(cellDict.print());
+        log.info(cellWithDict.print());
 
-        CellSlice cs = CellSlice.beginParse(cellDict);
+        CellSlice cs = CellSlice.beginParse(cellWithDict);
         BigInteger i = cs.loadUint(5);
         log.info("i = {}", i);
 
@@ -608,7 +608,7 @@ public class TestCellSlice {
                 .storeInt(30, 8)
                 .storeRef(cRef0)
                 .storeRef(cRef1)
-                .storeDict(dictCell)
+                .storeDictInLine(dictCell)
                 .storeBitString(bs0) // 40
                 .endCell();
 
@@ -749,7 +749,7 @@ public class TestCellSlice {
         log.info("cell dict bits length: {}", dict.bits.getUsedBits());
 
         Cell cellDict = CellBuilder.beginCell()
-                .storeDict(dict)
+                .storeDictInLine(dict)
                 .endCell();
 
         log.info(cellDict.print());
@@ -770,6 +770,4 @@ public class TestCellSlice {
             j++;
         }
     }
-
-    // test coins big numbers
 }

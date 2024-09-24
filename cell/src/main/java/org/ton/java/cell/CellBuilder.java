@@ -367,7 +367,24 @@ public class CellBuilder {
         return this;
     }
 
+    /**
+     * Used to store TonHashmapE that can be empty and is stored in cell's ref if not empty (storeRefMaybe(dict)).
+     *
+     * @param dict Cell
+     * @return CellBuilder
+     */
     public CellBuilder storeDict(Cell dict) {
+        storeRefMaybe(dict);
+        return this;
+    }
+
+    /**
+     * Used to store TonHashmap that can't be empty and is stored directly in cell, not in ref (storeCell(dict));
+     *
+     * @param dict Cell
+     * @return CellBuilder
+     */
+    public CellBuilder storeDictInLine(Cell dict) {
         storeSlice(CellSlice.beginParse(dict));
         return this;
     }

@@ -4,10 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonPfxHashMapE;
+import org.ton.java.cell.*;
 import org.ton.java.utils.Utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,16 +35,18 @@ public class TestPfxHashMapE {
 
         log.info("pfx-hashmapE x {}", x);
 
-        Cell cell = x.serialize(
+        Cell dictCell = x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
-        log.info("serialized cell: \n{}", cell.print());
-        log.info("serialized boc: \n{}", cell.toHex());
-        log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
+        log.info("serialized cell: \n{}", dictCell.print());
+        log.info("serialized boc: \n{}", dictCell.toHex());
+        log.info("cell hash {}", Utils.bytesToHex(dictCell.hash()));
 
-        CellSlice cs = CellSlice.beginParse(cell);
+        Cell cellWithDict = CellBuilder.beginCell().storeDict(dictCell).endCell();
+
+        CellSlice cs = CellSlice.beginParse(cellWithDict);
         TonPfxHashMapE dex = cs.loadDictPfxE(dictKeySize,
                 k -> k.readUint(dictKeySize),
                 v -> CellSlice.beginParse(v).loadUint(3)
@@ -55,6 +54,38 @@ public class TestPfxHashMapE {
 
         log.info("pfx-hashmapE x {}", dex);
 
-        assertThat(Utils.bytesToHex(cell.toBoc())).isEqualTo(Utils.bytesToHex(cell.toBoc()));
+        assertThat(Utils.bytesToHex(dictCell.toBoc())).isEqualTo(Utils.bytesToHex(dictCell.toBoc()));
+    }
+
+    @Test
+    public void testPfxHashMapESerializationParse() {
+        int dictKeySize = 9;
+        TonPfxHashMapE x = new TonPfxHashMapE(dictKeySize);
+
+        x.elements.put(100L, (byte) 1);
+        x.elements.put(200L, (byte) 2);
+        x.elements.put(300L, (byte) 3);
+        x.elements.put(400L, (byte) 4);
+
+        log.info("pfx-hashmapE x {}", x);
+
+        Cell dictCell = x.serialize(
+                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
+                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
+        );
+
+        log.info("serialized cell: \n{}", dictCell.print());
+        log.info("serialized boc: \n{}", dictCell.toHex());
+        log.info("cell hash {}", Utils.bytesToHex(dictCell.hash()));
+
+        CellSlice cs = CellSlice.beginParse(dictCell);
+        TonPfxHashMap dex = cs.parseDictPfx(dictKeySize,
+                k -> k.readUint(dictKeySize),
+                v -> CellSlice.beginParse(v).loadUint(3)
+        );
+
+        log.info("pfx-hashmapE x {}", dex);
+
+        assertThat(Utils.bytesToHex(dictCell.toBoc())).isEqualTo(Utils.bytesToHex(dictCell.toBoc()));
     }
 }

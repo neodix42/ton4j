@@ -1,4 +1,4 @@
-package org.ton.java;
+package org.ton.java.sdk;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -185,12 +185,13 @@ public class TestTonSdkTestCasesCellDeserialization {
         log.info("testId: {}", testId);
         log.info("description: {}", description);
 
-        String bocAsBse64 = testCase.getInput().get("bocAsBse64").toString();
+        String bocAsBse64 = testCase.getInput().get("bocAsBase64").toString();
         Cell cell = CellBuilder.beginCell().fromBocBase64(bocAsBse64).endCell();
 
         String expectedHash = testCase.getExpectedOutput().get("hash").toString();
 
-        assertThat(Utils.bytesToHex(cell.getHash())).isEqualTo(expectedHash);
+        // hash does not coincide with the fift result, needs to be fixed
+        assertThat(Utils.bytesToHex(cell.getHash()).toUpperCase()).isEqualTo(expectedHash);
     }
 
     @Test
@@ -210,7 +211,8 @@ public class TestTonSdkTestCasesCellDeserialization {
         String expectedHash = testCase.getExpectedOutput().get("hash").toString();
         int expectedRefsSize = Integer.parseInt(testCase.getExpectedOutput().get("sizeOfRefs").toString());
 
-        assertThat(Utils.bytesToHex(cell.getHash())).isEqualTo(expectedHash);
+        // hash does not coincide with the fift result, needs to be fixed
+        assertThat(Utils.bytesToHex(cell.getHash()).toUpperCase()).isEqualTo(expectedHash);
         assertThat(cell.getRefs().size()).isEqualTo(expectedRefsSize);
     }
 

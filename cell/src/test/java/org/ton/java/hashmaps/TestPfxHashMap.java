@@ -22,9 +22,9 @@ public class TestPfxHashMap {
     public void testPfxHashMapDeserializationFromBoc() {
         String t = "B5EE9C7241010501007A00020374C001020045A0E034CD6A3000596F07C3F0AB332935D3E3FC98F1E78F6AE1FC710EA4D98732772F1002057FBFB003040043BFB333333333333333333333333333333333333333333333333333333333333333400043BF955555555555555555555555555555555555555555555555555555555555555540DE161D24";
 
-        Cell cell = CellBuilder.beginCell().fromBoc(t).endCell();
+        Cell cellWithDict = CellBuilder.beginCell().fromBoc(t).endCell();
 
-        CellSlice cs = CellSlice.beginParse(cell);
+        CellSlice cs = CellSlice.beginParse(cellWithDict);
         TonPfxHashMap dict = cs.loadDictPfx(267,
                 BitString::readAddress,
                 v -> true
@@ -58,24 +58,24 @@ public class TestPfxHashMap {
 
         log.info("pfx-hashmap dict {}", x);
 
-        Cell cell = x.serialize(
+        Cell dictCell = x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
 
-        log.info("serialized cell: \n{}", cell.print());
-        log.info("serialized boc: \n{}", cell.toHex());
-        log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
+        log.info("serialized cell: \n{}", dictCell.print());
+        log.info("serialized boc: \n{}", dictCell.toHex());
+        log.info("cell hash {}", Utils.bytesToHex(dictCell.hash()));
 
-        CellSlice cs = CellSlice.beginParse(cell);
-        TonPfxHashMap dex = cs.loadDictPfx(dictKeySize,
+        CellSlice cs = CellSlice.beginParse(dictCell);
+        TonPfxHashMap dex = cs.parseDictPfx(dictKeySize,
                 k -> k.readUint(dictKeySize),
                 v -> CellSlice.beginParse(v).loadUint(3)
         );
 
         log.info("pfx-hashmap dict {}", dex);
 
-        assertThat(Utils.bytesToHex(cell.toBoc())).isEqualTo(Utils.bytesToHex(cell.toBoc()));
+        assertThat(Utils.bytesToHex(dictCell.toBoc())).isEqualTo(Utils.bytesToHex(dictCell.toBoc()));
         assertThat(dex.elements.size()).isEqualTo(4);
     }
 }

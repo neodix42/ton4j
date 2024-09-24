@@ -1,4 +1,4 @@
-package org.ton.java;
+package org.ton.java.sdk;
 
 import lombok.Builder;
 import lombok.Data;

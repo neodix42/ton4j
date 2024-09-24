@@ -30,16 +30,13 @@ public class TonHashMapE extends TonHashMap {
         }
 
         if (nodes.isEmpty()) {
-            return CellBuilder.beginCell().storeBit(false).endCell();
+            return null;
         } else {
             PatriciaTreeNode root = flatten(splitTree(nodes), keySize);
             CellBuilder b = CellBuilder.beginCell();
             serialize_edge(root, b);
 
-            return CellBuilder.beginCell()
-                    .storeBit(true)
-                    .storeRef(b.endCell())
-                    .endCell();
+            return b.endCell();
         }
     }
 }

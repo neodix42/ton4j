@@ -1,6 +1,7 @@
 package org.ton.java.hashmaps;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -23,13 +24,14 @@ public class TestHashMapE {
         int dictKeySize = 9;
         TonHashMapE x = new TonHashMapE(dictKeySize);
 
-        Cell cell = x.serialize(
+        Cell cellDict = x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
-        log.info("serialized cell: \n{}", cell.print());
-        log.info("serialized boc: \n{}", cell.toHex());
-        log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
+
+        assertThat(cellDict).isNull();
+        Cell cellWithDict = CellBuilder.beginCell().storeDict(cellDict).endCell();
+        assertThat(cellWithDict.print().trim()).isEqualTo("x{4_}");
     }
 
     @Test
@@ -47,6 +49,7 @@ public class TestHashMapE {
         log.info("serialized cell: \n{}", cell.print());
         log.info("serialized boc: \n{}", cell.toHex());
         log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
+        assertThat(StringUtils.trim(cell.print())).isEqualTo("x{A4C86_}");
     }
 
     @Test
@@ -59,18 +62,18 @@ public class TestHashMapE {
         x.elements.put(300L, Address.of("UQCnuv+ZuR0QsIh5vwxUBuzzocSowbCa7ctdwl6QizBKzDiJ"));
         x.elements.put(400L, Address.of("Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF"));
 
-        Cell cell = x.serialize(
+        Cell dictCell = x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeAddress((Address) v).endCell()
         );
 
-        log.info("serialized cell: \n{}", cell.print());
-        log.info("serialized boc: \n{}", cell.toHex());
-        log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
+        log.info("serialized cell: \n{}", dictCell.print());
+        log.info("serialized boc: \n{}", dictCell.toHex());
+        log.info("cell hash {}", Utils.bytesToHex(dictCell.hash()));
 
 
-        CellSlice cs = CellSlice.beginParse(cell);
-        TonHashMapE dex = cs.loadDictE(9,
+        CellSlice cs = CellSlice.beginParse(dictCell);
+        TonHashMap dex = cs.parseDict(9,
                 k -> k.readUint(9),
                 v -> CellSlice.beginParse(v).loadAddress()
         );
@@ -81,23 +84,58 @@ public class TestHashMapE {
     }
 
     @Test
+    public void testHashMapEOneEntrySerializationParse() {
+
+        TonHashMapE x = new TonHashMapE(9);
+
+        x.elements.put(100L, Address.of("0QAljlSWOKaYCuXTx2OCr9P08y40SC2vw3UeM1hYnI3gDY7I"));
+
+        Cell dictCell = x.serialize(
+                k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().getBits(),
+                v -> CellBuilder.beginCell().storeAddress((Address) v).endCell()
+        );
+
+        log.info("serialized cell: \n{}", dictCell.print());
+        log.info("serialized boc: \n{}", dictCell.toHex());
+        log.info("cell hash {}", Utils.bytesToHex(dictCell.hash()));
+
+
+        CellSlice cs = CellSlice.beginParse(dictCell);
+        TonHashMap dex = cs.parseDict(9,
+                k -> k.readUint(9),
+                v -> CellSlice.beginParse(v).loadAddress()
+        );
+
+        log.info("Deserialized hashmap from cell {}", dex);
+
+        assertThat(dex.elements.size()).isEqualTo(1);
+    }
+
+    /**
+     * Feel the difference:
+     * parseDictE - parses a cell that is already dict/hoshmap
+     * loadDictE - looks for a dict in a cellSlice and loads it
+     */
+    @Test
     public void testHashMapEOneEntrySerialization() {
 
         TonHashMapE x = new TonHashMapE(9);
 
         x.elements.put(100L, Address.of("0QAljlSWOKaYCuXTx2OCr9P08y40SC2vw3UeM1hYnI3gDY7I"));
 
-        Cell cell = x.serialize(
+        Cell dictCell = x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, 9).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeAddress((Address) v).endCell()
         );
 
-        log.info("serialized cell: \n{}", cell.print());
-        log.info("serialized boc: \n{}", cell.toHex());
-        log.info("cell hash {}", Utils.bytesToHex(cell.hash()));
+        log.info("serialized cell: \n{}", dictCell.print());
+        log.info("serialized boc: \n{}", dictCell.toHex());
+        log.info("cell hash {}", Utils.bytesToHex(dictCell.hash()));
+
+        Cell cellWithDict = CellBuilder.beginCell().storeDict(dictCell).endCell();
 
 
-        CellSlice cs = CellSlice.beginParse(cell);
+        CellSlice cs = CellSlice.beginParse(cellWithDict);
         TonHashMapE dex = cs.loadDictE(9,
                 k -> k.readUint(9),
                 v -> CellSlice.beginParse(v).loadAddress()
@@ -113,20 +151,20 @@ public class TestHashMapE {
         int dictKeySize = 9;
         TonHashMapE x = new TonHashMapE(dictKeySize);
 
-        Cell dict = x.serialize(
+        Cell dictCell = x.serialize(
                 k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
         );
-        log.info("dict {}", dict.print());
+        assertThat(dictCell).isNull();
 
-        Cell cellDict = CellBuilder.beginCell()
-                .storeDict(dict)
+        Cell cellWithDict = CellBuilder.beginCell()
+                .storeDict(dictCell)
                 .endCell();
-        log.info("serialized cell: \n{}", cellDict.print());
-        log.info("serialized boc: \n{}", cellDict.toHex());
-        log.info("cell hash {}", Utils.bytesToHex(cellDict.hash()));
+        log.info("serialized cell: \n{}", cellWithDict.print());
+        log.info("serialized boc: \n{}", cellWithDict.toHex());
+        log.info("cell hash {}", Utils.bytesToHex(cellWithDict.hash()));
 
-        CellSlice cs = CellSlice.beginParse(cellDict);
+        CellSlice cs = CellSlice.beginParse(cellWithDict);
 
         TonHashMapE loadedDict = cs
                 .loadDictE(dictKeySize,
@@ -157,10 +195,10 @@ public class TestHashMapE {
 
         String t = "B5EE9C72410106010020000101C0010202C8020302016204050007BEFDF2180007A68054C00007A08090C08D16037D";
 
-        Cell cell = CellBuilder.beginCell().fromBoc(t).endCell();
-        log.info("cell {}", cell.print());
+        Cell cellWithDict = CellBuilder.beginCell().fromBoc(t).endCell();
+        log.info("cell {}", cellWithDict.print());
 
-        CellSlice cs = CellSlice.beginParse(cell);
+        CellSlice cs = CellSlice.beginParse(cellWithDict);
 
         TonHashMapE loadedDict = cs.loadDictE(16,
                 k -> k.readUint(16),
@@ -455,7 +493,7 @@ public class TestHashMapE {
         CellSlice cs = CellSlice.beginParse(cell);
         TonHashMap loadedDictX = cs
                 .loadDictE(dictKeySize,
-                        k -> k.readAddress(),
+                        BitString::readAddress,
                         v -> CellSlice.beginParse(v).loadUint(3)
                 );
 

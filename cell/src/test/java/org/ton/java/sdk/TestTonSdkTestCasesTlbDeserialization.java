@@ -1,4 +1,4 @@
-package org.ton.java;
+package org.ton.java.sdk;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
