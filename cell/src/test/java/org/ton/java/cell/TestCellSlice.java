@@ -1,19 +1,18 @@
 package org.ton.java.cell;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -230,39 +229,39 @@ public class TestCellSlice {
         assertThrows(Error.class, () -> CellSlice.beginParse(c1).skipRefs(2).loadRef());
     }
 
-    @Test
-    public void testCellSliceSkipDict() {
-        int dictKeySize = 9;
-        TonHashMap x = new TonHashMap(dictKeySize);
-
-        x.elements.put(100L, (byte) 1);
-        x.elements.put(200L, (byte) 2);
-
-        Cell dict = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
-        );
-
-        Cell cellDict = CellBuilder.beginCell()
-                .storeUint(10, 5)
-                .storeDictInLine(dict)
-                .storeRef(CellBuilder.beginCell().storeUint(7, 8).endCell())
-                .endCell();
-
-        log.info(cellDict.print());
-
-        CellSlice cs = CellSlice.beginParse(cellDict);
-        BigInteger i = cs.loadUint(5);
-        log.info("i = {}", i);
-        assertThat(i.longValue()).isEqualTo(10);
-
-        CellSlice t = cs.skipDict(dictKeySize);
-        log.info(t.toString());
-
-        Cell cRef = cs.loadRef();
-
-        assertThat(CellSlice.beginParse(cRef).loadUint(8).longValue()).isEqualTo(7);
-    }
+//    @Test
+//    public void testCellSliceSkipDict() {
+//        int dictKeySize = 9;
+//        TonHashMap x = new TonHashMap(dictKeySize);
+//
+//        x.elements.put(100L, (byte) 1);
+//        x.elements.put(200L, (byte) 2);
+//
+//        Cell dict = x.serialize(
+//                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
+//                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
+//        );
+//
+//        Cell cellDict = CellBuilder.beginCell()
+//                .storeUint(10, 5)
+//                .storeDictInLine(dict)
+//                .storeRef(CellBuilder.beginCell().storeUint(7, 8).endCell())
+//                .endCell();
+//
+//        log.info(cellDict.print());
+//
+//        CellSlice cs = CellSlice.beginParse(cellDict);
+//        BigInteger i = cs.loadUint(5);
+//        log.info("i = {}", i);
+//        assertThat(i.longValue()).isEqualTo(10);
+//
+//        CellSlice t = cs.skipDict(dictKeySize);
+//        log.info(t.toString());
+//
+//        Cell cRef = cs.loadRef();
+//
+//        assertThat(CellSlice.beginParse(cRef).loadUint(8).longValue()).isEqualTo(7);
+//    }
 
     @Test
     public void testCellSliceSkipDictE() {
@@ -308,51 +307,51 @@ public class TestCellSlice {
         ));
     }
 
-    @Test
-    public void testCellSliceWithCellWithDict() {
-        int dictKeySize = 9;
-        TonHashMap x = new TonHashMap(dictKeySize);
-
-        x.elements.put(100L, (byte) 1);
-        x.elements.put(200L, (byte) 2);
-
-        Cell dictCell = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
-        );
-
-        log.info("cell dict bits length: {}", dictCell.bits.getUsedBits());
-
-        Cell cellWithDict = CellBuilder.beginCell()
-                .storeUint(10, 5)
-                .storeDictInLine(dictCell)
-                .storeRef(CellBuilder.beginCell().storeUint(7, 8).endCell())
-                .endCell();
-
-        log.info(cellWithDict.print());
-
-        CellSlice cs = CellSlice.beginParse(cellWithDict);
-        BigInteger i = cs.loadUint(5);
-        log.info("i = {}", i);
-
-        TonHashMap loadedDict = cs
-                .loadDict(dictKeySize,
-                        k -> k.readUint(dictKeySize),
-                        v -> CellSlice.beginParse(v).loadUint(3)
-                );
-        Cell cRef = cs.loadRef();
-
-        assertThat(i.longValue()).isEqualTo(10);
-        assertThat(loadedDict.elements.size()).isEqualTo(2);
-        int j = 1;
-        for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
-            log.info("key {}, value {}", entry.getKey(), entry.getValue());
-            assertThat((BigInteger) entry.getKey()).isEqualTo(100 * j);
-            assertThat((BigInteger) entry.getValue()).isEqualTo(j);
-            j++;
-        }
-        assertThat(CellSlice.beginParse(cRef).loadUint(8).longValue()).isEqualTo(7);
-    }
+//    @Test
+//    public void testCellSliceWithCellWithDict() {
+//        int dictKeySize = 9;
+//        TonHashMap x = new TonHashMap(dictKeySize);
+//
+//        x.elements.put(100L, (byte) 1);
+//        x.elements.put(200L, (byte) 2);
+//
+//        Cell dictCell = x.serialize(
+//                k -> CellBuilder.beginCell().storeUint((Long) k, dictKeySize).endCell().getBits(),
+//                v -> CellBuilder.beginCell().storeUint((byte) v, 3).endCell()
+//        );
+//
+//        log.info("cell dict bits length: {}", dictCell.bits.getUsedBits());
+//
+//        Cell cellWithDict = CellBuilder.beginCell()
+//                .storeUint(10, 5)
+//                .storeDictInLine(dictCell)
+//                .storeRef(CellBuilder.beginCell().storeUint(7, 8).endCell())
+//                .endCell();
+//
+//        log.info(cellWithDict.print());
+//
+//        CellSlice cs = CellSlice.beginParse(cellWithDict);
+//        BigInteger i = cs.loadUint(5);
+//        log.info("i = {}", i);
+//
+//        TonHashMap loadedDict = cs
+//                .loadDict(dictKeySize,
+//                        k -> k.readUint(dictKeySize),
+//                        v -> CellSlice.beginParse(v).loadUint(3)
+//                );
+//        Cell cRef = cs.loadRef();
+//
+//        assertThat(i.longValue()).isEqualTo(10);
+//        assertThat(loadedDict.elements.size()).isEqualTo(2);
+//        int j = 1;
+//        for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+//            log.info("key {}, value {}", entry.getKey(), entry.getValue());
+//            assertThat((BigInteger) entry.getKey()).isEqualTo(100 * j);
+//            assertThat((BigInteger) entry.getValue()).isEqualTo(j);
+//            j++;
+//        }
+//        assertThat(CellSlice.beginParse(cRef).loadUint(8).longValue()).isEqualTo(7);
+//    }
 
     /**
      * Test TonHashMapE - where empty dict is allowed

@@ -75,8 +75,7 @@ public class TestHashMapE {
     log.info("cell hash {}", Utils.bytesToHex(dictCell.hash()));
 
     CellSlice cs = CellSlice.beginParse(dictCell);
-    TonHashMap dex =
-        cs.parseDict(9, k -> k.readUint(9), v -> CellSlice.beginParse(v).loadAddress());
+    TonHashMap dex = cs.loadDict(9, k -> k.readUint(9), v -> CellSlice.beginParse(v).loadAddress());
 
     log.info("Deserialized hashmap from cell {}", dex);
 
@@ -100,8 +99,7 @@ public class TestHashMapE {
     log.info("cell hash {}", Utils.bytesToHex(dictCell.hash()));
 
     CellSlice cs = CellSlice.beginParse(dictCell);
-    TonHashMap dex =
-        cs.parseDict(9, k -> k.readUint(9), v -> CellSlice.beginParse(v).loadAddress());
+    TonHashMap dex = cs.loadDict(9, k -> k.readUint(9), v -> CellSlice.beginParse(v).loadAddress());
 
     log.info("Deserialized hashmap from cell {}", dex);
 

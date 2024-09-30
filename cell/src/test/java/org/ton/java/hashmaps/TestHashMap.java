@@ -1,5 +1,10 @@
 package org.ton.java.hashmaps;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
+
+import java.math.BigInteger;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,12 +15,6 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMap;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -79,7 +78,7 @@ public class TestHashMap {
 
 
         CellSlice cs = CellSlice.beginParse(dictCell);
-        TonHashMap dex = cs.parseDict(9,
+        TonHashMap dex = cs.loadDict(9,
                 k -> k.readUint(9),
                 v -> CellSlice.beginParse(v).loadUint(3)
         );
