@@ -2,7 +2,8 @@
 
 Java Tonlib library uses JNA to access methods in native Tonlib shared library.
 
-Since this is Java Tonlib wrapper around the native binary, you have to specify path to the library, see the example below.
+Since this is Java Tonlib wrapper around the native binary, you have to specify path to the library, see the example
+below.
 
 You can get the latest tonlib library by:
 
@@ -15,7 +16,7 @@ You can get the latest tonlib library by:
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>tonlib</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.0</version>
 </dependency>
 ```
 
@@ -25,7 +26,7 @@ You can get the latest tonlib library by:
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>tonlib</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.0</version>
 </dependency>
 ```
 

@@ -8,7 +8,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>fift</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.0</version>
 </dependency>
 ```
 
@@ -18,21 +18,21 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>fift</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.0</version>
 </dependency>
 ```
 
 ## Usage
 
 ```java
-URL resource = TestFiftRunner.class.getResource("/test.fift");
-File fiftFile = Paths.get(resource.toURI()).toFile();
-String absolutePath = fiftFile.getAbsolutePath();
+URL resource=TestFiftRunner.class.getResource("/test.fift");
+        File fiftFile=Paths.get(resource.toURI()).toFile();
+        String absolutePath=fiftFile.getAbsolutePath();
 
-FiftRunner fiftRunner = FiftRunner.builder().build();
+        FiftRunner fiftRunner=FiftRunner.builder().build();
 
-String result = fiftRunner.run(fiftFile.getParent(), "-s", absolutePath);
-log.info("output: {}", result);
+        String result=fiftRunner.run(fiftFile.getParent(),"-s",absolutePath);
+        log.info("output: {}",result);
 ```
 
 More examples in [TestFiftRunner](../fift/src/test/java/org/ton/java/fift/TestFiftRunner.java) class.
