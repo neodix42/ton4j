@@ -283,8 +283,8 @@ log.info("hex {}", cell.toHex().toUpperCase());
         String expectedCellBocWithCrc = testCase.getExpectedOutput().get("HashMapBocWithCrc").toString();
 
         assertThat(StringUtils.trim(cell.print())).isEqualTo(expectedCellPrint);
-        assertThat(Utils.bytesToHex(cell.hash())).isEqualTo(expectedCellHash);
-        assertThat(cell.toHex()).isEqualTo(expectedCellBocWithCrc);
+        assertThat(Utils.bytesToHex(cell.hash()).toUpperCase()).isEqualTo(expectedCellHash);
+        assertThat(cell.toHex().toUpperCase()).isEqualTo(expectedCellBocWithCrc);
     }
 
     @Test

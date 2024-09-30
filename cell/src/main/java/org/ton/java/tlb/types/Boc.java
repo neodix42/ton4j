@@ -67,7 +67,7 @@ public class Boc {
                 .storeList(rootList, size * 8);
 
         if (hasIdx) {
-            cell.storeList(index, hasIdx ? offBytes * 8 : 0);
+            cell.storeList(index, offBytes * 8);
         }
 
         cell.storeBytes(cellData, totalCellsSize * 8);
@@ -76,7 +76,7 @@ public class Boc {
             byte[] cellAsByteArray = cell.toSignedByteArray();
             byte[] checksum = Utils.getCRC32ChecksumAsBytesReversed(cellAsByteArray);
 
-            cell.storeBytes(checksum, hasCrc32c ? 32 : 0);
+            cell.storeBytes(checksum, 32);
         }
 
         return cell.endCell();

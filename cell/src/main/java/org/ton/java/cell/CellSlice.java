@@ -1,15 +1,14 @@
 package org.ton.java.cell;
 
 
-import org.ton.java.address.Address;
-import org.ton.java.bitstring.BitString;
+import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-
-import static java.util.Objects.nonNull;
+import org.ton.java.address.Address;
+import org.ton.java.bitstring.BitString;
 
 public class CellSlice {
 
@@ -286,9 +285,6 @@ public class CellSlice {
         return isEmpty ? skipRefs(1) : this;
     }
 
-    /**
-     * TODO - implement skip without traversing the actual hashmap
-     */
     public CellSlice skipDict(int dictKeySize) {
         loadDict(dictKeySize,
                 k -> CellBuilder.beginCell().endCell(),

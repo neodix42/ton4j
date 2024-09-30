@@ -1,6 +1,12 @@
 package org.ton.java.smartcontract.wallet.v5;
 
+import static java.util.Objects.isNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -15,13 +21,6 @@ import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.util.Objects.isNull;
 
 @Builder
 @Getter
@@ -239,7 +238,7 @@ public class WalletV5 implements Contract {
                 .endCell();
     }
 
-    public Cell createInternalSignedlBody(WalletV5Config config) {
+    public Cell createInternalSignedBody(WalletV5Config config) {
         Cell body = createInternalTransferBody(config);
         byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
 

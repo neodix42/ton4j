@@ -1,6 +1,14 @@
 package org.ton.java.smartcontract.integrationtests;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.java.address.Address;
@@ -20,15 +28,6 @@ import org.ton.java.tlb.types.ExtendedActionType;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.util.*;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 public class TestWalletV5 extends CommonTest {
@@ -734,7 +733,7 @@ public class TestWalletV5 extends CommonTest {
                 .walletId(43)
                 .destination(contractV5.getAddress())
                 .amount(Utils.toNano(0.017))
-                .body(contractV5.createInternalSignedlBody(walletV5Config))
+                .body(contractV5.createInternalSignedBody(walletV5Config))
                 .build();
 
         extMessageInfo = contractV3.send(walletV3Config);

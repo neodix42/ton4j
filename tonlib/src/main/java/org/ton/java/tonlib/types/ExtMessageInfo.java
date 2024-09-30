@@ -16,7 +16,7 @@ public class ExtMessageInfo implements Serializable {
 
     @SerializedName("@type")
     final String type = "raw.extMessageInfo";
-    String body_hash;
+    String hash;
     TonlibError error;
 }
 

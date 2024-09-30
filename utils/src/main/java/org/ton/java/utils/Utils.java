@@ -499,6 +499,21 @@ public class Utils {
         return dst;
     }
 
+    public static byte[] append(byte[] dst, byte[] with) {
+        System.arraycopy(with, 0, dst, dst.length, with.length);
+        return dst;
+    }
+
+    public static byte[] appendByteArray(byte[] originalArray, byte[] appendArray) {
+        // Create a new array with size equal to the sum of both input arrays
+        byte[] resultArray = Arrays.copyOf(originalArray, originalArray.length + appendArray.length);
+
+        // Copy the appendArray into the new array starting from the end of originalArray
+        System.arraycopy(appendArray, 0, resultArray, originalArray.length, appendArray.length);
+
+        return resultArray;
+    }
+
 
     public static int[] copy(int[] dst, int destPos, int[] src, int srcPos) {
         System.arraycopy(src, srcPos, dst, destPos, src.length);
@@ -510,8 +525,21 @@ public class Utils {
         return dst;
     }
 
+    public static byte[] slice( byte[] src, int from, int size) {
+        byte[] resultArray = new byte[size];
+        System.arraycopy(src, from, resultArray, 0, size);
+        return resultArray;
+    }
+
     public static int dynInt(int[] data) {
         int[] tmp = new int[8];
+        Utils.copy(tmp, 8 - data.length, data, 0);
+
+        return Integer.valueOf(Utils.bytesToHex(tmp), 16);
+    }
+
+    public static int dynInt(byte[] data) {
+        byte[] tmp = new byte[8];
         Utils.copy(tmp, 8 - data.length, data, 0);
 
         return Integer.valueOf(Utils.bytesToHex(tmp), 16);
@@ -902,5 +930,21 @@ public class Utils {
         Arrays.fill(b, bits.length, sz, (byte) c);
 
         return b;
+    }
+
+    public static int log2(int val) {
+        return (int) Math.ceil(Math.log(val) / Math.log(2));
+    }
+
+    public static int[] uintToBytes(int l) {
+        return new int[]{l};
+    }
+
+    public static byte[] byteToBytes(byte l) {
+        return new byte[]{l};
+    }
+
+    public static boolean compareBytes(byte[] a, byte[] b) {
+        return Arrays.equals(a, b);
     }
 }

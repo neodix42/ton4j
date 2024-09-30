@@ -21,7 +21,8 @@ public class DepthBalanceInfo {
     public Cell toCell() {
         return CellBuilder.beginCell()
                 .storeUint(depth, Utils.log2Ceil(depth))
-                .storeCell(currencies.toCell()).endCell();
+                .storeCell(currencies.toCell())
+                .endCell();
     }
 
     public static DepthBalanceInfo deserialize(CellSlice cs) {

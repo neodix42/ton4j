@@ -87,16 +87,13 @@ public class TestHighloadWalletV3 extends CommonTest {
                                                 .body(CellBuilder.beginCell()
                                                         .storeUint(0, 32)
                                                         .storeString("test-comment-1")
-                                                        .endCell()
-                                                ).build(),
+                                                        .endCell()).build(),
                                         Destination.builder()
                                                 .address("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G")
                                                 .amount(Utils.toNano(0.033))
                                                 .comment("test-comment-2")
-                                                .build()
-                                ),
-                                BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId()))
-                )
+                                                .build()),
+                                BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
                 .build();
 
         extMessageInfo = contract.send(config);
@@ -348,7 +345,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(3));
-        Utils.sleep(10, "topping up...");
+
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
 //        long createdAt = Instant.now().getEpochSecond() - 60 * 5;
@@ -401,7 +398,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
         // top up new wallet using test-faucet-wallet
         BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(12));
-        Utils.sleep(10, "topping up...");
+
         log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
         HighloadV3Config config = HighloadV3Config.builder()

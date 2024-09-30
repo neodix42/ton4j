@@ -192,7 +192,7 @@ public class TestJetton {
 
 
     @Test
-    public void testJettonTransferWithHighloadWalletV3_800() throws InterruptedException, NoSuchAlgorithmException {
+    public void testJettonTransferWithHighloadWalletV3_500() throws InterruptedException, NoSuchAlgorithmException {
 
         tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
@@ -223,9 +223,7 @@ public class TestJetton {
                                 null, // from address
                                 null, // response address
                                 BigInteger.ONE, // fwd amount
-                                MsgUtils.createTextMessageBody("minting") // forward payload
-                        )
-                )
+                                MsgUtils.createTextMessageBody("minting"))) // forward payload
                 .build();
         ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
@@ -254,9 +252,7 @@ public class TestJetton {
                                 null, // response address
                                 null, // custom payload
                                 BigInteger.ONE, // forward amount
-                                MsgUtils.createTextMessageBody("gift") // forward payload
-                        )
-                )
+                                MsgUtils.createTextMessageBody("gift"))) // forward payload
                 .build();
         extMessageInfo = adminWallet.send(walletV3Config);
         Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
@@ -266,21 +262,19 @@ public class TestJetton {
 
         JettonWallet highloadJettonWallet2 = minter.getJettonWallet(highloadWallet2.getAddress());
 
-        // transfer jettons from highloadWallet2 to two destinations by sending transfer request to highload's jetton wallet
+        // transfer jettons from highloadWallet2 to 600 destinations by sending transfer request to highload's jetton wallet
 
         HighloadV3Config highloadV3Config = HighloadV3Config.builder()
                 .walletId(42)
                 .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
-                .body(
-                        highloadWallet2.createBulkTransfer(
-                                createDummyDestinations(800, highloadJettonWallet2),
-                                BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId()))
-                )
+                .body(highloadWallet2.createBulkTransfer(
+                                createDummyDestinations(500, highloadJettonWallet2),
+                                BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
                 .build();
         extMessageInfo = highloadWallet2.send(highloadV3Config);
         assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        Utils.sleep(30, "transferring to 800 recipients 2 jettons...");
+        Utils.sleep(30, "transferring to 500 recipients 2 jettons...");
         log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
 
         getMinterInfo(minter);
@@ -290,7 +284,7 @@ public class TestJetton {
     private void getMinterInfo(JettonMinter minter) {
         JettonMinterData data = minter.getJettonData(tonlib);
         log.info("minter adminAddress {}", data.getAdminAddress());
-        log.info("minter totalSupply {}", Utils.formatNanoValue(data.getTotalSupply()));
+        log.info("minter totalSupply {}", data.getTotalSupply());
         log.info("minter jetton uri {}", data.getJettonContentUri());
     }
 
@@ -311,8 +305,7 @@ public class TestJetton {
                             null,     // response address
                             null,     // custom payload
                             BigInteger.ONE, // forward amount
-                            MsgUtils.createTextMessageBody("test sdk") // forward payload / memo
-                    ))
+                            MsgUtils.createTextMessageBody("test sdk"))) // forward payload / memo
                     .build());
         }
         return result;

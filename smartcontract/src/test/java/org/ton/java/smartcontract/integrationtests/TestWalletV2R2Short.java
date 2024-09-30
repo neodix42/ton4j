@@ -25,6 +25,7 @@ public class TestWalletV2R2Short extends CommonTest {
         TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
         WalletV2R2 contract = WalletV2R2.builder()
+                .tonlib(tonlib)
                 .keyPair(keyPair)
                 .build();
 

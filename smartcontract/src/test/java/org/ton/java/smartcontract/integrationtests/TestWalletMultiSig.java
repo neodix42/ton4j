@@ -801,7 +801,7 @@ public class TestWalletMultiSig extends CommonTest {
                                 .creatorI(0)
                                 .cnt(2)
                                 .cntBits(3)
-                                .msg(msg2)
+                                .msg(msg1)
                                 .build(),
                         PendingQuery.builder()
                                 .queryId(queryId2)
@@ -812,8 +812,14 @@ public class TestWalletMultiSig extends CommonTest {
                                 .build()
                 ), n);
 
+        log.info("pendingQueriesToMerge1 {}", dict1.toHex(false));
+        log.info("pendingQueriesToMerge2 {}", dict2.toHex(false));
+        log.info("pendingQueriesToMerge1-hash {}", Utils.bytesToHex(dict1.getHash()));
+        log.info("pendingQueriesToMerge2-hash {}", Utils.bytesToHex(dict2.getHash()));
+
         Cell mergeDict = contract.mergePendingQueries(tonlib, dict1, dict2);
         log.info("merged dict {}", mergeDict);
+        assertThat(mergeDict).isNotNull();
     }
 
     private void showMessagesInfo(Map<BigInteger, Cell> messages, String label) {

@@ -12,6 +12,6 @@ import lombok.ToString;
 @ToString
 public class SendRawMessageQuery extends ExtraQuery {
     @SerializedName(value = "@type")
-    final String type = "raw.sendMessage";
+    final String type = "raw.sendMessageReturnHash";
     String body;
 }

@@ -38,7 +38,9 @@ public class CellBuilder {
      * Converts a builder into an ordinary cell.
      */
     public Cell endCell() {
-        cell.calculateHashes();
+        if (cell.getHashes().length == 0) {
+            cell.calculateHashes();
+        }
         return cell;
     }
 
@@ -459,7 +461,7 @@ public class CellBuilder {
     }
 
     public CellBuilder fromBocBase64(String data) {
-        cell = Cell.fromBocMultiRoot(Utils.base64ToSignedBytes(data)).get(0);
+        cell = Cell.fromBocMultiRoot(Utils.base64ToBytes(data)).get(0);
         return this;
     }
 

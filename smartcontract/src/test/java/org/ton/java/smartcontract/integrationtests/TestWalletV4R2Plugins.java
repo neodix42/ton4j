@@ -1,6 +1,11 @@
 package org.ton.java.smartcontract.integrationtests;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.ton.java.smartcontract.TestFaucet.FAUCET_ADDRESS_RAW;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,238 +23,280 @@ import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
-import java.util.List;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.ton.java.smartcontract.TestFaucet.FAUCET_ADDRESS_RAW;
-
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestWalletV4R2Plugins extends CommonTest {
 
-    @Test
-    public void testPlugins() throws InterruptedException {
+  @Test
+  public void testWalletV4Deploy() throws InterruptedException {
 
-        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        WalletV4R2 contract = WalletV4R2.builder()
-                .tonlib(tonlib)
-                .keyPair(keyPair)
-                .walletId(42)
-                .build();
+    WalletV4R2 contract = WalletV4R2.builder().tonlib(tonlib).keyPair(keyPair).walletId(42).build();
 
-        Address walletAddress = contract.getAddress();
+    Address walletAddress = contract.getAddress();
 
-        String nonBounceableAddress = walletAddress.toNonBounceable();
-        String bounceableAddress = walletAddress.toBounceable();
-        log.info("bounceableAddress: {}", bounceableAddress);
-        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
-        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+    String nonBounceableAddress = walletAddress.toNonBounceable();
+    String bounceableAddress = walletAddress.toBounceable();
+    log.info("bounceableAddress: {}", bounceableAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
-        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    BigInteger balance =
+        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        // deploy wallet-v4
-        ExtMessageInfo extMessageInfo = contract.deploy();
-        assertThat(extMessageInfo.getError().getCode()).isZero();
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+  }
 
-        contract.waitForDeployment(30);
+  @Test
+  public void testPlugins() throws InterruptedException {
 
-        long walletCurrentSeqno = contract.getSeqno();
-        log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
-        log.info("seqno: {}", walletCurrentSeqno);
-        log.info("walletId: {}", contract.getWalletId());
-        log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey()));
-        log.info("pluginsList: {}", contract.getPluginsList());
-        log.info("pluginsList: {}", contract.getPluginsList());
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-        // create and deploy plugin -- start
+    WalletV4R2 contract = WalletV4R2.builder().tonlib(tonlib).keyPair(keyPair).walletId(42).build();
 
-        Address beneficiaryAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
-        log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
+    Address walletAddress = contract.getAddress();
 
-        SubscriptionInfo subscriptionInfo = SubscriptionInfo.builder()
-                .beneficiary(beneficiaryAddress)
-                .subscriptionFee(Utils.toNano(2))
-                .period(60)
-                .startTime(0)
-                .timeOut(30)
-                .lastPaymentTime(0)
-                .lastRequestTime(0)
-                .failedAttempts(0)
-                .subscriptionId(12345)
-                .build();
+    String nonBounceableAddress = walletAddress.toNonBounceable();
+    String bounceableAddress = walletAddress.toBounceable();
+    log.info("bounceableAddress: {}", bounceableAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
-        Utils.sleep(30);
+    BigInteger balance =
+        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
+    // deploy wallet-v4
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        WalletV4R2Config config = WalletV4R2Config.builder()
-                .seqno(contract.getSeqno())
-                .operation(1) // deploy and install plugin
-                .walletId(42)
-                .newPlugin(NewPlugin.builder()
-                        .secretKey(keyPair.getSecretKey())
-                        .seqno(walletCurrentSeqno)
-                        .pluginWc(contract.getWc()) // reuse wc of the wallet
-                        .amount(Utils.toNano(0.1)) // initial plugin balance, will be taken from wallet-v4
-                        .stateInit(contract.createPluginStateInit(subscriptionInfo))
-                        .body(contract.createPluginBody())
-                        .build())
-                .build();
+    contract.waitForDeployment(30);
 
-        extMessageInfo = contract.send(config);
-        assertThat(extMessageInfo.getError().getCode()).isZero();
+    long walletCurrentSeqno = contract.getSeqno();
+    log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
+    log.info("seqno: {}", walletCurrentSeqno);
+    log.info("walletId: {}", contract.getWalletId());
+    log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey()));
+    log.info("pluginsList: {}", contract.getPluginsList());
+    assertThat(contract.getPluginsList().isEmpty()).isTrue();
 
-        Utils.sleep(45);
+    // create and deploy plugin -- start
 
-        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
+    Address beneficiaryAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+    log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
 
-        // create and deploy plugin -- end
+    SubscriptionInfo subscriptionInfo =
+        SubscriptionInfo.builder()
+            .beneficiary(beneficiaryAddress)
+            .subscriptionFee(Utils.toNano(2))
+            .period(60)
+            .startTime(0)
+            .timeOut(30)
+            .lastPaymentTime(0)
+            .lastRequestTime(0)
+            .failedAttempts(0)
+            .subscriptionId(12345)
+            .build();
 
-        // get plugin list
-        List<String> plugins = contract.getPluginsList();
-        log.info("pluginsList: {}", plugins);
+    Utils.sleep(30);
 
-        Address pluginAddress = Address.of(plugins.get(0));
-        log.info("pluginAddress {}", pluginAddress.toString(false));
+    log.info(
+        "beneficiaryWallet balance {}",
+        Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
 
-        subscriptionInfo = contract.getSubscriptionData(pluginAddress);
+    WalletV4R2Config config =
+        WalletV4R2Config.builder()
+            .seqno(contract.getSeqno())
+            .operation(1) // deploy and install plugin
+            .walletId(42)
+            .newPlugin(
+                NewPlugin.builder()
+                    .secretKey(keyPair.getSecretKey())
+                    .seqno(walletCurrentSeqno)
+                    .pluginWc(contract.getWc()) // reuse wc of the wallet
+                    .amount(
+                        Utils.toNano(0.1)) // initial plugin balance, will be taken from wallet-v4
+                    .stateInit(contract.createPluginStateInit(subscriptionInfo))
+                    .body(contract.createPluginBody())
+                    .build())
+            .build();
 
-        log.info("{}", subscriptionInfo);
-        log.info("plugin hash (int) {}", new BigInteger(pluginAddress.hashPart));
-        log.info("plugin hash (hex) {}", Utils.bytesToHex(pluginAddress.hashPart));
+    extMessageInfo = contract.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        log.info("plugin {} installed {}", pluginAddress, contract.isPluginInstalled(pluginAddress));
+    Utils.sleep(45);
 
-        log.info("collect fee - first time");
+    log.info(
+        "beneficiaryWallet balance {}",
+        Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
 
-        Cell extMessage = MsgUtils.createExternalMessageWithSignedBody(contract.getKeyPair(), pluginAddress, null, null).toCell();
-        extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
-        assertThat(extMessageInfo.getError().getCode()).isZero();
+    // create and deploy plugin -- end
 
-        ContractUtils.waitForDeployment(tonlib, beneficiaryAddress, 90); // no need?
+    // get plugin list
+    List<String> plugins = contract.getPluginsList();
+    log.info("pluginsList: {}", plugins);
 
-        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
+    assertThat(plugins.isEmpty()).isFalse();
 
-        Utils.sleep(30, "wait for seqno update");
+    Address pluginAddress = Address.of(plugins.get(0));
+    log.info("pluginAddress {}", pluginAddress.toString(false));
 
-        log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
+    subscriptionInfo = contract.getSubscriptionData(pluginAddress);
 
-        subscriptionInfo = contract.getSubscriptionData(pluginAddress);
-        log.info("{}", subscriptionInfo);
+    log.info("{}", subscriptionInfo);
+    log.info(
+        "plugin hash: int {}, hex {}",
+        new BigInteger(pluginAddress.hashPart),
+        Utils.bytesToHex(pluginAddress.hashPart));
 
-        assertThat(subscriptionInfo.getLastPaymentTime()).isNotEqualTo(0);
+    log.info("plugin {} installed {}", pluginAddress, contract.isPluginInstalled(pluginAddress));
 
-        log.info("collect fee - second time");
+    log.info("collect fee - first time");
 
-        Utils.sleep(180, "wait for timeout");
+    Cell extMessage =
+        MsgUtils.createExternalMessageWithSignedBody(
+                contract.getKeyPair(), pluginAddress, null, null)
+            .toCell();
 
-        extMessage = MsgUtils.createExternalMessageWithSignedBody(contract.getKeyPair(), pluginAddress, null, null).toCell();
+    extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
+    log.info("extMessageInfo {}", extMessageInfo);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
-        assertThat(extMessageInfo.getError().getCode()).isZero();
+    ContractUtils.waitForDeployment(tonlib, beneficiaryAddress, 90); // no need?
 
-        ContractUtils.waitForDeployment(tonlib, subscriptionInfo.getBeneficiary(), 90);
+    log.info(
+        "beneficiaryWallet balance {}",
+        Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
 
-        log.info("beneficiaryWallet balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(subscriptionInfo.getBeneficiary())));
+    Utils.sleep(30, "wait for seqno update");
 
-        Utils.sleep(30);
+    log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
 
-        log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
+    subscriptionInfo = contract.getSubscriptionData(pluginAddress);
+    log.info("{}", subscriptionInfo);
 
-        subscriptionInfo = contract.getSubscriptionData(pluginAddress);
-        log.info("{}", subscriptionInfo);
+    assertThat(subscriptionInfo.getLastPaymentTime()).isNotEqualTo(0);
 
-        // uninstall/remove plugin from the wallet -- start
+    log.info("collect fee - second time");
 
-        log.info("Uninstalling plugin {}", Address.of(contract.getPluginsList().get(0)));
+    Utils.sleep(180, "wait for timeout");
 
-        walletCurrentSeqno = contract.getSeqno();
+    subscriptionInfo = contract.getSubscriptionData(pluginAddress);
+    log.info("{}", subscriptionInfo);
 
-        config = WalletV4R2Config.builder()
-                .seqno(contract.getSeqno())
-                .walletId(config.getWalletId())
-                .operation(3) // uninstall plugin
-                .deployedPlugin(DeployedPlugin.builder()
-                        .seqno(walletCurrentSeqno)
-                        .amount(Utils.toNano(0.1))
-                        .pluginAddress(Address.of(contract.getPluginsList().get(0)))
-                        .secretKey(keyPair.getSecretKey())
-                        .queryId(0)
-                        .build())
-                .build();
+    extMessage =
+        MsgUtils.createExternalMessageWithSignedBody(
+                contract.getKeyPair(), pluginAddress, null, null)
+            .toCell();
+    extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
+    log.info("extMessageInfo {}", extMessageInfo);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        extMessageInfo = contract.uninstallPlugin(config);
-        Utils.sleep(30, "sent uninstall request");
-        assertThat(extMessageInfo.getError().getCode()).isZero();
+    ContractUtils.waitForDeployment(tonlib, subscriptionInfo.getBeneficiary(), 90);
 
-        // uninstall plugin -- end
+    log.info(
+        "beneficiaryWallet balance {}",
+        Utils.formatNanoValue(tonlib.getAccountBalance(subscriptionInfo.getBeneficiary())));
 
-        Utils.sleep(30);
-        List<String> list = contract.getPluginsList();
-        log.info("pluginsList: {}", list);
-        assertThat(list.isEmpty()).isTrue();
+    Utils.sleep(30);
 
-        config = WalletV4R2Config.builder()
-                .operation(0)
-                .walletId(contract.getWalletId())
-                .seqno(contract.getSeqno())
-                .destination(Address.of(FAUCET_ADDRESS_RAW))
-                .amount(Utils.toNano(0.331)).build();
+    log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
 
-        extMessageInfo = contract.send(config);
-        Utils.sleep(30, "sent toncoins");
-        assertThat(extMessageInfo.getError().getCode()).isZero();
-    }
+    subscriptionInfo = contract.getSubscriptionData(pluginAddress);
+    log.info("{}", subscriptionInfo);
 
-    @Test
-    public void testSimpleSend() throws InterruptedException {
+    // uninstall/remove plugin from the wallet -- start
 
-        TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    log.info("Uninstalling plugin {}", Address.of(contract.getPluginsList().get(0)));
 
-        WalletV4R2 contract = WalletV4R2.builder()
-                .tonlib(tonlib)
-                .keyPair(keyPair)
-                .walletId(42)
-                .build();
+    walletCurrentSeqno = contract.getSeqno();
 
-        Address walletAddress = contract.getAddress();
+    config =
+        WalletV4R2Config.builder()
+            .seqno(contract.getSeqno())
+            .walletId(config.getWalletId())
+            .operation(3) // uninstall plugin
+            .deployedPlugin(
+                DeployedPlugin.builder()
+                    .seqno(walletCurrentSeqno)
+                    .amount(Utils.toNano(0.1))
+                    .pluginAddress(Address.of(contract.getPluginsList().get(0)))
+                    .secretKey(keyPair.getSecretKey())
+                    .queryId(0)
+                    .build())
+            .build();
 
-        String nonBounceableAddress = walletAddress.toNonBounceable();
-        String bounceableAddress = walletAddress.toBounceable();
-        log.info("bounceableAddress: {}", bounceableAddress);
-        log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
-        log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+    extMessageInfo = contract.uninstallPlugin(config);
+    Utils.sleep(30, "sent uninstall request");
+    assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
-        log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    // uninstall plugin -- end
 
-        // deploy wallet-v4
-        ExtMessageInfo extMessageInfo = contract.deploy();
-        assertThat(extMessageInfo.getError().getCode()).isZero();
+    Utils.sleep(60);
+    List<String> list = contract.getPluginsList();
+    log.info("pluginsList: {}", list);
+    assertThat(list.isEmpty()).isTrue();
 
-        contract.waitForDeployment(30);
+    config =
+        WalletV4R2Config.builder()
+            .operation(0)
+            .walletId(contract.getWalletId())
+            .seqno(contract.getSeqno())
+            .destination(Address.of(FAUCET_ADDRESS_RAW))
+            .amount(Utils.toNano(0.331))
+            .build();
 
-        long walletCurrentSeqno = contract.getSeqno();
-        log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
-        log.info("seqno: {}", walletCurrentSeqno);
-        log.info("walletId: {}", contract.getWalletId());
-        log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey()));
-        log.info("pluginsList: {}", contract.getPluginsList());
-        log.info("pluginsList: {}", contract.getPluginsList());
+    extMessageInfo = contract.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+  }
 
-        WalletV4R2Config config = WalletV4R2Config.builder()
-                .operation(0)
-                .walletId(contract.getWalletId())
-                .seqno(contract.getSeqno())
-                .destination(Address.of(FAUCET_ADDRESS_RAW))
-                .mode(3)
-                .amount(Utils.toNano(0.331))
-                .comment("ton4j-v4r2-simple-send")
-                .build();
+  @Test
+  public void testSimpleSend() throws InterruptedException {
 
-        contract.send(config);
-    }
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    WalletV4R2 contract = WalletV4R2.builder().tonlib(tonlib).keyPair(keyPair).walletId(42).build();
+
+    Address walletAddress = contract.getAddress();
+
+    String nonBounceableAddress = walletAddress.toNonBounceable();
+    String bounceableAddress = walletAddress.toBounceable();
+    log.info("bounceableAddress: {}", bounceableAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+    BigInteger balance =
+        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    // deploy wallet-v4
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForDeployment(30);
+
+    long walletCurrentSeqno = contract.getSeqno();
+    log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
+    log.info("seqno: {}", walletCurrentSeqno);
+    log.info("walletId: {}", contract.getWalletId());
+    log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey()));
+    log.info("pluginsList: {}", contract.getPluginsList());
+    log.info("pluginsList: {}", contract.getPluginsList());
+
+    WalletV4R2Config config =
+        WalletV4R2Config.builder()
+            .operation(0)
+            .walletId(contract.getWalletId())
+            .seqno(contract.getSeqno())
+            .destination(Address.of(FAUCET_ADDRESS_RAW))
+            .mode(3)
+            .amount(Utils.toNano(0.331))
+            .comment("ton4j-v4r2-simple-send")
+            .build();
+
+    contract.send(config);
+  }
 }
