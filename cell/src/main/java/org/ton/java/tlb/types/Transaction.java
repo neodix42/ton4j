@@ -1,5 +1,8 @@
 package org.ton.java.tlb.types;
 
+import static java.util.Objects.nonNull;
+
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -7,9 +10,9 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
-import java.math.BigInteger;
-
 /**
+ *
+ *
  * <pre>
  * transaction$0111
  *   account_addr:bits256
@@ -31,134 +34,149 @@ import java.math.BigInteger;
  */
 @Builder
 @Data
-
 public class Transaction {
-    int magic;
-    BigInteger accountAddr;
-    BigInteger lt;
-    BigInteger prevTxHash;
-    BigInteger prevTxLt;
-    long now;
-    long outMsgCount;
-    AccountStates origStatus;
-    AccountStates endStatus;
-    TransactionIO inOut;
-    CurrencyCollection totalFees;
-    HashUpdate stateUpdate;
-    TransactionDescription description;
+  int magic;
+  BigInteger accountAddr;
+  BigInteger lt;
+  BigInteger prevTxHash;
+  BigInteger prevTxLt;
+  long now;
+  long outMsgCount;
+  AccountStates origStatus;
+  AccountStates endStatus;
+  TransactionIO inOut;
+  CurrencyCollection totalFees;
+  HashUpdate stateUpdate;
+  TransactionDescription description;
 
-    // not in scheme, but might be filled based on request data for flexibility
-    byte[] hash;
+  // not in scheme, but might be filled based on request data for flexibility
+  byte[] hash;
 
-    private String getMagic() {
-        return Long.toBinaryString(magic);
+  private String getMagic() {
+    return Long.toBinaryString(magic);
+  }
+
+  private String getAccountAddr() {
+    if (nonNull(accountAddr)) {
+      return accountAddr.toString(16);
+    } else {
+      return "null";
     }
+  }
 
-    private String getAccountAddr() {
-        return accountAddr.toString(16);
+  private String getPrevTxHash() {
+    if (nonNull(accountAddr)) {
+      return prevTxHash.toString(16);
+    } else {
+      return "null";
     }
+  }
 
-    private String getPrevTxHash() {
-        return prevTxHash.toString(16);
-    }
+  public Cell toCell() {
+    CellBuilder c = CellBuilder.beginCell();
+    c.storeUint(0b0111, 4);
+    c.storeUint(accountAddr, 256);
+    c.storeUint(lt, 64);
+    c.storeUint(prevTxHash, 256);
+    c.storeUint(prevTxLt, 64);
+    c.storeUint(now, 32);
+    c.storeUint(outMsgCount, 15);
+    c.storeCell(serializeAccountState(origStatus));
+    c.storeCell(serializeAccountState(endStatus));
+    c.storeCell(totalFees.toCell());
 
-    public void dump() {
-        //todo
-    }
+    c.storeRef(inOut.toCell());
+    c.storeRef(stateUpdate.toCell());
+    c.storeRef(description.toCell());
 
-    public Cell toCell() {
-        CellBuilder c = CellBuilder.beginCell();
-        c.storeUint(0b0111, 4);
-        c.storeUint(accountAddr, 256);
-        c.storeUint(lt, 64);
-        c.storeUint(prevTxHash, 256);
-        c.storeUint(prevTxLt, 64);
-        c.storeUint(now, 32);
-        c.storeUint(outMsgCount, 15);
-        c.storeCell(serializeAccountState(origStatus));
-        c.storeCell(serializeAccountState(endStatus));
-        c.storeCell(totalFees.toCell());
+    return c.endCell();
+  }
 
-        c.storeRef(inOut.toCell());
-        c.storeRef(stateUpdate.toCell());
-        c.storeRef(description.toCell());
+  public static Transaction deserialize(CellSlice cs) {
+    long magic = cs.loadUint(4).intValue();
+    assert (magic == 0b0111)
+        : "Transaction: magic not equal to 0b0111, found 0b" + Long.toBinaryString(magic);
 
-        return c.endCell();
-    }
+    Transaction tx =
+        Transaction.builder()
+            .magic(0b0111)
+            .accountAddr(cs.loadUint(256))
+            .lt(cs.loadUint(64))
+            .prevTxHash(cs.loadUint(256))
+            .prevTxLt(cs.loadUint(64))
+            .now(cs.loadUint(32).longValue())
+            .outMsgCount(cs.loadUint(15).intValue())
+            .origStatus(deserializeAccountState(cs.loadUint(2).byteValue()))
+            .endStatus(deserializeAccountState(cs.loadUint(2).byteValueExact()))
+            .build();
 
-    public static Transaction deserialize(CellSlice cs) {
-        long magic = cs.loadUint(4).intValue();
-        assert (magic == 0b0111) : "Transaction: magic not equal to 0b0111, found 0b" + Long.toBinaryString(magic);
+    CellSlice inOutMsgs = CellSlice.beginParse(cs.loadRef());
+    Message msg =
+        inOutMsgs.loadBit() ? Message.deserialize(CellSlice.beginParse(inOutMsgs.loadRef())) : null;
+    TonHashMapE out =
+        inOutMsgs.loadDictE(
+            15,
+            k -> k.readInt(15),
+            v -> Message.deserialize(CellSlice.beginParse(CellSlice.beginParse(v).loadRef())));
 
-        Transaction tx = Transaction.builder()
-                .magic(0b0111)
-                .accountAddr(cs.loadUint(256))
-                .lt(cs.loadUint(64))
-                .prevTxHash(cs.loadUint(256))
-                .prevTxLt(cs.loadUint(64))
-                .now(cs.loadUint(32).longValue())
-                .outMsgCount(cs.loadUint(15).intValue())
-                .origStatus(deserializeAccountState(cs.loadUint(2).byteValue()))
-                .endStatus(deserializeAccountState(cs.loadUint(2).byteValueExact()))
-                .build();
+    tx.setInOut(TransactionIO.builder().in(msg).out(out).build());
 
-        CellSlice inOutMsgs = CellSlice.beginParse(cs.loadRef());
-        Message msg = inOutMsgs.loadBit() ? Message.deserialize(CellSlice.beginParse(inOutMsgs.loadRef())) : null;
-        TonHashMapE out = inOutMsgs.loadDictE(15,
-                k -> k.readInt(15),
-                v -> Message.deserialize(CellSlice.beginParse(CellSlice.beginParse(v).loadRef())));
+    //        if (nonNull(tx.getInOut().getOut())) { // todo cleanup
+    //            for (Map.Entry<Object, Object> entry : tx.getInOut().getOut().elements.entrySet())
+    // {
+    //                System.out.println("key " + entry.getKey() + ", value " + ((Message)
+    // entry.getValue()));
+    //            }
+    //        }
 
-        tx.setInOut(TransactionIO.builder()
-                .in(msg)
-                .out(out)
-                .build());
+    tx.setTotalFees(CurrencyCollection.deserialize(cs));
+    tx.setStateUpdate(HashUpdate.deserialize(CellSlice.beginParse(cs.loadRef())));
+    tx.setDescription(TransactionDescription.deserialize(CellSlice.beginParse(cs.loadRef())));
 
-//        if (nonNull(tx.getInOut().getOut())) { // todo cleanup
-//            for (Map.Entry<Object, Object> entry : tx.getInOut().getOut().elements.entrySet()) {
-//                System.out.println("key " + entry.getKey() + ", value " + ((Message) entry.getValue()));
-//            }
-//        }
+    return tx;
+  }
 
-        tx.setTotalFees(CurrencyCollection.deserialize(cs));
-        tx.setStateUpdate(HashUpdate.deserialize(CellSlice.beginParse(cs.loadRef())));
-        tx.setDescription(TransactionDescription.deserialize(CellSlice.beginParse(cs.loadRef())));
-
-        return tx;
-    }
-
-    public static Cell serializeAccountState(AccountStates state) {
-        switch (state) {
-            case UNINIT: {
-                return CellBuilder.beginCell().storeUint(0, 2).endCell();
-            }
-            case FROZEN: {
-                return CellBuilder.beginCell().storeUint(1, 2).endCell();
-            }
-            case ACTIVE: {
-                return CellBuilder.beginCell().storeUint(2, 2).endCell();
-            }
-            case NON_EXIST: {
-                return CellBuilder.beginCell().storeUint(3, 2).endCell();
-            }
+  public static Cell serializeAccountState(AccountStates state) {
+    switch (state) {
+      case UNINIT:
+        {
+          return CellBuilder.beginCell().storeUint(0, 2).endCell();
         }
-        return null;
-    }
-
-    public static AccountStates deserializeAccountState(byte state) {
-        switch (state) {
-            case 0: {
-                return AccountStates.UNINIT;
-            }
-            case 1: {
-                return AccountStates.FROZEN;
-            }
-            case 2: {
-                return AccountStates.ACTIVE;
-            }
-            case 3: {
-                return AccountStates.NON_EXIST;
-            }
+      case FROZEN:
+        {
+          return CellBuilder.beginCell().storeUint(1, 2).endCell();
         }
-        return null;
+      case ACTIVE:
+        {
+          return CellBuilder.beginCell().storeUint(2, 2).endCell();
+        }
+      case NON_EXIST:
+        {
+          return CellBuilder.beginCell().storeUint(3, 2).endCell();
+        }
     }
+    return null;
+  }
+
+  public static AccountStates deserializeAccountState(byte state) {
+    switch (state) {
+      case 0:
+        {
+          return AccountStates.UNINIT;
+        }
+      case 1:
+        {
+          return AccountStates.FROZEN;
+        }
+      case 2:
+        {
+          return AccountStates.ACTIVE;
+        }
+      case 3:
+        {
+          return AccountStates.NON_EXIST;
+        }
+    }
+    return null;
+  }
 }

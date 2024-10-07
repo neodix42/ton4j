@@ -652,6 +652,10 @@ public class Cell {
     return Utils.bytesToBase64(toBoc(true));
   }
 
+  public String toBase64UrlSafe() {
+    return Utils.bytesToBase64SafeUrl(toBoc(true));
+  }
+
   public String toBase64(boolean withCrc) {
     return Utils.bytesToBase64(toBoc(withCrc));
   }

@@ -1,159 +1,532 @@
 package org.ton.java.emulator;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+
+import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.TonHashMapE;
+import org.ton.java.emulator.tx.TxEmulator;
+import org.ton.java.emulator.tx.TxEmulatorI;
+import org.ton.java.emulator.tx.TxVerbosityLevel;
 import org.ton.java.liteclient.LiteClient;
+import org.ton.java.smartcontract.SmartContractCompiler;
+import org.ton.java.smartcontract.types.Destination;
+import org.ton.java.smartcontract.types.WalletV5Config;
+import org.ton.java.smartcontract.wallet.v5.WalletV5;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.SmcLibraryEntry;
 import org.ton.java.tonlib.types.SmcLibraryResult;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
-import java.util.Collections;
-
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestTxEmulator {
 
-    static TxEmulator txEmulator;
-    static Tonlib tonlib;
-    static Cell config;
-    static LiteClient liteClient;
+  static TxEmulator txEmulator;
+  static Tonlib tonlib;
+  static Cell config;
+  static LiteClient liteClient;
 
-    @BeforeClass
-    public static void setUpBeforeClass() {
-        liteClient = LiteClient.builder()
-                .pathToLiteClientBinary("G:/Git_Projects/ton4j/emulator/lite-client.exe")
-                .build();
-        tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .build();
-        config = tonlib.getConfigAll(128);
-        txEmulator = TxEmulator.builder()
-                .configBoc(config.toBase64())
-                .build();
+  static Account testAccount;
+
+  @BeforeClass
+  public static void setUpBeforeClass() throws IOException {
+    liteClient =
+        LiteClient.builder()
+            .pathToLiteClientBinary("G:/Git_Projects/ton4j/emulator/lite-client.exe")
+            .build();
+    tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+
+    config = tonlib.getConfigAll(128);
+
+    // all configs taken as of 04.10.2024
+    String configAllMainnet =
+        IOUtils.toString(
+            Objects.requireNonNull(
+                TestTxEmulator.class.getResourceAsStream("/config-all-mainnet.txt")),
+            StandardCharsets.UTF_8);
+
+    //    String configAllTestnet =
+    //        IOUtils.toString(
+    //            Objects.requireNonNull(
+    //                TestTxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
+    //            StandardCharsets.UTF_8);
+    //
+    //    String slimConfig =
+    //        IOUtils.toString(
+    //
+    // Objects.requireNonNull(TestTxEmulator.class.getResourceAsStream("/slim-config.txt")),
+    //            StandardCharsets.UTF_8);
+
+    txEmulator =
+        TxEmulator.builder()
+            .configBoc(configAllMainnet)
+            //            .pathToEmulatorSharedLib("G:/libs/emulator.dll")
+            .pathToEmulatorSharedLib(
+                "G:\\Git_Projects\\ton-blockchain\\build\\emulator\\emulator.dll")
+            .verbosityLevel(TxVerbosityLevel.UNLIMITED)
+            .build();
+
+    //    txEmulator.setVerbosityLevel(TxVerbosityLevel.WITH_ALL_STACK_VALUES.ordinal());
+
+    testAccount =
+        Account.builder()
+            .isNone(false)
+            .address(
+                MsgAddressIntStd.of(
+                    "-1:0000000000000000000000000000000000000000000000000000000000000000"))
+            .storageInfo(
+                StorageInfo.builder()
+                    .storageUsed(
+                        StorageUsed.builder()
+                            .cellsUsed(BigInteger.ZERO)
+                            .bitsUsed(BigInteger.ZERO)
+                            .publicCellsUsed(BigInteger.ZERO)
+                            .build())
+                    .lastPaid(123654)
+                    .duePayment(Utils.toNano(2))
+                    .build())
+            .accountStorage(
+                AccountStorage.builder()
+                    //
+                    // .lastTransactionLt(BigInteger.TWO)
+                    .balance(CurrencyCollection.builder().coins(Utils.toNano(2)).build())
+                    .accountState(
+                        AccountStateActive.builder()
+                            .stateInit(
+                                StateInit.builder()
+                                    //
+                                    //  .depth(BigInteger.valueOf(1))
+                                    //
+                                    //  .tickTock(TickTock.builder()
+                                    //
+                                    //          .tick(false)
+                                    //
+                                    //          .tock(true)
+                                    //
+                                    //          .build())
+                                    .code(
+                                        CellBuilder.beginCell()
+                                            .fromBoc(
+                                                "b5ee9c7241010101004e000098ff0020dd2082014c97ba9730ed44d0d70b1fe0a4f260810200d71820d70b1fed44d0d31fd3ffd15112baf2a122f901541044f910f2a2f80001d31f31d307d4d101fb00a4c8cb1fcbffc9ed5470102286")
+                                            .endCell())
+                                    //
+                                    //
+                                    // .data(CellBuilder.beginCell().storeBit(true).endCell())
+                                    .build())
+                            .build())
+                    .accountStatus("ACTIVE")
+                    .build())
+            .build();
+  }
+
+  @Test
+  public void testInitTxEmulator() {
+    TxEmulatorI txEmulatorI = Native.load("emulator.dll", TxEmulatorI.class);
+    long emulator = txEmulatorI.transaction_emulator_create(config.toBase64(), 2);
+    assertNotEquals(0, emulator);
+  }
+
+  @Test
+  public void testSetVerbosityLevel() {
+    txEmulator.setVerbosityLevel(4);
+  }
+
+  @Test
+  public void testTxEmulatorIgnoreCheckSignature() {
+    assertTrue(txEmulator.setIgnoreCheckSignature(true));
+  }
+
+  @Test
+  public void testTxEmulatorSetLt() {
+    assertTrue(txEmulator.setEmulatorLt(200000));
+  }
+
+  @Test
+  public void testTxEmulatorSetLibs() {
+    Cell dictLibs = getLibs();
+
+    log.info("txEmulator.setLibs() result {}", txEmulator.setLibs(dictLibs.toBase64()));
+  }
+
+  @Test
+  public void testTxEmulatorEmulateTickTockTx() {
+    //        Cell dictLibs = getLibs();
+    //        txEmulator.setLibs(dictLibs.toBase64());
+
+    //        ResultLastBlock lightBlock = LiteClientParser.parseLast(liteClient.executeLast());
+    //        Block block = LiteClientParser.parseDumpblock(liteClient.executeDumpblock(lightBlock),
+    // true, true);
+    //        log.info("block: {}", block);
+
+    ShardAccount shardAccount =
+        ShardAccount.builder()
+            .account(testAccount)
+            .lastTransHash(BigInteger.valueOf(2))
+            .lastTransLt(BigInteger.ZERO)
+            .build();
+
+    log.info("shardAccount: {}", shardAccount);
+    String shardAccountBocBase64 = shardAccount.toCell().toBase64();
+    log.info("shardAccountCellBocBase64: {}", shardAccountBocBase64);
+    EmulateTransactionResult result =
+        txEmulator.emulateTickTockTransaction(shardAccountBocBase64, false);
+    log.info("result {}", result);
+  }
+
+  @Test
+  public void testTxEmulatorEmulateTxWithEmptyAccount() {
+
+    ShardAccount shardAccount =
+        ShardAccount.builder()
+            .account(Account.builder().isNone(true).build())
+            .lastTransHash(BigInteger.ZERO)
+            .lastTransLt(BigInteger.ZERO)
+            .build();
+    String shardAccountBocBase64 = shardAccount.toCell().toBase64();
+
+    Message internalMsg =
+        Message.builder()
+            .info(
+                InternalMessageInfo.builder()
+                    .srcAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId((byte) 0)
+                            .address(BigInteger.ZERO)
+                            .build())
+                    .dstAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId((byte) 0)
+                            .address(BigInteger.ZERO)
+                            .build())
+                    .value(CurrencyCollection.builder().coins(Utils.toNano(1)).build())
+                    .bounce(false)
+                    .createdAt(0)
+                    .build())
+            .init(null)
+            .body(null)
+            .build();
+    String internalMsgBocBase64 = internalMsg.toCell().toBase64();
+    EmulateTransactionResult result =
+        txEmulator.emulateTransaction(shardAccountBocBase64, internalMsgBocBase64);
+    log.info("result {}", result);
+    assertThat(result.isSuccess()).isTrue();
+  }
+
+  @Test
+  public void testTxEmulatorEmulateTxWithAccount() {
+
+    ShardAccount shardAccount =
+        ShardAccount.builder()
+            .account(testAccount)
+            .lastTransHash(BigInteger.ZERO)
+            .lastTransLt(BigInteger.ZERO)
+            .build();
+    String shardAccountBocBase64 = shardAccount.toCell().toBase64();
+
+    Message internalMsg =
+        Message.builder()
+            .info(
+                InternalMessageInfo.builder()
+                    .srcAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId((byte) 0)
+                            .address(BigInteger.ZERO)
+                            .build())
+                    .dstAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId((byte) 0)
+                            .address(BigInteger.ZERO)
+                            .build())
+                    .value(CurrencyCollection.builder().coins(Utils.toNano(1)).build())
+                    .bounce(false)
+                    .createdAt(0)
+                    .build())
+            .init(null)
+            .body(null)
+            .build();
+    String internalMsgBocBase64 = internalMsg.toCell().toBase64();
+    EmulateTransactionResult result =
+        txEmulator.emulateTransaction(shardAccountBocBase64, internalMsgBocBase64);
+    log.info("result {}", result);
+    assertThat(result.isSuccess()).isTrue();
+    log.info("new shardAccount {}", result.getNewShardAccount());
+    log.info("new transaction {}", result.getTransaction());
+    log.info("new actions {}", result.getActions());
+  }
+
+  @Test
+  public void testTxEmulatorWalletV5ExternalMsg() throws IOException, URISyntaxException {
+
+    URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v5.fc");
+    String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
+    SmartContractCompiler smcFunc =
+        SmartContractCompiler.builder().contractPath(contractAbsolutePath).build();
+
+    String codeCellHex = smcFunc.compile();
+    Cell codeCell = CellBuilder.beginCell().fromBoc(codeCellHex).endCell();
+
+    byte[] publicKey =
+        Utils.hexToSignedBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
+    byte[] secretKey =
+        Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+    TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+
+    WalletV5 walletV5 =
+        WalletV5.builder()
+            .keyPair(keyPair)
+            .isSigAuthAllowed(false)
+            .initialSeqno(0)
+            .walletId(42)
+            .build();
+
+    Cell dataCell = walletV5.createDataCell();
+
+    log.info("codeCellHex {}", codeCellHex);
+    log.info("dataCellHex {}", dataCell.toHex());
+
+    Address address = StateInit.builder().code(codeCell).data(dataCell).build().getAddress();
+    log.info("addressRaw {}", address.toRaw());
+    log.info("addressBounceable {}", address.toBounceable());
+
+    Account walletV5Account =
+        Account.builder()
+            .isNone(false)
+            .address(MsgAddressIntStd.of(address))
+            .storageInfo(
+                StorageInfo.builder()
+                    .storageUsed(
+                        StorageUsed.builder()
+                            .cellsUsed(BigInteger.ZERO)
+                            .bitsUsed(BigInteger.ZERO)
+                            .publicCellsUsed(BigInteger.ZERO)
+                            .build())
+                    .lastPaid(System.currentTimeMillis() / 1000)
+                    .duePayment(Utils.toNano(22))
+                    .build())
+            .accountStorage(
+                AccountStorage.builder()
+                    .lastTransactionLt(BigInteger.ZERO)
+                    .balance(
+                        CurrencyCollection.builder()
+                            .coins(Utils.toNano(2)) // initial balance
+                            .build())
+                    .accountState(
+                        AccountStateActive.builder()
+                            .stateInit(StateInit.builder().code(codeCell).data(dataCell).build())
+                            .build())
+                    //                    .accountStatus("ACTIVE")
+                    .build())
+            .build();
+
+    ShardAccount shardAccount =
+        ShardAccount.builder()
+            .account(walletV5Account)
+            .lastTransHash(BigInteger.ZERO)
+            .lastTransLt(BigInteger.ZERO)
+            .build();
+    String shardAccountBocBase64 = shardAccount.toCell().toBase64();
+
+    txEmulator.setDebugEnabled(true);
+
+    //    assertTrue(txEmulator.setLibs(getLibs().toBase64()));
+
+    String rawDummyDestinationAddress =
+        "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d";
+
+    WalletV5Config walletV5Config =
+        WalletV5Config.builder()
+            .seqno(1)
+            .walletId(42)
+            .body(
+                walletV5
+                    .createBulkTransfer(
+                        Collections.singletonList(
+                            Destination.builder()
+                                .bounce(false)
+                                .address(rawDummyDestinationAddress)
+                                .amount(Utils.toNano(0.001))
+                                .build()))
+                    .toCell())
+            .build();
+
+    //    Message extMsg = walletV5.prepareExternalMsg(walletV5Config);
+    Cell extBodyCell = walletV5.createExternalTransferBody(walletV5Config);
+
+    //    Cell transferBody = walletV5.createExternalTransferBody(walletV5Config);
+    //
+    //    Cell signedBody =
+    //        CellBuilder.beginCell()
+    //            .storeBytes(
+    //                Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(),
+    // transferBody.hash()))
+    //            .storeCell(transferBody)
+    //            .endCell();
+    //    log.info("extMsg {}", signedBody.toHex());
+
+    EmulateTransactionResult result =
+        txEmulator.emulateTransaction(shardAccountBocBase64, extBodyCell.toBase64());
+    //    EmulateTransactionResult result =
+    //        txEmulator.emulateTransaction(shardAccountBocBase64, signedBody.toBase64());
+    //        txEmulator.emulateTransaction(shardAccountBocBase64, extMsg.toCell().toBase64());
+
+    log.info("result sendExternalMessage, exitCode: {}", result);
+  }
+
+  @Test
+  public void testTvmEmulatorWalletV5InternalMsg() throws IOException, URISyntaxException {
+
+    testAccount =
+        Account.builder()
+            .isNone(false)
+            .address(
+                MsgAddressIntStd.of(
+                    "-1:0000000000000000000000000000000000000000000000000000000000000000"))
+            .storageInfo(
+                StorageInfo.builder()
+                    .storageUsed(
+                        StorageUsed.builder()
+                            .cellsUsed(BigInteger.ZERO)
+                            .bitsUsed(BigInteger.ZERO)
+                            .publicCellsUsed(BigInteger.ZERO)
+                            .build())
+                    .lastPaid(123654)
+                    .duePayment(Utils.toNano(2))
+                    .build())
+            .accountStorage(
+                AccountStorage.builder()
+                    //
+                    // .lastTransactionLt(BigInteger.TWO)
+                    .balance(CurrencyCollection.builder().coins(Utils.toNano(2)).build())
+                    .accountState(
+                        AccountStateActive.builder()
+                            .stateInit(
+                                StateInit.builder()
+                                    //
+                                    //  .depth(BigInteger.valueOf(1))
+                                    //
+                                    //  .tickTock(TickTock.builder()
+                                    //
+                                    //          .tick(false)
+                                    //
+                                    //          .tock(true)
+                                    //
+                                    //          .build())
+                                    .code(
+                                        CellBuilder.beginCell()
+                                            .fromBoc(
+                                                "b5ee9c7241010101004e000098ff0020dd2082014c97ba9730ed44d0d70b1fe0a4f260810200d71820d70b1fed44d0d31fd3ffd15112baf2a122f901541044f910f2a2f80001d31f31d307d4d101fb00a4c8cb1fcbffc9ed5470102286")
+                                            .endCell())
+                                    //
+                                    //
+                                    // .data(CellBuilder.beginCell().storeBit(true).endCell())
+                                    .build())
+                            .build())
+                    .accountStatus("ACTIVE")
+                    .build())
+            .build();
+
+    ShardAccount shardAccount =
+        ShardAccount.builder()
+            .account(testAccount)
+            .lastTransHash(BigInteger.ZERO)
+            .lastTransLt(BigInteger.ZERO)
+            .build();
+    String shardAccountBocBase64 = shardAccount.toCell().toBase64();
+
+    URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v5.fc");
+    String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
+    SmartContractCompiler smcFunc =
+        SmartContractCompiler.builder().contractPath(contractAbsolutePath).build();
+
+    String codeCellHex = smcFunc.compile();
+    Cell codeCell = CellBuilder.beginCell().fromBoc(codeCellHex).endCell();
+
+    byte[] publicKey =
+        Utils.hexToSignedBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
+    byte[] secretKey =
+        Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+    TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+
+    WalletV5 walletV5 =
+        WalletV5.builder()
+            .keyPair(keyPair)
+            .isSigAuthAllowed(false)
+            .initialSeqno(0)
+            .walletId(42)
+            .build();
+
+    Cell dataCell = walletV5.createDataCell();
+
+    log.info("codeCellHex {}", codeCellHex);
+    log.info("dataCellHex {}", dataCell.toHex());
+
+    Address address = StateInit.builder().code(codeCell).data(dataCell).build().getAddress();
+    log.info("addressRaw {}", address.toRaw());
+    log.info("addressBounceable {}", address.toBounceable());
+
+    txEmulator.setDebugEnabled(true);
+
+    assertTrue(txEmulator.setLibs(getLibs().toBase64()));
+
+    Cell internalBodyCell =
+        walletV5
+            .createBulkTransfer(
+                Collections.singletonList(
+                    Destination.builder()
+                        .bounce(false)
+                        .address(
+                            "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d")
+                        .amount(Utils.toNano(0.0001))
+                        .build()))
+            .toCell();
+
+    EmulateTransactionResult result =
+        txEmulator.emulateTransaction(shardAccountBocBase64, internalBodyCell.toBase64());
+
+    log.info("result emulateTransaction:  {}", result);
+  }
+
+  private static Cell getLibs() {
+    SmcLibraryResult result =
+        tonlib.getLibraries(
+            Collections.singletonList("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
+    log.info("result: {}", result);
+
+    TonHashMapE x = new TonHashMapE(256);
+
+    for (SmcLibraryEntry l : result.getResult()) {
+      String cellLibBoc = l.getData();
+      Cell lib = Cell.fromBocBase64(cellLibBoc);
+      log.info("cell lib {}", lib.toHex());
+      x.elements.put(1L, lib);
+      x.elements.put(2L, lib); // 2nd because of the bug in hashmap/e
     }
 
-    @Test
-    public void testInitTxEmulator() {
-        TxEmulatorI txEmulatorI = Native.load("emulator.dll", TxEmulatorI.class);
-        long emulator = txEmulatorI.transaction_emulator_create(config.toBase64(), 2);
-        assertNotEquals(0, emulator);
-    }
-
-    @Test
-    public void testSetVerbosityLevel() {
-        txEmulator.setVerbosityLevel(4);
-    }
-
-    @Test
-    public void testTxEmulatorIgnoreCheckSignature() {
-        assertTrue(txEmulator.setIgnoreCheckSignature(true));
-    }
-
-    @Test
-    public void testTxEmulatorSetLt() {
-        assertTrue(txEmulator.setEmulatorLt(200000));
-    }
-
-    @Test
-    public void testTxEmulatorSetLibs() {
-        Cell dictLibs = getLibs();
-
-        log.info("txEmulator.setLibs() result {}", txEmulator.setLibs(dictLibs.toBase64()));
-    }
-
-
-    @Test
-    public void testTxEmulatorEmulateTickTockTx() {
-//        Cell dictLibs = getLibs();
-//        txEmulator.setLibs(dictLibs.toBase64());
-
-//        ResultLastBlock lightBlock = LiteClientParser.parseLast(liteClient.executeLast());
-//        Block block = LiteClientParser.parseDumpblock(liteClient.executeDumpblock(lightBlock), true, true);
-//        log.info("block: {}", block);
-
-        ShardAccount shardAccount = ShardAccount.builder()
-                .account(
-                        Account.builder()
-                                .isNone(false)
-                                .address(MsgAddressIntStd.builder()
-                                        .workchainId((byte) -1)
-                                        .address(new BigInteger("000000000000000000000000000000000000000000000000000000000000000", 16))
-//                                        .address(new BigInteger("333333333333333333333333333333333333333333333333333333333333333", 16))
-//                                        .address(new BigInteger("555555555555555555555555555555555555555555555555555555555555555", 16))
-                                        .build())
-                                .storageInfo(StorageInfo.builder()
-                                        .storageUsed(StorageUsed.builder()
-                                                .cellsUsed(BigInteger.ZERO)
-                                                .bitsUsed(BigInteger.ZERO)
-                                                .publicCellsUsed(BigInteger.ZERO)
-                                                .build())
-                                        .lastPaid(123654)
-                                        .duePayment(Utils.toNano(2))
-                                        .build())
-                                .accountStorage(AccountStorage.builder()
-//                                        .lastTransactionLt(BigInteger.TWO)
-                                        .balance(CurrencyCollection.builder()
-                                                .coins(Utils.toNano(2))
-                                                .build())
-                                        .accountState(AccountStateActive.builder()
-                                                .stateInit(StateInit.builder()
-//                                                        .depth(BigInteger.valueOf(1))
-//                                                        .tickTock(TickTock.builder()
-//                                                                .tick(false)
-//                                                                .tock(true)
-//                                                                .build())
-                                                        .code(CellBuilder.beginCell().fromBoc("b5ee9c7241010101004e000098ff0020dd2082014c97ba9730ed44d0d70b1fe0a4f260810200d71820d70b1fed44d0d31fd3ffd15112baf2a122f901541044f910f2a2f80001d31f31d307d4d101fb00a4c8cb1fcbffc9ed5470102286").endCell())
-//                                                        .data(CellBuilder.beginCell().storeBit(true).endCell())
-                                                        .build())
-                                                .build())
-                                        .accountStatus("ACTIVE")
-                                        .build())
-                                .build()
-                )
-//                .lastTransLt(BigInteger.ONE)
-                .lastTransHash(BigInteger.valueOf(2))
-                .build();
-
-        log.info("shardAccount: {}", shardAccount);
-        String shardAccountBocBase64 = shardAccount.toCell().toBase64();
-        log.info("shardAccountCellBocBase64: {}", shardAccountBocBase64);
-        String result = txEmulator.emulateTickTockTransaction(shardAccountBocBase64, false);
-        log.info("result {}", result);
-    }
-
-    private static Cell getLibs() {
-        SmcLibraryResult result = tonlib.getLibraries(
-                Collections.singletonList("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
-        log.info("result: {}", result);
-
-        TonHashMapE x = new TonHashMapE(256);
-
-        for (SmcLibraryEntry l : result.getResult()) {
-            String cellLibBoc = l.getData();
-            Cell lib = Cell.fromBocBase64(cellLibBoc);
-            log.info("cell lib {}", lib.toHex());
-            x.elements.put(1L, lib);
-            x.elements.put(2L, lib); // 2nd because of the bug in hashmap/e
-        }
-
-        Cell dictLibs = x.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeRef((Cell) v).endCell()
-        );
-        return dictLibs;
-    }
+    Cell dictLibs =
+        x.serialize(
+            k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
+            v -> CellBuilder.beginCell().storeRef((Cell) v).endCell());
+    return dictLibs;
+  }
 }
