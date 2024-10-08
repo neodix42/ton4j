@@ -141,4 +141,24 @@ public class WalletV1R2 implements Contract {
                         .endCell())
                 .build();
     }
+
+    public Cell createInternalSignedBody(WalletV1R2Config config) {
+        Cell body = createTransferBody(config);
+        byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
+
+        return CellBuilder.beginCell().storeCell(body).storeBytes(signature).endCell();
+    }
+
+    public Message prepareInternalMsg(WalletV1R2Config config) {
+        Cell body = createInternalSignedBody(config);
+
+        return Message.builder()
+                .info(InternalMessageInfo.builder()
+                        .srcAddr(getAddressIntStd())
+                        .dstAddr(getAddressIntStd())
+                        .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                        .build())
+                .body(body)
+                .build();
+    }
 }

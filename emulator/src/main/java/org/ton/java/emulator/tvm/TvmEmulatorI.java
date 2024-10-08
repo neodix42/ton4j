@@ -22,6 +22,14 @@ public interface TvmEmulatorI extends Library {
   void tvm_emulator_destroy(long tvmEmulator);
 
   /**
+   * Set config for TVM emulator
+   * @param tmvEmulator Pointer to TVM emulator
+   * @param config Pointer to Config object
+   * @return true in case of success, false in case of error
+   */
+  boolean tvm_emulator_set_config_object(long tmvEmulator, long config);
+
+  /**
    * Set libraries for TVM emulator
    *
    * @param tvmEmulator Pointer to TVM emulator

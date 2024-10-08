@@ -26,4 +26,5 @@ public class WalletV2R2Config implements WalletConfig {
     Cell body;
     StateInit stateInit;
     String comment;
+    BigInteger amount; // for internal msg
 }

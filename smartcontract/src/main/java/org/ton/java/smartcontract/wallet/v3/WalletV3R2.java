@@ -99,14 +99,7 @@ public class WalletV3R2 implements Contract {
             .info(
                 InternalMessageInfo.builder()
                     .bounce(config.isBounce())
-                    .srcAddr(
-                        isNull(config.getSource())
-                            ? null
-                            : MsgAddressIntStd.builder()
-                                .workchainId(config.getSource().wc)
-                                .address(config.getSource().toBigInteger())
-                                .build())
-                    .dstAddr(
+                        .dstAddr(
                         MsgAddressIntStd.builder()
                             .workchainId(config.getDestination().wc)
                             .address(config.getDestination().toBigInteger())
@@ -172,5 +165,25 @@ public class WalletV3R2 implements Contract {
   public Message prepareExternalMsg(WalletV3Config config) {
     Cell body = createTransferBody(config);
     return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
+  }
+
+  public Cell createInternalSignedBody(WalletV3Config config) {
+    Cell body = createTransferBody(config);
+    byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
+
+    return CellBuilder.beginCell().storeCell(body).storeBytes(signature).endCell();
+  }
+
+  public Message prepareInternalMsg(WalletV3Config config) {
+    Cell body = createInternalSignedBody(config);
+
+    return Message.builder()
+            .info(InternalMessageInfo.builder()
+                    .srcAddr(getAddressIntStd())
+                    .dstAddr(getAddressIntStd())
+                    .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                    .build())
+            .body(body)
+            .build();
   }
 }

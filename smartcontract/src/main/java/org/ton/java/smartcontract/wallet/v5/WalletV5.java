@@ -170,6 +170,19 @@ public class WalletV5 implements Contract {
         .build();
   }
 
+  public Message prepareInternalMsg(WalletV5Config config) {
+    Cell body = createInternalSignedBody(config);
+
+    return Message.builder()
+            .info(InternalMessageInfo.builder()
+                    .srcAddr(getAddressIntStd())
+                    .dstAddr(getAddressIntStd())
+                    .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                    .build())
+            .body(body)
+            .build();
+  }
+
   /**
    *
    *
@@ -253,7 +266,7 @@ public class WalletV5 implements Contract {
         .endCell();
   }
 
-  public Cell createInternalExtensionSignedlBody(BigInteger queryId, Cell body) {
+  public Cell createInternalExtensionSignedBody(BigInteger queryId, Cell body) {
     Cell body1 = createInternalExtensionTransferBody(queryId, body);
     byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body1.hash());
 

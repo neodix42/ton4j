@@ -38,4 +38,8 @@ public class ShardAccount {
                 .lastTransLt(cs.loadUint(64))
                 .build();
     }
+
+    public BigInteger getBalance() {
+        return account.getAccountStorage().getBalance().getCoins();
+    }
 }

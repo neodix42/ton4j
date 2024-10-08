@@ -58,7 +58,9 @@ public class TestTvmEmulator {
 
     log.info("pubKey {}", Utils.bytesToHex(keyPair.getPublicKey()));
     log.info("prvKey {}", Utils.bytesToHex(keyPair.getSecretKey()));
-    tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    tonlib = Tonlib.builder()
+            .pathToTonlibSharedLib("/home/neodix/gitProjects/ton-neodix/build/tonlib/libtonlibjson.so")
+            .testnet(true).ignoreCache(false).build();
 
     walletV4R2 = WalletV4R2.builder().tonlib(tonlib).keyPair(keyPair).walletId(42).build();
 
@@ -75,7 +77,7 @@ public class TestTvmEmulator {
 
     tvmEmulator =
         TvmEmulator.builder()
-            .pathToEmulatorSharedLib("G:/libs/emulator.dll")
+            .pathToEmulatorSharedLib("/home/neodix/gitProjects/ton-neodix/build/emulator/libemulator.so")
             .codeBoc(code.toBase64())
             .dataBoc(data.toBase64())
             .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
@@ -86,7 +88,7 @@ public class TestTvmEmulator {
   @Test
   public void testInitTvmEmulator() {
     //    TvmEmulatorI tvmEmulatorI = Native.load("emulator.dll", TvmEmulatorI.class);
-    TvmEmulatorI tvmEmulatorI = Native.load("G:/libs/emulator.dll", TvmEmulatorI.class);
+    TvmEmulatorI tvmEmulatorI = Native.load("/home/neodix/gitProjects/ton-neodix/build/emulator/libemulator.so", TvmEmulatorI.class);
     long emulator =
         tvmEmulatorI.tvm_emulator_create(
             walletV4R2.getStateInit().getCode().toBase64(),
@@ -155,7 +157,7 @@ public class TestTvmEmulator {
             .storeRef(
                 CellBuilder.beginCell()
                     .storeRef(stack.toCell()) // c7 ^VmStack
-                    .storeRef(getLibs()) // libs ^Cell
+//                    .storeRef(getLibs()) // libs ^Cell
                     .endCell())
             .storeUint(Utils.calculateMethodId("seqno"), 32) // method-id - seqno
             .endCell()
@@ -668,7 +670,7 @@ public class TestTvmEmulator {
 
     tvmEmulator =
         TvmEmulator.builder()
-            .pathToEmulatorSharedLib("G:/libs/emulator.dll")
+            .pathToEmulatorSharedLib("/home/neodix/gitProjects/ton-neodix/build/emulator/libemulator.so")
             .codeBoc(codeCell.toBase64())
             .dataBoc(dataCell.toBase64())
             .verbosityLevel(TvmVerbosityLevel.UNLIMITED)

@@ -10,7 +10,9 @@ import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV2R2Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
+import org.ton.java.tlb.types.CurrencyCollection;
 import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.InternalMessageInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -162,6 +164,26 @@ public class WalletV2R2 implements Contract {
                         .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
                         .storeCell(body)
                         .endCell())
+                .build();
+    }
+
+    public Cell createInternalSignedBody(WalletV2R2Config config) {
+        Cell body = createTransferBody(config);
+        byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
+
+        return CellBuilder.beginCell().storeCell(body).storeBytes(signature).endCell();
+    }
+
+    public Message prepareInternalMsg(WalletV2R2Config config) {
+        Cell body = createInternalSignedBody(config);
+
+        return Message.builder()
+                .info(InternalMessageInfo.builder()
+                        .srcAddr(getAddressIntStd())
+                        .dstAddr(getAddressIntStd())
+                        .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                        .build())
+                .body(body)
                 .build();
     }
 }

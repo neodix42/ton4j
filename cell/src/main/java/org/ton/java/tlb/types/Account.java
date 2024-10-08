@@ -32,7 +32,7 @@ public class Account {
     public static Account deserialize(CellSlice cs) {
         boolean isAccount = cs.loadBit();
         if (!isAccount) {
-            return Account.builder().isNone(false).build();
+            return Account.builder().isNone(true).build();
 
         }
         MsgAddressInt address = MsgAddressInt.deserialize(cs);
@@ -40,7 +40,7 @@ public class Account {
         AccountStorage storage = AccountStorage.deserialize(cs);
 
         return Account.builder()
-                .isNone(true)
+                .isNone(false)
                 .address(address)
                 .storageInfo(info)
                 .accountStorage(storage)

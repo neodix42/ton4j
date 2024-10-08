@@ -23,7 +23,7 @@ public class EmulateTransactionResult implements Serializable {
   double elapsed_time;
 
   ShardAccount getNewShardAccount() {
-    if (StringUtils.isNotEmpty(transaction)) {
+    if (StringUtils.isNotEmpty(shard_account)) {
       return ShardAccount.deserialize(CellSlice.beginParse(Cell.fromBocBase64(shard_account)));
     } else {
       return ShardAccount.builder().build();
@@ -39,7 +39,7 @@ public class EmulateTransactionResult implements Serializable {
   }
 
   OutList getActions() {
-    if (StringUtils.isNotEmpty(transaction)) {
+    if (StringUtils.isNotEmpty(actions)) {
       return OutList.deserialize(CellSlice.beginParse(Cell.fromBocBase64(actions)));
     } else {
       return OutList.builder().build();

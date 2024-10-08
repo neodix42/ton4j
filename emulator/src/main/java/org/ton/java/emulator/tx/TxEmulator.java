@@ -187,6 +187,16 @@ public class TxEmulator {
   }
 
   /**
+   * Set unixtime for emulation
+   *
+   * @param utime Unix timestamp
+   * @return true in case of success, false in case of error
+   */
+  public boolean setUnixTime(long utime) {
+    return txEmulatorI.transaction_emulator_set_unixtime(txEmulator, utime);
+  }
+
+  /**
    * Set config for emulation
    *
    * @param configBoc Base64 encoded BoC serialized Config dictionary (Hashmap 32 ^Cell)
@@ -194,6 +204,23 @@ public class TxEmulator {
    */
   public boolean setConfig(String configBoc) {
     return txEmulatorI.transaction_emulator_set_config(txEmulator, configBoc);
+  }
+
+  /**
+   * Creates Config object from base64 encoded BoC
+   * @param configBoc Base64 encoded BoC serialized Config dictionary (Hashmap 32 ^Cell)
+   * @return Pointer to Config object or nullptr in case of error
+   */
+  public long createConfig(String configBoc) {
+    return txEmulatorI.emulator_config_create(configBoc);
+  }
+
+  /**
+   * Destroy Config object
+   * @param config Pointer to Config object
+   */
+  public void destroyConfig(long config) {
+    txEmulatorI.emulator_config_destroy(config);
   }
 
   /**

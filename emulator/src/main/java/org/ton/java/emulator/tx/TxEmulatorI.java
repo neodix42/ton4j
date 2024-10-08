@@ -5,28 +5,20 @@ import com.sun.jna.Library;
 public interface TxEmulatorI extends Library {
 
   /**
-   * @brief Creates Config object from base64 encoded BoC
+   * Creates Config object from base64 encoded BoC
    * @param configParamBoc Base64 encoded BoC serialized Config dictionary (Hashmap 32 ^Cell)
    * @return Pointer to Config object or nullptr in case of error
    */
   long emulator_config_create(String configParamBoc);
 
   /**
-   * @brief Set config for TVM emulator
-   * @param tmvEmulator Pointer to TVM emulator
-   * @param config Pointer to Config object
-   * @return true in case of success, false in case of error
-   */
-  boolean tvm_emulator_set_config_object(long tmvEmulator, long config);
-
-  /**
-   * @brief Destroy Config object
+   * Destroy Config object
    * @param config Pointer to Config object
    */
   void emulator_config_destroy(long config);
 
   /**
-   * @brief Get git commit hash and date of the library
+   * Get git commit hash and date of the library
    */
   String emulator_version();
 
@@ -137,7 +129,7 @@ public interface TxEmulatorI extends Library {
    * @param verbosityLevel New verbosity level (0 - never, 1 - error, 2 - warning, 3 - info, 4 -
    *     debug)
    */
-  String emulator_set_verbosity_level(long txEmulator, int verbosityLevel);
+  void emulator_set_verbosity_level(long txEmulator, int verbosityLevel);
 
   /**
    * Set lt for emulation

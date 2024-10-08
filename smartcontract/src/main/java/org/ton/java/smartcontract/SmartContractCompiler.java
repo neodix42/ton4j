@@ -23,10 +23,6 @@ import java.nio.charset.Charset;
 public class SmartContractCompiler {
 
     String contractPath;
-    String funcExecutablePath;
-    String fiftExecutablePath;
-    String fiftAsmLibraryPath;
-    String fiftSmartcontLibraryPath;
 
     @Ignore
     private FiftRunner fiftRunner;
