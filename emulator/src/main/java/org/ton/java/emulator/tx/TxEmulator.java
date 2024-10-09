@@ -6,9 +6,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.extern.java.Log;
+import org.apache.commons.io.IOUtils;
+import org.ton.java.cell.Cell;
 import org.ton.java.emulator.EmulateTransactionResult;
+import org.ton.java.tlb.types.*;
 import org.ton.java.utils.Utils;
 
 /**
@@ -22,8 +28,8 @@ public class TxEmulator {
   private String pathToEmulatorSharedLib;
   private final TxEmulatorI txEmulatorI;
   private final long txEmulator;
-
-  private String configBoc;
+  private TxEmulatorConfig configType;
+  private String customConfig;
   private TxVerbosityLevel verbosityLevel;
 
   public static class TxEmulatorBuilder {}
@@ -35,36 +41,70 @@ public class TxEmulator {
   private static class CustomEmulatorBuilder extends TxEmulatorBuilder {
     @Override
     public TxEmulator build() {
+      try {
 
-      if (isNull(super.pathToEmulatorSharedLib)) {
-        if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
-          super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("emulator", true);
-        } else {
-          super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("libemulator", true);
+        if (isNull(super.pathToEmulatorSharedLib)) {
+          if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
+            super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("emulator", true);
+          } else {
+            super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("libemulator", true);
+          }
         }
-      }
 
-      super.txEmulatorI = Native.load(super.pathToEmulatorSharedLib, TxEmulatorI.class);
-      if (isNull(super.verbosityLevel)) {
-        super.verbosityLevel = TxVerbosityLevel.WITH_ALL_STACK_VALUES;
-      }
-      if (isNull(super.configBoc)) {
-        throw new Error("Config is not set");
-      }
+        super.txEmulatorI = Native.load(super.pathToEmulatorSharedLib, TxEmulatorI.class);
+        if (isNull(super.verbosityLevel)) {
+          super.verbosityLevel = TxVerbosityLevel.WITH_ALL_STACK_VALUES;
+        }
+        if (isNull(super.configType)) {
+          throw new Error("ConfigType is not set");
+        }
 
-      super.txEmulator =
-          super.txEmulatorI.transaction_emulator_create(
-              super.configBoc, super.verbosityLevel.ordinal());
+        String configBoc = "";
+        switch (super.configType) {
+          case MAINNET:
+            {
+              configBoc =
+                  IOUtils.toString(
+                      Objects.requireNonNull(
+                          TxEmulator.class.getResourceAsStream("/config-all-mainnet.txt")),
+                      StandardCharsets.UTF_8);
+              break;
+            }
+          case TESTNET:
+            {
+              configBoc =
+                  IOUtils.toString(
+                      Objects.requireNonNull(
+                          TxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
+                      StandardCharsets.UTF_8);
+              break;
+            }
+          case CUSTOM:
+            {
+              configBoc = super.customConfig;
+              break;
+            }
+        }
 
-      if (super.txEmulator == 0) {
-        throw new Error("Can't create tx emulator instance");
+        super.txEmulator =
+            super.txEmulatorI.transaction_emulator_create(
+                configBoc, super.verbosityLevel.ordinal());
+
+        if (super.txEmulator == 0) {
+          throw new Error("Can't create tx emulator instance");
+        }
+
+        log.info(
+            String.format(
+                "Java TON Tx Emulator configuration:\n"
+                    + "Location: %s\n"
+                    + "Config: %s\n"
+                    + "Verbosity level: %s",
+                super.pathToEmulatorSharedLib, super.configType, super.verbosityLevel));
+        return super.build();
+      } catch (Exception e) {
+        throw new Error("Error creating tx emulator instance: " + e.getMessage());
       }
-
-      log.info(
-          String.format(
-              "Java TON Tx Emulator configuration:\n" + "Location: %s\n" + "Verbosity level: %s",
-              super.pathToEmulatorSharedLib, super.verbosityLevel));
-      return super.build();
     }
   }
 
@@ -88,6 +128,62 @@ public class TxEmulator {
     String result =
         txEmulatorI.transaction_emulator_emulate_transaction(
             txEmulator, shardAccountBoc, messageBoc);
+    Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
+    return gson.fromJson(result, EmulateTransactionResult.class);
+  }
+
+  /**
+   * Emulate transaction
+   *
+   * @param code code cell of a contract
+   * @param data data cell of a contract
+   * @param initialBalance Initial balance in nanacoins
+   * @param messageBoc Base64 encoded BoC serialized inbound Message (internal or external)
+   * @return Json object with error: { "success": false, "error": "Error description",
+   *     "external_not_accepted": false, // and optional fields "vm_exit_code", "vm_log",
+   *     "elapsed_time" in case external message was not accepted. } Or success: { "success": true,
+   *     "transaction": "Base64 encoded Transaction boc", "shard_account": "Base64 encoded new
+   *     ShardAccount boc", "vm_log": "execute DUP...", "actions": "Base64 encoded compute phase
+   *     actions boc (OutList n)", "elapsed_time": 0.02 }
+   */
+  public EmulateTransactionResult emulateTransaction(
+      Cell code, Cell data, BigInteger initialBalance, String messageBoc) {
+
+    StateInit stateInit = StateInit.builder().code(code).data(data).build();
+
+    ShardAccount shardAccount =
+        ShardAccount.builder()
+            .account(
+                Account.builder()
+                    .isNone(false)
+                    .address(MsgAddressIntStd.of(stateInit.getAddress()))
+                    .storageInfo(
+                        StorageInfo.builder()
+                            .storageUsed(
+                                StorageUsed.builder()
+                                    .cellsUsed(BigInteger.ZERO)
+                                    .bitsUsed(BigInteger.ZERO)
+                                    .publicCellsUsed(BigInteger.ZERO)
+                                    .build())
+                            .lastPaid(System.currentTimeMillis() / 1000)
+                            .duePayment(BigInteger.ZERO)
+                            .build())
+                    .accountStorage(
+                        AccountStorage.builder()
+                            .lastTransactionLt(BigInteger.ZERO)
+                            .balance(CurrencyCollection.builder().coins(initialBalance).build())
+                            .accountState(AccountStateActive.builder().stateInit(stateInit).build())
+                            .build())
+                    .build())
+            .lastTransHash(BigInteger.ZERO)
+            .lastTransLt(BigInteger.ZERO)
+            .build();
+
+    String shardAccountBocBase64 = shardAccount.toCell().toBase64();
+
+    String result =
+        txEmulatorI.transaction_emulator_emulate_transaction(
+            txEmulator, shardAccountBocBase64, messageBoc);
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, EmulateTransactionResult.class);
   }

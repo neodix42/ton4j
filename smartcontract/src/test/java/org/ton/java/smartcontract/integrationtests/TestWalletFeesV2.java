@@ -27,206 +27,216 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(JUnit4.class)
 public class TestWalletFeesV2 extends CommonTest {
 
-    @Test
-    public void testWalletFeesV2() throws InterruptedException {
+  @Test
+  public void testWalletFeesV2() throws InterruptedException {
 
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .build();
+    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
-        TweetNaclFast.Signature.KeyPair keyPairA = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPairA = Utils.generateSignatureKeyPair();
 
-        WalletV2R2 walletA = WalletV2R2.builder()
-                .tonlib(tonlib)
-                .keyPair(keyPairA)
-                .build();
+    WalletV2R2 walletA = WalletV2R2.builder().tonlib(tonlib).keyPair(keyPairA).build();
 
-        String nonBounceableAddrWalletA = walletA.getAddress().toNonBounceable();
-        String rawAddrWalletA = walletA.getAddress().toRaw();
+    String nonBounceableAddrWalletA = walletA.getAddress().toNonBounceable();
+    String rawAddrWalletA = walletA.getAddress().toRaw();
 
-        log.info("rawAddressA: {}", rawAddrWalletA);
-        log.info("pub-key {}", Utils.bytesToHex(walletA.getKeyPair().getPublicKey()));
-        log.info("prv-key {}", Utils.bytesToHex(walletA.getKeyPair().getSecretKey()));
+    log.info("rawAddressA: {}", rawAddrWalletA);
+    log.info("pub-key {}", Utils.bytesToHex(walletA.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(walletA.getKeyPair().getSecretKey()));
 
-        TweetNaclFast.Signature.KeyPair keyPairB = Utils.generateSignatureKeyPair();
+    TweetNaclFast.Signature.KeyPair keyPairB = Utils.generateSignatureKeyPair();
 
-        WalletV2R2 walletB = WalletV2R2.builder()
-                .tonlib(tonlib)
-                .keyPair(keyPairB)
-                .build();
+    WalletV2R2 walletB = WalletV2R2.builder().tonlib(tonlib).keyPair(keyPairB).build();
 
-        String nonBounceableAddrWalletB = walletB.getAddress().toNonBounceable();
-        String rawAddrWalletB = walletB.getAddress().toRaw();
+    String nonBounceableAddrWalletB = walletB.getAddress().toNonBounceable();
+    String rawAddrWalletB = walletB.getAddress().toRaw();
 
-        log.info("rawAddressB: {}", rawAddrWalletB);
+    log.info("rawAddressB: {}", rawAddrWalletB);
 
-        log.info("pub-key {}", Utils.bytesToHex(walletB.getKeyPair().getPublicKey()));
-        log.info("prv-key {}", Utils.bytesToHex(walletB.getKeyPair().getSecretKey()));
+    log.info("pub-key {}", Utils.bytesToHex(walletB.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(walletB.getKeyPair().getSecretKey()));
 
-        // top up new walletA using test-faucet-wallet
-        BigInteger balance1 = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddrWalletA), Utils.toNano(1));
-        log.info("balance walletA: {}", Utils.formatNanoValue(balance1));
+    // top up new walletA using test-faucet-wallet
+    BigInteger balance1 =
+        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddrWalletA), Utils.toNano(1));
+    log.info("balance walletA: {}", Utils.formatNanoValue(balance1));
 
-        // top up new walletB using test-faucet-wallet
-        BigInteger balance2 = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddrWalletB), Utils.toNano(1));
-        log.info("balance walletB: {} ", Utils.formatNanoValue(balance2));
+    // top up new walletB using test-faucet-wallet
+    BigInteger balance2 =
+        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddrWalletB), Utils.toNano(1));
+    log.info("balance walletB: {} ", Utils.formatNanoValue(balance2));
 
-        ExtMessageInfo extMessageInfo = walletA.deploy();
-        assertThat(extMessageInfo.getError().getCode()).isZero();
+    ExtMessageInfo extMessageInfo = walletA.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        walletA.waitForDeployment(30);
+    walletA.waitForDeployment(30);
 
-        extMessageInfo = walletB.deploy();
-        AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
+    extMessageInfo = walletB.deploy();
+    AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
 
-        walletB.waitForDeployment(30);
+    walletB.waitForDeployment(30);
 
-        // transfer 0.1 from walletA to walletB where B receives exact amount i.e. 0.1
-        BigInteger balanceAbefore = walletA.getBalance();
-        BigInteger balanceBbefore = walletB.getBalance();
-        log.info("walletA balance before: {}", Utils.formatNanoValue(balanceAbefore));
-        log.info("walletB balance before: {}", Utils.formatNanoValue(balanceBbefore));
+    // transfer 0.1 from walletA to walletB where B receives exact amount i.e. 0.1
+    BigInteger balanceAbefore = walletA.getBalance();
+    BigInteger balanceBbefore = walletB.getBalance();
+    log.info("walletA balance before: {}", Utils.formatNanoValue(balanceAbefore));
+    log.info("walletB balance before: {}", Utils.formatNanoValue(balanceBbefore));
 
-        WalletV2R2Config configA = WalletV2R2Config.builder()
-                .seqno(walletA.getSeqno())
-                .destination1(walletB.getAddress())
-                .mode(3)
-                .build();
+    WalletV2R2Config configA =
+        WalletV2R2Config.builder()
+            .seqno(walletA.getSeqno())
+            .destination1(walletB.getAddress())
+            .mode(3)
+            .build();
 
-        Message msg = walletA.prepareExternalMsg(configA);
+    Message msg = walletA.prepareExternalMsg(configA);
 
-        QueryFees fees = tonlib.estimateFees(
-                walletB.getAddress().toBounceable(),
-                msg.getBody().toBase64());
+    QueryFees fees =
+        tonlib.estimateFees(walletB.getAddress().toBounceable(), msg.getBody().toBase64());
 
-        // adjust amount by including storage fee
-        configA.setAmount1(Utils.toNano(0.1).add(walletA.getGasFees()).add(BigInteger.valueOf(fees.getSource_fees().getStorage_fee())));
+    // adjust amount by including storage fee
+    configA.setAmount1(
+        Utils.toNano(0.1)
+            .add(walletA.getGasFees())
+            .add(BigInteger.valueOf(fees.getSource_fees().getStorage_fee())));
 
-        log.info("fees on walletB with msg body from A: {}", fees);
-        log.info("sending {}", Utils.formatNanoValue(configA.getAmount1()));
+    log.info("fees on walletB with msg body from A: {}", fees);
+    log.info("sending {}", Utils.formatNanoValue(configA.getAmount1()));
 
-        walletA.send(configA);
+    walletA.send(configA);
 
-        walletB.waitForBalanceChange(30);
+    walletB.waitForBalanceChange(30);
 
-        BigInteger balanceAafter = walletA.getBalance();
-        BigInteger balanceBafter = walletB.getBalance();
-        log.info("walletA balance after: {}", Utils.formatNanoValue(balanceAafter));
-        log.info("walletB balance after: {}", Utils.formatNanoValue(balanceBafter));
+    BigInteger balanceAafter = walletA.getBalance();
+    BigInteger balanceBafter = walletB.getBalance();
+    log.info("walletA balance after: {}", Utils.formatNanoValue(balanceAafter));
+    log.info("walletB balance after: {}", Utils.formatNanoValue(balanceBafter));
 
-        log.info("diff walletA (debited): -{}", Utils.formatNanoValue(balanceAbefore.subtract(balanceAafter)));
-        log.info("diff walletB (credited): +{}, missing value {}", Utils.formatNanoValue(balanceBafter.subtract(balanceBbefore)),
-                Utils.formatNanoValue(Utils.toNano(0.1).subtract(balanceBafter.subtract(balanceBbefore))));
+    log.info(
+        "diff walletA (debited): -{}",
+        Utils.formatNanoValue(balanceAbefore.subtract(balanceAafter)));
+    log.info(
+        "diff walletB (credited): +{}, missing value {}",
+        Utils.formatNanoValue(balanceBafter.subtract(balanceBbefore)),
+        Utils.formatNanoValue(Utils.toNano(0.1).subtract(balanceBafter.subtract(balanceBbefore))));
 
-        assertThat(Utils.toNano(0.1).subtract(balanceBafter.subtract(balanceBbefore))).isEqualTo(BigInteger.ZERO);
-    }
+    assertThat(Utils.toNano(0.1).subtract(balanceBafter.subtract(balanceBbefore)))
+        .isEqualTo(BigInteger.ZERO);
+  }
 
-    @Test
-    public void testWithDeployedWalletsV2AB() {
+  @Test
+  public void testWithDeployedWalletsV2AB() {
 
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .build();
+    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
-        TweetNaclFast.Box.KeyPair keyPairBoxA = Utils.generateKeyPairFromSecretKey(Utils.hexToSignedBytes("49c61704e3e229e71c03b6729185e16ff1d5c23f521fcb9c61f49f4a9d02a5aaba54bea10e0125b24747ab5d849f0bff99b32c4e59fb7b176dc7556fdb52b0c3"));
-        TweetNaclFast.Signature.KeyPair keyPairSignatureA = Utils.generateSignatureKeyPairFromSeed(keyPairBoxA.getSecretKey());
-        WalletV2R2 walletA = WalletV2R2.builder()
-                .keyPair(keyPairSignatureA)
-                .tonlib(tonlib)
-                .build();
-        log.info("rawAddressA {}", walletA.getAddress().toRaw());
-        log.info("bounceableA {}", walletA.getAddress().toBounceable());
+    TweetNaclFast.Box.KeyPair keyPairBoxA =
+        Utils.generateKeyPairFromSecretKey(
+            Utils.hexToSignedBytes(
+                "49c61704e3e229e71c03b6729185e16ff1d5c23f521fcb9c61f49f4a9d02a5aaba54bea10e0125b24747ab5d849f0bff99b32c4e59fb7b176dc7556fdb52b0c3"));
+    TweetNaclFast.Signature.KeyPair keyPairSignatureA =
+        Utils.generateSignatureKeyPairFromSeed(keyPairBoxA.getSecretKey());
+    WalletV2R2 walletA = WalletV2R2.builder().keyPair(keyPairSignatureA).tonlib(tonlib).build();
+    log.info("rawAddressA {}", walletA.getAddress().toRaw());
+    log.info("bounceableA {}", walletA.getAddress().toBounceable());
 
-        TweetNaclFast.Box.KeyPair keyPairBoxB = Utils.generateKeyPairFromSecretKey(Utils.hexToSignedBytes("3c11edde736a9bbc576bab50650b1193439c35d2c206c5b1457828a22a8403a578fb62e179be94779082747bcc18044aa264329e6f53d4562e057f9a8856dfbc"));
-        TweetNaclFast.Signature.KeyPair keyPairSignatureB = Utils.generateSignatureKeyPairFromSeed(keyPairBoxB.getSecretKey());
-        WalletV2R2 walletB = WalletV2R2.builder()
-                .keyPair(keyPairSignatureB)
-                .tonlib(tonlib)
-                .build();
-        log.info("rawAddressB {}", walletB.getAddress().toRaw());
-        log.info("bounceableB {}", walletB.getAddress().toBounceable());
+    TweetNaclFast.Box.KeyPair keyPairBoxB =
+        Utils.generateKeyPairFromSecretKey(
+            Utils.hexToSignedBytes(
+                "3c11edde736a9bbc576bab50650b1193439c35d2c206c5b1457828a22a8403a578fb62e179be94779082747bcc18044aa264329e6f53d4562e057f9a8856dfbc"));
+    TweetNaclFast.Signature.KeyPair keyPairSignatureB =
+        Utils.generateSignatureKeyPairFromSeed(keyPairBoxB.getSecretKey());
+    WalletV2R2 walletB = WalletV2R2.builder().keyPair(keyPairSignatureB).tonlib(tonlib).build();
+    log.info("rawAddressB {}", walletB.getAddress().toRaw());
+    log.info("bounceableB {}", walletB.getAddress().toBounceable());
 
+    BigInteger balanceAbefore = walletA.getBalance();
+    BigInteger balanceBbefore = walletB.getBalance();
+    log.info("walletA balance before: {}", Utils.formatNanoValue(balanceAbefore));
+    log.info("walletB balance before: {}", Utils.formatNanoValue(balanceBbefore));
 
-        BigInteger balanceAbefore = walletA.getBalance();
-        BigInteger balanceBbefore = walletB.getBalance();
-        log.info("walletA balance before: {}", Utils.formatNanoValue(balanceAbefore));
-        log.info("walletB balance before: {}", Utils.formatNanoValue(balanceBbefore));
+    WalletV2R2Config configA =
+        WalletV2R2Config.builder()
+            .seqno(walletA.getSeqno())
+            .destination1(walletB.getAddress())
+            .mode(3)
+            .build();
 
+    Message msg = walletA.prepareExternalMsg(configA);
+    QueryFees feesWithCodeData =
+        tonlib.estimateFees(walletB.getAddress().toBounceable(), msg.getBody().toBase64());
 
-        WalletV2R2Config configA = WalletV2R2Config.builder()
-                .seqno(walletA.getSeqno())
-                .destination1(walletB.getAddress())
-                .mode(3)
-                .build();
+    // adjust new amount
+    configA.setAmount1(
+        Utils.toNano(0.1)
+            .add(walletA.getGasFees())
+            .add(BigInteger.valueOf(feesWithCodeData.getSource_fees().getStorage_fee())));
 
-        Message msg = walletA.prepareExternalMsg(configA);
-        QueryFees feesWithCodeData = tonlib.estimateFees(
-                walletB.getAddress().toBounceable(),
-                msg.getBody().toBase64());
+    log.info("fees on walletB with msg body from A: {}", feesWithCodeData);
 
-        //adjust new amount
-        configA.setAmount1(Utils.toNano(0.1).add(walletA.getGasFees()).add(BigInteger.valueOf(feesWithCodeData.getSource_fees().getStorage_fee())));
+    walletA.send(configA);
 
-        log.info("fees on walletB with msg body from A: {}", feesWithCodeData);
+    walletB.waitForBalanceChange(30);
 
-        walletA.send(configA);
+    BigInteger balanceAafter = walletA.getBalance();
+    BigInteger balanceBafter = walletB.getBalance();
+    log.info("walletA balance after: {}", Utils.formatNanoValue(balanceAafter));
+    log.info("walletB balance after: {}", Utils.formatNanoValue(balanceBafter));
 
-        walletB.waitForBalanceChange(30);
+    log.info(
+        "diff walletA (debited): -{}",
+        Utils.formatNanoValue(balanceAbefore.subtract(balanceAafter)));
+    log.info(
+        "diff walletB (credited): +{}, missing value {}",
+        Utils.formatNanoValue(balanceBafter.subtract(balanceBbefore)),
+        Utils.formatNanoValue(Utils.toNano(0.1).subtract(balanceBafter.subtract(balanceBbefore))));
 
-        BigInteger balanceAafter = walletA.getBalance();
-        BigInteger balanceBafter = walletB.getBalance();
-        log.info("walletA balance after: {}", Utils.formatNanoValue(balanceAafter));
-        log.info("walletB balance after: {}", Utils.formatNanoValue(balanceBafter));
+    assertThat(Utils.toNano(0.1).subtract(balanceBafter.subtract(balanceBbefore)))
+        .isEqualTo(BigInteger.ZERO);
+  }
 
-        log.info("diff walletA (debited): -{}", Utils.formatNanoValue(balanceAbefore.subtract(balanceAafter)));
-        log.info("diff walletB (credited): +{}, missing value {}", Utils.formatNanoValue(balanceBafter.subtract(balanceBbefore)),
-                Utils.formatNanoValue(Utils.toNano(0.1).subtract(balanceBafter.subtract(balanceBbefore))));
+  @Test
+  public void testWalletStorageFeeSpeedV2() {
 
-        assertThat(Utils.toNano(0.1).subtract(balanceBafter.subtract(balanceBbefore))).isEqualTo(BigInteger.ZERO);
-    }
+    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
-    @Test
-    public void testWalletStorageFeeSpeedV2() {
+    TweetNaclFast.Box.KeyPair keyPairBoxA =
+        Utils.generateKeyPairFromSecretKey(
+            Utils.hexToSignedBytes(
+                "49c61704e3e229e71c03b6729185e16ff1d5c23f521fcb9c61f49f4a9d02a5aaba54bea10e0125b24747ab5d849f0bff99b32c4e59fb7b176dc7556fdb52b0c3"));
+    TweetNaclFast.Signature.KeyPair keyPairSignatureA =
+        Utils.generateSignatureKeyPairFromSeed(keyPairBoxA.getSecretKey());
+    WalletV2R2 walletA = WalletV2R2.builder().keyPair(keyPairSignatureA).tonlib(tonlib).build();
+    log.info("rawAddressA {}", walletA.getAddress().toRaw());
+    log.info("bounceableA {}", walletA.getAddress().toBounceable());
 
-        Tonlib tonlib = Tonlib.builder()
-                .testnet(true)
-                .ignoreCache(false)
-                .build();
+    TweetNaclFast.Box.KeyPair keyPairBoxB =
+        Utils.generateKeyPairFromSecretKey(
+            Utils.hexToSignedBytes(
+                "3c11edde736a9bbc576bab50650b1193439c35d2c206c5b1457828a22a8403a578fb62e179be94779082747bcc18044aa264329e6f53d4562e057f9a8856dfbc"));
+    TweetNaclFast.Signature.KeyPair keyPairSignatureB =
+        Utils.generateSignatureKeyPairFromSeed(keyPairBoxB.getSecretKey());
+    WalletV2R2 walletB = WalletV2R2.builder().keyPair(keyPairSignatureB).tonlib(tonlib).build();
 
-        TweetNaclFast.Box.KeyPair keyPairBoxA = Utils.generateKeyPairFromSecretKey(Utils.hexToSignedBytes("49c61704e3e229e71c03b6729185e16ff1d5c23f521fcb9c61f49f4a9d02a5aaba54bea10e0125b24747ab5d849f0bff99b32c4e59fb7b176dc7556fdb52b0c3"));
-        TweetNaclFast.Signature.KeyPair keyPairSignatureA = Utils.generateSignatureKeyPairFromSeed(keyPairBoxA.getSecretKey());
-        WalletV2R2 walletA = WalletV2R2.builder()
-                .keyPair(keyPairSignatureA)
-                .tonlib(tonlib)
-                .build();
-        log.info("rawAddressA {}", walletA.getAddress().toRaw());
-        log.info("bounceableA {}", walletA.getAddress().toBounceable());
+    WalletV2R2Config configA =
+        WalletV2R2Config.builder()
+            .seqno(walletA.getSeqno())
+            .destination1(walletB.getAddress())
+            .mode(3)
+            .build();
 
-        TweetNaclFast.Box.KeyPair keyPairBoxB = Utils.generateKeyPairFromSecretKey(Utils.hexToSignedBytes("3c11edde736a9bbc576bab50650b1193439c35d2c206c5b1457828a22a8403a578fb62e179be94779082747bcc18044aa264329e6f53d4562e057f9a8856dfbc"));
-        TweetNaclFast.Signature.KeyPair keyPairSignatureB = Utils.generateSignatureKeyPairFromSeed(keyPairBoxB.getSecretKey());
-        WalletV2R2 walletB = WalletV2R2.builder()
-                .keyPair(keyPairSignatureB)
-                .tonlib(tonlib)
-                .build();
+    Message msg = walletA.prepareExternalMsg(configA);
 
-        WalletV2R2Config configA = WalletV2R2Config.builder()
-                .seqno(walletA.getSeqno())
-                .destination1(walletB.getAddress())
-                .mode(3)
-                .build();
+    ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    executorService.scheduleAtFixedRate(
+        () -> {
+          QueryFees f =
+              tonlib.estimateFees(
+                  walletB.getAddress().toBounceable(), msg.getBody().toBase64(), null, null, true);
+          log.info("fees {}", f);
+        },
+        0,
+        15,
+        TimeUnit.SECONDS);
 
-        Message msg = walletA.prepareExternalMsg(configA);
-
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.scheduleAtFixedRate(() -> {
-            QueryFees f = tonlib.estimateFees(
-                    walletB.getAddress().toBounceable(),
-                    msg.getBody().toBase64(), null, null, true);
-            log.info("fees {}", f);
-        }, 0, 15, TimeUnit.SECONDS);
-
-        Utils.sleep(600);
-    }
+    Utils.sleep(600);
+  }
 }

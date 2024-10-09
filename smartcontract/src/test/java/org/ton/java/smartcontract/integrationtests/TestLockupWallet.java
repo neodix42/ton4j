@@ -1,6 +1,11 @@
 package org.ton.java.smartcontract.integrationtests;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,12 +17,6 @@ import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.types.LockupWalletV1Config;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Arrays;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)

@@ -6,7 +6,7 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>tonconnect</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.1</version>
 </dependency>
 ```
 
@@ -16,12 +16,14 @@
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>tonconnect</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.1</version>
 </dependency>
 ```
 
 ## Description
-Please follow the [official documentation](https://docs.ton.org/develop/dapps/ton-connect/sign#how-does-it-work) for more details.
+
+Please follow the [official documentation](https://docs.ton.org/develop/dapps/ton-connect/sign#how-does-it-work) for
+more details.
 
 ## Usage
 

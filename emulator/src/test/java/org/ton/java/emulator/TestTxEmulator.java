@@ -25,6 +25,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.emulator.tx.TxEmulator;
+import org.ton.java.emulator.tx.TxEmulatorConfig;
 import org.ton.java.emulator.tx.TxEmulatorI;
 import org.ton.java.emulator.tx.TxVerbosityLevel;
 import org.ton.java.liteclient.LiteClient;
@@ -50,35 +51,16 @@ public class TestTxEmulator {
   static Account testAccount;
 
   @BeforeClass
-  public static void setUpBeforeClass() throws IOException {
+  public static void setUpBeforeClass() {
     liteClient = LiteClient.builder().build();
 
     tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
     config = tonlib.getConfigAll(128);
 
-    // all configs taken as of 04.10.2024
-    String configAllMainnet =
-        IOUtils.toString(
-            Objects.requireNonNull(
-                TestTxEmulator.class.getResourceAsStream("/config-all-mainnet.txt")),
-            StandardCharsets.UTF_8);
-
-    //        String configAllTestnet =
-    //            IOUtils.toString(
-    //                Objects.requireNonNull(
-    //                    TestTxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
-    //                StandardCharsets.UTF_8);
-
-    //    String slimConfig =
-    //        IOUtils.toString(
-    //
-    // Objects.requireNonNull(TestTxEmulator.class.getResourceAsStream("/slim-config.txt")),
-    //            StandardCharsets.UTF_8);
-
     txEmulator =
         TxEmulator.builder()
-            .configBoc(configAllMainnet)
+            .configType(TxEmulatorConfig.TESTNET)
             .verbosityLevel(TxVerbosityLevel.UNLIMITED)
             .build();
 
@@ -123,15 +105,40 @@ public class TestTxEmulator {
   }
 
   @Test
-  public void testInitTxEmulator() {
+  public void testInitTxEmulator() throws IOException {
+
+    String configAllTestnet =
+        IOUtils.toString(
+            Objects.requireNonNull(
+                TestTxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
+            StandardCharsets.UTF_8);
+
     TxEmulatorI txEmulatorI =
         Native.load(Utils.detectAbsolutePath("emulator", true), TxEmulatorI.class);
-    long emulator = txEmulatorI.transaction_emulator_create(config.toBase64(), 2);
+    long emulator = txEmulatorI.transaction_emulator_create(configAllTestnet, 2);
     assertNotEquals(0, emulator);
   }
 
   @Test
   public void testSetVerbosityLevel() {
+    txEmulator.setVerbosityLevel(4);
+  }
+
+  @Test
+  public void testCustomConfig() throws IOException {
+
+    String configAllTestnet =
+        IOUtils.toString(
+            Objects.requireNonNull(
+                TestTxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
+            StandardCharsets.UTF_8);
+
+    txEmulator =
+        TxEmulator.builder()
+            .configType(TxEmulatorConfig.CUSTOM)
+            .customConfig(configAllTestnet)
+            .verbosityLevel(TxVerbosityLevel.UNLIMITED)
+            .build();
     txEmulator.setVerbosityLevel(4);
   }
 

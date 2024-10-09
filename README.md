@@ -14,7 +14,7 @@ found [here](https://github.com/ton-blockchain/ton/actions).
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.1</version>
 </dependency>
 ```
 
@@ -33,7 +33,7 @@ found [here](https://github.com/ton-blockchain/ton/actions).
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>ton4j</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.1</version>
 </dependency>
 ```
 
@@ -73,7 +73,9 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ HashMap, HashMapE, PfxHashMap, PfxHashMapE, HashMapAug, HashMapAugE serialization / deserialization
 
 ## Support ton4j development
-If you want to speed up ton4j development and thus change its priority in my backlog, you are welcome to donate some toncoins:
+
+If you want to speed up ton4j development and thus change its priority in my backlog, you are welcome to donate some
+toncoins:
 
 ```UQBguBMWc_wUA8pJjC-A9JbTJFzb7lbFbbkiFYajA33-U9YU```
 

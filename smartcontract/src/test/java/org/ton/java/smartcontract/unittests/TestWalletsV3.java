@@ -22,8 +22,6 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
-
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestWalletsV3 {

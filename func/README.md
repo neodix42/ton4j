@@ -8,7 +8,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>func</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.1</version>
 </dependency>
 ```
 
@@ -18,21 +18,21 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>func</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.1</version>
 </dependency>
 ```
 
 ## Usage
 
 ```java
-URL resource = TestFuncRunner.class.getResource("/test.fc");
-File funcFile = Paths.get(resource.toURI()).toFile();
-String absolutePath = funcFile.getAbsolutePath();
+URL resource=TestFuncRunner.class.getResource("/test.fc");
+        File funcFile=Paths.get(resource.toURI()).toFile();
+        String absolutePath=funcFile.getAbsolutePath();
 
-FuncRunner funcRunner = FuncRunner.builder().build();
+        FuncRunner funcRunner=FuncRunner.builder().build();
 
-String result = funcRunner.run(funcFile.getParent(), "-PA", absolutePath);
-log.info("output: {}", result);
+        String result=funcRunner.run(funcFile.getParent(),"-PA",absolutePath);
+        log.info("output: {}",result);
 ```
 
 More examples in [TestFuncRunner](../func/src/test/java/org/ton/java/func/TestFuncRunner.java) class.

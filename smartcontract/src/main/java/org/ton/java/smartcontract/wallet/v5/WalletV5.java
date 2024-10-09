@@ -174,13 +174,14 @@ public class WalletV5 implements Contract {
     Cell body = createInternalSignedBody(config);
 
     return Message.builder()
-            .info(InternalMessageInfo.builder()
-                    .srcAddr(getAddressIntStd())
-                    .dstAddr(getAddressIntStd())
-                    .value(CurrencyCollection.builder().coins(config.getAmount()).build())
-                    .build())
-            .body(body)
-            .build();
+        .info(
+            InternalMessageInfo.builder()
+                .srcAddr(getAddressIntStd())
+                .dstAddr(getAddressIntStd())
+                .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                .build())
+        .body(body)
+        .build();
   }
 
   /**

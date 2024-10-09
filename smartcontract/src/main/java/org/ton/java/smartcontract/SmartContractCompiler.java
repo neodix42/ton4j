@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.extern.java.Log;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.ton.java.cell.Cell;
 import org.ton.java.fift.FiftRunner;
 import org.ton.java.func.FuncRunner;
 import org.ton.java.utils.Utils;
@@ -47,6 +48,8 @@ public class SmartContractCompiler {
   }
 
   /**
+   * Compile to Boc in hex format
+   *
    * @return code of BoC in hex
    */
   public String compile() throws IOException {
@@ -78,5 +81,14 @@ public class SmartContractCompiler {
 
     byte[] bocContent = FileUtils.readFileToByteArray(new File(file.getParent() + "/dummy.boc"));
     return Utils.bytesToHex(bocContent);
+  }
+
+  /**
+   * Compile to Cell
+   *
+   * @return Cell
+   */
+  public Cell compileToCell() throws IOException {
+    return Cell.fromBoc(compile());
   }
 }
