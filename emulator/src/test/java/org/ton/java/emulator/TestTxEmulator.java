@@ -294,10 +294,10 @@ public class TestTxEmulator {
   @Test
   public void testTxEmulatorWalletV5ExternalMsg() throws IOException, URISyntaxException {
 
-    URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v5.fc");
-    String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
     SmartContractCompiler smcFunc =
-        SmartContractCompiler.builder().contractPath(contractAbsolutePath).build();
+        SmartContractCompiler.builder()
+            .contractAsResource("/contracts/wallets/new-wallet-v5.fc")
+            .build();
 
     String codeCellHex = smcFunc.compile();
     Cell codeCell = CellBuilder.beginCell().fromBoc(codeCellHex).endCell();
