@@ -51,14 +51,9 @@ public class TestTxEmulator {
 
   @BeforeClass
   public static void setUpBeforeClass() throws IOException {
-    liteClient =
-        LiteClient.builder()
-            .pathToLiteClientBinary("/home/neodix/gitProjects/ton-neodix/build/lite-client/lite-client")
-            .build();
+    liteClient = LiteClient.builder().build();
 
-    tonlib = Tonlib.builder()
-            .pathToTonlibSharedLib("/home/neodix/gitProjects/ton-neodix/build/tonlib/libtonlibjson.so")
-            .testnet(true).ignoreCache(false).build();
+    tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
     config = tonlib.getConfigAll(128);
 
@@ -69,11 +64,11 @@ public class TestTxEmulator {
                 TestTxEmulator.class.getResourceAsStream("/config-all-mainnet.txt")),
             StandardCharsets.UTF_8);
 
-//        String configAllTestnet =
-//            IOUtils.toString(
-//                Objects.requireNonNull(
-//                    TestTxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
-//                StandardCharsets.UTF_8);
+    //        String configAllTestnet =
+    //            IOUtils.toString(
+    //                Objects.requireNonNull(
+    //                    TestTxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
+    //                StandardCharsets.UTF_8);
 
     //    String slimConfig =
     //        IOUtils.toString(
@@ -84,9 +79,6 @@ public class TestTxEmulator {
     txEmulator =
         TxEmulator.builder()
             .configBoc(configAllMainnet)
-            //  .pathToEmulatorSharedLib("G:/libs/emulator.dll")
-            .pathToEmulatorSharedLib(
-                "/home/neodix/gitProjects/ton-neodix/build/emulator/libemulator.so")
             .verbosityLevel(TxVerbosityLevel.UNLIMITED)
             .build();
 
@@ -109,7 +101,10 @@ public class TestTxEmulator {
                     .build())
             .accountStorage(
                 AccountStorage.builder()
-                    .balance(CurrencyCollection.builder().coins(Utils.toNano(2)).build()) // initial balance
+                    .balance(
+                        CurrencyCollection.builder()
+                            .coins(Utils.toNano(2))
+                            .build()) // initial balance
                     .accountState(
                         AccountStateActive.builder()
                             .stateInit(
@@ -129,7 +124,8 @@ public class TestTxEmulator {
 
   @Test
   public void testInitTxEmulator() {
-    TxEmulatorI txEmulatorI = Native.load("/home/neodix/gitProjects/ton-neodix/build/emulator/libemulator.so", TxEmulatorI.class);
+    TxEmulatorI txEmulatorI =
+        Native.load(Utils.detectAbsolutePath("emulator", true), TxEmulatorI.class);
     long emulator = txEmulatorI.transaction_emulator_create(config.toBase64(), 2);
     assertNotEquals(0, emulator);
   }
@@ -171,7 +167,6 @@ public class TestTxEmulator {
     txEmulator.destroyConfig(config);
   }
 
-
   @Test
   public void testTxEmulatorSetLibs() {
     Cell dictLibs = getLibs();
@@ -200,17 +195,17 @@ public class TestTxEmulator {
   @Test
   public void testTxEmulatorEmulateTockTx() {
     ShardAccount shardAccount =
-            ShardAccount.builder()
-                    .account(testAccount)
-                    .lastTransHash(BigInteger.valueOf(2))
-                    .lastTransLt(BigInteger.ZERO)
-                    .build();
+        ShardAccount.builder()
+            .account(testAccount)
+            .lastTransHash(BigInteger.valueOf(2))
+            .lastTransLt(BigInteger.ZERO)
+            .build();
 
     log.info("shardAccount: {}", shardAccount);
     String shardAccountBocBase64 = shardAccount.toCell().toBase64();
     log.info("shardAccountCellBocBase64: {}", shardAccountBocBase64);
     EmulateTransactionResult result =
-            txEmulator.emulateTickTockTransaction(shardAccountBocBase64, true);
+        txEmulator.emulateTickTockTransaction(shardAccountBocBase64, true);
     log.info("result {}", result);
     assertThat(result.success).isTrue();
   }
@@ -354,10 +349,7 @@ public class TestTxEmulator {
                         CurrencyCollection.builder()
                             .coins(Utils.toNano(5)) // initial balance
                             .build())
-                    .accountState(
-                        AccountStateActive.builder()
-                            .stateInit(walletV5StateInit)
-                            .build())
+                    .accountState(AccountStateActive.builder().stateInit(walletV5StateInit).build())
                     .build())
             .build();
 
@@ -404,7 +396,8 @@ public class TestTxEmulator {
     TransactionDescription txDesc = result.getTransaction().getDescription();
     log.info("txDesc {}", txDesc);
 
-    TransactionDescriptionOrdinary txDescOrd = (TransactionDescriptionOrdinary) txDesc.getDescription();
+    TransactionDescriptionOrdinary txDescOrd =
+        (TransactionDescriptionOrdinary) txDesc.getDescription();
 
     ComputePhaseVM computePhase = (ComputePhaseVM) txDescOrd.getComputePhase();
     assertThat(computePhase.isSuccess()).isTrue();
@@ -417,20 +410,20 @@ public class TestTxEmulator {
 
     // transfer one more time
     walletV5Config =
-            WalletV5Config.builder()
-                    .seqno(1)
-                    .walletId(42)
-                    .body(
-                            walletV5
-                                    .createBulkTransfer(
-                                            Collections.singletonList(
-                                                    Destination.builder()
-                                                            .bounce(false)
-                                                            .address(rawDummyDestinationAddress)
-                                                            .amount(Utils.toNano(1))
-                                                            .build()))
-                                    .toCell())
-                    .build();
+        WalletV5Config.builder()
+            .seqno(1)
+            .walletId(42)
+            .body(
+                walletV5
+                    .createBulkTransfer(
+                        Collections.singletonList(
+                            Destination.builder()
+                                .bounce(false)
+                                .address(rawDummyDestinationAddress)
+                                .amount(Utils.toNano(1))
+                                .build()))
+                    .toCell())
+            .build();
 
     extMsg = walletV5.prepareExternalMsg(walletV5Config);
 
@@ -455,7 +448,8 @@ public class TestTxEmulator {
     log.info("txDescOrd {}", txDescOrd);
     assertThat(txDescOrd.isAborted()).isFalse();
 
-    assertThat(newShardAccount.getAccount().getAccountStorage().getBalance().getCoins()).isLessThan(Utils.toNano(3.2));
+    assertThat(newShardAccount.getAccount().getAccountStorage().getBalance().getCoins())
+        .isLessThan(Utils.toNano(3.2));
     assertThat(newShardAccount.getBalance()).isLessThan(Utils.toNano(3.2)); // same as above
   }
 
@@ -465,24 +459,24 @@ public class TestTxEmulator {
     URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v5.fc");
     String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
     SmartContractCompiler smcFunc =
-            SmartContractCompiler.builder().contractPath(contractAbsolutePath).build();
+        SmartContractCompiler.builder().contractPath(contractAbsolutePath).build();
 
     String codeCellHex = smcFunc.compile();
     Cell codeCell = CellBuilder.beginCell().fromBoc(codeCellHex).endCell();
 
     byte[] publicKey =
-            Utils.hexToSignedBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
+        Utils.hexToSignedBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
     byte[] secretKey =
-            Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+        Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
     TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
     WalletV5 walletV5 =
-            WalletV5.builder()
-                    .keyPair(keyPair)
-                    .isSigAuthAllowed(false)
-                    .initialSeqno(0)
-                    .walletId(42)
-                    .build();
+        WalletV5.builder()
+            .keyPair(keyPair)
+            .isSigAuthAllowed(false)
+            .initialSeqno(0)
+            .walletId(42)
+            .build();
 
     Cell dataCell = walletV5.createDataCell();
 
@@ -494,63 +488,63 @@ public class TestTxEmulator {
     log.info("addressBounceable {}", address.toBounceable());
 
     Account walletV5Account =
-            Account.builder()
-                    .isNone(false)
-                    .address(MsgAddressIntStd.of(address))
-                    .storageInfo(
-                            StorageInfo.builder()
-                                    .storageUsed(
-                                            StorageUsed.builder()
-                                                    .cellsUsed(BigInteger.ZERO)
-                                                    .bitsUsed(BigInteger.ZERO)
-                                                    .publicCellsUsed(BigInteger.ZERO)
-                                                    .build())
-                                    .lastPaid(System.currentTimeMillis() / 1000)
-                                    .duePayment(BigInteger.ZERO)
-                                    .build())
-                    .accountStorage(
-                            AccountStorage.builder()
-                                    .lastTransactionLt(BigInteger.ZERO)
-                                    .balance(
-                                            CurrencyCollection.builder()
-                                                    .coins(Utils.toNano(5)) // initial balance
-                                                    .build())
-                                    .accountState(
-                                            AccountStateActive.builder()
-                                                    .stateInit(StateInit.builder().code(codeCell).data(dataCell).build())
-                                                    .build())
-                                    .build())
-                    .build();
+        Account.builder()
+            .isNone(false)
+            .address(MsgAddressIntStd.of(address))
+            .storageInfo(
+                StorageInfo.builder()
+                    .storageUsed(
+                        StorageUsed.builder()
+                            .cellsUsed(BigInteger.ZERO)
+                            .bitsUsed(BigInteger.ZERO)
+                            .publicCellsUsed(BigInteger.ZERO)
+                            .build())
+                    .lastPaid(System.currentTimeMillis() / 1000)
+                    .duePayment(BigInteger.ZERO)
+                    .build())
+            .accountStorage(
+                AccountStorage.builder()
+                    .lastTransactionLt(BigInteger.ZERO)
+                    .balance(
+                        CurrencyCollection.builder()
+                            .coins(Utils.toNano(5)) // initial balance
+                            .build())
+                    .accountState(
+                        AccountStateActive.builder()
+                            .stateInit(StateInit.builder().code(codeCell).data(dataCell).build())
+                            .build())
+                    .build())
+            .build();
 
     ShardAccount shardAccount =
-            ShardAccount.builder()
-                    .account(walletV5Account)
-                    .lastTransHash(BigInteger.ZERO)
-                    .lastTransLt(BigInteger.ZERO)
-                    .build();
+        ShardAccount.builder()
+            .account(walletV5Account)
+            .lastTransHash(BigInteger.ZERO)
+            .lastTransLt(BigInteger.ZERO)
+            .build();
     String shardAccountBocBase64 = shardAccount.toCell().toBase64();
 
     txEmulator.setDebugEnabled(true);
 
     String rawDummyDestinationAddress =
-            "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d";
+        "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d";
 
     WalletV5Config walletV5Config =
-            WalletV5Config.builder()
-                    .seqno(0)
-                    .walletId(42)
-                    .amount(Utils.toNano(0.1))
-                    .body(
-                            walletV5
-                                    .createBulkTransfer(
-                                            Collections.singletonList(
-                                                    Destination.builder()
-                                                            .bounce(false)
-                                                            .address(rawDummyDestinationAddress)
-                                                            .amount(Utils.toNano(1))
-                                                            .build()))
-                                    .toCell())
-                    .build();
+        WalletV5Config.builder()
+            .seqno(0)
+            .walletId(42)
+            .amount(Utils.toNano(0.1))
+            .body(
+                walletV5
+                    .createBulkTransfer(
+                        Collections.singletonList(
+                            Destination.builder()
+                                .bounce(false)
+                                .address(rawDummyDestinationAddress)
+                                .amount(Utils.toNano(1))
+                                .build()))
+                    .toCell())
+            .build();
 
     Message intMsg = walletV5.prepareInternalMsg(walletV5Config);
 
@@ -566,7 +560,8 @@ public class TestTxEmulator {
     TransactionDescription txDesc = result.getTransaction().getDescription();
     log.info("txDesc {}", txDesc);
 
-    TransactionDescriptionOrdinary txDescOrd = (TransactionDescriptionOrdinary) txDesc.getDescription();
+    TransactionDescriptionOrdinary txDescOrd =
+        (TransactionDescriptionOrdinary) txDesc.getDescription();
 
     ComputePhaseVM computePhase = (ComputePhaseVM) txDescOrd.getComputePhase();
     assertThat(computePhase.isSuccess()).isTrue();
@@ -579,27 +574,28 @@ public class TestTxEmulator {
 
     // second transfer using new shard account
 
-
     walletV5Config =
-            WalletV5Config.builder()
-                    .seqno(1)
-                    .walletId(42)
-                    .amount(Utils.toNano(0.1))
-                    .body(
-                            walletV5
-                                    .createBulkTransfer(
-                                            Collections.singletonList(
-                                                    Destination.builder()
-                                                            .bounce(false)
-                                                            .address(rawDummyDestinationAddress)
-                                                            .amount(Utils.toNano(1))
-                                                            .build()))
-                                    .toCell())
-                    .build();
+        WalletV5Config.builder()
+            .seqno(1)
+            .walletId(42)
+            .amount(Utils.toNano(0.1))
+            .body(
+                walletV5
+                    .createBulkTransfer(
+                        Collections.singletonList(
+                            Destination.builder()
+                                .bounce(false)
+                                .address(rawDummyDestinationAddress)
+                                .amount(Utils.toNano(1))
+                                .build()))
+                    .toCell())
+            .build();
 
     intMsg = walletV5.prepareInternalMsg(walletV5Config);
 
-    result = txEmulator.emulateTransaction(newShardAccount.toCell().toBase64(), intMsg.toCell().toBase64());
+    result =
+        txEmulator.emulateTransaction(
+            newShardAccount.toCell().toBase64(), intMsg.toCell().toBase64());
 
     log.info("result emulateTransaction:  {}", result);
     assertThat(result.success).isTrue();
@@ -621,7 +617,8 @@ public class TestTxEmulator {
     log.info("txDescOrd {}", txDescOrd);
     assertThat(txDescOrd.isAborted()).isFalse();
 
-    assertThat(newShardAccount.getAccount().getAccountStorage().getBalance().getCoins()).isLessThan(Utils.toNano(3.2));
+    assertThat(newShardAccount.getAccount().getAccountStorage().getBalance().getCoins())
+        .isLessThan(Utils.toNano(3.2));
     assertThat(newShardAccount.getBalance()).isLessThan(Utils.toNano(3.2)); // same as above
   }
 

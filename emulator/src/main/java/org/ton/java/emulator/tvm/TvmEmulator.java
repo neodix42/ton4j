@@ -22,29 +22,8 @@ import org.ton.java.utils.Utils;
 public class TvmEmulator {
 
   /**
-   * If not specified then emulator shared library must be located in:<br>
-   *
-   * <ul>
-   *   <li><code>jna.library.path</code> User-customizable path
-   *   <li><code>jna.platform.library.path</code> Platform-specific paths
-   *   <li>On OSX, ~/Library/Frameworks, /Library/Frameworks, and /System/Library/Frameworks will be
-   *       searched for a framework with a name corresponding to that requested. Absolute paths to
-   *       frameworks are also accepted, either ending at the framework name (sans ".framework") or
-   *       the full path to the framework shared library (e.g. CoreServices.framework/CoreServices).
-   *   <li>Context class loader classpath. Deployed native libraries may be installed on the
-   *       classpath under ${os-prefix}/LIBRARY_FILENAME, where ${os-prefix} is the OS/Arch prefix
-   *       returned by Platform.getNativeLibraryResourcePrefix(). If bundled in a jar file, the
-   *       resource will be extracted to jna.tmpdir for loading, and later removed.
-   * </ul>
-   *
-   * <br>
-   * Java Tonlib looking for following filenames in above locations:<br>
-   *
-   * <ul>
-   *   <li>libemulator-linux-x86_64.so and libemulator-linux-arm64.so
-   *   <li>emulator.dll and emulator-arm.dll
-   *   <li>libemulator-mac-x86-64.dylib and libemulator-mac-arm64.dylib
-   *       <ul>
+   * If not specified then tries to find emulator in system folder, more info <a
+   * href="https://github.com/ton-blockchain/packages">here</a>
    */
   private String pathToEmulatorSharedLib;
 
@@ -64,35 +43,13 @@ public class TvmEmulator {
   private static class CustomTvmEmulatorBuilder extends TvmEmulatorBuilder {
     @Override
     public TvmEmulator build() {
-      String emulatorName;
-      Utils.OS os = Utils.getOS();
-      switch (os) {
-        case LINUX:
-          emulatorName = "libemulator-linux-x86_64.so";
-          break;
-        case LINUX_ARM:
-          emulatorName = "libemulator-linux-arm64.so";
-          break;
-        case WINDOWS:
-          emulatorName = "emulator.dll";
-          break;
-        case WINDOWS_ARM:
-          emulatorName = "emulator-arm.dll";
-          break;
-        case MAC:
-          emulatorName = "libemulator-mac-x86-64.dylib";
-          break;
-        case MAC_ARM64:
-          emulatorName = "libemulator-mac-arm64.dylib";
-          break;
-        case UNKNOWN:
-          throw new Error("Operating system is not supported!");
-        default:
-          throw new IllegalArgumentException("Unknown operating system: " + os);
-      }
 
       if (isNull(super.pathToEmulatorSharedLib)) {
-        super.pathToEmulatorSharedLib = emulatorName;
+        if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
+          super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("emulator", true);
+        } else {
+          super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("libemulator", true);
+        }
       }
 
       super.tvmEmulatorI = Native.load(super.pathToEmulatorSharedLib, TvmEmulatorI.class);

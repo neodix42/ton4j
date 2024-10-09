@@ -1,14 +1,7 @@
 package org.ton.java.liteclient;
 
-import lombok.Builder;
-import lombok.extern.java.Log;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.ton.java.liteclient.api.ResultLastBlock;
-import org.ton.java.liteclient.api.ResultListBlockTransactions;
-import org.ton.java.utils.Utils;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,9 +14,15 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import lombok.Builder;
+import lombok.extern.java.Log;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.ton.java.liteclient.api.ResultLastBlock;
+import org.ton.java.liteclient.api.ResultListBlockTransactions;
+import org.ton.java.utils.Utils;
 
 @Log
 @Builder
@@ -65,30 +64,9 @@ public class LiteClient {
         public LiteClient build() {
 
             try {
-                String liteClientName;
-                switch (Utils.getOS()) {
-                    case LINUX:
-                        liteClientName = "lite-client-linux-x86-64";
-                        break;
-                    case LINUX_ARM:
-                        liteClientName = "lite-client-linux-arm64";
-                        break;
-                    case WINDOWS:
-                    case WINDOWS_ARM:
-                        liteClientName = "lite-client.exe";
-                        break;
-                    case MAC:
-                        liteClientName = "lite-client-mac-x86-64";
-                        break;
-                    case MAC_ARM64:
-                        liteClientName = "lite-client-mac-arm64";
-                        break;
-                    default:
-                        throw new Error("Operating system is not supported!");
-                }
 
                 if (isNull(super.pathToLiteClientBinary)) {
-                    super.pathToLiteClientBinary = liteClientName;
+                    super.pathToLiteClientBinary = Utils.detectAbsolutePath("lite-client", false);;
                 }
 
                 if (super.timeout == 0) {

@@ -12,24 +12,8 @@ import org.ton.java.emulator.EmulateTransactionResult;
 import org.ton.java.utils.Utils;
 
 /**
- *
- *
- * <pre>
- * If not specified then emulator shared library must be located in:
- * <ul>
- * <li><code>jna.library.path</code> User-customizable path</li>
- * <li><code>jna.platform.library.path</code> Platform-specific paths</li>
- * <li>On OSX, ~/Library/Frameworks, /Library/Frameworks, and /System/Library/Frameworks will be searched for a framework with a name corresponding to that requested. Absolute paths to frameworks are also accepted, either ending at the framework name (sans ".framework") or the full path to the framework shared library (e.g. CoreServices.framework/CoreServices).</li>
- * <li>Context class loader classpath. Deployed native libraries may be installed on the classpath under ${os-prefix}/LIBRARY_FILENAME, where ${os-prefix} is the OS/Arch prefix returned by Platform.getNativeLibraryResourcePrefix(). If bundled in a jar file, the resource will be extracted to jna.tmpdir for loading, and later removed.</li>
- * </ul>
- *
- * Java Tonlib looking for following filenames in above locations:<br>
- * <ul>
- *     <li>libemulator-linux-x86-64.so and libemulator-linux-arm64.so</li>
- *     <li>emulator.dll and emulator-arm.dll</li>
- *     <li>libemulator-mac-x86-64.dylib and libemulator-mac-arm64.dylib</li>
- *  <ul>
- * </pre>
+ * If not specified then tries to find emulator in system folder, more info <a
+ * href="https://github.com/ton-blockchain/packages">here</a>
  */
 @Log
 @Builder
@@ -51,35 +35,13 @@ public class TxEmulator {
   private static class CustomEmulatorBuilder extends TxEmulatorBuilder {
     @Override
     public TxEmulator build() {
-      String emulatorName;
-      Utils.OS os = Utils.getOS();
-      switch (os) {
-        case LINUX:
-          emulatorName = "libemulator-linux-x86-64.so";
-          break;
-        case LINUX_ARM:
-          emulatorName = "libemulator-linux-arm64.so";
-          break;
-        case WINDOWS:
-          emulatorName = "emulator.dll";
-          break;
-        case WINDOWS_ARM:
-          emulatorName = "emulator-arm.dll";
-          break;
-        case MAC:
-          emulatorName = "libemulator-mac-x86-64.dylib";
-          break;
-        case MAC_ARM64:
-          emulatorName = "libemulator-mac-arm64.dylib";
-          break;
-        case UNKNOWN:
-          throw new Error("Operating system is not supported!");
-        default:
-          throw new IllegalArgumentException("Unknown operating system: " + os);
-      }
 
       if (isNull(super.pathToEmulatorSharedLib)) {
-        super.pathToEmulatorSharedLib = emulatorName;
+        if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
+          super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("emulator", true);
+        } else {
+          super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("libemulator", true);
+        }
       }
 
       super.txEmulatorI = Native.load(super.pathToEmulatorSharedLib, TxEmulatorI.class);
@@ -89,12 +51,6 @@ public class TxEmulator {
       if (isNull(super.configBoc)) {
         throw new Error("Config is not set");
       }
-
-      String ss = super.txEmulatorI.emulator_version();
-      System.out.println("version = " + ss);
-
-      long s = super.txEmulator = super.txEmulatorI.emulator_config_create(super.configBoc);
-      System.out.println("s = " + s);
 
       super.txEmulator =
           super.txEmulatorI.transaction_emulator_create(
@@ -208,6 +164,7 @@ public class TxEmulator {
 
   /**
    * Creates Config object from base64 encoded BoC
+   *
    * @param configBoc Base64 encoded BoC serialized Config dictionary (Hashmap 32 ^Cell)
    * @return Pointer to Config object or nullptr in case of error
    */
@@ -217,6 +174,7 @@ public class TxEmulator {
 
   /**
    * Destroy Config object
+   *
    * @param config Pointer to Config object
    */
   public void destroyConfig(long config) {
