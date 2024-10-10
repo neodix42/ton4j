@@ -26,6 +26,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.smartcontract.faucet.TestnetFaucet;
+import org.ton.java.smartcontract.faucet.TestnetJettonFaucet;
 import org.ton.java.smartcontract.highload.HighloadWalletV3;
 import org.ton.java.smartcontract.token.ft.JettonMinter;
 import org.ton.java.smartcontract.token.ft.JettonMinterStableCoin;
@@ -837,7 +839,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
@@ -923,7 +925,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
@@ -1019,7 +1021,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
     log.info(
         "new wallet {} toncoins balance: {}",
         highloadWalletV3.getName(),
@@ -1027,7 +1029,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
     // top up new wallet with NEOJ using test-jetton-faucet-wallet
     balance =
-        TestJettonFaucet.topUpContractWithNeoj(
+        TestnetJettonFaucet.topUpContractWithNeoj(
             tonlib, Address.of(nonBounceableAddress), BigInteger.valueOf(100));
     log.info(
         "new wallet {} jetton balance: {}",
@@ -1140,7 +1142,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(20));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(20));
     log.info(
         "new wallet {} toncoins balance: {}",
         highloadWalletV3.getName(),
@@ -1148,7 +1150,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
     // top up new wallet with NEOJ using test-jetton-faucet-wallet
     balance =
-        TestJettonFaucet.topUpContractWithNeoj(
+        TestnetJettonFaucet.topUpContractWithNeoj(
             tonlib, Address.of(nonBounceableAddress), expectedTotalSumOfJettonsAt300Addresses);
     log.info(
         "new wallet {} jetton balance: {}",

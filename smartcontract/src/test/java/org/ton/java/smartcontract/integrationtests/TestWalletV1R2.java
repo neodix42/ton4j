@@ -1,19 +1,18 @@
 package org.ton.java.smartcontract.integrationtests;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV1R2Config;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R2;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -33,7 +32,7 @@ public class TestWalletV1R2 extends CommonTest {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     ExtMessageInfo extMessageInfo = contract.deploy();
@@ -46,7 +45,7 @@ public class TestWalletV1R2 extends CommonTest {
     WalletV1R2Config config =
         WalletV1R2Config.builder()
             .seqno(contract.getSeqno())
-            .destination(Address.of(TestFaucet.BOUNCEABLE))
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(0.08))
             .comment("testNewWalletV1R2")
             .build();

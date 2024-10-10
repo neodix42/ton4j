@@ -345,7 +345,7 @@ Address address = exampleContract.getAddress();
 log.info("contract address {}", address);
 
 // top up new wallet using test-faucet-wallet
-BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(address.toString(true)), Utils.toNano(0.1));
+BigInteger balance = TestnetFaucet.topUpContract(tonlib, Address.of(address.toString(true)), Utils.toNano(0.1));
 log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
 ExtMessageInfo extMessageInfo = exampleContract.deploy();

@@ -20,7 +20,7 @@ log.info("bounceableAddress: {}", bounceableAddress);
 log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
 log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
-BigInteger balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
+BigInteger balance = TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
 log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
 // deploy wallet-v4

@@ -1,7 +1,6 @@
 package org.ton.java.smartcontract.integrationtests;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.ton.java.smartcontract.TestFaucet.FAUCET_ADDRESS_RAW;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
@@ -12,7 +11,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
-import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.DeployedPlugin;
 import org.ton.java.smartcontract.types.NewPlugin;
 import org.ton.java.smartcontract.types.WalletV4R2Config;
@@ -26,6 +25,9 @@ import org.ton.java.utils.Utils;
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestWalletV4R2Plugins extends CommonTest {
+
+  static String FAUCET_ADDRESS_RAW =
+      "0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4";
 
   @Test
   public void testWalletV4Deploy() throws InterruptedException {
@@ -43,7 +45,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     ExtMessageInfo extMessageInfo = contract.deploy();
@@ -66,7 +68,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(7));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v4
@@ -269,7 +271,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v4

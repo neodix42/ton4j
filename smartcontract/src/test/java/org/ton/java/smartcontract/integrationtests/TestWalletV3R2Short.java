@@ -1,6 +1,10 @@
 package org.ton.java.smartcontract.integrationtests;
 
+import static java.util.Objects.nonNull;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.Test;
@@ -9,7 +13,7 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -17,11 +21,6 @@ import org.ton.java.tonlib.types.RawMessage;
 import org.ton.java.tonlib.types.RawTransaction;
 import org.ton.java.tonlib.types.RawTransactions;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-
-import static java.util.Objects.nonNull;
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -71,7 +70,7 @@ public class TestWalletV3R2Short extends CommonTest {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance1 =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress1), Utils.toNano(1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress1), Utils.toNano(1));
     log.info(
         "walletId {} new wallet {} balance: {}",
         contract1.getWalletId(),
@@ -79,7 +78,7 @@ public class TestWalletV3R2Short extends CommonTest {
         Utils.formatNanoValue(balance1));
 
     BigInteger balance2 =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress2), Utils.toNano(1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress2), Utils.toNano(1));
     log.info(
         "walletId {} new wallet {} balance: {}",
         contract2.getWalletId(),
@@ -100,7 +99,7 @@ public class TestWalletV3R2Short extends CommonTest {
         WalletV3Config.builder()
             .walletId(42)
             .seqno(contract1.getSeqno())
-            .destination(Address.of(TestFaucet.BOUNCEABLE))
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(0.8))
             .comment("testWalletV3R2-42")
             .build();
@@ -115,7 +114,7 @@ public class TestWalletV3R2Short extends CommonTest {
         WalletV3Config.builder()
             .walletId(98)
             .seqno(contract2.getSeqno())
-            .destination(Address.of(TestFaucet.BOUNCEABLE))
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(0.7))
             .comment("testWalletV3R2-98")
             .build();
@@ -210,7 +209,8 @@ public class TestWalletV3R2Short extends CommonTest {
     log.info("pub key: {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
     log.info("prv key: {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
-    BigInteger balance = TestFaucet.topUpContract(tonlib, contract.getAddress(), Utils.toNano(1));
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonlib, contract.getAddress(), Utils.toNano(1));
     log.info(
         "walletId {} new wallet {} balance: {}",
         contract.getWalletId(),

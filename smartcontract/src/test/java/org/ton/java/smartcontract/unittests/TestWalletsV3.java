@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
-import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
@@ -107,7 +107,7 @@ public class TestWalletsV3 {
         WalletV3Config.builder()
             .walletId(42)
             .seqno(contract.getSeqno())
-            .destination(Address.of(TestFaucet.BOUNCEABLE))
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(0.8))
             .build();
 

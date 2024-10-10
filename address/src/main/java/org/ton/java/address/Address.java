@@ -1,6 +1,6 @@
 package org.ton.java.address;
 
-import org.ton.java.utils.Utils;
+import static java.util.Objects.isNull;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -8,8 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-
-import static java.util.Objects.isNull;
+import org.ton.java.utils.Utils;
 
 public class Address {
 
@@ -191,12 +190,20 @@ public class Address {
         return toString(true, true, true, false);
     }
 
+    public String toBounceableTestnet() {
+        return toString(true, true, true, true);
+    }
+
     public String toRaw() {
         return toString(false, true, true, false);
     }
 
     public String toNonBounceable() {
         return toString(true, true, false, false);
+    }
+
+    public String toNonBounceableTestnet() {
+        return toString(true, true, false, true);
     }
 
     public String toString(boolean isUserFriendly,

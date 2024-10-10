@@ -1,13 +1,19 @@
 package org.ton.java.smartcontract.integrationtests;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV1R3Config;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.java.tlb.types.Message;
@@ -15,13 +21,6 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.QueryFees;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -57,12 +56,12 @@ public class TestWalletFeesV1 extends CommonTest {
 
     // top up new walletA using test-faucet-wallet
     BigInteger balance1 =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddrWalletA), Utils.toNano(1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddrWalletA), Utils.toNano(1));
     log.info("balance walletA: {}", Utils.formatNanoValue(balance1));
 
     // top up new walletB using test-faucet-wallet
     BigInteger balance2 =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddrWalletB), Utils.toNano(1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddrWalletB), Utils.toNano(1));
     log.info("balance walletB: {} ", Utils.formatNanoValue(balance2));
 
     ExtMessageInfo extMessageInfo = walletA.deploy();

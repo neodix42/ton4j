@@ -1,5 +1,7 @@
 package org.ton.java.smartcontract.integrationtests;
 
+import java.math.BigInteger;
+import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,14 +10,11 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.LibraryDeployer;
-import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.tonlib.types.SmcLibraryEntry;
 import org.ton.java.tonlib.types.SmcLibraryResult;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.util.Collections;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -40,7 +39,7 @@ public class TestLibraryDeployer extends CommonTest {
     log.info("raw address {}", libraryDeployer.getAddress().toRaw());
 
     BigInteger balanceLib =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddressLib), Utils.toNano(1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddressLib), Utils.toNano(1));
     log.info(
         "new wallet {} balance: {}", libraryDeployer.getName(), Utils.formatNanoValue(balanceLib));
     libraryDeployer.deploy();

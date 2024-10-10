@@ -15,7 +15,7 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
-import org.ton.java.smartcontract.TestFaucet;
+import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.types.WalletV5Config;
@@ -63,7 +63,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -106,7 +106,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -169,7 +169,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1.5));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1.5));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -211,7 +211,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -255,7 +255,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -313,7 +313,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -394,7 +394,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -440,7 +440,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -486,7 +486,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -566,7 +566,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -642,7 +642,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -712,7 +712,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv key: {}", Utils.bytesToHex(contractV3.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
     log.info(
         "walletId {} new wallet v3 {} balance: {}",
         contractV3.getWalletId(),
@@ -742,7 +742,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("pub-key {}", Utils.bytesToHex(contractV5.getKeyPair().getPublicKey()));
     log.info("prv-key {}", Utils.bytesToHex(contractV5.getKeyPair().getSecretKey()));
 
-    balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
+    balance =
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
     log.info("new wallet v5 {} balance: {}", contractV5.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet v5
@@ -808,7 +809,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv key: {}", Utils.bytesToHex(contractV3.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
     log.info(
         "walletId {} new wallet v3 {} balance: {}",
         contractV3.getWalletId(),
@@ -842,7 +843,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("pub-key {}", Utils.bytesToHex(contractV5.getKeyPair().getPublicKey()));
     log.info("prv-key {}", Utils.bytesToHex(contractV5.getKeyPair().getSecretKey()));
 
-    balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
+    balance =
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
     log.info("new wallet v5 {} balance: {}", contractV5.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet v5
@@ -900,7 +902,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv key: {}", Utils.bytesToHex(contractV3.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
     log.info(
         "walletId {} new wallet v3 {} balance: {}",
         contractV3.getWalletId(),
@@ -936,7 +938,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("pub-key {}", Utils.bytesToHex(contractV5.getKeyPair().getPublicKey()));
     log.info("prv-key {}", Utils.bytesToHex(contractV5.getKeyPair().getSecretKey()));
 
-    balance = TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
+    balance =
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.2));
     log.info("new wallet v5 {} balance: {}", contractV5.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet v5
@@ -1001,7 +1004,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -1033,7 +1036,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
@@ -1070,7 +1073,7 @@ public class TestWalletV5 extends CommonTest {
     log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
