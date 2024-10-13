@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import lombok.Builder;
 import lombok.extern.java.Log;
 import org.apache.commons.lang3.ArrayUtils;
@@ -19,7 +18,7 @@ public class FiftRunner {
   String fiftSmartcontLibraryPath;
   String fiftExecutablePath;
 
-  @Ignore private String fiftExecutable;
+  static String fiftExecutable = "";
 
   public static class FiftRunnerBuilder {}
 
@@ -45,13 +44,13 @@ public class FiftRunner {
           }
           fiftAbsolutePath = Utils.detectAbsolutePath("fift", false);
           log.info("fift found at " + fiftAbsolutePath);
-          super.fiftExecutable = "fift";
+          fiftExecutable = "fift";
         } catch (Exception e) {
           throw new Error("Cannot execute simple fift command.\n" + errorMsg);
         }
       } else {
         log.info("using " + super.fiftExecutablePath);
-        super.fiftExecutable = super.fiftExecutablePath;
+        fiftExecutable = super.fiftExecutablePath;
       }
 
       if (StringUtils.isEmpty(super.fiftAsmLibraryPath)) {
@@ -104,6 +103,29 @@ public class FiftRunner {
     }
     String[] all = ArrayUtils.addAll(withInclude, params);
     Pair<Process, String> result = Executor.execute(fiftExecutable, workdir, all);
+    if (nonNull(result)) {
+      try {
+        return result.getRight();
+      } catch (Exception e) {
+        log.info("executeFift error " + e.getMessage());
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  public String runStdIn(String workdir, String stdin) {
+    String withInclude;
+    if (Utils.getOS() == Utils.OS.WINDOWS) {
+      withInclude =
+          "-I" + "\"" + fiftAsmLibraryPath + "@" + fiftSmartcontLibraryPath + "\"" + " -s -";
+    } else {
+      withInclude = "-I" + fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath + " -s -";
+    }
+
+    Pair<Process, String> result =
+        Executor.executeStdIn(fiftExecutable, workdir, stdin, withInclude);
     if (nonNull(result)) {
       try {
         return result.getRight();

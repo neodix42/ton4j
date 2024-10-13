@@ -1,0 +1,10 @@
+<archetype-descriptor name="devenv">
+    <fileSets>
+        <fileSet>
+            <directory>src/test/java</directory>
+        </fileSet>
+        <fileSet>
+            <directory>src/test/resources</directory>
+        </fileSet>
+    </fileSets>
+</archetype-descriptor>

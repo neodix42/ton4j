@@ -11,11 +11,6 @@ import org.ton.java.smartcontract.SmartContractCompiler;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
-
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestSmartContractCompiler {
@@ -25,21 +20,10 @@ public class TestSmartContractCompiler {
    * based on new-wallet-v4r2.fc smart contract. You can specify path to any smart contract.
    */
   @Test
-  public void testSmartContractCompiler()
-      throws URISyntaxException, InterruptedException, IOException {
-    //        URL resource =
-    // FuncCompiler.class.getResource("/contracts/stablecoin/contracts/jetton-minter.fc");
-    URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v4r2.fc");
-    String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
+  public void testSmartContractCompiler() {
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            //                .contractPath("C:/stablecoin/contracts/jetton-minter.fc")
-            .contractPath(contractAbsolutePath)
-            //                .fiftExecutablePath("C:/ProgramData/chocolatey/bin/fift")
-            //                .funcExecutablePath("C:/ProgramData/chocolatey/bin/func")
-            //                .fiftAsmLibraryPath("C:/ProgramData/chocolatey/lib/ton/bin/lib")
-            //
-            // .fiftSmartcontLibraryPath("C:/ProgramData/chocolatey/lib/ton/bin/smartcont")
+            .contractAsResource("/contracts/wallets/new-wallet-v4r2.fc")
             .build();
 
     String codeCellHex = smcFunc.compile();
@@ -92,11 +76,11 @@ public class TestSmartContractCompiler {
   }
 
   @Test
-  public void testWalletV5Compiler() throws URISyntaxException, IOException {
-    URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v5.fc");
-    String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
+  public void testWalletV5Compiler() {
     SmartContractCompiler smcFunc =
-        SmartContractCompiler.builder().contractPath(contractAbsolutePath).build();
+        SmartContractCompiler.builder()
+            .contractAsResource("/contracts/wallets/new-wallet-v5.fc")
+            .build();
 
     String codeCellHex = smcFunc.compile();
 
@@ -104,12 +88,11 @@ public class TestSmartContractCompiler {
   }
 
   @Test
-  public void testLibraryDeployerCompiler() throws URISyntaxException, IOException {
-    URL resource =
-        SmartContractCompiler.class.getResource("/contracts/wallets/library-deployer.fc");
-    String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
+  public void testLibraryDeployerCompiler() {
     SmartContractCompiler smcFunc =
-        SmartContractCompiler.builder().contractPath(contractAbsolutePath).build();
+        SmartContractCompiler.builder()
+            .contractAsResource("/contracts/wallets/library-deployer.fc")
+            .build();
 
     String codeCellHex = smcFunc.compile();
 

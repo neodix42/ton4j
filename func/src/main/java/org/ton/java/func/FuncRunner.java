@@ -1,7 +1,6 @@
 package org.ton.java.func;
 
 import java.util.concurrent.TimeUnit;
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import lombok.Builder;
 import lombok.extern.java.Log;
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +13,7 @@ public class FuncRunner {
 
   String funcExecutablePath;
 
-  @Ignore private String funcExecutable;
+  static String funcExecutable = "";
 
   public static class FuncRunnerBuilder {}
 
@@ -41,7 +40,7 @@ public class FuncRunner {
           String funcAbsolutePath = Utils.detectAbsolutePath("func", false);
 
           log.info("func found at " + funcAbsolutePath);
-          super.funcExecutable = "func";
+          funcExecutable = "func";
 
         } catch (Exception e) {
           log.info(e.getMessage());
@@ -49,7 +48,7 @@ public class FuncRunner {
         }
       } else {
         log.info("using " + super.funcExecutablePath);
-        super.funcExecutable = super.funcExecutablePath;
+        funcExecutable = super.funcExecutablePath;
       }
       return super.build();
     }

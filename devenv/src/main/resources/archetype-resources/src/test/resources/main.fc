@@ -1,0 +1,27 @@
+#pragma version >=0.4.3;
+
+#include "stdlib.fc";
+
+() recv_internal(int my_ton_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    ~dump(40);
+}
+
+() recv_external(slice in_msg_body) impure {
+    ~dump(41);
+    var msg_seqno = in_msg_body~load_uint(32);
+    var ds = get_data().begin_parse();
+    var stored_seqno = ds~load_uint(32);
+
+    throw_if(33, msg_seqno != stored_seqno);
+
+    accept_message();
+
+    set_data(begin_cell()
+            .store_uint(stored_seqno + 1, 32)
+            .end_cell());
+}
+
+int get_id() method_id {
+    ;;     ~dump(42);
+    return 42;
+}
