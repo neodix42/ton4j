@@ -1,64 +1,105 @@
 package org.ton.java.tlb.types;
 
-import lombok.Builder;
-import lombok.Data;
 import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-@Builder
-@Data
-public class TransactionDescription {
-    Object description; // `tlb:"."`
+/**
+ *
+ *
+ * <pre>
+ * trans_ord$0000 credit_first:Bool
+ *   storage_ph:(Maybe TrStoragePhase)
+ *   credit_ph:(Maybe TrCreditPhase)
+ *   compute_ph:TrComputePhase action:(Maybe ^TrActionPhase)
+ *   aborted:Bool bounce:(Maybe TrBouncePhase)
+ *   destroyed:Bool
+ *   = TransactionDescr;
+ *
+ * trans_storage$0001 storage_ph:TrStoragePhase
+ *   = TransactionDescr;
+ *
+ * trans_tick_tock$001 is_tock:Bool storage_ph:TrStoragePhase
+ *   compute_ph:TrComputePhase action:(Maybe ^TrActionPhase)
+ *   aborted:Bool destroyed:Bool = TransactionDescr;
+ * //
+ * split_merge_info$_ cur_shard_pfx_len:(## 6)
+ *   acc_split_depth:(## 6) this_addr:bits256 sibling_addr:bits256
+ *   = SplitMergeInfo;
+ * trans_split_prepare$0100 split_info:SplitMergeInfo
+ *   storage_ph:(Maybe TrStoragePhase)
+ *   compute_ph:TrComputePhase action:(Maybe ^TrActionPhase)
+ *   aborted:Bool destroyed:Bool
+ *   = TransactionDescr;
+ * trans_split_install$0101 split_info:SplitMergeInfo
+ *   prepare_transaction:^Transaction
+ *   installed:Bool = TransactionDescr;
+ *
+ * trans_merge_prepare$0110 split_info:SplitMergeInfo
+ *   storage_ph:TrStoragePhase aborted:Bool
+ *   = TransactionDescr;
+ *
+ * trans_merge_install$0111 split_info:SplitMergeInfo
+ *   prepare_transaction:^Transaction
+ *   storage_ph:(Maybe TrStoragePhase)
+ *   credit_ph:(Maybe TrCreditPhase)
+ *   compute_ph:TrComputePhase action:(Maybe ^TrActionPhase)
+ *   aborted:Bool destroyed:Bool
+ *   = TransactionDescr;
+ *   </pre>
+ */
+public interface TransactionDescription {
 
-    public Cell toCell() {
-        CellBuilder c = CellBuilder.beginCell();
+  Cell toCell();
 
-        if (description instanceof TransactionDescriptionStorage) {
-            c.storeUint(0b0001, 3);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionStorage) description).toCell()));
-        } else if (description instanceof TransactionDescriptionOrdinary) {
-            c.storeUint(0b000, 3);
-            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionOrdinary) description).toCell()));
+  //    {
+  //        CellBuilder c = CellBuilder.beginCell();
+  //
+  //        if (description instanceof TransactionDescriptionStorage) {
+  //            c.storeUint(0b0001, 3);
+  //            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionStorage)
+  // description).toCell()));
+  //        } else if (description instanceof TransactionDescriptionOrdinary) {
+  //            c.storeUint(0b000, 3);
+  //            c.storeSlice(CellSlice.beginParse(((TransactionDescriptionOrdinary)
+  // description).toCell()));
+  //        }
+  //        return c.endCell();
+  //    }
+
+  static TransactionDescription deserialize(CellSlice cs) {
+    int pfx = cs.preloadUint(3).intValue();
+    switch (pfx) {
+      case 0b000:
+        {
+          boolean isStorage = cs.preloadBit();
+          if (isStorage) {
+            return TransactionDescriptionStorage.deserialize(cs);
+          }
+          return TransactionDescriptionOrdinary.deserialize(cs);
         }
-        return c.endCell();
-    }
-
-    public static TransactionDescription deserialize(CellSlice cs) {
-        int pfx = cs.preloadUint(3).intValue();
-        switch (pfx) {
-            case 0b000: {
-                boolean isStorage = cs.preloadBit();
-                if (isStorage) {
-                    TransactionDescriptionStorage desc = TransactionDescriptionStorage.deserialize(cs);
-                    return TransactionDescription.builder().description(desc).build();
-                }
-                TransactionDescriptionOrdinary descOrdinary = TransactionDescriptionOrdinary.deserialize(cs); // skipped was true
-                return TransactionDescription.builder().description(descOrdinary).build();
-            }
-            case 0b001: {
-                TransactionDescriptionTickTock descTickTock = TransactionDescriptionTickTock.deserialize(cs); // skipped was true
-                return TransactionDescription.builder().description(descTickTock).build();
-            }
-            case 0b010: {
-                boolean isInstall = cs.preloadBit();
-                if (isInstall) {
-                    TransactionDescriptionSplitInstall descSplit = TransactionDescriptionSplitInstall.deserialize(cs); // skipped was true
-                    return TransactionDescription.builder().description(descSplit).build();
-                }
-                TransactionDescriptionSplitPrepare descSplitPrepare = TransactionDescriptionSplitPrepare.deserialize(cs); // skipped was true
-                return TransactionDescription.builder().description(descSplitPrepare).build();
-            }
-            case 0b011: {
-                boolean isInstall = cs.preloadBit();
-                if (isInstall) {
-                    TransactionDescriptionMergeInstall descMerge = TransactionDescriptionMergeInstall.deserialize(cs); // skipped was true
-                    return TransactionDescription.builder().description(descMerge).build();
-                }
-                TransactionDescriptionMergePrepare descMergePrepare = TransactionDescriptionMergePrepare.deserialize(cs); // skipped was true
-                return TransactionDescription.builder().description(descMergePrepare).build();
-            }
+      case 0b001:
+        {
+          return TransactionDescriptionTickTock.deserialize(cs);
         }
-        throw new Error("unknown transaction description type (must be in range [0..3], found 0x" + Integer.toBinaryString(pfx));
+      case 0b010:
+        {
+          boolean isInstall = cs.preloadBit();
+          if (isInstall) {
+            return TransactionDescriptionSplitInstall.deserialize(cs);
+          }
+          return TransactionDescriptionSplitPrepare.deserialize(cs);
+        }
+      case 0b011:
+        {
+          boolean isInstall = cs.preloadBit();
+          if (isInstall) {
+            return TransactionDescriptionMergeInstall.deserialize(cs);
+          }
+          return TransactionDescriptionMergePrepare.deserialize(cs);
+        }
     }
+    throw new Error(
+        "unknown transaction description type (must be in range [0..3], found 0x"
+            + Integer.toBinaryString(pfx));
+  }
 }

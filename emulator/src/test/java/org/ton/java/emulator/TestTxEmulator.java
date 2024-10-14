@@ -56,7 +56,7 @@ public class TestTxEmulator {
 
     tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
-    config = tonlib.getConfigAll(128);
+    //    config = tonlib.getConfigAll(128);
 
     txEmulator =
         TxEmulator.builder()
@@ -254,6 +254,7 @@ public class TestTxEmulator {
         txEmulator.emulateTransaction(shardAccountBocBase64, internalMsgBocBase64);
     log.info("result {}", result);
     assertThat(result.isSuccess()).isTrue();
+    result.getTransaction().printTransactionFees(true);
   }
 
   @Test
@@ -296,10 +297,11 @@ public class TestTxEmulator {
     log.info("new shardAccount {}", result.getNewShardAccount());
     log.info("new transaction {}", result.getTransaction());
     log.info("new actions {}", result.getActions());
+    result.getTransaction().printTransactionFees(true);
   }
 
   @Test
-  public void testTxEmulatorWalletV5ExternalMsg() throws IOException, URISyntaxException {
+  public void testTxEmulatorWalletV5ExternalMsg() {
 
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
@@ -403,8 +405,7 @@ public class TestTxEmulator {
     TransactionDescription txDesc = result.getTransaction().getDescription();
     log.info("txDesc {}", txDesc);
 
-    TransactionDescriptionOrdinary txDescOrd =
-        (TransactionDescriptionOrdinary) txDesc.getDescription();
+    TransactionDescriptionOrdinary txDescOrd = (TransactionDescriptionOrdinary) txDesc;
 
     ComputePhaseVM computePhase = (ComputePhaseVM) txDescOrd.getComputePhase();
     assertThat(computePhase.isSuccess()).isTrue();
@@ -443,8 +444,9 @@ public class TestTxEmulator {
 
     txDesc = result.getTransaction().getDescription();
     log.info("txDesc {}", txDesc);
+    result.getTransaction().printTransactionFees(true);
 
-    txDescOrd = (TransactionDescriptionOrdinary) txDesc.getDescription();
+    txDescOrd = (TransactionDescriptionOrdinary) txDesc;
 
     computePhase = (ComputePhaseVM) txDescOrd.getComputePhase();
     assertThat(computePhase.isSuccess()).isTrue();
@@ -461,7 +463,72 @@ public class TestTxEmulator {
   }
 
   @Test
-  public void testTxEmulatorWalletV5InternalMsg() throws IOException, URISyntaxException {
+  public void testTxEmulatorWalletV5ExternalMsgSimplified() {
+
+    SmartContractCompiler smcFunc =
+        SmartContractCompiler.builder()
+            .contractAsResource("/contracts/wallets/new-wallet-v5.fc")
+            .build();
+
+    Cell codeCell = smcFunc.compileToCell();
+
+    byte[] publicKey =
+        Utils.hexToSignedBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
+    byte[] secretKey =
+        Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+    TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+
+    WalletV5 walletV5 =
+        WalletV5.builder()
+            .keyPair(keyPair)
+            .isSigAuthAllowed(false)
+            .initialSeqno(0)
+            .walletId(42)
+            .build();
+
+    Cell dataCell = walletV5.createDataCell();
+
+    log.info("codeCellHex {}", codeCell.toHex());
+    log.info("dataCellHex {}", dataCell.toHex());
+
+    StateInit walletV5StateInit = StateInit.builder().code(codeCell).data(dataCell).build();
+
+    Address address = walletV5StateInit.getAddress();
+    log.info("addressRaw {}", address.toRaw());
+    log.info("addressBounceable {}", address.toBounceable());
+
+    String rawDummyDestinationAddress =
+        "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d";
+
+    WalletV5Config walletV5Config =
+        WalletV5Config.builder()
+            .seqno(0)
+            .walletId(42)
+            .body(
+                walletV5
+                    .createBulkTransfer(
+                        Collections.singletonList(
+                            Destination.builder()
+                                .bounce(false)
+                                .address(rawDummyDestinationAddress)
+                                .amount(Utils.toNano(1))
+                                .build()))
+                    .toCell())
+            .build();
+
+    Message extMsg = walletV5.prepareExternalMsg(walletV5Config);
+
+    EmulateTransactionResult result =
+        txEmulator.emulateTransaction(
+            codeCell, dataCell, Utils.toNano(2), extMsg.toCell().toBase64());
+
+    log.info("result sendExternalMessage[1]: {}", result);
+    //    log.info("txFees: {}", result.getTransaction().getTransactionFees());
+    result.getTransaction().printTransactionFees(true);
+  }
+
+  @Test
+  public void testTxEmulatorWalletV5InternalMsg() throws URISyntaxException {
 
     URL resource = SmartContractCompiler.class.getResource("/contracts/wallets/new-wallet-v5.fc");
     String contractAbsolutePath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
@@ -567,8 +634,7 @@ public class TestTxEmulator {
     TransactionDescription txDesc = result.getTransaction().getDescription();
     log.info("txDesc {}", txDesc);
 
-    TransactionDescriptionOrdinary txDescOrd =
-        (TransactionDescriptionOrdinary) txDesc.getDescription();
+    TransactionDescriptionOrdinary txDescOrd = (TransactionDescriptionOrdinary) txDesc;
 
     ComputePhaseVM computePhase = (ComputePhaseVM) txDescOrd.getComputePhase();
     assertThat(computePhase.isSuccess()).isTrue();
@@ -613,7 +679,9 @@ public class TestTxEmulator {
     txDesc = result.getTransaction().getDescription();
     log.info("txDesc {}", txDesc);
 
-    txDescOrd = (TransactionDescriptionOrdinary) txDesc.getDescription();
+    result.getTransaction().printTransactionFees(true);
+
+    txDescOrd = (TransactionDescriptionOrdinary) txDesc;
 
     computePhase = (ComputePhaseVM) txDescOrd.getComputePhase();
     assertThat(computePhase.isSuccess()).isTrue();
@@ -642,7 +710,6 @@ public class TestTxEmulator {
       Cell lib = Cell.fromBocBase64(cellLibBoc);
       log.info("cell lib {}", lib.toHex());
       x.elements.put(1L, lib);
-      x.elements.put(2L, lib); // 2nd because of the bug in hashmap/e
     }
 
     Cell dictLibs =

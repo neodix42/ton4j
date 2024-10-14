@@ -5,9 +5,7 @@ import lombok.*;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.tlb.types.OutList;
-import org.ton.java.tlb.types.ShardAccount;
-import org.ton.java.tlb.types.Transaction;
+import org.ton.java.tlb.types.*;
 
 @Builder
 @Data
@@ -22,7 +20,7 @@ public class EmulateTransactionResult implements Serializable {
   String actions; // Base64 encoded compute phase actions boc (OutList n)"
   double elapsed_time;
 
-  ShardAccount getNewShardAccount() {
+  public ShardAccount getNewShardAccount() {
     if (StringUtils.isNotEmpty(shard_account)) {
       return ShardAccount.deserialize(CellSlice.beginParse(Cell.fromBocBase64(shard_account)));
     } else {
@@ -30,7 +28,7 @@ public class EmulateTransactionResult implements Serializable {
     }
   }
 
-  Transaction getTransaction() {
+  public Transaction getTransaction() {
     if (StringUtils.isNotEmpty(transaction)) {
       return Transaction.deserialize(CellSlice.beginParse(Cell.fromBocBase64(transaction)));
     } else {
@@ -38,7 +36,7 @@ public class EmulateTransactionResult implements Serializable {
     }
   }
 
-  OutList getActions() {
+  public OutList getActions() {
     if (StringUtils.isNotEmpty(actions)) {
       return OutList.deserialize(CellSlice.beginParse(Cell.fromBocBase64(actions)));
     } else {

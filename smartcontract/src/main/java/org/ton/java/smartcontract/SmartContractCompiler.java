@@ -65,7 +65,6 @@ public class SmartContractCompiler {
         || outputFiftAsmFile.contains("error: undefined function")) {
       throw new Error("Compile error: " + outputFiftAsmFile);
     }
-    //    outputFiftAsmFile = StringUtils.replace(outputFiftAsmFile, "2 boc+>B", "0 boc+>B");
     outputFiftAsmFile =
         "\"\"\"\"TonUtil.fif\"\"\"\" include \"\"\"\"Asm.fif\"\"\"\" include PROGRAM{ "
             + outputFiftAsmFile

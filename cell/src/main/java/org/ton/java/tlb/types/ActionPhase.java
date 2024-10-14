@@ -1,12 +1,11 @@
 package org.ton.java.tlb.types;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import java.math.BigInteger;
 
 /**
  * <pre>
@@ -75,8 +74,8 @@ public class ActionPhase {
                 .valid(cs.loadBit())
                 .noFunds(cs.loadBit())
                 .statusChange(AccStatusChange.deserialize(cs))
-                .totalFwdFees(cs.loadBit() ? cs.loadCoins() : null)
-                .totalActionFees(cs.loadBit() ? cs.loadCoins() : null)
+                .totalFwdFees(cs.loadBit() ? cs.loadCoins() : BigInteger.ZERO)
+                .totalActionFees(cs.loadBit() ? cs.loadCoins() : BigInteger.ZERO)
                 .resultCode(cs.loadUint(32).longValue())
                 .resultArg(cs.loadBit() ? cs.loadUint(32).longValue() : 0)
                 .totalActions(cs.loadUint(16).longValue())
