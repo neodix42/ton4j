@@ -3,6 +3,7 @@ package org.ton.java.cell;
 import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -443,9 +444,7 @@ public class CellSlice {
         BitString bitString = ref.loadBits(ref.bits.getLength());
 
         byte[] uintArray = bitString.toByteArray();
-        for (byte value : uintArray) {
-          s.append((char) value);
-        }
+        s.append(new String(uintArray, StandardCharsets.UTF_8));
 
         if (ref.refs.size() > 1) {
           throw new Error("more than one ref, it is not snake string");
