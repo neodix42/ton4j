@@ -38,6 +38,7 @@ public class CellBuilder {
      * Converts a builder into an ordinary cell.
      */
     public Cell endCell() {
+        cell.levelMask = cell.resolveMask();
         if (cell.getHashes().length == 0) {
             cell.calculateHashes();
         }
