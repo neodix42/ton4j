@@ -152,6 +152,49 @@ public class TonHashMap {
         }
     }
 
+
+    private boolean isSame(String label) {
+        if (label.isEmpty() || label.length() == 1) {
+            return true;
+        }
+        for (int i = 1; i < label.length(); i++) {
+            if (label.charAt(i) != label.charAt(0)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int detectLabelType(String label, int keyLength) {
+        int type = 0;
+        // hml_short$0 {m:#} {n:#} len:(Unary ~n) {n <= m} s:(n * Bit) = HmLabel ~n m;
+        // first bit for 0, then n + 1 for Unary ~n and next n is n * Bit
+        // 0
+        int bestLength = 1 + label.length() + 1 + label.length();
+
+        // hml_long$10 {m:#} n:(#<= m) s:(n * Bit) = HmLabel ~n m;
+        // first 1 + 1 for 10, then log2 bits for n and next n is n * Bit
+        // 1
+        int labelLongLength = 1 + 1 + (int) Math.ceil(log2(keyLength + 1)) + label.length();
+
+        boolean isSame = isSame(label);
+        // hml_same$11 {m:#} v:Bit n:(#<= m) = HmLabel ~n m;
+        // 2
+        int labelSameLength = 1 + 1 + 1 + (int) Math.ceil(log2(keyLength + 1));
+
+        if (labelLongLength < bestLength) {
+            type = 1;
+            bestLength = labelLongLength;
+        }
+        if (isSame) {
+            if (labelSameLength < bestLength) {
+                type = 2;
+            }
+        }
+        return type;
+    }
+
+
     /**
      * Serialize HashMap label
      * hml_short$0 {m:#} {n:#} len:(Unary ~n) {n <= m} s:(n * Bit) = HmLabel ~n m;
@@ -163,15 +206,10 @@ public class TonHashMap {
      * @param builder Cell to which label will be serialized
      */
     void serialize_label(String label, int m, CellBuilder builder) {
-        int n = label.length();
-        if (label.isEmpty()) {
-            builder.storeBit(false); //hml_short$0
-            builder.storeBit(false); //Unary 0
-            return;
-        }
-
+        int t = detectLabelType(label, m);
         int sizeOfM = BigInteger.valueOf(m).bitLength();
-        if (n < sizeOfM) {
+        if (t == 0) {
+            int n = label.length();
             builder.storeBit(false);  // hml_short
             for (int i = 0; i < n; i++) {
                 builder.storeBit(true); // Unary n
@@ -180,22 +218,20 @@ public class TonHashMap {
             for (Character c : label.toCharArray()) {
                 builder.storeBit(c == '1');
             }
-            return;
-        }
-        boolean isSame = (label.equals(Utils.repeat("0", label.length())) || label.equals(Utils.repeat("10", label.length())));
-
-        if (isSame) {
-            builder.storeBit(true);
-            builder.storeBit(true); //hml_same
-            builder.storeBit(label.charAt(0) == '1');
-            builder.storeUint(label.length(), sizeOfM);
-        } else {
+        } else if (t == 1) {
             builder.storeBit(true);
             builder.storeBit(false); //hml_long
             builder.storeUint(label.length(), sizeOfM);
             for (Character c : label.toCharArray()) {
                 builder.storeBit(c == '1');
             }
+        } else if (t == 2) {
+            builder.storeBit(true);
+            builder.storeBit(true); //hml_same
+            builder.storeBit(label.charAt(0) == '1');
+            builder.storeUint(label.length(), sizeOfM);
+        } else {
+            throw new IllegalStateException("Unknown label type: " + t);
         }
     }
 
@@ -325,4 +361,135 @@ public class TonHashMap {
         }
         throw new Error("value not found at index " + index);
     }
+
+    public Cell buildMerkleProof(
+            Object key,
+            Function<Object, BitString> keySerializer,
+            Function<Object, Cell> valueSerializer
+    ) {
+        Cell dictCell = CellBuilder.beginCell().storeDictInLine(
+                this.serialize(keySerializer, valueSerializer)
+        ).endCell();
+
+        Cell cell = generateMerkleProof(
+                "",
+                CellSlice.beginParse(dictCell),
+                keySize,
+                padString(keySerializer.apply(key).toBitString(), keySize, '0')
+        );
+
+        return convertToMerkleProof(cell);
+    }
+
+    private int readUnaryLength(CellSlice slice) {
+        int res = 0;
+        while (slice.loadBit()) {
+            res++;
+        }
+        return res;
+    }
+
+    private Cell generateMerkleProof(
+            String prefix,
+            CellSlice slice,
+            int n,
+            String key
+    ) {
+        Cell originalCell = CellBuilder.beginCell().storeSlice(slice).endCell();
+
+        int lb0 = slice.loadBit() ? 1 : 0;
+        int prefixLength;
+        StringBuilder pp = new StringBuilder(prefix);
+
+        if (lb0 == 0) {
+            // Short label detected
+            prefixLength = readUnaryLength(slice);
+            for (int i = 0; i < prefixLength; i++) {
+                pp.append(slice.loadBit() ? '1' : '0');
+            }
+        } else {
+            int lb1 = slice.loadBit() ? 1 : 0;
+            if (lb1 == 0) {
+                // Long label detected
+                prefixLength = slice.loadUint((int) Math.ceil(Math.log(n + 1) / Math.log(2))).intValue();
+                for (int i = 0; i < prefixLength; i++) {
+                    pp.append(slice.loadBit() ? '1' : '0');
+                }
+            } else {
+                // Same label detected
+                char bit = slice.loadBit() ? '1' : '0';
+                prefixLength = slice.loadUint((int) (Math.ceil(Math.log(n + 1) / Math.log(2)))).intValue();
+                for (int i = 0; i < prefixLength; i++) {
+                    pp.append(bit);
+                }
+            }
+        }
+
+        if (n - prefixLength == 0) {
+            return originalCell;
+        } else {
+            CellSlice sl = CellSlice.beginParse(originalCell);
+            Cell left = sl.loadRef();
+            Cell right = sl.loadRef();
+            // NOTE: Left and right branches implicitly contain prefixes '0' and '1'
+
+            if (left.getCellType() == CellType.ORDINARY) {
+                left = (pp.toString() + '0').equals(key.substring(0, pp.length() + 1))
+                        ? generateMerkleProof(pp.toString() + '0', CellSlice.beginParse(left), n - prefixLength - 1, key)
+                        : convertToPrunedBranch(left);
+            }
+
+            if (right.getCellType() == CellType.ORDINARY) {
+                right = (pp.toString() + '1').equals(key.substring(0, pp.length() + 1))
+                        ? generateMerkleProof(pp.toString() + '1', CellSlice.beginParse(right), n - prefixLength - 1, key)
+                        : convertToPrunedBranch(right);
+            }
+
+            return CellBuilder.beginCell()
+                    .storeSlice(sl)
+                    .storeRef(left)
+                    .storeRef(right)
+                    .endCell();
+        }
+    }
+
+    private Cell endExoticCell(CellBuilder builder, CellType type) {
+        Cell c = builder.endCell();
+        Cell exotic = new Cell(c.getBits(), c.getBitLength(), c.getRefs(), true, type);
+        exotic.calculateHashes();
+        return exotic;
+    }
+
+    private Cell convertToMerkleProof(Cell c) {
+        return endExoticCell(
+                CellBuilder.beginCell()
+                        .storeUint(3, 8)
+                        .storeBytes(c.getHash(0))
+                        .storeUint(c.getDepthLevels()[0], 16)
+                        .storeRef(c),
+                CellType.MERKLE_PROOF
+        );
+    }
+
+    private Cell convertToPrunedBranch(Cell c) {
+        return endExoticCell(
+                CellBuilder.beginCell()
+                        .storeUint(1, 8)
+                        .storeUint(1, 8)
+                        .storeBytes(c.getHash(0))
+                        .storeUint(c.getDepthLevels()[0], 16),
+                CellType.PRUNED_BRANCH
+        );
+    }
+
+    private String padString(String original, int requiredSize, char padChar) {
+        if (original.length() >= requiredSize) {
+            return original; // No padding needed
+        }
+
+        return String.valueOf(padChar)
+                .repeat(Math.max(0, requiredSize - original.length() + 1)) +
+                original;
+    }
+
 }

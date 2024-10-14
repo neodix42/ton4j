@@ -568,7 +568,15 @@ public class Cell {
    * @return String
    */
   public String print(String indent) {
-    StringBuilder s = new StringBuilder(indent + "x{" + bits.toHex() + "}\n");
+    String t = "x";
+    if (this.type == CellType.MERKLE_PROOF) {
+      t = "p";
+    } else if (this.type == CellType.MERKLE_UPDATE) {
+      t = "u";
+    } else if (this.type == CellType.PRUNED_BRANCH) {
+      t = "P";
+    }
+    StringBuilder s = new StringBuilder(indent + t + "{" + bits.toHex() + "}\n");
     if (nonNull(refs) && !refs.isEmpty()) {
       for (Cell i : refs) {
         if (nonNull(i)) {
@@ -580,15 +588,7 @@ public class Cell {
   }
 
   public String print() {
-    StringBuilder s = new StringBuilder("x{" + bits.toHex() + "}\n");
-    if (nonNull(refs) && !refs.isEmpty()) {
-      for (Cell i : refs) {
-        if (nonNull(i)) {
-          s.append(i.print(" "));
-        }
-      }
-    }
-    return s.toString();
+    return print("");
   }
 
   /** Saves BoC to file */
