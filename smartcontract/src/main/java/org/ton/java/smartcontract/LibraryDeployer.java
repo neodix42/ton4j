@@ -1,17 +1,17 @@
 package org.ton.java.smartcontract;
 
+import static java.util.Objects.isNull;
+
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.ExternalMessageInInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
-
-import static java.util.Objects.isNull;
 
 @Builder
 @Data
@@ -72,7 +72,7 @@ public class LibraryDeployer implements Contract {
     public Message prepareDeployMsg() {
 
         return Message.builder()
-                .info(ExternalMessageInfo.builder()
+                .info(ExternalMessageInInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .init(getStateInit())

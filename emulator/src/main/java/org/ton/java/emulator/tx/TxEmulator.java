@@ -53,7 +53,7 @@ public class TxEmulator {
 
         super.txEmulatorI = Native.load(super.pathToEmulatorSharedLib, TxEmulatorI.class);
         if (isNull(super.verbosityLevel)) {
-          super.verbosityLevel = TxVerbosityLevel.WITH_ALL_STACK_VALUES;
+          super.verbosityLevel = TxVerbosityLevel.TRUNCATED;
         }
         if (isNull(super.configType)) {
           throw new Error("ConfigType is not set");

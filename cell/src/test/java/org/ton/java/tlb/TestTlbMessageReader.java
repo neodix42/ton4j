@@ -1,5 +1,8 @@
 package org.ton.java.tlb;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,10 +13,6 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.types.*;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -54,9 +53,9 @@ public class TestTlbMessageReader {
     @Test
     public void testExternalMessage1() {
         Cell c = CellBuilder.beginCell().fromBoc("B5EE9C724102030100010F0002DF88009F4CFD8AB69CB20864160E3A40E4F578643B5B5B409C51A0215DA579D95E49F6119529DEF4481C60CD81087FC7B058797AFDCEBCC1BE127EE2C4707C1E1C0F3D12F955EC3DE1C63E714876A931F6C6F13E6980284238AA9F94B0EC5859B37C4DE1E5353462FFFFFFFFE000000010010200DEFF0020DD2082014C97BA218201339CBAB19F71B0ED44D0D31FD31F31D70BFFE304E0A4F2608308D71820D31FD31FD31FF82313BBF263ED44D0D31FD31FD3FFD15132BAF2A15144BAF2A204F901541055F910F2A3F8009320D74A96D307D402FB00E8D101A4C8CB1FCB1FCBFFC9ED5400500000000029A9A31782A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB2452EEC2").endCell();
-        ExternalMessageInfo externalMessageInfo = ExternalMessageInfo.deserialize(CellSlice.beginParse(c));
-        log.info("externalMessage {}", externalMessageInfo);
-        assertThat(externalMessageInfo.getDstAddr().toString()).isEqualTo("0:4fa67ec55b4e5904320b071d20727abc321dadada04e28d010aed2bcecaf24fb");
+        ExternalMessageInInfo externalMessageInInfo = ExternalMessageInInfo.deserialize(CellSlice.beginParse(c));
+        log.info("externalMessage {}", externalMessageInInfo);
+        assertThat(externalMessageInInfo.getDstAddr().toString()).isEqualTo("0:4fa67ec55b4e5904320b071d20727abc321dadada04e28d010aed2bcecaf24fb");
     }
 
     @Test
@@ -112,7 +111,7 @@ public class TestTlbMessageReader {
 
     @Test
     public void testExternalMessageLoadFromCell() {
-        ExternalMessageInfo externalMessageInfo = ExternalMessageInfo.builder()
+        ExternalMessageInInfo externalMessageInInfo = ExternalMessageInInfo.builder()
                 .srcAddr(MsgAddressExtNone.builder().build())
                 .dstAddr(MsgAddressIntStd.builder()
                         .workchainId((byte) 2)
@@ -121,7 +120,7 @@ public class TestTlbMessageReader {
                 .importFee(BigInteger.TEN)
                 .build();
 
-        ExternalMessageInfo loadedMessage = ExternalMessageInfo.deserialize(CellSlice.beginParse(externalMessageInfo.toCell()));
+        ExternalMessageInInfo loadedMessage = ExternalMessageInInfo.deserialize(CellSlice.beginParse(externalMessageInInfo.toCell()));
         log.info("loadedMessage {}", loadedMessage);
         assertThat(loadedMessage.getImportFee()).isEqualTo(BigInteger.TEN);
     }

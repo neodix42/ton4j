@@ -1,5 +1,7 @@
 package org.ton.java.tlb.types;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -7,6 +9,8 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 /**
+ *
+ *
  * <pre>
  * block#11ef55aa
  *   global_id:int32
@@ -18,114 +22,111 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-
 public class Block {
-    long magic;
-    int globalId;
-    BlockInfo blockInfo;
-    ValueFlow valueFlow;
-    MerkleUpdate stateUpdate;
-    BlockExtra extra;
+  long magic;
+  int globalId;
+  BlockInfo blockInfo;
+  ValueFlow valueFlow;
+  MerkleUpdate stateUpdate;
+  BlockExtra extra;
 
-    public Cell toCell() {
-        return CellBuilder.beginCell()
-                .storeUint(0x11ef55aa, 32)
-                .storeInt(globalId, 32)
-                .storeRef(blockInfo.toCell())
-                .storeRef(valueFlow.toCell())
-                .storeRef(stateUpdate.toCell())
-                .storeRef(extra.toCell())
-                .endCell();
+  public Cell toCell() {
+    return CellBuilder.beginCell()
+        .storeUint(0x11ef55aa, 32)
+        .storeInt(globalId, 32)
+        .storeRef(blockInfo.toCell())
+        .storeRef(valueFlow.toCell())
+        .storeRef(stateUpdate.toCell())
+        .storeRef(extra.toCell())
+        .endCell();
+  }
+
+  public static Block deserialize(CellSlice cs) {
+
+    long magic = cs.loadUint(32).longValue();
+    assert (magic == 0x11ef55aaL)
+        : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
+
+    Block block =
+        Block.builder()
+            .magic(0x11ef55aaL)
+            .globalId(cs.loadInt(32).intValue())
+            .blockInfo(BlockInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
+            .build();
+
+    block.setValueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())));
+
+    MerkleUpdate merkleUpdate = MerkleUpdate.deserialize(CellSlice.beginParse(cs.loadRef()));
+    block.setStateUpdate(merkleUpdate);
+    block.setExtra(BlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())));
+
+    return block;
+  }
+
+  public List<Transaction> getAllTransactions() {
+    List<Transaction> result = new ArrayList<>();
+    Block block = this;
+
+    List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
+
+    for (OutMsg outMsg : outMsgs) {
+      if (outMsg instanceof OutMsgExt) {
+        result.add(((OutMsgExt) outMsg).getTransaction());
+      }
+      if (outMsg instanceof OutMsgImm) {
+        result.add(((OutMsgImm) outMsg).getTransaction());
+      }
+      if (outMsg instanceof OutMsgNew) {
+        result.add(((OutMsgNew) outMsg).getTransaction());
+      }
+      if (outMsg instanceof OutMsgNew) {
+        result.add(((OutMsgNew) outMsg).getTransaction());
+      }
     }
 
-    public static Block deserialize(CellSlice cs) {
-
-        long magic = cs.loadUint(32).longValue();
-        assert (magic == 0x11ef55aaL) : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
-
-        Block block = Block.builder()
-                .magic(0x11ef55aaL)
-                .globalId(cs.loadInt(32).intValue())
-                .blockInfo(BlockInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .build();
-
-        block.setValueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())));
-
-        MerkleUpdate merkleUpdate = MerkleUpdate.deserialize(CellSlice.beginParse(cs.loadRef()));
-        block.setStateUpdate(merkleUpdate);
-        block.setExtra(BlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())));
-
-        return block;
+    List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
+    for (InMsg inMsg : inMsgs) {
+      if (inMsg instanceof InMsgImportExt) {
+        result.add(((InMsgImportExt) inMsg).getTransaction());
+      }
+      if (inMsg instanceof InMsgImportIhr) {
+        result.add(((InMsgImportIhr) inMsg).getTransaction());
+      }
+      if (inMsg instanceof InMsgImportImm) {
+        result.add(((InMsgImportImm) inMsg).getTransaction());
+      }
+      if (inMsg instanceof InMsgImportFin) {
+        result.add(((InMsgImportFin) inMsg).getTransaction());
+      }
     }
+    return result;
+  }
 
-/*
-    public List<BlockIdExt> getParentBlocks() {
-        Pair<Long, Long> wcShard = convertShardIdentToShard(blockInfo.getBlockInfoPart().getShard());
-        if (!blockInfo.getBlockInfoPart().isAfterMerge() && !blockInfo.getBlockInfoPart().isAfterSplit()) {
-            return List.of(BlockIdExt.builder()
-                    .workchain(wcShard.getLeft())
-                    .seqno(blockInfo.getPrevRef().getPrev1().seqno)
-                    .root_hash(blockInfo.getPrevRef().getPrev1().getRootHash())
-                    .file_hash(blockInfo.getPrevRef().getPrev1().getFileHash())
-                    .shard(wcShard.getRight())
-                    .build());
-        } else if (!blockInfo.getBlockInfoPart().isAfterMerge() && blockInfo.getBlockInfoPart().isAfterSplit()) {
-            return List.of(BlockIdExt.builder()
-                    .workchain(wcShard.getLeft())
-                    .seqno(blockInfo.getPrevRef().getPrev1().seqno)
-                    .root_hash(blockInfo.getPrevRef().getPrev1().getRootHash())
-                    .file_hash(blockInfo.getPrevRef().getPrev1().getFileHash())
-                    .shard(shardParent(wcShard.getRight()))
-                    .build());
-        }
-        if (isNull(blockInfo.getPrevRef().getPrev1())) {
-            throw new Error("must be 2 parent blocks after merge");
-        }
-        return List.of(
-                BlockIdExt.builder()
-                        .workchain(wcShard.getLeft())
-                        .seqno(blockInfo.getPrevRef().getPrev1().seqno)
-                        .root_hash(blockInfo.getPrevRef().getPrev1().getRootHash())
-                        .file_hash(blockInfo.getPrevRef().getPrev1().getFileHash())
-                        .shard(shardChild(wcShard.getRight(), true))
-                        .build(),
-                BlockIdExt.builder()
-                        .workchain(wcShard.getLeft())
-                        .seqno(blockInfo.getPrevRef().getPrev1().seqno)
-                        .root_hash(blockInfo.getPrevRef().getPrev1().getRootHash())
-                        .file_hash(blockInfo.getPrevRef().getPrev1().getFileHash())
-                        .shard(shardChild(wcShard.getRight(), false))
-                        .build());
-
+  public void printAllTransactions() {
+    Transaction.printTxHeader();
+    List<Transaction> txs = getAllTransactions();
+    for (Transaction tx : txs) {
+      tx.printTransactionFees();
     }
+    Transaction.printTxFooter();
+  }
 
-    private Pair<Long, Long> convertShardIdentToShard(ShardIdent shardIdent) {
-        BigInteger shard = shardIdent.getShardPrefix();
-        long pow2 = 1L << (64 - shardIdent.getPrefixBits());
-        shard = shard.or(BigInteger.valueOf(pow2));
-        return Pair.of(shardIdent.getWorkchain(), shard.longValue());
+  public List<MessageFees> getAllMessageFees() {
+    List<Transaction> txs = getAllTransactions();
+    List<MessageFees> msgFees = new ArrayList<>();
+    for (Transaction tx : txs) {
+      msgFees.addAll(tx.getAllMessageFees());
     }
+    return msgFees;
+  }
 
-    private Long shardChild(Long shard, boolean left) {
-        Long x = lowerBit64(shard) >> 1;
-        if (left) {
-            return shard - x;
-        } else {
-            return shard + x;
-        }
-    }
+  public void printAllMessages() {
+    List<MessageFees> msgFees = getAllMessageFees();
 
-    private Long shardParent(Long shard) {
-        Long x = lowerBit64(shard);
-        return (shard - x) | (x << 1);
+    MessageFees.printMessageFeesHeader();
+    for (MessageFees msgFee : msgFees) {
+      msgFee.printMessageFees();
     }
-
-    private Long lowerBit64(Long x) {
-        return x & bitsNegate64(x);
-    }
-
-    private Long bitsNegate64(Long x) {
-        return ~x + 1;
-    }
-    */
+    MessageFees.printMessageFeesFooter();
+  }
 }

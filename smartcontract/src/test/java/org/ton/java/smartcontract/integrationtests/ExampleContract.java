@@ -1,7 +1,11 @@
 package org.ton.java.smartcontract.integrationtests;
 
 
+import static java.util.Objects.isNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
+import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.cell.Cell;
@@ -12,11 +16,6 @@ import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.time.Instant;
-
-import static java.util.Objects.isNull;
 
 @Builder
 @Getter
@@ -114,7 +113,7 @@ public class ExampleContract implements Contract {
         Cell body = createDeployMessage();
 
         Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
+                .info(ExternalMessageInInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .init(getStateInit())
@@ -130,7 +129,7 @@ public class ExampleContract implements Contract {
     public ExtMessageInfo send(CustomContractConfig config) {
         Cell body = createTransferBody(config);
         Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
+                .info(ExternalMessageInInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()

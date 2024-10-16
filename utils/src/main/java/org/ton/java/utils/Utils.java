@@ -809,6 +809,17 @@ public class Utils {
         new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP));
   }
 
+  public static String formatNanoValueZero(BigInteger nanoCoins) {
+    checkToncoinsOverflow(nanoCoins);
+    if (nanoCoins.compareTo(BigInteger.ZERO) == 0) {
+      return "0";
+    } else {
+      return String.format(
+          "%,.9f",
+          new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP));
+    }
+  }
+
   public static String formatNanoValue(String nanoCoins, int scale) {
     checkToncoinsOverflow(new BigInteger(nanoCoins));
     return String.format(

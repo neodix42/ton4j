@@ -1,16 +1,15 @@
 package org.ton.java.smartcontract.utils;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.tlb.types.*;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 public class MsgUtils {
 
@@ -18,7 +17,7 @@ public class MsgUtils {
 
     return Message.builder()
         .info(
-            ExternalMessageInfo.builder()
+            ExternalMessageInInfo.builder()
                 .dstAddr(
                     MsgAddressIntStd.builder()
                         .workchainId(destination.wc)
@@ -38,7 +37,7 @@ public class MsgUtils {
     Message externalMessage =
         Message.builder()
             .info(
-                ExternalMessageInfo.builder()
+                ExternalMessageInInfo.builder()
                     .dstAddr(
                         MsgAddressIntStd.builder()
                             .workchainId(destination.wc)

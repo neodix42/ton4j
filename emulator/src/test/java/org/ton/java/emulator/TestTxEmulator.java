@@ -61,7 +61,7 @@ public class TestTxEmulator {
     txEmulator =
         TxEmulator.builder()
             .configType(TxEmulatorConfig.TESTNET)
-            .verbosityLevel(TxVerbosityLevel.UNLIMITED)
+            .verbosityLevel(TxVerbosityLevel.TRUNCATED)
             .build();
 
     testAccount =
@@ -85,8 +85,8 @@ public class TestTxEmulator {
                 AccountStorage.builder()
                     .balance(
                         CurrencyCollection.builder()
-                            .coins(Utils.toNano(2))
-                            .build()) // initial balance
+                            .coins(Utils.toNano(2)) // initial balance
+                            .build())
                     .accountState(
                         AccountStateActive.builder()
                             .stateInit(
@@ -197,6 +197,8 @@ public class TestTxEmulator {
         txEmulator.emulateTickTockTransaction(shardAccountBocBase64, false);
     log.info("result {}", result);
     assertThat(result.success).isTrue();
+    result.getTransaction().printTransactionFees(true, true);
+    result.getTransaction().printAllMessages(true);
   }
 
   @Test
@@ -215,6 +217,8 @@ public class TestTxEmulator {
         txEmulator.emulateTickTockTransaction(shardAccountBocBase64, true);
     log.info("result {}", result);
     assertThat(result.success).isTrue();
+    result.getTransaction().printTransactionFees(true, true);
+    result.getTransaction().printAllMessages(true);
   }
 
   @Test
@@ -254,7 +258,9 @@ public class TestTxEmulator {
         txEmulator.emulateTransaction(shardAccountBocBase64, internalMsgBocBase64);
     log.info("result {}", result);
     assertThat(result.isSuccess()).isTrue();
-    result.getTransaction().printTransactionFees(true);
+    result.getTransaction().printTransactionFees(true, true);
+
+    result.getTransaction().printAllMessages(true);
   }
 
   @Test
@@ -297,7 +303,8 @@ public class TestTxEmulator {
     log.info("new shardAccount {}", result.getNewShardAccount());
     log.info("new transaction {}", result.getTransaction());
     log.info("new actions {}", result.getActions());
-    result.getTransaction().printTransactionFees(true);
+    result.getTransaction().printTransactionFees(true, true);
+    result.getTransaction().printAllMessages(true);
   }
 
   @Test
@@ -371,7 +378,7 @@ public class TestTxEmulator {
 
     String shardAccountBocBase64 = shardAccount.toCell().toBase64();
 
-    txEmulator.setDebugEnabled(true);
+    //    txEmulator.setDebugEnabled(true);
 
     String rawDummyDestinationAddress =
         "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d";
@@ -387,23 +394,25 @@ public class TestTxEmulator {
                             Destination.builder()
                                 .bounce(false)
                                 .address(rawDummyDestinationAddress)
-                                .amount(Utils.toNano(1))
+                                .amount(Utils.toNano(1.1))
                                 .build()))
                     .toCell())
             .build();
 
     Message extMsg = walletV5.prepareExternalMsg(walletV5Config);
 
+    txEmulator.setDebugEnabled(false);
+
     EmulateTransactionResult result =
         txEmulator.emulateTransaction(shardAccountBocBase64, extMsg.toCell().toBase64());
 
-    log.info("result sendExternalMessage[1]: {}", result);
+    //    log.info("result sendExternalMessage[1]: {}", result);
 
     ShardAccount newShardAccount = result.getNewShardAccount();
-    log.info("new ShardAccount {}", newShardAccount);
+    //    log.info("new ShardAccount {}", newShardAccount);
 
     TransactionDescription txDesc = result.getTransaction().getDescription();
-    log.info("txDesc {}", txDesc);
+    //    log.info("txDesc {}", txDesc);
 
     TransactionDescriptionOrdinary txDescOrd = (TransactionDescriptionOrdinary) txDesc;
 
@@ -413,8 +422,11 @@ public class TestTxEmulator {
     ActionPhase actionPhase = txDescOrd.getActionPhase();
     assertThat(actionPhase.isSuccess()).isTrue();
 
-    log.info("txDescOrd {}", txDescOrd);
+    //    log.info("txDescOrd {}", txDescOrd);
     assertThat(txDescOrd.isAborted()).isFalse();
+
+    result.getTransaction().printTransactionFees(true, true);
+    result.getTransaction().printAllMessages(true);
 
     // transfer one more time
     walletV5Config =
@@ -428,7 +440,7 @@ public class TestTxEmulator {
                             Destination.builder()
                                 .bounce(false)
                                 .address(rawDummyDestinationAddress)
-                                .amount(Utils.toNano(1))
+                                .amount(Utils.toNano(1.2))
                                 .build()))
                     .toCell())
             .build();
@@ -436,15 +448,14 @@ public class TestTxEmulator {
     extMsg = walletV5.prepareExternalMsg(walletV5Config);
 
     result = txEmulator.emulateTransaction(result.getShard_account(), extMsg.toCell().toBase64());
-    log.info("result sendExternalMessage[2], exitCode: {}", result);
+    //    log.info("result sendExternalMessage[2], exitCode: {}", result);
     assertThat(result.success).isTrue();
 
     newShardAccount = result.getNewShardAccount();
-    log.info("new ShardAccount {}", newShardAccount);
+    //    log.info("new ShardAccount {}", newShardAccount);
 
     txDesc = result.getTransaction().getDescription();
-    log.info("txDesc {}", txDesc);
-    result.getTransaction().printTransactionFees(true);
+    //    log.info("txDesc {}", txDesc);
 
     txDescOrd = (TransactionDescriptionOrdinary) txDesc;
 
@@ -454,12 +465,15 @@ public class TestTxEmulator {
     actionPhase = txDescOrd.getActionPhase();
     assertThat(actionPhase.isSuccess()).isTrue();
 
-    log.info("txDescOrd {}", txDescOrd);
+    //    log.info("txDescOrd {}", txDescOrd);
     assertThat(txDescOrd.isAborted()).isFalse();
 
     assertThat(newShardAccount.getAccount().getAccountStorage().getBalance().getCoins())
         .isLessThan(Utils.toNano(3.2));
     assertThat(newShardAccount.getBalance()).isLessThan(Utils.toNano(3.2)); // same as above
+
+    result.getTransaction().printTransactionFees(true, true);
+    result.getTransaction().printAllMessages(true);
   }
 
   @Test
@@ -524,7 +538,7 @@ public class TestTxEmulator {
 
     log.info("result sendExternalMessage[1]: {}", result);
     //    log.info("txFees: {}", result.getTransaction().getTransactionFees());
-    result.getTransaction().printTransactionFees(true);
+    result.getTransaction().printTransactionFees(true, true);
   }
 
   @Test
@@ -679,7 +693,7 @@ public class TestTxEmulator {
     txDesc = result.getTransaction().getDescription();
     log.info("txDesc {}", txDesc);
 
-    result.getTransaction().printTransactionFees(true);
+    result.getTransaction().printTransactionFees(true, true);
 
     txDescOrd = (TransactionDescriptionOrdinary) txDesc;
 

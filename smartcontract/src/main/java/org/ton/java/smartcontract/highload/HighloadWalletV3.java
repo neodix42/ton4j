@@ -159,7 +159,7 @@ public class HighloadWalletV3 implements Contract {
     Message externalMessage =
         Message.builder()
             .info(
-                ExternalMessageInfo.builder()
+                ExternalMessageInInfo.builder()
                     .dstAddr(
                         MsgAddressIntStd.builder()
                             .workchainId(ownAddress.wc)
@@ -205,7 +205,7 @@ public class HighloadWalletV3 implements Contract {
     Message externalMessage =
         Message.builder()
             .info(
-                ExternalMessageInfo.builder()
+                ExternalMessageInInfo.builder()
                     .dstAddr(
                         MsgAddressIntStd.builder()
                             .workchainId(ownAddress.wc)

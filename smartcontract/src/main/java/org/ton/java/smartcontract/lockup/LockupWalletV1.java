@@ -1,6 +1,15 @@
 package org.ton.java.smartcontract.lockup;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.address.Address;
@@ -17,16 +26,6 @@ import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.List;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 /**
  * <a href="https://github.com/toncenter/tonweb/tree/master/src/contract/lockup">lockup contract</a>
@@ -265,7 +264,7 @@ public class LockupWalletV1 implements Contract {
         Cell body = createDeployMessage();
 
         Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
+                .info(ExternalMessageInInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .init(getStateInit())
@@ -282,7 +281,7 @@ public class LockupWalletV1 implements Contract {
         Cell body = createTransferBody(config);
 
         Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
+                .info(ExternalMessageInInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()

@@ -1,10 +1,11 @@
 package org.ton.java.tlb.types;
 
-
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 
 /**
+ *
+ *
  * <pre>
  * int_msg_info$0
  * ihr_disabled:Bool
@@ -30,22 +31,21 @@ import org.ton.java.cell.CellSlice;
  * created_at:uint32 = CommonMsgInfo;
  * </pre>
  */
-
 public interface CommonMsgInfo {
 
-    Cell toCell();
+  Cell toCell();
 
-    static CommonMsgInfo deserialize(CellSlice cs) {
-        boolean isExternal = cs.preloadBit();
-        if (!isExternal) {
-            return InternalMessageInfo.deserialize(cs);
-        } else {
-            boolean isOut = cs.preloadBitAt(2);
-            if (isOut) {
-                return ExternalMessageOutInfo.deserialize(cs);
-            } else {
-                return ExternalMessageInfo.deserialize(cs);
-            }
-        }
+  static CommonMsgInfo deserialize(CellSlice cs) {
+    boolean isExternal = cs.preloadBit();
+    if (!isExternal) {
+      return InternalMessageInfo.deserialize(cs);
+    } else {
+      boolean isOut = cs.preloadBitAt(2);
+      if (isOut) {
+        return ExternalMessageOutInfo.deserialize(cs);
+      } else {
+        return ExternalMessageInInfo.deserialize(cs);
+      }
     }
+  }
 }

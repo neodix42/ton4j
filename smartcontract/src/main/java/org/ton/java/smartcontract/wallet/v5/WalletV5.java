@@ -153,7 +153,7 @@ public class WalletV5 implements Contract {
     byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
 
     return Message.builder()
-        .info(ExternalMessageInfo.builder().dstAddr(getAddressIntStd()).build())
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
         .init(getStateInit())
         .body(CellBuilder.beginCell().storeCell(body).storeBytes(signature).endCell())
         .build();
@@ -164,7 +164,7 @@ public class WalletV5 implements Contract {
     byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
 
     return Message.builder()
-        .info(ExternalMessageInfo.builder().dstAddr(getAddressIntStd()).build())
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
         .init(getStateInit())
         .body(CellBuilder.beginCell().storeCell(body).storeBytes(signature).endCell())
         .build();

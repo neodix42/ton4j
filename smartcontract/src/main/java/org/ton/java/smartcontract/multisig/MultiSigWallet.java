@@ -1,6 +1,11 @@
 package org.ton.java.smartcontract.multisig;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
+import java.util.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.java.Log;
@@ -13,12 +18,6 @@ import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.util.*;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -193,7 +192,7 @@ public class MultiSigWallet implements Contract {
         Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
 
         Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
+                .info(ExternalMessageInInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
@@ -214,7 +213,7 @@ public class MultiSigWallet implements Contract {
         Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
 
         Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
+                .info(ExternalMessageInInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .body(CellBuilder.beginCell()
@@ -360,7 +359,7 @@ public class MultiSigWallet implements Contract {
     public ExtMessageInfo deploy() {
 
         Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
+                .info(ExternalMessageInInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .init(getStateInit())

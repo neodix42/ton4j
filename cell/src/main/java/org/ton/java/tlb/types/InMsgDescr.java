@@ -1,7 +1,11 @@
 package org.ton.java.tlb.types;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -38,5 +42,14 @@ public class InMsgDescr {
 
     public long getCount() {
         return inMsg.elements.size();
+    }
+
+
+    public List<InMsg> getInMessages() {
+        List<InMsg> inMsgs = new ArrayList<>();
+        for (Map.Entry<Object, Pair<Object, Object>> entry : inMsg.elements.entrySet()) {
+            inMsgs.add((InMsg) entry.getValue().getLeft());
+        }
+        return inMsgs;
     }
 }

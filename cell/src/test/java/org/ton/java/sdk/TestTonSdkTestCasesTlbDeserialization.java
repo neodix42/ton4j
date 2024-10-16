@@ -1,8 +1,14 @@
 package org.ton.java.sdk;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.URL;
+import java.nio.charset.Charset;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -12,15 +18,8 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.types.Block;
-import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.ExternalMessageInInfo;
 import org.ton.java.tlb.types.InternalMessageInfo;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.URL;
-import java.nio.charset.Charset;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -87,16 +86,16 @@ public class TestTonSdkTestCasesTlbDeserialization {
         String bocAsHex = testCase.getInput().get("bocAsHex").toString();
 
         Cell c = CellBuilder.beginCell().fromBoc(bocAsHex).endCell();
-        ExternalMessageInfo externalMessageInfo = ExternalMessageInfo.deserialize(CellSlice.beginParse(c));
-        log.info("ExternalMessageInfo {}", externalMessageInfo);
+        ExternalMessageInInfo externalMessageInInfo = ExternalMessageInInfo.deserialize(CellSlice.beginParse(c));
+        log.info("ExternalMessageInfo {}", externalMessageInInfo);
 
         String expectedSourceAddress = testCase.getExpectedOutput().get("sourceAddress").toString();
         String expectedDestinationAddress = testCase.getExpectedOutput().get("destinationAddress").toString();
         Long expectedImportFee = Long.parseLong(testCase.getExpectedOutput().get("importFee").toString());
 
-        assertThat(externalMessageInfo.getSrcAddr().toString()).isEqualTo(expectedSourceAddress);
-        assertThat(externalMessageInfo.getDstAddr().toAddress().toRaw()).isEqualTo(expectedDestinationAddress);
-        assertThat(externalMessageInfo.getImportFee().longValue()).isEqualTo(expectedImportFee);
+        assertThat(externalMessageInInfo.getSrcAddr().toString()).isEqualTo(expectedSourceAddress);
+        assertThat(externalMessageInInfo.getDstAddr().toAddress().toRaw()).isEqualTo(expectedDestinationAddress);
+        assertThat(externalMessageInInfo.getImportFee().longValue()).isEqualTo(expectedImportFee);
     }
 
     @Test

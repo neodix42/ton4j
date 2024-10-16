@@ -1,7 +1,11 @@
 package org.ton.java.tlb.types;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -37,4 +41,11 @@ public class ShardFees {
                 .build();
     }
 
+    public List<ShardFeeCreated> getShardFeesCreatedAsList() {
+        List<ShardFeeCreated> shardFeesCreated = new ArrayList<>();
+        for (Map.Entry<Object, Pair<Object, Object>> entry : shardFees.elements.entrySet()) {
+            shardFeesCreated.add((ShardFeeCreated) entry.getValue().getLeft());
+        }
+        return shardFeesCreated;
+    }
 }

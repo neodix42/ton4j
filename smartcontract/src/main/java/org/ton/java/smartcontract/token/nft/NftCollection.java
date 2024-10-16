@@ -1,27 +1,26 @@
 package org.ton.java.smartcontract.token.nft;
 
+import static java.util.Objects.isNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
-import lombok.Builder;import lombok.Data;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.ExternalMessageInInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.MsgAddressExtNone;
 import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.Deque;
-
-import static java.util.Objects.isNull;
 
 @Builder
 @Getter
@@ -300,7 +299,7 @@ public class NftCollection implements Contract {
         Address ownAddress = getAddress();
 
         Message externalMessage = Message.builder()
-                .info(ExternalMessageInfo.builder()
+                .info(ExternalMessageInInfo.builder()
                         .srcAddr(MsgAddressExtNone.builder().build())
                         .dstAddr(MsgAddressIntStd.builder()
                                 .workchainId(ownAddress.wc)

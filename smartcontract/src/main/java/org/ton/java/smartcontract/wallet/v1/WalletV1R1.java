@@ -23,140 +23,142 @@ import static java.util.Objects.nonNull;
 @Getter
 public class WalletV1R1 implements Contract {
 
-    TweetNaclFast.Signature.KeyPair keyPair;
-    long initialSeqno;
+  TweetNaclFast.Signature.KeyPair keyPair;
+  long initialSeqno;
 
-    public static class WalletV1R1Builder {
-    }
+  public static class WalletV1R1Builder {}
 
-    public static WalletV1R1Builder builder() {
-        return new CustomWalletV1R1Builder();
-    }
+  public static WalletV1R1Builder builder() {
+    return new CustomWalletV1R1Builder();
+  }
 
-    private static class CustomWalletV1R1Builder extends WalletV1R1Builder {
-        @Override
-        public WalletV1R1 build() {
-            if (isNull(super.keyPair)) {
-                super.keyPair = Utils.generateSignatureKeyPair();
-            }
-            return super.build();
-        }
-    }
-
-    private Tonlib tonlib;
-    private long wc;
-
+  private static class CustomWalletV1R1Builder extends WalletV1R1Builder {
     @Override
-    public Tonlib getTonlib() {
-        return tonlib;
+    public WalletV1R1 build() {
+      if (isNull(super.keyPair)) {
+        super.keyPair = Utils.generateSignatureKeyPair();
+      }
+      return super.build();
     }
+  }
 
-    @Override
-    public long getWorkchain() {
-        return wc;
-    }
+  private Tonlib tonlib;
+  private long wc;
 
-    @Override
-    public String getName() {
-        return "V1R1";
-    }
+  @Override
+  public Tonlib getTonlib() {
+    return tonlib;
+  }
 
-    @Override
-    public Cell createDataCell() {
-        return CellBuilder.beginCell()
-                .storeUint(initialSeqno, 32) // seqno
-                .storeBytes(keyPair.getPublicKey())
-                .endCell();
-    }
+  @Override
+  public long getWorkchain() {
+    return wc;
+  }
 
-    @Override
-    public Cell createCodeCell() {
-        return CellBuilder.beginCell().
-                fromBoc(WalletCodes.V1R1.getValue()).
-                endCell();
-    }
+  @Override
+  public String getName() {
+    return "V1R1";
+  }
 
-    Cell createDeployMessage() {
-        return CellBuilder.beginCell().storeUint(initialSeqno, 32).endCell();
-    }
+  @Override
+  public Cell createDataCell() {
+    return CellBuilder.beginCell()
+        .storeUint(initialSeqno, 32) // seqno
+        .storeBytes(keyPair.getPublicKey())
+        .endCell();
+  }
 
-    Cell createTransferBody(WalletV1R1Config config) {
-        Cell order = Message.builder()
-                .info(InternalMessageInfo.builder()
-                        .bounce(config.getBounce())
-                        .dstAddr(MsgAddressIntStd.builder()
-                                .workchainId(config.getDestination().wc)
-                                .address(config.getDestination().toBigInteger())
-                                .build())
-                        .value(CurrencyCollection.builder().coins(config.getAmount()).build())
-                        .build())
-                .init(config.getStateInit())
-                .body((isNull(config.getBody()) && nonNull(config.getComment())) ?
-                        CellBuilder.beginCell()
-                                .storeUint(0, 32)
-                                .storeString(config.getComment())
-                                .endCell()
-                        : config.getBody())
-                .build().toCell();
+  @Override
+  public Cell createCodeCell() {
+    return CellBuilder.beginCell().fromBoc(WalletCodes.V1R1.getValue()).endCell();
+  }
 
-        return CellBuilder.beginCell()
-                .storeUint(BigInteger.valueOf(config.getSeqno()), 32)
-                .storeUint((config.getMode() == 0) ? 3 : config.getMode() & 0xff, 8)
-                .storeRef(order)
-                .endCell();
-    }
+  Cell createDeployMessage() {
+    return CellBuilder.beginCell().storeUint(initialSeqno, 32).endCell();
+  }
 
+  Cell createTransferBody(WalletV1R1Config config) {
+    Cell order =
+        Message.builder()
+            .info(
+                InternalMessageInfo.builder()
+                    .bounce(config.getBounce())
+                    .dstAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId(config.getDestination().wc)
+                            .address(config.getDestination().toBigInteger())
+                            .build())
+                    .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                    .build())
+            .init(config.getStateInit())
+            .body(
+                (isNull(config.getBody()) && nonNull(config.getComment()))
+                    ? CellBuilder.beginCell()
+                        .storeUint(0, 32)
+                        .storeString(config.getComment())
+                        .endCell()
+                    : config.getBody())
+            .build()
+            .toCell();
 
-    /**
-     * Sends amount of nano toncoins to destination address using specified seqno
-     *
-     * @param config WalletV1R1Config
-     */
-    public ExtMessageInfo send(WalletV1R1Config config) {
-        return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
-    }
+    return CellBuilder.beginCell()
+        .storeUint(BigInteger.valueOf(config.getSeqno()), 32)
+        .storeUint((config.getMode() == 0) ? 3 : config.getMode() & 0xff, 8)
+        .storeRef(order)
+        .endCell();
+  }
 
-    public Message prepareExternalMsg(WalletV1R1Config config) {
-        Cell body = createTransferBody(config);
-        return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
-    }
+  /**
+   * Sends amount of nano toncoins to destination address using specified seqno
+   *
+   * @param config WalletV1R1Config
+   */
+  public ExtMessageInfo send(WalletV1R1Config config) {
+    return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
+  }
 
-    public ExtMessageInfo deploy() {
-        return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
-    }
+  public Message prepareExternalMsg(WalletV1R1Config config) {
+    Cell body = createTransferBody(config);
+    return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
+  }
 
-    public Message prepareDeployMsg() {
-        Cell body = createDeployMessage();
+  public ExtMessageInfo deploy() {
+    return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+  }
 
-        return Message.builder()
-                .info(ExternalMessageInfo.builder()
-                        .dstAddr(getAddressIntStd())
-                        .build())
-                .init(getStateInit())
-                .body(CellBuilder.beginCell()
-                        .storeBytes(Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                        .storeCell(body)
-                        .endCell())
-                .build();
-    }
+  public Message prepareDeployMsg() {
+    Cell body = createDeployMessage();
 
-    public Cell createInternalSignedBody(WalletV1R1Config config) {
-        Cell body = createTransferBody(config);
-        byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(
+            CellBuilder.beginCell()
+                .storeBytes(
+                    Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                .storeCell(body)
+                .endCell())
+        .build();
+  }
 
-        return CellBuilder.beginCell().storeCell(body).storeBytes(signature).endCell();
-    }
+  public Cell createInternalSignedBody(WalletV1R1Config config) {
+    Cell body = createTransferBody(config);
+    byte[] signature = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
 
-    public Message prepareInternalMsg(WalletV1R1Config config) {
-        Cell body = createInternalSignedBody(config);
+    return CellBuilder.beginCell().storeCell(body).storeBytes(signature).endCell();
+  }
 
-        return Message.builder()
-                .info(InternalMessageInfo.builder()
-                        .srcAddr(getAddressIntStd())
-                        .dstAddr(getAddressIntStd())
-                        .value(CurrencyCollection.builder().coins(config.getAmount()).build())
-                        .build())
-                .body(body)
-                .build();
-    }
+  public Message prepareInternalMsg(WalletV1R1Config config) {
+    Cell body = createInternalSignedBody(config);
+
+    return Message.builder()
+        .info(
+            InternalMessageInfo.builder()
+                .srcAddr(getAddressIntStd())
+                .dstAddr(getAddressIntStd())
+                .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                .build())
+        .body(body)
+        .build();
+  }
 }

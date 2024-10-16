@@ -4,8 +4,11 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -60,9 +63,9 @@ public class Transaction {
 
   private String getAccountAddr() {
     if (nonNull(accountAddr)) {
-      return accountAddr.toString(16);
+      return StringUtils.leftPad(accountAddr.toString(16), 64, "0");
     } else {
-      return "null";
+      return "N/A";
     }
   }
 
@@ -196,24 +199,31 @@ public class Transaction {
     long exitCode = getExitCode(tx.getDescription());
     long actionCode = getActionCode(tx.getDescription());
     long totalActions = getTotalActions(tx.getDescription());
+    long now = tx.getNow();
+    BigInteger lt = tx.getLt();
+    long outMsgs = tx.getOutMsgCount();
 
     Message inMsg = tx.getInOut().getIn();
-    Cell body = inMsg.getBody();
+    if (nonNull(inMsg)) {
+      Cell body = inMsg.getBody();
 
-    if (nonNull(body) && body.getBits().getUsedBits() >= 32) {
-      op = CellSlice.beginParse(body).preloadInt(32);
-    } else {
-      op = BigInteger.ONE.negate();
-    }
+      if (nonNull(body) && body.getBits().getUsedBits() >= 32) {
+        op = CellSlice.beginParse(body).preloadInt(32);
+      } else {
+        op = BigInteger.ONE.negate();
+      }
 
-    if (inMsg.getInfo() instanceof InternalMessageInfo) {
-      valueIn = ((InternalMessageInfo) inMsg.getInfo()).getValue().getCoins();
-      inForwardFees = ((InternalMessageInfo) inMsg.getInfo()).getFwdFee();
+      if (inMsg.getInfo() instanceof InternalMessageInfo) {
+        valueIn = ((InternalMessageInfo) inMsg.getInfo()).getValue().getCoins();
+        inForwardFees = ((InternalMessageInfo) inMsg.getInfo()).getFwdFee();
+      }
     }
 
     for (Message outMsg : tx.getInOut().getOutMessages()) {
-      InternalMessageInfo intMsgInfo = (InternalMessageInfo) outMsg.getInfo();
-      valueOut = valueOut.add(intMsgInfo.getValue().getCoins());
+      if (outMsg.getInfo() instanceof InternalMessageInfo) {
+        InternalMessageInfo intMsgInfo = (InternalMessageInfo) outMsg.getInfo();
+        valueOut = valueOut.add(intMsgInfo.getValue().getCoins());
+      }
     }
 
     return TransactionFees.builder()
@@ -221,6 +231,7 @@ public class Transaction {
             (isNull(op))
                 ? "N/A"
                 : (op.compareTo(BigInteger.ONE.negate()) != 0) ? op.toString(16) : "no body")
+        .type(tx.getDescription().getClass().getSimpleName().substring(22))
         .valueIn(valueIn)
         .valueOut(valueOut)
         .totalFees(totalFees)
@@ -230,6 +241,9 @@ public class Transaction {
         .exitCode(exitCode)
         .actionCode(actionCode)
         .totalActions(totalActions)
+        .now(now)
+        .lt(lt)
+        .account(tx.getAccountAddr())
         .build();
   }
 
@@ -263,16 +277,16 @@ public class Transaction {
   private BigInteger getForwardFees(TransactionDescription txDesc) {
     if (txDesc instanceof TransactionDescriptionOrdinary) {
       ActionPhase actionPhase = ((TransactionDescriptionOrdinary) txDesc).getActionPhase();
-      return actionPhase.getTotalFwdFees();
+      return isNull(actionPhase) ? BigInteger.ZERO : actionPhase.getTotalFwdFees();
     } else if (txDesc instanceof TransactionDescriptionSplitPrepare) {
       ActionPhase actionPhase = ((TransactionDescriptionSplitPrepare) txDesc).getActionPhase();
-      return actionPhase.getTotalFwdFees();
+      return isNull(actionPhase) ? BigInteger.ZERO : actionPhase.getTotalFwdFees();
     } else if (txDesc instanceof TransactionDescriptionTickTock) {
       ActionPhase actionPhase = ((TransactionDescriptionTickTock) txDesc).getActionPhase();
-      return actionPhase.getTotalFwdFees();
+      return isNull(actionPhase) ? BigInteger.ZERO : actionPhase.getTotalFwdFees();
     } else if (txDesc instanceof TransactionDescriptionMergeInstall) {
       ActionPhase actionPhase = ((TransactionDescriptionMergeInstall) txDesc).getActionPhase();
-      return actionPhase.getTotalFwdFees();
+      return isNull(actionPhase) ? BigInteger.ZERO : actionPhase.getTotalFwdFees();
     } else {
       return BigInteger.ZERO;
     }
@@ -281,16 +295,16 @@ public class Transaction {
   private long getTotalActions(TransactionDescription txDesc) {
     if (txDesc instanceof TransactionDescriptionOrdinary) {
       ActionPhase actionPhase = ((TransactionDescriptionOrdinary) txDesc).getActionPhase();
-      return actionPhase.getTotalActions();
+      return isNull(actionPhase) ? 0 : actionPhase.getTotalActions();
     } else if (txDesc instanceof TransactionDescriptionSplitPrepare) {
       ActionPhase actionPhase = ((TransactionDescriptionSplitPrepare) txDesc).getActionPhase();
-      return actionPhase.getTotalActions();
+      return isNull(actionPhase) ? 0 : actionPhase.getTotalActions();
     } else if (txDesc instanceof TransactionDescriptionTickTock) {
       ActionPhase actionPhase = ((TransactionDescriptionTickTock) txDesc).getActionPhase();
-      return actionPhase.getTotalActions();
+      return isNull(actionPhase) ? 0 : actionPhase.getTotalActions();
     } else if (txDesc instanceof TransactionDescriptionMergeInstall) {
       ActionPhase actionPhase = ((TransactionDescriptionMergeInstall) txDesc).getActionPhase();
-      return actionPhase.getTotalActions();
+      return isNull(actionPhase) ? 0 : actionPhase.getTotalActions();
     } else {
       return -1;
     }
@@ -299,16 +313,16 @@ public class Transaction {
   private long getActionCode(TransactionDescription txDesc) {
     if (txDesc instanceof TransactionDescriptionOrdinary) {
       ActionPhase actionPhase = ((TransactionDescriptionOrdinary) txDesc).getActionPhase();
-      return actionPhase.getResultCode();
+      return isNull(actionPhase) ? 0 : actionPhase.getResultCode();
     } else if (txDesc instanceof TransactionDescriptionSplitPrepare) {
       ActionPhase actionPhase = ((TransactionDescriptionSplitPrepare) txDesc).getActionPhase();
-      return actionPhase.getResultCode();
+      return isNull(actionPhase) ? 0 : actionPhase.getResultCode();
     } else if (txDesc instanceof TransactionDescriptionTickTock) {
       ActionPhase actionPhase = ((TransactionDescriptionTickTock) txDesc).getActionPhase();
-      return actionPhase.getResultCode();
+      return isNull(actionPhase) ? 0 : actionPhase.getResultCode();
     } else if (txDesc instanceof TransactionDescriptionMergeInstall) {
       ActionPhase actionPhase = ((TransactionDescriptionMergeInstall) txDesc).getActionPhase();
-      return actionPhase.getResultCode();
+      return isNull(actionPhase) ? 0 : actionPhase.getResultCode();
     } else {
       return -1;
     }
@@ -341,30 +355,204 @@ public class Transaction {
     return -1;
   }
 
-  public void printTransactionFees(boolean withHeader) {
+  public void printTransactionFees() {
+    printTransactionFees(false, false);
+  }
+
+  public void printTransactionFees(boolean withHeader, boolean withFooter) {
     TransactionFees txFees = getTransactionFees();
-    String header =
-        "| op       | valueIn        | valueOut       | totalFees    | inForwardFee | outForwardFee | outActions | computeFee    | exitCode | actionCode |";
     if (withHeader) {
-      System.out.println(
-          "_________________________________________________________________________________________________________________________________________________");
-      System.out.println(header);
-      System.out.println(
-          "-------------------------------------------------------------------------------------------------------------------------------------------------");
+      printTxHeader();
     }
     String str =
         String.format(
-            "| %-9s| %-15s| %-15s| %-13s| %-13s| %-14s| %-11s| %-14s| %-9s| %-11s|",
+            "| %-9s| %-13s| %-15s| %-15s| %-13s| %-13s| %-14s| %-11s| %-8s| %-14s| %-9s| %-11s| %-64s |",
             txFees.getOp(),
-            Utils.formatNanoValue(txFees.getValueIn()),
-            Utils.formatNanoValue(txFees.getValueOut()),
-            Utils.formatNanoValue(txFees.getTotalFees()),
-            Utils.formatNanoValue(txFees.getInForwardFee().toString()),
-            Utils.formatNanoValue(txFees.getOutForwardFee()),
+            txFees.getType(),
+            Utils.formatNanoValueZero(txFees.getValueIn()),
+            Utils.formatNanoValueZero(txFees.getValueOut()),
+            Utils.formatNanoValueZero(txFees.getTotalFees()),
+            Utils.formatNanoValueZero(txFees.getInForwardFee()),
+            Utils.formatNanoValueZero(txFees.getOutForwardFee()),
             txFees.getTotalActions(),
-            Utils.formatNanoValue(txFees.getComputeFee()),
+            txFees.getOutMsgs(),
+            Utils.formatNanoValueZero(txFees.getComputeFee()),
             txFees.getExitCode(),
-            txFees.getActionCode());
+            txFees.getActionCode(),
+            txFees.getAccount());
     System.out.println(str);
+    if (withFooter) {
+      printTxFooter();
+    }
+  }
+
+  public List<MessageFees> getAllMessageFees() {
+    List<MessageFees> messageFees = new ArrayList<>();
+    Transaction tx = this;
+
+    BigInteger op;
+
+    Message inMsg = tx.getInOut().getIn();
+    if (nonNull(inMsg)) {
+      Cell body = inMsg.getBody();
+
+      if (nonNull(body) && body.getBits().getUsedBits() >= 32) {
+        op = CellSlice.beginParse(body).preloadInt(32);
+      } else {
+        op = BigInteger.ONE.negate();
+      }
+
+      if (inMsg.getInfo() instanceof InternalMessageInfo) {
+        InternalMessageInfo msgInfo = ((InternalMessageInfo) inMsg.getInfo());
+        MessageFees msgFee =
+            MessageFees.builder()
+                .direction("in")
+                .type(inMsg.getInfo().getClass().getSimpleName())
+                .op(
+                    (isNull(op))
+                        ? "N/A"
+                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                            ? op.toString(16)
+                            : "no body")
+                .value(msgInfo.getValue().getCoins())
+                .fwdFee(msgInfo.getFwdFee())
+                .ihrFee(msgInfo.getIHRFee())
+                .createdLt(msgInfo.getCreatedLt())
+                .createdAt(BigInteger.valueOf(msgInfo.getCreatedAt()))
+                .build();
+        messageFees.add(msgFee);
+      }
+      if (inMsg.getInfo() instanceof ExternalMessageOutInfo) {
+        ExternalMessageOutInfo msgInfo = ((ExternalMessageOutInfo) inMsg.getInfo());
+        MessageFees msgFee =
+            MessageFees.builder()
+                .direction("in")
+                .type(inMsg.getInfo().getClass().getSimpleName())
+                .op(
+                    (isNull(op))
+                        ? "N/A"
+                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                            ? op.toString(16)
+                            : "no body")
+                .createdLt(msgInfo.getCreatedLt())
+                .createdAt(BigInteger.valueOf(msgInfo.getCreatedAt()))
+                .build();
+        messageFees.add(msgFee);
+      }
+      if (inMsg.getInfo() instanceof ExternalMessageInInfo) {
+        ExternalMessageInInfo msgInfo = ((ExternalMessageInInfo) inMsg.getInfo());
+        MessageFees msgFee =
+            MessageFees.builder()
+                .direction("in")
+                .type(inMsg.getInfo().getClass().getSimpleName())
+                .op(
+                    (isNull(op))
+                        ? "N/A"
+                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                            ? op.toString(16)
+                            : "no body")
+                .importFee(msgInfo.getImportFee())
+                .build();
+        messageFees.add(msgFee);
+      }
+    }
+
+    for (Message outMsg : tx.getInOut().getOutMessages()) {
+
+      Cell body = outMsg.getBody();
+
+      if (nonNull(body) && body.getBits().getUsedBits() >= 32) {
+        op = CellSlice.beginParse(body).preloadInt(32);
+      } else {
+        op = BigInteger.ONE.negate();
+      }
+
+      if (outMsg.getInfo() instanceof InternalMessageInfo) {
+        InternalMessageInfo intMsgInfo = (InternalMessageInfo) outMsg.getInfo();
+
+        MessageFees msgFee =
+            MessageFees.builder()
+                .direction("out")
+                .type(outMsg.getInfo().getClass().getSimpleName())
+                .op(
+                    (isNull(op))
+                        ? "N/A"
+                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                            ? op.toString(16)
+                            : "no body")
+                .value(intMsgInfo.getValue().getCoins())
+                .fwdFee(intMsgInfo.getFwdFee())
+                .ihrFee(intMsgInfo.getIHRFee())
+                .createdLt(intMsgInfo.getCreatedLt())
+                .createdAt(BigInteger.valueOf(intMsgInfo.getCreatedAt()))
+                .build();
+        messageFees.add(msgFee);
+      }
+      if (outMsg.getInfo() instanceof ExternalMessageOutInfo) {
+        ExternalMessageOutInfo outMsgInfo = (ExternalMessageOutInfo) outMsg.getInfo();
+
+        MessageFees msgFee =
+            MessageFees.builder()
+                .direction("out")
+                .type(outMsg.getInfo().getClass().getSimpleName())
+                .op(
+                    (isNull(op))
+                        ? "N/A"
+                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                            ? op.toString(16)
+                            : "no body")
+                .createdLt(outMsgInfo.getCreatedLt())
+                .createdAt(BigInteger.valueOf(outMsgInfo.getCreatedAt()))
+                .build();
+        messageFees.add(msgFee);
+      }
+      if (outMsg.getInfo() instanceof ExternalMessageInInfo) {
+        ExternalMessageInInfo outMsgInfo = (ExternalMessageInInfo) outMsg.getInfo();
+
+        MessageFees msgFee =
+            MessageFees.builder()
+                .direction("out")
+                .type(outMsg.getInfo().getClass().getSimpleName())
+                .op(
+                    (isNull(op))
+                        ? "N/A"
+                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                            ? op.toString(16)
+                            : "no body")
+                .importFee(outMsgInfo.getImportFee())
+                .build();
+        messageFees.add(msgFee);
+      }
+    }
+
+    return messageFees;
+  }
+
+  public void printAllMessages(boolean withHeader) {
+    List<MessageFees> msgFees = getAllMessageFees();
+
+    if (withHeader) {
+      MessageFees.printMessageFeesHeader();
+    }
+
+    for (MessageFees msgFee : msgFees) {
+      msgFee.printMessageFees();
+    }
+    MessageFees.printMessageFeesFooter();
+  }
+
+  public static void printTxHeader() {
+    System.out.println("Transactions");
+    System.out.println(
+        "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+    System.out.println(
+        "| op       | type         | valueIn        | valueOut       | totalFees    | inForwardFee | outForwardFee | outActions | outMsgs | computeFee    | exitCode | actionCode | account                                                          |");
+    System.out.println(
+        "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+  }
+
+  public static void printTxFooter() {
+    System.out.println(
+        "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
   }
 }

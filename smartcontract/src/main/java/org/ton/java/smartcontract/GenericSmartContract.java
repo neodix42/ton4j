@@ -8,7 +8,7 @@ import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.ExternalMessageInInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -81,7 +81,7 @@ public class GenericSmartContract implements Contract {
 
   public Message prepareDeployMsgWithoutBody() {
     return Message.builder()
-        .info(ExternalMessageInfo.builder().dstAddr(getAddressIntStd()).build())
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
         .init(getStateInit())
         .build();
   }
@@ -89,7 +89,7 @@ public class GenericSmartContract implements Contract {
   public Message prepareDeployMsg(Cell deployMessageBody) {
 
     return Message.builder()
-        .info(ExternalMessageInfo.builder().dstAddr(getAddressIntStd()).build())
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
         .init(getStateInit())
         .body(
             CellBuilder.beginCell()

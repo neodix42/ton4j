@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class TransactionFees {
   String op;
+  String type;
   BigInteger totalFees;
   BigInteger computeFee;
   BigInteger inForwardFee;
@@ -17,4 +18,8 @@ public class TransactionFees {
   long exitCode;
   long actionCode;
   long totalActions;
+  long outMsgs;
+  long now;
+  BigInteger lt;
+  String account;
 }

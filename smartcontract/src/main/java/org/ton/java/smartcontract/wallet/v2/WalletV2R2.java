@@ -1,6 +1,11 @@
 package org.ton.java.smartcontract.wallet.v2;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
+import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.address.Address;
@@ -11,7 +16,7 @@ import org.ton.java.smartcontract.types.WalletV2R2Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.CurrencyCollection;
-import org.ton.java.tlb.types.ExternalMessageInfo;
+import org.ton.java.tlb.types.ExternalMessageInInfo;
 import org.ton.java.tlb.types.InternalMessageInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
@@ -19,12 +24,6 @@ import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.time.Instant;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -156,7 +155,7 @@ public class WalletV2R2 implements Contract {
         Cell body = createDeployMessage();
 
         return Message.builder()
-                .info(ExternalMessageInfo.builder()
+                .info(ExternalMessageInInfo.builder()
                         .dstAddr(getAddressIntStd())
                         .build())
                 .init(getStateInit())
