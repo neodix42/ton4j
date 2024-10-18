@@ -103,8 +103,12 @@ public class Block {
   }
 
   public void printAllTransactions() {
-    Transaction.printTxHeader();
     List<Transaction> txs = getAllTransactions();
+    if (txs.isEmpty()) {
+      System.out.println("No transactions");
+      return;
+    }
+    Transaction.printTxHeader();
     for (Transaction tx : txs) {
       tx.printTransactionFees();
     }
@@ -117,12 +121,16 @@ public class Block {
     for (Transaction tx : txs) {
       msgFees.addAll(tx.getAllMessageFees());
     }
+
     return msgFees;
   }
 
   public void printAllMessages() {
     List<MessageFees> msgFees = getAllMessageFees();
-
+    if (msgFees.isEmpty()) {
+      System.out.println("No messages");
+      return;
+    }
     MessageFees.printMessageFeesHeader();
     for (MessageFees msgFee : msgFees) {
       msgFee.printMessageFees();

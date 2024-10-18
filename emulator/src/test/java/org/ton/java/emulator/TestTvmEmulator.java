@@ -27,7 +27,6 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.emulator.tvm.*;
-import org.ton.java.smartcontract.GenericSmartContract;
 import org.ton.java.smartcontract.SmartContractCompiler;
 import org.ton.java.smartcontract.types.NewPlugin;
 import org.ton.java.smartcontract.types.WalletV4R2Config;
@@ -391,14 +390,6 @@ public class TestTvmEmulator {
     ////                , configAll.toBase64()
     //        ));
 
-    GenericSmartContract smc =
-        GenericSmartContract.builder()
-            .tonlib(tonlib)
-            .keyPair(keyPair)
-            .code(codeCellHex)
-            .data(dataCell.toHex())
-            .build();
-
     WalletV4R2Config config =
         WalletV4R2Config.builder()
             .operation(0)
@@ -703,7 +694,7 @@ public class TestTvmEmulator {
             .storeUint(0x706c7567, 32) // op request funds
             .endCell();
 
-    tvmEmulator.setDebugEnabled(true);
+    tvmEmulator.setDebugEnabled(false);
 
     SendInternalMessageResult result =
         tvmEmulator.sendInternalMessage(body.toBase64(), Utils.toNano(0.11).longValue());

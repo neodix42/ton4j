@@ -125,6 +125,11 @@ public class TestTxEmulator {
   }
 
   @Test
+  public void testSetDebugEnabled() {
+    assertTrue(txEmulator.setDebugEnabled(false));
+  }
+
+  @Test
   public void testCustomConfig() throws IOException {
 
     String configAllTestnet =
@@ -199,6 +204,7 @@ public class TestTxEmulator {
     assertThat(result.success).isTrue();
     result.getTransaction().printTransactionFees(true, true);
     result.getTransaction().printAllMessages(true);
+    log.info("vm log {}", result.getVm_log());
   }
 
   @Test
@@ -406,13 +412,13 @@ public class TestTxEmulator {
     EmulateTransactionResult result =
         txEmulator.emulateTransaction(shardAccountBocBase64, extMsg.toCell().toBase64());
 
-    //    log.info("result sendExternalMessage[1]: {}", result);
+    //    log.info("result sendExternalMessage[1]: "+ result);
 
     ShardAccount newShardAccount = result.getNewShardAccount();
-    //    log.info("new ShardAccount {}", newShardAccount);
+    //    log.info("new ShardAccount "+ newShardAccount);
 
     TransactionDescription txDesc = result.getTransaction().getDescription();
-    //    log.info("txDesc {}", txDesc);
+    //    log.info("txDesc "+ txDesc);
 
     TransactionDescriptionOrdinary txDescOrd = (TransactionDescriptionOrdinary) txDesc;
 
@@ -422,7 +428,7 @@ public class TestTxEmulator {
     ActionPhase actionPhase = txDescOrd.getActionPhase();
     assertThat(actionPhase.isSuccess()).isTrue();
 
-    //    log.info("txDescOrd {}", txDescOrd);
+    //    log.info("txDescOrd "+ txDescOrd);
     assertThat(txDescOrd.isAborted()).isFalse();
 
     result.getTransaction().printTransactionFees(true, true);
@@ -448,14 +454,14 @@ public class TestTxEmulator {
     extMsg = walletV5.prepareExternalMsg(walletV5Config);
 
     result = txEmulator.emulateTransaction(result.getShard_account(), extMsg.toCell().toBase64());
-    //    log.info("result sendExternalMessage[2], exitCode: {}", result);
+    //    log.info("result sendExternalMessage[2], exitCode: "+ result);
     assertThat(result.success).isTrue();
 
     newShardAccount = result.getNewShardAccount();
-    //    log.info("new ShardAccount {}", newShardAccount);
+    //    log.info("new ShardAccount "+ newShardAccount);
 
     txDesc = result.getTransaction().getDescription();
-    //    log.info("txDesc {}", txDesc);
+    //    log.info("txDesc "+ txDesc);
 
     txDescOrd = (TransactionDescriptionOrdinary) txDesc;
 
@@ -465,7 +471,7 @@ public class TestTxEmulator {
     actionPhase = txDescOrd.getActionPhase();
     assertThat(actionPhase.isSuccess()).isTrue();
 
-    //    log.info("txDescOrd {}", txDescOrd);
+    //    log.info("txDescOrd "+ txDescOrd);
     assertThat(txDescOrd.isAborted()).isFalse();
 
     assertThat(newShardAccount.getAccount().getAccountStorage().getBalance().getCoins())
@@ -536,8 +542,8 @@ public class TestTxEmulator {
         txEmulator.emulateTransaction(
             codeCell, dataCell, Utils.toNano(2), extMsg.toCell().toBase64());
 
-    log.info("result sendExternalMessage[1]: {}", result);
-    //    log.info("txFees: {}", result.getTransaction().getTransactionFees());
+    //    log.info("result sendExternalMessage[1]: "+ result);
+    //    log.info("txFees: "+ result.getTransaction().getTransactionFees());
     result.getTransaction().printTransactionFees(true, true);
   }
 
@@ -659,6 +665,9 @@ public class TestTxEmulator {
     log.info("txDescOrd {}", txDescOrd);
     assertThat(txDescOrd.isAborted()).isFalse();
 
+    result.getTransaction().printTransactionFees(true, true);
+    result.getTransaction().printAllMessages(true);
+
     // second transfer using new shard account
 
     walletV5Config =
@@ -693,8 +702,6 @@ public class TestTxEmulator {
     txDesc = result.getTransaction().getDescription();
     log.info("txDesc {}", txDesc);
 
-    result.getTransaction().printTransactionFees(true, true);
-
     txDescOrd = (TransactionDescriptionOrdinary) txDesc;
 
     computePhase = (ComputePhaseVM) txDescOrd.getComputePhase();
@@ -709,6 +716,9 @@ public class TestTxEmulator {
     assertThat(newShardAccount.getAccount().getAccountStorage().getBalance().getCoins())
         .isLessThan(Utils.toNano(3.2));
     assertThat(newShardAccount.getBalance()).isLessThan(Utils.toNano(3.2)); // same as above
+
+    result.getTransaction().printTransactionFees(true, true);
+    result.getTransaction().printAllMessages(true);
   }
 
   private static Cell getLibs() {

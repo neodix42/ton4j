@@ -77,6 +77,7 @@ public class TestTlbBlockReader {
     List<Transaction> txs = block.getAllTransactions();
     log.info("txs {}", txs);
     block.printAllTransactions();
+    block.printAllMessages();
   }
 
   @Test
@@ -104,6 +105,7 @@ public class TestTlbBlockReader {
     List<Transaction> txs = block.getAllTransactions();
     log.info("txs {}", txs);
     block.printAllTransactions();
+    block.printAllMessages();
   }
 
   @Test // does not work in pytoniq-core
@@ -119,6 +121,7 @@ public class TestTlbBlockReader {
     List<Transaction> txs = block.getAllTransactions();
     log.info("txs {}", txs);
     block.printAllTransactions();
+    block.printAllMessages();
   }
 
   @Test
@@ -137,9 +140,8 @@ public class TestTlbBlockReader {
         block.getExtra().getShardAccountBlocks().elements.size(),
         block);
 
-    List<Transaction> txs = block.getAllTransactions();
-    log.info("txs {}", txs);
     block.printAllTransactions();
+    block.printAllMessages();
   }
 
   @Test
@@ -157,8 +159,7 @@ public class TestTlbBlockReader {
         block.getExtra().getOutMsgDesc().getCount(),
         block.getExtra().getShardAccountBlocks().elements.size(),
         block);
-    List<Transaction> txs = block.getAllTransactions();
-    log.info("txs {}", txs);
+
     block.printAllTransactions();
     block.printAllMessages();
   }

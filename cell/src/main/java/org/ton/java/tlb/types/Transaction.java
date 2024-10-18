@@ -63,7 +63,10 @@ public class Transaction {
 
   private String getAccountAddr() {
     if (nonNull(accountAddr)) {
-      return StringUtils.leftPad(accountAddr.toString(16), 64, "0");
+      String str64 = StringUtils.leftPad(accountAddr.toString(16), 64, "0");
+      return str64.substring(0, 5)
+          + "..."
+          + str64.substring(str64.length() - 6, str64.length() - 1);
     } else {
       return "N/A";
     }
@@ -361,12 +364,13 @@ public class Transaction {
 
   public void printTransactionFees(boolean withHeader, boolean withFooter) {
     TransactionFees txFees = getTransactionFees();
+
     if (withHeader) {
       printTxHeader();
     }
     String str =
         String.format(
-            "| %-9s| %-13s| %-15s| %-15s| %-13s| %-13s| %-14s| %-11s| %-8s| %-14s| %-9s| %-11s| %-64s |",
+            "| %-9s| %-13s| %-15s| %-15s| %-13s| %-13s| %-14s| %-11s| %-8s| %-14s| %-9s| %-11s| %-13s |",
             txFees.getOp(),
             txFees.getType(),
             Utils.formatNanoValueZero(txFees.getValueIn()),
@@ -407,7 +411,7 @@ public class Transaction {
         MessageFees msgFee =
             MessageFees.builder()
                 .direction("in")
-                .type(inMsg.getInfo().getClass().getSimpleName())
+                .type(formatMsgType(inMsg.getInfo().getClass().getSimpleName()))
                 .op(
                     (isNull(op))
                         ? "N/A"
@@ -419,6 +423,8 @@ public class Transaction {
                 .ihrFee(msgInfo.getIHRFee())
                 .createdLt(msgInfo.getCreatedLt())
                 .createdAt(BigInteger.valueOf(msgInfo.getCreatedAt()))
+                .src(msgInfo.getSrcAddr().toAddress().toRaw())
+                .dst(msgInfo.getDstAddr().toAddress().toRaw())
                 .build();
         messageFees.add(msgFee);
       }
@@ -427,7 +433,7 @@ public class Transaction {
         MessageFees msgFee =
             MessageFees.builder()
                 .direction("in")
-                .type(inMsg.getInfo().getClass().getSimpleName())
+                .type(formatMsgType(inMsg.getInfo().getClass().getSimpleName()))
                 .op(
                     (isNull(op))
                         ? "N/A"
@@ -436,6 +442,8 @@ public class Transaction {
                             : "no body")
                 .createdLt(msgInfo.getCreatedLt())
                 .createdAt(BigInteger.valueOf(msgInfo.getCreatedAt()))
+                .src(msgInfo.getSrcAddr().toAddress().toRaw())
+                .dst(msgInfo.getDstAddr().toString())
                 .build();
         messageFees.add(msgFee);
       }
@@ -444,7 +452,7 @@ public class Transaction {
         MessageFees msgFee =
             MessageFees.builder()
                 .direction("in")
-                .type(inMsg.getInfo().getClass().getSimpleName())
+                .type(formatMsgType(inMsg.getInfo().getClass().getSimpleName()))
                 .op(
                     (isNull(op))
                         ? "N/A"
@@ -452,6 +460,8 @@ public class Transaction {
                             ? op.toString(16)
                             : "no body")
                 .importFee(msgInfo.getImportFee())
+                .src(msgInfo.getSrcAddr().toString())
+                .dst(msgInfo.getDstAddr().toString())
                 .build();
         messageFees.add(msgFee);
       }
@@ -473,7 +483,7 @@ public class Transaction {
         MessageFees msgFee =
             MessageFees.builder()
                 .direction("out")
-                .type(outMsg.getInfo().getClass().getSimpleName())
+                .type(formatMsgType(outMsg.getInfo().getClass().getSimpleName()))
                 .op(
                     (isNull(op))
                         ? "N/A"
@@ -485,6 +495,8 @@ public class Transaction {
                 .ihrFee(intMsgInfo.getIHRFee())
                 .createdLt(intMsgInfo.getCreatedLt())
                 .createdAt(BigInteger.valueOf(intMsgInfo.getCreatedAt()))
+                .src(intMsgInfo.getSrcAddr().toAddress().toRaw())
+                .dst(intMsgInfo.getDstAddr().toAddress().toRaw())
                 .build();
         messageFees.add(msgFee);
       }
@@ -494,7 +506,7 @@ public class Transaction {
         MessageFees msgFee =
             MessageFees.builder()
                 .direction("out")
-                .type(outMsg.getInfo().getClass().getSimpleName())
+                .type(formatMsgType(outMsg.getInfo().getClass().getSimpleName()))
                 .op(
                     (isNull(op))
                         ? "N/A"
@@ -503,6 +515,8 @@ public class Transaction {
                             : "no body")
                 .createdLt(outMsgInfo.getCreatedLt())
                 .createdAt(BigInteger.valueOf(outMsgInfo.getCreatedAt()))
+                .src(outMsgInfo.getSrcAddr().toAddress().toRaw())
+                .dst(outMsgInfo.getDstAddr().toString())
                 .build();
         messageFees.add(msgFee);
       }
@@ -512,7 +526,7 @@ public class Transaction {
         MessageFees msgFee =
             MessageFees.builder()
                 .direction("out")
-                .type(outMsg.getInfo().getClass().getSimpleName())
+                .type(formatMsgType(outMsg.getInfo().getClass().getSimpleName()))
                 .op(
                     (isNull(op))
                         ? "N/A"
@@ -520,6 +534,8 @@ public class Transaction {
                             ? op.toString(16)
                             : "no body")
                 .importFee(outMsgInfo.getImportFee())
+                .src(outMsgInfo.getSrcAddr().toString())
+                .dst(outMsgInfo.getDstAddr().toString())
                 .build();
         messageFees.add(msgFee);
       }
@@ -530,6 +546,10 @@ public class Transaction {
 
   public void printAllMessages(boolean withHeader) {
     List<MessageFees> msgFees = getAllMessageFees();
+    if (msgFees.isEmpty()) {
+      System.out.println("No messages");
+      return;
+    }
 
     if (withHeader) {
       MessageFees.printMessageFeesHeader();
@@ -544,15 +564,25 @@ public class Transaction {
   public static void printTxHeader() {
     System.out.println("Transactions");
     System.out.println(
-        "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+        "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
     System.out.println(
-        "| op       | type         | valueIn        | valueOut       | totalFees    | inForwardFee | outForwardFee | outActions | outMsgs | computeFee    | exitCode | actionCode | account                                                          |");
+        "| op       | type         | valueIn        | valueOut       | totalFees    | inForwardFee | outForwardFee | outActions | outMsgs | computeFee    | exitCode | actionCode | account       |");
     System.out.println(
-        "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+        "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
   }
 
   public static void printTxFooter() {
     System.out.println(
-        "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+        "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+  }
+
+  private String formatMsgType(String fullMsgType) {
+    if (fullMsgType.equals("InternalMessageInfo")) {
+      return "internal-in";
+    } else if (fullMsgType.equals("ExternalMessageOutInfo")) {
+      return "external-out";
+    } else {
+      return "external-in";
+    }
   }
 }
