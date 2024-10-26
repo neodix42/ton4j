@@ -9,7 +9,6 @@
         <version>0.7.1</version>
     </parent>
 
-    <groupId>org.ton.java</groupId>
     <artifactId>devenv</artifactId>
     <packaging>maven-archetype</packaging>
 
