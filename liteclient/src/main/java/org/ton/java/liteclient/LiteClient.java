@@ -68,7 +68,7 @@ public class LiteClient {
         if (StringUtils.isEmpty(super.pathToLiteClientBinary)) {
           log.info("checking if lite-client is installed...");
           String errorMsg =
-              "Make sure you have fift installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.fiftExecutablePath().";
+              "Make sure you have lite-client installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via LiteClientBuilder.pathToLiteClientBinary().";
           try {
             ProcessBuilder pb = new ProcessBuilder("lite-client", "-h").redirectErrorStream(true);
             Process p = pb.start();
