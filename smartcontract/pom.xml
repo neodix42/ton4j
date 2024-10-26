@@ -125,5 +125,10 @@
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.h6x0r</groupId>
+            <artifactId>tonapi4j</artifactId>
+            <version>1.0.4</version>
+        </dependency>
     </dependencies>
 </project>
