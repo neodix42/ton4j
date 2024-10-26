@@ -1,9 +1,15 @@
 package org.ton.java.smartcontract.token.ft;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
@@ -19,16 +25,9 @@ import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.tonlib.types.TvmStackEntrySlice;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
-import java.util.ArrayDeque;
-import java.util.Deque;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-
 @Builder
 @Getter
-@Log
+@Slf4j
 public class JettonMinter implements Contract {
     TweetNaclFast.Signature.KeyPair keyPair;
     Address adminAddress;

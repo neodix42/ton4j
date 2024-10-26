@@ -1,21 +1,27 @@
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.iwebpp.crypto.TweetNaclFast;
-import java.util.Collections;
+import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.emulator.EmulateTransactionResult;
+import org.ton.java.emulator.tvm.TvmEmulator;
+import org.ton.java.emulator.tvm.TvmVerbosityLevel;
 import org.ton.java.emulator.tx.TxEmulator;
 import org.ton.java.emulator.tx.TxEmulatorConfig;
 import org.ton.java.emulator.tx.TxVerbosityLevel;
 import org.ton.java.smartcontract.*;
+import org.ton.java.smartcontract.GenericSmartContract;
 import org.ton.java.smartcontract.SmartContractCompiler;
-import org.ton.java.smartcontract.types.Destination;
-import org.ton.java.smartcontract.types.WalletV5Config;
-import org.ton.java.smartcontract.wallet.v5.WalletV5;
+import org.ton.java.smartcontract.faucet.TestnetFaucet;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.ShardAccount;
 import org.ton.java.tlb.types.StateInit;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.BlockIdExt;
@@ -25,12 +31,154 @@ import org.ton.java.utils.Utils;
 @RunWith(JUnit4.class)
 public class DevEnvTest {
 
+  Cell codeCell;
+  Cell dataCell;
+  StateInit stateInit;
+
+  TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+  Address dummyAddress = Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G");
+
   @Test
-  public void testCompileContract() {
+  public void testCompileSmartContract() {
     SmartContractCompiler smcFunc =
             SmartContractCompiler.builder().contractAsResource("/simple.fc").build();
-    Cell codeCell = smcFunc.compileToCell();
-    log.info("codeCell {}", codeCell.print());
+
+    assertThat(smcFunc.compile()).isNotNull();
+  }
+
+  @Test
+  public void testSendExternalMessageInEmulator() {
+
+    compile();
+
+    TxEmulator txEmulator =
+            TxEmulator.builder()
+                    .configType(TxEmulatorConfig.TESTNET)
+                    .verbosityLevel(TxVerbosityLevel.UNLIMITED)
+                    .build();
+
+    txEmulator.setDebugEnabled(true);
+
+    double initialBalanceInToncoins = 0.1;
+
+    Cell bodyCell =
+            CellBuilder.beginCell()
+                    .storeUint(0, 32) // seqno
+                    .endCell();
+
+    Message extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
+
+    EmulateTransactionResult result =
+            txEmulator.emulateTransaction(
+                    codeCell, dataCell, Utils.toNano(initialBalanceInToncoins), extMsg.toCell().toBase64());
+
+    ShardAccount newShardAccount = result.getNewShardAccount();
+    log.info("result sendExternalMessage[1]: {}", result);
+    result.getTransaction().printTransactionFees(true, true);
+    result.getTransaction().printAllMessages(true);
+    log.info("end balance after #1 tx: {}", Utils.formatNanoValue(newShardAccount.getBalance().toString()));
+
+    bodyCell =
+            CellBuilder.beginCell()
+                    .storeUint(1, 32) // increased seqno
+                    .endCell();
+
+    extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
+
+    result = txEmulator.emulateTransaction(newShardAccount.toCell().toBase64(), extMsg.toCell().toBase64());
+    result.getTransaction().printTransactionFees(true, true);
+    result.getTransaction().printAllMessages(true);
+    log.info("end balance after #2 tx: {}", Utils.formatNanoValue(result.getNewShardAccount().getBalance().toString()));
+
+    TvmEmulator tvmEmulator =
+            TvmEmulator.builder()
+                    .codeBoc(codeCell.toBase64())
+                    .dataBoc(result.getNewStateInit().getData().toBase64())
+                    .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
+                    .build();
+
+    log.info("updated seqno {}",tvmEmulator.runGetSeqNo());
+    assertThat(tvmEmulator.runGetSeqNo()).isEqualTo(2);
+  }
+
+  @Test
+  public void testNewContractInEmulatorSendInternalMessage() {
+
+    compile();
+
+    TxEmulator txEmulator =
+            TxEmulator.builder()
+                    .configType(TxEmulatorConfig.TESTNET)
+                    .verbosityLevel(TxVerbosityLevel.UNLIMITED)
+                    .build();
+
+    txEmulator.setDebugEnabled(true);
+
+    double initialBalanceInToncoins = 1;
+
+    Cell bodyCell =
+            CellBuilder.beginCell()
+                    .storeUint(3, 32) // seqno
+                    .endCell();
+
+    Message internalMessageMsg =
+            MsgUtils.createInternalMessageWithSourceAddress(dummyAddress, stateInit.getAddress(), Utils.toNano(0.1), null, bodyCell, false);
+
+    EmulateTransactionResult result =
+            txEmulator.emulateTransaction(
+                    codeCell,
+                    dataCell,
+                    Utils.toNano(initialBalanceInToncoins),
+                    internalMessageMsg.toCell().toBase64());
+
+    log.info("result {}", result);
+
+    result.getTransaction().printTransactionFees(true, true);
+    result.getTransaction().printAllMessages(true);
+
+    assertThat(result.isSuccess()).isTrue();
+
+
+    TvmEmulator tvmEmulator =
+            TvmEmulator.builder()
+                    .codeBoc(codeCell.toBase64())
+                    .dataBoc(result.getNewStateInit().getData().toBase64())
+                    .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
+                    .build();
+
+    log.info("updated seqno {}",tvmEmulator.runGetSeqNo());
+    assertThat(tvmEmulator.runGetSeqNo()).isEqualTo(3);
+  }
+
+  @Test
+  public void testDeployContractInTestnet() throws InterruptedException {
+
+    compile();
+
+    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+
+    GenericSmartContract smc =
+            GenericSmartContract.builder()
+                    .tonlib(tonlib)
+                    .keyPair(keyPair)
+                    .code(codeCell.toHex())
+                    .data(dataCell.toHex())
+                    .build();
+
+    double initialBalanceInToncoins = 0.1;
+
+    BigInteger balance =
+            TestnetFaucet.topUpContract(
+                    tonlib, Address.of(smc.getAddress().toNonBounceableTestnet()), Utils.toNano(initialBalanceInToncoins));
+    log.info("new wallet balance {}", Utils.formatNanoValue(balance));
+
+    Cell deployMessageBody =
+            CellBuilder.beginCell()
+                    .storeUint(0, 32) // seqno
+                    .endCell();
+
+    assertThat(smc.deployWithoutSignature(deployMessageBody)).isNotNull();
+    smc.waitForDeployment(20);
   }
 
   @Test
@@ -40,71 +188,30 @@ public class DevEnvTest {
     log.info("block {}", block);
   }
 
-  @Test
-  public void testTxEmulatorWalletV5ExternalMsgSimplified() {
-
-    TxEmulator txEmulator =
-            TxEmulator.builder()
-                    .configType(TxEmulatorConfig.TESTNET)
-                    .verbosityLevel(TxVerbosityLevel.UNLIMITED)
-                    .build();
-
+  private void compile() {
     SmartContractCompiler smcFunc =
-            SmartContractCompiler.builder().contractAsResource("/new-wallet-v5.fc").build();
+            SmartContractCompiler.builder().contractAsResource("/simple.fc").build();
 
-    Cell codeCell = smcFunc.compileToCell();
+    codeCell = smcFunc.compileToCell();
 
-    byte[] publicKey =
-            Utils.hexToSignedBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");
-    byte[] secretKey =
-            Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
-    TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+    dataCell =
+            CellBuilder.beginCell()
+                    .storeUint(0, 32) // seqno
+                    .endCell();
 
-    WalletV5 walletV5 =
-            WalletV5.builder()
-                    .keyPair(keyPair)
-                    .isSigAuthAllowed(false)
-                    .initialSeqno(0)
-                    .walletId(42)
-                    .build();
+    GenericSmartContract smc =
+            GenericSmartContract.builder().keyPair(keyPair).code(codeCell.toHex()).data(dataCell.toHex()).build();
 
-    Cell dataCell = walletV5.createDataCell();
+    String nonBounceableAddress = smc.getAddress().toNonBounceable();
+    String bounceableAddress = smc.getAddress().toBounceable();
+    String rawAddress = smc.getAddress().toRaw();
 
-    log.info("codeCellHex {}", codeCell.toHex());
-    log.info("dataCellHex {}", dataCell.toHex());
+    log.info("non-bounceable address: {}", nonBounceableAddress);
+    log.info("    bounceable address: {}", bounceableAddress);
+    log.info("    raw address: {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(smc.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(smc.getKeyPair().getSecretKey()));
 
-    StateInit walletV5StateInit = StateInit.builder().code(codeCell).data(dataCell).build();
-
-    Address address = walletV5StateInit.getAddress();
-    log.info("addressRaw {}", address.toRaw());
-    log.info("addressBounceable {}", address.toBounceable());
-
-    String rawDummyDestinationAddress =
-            "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d";
-
-    WalletV5Config walletV5Config =
-            WalletV5Config.builder()
-                    .seqno(0)
-                    .walletId(42)
-                    .body(
-                            walletV5
-                                    .createBulkTransfer(
-                                            Collections.singletonList(
-                                                    Destination.builder()
-                                                            .bounce(false)
-                                                            .address(rawDummyDestinationAddress)
-                                                            .amount(Utils.toNano(1))
-                                                            .build()))
-                                    .toCell())
-                    .build();
-
-    Message extMsg = walletV5.prepareExternalMsg(walletV5Config);
-
-    EmulateTransactionResult result =
-            txEmulator.emulateTransaction(
-                    codeCell, dataCell, Utils.toNano(2), extMsg.toCell().toBase64());
-
-    log.info("result sendExternalMessage[1]: {}", result);
-    result.getTransaction().printTransactionFees(true);
+    stateInit = StateInit.builder().code(codeCell).data(dataCell).build();
   }
 }

@@ -61,7 +61,7 @@ public class Transaction {
     return Long.toBinaryString(magic);
   }
 
-  private String getAccountAddr() {
+  private String getAccountAddrShort() {
     if (nonNull(accountAddr)) {
       String str64 = StringUtils.leftPad(accountAddr.toString(16), 64, "0");
       return str64.substring(0, 5)
@@ -191,7 +191,8 @@ public class Transaction {
   public TransactionFees getTransactionFees() {
     Transaction tx = this;
 
-    BigInteger totalFees = tx.getTotalFees().getCoins();
+    BigInteger totalFees =
+        nonNull(tx.getTotalFees()) ? tx.getTotalFees().getCoins() : BigInteger.ZERO;
     BigInteger totalForwardFees = getForwardFees(tx.getDescription());
     BigInteger computeFees = getComputeFees(tx.getDescription());
 
@@ -206,26 +207,28 @@ public class Transaction {
     BigInteger lt = tx.getLt();
     long outMsgs = tx.getOutMsgCount();
 
-    Message inMsg = tx.getInOut().getIn();
-    if (nonNull(inMsg)) {
-      Cell body = inMsg.getBody();
+    if (nonNull(tx.getInOut())) {
+      Message inMsg = tx.getInOut().getIn();
+      if (nonNull(inMsg)) {
+        Cell body = inMsg.getBody();
 
-      if (nonNull(body) && body.getBits().getUsedBits() >= 32) {
-        op = CellSlice.beginParse(body).preloadInt(32);
-      } else {
-        op = BigInteger.ONE.negate();
+        if (nonNull(body) && body.getBits().getUsedBits() >= 32) {
+          op = CellSlice.beginParse(body).preloadInt(32);
+        } else {
+          op = BigInteger.ONE.negate();
+        }
+
+        if (inMsg.getInfo() instanceof InternalMessageInfo) {
+          valueIn = ((InternalMessageInfo) inMsg.getInfo()).getValue().getCoins();
+          inForwardFees = ((InternalMessageInfo) inMsg.getInfo()).getFwdFee();
+        }
       }
 
-      if (inMsg.getInfo() instanceof InternalMessageInfo) {
-        valueIn = ((InternalMessageInfo) inMsg.getInfo()).getValue().getCoins();
-        inForwardFees = ((InternalMessageInfo) inMsg.getInfo()).getFwdFee();
-      }
-    }
-
-    for (Message outMsg : tx.getInOut().getOutMessages()) {
-      if (outMsg.getInfo() instanceof InternalMessageInfo) {
-        InternalMessageInfo intMsgInfo = (InternalMessageInfo) outMsg.getInfo();
-        valueOut = valueOut.add(intMsgInfo.getValue().getCoins());
+      for (Message outMsg : tx.getInOut().getOutMessages()) {
+        if (outMsg.getInfo() instanceof InternalMessageInfo) {
+          InternalMessageInfo intMsgInfo = (InternalMessageInfo) outMsg.getInfo();
+          valueOut = valueOut.add(intMsgInfo.getValue().getCoins());
+        }
       }
     }
 
@@ -234,7 +237,10 @@ public class Transaction {
             (isNull(op))
                 ? "N/A"
                 : (op.compareTo(BigInteger.ONE.negate()) != 0) ? op.toString(16) : "no body")
-        .type(tx.getDescription().getClass().getSimpleName().substring(22))
+        .type(
+            nonNull(tx.getDescription())
+                ? tx.getDescription().getClass().getSimpleName().substring(22)
+                : "")
         .valueIn(valueIn)
         .valueOut(valueOut)
         .totalFees(totalFees)
@@ -246,7 +252,7 @@ public class Transaction {
         .totalActions(totalActions)
         .now(now)
         .lt(lt)
-        .account(tx.getAccountAddr())
+        .account(nonNull(tx.getAccountAddr()) ? tx.getAccountAddrShort() : "")
         .build();
   }
 
@@ -396,151 +402,153 @@ public class Transaction {
 
     BigInteger op;
 
-    Message inMsg = tx.getInOut().getIn();
-    if (nonNull(inMsg)) {
-      Cell body = inMsg.getBody();
+    if (nonNull(tx.getInOut())) {
 
-      if (nonNull(body) && body.getBits().getUsedBits() >= 32) {
-        op = CellSlice.beginParse(body).preloadInt(32);
-      } else {
-        op = BigInteger.ONE.negate();
+      Message inMsg = tx.getInOut().getIn();
+      if (nonNull(inMsg)) {
+        Cell body = inMsg.getBody();
+
+        if (nonNull(body) && body.getBits().getUsedBits() >= 32) {
+          op = CellSlice.beginParse(body).preloadInt(32);
+        } else {
+          op = BigInteger.ONE.negate();
+        }
+
+        if (inMsg.getInfo() instanceof InternalMessageInfo) {
+          InternalMessageInfo msgInfo = ((InternalMessageInfo) inMsg.getInfo());
+          MessageFees msgFee =
+              MessageFees.builder()
+                  .direction("in")
+                  .type(formatMsgType(inMsg.getInfo().getClass().getSimpleName()))
+                  .op(
+                      (isNull(op))
+                          ? "N/A"
+                          : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                              ? op.toString(16)
+                              : "no body")
+                  .value(msgInfo.getValue().getCoins())
+                  .fwdFee(msgInfo.getFwdFee())
+                  .ihrFee(msgInfo.getIHRFee())
+                  .createdLt(msgInfo.getCreatedLt())
+                  .createdAt(BigInteger.valueOf(msgInfo.getCreatedAt()))
+                  .src(msgInfo.getSrcAddr().toAddress().toRaw())
+                  .dst(msgInfo.getDstAddr().toAddress().toRaw())
+                  .build();
+          messageFees.add(msgFee);
+        }
+        if (inMsg.getInfo() instanceof ExternalMessageOutInfo) {
+          ExternalMessageOutInfo msgInfo = ((ExternalMessageOutInfo) inMsg.getInfo());
+          MessageFees msgFee =
+              MessageFees.builder()
+                  .direction("in")
+                  .type(formatMsgType(inMsg.getInfo().getClass().getSimpleName()))
+                  .op(
+                      (isNull(op))
+                          ? "N/A"
+                          : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                              ? op.toString(16)
+                              : "no body")
+                  .createdLt(msgInfo.getCreatedLt())
+                  .createdAt(BigInteger.valueOf(msgInfo.getCreatedAt()))
+                  .src(msgInfo.getSrcAddr().toAddress().toRaw())
+                  .dst(msgInfo.getDstAddr().toString())
+                  .build();
+          messageFees.add(msgFee);
+        }
+        if (inMsg.getInfo() instanceof ExternalMessageInInfo) {
+          ExternalMessageInInfo msgInfo = ((ExternalMessageInInfo) inMsg.getInfo());
+          MessageFees msgFee =
+              MessageFees.builder()
+                  .direction("in")
+                  .type(formatMsgType(inMsg.getInfo().getClass().getSimpleName()))
+                  .op(
+                      (isNull(op))
+                          ? "N/A"
+                          : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                              ? op.toString(16)
+                              : "no body")
+                  .importFee(msgInfo.getImportFee())
+                  .src(msgInfo.getSrcAddr().toString())
+                  .dst(msgInfo.getDstAddr().toString())
+                  .build();
+          messageFees.add(msgFee);
+        }
       }
 
-      if (inMsg.getInfo() instanceof InternalMessageInfo) {
-        InternalMessageInfo msgInfo = ((InternalMessageInfo) inMsg.getInfo());
-        MessageFees msgFee =
-            MessageFees.builder()
-                .direction("in")
-                .type(formatMsgType(inMsg.getInfo().getClass().getSimpleName()))
-                .op(
-                    (isNull(op))
-                        ? "N/A"
-                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
-                            ? op.toString(16)
-                            : "no body")
-                .value(msgInfo.getValue().getCoins())
-                .fwdFee(msgInfo.getFwdFee())
-                .ihrFee(msgInfo.getIHRFee())
-                .createdLt(msgInfo.getCreatedLt())
-                .createdAt(BigInteger.valueOf(msgInfo.getCreatedAt()))
-                .src(msgInfo.getSrcAddr().toAddress().toRaw())
-                .dst(msgInfo.getDstAddr().toAddress().toRaw())
-                .build();
-        messageFees.add(msgFee);
-      }
-      if (inMsg.getInfo() instanceof ExternalMessageOutInfo) {
-        ExternalMessageOutInfo msgInfo = ((ExternalMessageOutInfo) inMsg.getInfo());
-        MessageFees msgFee =
-            MessageFees.builder()
-                .direction("in")
-                .type(formatMsgType(inMsg.getInfo().getClass().getSimpleName()))
-                .op(
-                    (isNull(op))
-                        ? "N/A"
-                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
-                            ? op.toString(16)
-                            : "no body")
-                .createdLt(msgInfo.getCreatedLt())
-                .createdAt(BigInteger.valueOf(msgInfo.getCreatedAt()))
-                .src(msgInfo.getSrcAddr().toAddress().toRaw())
-                .dst(msgInfo.getDstAddr().toString())
-                .build();
-        messageFees.add(msgFee);
-      }
-      if (inMsg.getInfo() instanceof ExternalMessageInInfo) {
-        ExternalMessageInInfo msgInfo = ((ExternalMessageInInfo) inMsg.getInfo());
-        MessageFees msgFee =
-            MessageFees.builder()
-                .direction("in")
-                .type(formatMsgType(inMsg.getInfo().getClass().getSimpleName()))
-                .op(
-                    (isNull(op))
-                        ? "N/A"
-                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
-                            ? op.toString(16)
-                            : "no body")
-                .importFee(msgInfo.getImportFee())
-                .src(msgInfo.getSrcAddr().toString())
-                .dst(msgInfo.getDstAddr().toString())
-                .build();
-        messageFees.add(msgFee);
+      for (Message outMsg : tx.getInOut().getOutMessages()) {
+
+        Cell body = outMsg.getBody();
+
+        if (nonNull(body) && body.getBits().getUsedBits() >= 32) {
+          op = CellSlice.beginParse(body).preloadInt(32);
+        } else {
+          op = BigInteger.ONE.negate();
+        }
+
+        if (outMsg.getInfo() instanceof InternalMessageInfo) {
+          InternalMessageInfo intMsgInfo = (InternalMessageInfo) outMsg.getInfo();
+
+          MessageFees msgFee =
+              MessageFees.builder()
+                  .direction("out")
+                  .type(formatMsgType(outMsg.getInfo().getClass().getSimpleName()))
+                  .op(
+                      (isNull(op))
+                          ? "N/A"
+                          : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                              ? op.toString(16)
+                              : "no body")
+                  .value(intMsgInfo.getValue().getCoins())
+                  .fwdFee(intMsgInfo.getFwdFee())
+                  .ihrFee(intMsgInfo.getIHRFee())
+                  .createdLt(intMsgInfo.getCreatedLt())
+                  .createdAt(BigInteger.valueOf(intMsgInfo.getCreatedAt()))
+                  .src(intMsgInfo.getSrcAddr().toAddress().toRaw())
+                  .dst(intMsgInfo.getDstAddr().toAddress().toRaw())
+                  .build();
+          messageFees.add(msgFee);
+        }
+        if (outMsg.getInfo() instanceof ExternalMessageOutInfo) {
+          ExternalMessageOutInfo outMsgInfo = (ExternalMessageOutInfo) outMsg.getInfo();
+
+          MessageFees msgFee =
+              MessageFees.builder()
+                  .direction("out")
+                  .type(formatMsgType(outMsg.getInfo().getClass().getSimpleName()))
+                  .op(
+                      (isNull(op))
+                          ? "N/A"
+                          : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                              ? op.toString(16)
+                              : "no body")
+                  .createdLt(outMsgInfo.getCreatedLt())
+                  .createdAt(BigInteger.valueOf(outMsgInfo.getCreatedAt()))
+                  .src(outMsgInfo.getSrcAddr().toAddress().toRaw())
+                  .dst(outMsgInfo.getDstAddr().toString())
+                  .build();
+          messageFees.add(msgFee);
+        }
+        if (outMsg.getInfo() instanceof ExternalMessageInInfo) {
+          ExternalMessageInInfo outMsgInfo = (ExternalMessageInInfo) outMsg.getInfo();
+
+          MessageFees msgFee =
+              MessageFees.builder()
+                  .direction("out")
+                  .type(formatMsgType(outMsg.getInfo().getClass().getSimpleName()))
+                  .op(
+                      (isNull(op))
+                          ? "N/A"
+                          : (op.compareTo(BigInteger.ONE.negate()) != 0)
+                              ? op.toString(16)
+                              : "no body")
+                  .importFee(outMsgInfo.getImportFee())
+                  .src(outMsgInfo.getSrcAddr().toString())
+                  .dst(outMsgInfo.getDstAddr().toString())
+                  .build();
+          messageFees.add(msgFee);
+        }
       }
     }
-
-    for (Message outMsg : tx.getInOut().getOutMessages()) {
-
-      Cell body = outMsg.getBody();
-
-      if (nonNull(body) && body.getBits().getUsedBits() >= 32) {
-        op = CellSlice.beginParse(body).preloadInt(32);
-      } else {
-        op = BigInteger.ONE.negate();
-      }
-
-      if (outMsg.getInfo() instanceof InternalMessageInfo) {
-        InternalMessageInfo intMsgInfo = (InternalMessageInfo) outMsg.getInfo();
-
-        MessageFees msgFee =
-            MessageFees.builder()
-                .direction("out")
-                .type(formatMsgType(outMsg.getInfo().getClass().getSimpleName()))
-                .op(
-                    (isNull(op))
-                        ? "N/A"
-                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
-                            ? op.toString(16)
-                            : "no body")
-                .value(intMsgInfo.getValue().getCoins())
-                .fwdFee(intMsgInfo.getFwdFee())
-                .ihrFee(intMsgInfo.getIHRFee())
-                .createdLt(intMsgInfo.getCreatedLt())
-                .createdAt(BigInteger.valueOf(intMsgInfo.getCreatedAt()))
-                .src(intMsgInfo.getSrcAddr().toAddress().toRaw())
-                .dst(intMsgInfo.getDstAddr().toAddress().toRaw())
-                .build();
-        messageFees.add(msgFee);
-      }
-      if (outMsg.getInfo() instanceof ExternalMessageOutInfo) {
-        ExternalMessageOutInfo outMsgInfo = (ExternalMessageOutInfo) outMsg.getInfo();
-
-        MessageFees msgFee =
-            MessageFees.builder()
-                .direction("out")
-                .type(formatMsgType(outMsg.getInfo().getClass().getSimpleName()))
-                .op(
-                    (isNull(op))
-                        ? "N/A"
-                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
-                            ? op.toString(16)
-                            : "no body")
-                .createdLt(outMsgInfo.getCreatedLt())
-                .createdAt(BigInteger.valueOf(outMsgInfo.getCreatedAt()))
-                .src(outMsgInfo.getSrcAddr().toAddress().toRaw())
-                .dst(outMsgInfo.getDstAddr().toString())
-                .build();
-        messageFees.add(msgFee);
-      }
-      if (outMsg.getInfo() instanceof ExternalMessageInInfo) {
-        ExternalMessageInInfo outMsgInfo = (ExternalMessageInInfo) outMsg.getInfo();
-
-        MessageFees msgFee =
-            MessageFees.builder()
-                .direction("out")
-                .type(formatMsgType(outMsg.getInfo().getClass().getSimpleName()))
-                .op(
-                    (isNull(op))
-                        ? "N/A"
-                        : (op.compareTo(BigInteger.ONE.negate()) != 0)
-                            ? op.toString(16)
-                            : "no body")
-                .importFee(outMsgInfo.getImportFee())
-                .src(outMsgInfo.getSrcAddr().toString())
-                .dst(outMsgInfo.getDstAddr().toString())
-                .build();
-        messageFees.add(msgFee);
-      }
-    }
-
     return messageFees;
   }
 

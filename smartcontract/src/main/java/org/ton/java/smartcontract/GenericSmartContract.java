@@ -71,6 +71,17 @@ public class GenericSmartContract implements Contract {
   }
 
   /**
+   * Deploy with body without signing it.
+   *
+   * @param deployMessageBody usually stands for internal message
+   * @return ExtMessageInfo
+   */
+  public ExtMessageInfo deployWithoutSignature(Cell deployMessageBody) {
+    return tonlib.sendRawMessage(
+        prepareDeployMsgWithoutSignature(deployMessageBody).toCell().toBase64());
+  }
+
+  /**
    * Deploy without body
    *
    * @return ExtMessageInfo
@@ -98,6 +109,15 @@ public class GenericSmartContract implements Contract {
                         keyPair.getPublicKey(), keyPair.getSecretKey(), deployMessageBody.hash()))
                 .storeCell(deployMessageBody)
                 .endCell())
+        .build();
+  }
+
+  public Message prepareDeployMsgWithoutSignature(Cell deployMessageBody) {
+
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(deployMessageBody)
         .build();
   }
 }

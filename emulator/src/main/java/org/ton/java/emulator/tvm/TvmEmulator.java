@@ -9,7 +9,7 @@ import com.sun.jna.Native;
 import java.math.BigInteger;
 import java.util.Collections;
 import lombok.Builder;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.types.VmStack;
 import org.ton.java.tlb.types.VmStackList;
@@ -17,7 +17,7 @@ import org.ton.java.tlb.types.VmStackValueInt;
 import org.ton.java.tlb.types.VmStackValueTinyInt;
 import org.ton.java.utils.Utils;
 
-@Log
+@Slf4j
 @Builder
 public class TvmEmulator {
 
@@ -173,6 +173,21 @@ public class TvmEmulator {
         tvmEmulatorI.tvm_emulator_run_get_method(
             tvmEmulator,
             methodId,
+            VmStack.builder()
+                .depth(0)
+                .stack(VmStackList.builder().tos(Collections.emptyList()).build())
+                .build()
+                .toCell()
+                .toBase64());
+    Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
+    return gson.fromJson(result, GetMethodResult.class);
+  }
+
+  public GetMethodResult runGetMethod(String methodName) {
+    String result =
+        tvmEmulatorI.tvm_emulator_run_get_method(
+            tvmEmulator,
+            Utils.calculateMethodId(methodName),
             VmStack.builder()
                 .depth(0)
                 .stack(VmStackList.builder().tos(Collections.emptyList()).build())

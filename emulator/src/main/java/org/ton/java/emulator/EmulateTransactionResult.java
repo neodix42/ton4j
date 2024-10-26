@@ -43,4 +43,21 @@ public class EmulateTransactionResult implements Serializable {
       return OutList.builder().build();
     }
   }
+
+  public StateInit getNewStateInit() {
+    ShardAccount shardAccount;
+    if (StringUtils.isNotEmpty(shard_account)) {
+      shardAccount =
+          ShardAccount.deserialize(CellSlice.beginParse(Cell.fromBocBase64(shard_account)));
+    } else {
+      shardAccount = ShardAccount.builder().build();
+    }
+
+    AccountState accountState = shardAccount.getAccount().getAccountStorage().getAccountState();
+    if (accountState instanceof AccountStateActive) {
+      return ((AccountStateActive) accountState).getStateInit();
+    }
+
+    return StateInit.builder().build();
+  }
 }

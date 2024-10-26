@@ -5,13 +5,13 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.utils.Utils;
 
-@Log
+@Slf4j
 public class Executor {
 
   public static Pair<Process, String> execute(
@@ -22,7 +22,7 @@ public class Executor {
     withBinaryCommand = ArrayUtils.addAll(withBinaryCommand, command);
 
     try {
-      log.info("execute: " + String.join(" ", withBinaryCommand));
+      log.info("execute: {}", String.join(" ", withBinaryCommand));
 
       final ProcessBuilder pb = new ProcessBuilder(withBinaryCommand).redirectErrorStream(true);
 
@@ -39,7 +39,7 @@ public class Executor {
       if (p.exitValue() == 2 || p.exitValue() == 0) {
         return Pair.of(p, resultInput);
       } else {
-        log.info("exit value " + p.exitValue());
+        log.info("exit value {}", p.exitValue());
         log.info(resultInput);
         throw new Exception("Error running " + Arrays.toString(withBinaryCommand));
       }
@@ -57,7 +57,7 @@ public class Executor {
       String pathToBinary, String workDir, String stdin, String include) {
 
     try {
-      //      log.info("execute: " + withBinaryCommand);
+      //      log.info("execute: {}",  withBinaryCommand);
       final ProcessBuilder pb;
       String cmd = "";
       if (Utils.getOS() == Utils.OS.WINDOWS) {
@@ -87,7 +87,7 @@ public class Executor {
       if (p.exitValue() == 2 || p.exitValue() == 0) {
         return Pair.of(p, resultInput);
       } else {
-        log.info("exit value " + p.exitValue());
+        log.info("exit value {}", p.exitValue());
         log.info(resultInput);
         throw new Exception("Error running " + cmd);
       }

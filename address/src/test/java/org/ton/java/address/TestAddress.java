@@ -1,15 +1,14 @@
 package org.ton.java.address;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.Assert.assertThrows;
+
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.utils.Utils;
-
-import java.io.IOException;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.Assert.assertThrows;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -107,7 +106,7 @@ public class TestAddress {
     public void testSaveAddress() throws IOException {
         // wc 0
         Address address01 = Address.of(TEST_ADDRESS_0);
-        log.info("full address " + address01.toString(false));
+        log.info("full address {}" , address01.toString(false));
         log.info("bounceable address {}", address01.toString(true, true, true));
         log.info("non-bounceable address {}", address01.toString(true, true, false));
 

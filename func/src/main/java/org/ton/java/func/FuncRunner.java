@@ -2,13 +2,13 @@ package org.ton.java.func;
 
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.utils.Utils;
 
 @Builder
-@Log
+@Slf4j
 public class FuncRunner {
 
   String funcExecutablePath;

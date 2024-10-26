@@ -10,7 +10,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import lombok.Builder;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.emulator.EmulateTransactionResult;
@@ -21,7 +21,7 @@ import org.ton.java.utils.Utils;
  * If not specified then tries to find emulator in system folder, more info <a
  * href="https://github.com/ton-blockchain/packages">here</a>
  */
-@Log
+@Slf4j
 @Builder
 public class TxEmulator {
 

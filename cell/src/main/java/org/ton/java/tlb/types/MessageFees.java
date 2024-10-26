@@ -1,11 +1,11 @@
 package org.ton.java.tlb.types;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.utils.Utils;
 
 @Builder
@@ -66,7 +66,7 @@ public class MessageFees {
   }
 
   public String getSrc() {
-    if (nonNull(src)) {
+    if (StringUtils.isNotEmpty(src)) {
       return src.substring(0, 7) + "..." + src.substring(src.length() - 6, src.length() - 1);
     } else {
       return "N/A";
@@ -74,7 +74,7 @@ public class MessageFees {
   }
 
   public String getDst() {
-    if (nonNull(dst)) {
+    if (StringUtils.isNotEmpty(dst)) {
       return dst.substring(0, 7) + "..." + dst.substring(dst.length() - 6, dst.length() - 1);
     } else {
       return "N/A";

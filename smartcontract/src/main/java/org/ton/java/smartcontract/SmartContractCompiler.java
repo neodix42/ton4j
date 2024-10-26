@@ -6,7 +6,7 @@ import java.nio.file.Paths;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.fift.FiftRunner;
@@ -18,7 +18,7 @@ import org.ton.java.func.FuncRunner;
  */
 @Builder
 @Getter
-@Log
+@Slf4j
 public class SmartContractCompiler {
 
   String contractPath;
@@ -27,6 +27,8 @@ public class SmartContractCompiler {
   @Ignore private FiftRunner fiftRunner;
 
   @Ignore private FuncRunner funcRunner;
+
+  private boolean printFiftAsmOutput;
 
   public static class SmartContractCompilerBuilder {}
 
@@ -74,6 +76,9 @@ public class SmartContractCompiler {
             .replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "")
             .replaceAll("\n", " ")
             .replaceAll("\r", " ");
+    if (printFiftAsmOutput) {
+      System.out.println(outputFiftAsmFile);
+    }
     return fiftRunner.runStdIn(new File(contractPath).getParent(), outputFiftAsmFile);
   }
 

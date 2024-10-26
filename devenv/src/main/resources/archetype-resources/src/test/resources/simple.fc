@@ -2,11 +2,20 @@
 
 #include "stdlib.fc";
 
-() recv_internal(int my_ton_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+() recv_internal(int my_ton_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure inline {
     ~dump(40);
+    ~dump(my_ton_balance);
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+
+    slice sender_address = cs~load_msg_addr();
+    var x = in_msg_body~load_uint(32);
+    ~dump(x);
+    set_data(begin_cell().store_uint(x, 32).end_cell());
 }
 
-() recv_external(slice in_msg_body) impure {
+() recv_external(slice in_msg_body) impure inline {
     ~dump(41);
 
     var msg_seqno = in_msg_body~load_uint(32);
@@ -17,13 +26,10 @@
 
     accept_message();
 
-    ;; replay protection
-    set_data(begin_cell()
-            .store_uint(stored_seqno + 1, 32)
-            .end_cell());
+    set_data(begin_cell().store_uint(stored_seqno + 1, 32).end_cell());
 }
 
-int get_id() method_id {
+int seqno() method_id {
     ~dump(42);
-    return 42;
+    return get_data().begin_parse().preload_uint(32);
 }

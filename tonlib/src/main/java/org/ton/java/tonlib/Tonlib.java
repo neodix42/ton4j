@@ -14,7 +14,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
@@ -25,7 +25,7 @@ import org.ton.java.tonlib.types.*;
 import org.ton.java.tonlib.types.globalconfig.*;
 import org.ton.java.utils.Utils;
 
-@Log
+@Slf4j
 @Builder
 public class Tonlib {
 
