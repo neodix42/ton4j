@@ -7,6 +7,7 @@ import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
@@ -29,10 +30,15 @@ import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
 import org.ton.java.tlb.types.Account;
 import org.ton.java.tlb.types.AccountStateActive;
+import org.ton.java.tlb.types.CurrencyCollection;
+import org.ton.java.tlb.types.InternalMessageInfo;
 import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.MsgAddressInt;
+import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
+import org.ton.schema.gasless.GaslessConfig;
 import org.ton.schema.gasless.SignRawMessage;
 import org.ton.schema.gasless.SignRawParams;
 import org.ton.tonapi.sync.Tonapi;
@@ -46,13 +52,18 @@ public class GaslessTransactionTest {
 
     private static final String API_KEY = "AGAGTULGORVJQBAAAAAELZDTJD5KSFEUVFQOI6WCBOZB5SVYSTWUMAKTU6TOXBXZF5M6ZPQ";
 
-    private static final Address recipient = Address.of("UQB8ANV_ynITQr1qHXADHDKYUAQ9VFcCRDZB7h4aPuPKuFtm");
+    private static final Address RECIPIENT = Address.of("UQB8ANV_ynITQr1qHXADHDKYUAQ9VFcCRDZB7h4aPuPKuFtm");
     private static final Address USDT_MASTER = Address.of("EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs");
 
     // TON API client initialization
     private final Tonapi tonApiClient = new Tonapi(API_KEY, true, 10);
 
     static Tonlib tonlib;
+
+    private Address getRelayAddress(GaslessMethod gaslessMethod) {
+        GaslessConfig config = gaslessMethod.getConfig();
+        return Address.of(config.getRelayAddress());
+    }
 
     @Test
     public void testGaslessTransaction() throws Exception {
@@ -61,7 +72,9 @@ public class GaslessTransactionTest {
             .ignoreCache(false)
             .build();
 
-        List<String> srcSeed = Arrays.asList("your", "seed", "24", "words");
+        GaslessMethod gaslessMethod = new GaslessMethod(tonApiClient);
+
+        List<String> srcSeed = Arrays.asList();
 
         Pair keyPairSrc = Mnemonic.toKeyPair(srcSeed);
 
@@ -71,6 +84,7 @@ public class GaslessTransactionTest {
         TweetNaclFast.Signature.KeyPair keyPairSigSrc = TweetNaclFast.Signature.keyPair_fromSeed(keyPairSrc.getSecretKey());
 
         long walletId = 2147483409L;
+
         // connect to a source wallet
         WalletV5 srcWallet = WalletV5.builder()
             .tonlib(tonlib)
@@ -84,7 +98,7 @@ public class GaslessTransactionTest {
         String nonBounceableAddress = srcWalletAddress.toNonBounceable();
         String bounceableAddress = srcWalletAddress.toBounceable();
         log.info("non-bounceable address {}", nonBounceableAddress);
-        log.info("    bounceable address {}", bounceableAddress);
+        log.info("bounceable address {}", bounceableAddress);
         log.info("pub-key {}", bytesToHex(srcWallet.getKeyPair().getPublicKey()));
         log.info("prv-key {}", bytesToHex(srcWallet.getKeyPair().getSecretKey()));
         log.info("Wallet {} balance: {}", srcWallet.getName(), Utils.formatNanoValue(srcWallet.getBalance()));
@@ -99,12 +113,14 @@ public class GaslessTransactionTest {
         BigInteger balance = tonlib.getAccountBalance(Address.of(bounceableAddress));
         log.info("account balance {}", Utils.formatNanoValue(balance));
 
-        JettonMinterStableCoin usdtMasterWallet = JettonMinterStableCoin.builder()
-                .tonlib(tonlib)
-                .customAddress(USDT_MASTER)
-                .build();
+        Address relay = getRelayAddress(gaslessMethod);
 
-        log.info("usdt total supply: {}", Utils.formatJettonValue(usdtMasterWallet.getTotalSupply(), 6, 2));
+        JettonMinterStableCoin usdtMasterWallet = JettonMinterStableCoin.builder()
+            .tonlib(tonlib)
+            .customAddress(USDT_MASTER)
+            .build();
+
+        log.info("USDT total supply: {}", Utils.formatJettonValue(usdtMasterWallet.getTotalSupply(), 6, 2));
 
         // get my JettonWallet the one that holds my jettons (USDT) tokens
         JettonWalletStableCoin srcJettonWallet = usdtMasterWallet.getJettonWallet(srcWalletAddress);
@@ -113,12 +129,12 @@ public class GaslessTransactionTest {
         Cell bodyCell = srcWallet.createBulkTransfer(
                 Collections.singletonList(
                     Destination.builder()
-                        .address(recipient.toString())
+                        .address(RECIPIENT.toString())
                         .body(JettonWalletStableCoin.createTransferBody(
                             0,
                             BigInteger.valueOf(1_000_000),              // 1 USDT
-                            recipient,                            // recipient
-                            null,                                 // response address
+                            RECIPIENT,                            // recipient
+                            relay,                                 // response address
                             BigInteger.ONE,                       // forward amount
                             MsgUtils.createTextMessageBody("test gasless") // comment
                         ))
@@ -131,15 +147,11 @@ public class GaslessTransactionTest {
             .body(bodyCell)
             .build();
 
-        ExtMessageInfo msg = srcWallet.send(walletV5Config);
+        String msg = srcWallet.createExternalTransferBody(walletV5Config).toBase64();
+        String msgBocHex = Utils.bytesToHex(Base64.getDecoder().decode(msg));
 
-        Utils.sleep(3, "transferring 1 USDT jettons to wallet " + recipient);
+        log.info("Prepared message: {}", msgBocHex);
 
-        // Gasless flow
-        GaslessMethod gaslessMethod = new GaslessMethod(tonApiClient);
-
-        String transferMessage = msg.getHash();
-        log.info("msg {}", transferMessage);
         String pubKey = bytesToHex(keyPairSigSrc.getPublicKey());
 
         // we send a single message containing a transfer from our wallet to a desired destination.
@@ -149,13 +161,29 @@ public class GaslessTransactionTest {
             USDT_MASTER.toString(),
             srcWalletAddress.toString(),
             pubKey,
-            Arrays.asList(transferMessage)
+            Arrays.asList(msgBocHex)
         );
 
         // signRawParams is the same structure as signRawParams in tonconnect.
         List<Destination> msgs = new ArrayList<>();
 
         for (SignRawMessage signRawMessage : signRawParams.getMessages()) {
+
+//            InternalMessageInfo internalMessageInfo = InternalMessageInfo.builder()
+//                .iHRDisabled(true)
+//                .bounce(false)
+//                .bounced(false)
+//                .value(CurrencyCollection.builder()
+//                    .coins(Utils.toNano(1))
+//                    .build())
+//                .srcAddr(srcWallet.getAddressIntStd())
+//                .dstAddr(MsgAddressIntStd.builder()
+//                    .workchainId(RECIPIENT.wc)
+//                    .address(RECIPIENT.toBigInteger())
+//                    .build())
+//                .build();
+
+
             Cell msgCell = Cell.fromBoc(signRawMessage.getPayload());
             BigInteger msgAmount = signRawMessage.getAmount();
             Destination rawMessage = Destination.builder()
@@ -179,10 +207,10 @@ public class GaslessTransactionTest {
 
         assertThat(isTxSuccess).isEqualTo(true);
 
-        BigInteger balanceOfDestinationWallet = tonlib.getAccountBalance(recipient);
+        BigInteger balanceOfDestinationWallet = tonlib.getAccountBalance(RECIPIENT);
         log.info("balanceOfDestinationWallet in toncoins: {}", balanceOfDestinationWallet);
 
-        JettonWalletStableCoin dstJettonWallet = usdtMasterWallet.getJettonWallet(recipient);
+        JettonWalletStableCoin dstJettonWallet = usdtMasterWallet.getJettonWallet(RECIPIENT);
         BigInteger dstJettonWalletBalance = dstJettonWallet.getBalance();
         log.info("dstJettonWallet balance in jettons: {}", Utils.formatJettonValue(dstJettonWalletBalance, 6, 2));
 
