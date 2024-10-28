@@ -11,9 +11,9 @@ import org.ton.java.utils.Utils;
 @Slf4j
 public class FuncRunner {
 
-  String funcExecutablePath;
+  public String funcExecutablePath;
 
-  static String funcExecutable = "";
+  public static String funcExecutable = "";
 
   public static class FuncRunnerBuilder {}
 
@@ -62,5 +62,9 @@ public class FuncRunner {
     }
 
     return "";
+  }
+
+  public String getFuncPath() {
+    return Utils.detectAbsolutePath("func", false);
   }
 }

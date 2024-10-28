@@ -25,7 +25,7 @@ public class TvmEmulator {
    * If not specified then tries to find emulator in system folder, more info <a
    * href="https://github.com/ton-blockchain/packages">here</a>
    */
-  private String pathToEmulatorSharedLib;
+  public String pathToEmulatorSharedLib;
 
   private final TvmEmulatorI tvmEmulatorI;
   private final long tvmEmulator;

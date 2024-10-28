@@ -33,7 +33,7 @@ public class Tonlib {
    * If not specified then tries to find tonlib in system folder, more info <a
    * href="https://github.com/ton-blockchain/packages">here</a>
    */
-  private String pathToTonlibSharedLib;
+  public String pathToTonlibSharedLib;
 
   /**
    * if not specified and globalConfigAsString is null then integrated global-config.json is used;
@@ -42,7 +42,7 @@ public class Tonlib {
    *
    * <p>If not specified and testnet=true then integrated testnet-global.config.json is used;
    */
-  private String pathToGlobalConfig;
+  public String pathToGlobalConfig;
 
   /**
    * if not specified and pathToGlobalConfig is null then integrated global-config.json is used;
@@ -231,7 +231,7 @@ public class Tonlib {
                 super.keystoreInMemory,
                 super.keystorePath,
                 super.pathToGlobalConfig,
-                (super.globalConfigAsString != null && super.globalConfigAsString.length() > 33)
+                (nonNull(super.globalConfigAsString) && super.globalConfigAsString.length() > 33)
                     ? super.globalConfigAsString.substring(0, 33)
                     : "",
                 super.originalGlobalConfigInternal.getLiteservers().length,
@@ -388,6 +388,12 @@ public class Tonlib {
                   "Error in tonlib.receive(), "
                       + receiveRetryTimes
                       + " times was not able retrieve result from lite-server.");
+            }
+
+            if (response.contains("Failed to unpack account state")) {
+              log.info(
+                  "You are trying to deploy a contract on address that does not have toncoins.");
+              break outterloop;
             }
 
             if (usingAllLiteServers) {
@@ -1555,5 +1561,32 @@ public class Tonlib {
       String result = syncAndRead(gson.toJson(getLibrariesQuery));
       return libraryResultParser.parse(result);
     }
+  }
+
+  public boolean isDeployed(Address address) {
+    return StringUtils.isNotEmpty(this.getRawAccountState(address).getCode());
+  }
+
+  public void waitForDeployment(Address address, int timeoutSeconds) {
+    log.info("waiting for deployment up to {}s", timeoutSeconds);
+    int i = 0;
+    do {
+      if (++i * 2 >= timeoutSeconds) {
+        throw new Error("Can't deploy contract within specified timeout.");
+      }
+      Utils.sleep(2);
+    } while (!isDeployed(address));
+  }
+
+  public void waitForBalanceChange(Address address, int timeoutSeconds) {
+    log.info("waiting for balance change up to {}s", timeoutSeconds);
+    BigInteger initialBalance = getAccountBalance(address);
+    int i = 0;
+    do {
+      if (++i * 2 >= timeoutSeconds) {
+        throw new Error("Balance was not changed within specified timeout.");
+      }
+      Utils.sleep(2);
+    } while (initialBalance.equals(getAccountBalance(address)));
   }
 }

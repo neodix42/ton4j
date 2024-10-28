@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
+import lombok.extern.slf4j.Slf4j;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.types.WalletV1R3Config;
 import org.ton.java.smartcontract.wallet.ContractUtils;
@@ -12,6 +13,7 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
+@Slf4j
 public class TestnetFaucet {
 
   public static String PUBLIC_KEY =
@@ -45,11 +47,10 @@ public class TestnetFaucet {
         }
 
         faucetBalance = faucet.getBalance();
-        System.out.println(
-            "Faucet address "
-                + faucet.getAddress().toBounceable()
-                + ", balance "
-                + Utils.formatNanoValue(faucetBalance));
+        log.info(
+            "Faucet address {}, balance {}",
+            faucet.getAddress().toBounceable(),
+            Utils.formatNanoValue(faucetBalance));
         if (faucetBalance.compareTo(amount) < 0) {
           throw new Error(
               "Faucet does not have that much toncoins. faucet balance "
@@ -58,7 +59,7 @@ public class TestnetFaucet {
                   + Utils.formatNanoValue(amount));
         }
       } catch (Exception e) {
-        System.out.println("Cannot get faucet balance. Restarting...");
+        log.info("Cannot get faucet balance. Restarting...");
         Utils.sleep(5, "Waiting for faucet balance");
       }
     } while (isNull(faucetBalance));

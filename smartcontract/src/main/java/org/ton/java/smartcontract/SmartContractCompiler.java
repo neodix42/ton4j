@@ -1,9 +1,10 @@
 package org.ton.java.smartcontract;
 
+import static java.util.Objects.isNull;
+
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Paths;
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +25,9 @@ public class SmartContractCompiler {
   String contractPath;
   String contractAsResource;
 
-  @Ignore private FiftRunner fiftRunner;
+  private FiftRunner fiftRunner;
 
-  @Ignore private FuncRunner funcRunner;
+  private FuncRunner funcRunner;
 
   private boolean printFiftAsmOutput;
 
@@ -39,8 +40,12 @@ public class SmartContractCompiler {
   private static class CustomSmartContractCompilerBuilder extends SmartContractCompilerBuilder {
     @Override
     public SmartContractCompiler build() {
-      super.funcRunner = FuncRunner.builder().build();
-      super.fiftRunner = FiftRunner.builder().build();
+      if (isNull(super.funcRunner)) {
+        super.funcRunner = FuncRunner.builder().build();
+      }
+      if (isNull(super.fiftRunner)) {
+        super.fiftRunner = FiftRunner.builder().build();
+      }
       return super.build();
     }
   }

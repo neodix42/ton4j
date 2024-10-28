@@ -25,7 +25,7 @@ import org.ton.java.utils.Utils;
 @Builder
 public class TxEmulator {
 
-  private String pathToEmulatorSharedLib;
+  public String pathToEmulatorSharedLib;
   private final TxEmulatorI txEmulatorI;
   private final long txEmulator;
   private TxEmulatorConfig configType;

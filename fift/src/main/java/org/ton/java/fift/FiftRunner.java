@@ -16,9 +16,9 @@ import org.ton.java.utils.Utils;
 public class FiftRunner {
   String fiftAsmLibraryPath;
   String fiftSmartcontLibraryPath;
-  String fiftExecutablePath;
+  public String fiftExecutablePath;
 
-  static String fiftExecutable = "";
+  public static String fiftExecutable = "";
 
   public static class FiftRunnerBuilder {}
 
@@ -136,5 +136,17 @@ public class FiftRunner {
     } else {
       return null;
     }
+  }
+
+  public String getLibsPath() {
+    if (Utils.getOS() == Utils.OS.WINDOWS) {
+      return fiftAsmLibraryPath + "@" + fiftSmartcontLibraryPath;
+    } else {
+      return fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath;
+    }
+  }
+
+  public String getFiftPath() {
+    return Utils.detectAbsolutePath("fift", false);
   }
 }
