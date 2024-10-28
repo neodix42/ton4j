@@ -130,6 +130,7 @@ public class GaslessTransactionTest {
                 Collections.singletonList(
                     Destination.builder()
                         .address(RECIPIENT.toString())
+                        .bounce(true)
                         .body(JettonWalletStableCoin.createTransferBody(
                             0,
                             BigInteger.valueOf(1_000_000),              // 1 USDT
@@ -147,10 +148,9 @@ public class GaslessTransactionTest {
             .body(bodyCell)
             .build();
 
-        String msg = srcWallet.createExternalTransferBody(walletV5Config).toBase64();
-        String msgBocHex = Utils.bytesToHex(Base64.getDecoder().decode(msg));
+        String msg = srcWallet.createInternalTransferBody(walletV5Config).toHex();
 
-        log.info("Prepared message: {}", msgBocHex);
+        log.info("Prepared message: {}", msg);
 
         String pubKey = bytesToHex(keyPairSigSrc.getPublicKey());
 
@@ -161,7 +161,7 @@ public class GaslessTransactionTest {
             USDT_MASTER.toString(),
             srcWalletAddress.toString(),
             pubKey,
-            Arrays.asList(msgBocHex)
+            Arrays.asList(msg)
         );
 
         // signRawParams is the same structure as signRawParams in tonconnect.
