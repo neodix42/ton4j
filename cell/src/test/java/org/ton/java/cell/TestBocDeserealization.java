@@ -12,11 +12,29 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.tlb.types.Transaction;
 import org.ton.java.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestBocDeserealization {
+
+  @Test
+  public void testTxDes() {
+    String base64boc =
+        "te6cckECBwEAAXYAA7V5QBVtaGBzXelnC+DoDhctQO99SeiHtx97kPR6CqcKIBAAAY3pKFDwECaGi15kBA/sg+mS5AXFRbdn6kqS4yBQE7nybKbPnPtQAAGN4NmfWBZxzFkwACBgQSDoAQIDAgHgBAUAgnJQdVmYCFXS9KgXRepSXHT8e+rFn5z5+QuRNP8kfXkPQu1TOHkZ0mu5gLKdK7eCsCXnvOxGjTz0QiYLq2OyHJBWAB8ETQjmJaABwDAgjTMEEa1AAK9oAct9CC/XwHCKXyewXhMtNci1Zua3V+FLpl8rt7T586IZACUAVbWhgc13pZwvg6A4XLUDvfUnoh7cfe5D0egqnCiATmJaAAYII1oAADG9JJAMBM45ixpAAQHfBgC3WAEoAq2tDA5rvSzhfB0BwuWoHe+pPRD24+9yHo9BVOFEAwA5b6EF+vgOEUvk9gvCZaa5Fqzc1ur8KXTL5Xb2nz50Qw5J8AAGCCNaAAAxvSUKHgTOOYsmf////8AumLaq";
+
+    byte[] rawBoc1 = Utils.base64ToSignedBytes(base64boc);
+
+    Cell c = CellBuilder.beginCell().fromBoc(rawBoc1).endCell();
+    Transaction tx = Transaction.deserialize(CellSlice.beginParse(c));
+    log.info("tx {}", tx);
+    log.info("tx in_msg hash {}", Utils.bytesToBase64(tx.getInOut().getIn().toCell().getHash()));
+    assertThat(Utils.bytesToBase64(tx.getInOut().getIn().toCell().getHash()))
+        .isEqualTo("9UNypzdgZ4qSUGIQnk+ugSufV5nUtui7OYm1gMLtrn4=");
+    log.info(
+        "tx in_msg-body hash {}", Utils.bytesToBase64(tx.getInOut().getIn().getBody().getHash()));
+  }
 
   /** <a href="https://github.com/toncenter/tonweb/issues/70">issue 70</a> */
   @Test
