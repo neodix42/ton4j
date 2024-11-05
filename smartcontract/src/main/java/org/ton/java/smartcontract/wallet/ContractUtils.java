@@ -21,7 +21,7 @@ public class ContractUtils {
   }
 
   public static void waitForDeployment(Tonlib tonlib, Address address, int timeoutSeconds) {
-    log.info("waiting for deployment up to " + timeoutSeconds + " sec");
+    log.info("waiting for deployment (up to " + timeoutSeconds + "s)");
     int i = 0;
     do {
       if (++i * 2 >= timeoutSeconds) {
@@ -32,7 +32,7 @@ public class ContractUtils {
   }
 
   public static void waitForBalanceChange(Tonlib tonlib, Address address, int timeoutSeconds) {
-    log.info("waiting for balance change up to " + timeoutSeconds + " sec");
+    log.info("waiting for balance change (up to " + timeoutSeconds + "s)");
     BigInteger initialBalance = tonlib.getAccountBalance(address);
     int i = 0;
     do {
@@ -45,7 +45,7 @@ public class ContractUtils {
 
   public static void waitForJettonBalanceChange(
       Tonlib tonlib, Address jettonMinter, Address address, int timeoutSeconds) {
-    log.info("waiting for jetton balance change up to " + timeoutSeconds + " sec");
+    log.info("waiting for jetton balance change (up to " + timeoutSeconds + "s)");
     BigInteger initialBalance = getJettonBalance(tonlib, jettonMinter, address);
     int i = 0;
     do {

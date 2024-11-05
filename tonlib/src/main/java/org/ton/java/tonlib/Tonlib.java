@@ -1568,7 +1568,7 @@ public class Tonlib {
   }
 
   public void waitForDeployment(Address address, int timeoutSeconds) {
-    log.info("waiting for deployment up to {}s", timeoutSeconds);
+    log.info("waiting for deployment (up to {}s)", timeoutSeconds);
     int i = 0;
     do {
       if (++i * 2 >= timeoutSeconds) {

@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -1027,5 +1028,13 @@ public class Utils {
     } else {
       return "so";
     }
+  }
+
+  public static int getRandomInt() {
+    return new Random().nextInt();
+  }
+
+  public static long getRandomLong() {
+    return new Random().nextLong();
   }
 }

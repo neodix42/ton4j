@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
+import org.ton.java.cell.Cell;
 import org.ton.java.emulator.tvm.TvmEmulator;
 import org.ton.java.emulator.tvm.TvmVerbosityLevel;
 import org.ton.java.emulator.tx.TxEmulator;
@@ -19,9 +20,11 @@ import org.ton.java.func.FuncRunner;
 import org.ton.java.smartcontract.SmartContractCompiler;
 import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV3Config;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.types.StateInit;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -36,17 +39,20 @@ public class Blockchain {
   private Network network;
   VerbosityLevel tonlibVerbosityLevel;
   TxEmulatorConfig txEmulatorConfig;
-  TxVerbosityLevel txVerbosityLevel;
-  TvmVerbosityLevel tvmVerbosityLevel;
-  Contract standardContract;
+  TxVerbosityLevel txEmulatorVerbosityLevel;
+  TvmVerbosityLevel tvmEmulatorVerbosityLevel;
+  Contract contract;
   String myLocalTonInstallationPath;
   String customContractPath;
-  String customGlobalConfigPath;
   String customContractAsResource;
+  Cell customContractDataCell;
+  Cell customContractBodyCell;
+  String customGlobalConfigPath;
   String customEmulatorPath;
   private static SmartContractCompiler smartContractCompiler;
   private static TxEmulator txEmulator;
   private static TvmEmulator tvmEmulator;
+  private static StateInit stateInit;
 
   /** default 0.1 toncoin */
   BigInteger initialDeployTopUpAmount;
@@ -66,6 +72,7 @@ public class Blockchain {
           super.initialDeployTopUpAmount = Utils.toNano(0.1);
         }
 
+        // initiate tonlib
         if (super.network != Network.EMULATOR) {
           if (isNull(super.tonlib)) {
             if (StringUtils.isNotEmpty(super.customGlobalConfigPath)) {
@@ -130,54 +137,90 @@ public class Blockchain {
                 .funcRunner(super.funcRunner)
                 .build();
 
+        // compile contract with Contract interface
+        if (nonNull(super.contract)) {
+          tvmEmulator =
+              TvmEmulator.builder()
+                  .codeBoc(super.contract.createCodeCell().toBase64())
+                  .dataBoc(super.contract.createDataCell().toBase64())
+                  .verbosityLevel(super.tvmEmulatorVerbosityLevel)
+                  .build();
+          stateInit =
+              StateInit.builder()
+                  .code(super.contract.createCodeCell())
+                  .data(super.contract.createDataCell())
+                  .build();
+
+          txEmulator = TxEmulator.builder().verbosityLevel(super.txEmulatorVerbosityLevel).build();
+        } else {
+          // compile custom contract
+          if (nonNull(super.customContractAsResource)) {
+            smartContractCompiler.setContractAsResource(super.customContractAsResource);
+          } else if (nonNull(super.customContractPath)) {
+            smartContractCompiler.setContractPath(super.customContractPath);
+          } else {
+            throw new Error(
+                "Specify path to custom contract via customContractAsResource or customContractPath.");
+          }
+
+          Cell codeCell = smartContractCompiler.compileToCell();
+          if (isNull(super.customContractDataCell)) {
+            throw new Error("Custom contract requires customContractDataCell to be specified.");
+          }
+          tvmEmulator =
+              TvmEmulator.builder()
+                  .codeBoc(codeCell.toBase64())
+                  .dataBoc(super.customContractDataCell.toBase64())
+                  .verbosityLevel(super.tvmEmulatorVerbosityLevel)
+                  .build();
+
+          stateInit = StateInit.builder().code(codeCell).data(super.customContractDataCell).build();
+
+          txEmulator = TxEmulator.builder().verbosityLevel(super.txEmulatorVerbosityLevel).build();
+        }
         if (super.network == Network.EMULATOR) {
+
           log.info(
-              String.format(
-                  "\nJava Blockchain configuration:\n"
-                      + "Target network: %s\n"
-                      + "Emulator location: %s, configType: %s, txVerbosity: %s, tvmVerbosity: %s\n"
-                      //                      + "Tonlib location: %s\n"
-                      //                      + "Tonlib global config: %s\n"
-                      + "Func location: %s\n"
-                      + "Fift location: %s, FIFTPATH=%s\n"
-                      + "Contract: %s\n",
-                  super.network,
-                  Utils.detectAbsolutePath("emulator", true),
-                  super.txEmulatorConfig,
-                  super.txVerbosityLevel,
-                  super.tvmVerbosityLevel,
-                  //                  super.tonlib.pathToTonlibSharedLib,
-                  //                  super.tonlib.pathToGlobalConfig,
-                  super.funcRunner.funcExecutablePath,
-                  super.fiftRunner.fiftExecutablePath,
-                  super.fiftRunner.getLibsPath(),
-                  nonNull(super.standardContract)
-                      ? "standard contract " + super.standardContract.getName()
-                      : isNull(super.customContractPath)
-                          ? "integrated resource: " + super.customContractAsResource
-                          : super.customContractPath));
+              "\nJava Blockchain configuration:\n"
+                  + "Target network: {}\n"
+                  + "Emulator location: {}, configType: {}, txVerbosity: {}, tvmVerbosity: {}\n"
+                  + "Func location: {}\n"
+                  + "Fift location: {}, FIFTPATH={}\n"
+                  + "Contract: {}\n",
+              super.network,
+              Utils.detectAbsolutePath("emulator", true),
+              txEmulator.getConfigType(),
+              txEmulator.getVerbosityLevel(),
+              tvmEmulator.getVerbosityLevel(),
+              super.funcRunner.getFuncPath(),
+              super.fiftRunner.getFiftPath(),
+              super.fiftRunner.getLibsPath(),
+              nonNull(super.contract)
+                  ? "standard contract " + super.contract.getName()
+                  : isNull(super.customContractPath)
+                      ? "integrated resource " + super.customContractAsResource
+                      : super.customContractPath);
         } else {
           log.info(
-              String.format(
-                  "Java Blockchain configuration:\n"
-                      + "Target network: %s\n"
-                      + "Emulator not used\n"
-                      + "Tonlib location: %s\n"
-                      + "Tonlib global config: %s\n"
-                      + "Func location: %s\n"
-                      + "Fift location: %s, FIFTPATH=%s\n"
-                      + "Contract: %s\n",
-                  super.network,
-                  super.tonlib.pathToTonlibSharedLib,
-                  super.tonlib.pathToGlobalConfig,
-                  super.funcRunner.getFuncPath(),
-                  super.fiftRunner.getFiftPath(),
-                  super.fiftRunner.getLibsPath(),
-                  nonNull(super.standardContract)
-                      ? "standard contract " + super.standardContract.getName()
-                      : isNull(super.customContractPath)
-                          ? "integrated resource at " + super.customContractAsResource
-                          : super.customContractPath));
+              "\nBlockchain configuration:\n"
+                  + "Target network: {}\n"
+                  + "Emulator not used\n"
+                  + "Tonlib location: {}\n"
+                  + "Tonlib global config: {}\n"
+                  + "Func location: {}\n"
+                  + "Fift location: {}, FIFTPATH={}\n"
+                  + "Contract: {}\n",
+              super.network,
+              super.tonlib.pathToTonlibSharedLib,
+              super.tonlib.pathToGlobalConfig,
+              super.funcRunner.getFuncPath(),
+              super.fiftRunner.getFiftPath(),
+              super.fiftRunner.getLibsPath(),
+              nonNull(super.contract)
+                  ? "standard contract " + super.contract.getName()
+                  : isNull(super.customContractPath)
+                      ? "integrated resource " + super.customContractAsResource
+                      : super.customContractPath);
         }
       } catch (Exception e) {
         e.printStackTrace();
@@ -190,87 +233,13 @@ public class Blockchain {
   public void deploy(int waitForDeploymentSeconds) {
     log.info("deploying on {}", network);
     try {
-      Address address = standardContract.getAddress();
-      log.info("contract address {}", address.toRaw());
 
-      String nonBounceableAddress;
-      if (nonNull(standardContract)) {
-        standardContract.getTonlib();
-        if (network == Network.MAINNET
-            || network == Network.TESTNET
-            || network == Network.MY_LOCAL_TON) {
-          ExtMessageInfo result;
-
-          if (waitForDeploymentSeconds != 0) {
-            nonBounceableAddress = address.toNonBounceableTestnet();
-            if (network == Network.MAINNET) {
-
-              log.info(
-                  "waiting {}s for toncoins to be deposited to address {}",
-                  waitForDeploymentSeconds,
-                  nonBounceableAddress);
-              tonlib.waitForBalanceChange(address, waitForDeploymentSeconds);
-              log.info("now sending external message with deploy instructions...");
-              Message msg = standardContract.prepareDeployMsg();
-              result = tonlib.sendRawMessage(msg.toCell().toBase64());
-              assert result.getError().getCode() != 0;
-              tonlib.waitForDeployment(address, waitForDeploymentSeconds);
-              log.info(
-                  "{} deployed at address {}", standardContract.getName(), nonBounceableAddress);
-            } else if (network == Network.TESTNET) {
-
-              log.info(
-                  "topping up {} with {} toncoin from TestnetFaucet",
-                  nonBounceableAddress,
-                  Utils.formatNanoValue(initialDeployTopUpAmount));
-              BigInteger newBalance =
-                  TestnetFaucet.topUpContract(
-                      tonlib, standardContract.getAddress(), initialDeployTopUpAmount);
-              log.info("topped up successfully, new balance {}", Utils.formatNanoValue(newBalance));
-              log.info("now sending external message with deploy instructions...");
-              Message msg = standardContract.prepareDeployMsg();
-              result = tonlib.sendRawMessage(msg.toCell().toBase64());
-              if (result.getError().getCode() != 0) {
-                throw new Error(
-                    "Cannot send external message. Error: " + result.getError().getMessage());
-              }
-
-              tonlib.waitForDeployment(address, waitForDeploymentSeconds);
-              log.info(
-                  "{} deployed at address {}", standardContract.getName(), nonBounceableAddress);
-            } else { // myLocalTon
-
-              // top up first
-              BigInteger newBalance = topUpFromMyLocalTonFaucet(address);
-              log.info("topped up successfully, new balance {}", Utils.formatNanoValue(newBalance));
-              // deploy smc
-              Message msg = standardContract.prepareDeployMsg();
-              result = tonlib.sendRawMessage(msg.toCell().toBase64());
-              if (result.getError().getCode() != 0) {
-                throw new Error(
-                    "Cannot send external message. Error: " + result.getError().getMessage());
-              }
-
-              tonlib.waitForDeployment(address, waitForDeploymentSeconds);
-              log.info(
-                  "{} deployed at address {}", standardContract.getName(), nonBounceableAddress);
-            }
-          }
-        } else {
-          tvmEmulator =
-              TvmEmulator.builder()
-                  .codeBoc(standardContract.createCodeCell().toBase64())
-                  .dataBoc(standardContract.createDataCell().toBase64())
-                  .verbosityLevel(tvmVerbosityLevel)
-                  .build();
-
-          txEmulator = TxEmulator.builder().verbosityLevel(txVerbosityLevel).build();
-          log.info("deployed at emulators");
-        }
-      } else { // deploy customer contract
-        // todo
-        log.info("deploying custom contract");
+      if (nonNull(contract)) {
+        deployRegularContract(contract, waitForDeploymentSeconds);
+      } else { // deploy on emulator custom contract
+        deployCustomContract(stateInit, waitForDeploymentSeconds);
       }
+      log.info("deployed on {}", network);
     } catch (Exception e) {
       e.printStackTrace();
       //      throw new Error("Cannot deploy the contract on " + network + ". Error " +
@@ -317,5 +286,148 @@ public class Blockchain {
 
     tonlib.waitForBalanceChange(address, 20);
     return tonlib.getAccountBalance(address);
+  }
+
+  private void deployRegularContract(Contract contract, int waitForDeploymentSeconds)
+      throws InterruptedException {
+    Address address = contract.getAddress();
+    log.info("contract address {}", address.toRaw());
+    //    contract.getTonlib();
+    if (network != Network.EMULATOR) {
+      ExtMessageInfo result;
+
+      if (waitForDeploymentSeconds != 0) {
+        String nonBounceableAddress = address.toNonBounceableTestnet();
+        if (network == Network.MAINNET) {
+
+          log.info(
+              "waiting {}s for toncoins to be deposited to address {}",
+              waitForDeploymentSeconds,
+              nonBounceableAddress);
+          tonlib.waitForBalanceChange(address, waitForDeploymentSeconds);
+          log.info("now sending external message with deploy instructions...");
+          Message msg = contract.prepareDeployMsg();
+          result = tonlib.sendRawMessage(msg.toCell().toBase64());
+          assert result.getError().getCode() != 0;
+          tonlib.waitForDeployment(address, waitForDeploymentSeconds);
+          log.info("{} deployed at address {}", contract.getName(), nonBounceableAddress);
+        } else if (network == Network.TESTNET) {
+
+          log.info(
+              "topping up {} with {} toncoin from TestnetFaucet",
+              nonBounceableAddress,
+              Utils.formatNanoValue(initialDeployTopUpAmount));
+          BigInteger newBalance =
+              TestnetFaucet.topUpContract(tonlib, contract.getAddress(), initialDeployTopUpAmount);
+          log.info("topped up successfully, new balance {}", Utils.formatNanoValue(newBalance));
+          log.info("now sending external message with deploy instructions...");
+          Message msg = contract.prepareDeployMsg();
+          result = tonlib.sendRawMessage(msg.toCell().toBase64());
+          if (result.getError().getCode() != 0) {
+            throw new Error(
+                "Cannot send external message. Error: " + result.getError().getMessage());
+          }
+
+          tonlib.waitForDeployment(address, waitForDeploymentSeconds);
+          log.info("{} deployed at address {}", contract.getName(), nonBounceableAddress);
+        } else { // myLocalTon
+
+          // top up first
+          BigInteger newBalance = topUpFromMyLocalTonFaucet(address);
+          log.info("topped up successfully, new balance {}", Utils.formatNanoValue(newBalance));
+          // deploy smc
+          Message msg = contract.prepareDeployMsg();
+          result = tonlib.sendRawMessage(msg.toCell().toBase64());
+          if (result.getError().getCode() != 0) {
+            throw new Error(
+                "Cannot send external message. Error: " + result.getError().getMessage());
+          }
+
+          tonlib.waitForDeployment(address, waitForDeploymentSeconds);
+          log.info("{} deployed at address {}", contract.getName(), nonBounceableAddress);
+        }
+      }
+    } else {
+      log.info("emulator regular");
+    }
+  }
+
+  /** custom contract does not have conventional deploy methods */
+  private void deployCustomContract(StateInit stateInit, int waitForDeploymentSeconds)
+      throws InterruptedException {
+    String contractName =
+        isNull(customContractAsResource) ? customContractPath : customContractAsResource;
+    Address address = stateInit.getAddress();
+    log.info("contract address {}", address.toRaw());
+    if (network != Network.EMULATOR) {
+      ExtMessageInfo result;
+
+      if (waitForDeploymentSeconds != 0) {
+        String nonBounceableAddress = address.toNonBounceableTestnet();
+        if (network == Network.MAINNET) {
+
+          log.info(
+              "waiting {}s for toncoins to be deposited to address {}",
+              waitForDeploymentSeconds,
+              nonBounceableAddress);
+          tonlib.waitForBalanceChange(address, waitForDeploymentSeconds);
+          log.info("now sending external message with deploy instructions...");
+          Message msg =
+              MsgUtils.createExternalMessage(
+                  address,
+                  stateInit,
+                  isNull(customContractBodyCell) ? stateInit.getData() : customContractDataCell);
+          result = tonlib.sendRawMessage(msg.toCell().toBase64());
+          assert result.getError().getCode() != 0;
+          tonlib.waitForDeployment(address, waitForDeploymentSeconds);
+          log.info("{} deployed at address {}", contractName, nonBounceableAddress);
+        } else if (network == Network.TESTNET) {
+
+          log.info(
+              "topping up {} with {} toncoin from TestnetFaucet",
+              nonBounceableAddress,
+              Utils.formatNanoValue(initialDeployTopUpAmount));
+          BigInteger newBalance =
+              TestnetFaucet.topUpContract(tonlib, address, initialDeployTopUpAmount);
+          log.info("topped up successfully, new balance {}", Utils.formatNanoValue(newBalance));
+          log.info("now sending external message with deploy instructions...");
+          Message msg =
+              MsgUtils.createExternalMessage(
+                  address,
+                  stateInit,
+                  isNull(customContractBodyCell) ? stateInit.getData() : customContractDataCell);
+          result = tonlib.sendRawMessage(msg.toCell().toBase64());
+          if (result.getError().getCode() != 0) {
+            throw new Error(
+                "Cannot send external message. Error: " + result.getError().getMessage());
+          }
+
+          tonlib.waitForDeployment(address, waitForDeploymentSeconds);
+          log.info("{} deployed at address {}", contractName, nonBounceableAddress);
+        } else { // myLocalTon
+
+          // top up first
+          BigInteger newBalance = topUpFromMyLocalTonFaucet(address);
+          log.info("topped up successfully, new balance {}", Utils.formatNanoValue(newBalance));
+          // deploy smc
+          Message msg =
+              MsgUtils.createExternalMessage(
+                  address,
+                  stateInit,
+                  isNull(customContractBodyCell) ? stateInit.getData() : customContractDataCell);
+          result = tonlib.sendRawMessage(msg.toCell().toBase64());
+          if (result.getError().getCode() != 0) {
+            throw new Error(
+                "Cannot send external message. Error: " + result.getError().getMessage());
+          }
+
+          tonlib.waitForDeployment(address, waitForDeploymentSeconds);
+          log.info("{} deployed at address {}", contractName, nonBounceableAddress);
+        }
+      }
+
+    } else {
+      log.info("emulator regular");
+    }
   }
 }

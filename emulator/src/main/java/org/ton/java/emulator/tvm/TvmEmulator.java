@@ -9,6 +9,7 @@ import com.sun.jna.Native;
 import java.math.BigInteger;
 import java.util.Collections;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.types.VmStack;
@@ -19,6 +20,7 @@ import org.ton.java.utils.Utils;
 
 @Slf4j
 @Builder
+@Getter
 public class TvmEmulator {
 
   /**
@@ -70,9 +72,10 @@ public class TvmEmulator {
         throw new Error("Can't create emulator instance");
       }
 
-      System.out.printf(
-          "Java TON TVM Emulator configuration:\n" + "Location: %s\n" + "Verbosity level: %s\n",
-          super.pathToEmulatorSharedLib, super.verbosityLevel);
+      log.info(
+          "\nTON TVM Emulator configuration:\n" + "Location: {}\n" + "Verbosity level: {}\n",
+          super.pathToEmulatorSharedLib,
+          super.verbosityLevel);
       return super.build();
     }
   }

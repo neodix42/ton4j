@@ -32,21 +32,21 @@ public class FiftRunner {
     @Override
     public FiftRunner build() {
       if (StringUtils.isEmpty(super.fiftExecutablePath)) {
-        log.info("checking if fift is installed...");
+        log.info("Checking if Fift is installed...");
         String errorMsg =
-            "Make sure you have fift installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.fiftExecutablePath().";
+            "Make sure you have Fift installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.fiftExecutablePath().";
         try {
           ProcessBuilder pb = new ProcessBuilder("fift", "-h").redirectErrorStream(true);
           Process p = pb.start();
           p.waitFor(1, TimeUnit.SECONDS);
           if (p.exitValue() != 2) {
-            throw new Error("Cannot execute simple fift command.\n" + errorMsg);
+            throw new Error("Cannot execute simple Fift command.\n" + errorMsg);
           }
           fiftAbsolutePath = Utils.detectAbsolutePath("fift", false);
           log.info("fift found at " + fiftAbsolutePath);
           fiftExecutable = "fift";
         } catch (Exception e) {
-          throw new Error("Cannot execute simple fift command.\n" + errorMsg);
+          throw new Error("Cannot execute simple Fift command.\n" + errorMsg);
         }
       } else {
         log.info("using " + super.fiftExecutablePath);

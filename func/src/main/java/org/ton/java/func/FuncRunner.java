@@ -26,25 +26,25 @@ public class FuncRunner {
     @Override
     public FuncRunner build() {
       if (StringUtils.isEmpty(super.funcExecutablePath)) {
-        log.info("checking if func is installed...");
+        log.info("Checking if Func is installed...");
 
         String errorMsg =
-            "Make sure you have func installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.funcExecutablePath().";
+            "Make sure you have Func installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.funcExecutablePath().";
         try {
           ProcessBuilder pb = new ProcessBuilder("func", "-h").redirectErrorStream(true);
           Process p = pb.start();
           p.waitFor(1, TimeUnit.SECONDS);
           if (p.exitValue() != 2) {
-            throw new Error("Cannot execute simple func command.\n" + errorMsg);
+            throw new Error("Cannot execute simple Func command.\n" + errorMsg);
           }
           String funcAbsolutePath = Utils.detectAbsolutePath("func", false);
 
-          log.info("func found at " + funcAbsolutePath);
+          log.info("Func found at " + funcAbsolutePath);
           funcExecutable = "func";
 
         } catch (Exception e) {
           log.info(e.getMessage());
-          throw new Error("Cannot execute simple func command.\n" + errorMsg);
+          throw new Error("Cannot execute simple Func command.\n" + errorMsg);
         }
       } else {
         log.info("using " + super.funcExecutablePath);

@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.ton.java.cell.Cell;
@@ -23,6 +24,7 @@ import org.ton.java.utils.Utils;
  */
 @Slf4j
 @Builder
+@Getter
 public class TxEmulator {
 
   public String pathToEmulatorSharedLib;
@@ -56,7 +58,8 @@ public class TxEmulator {
           super.verbosityLevel = TxVerbosityLevel.TRUNCATED;
         }
         if (isNull(super.configType)) {
-          throw new Error("ConfigType is not set");
+          super.configType = TxEmulatorConfig.MAINNET;
+          //          log.info("Using default TxEmulator Config - MAINNET");
         }
 
         String configBoc = "";
@@ -95,12 +98,13 @@ public class TxEmulator {
         }
 
         log.info(
-            String.format(
-                "Java TON Tx Emulator configuration:\n"
-                    + "Location: %s\n"
-                    + "Config: %s\n"
-                    + "Verbosity level: %s",
-                super.pathToEmulatorSharedLib, super.configType, super.verbosityLevel));
+            "\nTON Tx Emulator configuration:\n"
+                + "Location: {}\n"
+                + "Config: {}\n"
+                + "Verbosity level: {}",
+            super.pathToEmulatorSharedLib,
+            super.configType,
+            super.verbosityLevel);
         return super.build();
       } catch (Exception e) {
         throw new Error("Error creating tx emulator instance: " + e.getMessage());

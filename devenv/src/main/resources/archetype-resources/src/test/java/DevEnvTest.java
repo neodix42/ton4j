@@ -41,7 +41,7 @@ public class DevEnvTest {
   @Test
   public void testCompileSmartContract() {
     SmartContractCompiler smcFunc =
-            SmartContractCompiler.builder().contractAsResource("/simple.fc").build();
+        SmartContractCompiler.builder().contractAsResource("simple.fc").build();
 
     assertThat(smcFunc.compile()).isNotNull();
   }
@@ -52,52 +52,58 @@ public class DevEnvTest {
     compile();
 
     TxEmulator txEmulator =
-            TxEmulator.builder()
-                    .configType(TxEmulatorConfig.TESTNET)
-                    .verbosityLevel(TxVerbosityLevel.UNLIMITED)
-                    .build();
+        TxEmulator.builder()
+            .configType(TxEmulatorConfig.TESTNET)
+            .verbosityLevel(TxVerbosityLevel.UNLIMITED)
+            .build();
 
     txEmulator.setDebugEnabled(true);
 
     double initialBalanceInToncoins = 0.1;
 
     Cell bodyCell =
-            CellBuilder.beginCell()
-                    .storeUint(0, 32) // seqno
-                    .endCell();
+        CellBuilder.beginCell()
+            .storeUint(0, 32) // seqno
+            .endCell();
 
     Message extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
 
     EmulateTransactionResult result =
-            txEmulator.emulateTransaction(
-                    codeCell, dataCell, Utils.toNano(initialBalanceInToncoins), extMsg.toCell().toBase64());
+        txEmulator.emulateTransaction(
+            codeCell, dataCell, Utils.toNano(initialBalanceInToncoins), extMsg.toCell().toBase64());
 
     ShardAccount newShardAccount = result.getNewShardAccount();
     log.info("result sendExternalMessage[1]: {}", result);
     result.getTransaction().printTransactionFees(true, true);
     result.getTransaction().printAllMessages(true);
-    log.info("end balance after #1 tx: {}", Utils.formatNanoValue(newShardAccount.getBalance().toString()));
+    log.info(
+        "end balance after #1 tx: {}",
+        Utils.formatNanoValue(newShardAccount.getBalance().toString()));
 
     bodyCell =
-            CellBuilder.beginCell()
-                    .storeUint(1, 32) // increased seqno
-                    .endCell();
+        CellBuilder.beginCell()
+            .storeUint(1, 32) // increased seqno
+            .endCell();
 
     extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
 
-    result = txEmulator.emulateTransaction(newShardAccount.toCell().toBase64(), extMsg.toCell().toBase64());
+    result =
+        txEmulator.emulateTransaction(
+            newShardAccount.toCell().toBase64(), extMsg.toCell().toBase64());
     result.getTransaction().printTransactionFees(true, true);
     result.getTransaction().printAllMessages(true);
-    log.info("end balance after #2 tx: {}", Utils.formatNanoValue(result.getNewShardAccount().getBalance().toString()));
+    log.info(
+        "end balance after #2 tx: {}",
+        Utils.formatNanoValue(result.getNewShardAccount().getBalance().toString()));
 
     TvmEmulator tvmEmulator =
-            TvmEmulator.builder()
-                    .codeBoc(codeCell.toBase64())
-                    .dataBoc(result.getNewStateInit().getData().toBase64())
-                    .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
-                    .build();
+        TvmEmulator.builder()
+            .codeBoc(codeCell.toBase64())
+            .dataBoc(result.getNewStateInit().getData().toBase64())
+            .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
+            .build();
 
-    log.info("updated seqno {}",tvmEmulator.runGetSeqNo());
+    log.info("updated seqno {}", tvmEmulator.runGetSeqNo());
     assertThat(tvmEmulator.runGetSeqNo()).isEqualTo(2);
   }
 
@@ -107,29 +113,30 @@ public class DevEnvTest {
     compile();
 
     TxEmulator txEmulator =
-            TxEmulator.builder()
-                    .configType(TxEmulatorConfig.TESTNET)
-                    .verbosityLevel(TxVerbosityLevel.UNLIMITED)
-                    .build();
+        TxEmulator.builder()
+            .configType(TxEmulatorConfig.TESTNET)
+            .verbosityLevel(TxVerbosityLevel.UNLIMITED)
+            .build();
 
     txEmulator.setDebugEnabled(true);
 
     double initialBalanceInToncoins = 1;
 
     Cell bodyCell =
-            CellBuilder.beginCell()
-                    .storeUint(3, 32) // seqno
-                    .endCell();
+        CellBuilder.beginCell()
+            .storeUint(3, 32) // seqno
+            .endCell();
 
     Message internalMessageMsg =
-            MsgUtils.createInternalMessageWithSourceAddress(dummyAddress, stateInit.getAddress(), Utils.toNano(0.1), null, bodyCell, false);
+        MsgUtils.createInternalMessageWithSourceAddress(
+            dummyAddress, stateInit.getAddress(), Utils.toNano(0.1), null, bodyCell, false);
 
     EmulateTransactionResult result =
-            txEmulator.emulateTransaction(
-                    codeCell,
-                    dataCell,
-                    Utils.toNano(initialBalanceInToncoins),
-                    internalMessageMsg.toCell().toBase64());
+        txEmulator.emulateTransaction(
+            codeCell,
+            dataCell,
+            Utils.toNano(initialBalanceInToncoins),
+            internalMessageMsg.toCell().toBase64());
 
     log.info("result {}", result);
 
@@ -138,15 +145,14 @@ public class DevEnvTest {
 
     assertThat(result.isSuccess()).isTrue();
 
-
     TvmEmulator tvmEmulator =
-            TvmEmulator.builder()
-                    .codeBoc(codeCell.toBase64())
-                    .dataBoc(result.getNewStateInit().getData().toBase64())
-                    .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
-                    .build();
+        TvmEmulator.builder()
+            .codeBoc(codeCell.toBase64())
+            .dataBoc(result.getNewStateInit().getData().toBase64())
+            .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
+            .build();
 
-    log.info("updated seqno {}",tvmEmulator.runGetSeqNo());
+    log.info("updated seqno {}", tvmEmulator.runGetSeqNo());
     assertThat(tvmEmulator.runGetSeqNo()).isEqualTo(3);
   }
 
@@ -158,24 +164,26 @@ public class DevEnvTest {
     Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
     GenericSmartContract smc =
-            GenericSmartContract.builder()
-                    .tonlib(tonlib)
-                    .keyPair(keyPair)
-                    .code(codeCell.toHex())
-                    .data(dataCell.toHex())
-                    .build();
+        GenericSmartContract.builder()
+            .tonlib(tonlib)
+            .keyPair(keyPair)
+            .code(codeCell.toHex())
+            .data(dataCell.toHex())
+            .build();
 
     double initialBalanceInToncoins = 0.1;
 
     BigInteger balance =
-            TestnetFaucet.topUpContract(
-                    tonlib, Address.of(smc.getAddress().toNonBounceableTestnet()), Utils.toNano(initialBalanceInToncoins));
+        TestnetFaucet.topUpContract(
+            tonlib,
+            Address.of(smc.getAddress().toNonBounceableTestnet()),
+            Utils.toNano(initialBalanceInToncoins));
     log.info("new wallet balance {}", Utils.formatNanoValue(balance));
 
     Cell deployMessageBody =
-            CellBuilder.beginCell()
-                    .storeUint(0, 32) // seqno
-                    .endCell();
+        CellBuilder.beginCell()
+            .storeUint(0, 32) // seqno
+            .endCell();
 
     assertThat(smc.deployWithoutSignature(deployMessageBody)).isNotNull();
     smc.waitForDeployment(20);
@@ -190,17 +198,21 @@ public class DevEnvTest {
 
   private void compile() {
     SmartContractCompiler smcFunc =
-            SmartContractCompiler.builder().contractAsResource("/simple.fc").build();
+        SmartContractCompiler.builder().contractAsResource("simple.fc").build();
 
     codeCell = smcFunc.compileToCell();
 
     dataCell =
-            CellBuilder.beginCell()
-                    .storeUint(0, 32) // seqno
-                    .endCell();
+        CellBuilder.beginCell()
+            .storeUint(0, 32) // seqno
+            .endCell();
 
     GenericSmartContract smc =
-            GenericSmartContract.builder().keyPair(keyPair).code(codeCell.toHex()).data(dataCell.toHex()).build();
+        GenericSmartContract.builder()
+            .keyPair(keyPair)
+            .code(codeCell.toHex())
+            .data(dataCell.toHex())
+            .build();
 
     String nonBounceableAddress = smc.getAddress().toNonBounceable();
     String bounceableAddress = smc.getAddress().toBounceable();

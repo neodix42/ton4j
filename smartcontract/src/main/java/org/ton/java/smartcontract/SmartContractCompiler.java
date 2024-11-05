@@ -6,7 +6,7 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Paths;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
@@ -18,7 +18,7 @@ import org.ton.java.func.FuncRunner;
  * href="https://github.com/ton-blockchain/packages">packages</a> for instructions.
  */
 @Builder
-@Getter
+@Data
 @Slf4j
 public class SmartContractCompiler {
 
@@ -58,7 +58,8 @@ public class SmartContractCompiler {
   public String compile() {
     if (StringUtils.isNotEmpty(contractAsResource)) {
       try {
-        URL resource = SmartContractCompiler.class.getResource(contractAsResource);
+        //        log.info("getClass {}", SmartContractCompiler.class.getClassLoader());
+        URL resource = SmartContractCompiler.class.getClassLoader().getResource(contractAsResource);
         contractPath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
       } catch (Exception e) {
         throw new Error("Can't find resource " + contractAsResource);

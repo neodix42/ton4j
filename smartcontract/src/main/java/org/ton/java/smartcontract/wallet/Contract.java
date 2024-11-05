@@ -94,7 +94,7 @@ public interface Contract {
   }
 
   default void waitForDeployment(int timeoutSeconds) {
-    System.out.println("waiting for deployment up to " + timeoutSeconds + " sec");
+    System.out.println("waiting for deployment (up to " + timeoutSeconds + "s)");
     int i = 0;
     do {
       if (++i * 2 >= timeoutSeconds) {
@@ -105,7 +105,7 @@ public interface Contract {
   }
 
   default void waitForBalanceChange(int timeoutSeconds) {
-    System.out.println("waiting for balance change up to " + timeoutSeconds + " sec");
+    System.out.println("waiting for balance change (up to " + timeoutSeconds + "s)");
     BigInteger initialBalance = getBalance();
     int i = 0;
     do {
