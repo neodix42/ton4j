@@ -6,12 +6,21 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
 import org.ton.java.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class BlockchainTest {
+  @Test
+  public void testDeployV3R2ContractOnEmulator() {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    WalletV3R2 wallet = WalletV3R2.builder().keyPair(keyPair).walletId(42).build();
+    Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
+    blockchain.deploy(30);
+  }
+
   @Test
   public void testDeployV5ContractOnEmulator() {
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
@@ -96,5 +105,92 @@ public class BlockchainTest {
                     .endCell())
             .build();
     blockchain.deploy(30);
+  }
+
+  @Test
+  public void testGetMethodsV3R2ContractOnEmulator() {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    WalletV3R2 wallet = WalletV3R2.builder().keyPair(keyPair).walletId(42).build();
+    Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
+    blockchain.deploy(30);
+    GetterResult result = blockchain.runGetMethod("seqno");
+    log.info("result {}", result);
+    log.info("seqno {}", blockchain.runGetSeqNo());
+    log.info("pubKey {}", blockchain.runGetPublicKey());
+  }
+
+  @Test
+  public void testGetMethodsV5ContractOnEmulator() {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    WalletV5 wallet =
+        WalletV5.builder().keyPair(keyPair).walletId(42).isSigAuthAllowed(true).build();
+    Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
+    blockchain.deploy(30);
+    GetterResult result = blockchain.runGetMethod("seqno");
+    log.info("result {}", result);
+    log.info("seqno {}", blockchain.runGetSeqNo());
+    log.info("pubKey {}", blockchain.runGetPublicKey());
+    log.info("subWalletId {}", blockchain.runGetSubWalletId());
+  }
+
+  @Test
+  public void testGetMethodsCustomContractOnEmulator() {
+    Blockchain blockchain =
+        Blockchain.builder()
+            .network(Network.EMULATOR)
+            .customContractAsResource("simple.fc")
+            .customContractDataCell(
+                CellBuilder.beginCell()
+                    .storeUint(0, 32)
+                    .storeInt(Utils.getRandomInt(), 32)
+                    .endCell())
+            .build();
+    GetterResult result = blockchain.runGetMethod("unique");
+    log.info("result {}", result);
+    log.info("seqno {}", blockchain.runGetSeqNo());
+  }
+
+  @Test
+  public void testGetMethodsV3R2ContractOnTestnet() {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    WalletV3R2 wallet = WalletV3R2.builder().keyPair(keyPair).walletId(42).build();
+    Blockchain blockchain = Blockchain.builder().network(Network.TESTNET).contract(wallet).build();
+    blockchain.deploy(30);
+    GetterResult result = blockchain.runGetMethod("seqno");
+    log.info("result {}", result);
+    log.info("seqno {}", blockchain.runGetSeqNo());
+    log.info("pubKey {}", blockchain.runGetPublicKey());
+  }
+
+  @Test
+  public void testGetMethodsV5ContractOnTestnet() {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    WalletV5 wallet =
+        WalletV5.builder().keyPair(keyPair).walletId(42).isSigAuthAllowed(true).build();
+    Blockchain blockchain = Blockchain.builder().network(Network.TESTNET).contract(wallet).build();
+    blockchain.deploy(30);
+    GetterResult result = blockchain.runGetMethod("seqno");
+    log.info("result {}", result);
+    log.info("seqno {}", blockchain.runGetSeqNo());
+    log.info("pubKey {}", blockchain.runGetPublicKey());
+    log.info("subWalletId {}", blockchain.runGetSubWalletId());
+  }
+
+  @Test
+  public void testGetMethodsCustomContractOnTestnet() {
+    Blockchain blockchain =
+        Blockchain.builder()
+            .network(Network.TESTNET)
+            .customContractAsResource("simple.fc")
+            .customContractDataCell(
+                CellBuilder.beginCell()
+                    .storeUint(0, 32)
+                    .storeInt(Utils.getRandomInt(), 32)
+                    .endCell())
+            .build();
+    blockchain.deploy(30);
+    GetterResult result = blockchain.runGetMethod("unique");
+    log.info("result {}", result);
+    log.info("seqno {}", blockchain.runGetSeqNo());
   }
 }

@@ -210,6 +210,15 @@ public class TvmEmulator {
         .getValue();
   }
 
+  public BigInteger runGetSubWalletId() {
+    GetMethodResult methodResult = runGetMethod(Utils.calculateMethodId("get_subwallet_id"));
+    VmStack stack = methodResult.getStack();
+    VmStackList vmStackList = stack.getStack();
+    return VmStackValueTinyInt.deserialize(
+            CellSlice.beginParse(vmStackList.getTos().get(0).toCell()))
+        .getValue();
+  }
+
   public String runGetPublicKey() {
     GetMethodResult methodResult = runGetMethod(Utils.calculateMethodId("get_public_key"));
     VmStack stack = methodResult.getStack();

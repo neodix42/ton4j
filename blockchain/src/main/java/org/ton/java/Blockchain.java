@@ -242,8 +242,120 @@ public class Blockchain {
       log.info("deployed on {}", network);
     } catch (Exception e) {
       e.printStackTrace();
-      //      throw new Error("Cannot deploy the contract on " + network + ". Error " +
-      // e.getMessage());
+      throw new Error("Cannot deploy the contract on " + network + ". Error " + e.getMessage());
+    }
+  }
+
+  public GetterResult runGetMethod(String methodName) {
+    log.info("running GetMethod {} on {}", methodName, network);
+    if (network == Network.EMULATOR) {
+      return GetterResult.builder().emulatorResult(tvmEmulator.runGetMethod(methodName)).build();
+    } else {
+      Address address;
+      if (nonNull(contract)) {
+        address = contract.getAddress();
+      } else {
+        address = stateInit.getAddress();
+      }
+      return GetterResult.builder().tonlibResult(tonlib.runMethod(address, methodName)).build();
+    }
+  }
+
+  public BigInteger runGetSeqNo() {
+    log.info("running {} on {}", "seqno", network);
+    if (network == Network.EMULATOR) {
+      return tvmEmulator.runGetSeqNo();
+    } else {
+      Address address;
+      if (nonNull(contract)) {
+        address = contract.getAddress();
+      } else {
+        address = stateInit.getAddress();
+      }
+      RunResult result = tonlib.runMethod(address, "seqno");
+      if (result.getExit_code() != 0) {
+        if (network == Network.TESTNET) {
+          throw new Error(
+              "Cannot get seqno from contract "
+                  + address.toBounceableTestnet()
+                  + ", exitCode "
+                  + result.getExit_code());
+        } else {
+          throw new Error(
+              "Cannot get seqno from contract "
+                  + address.toBounceable()
+                  + ", exitCode "
+                  + result.getExit_code());
+        }
+      }
+      TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
+
+      return seqno.getNumber();
+    }
+  }
+
+  public String runGetPublicKey() {
+    log.info("running {} on {}", "get_public_key", network);
+    if (network == Network.EMULATOR) {
+      return tvmEmulator.runGetPublicKey();
+    } else {
+      Address address;
+      if (nonNull(contract)) {
+        address = contract.getAddress();
+      } else {
+        address = stateInit.getAddress();
+      }
+      RunResult result = tonlib.runMethod(address, "get_public_key");
+      if (result.getExit_code() != 0) {
+        if (network == Network.TESTNET) {
+          throw new Error(
+              "Cannot get_public_key from contract "
+                  + address.toBounceableTestnet()
+                  + ", exitCode "
+                  + result.getExit_code());
+        } else {
+          throw new Error(
+              "Cannot get_public_key from contract "
+                  + address.toBounceable()
+                  + ", exitCode "
+                  + result.getExit_code());
+        }
+      }
+      TvmStackEntryNumber publicKeyNumber = (TvmStackEntryNumber) result.getStack().get(0);
+      return publicKeyNumber.getNumber().toString(16);
+    }
+  }
+
+  public BigInteger runGetSubWalletId() {
+    log.info("running {} on {}", "get_subwallet_id", network);
+    if (network == Network.EMULATOR) {
+      return tvmEmulator.runGetSubWalletId();
+    } else {
+      Address address;
+      if (nonNull(contract)) {
+        address = contract.getAddress();
+      } else {
+        address = stateInit.getAddress();
+      }
+      RunResult result = tonlib.runMethod(address, "get_subwallet_id");
+      if (result.getExit_code() != 0) {
+        if (network == Network.TESTNET) {
+          throw new Error(
+              "Cannot get_subwallet_id from contract "
+                  + address.toBounceableTestnet()
+                  + ", exitCode "
+                  + result.getExit_code());
+        } else {
+          throw new Error(
+              "Cannot get_subwallet_id from contract "
+                  + address.toBounceable()
+                  + ", exitCode "
+                  + result.getExit_code());
+        }
+      }
+      TvmStackEntryNumber subWalletId = (TvmStackEntryNumber) result.getStack().get(0);
+
+      return subWalletId.getNumber();
     }
   }
 
@@ -261,10 +373,10 @@ public class Blockchain {
             .build();
     log.info("faucetMyLocalTonWallet address {}", faucetMyLocalTonWallet.getAddress().toRaw());
 
-    log.info("mlt faucet balance {}", faucetMyLocalTonWallet.getBalance());
+    log.info("myLocalTon faucet balance {}", faucetMyLocalTonWallet.getBalance());
     nonBounceableAddress = address.toNonBounceable();
     log.info(
-        "topping up {} with {} toncoin from TestnetFaucet",
+        "topping up {} with {} toncoin from MyLocalTon Faucet",
         nonBounceableAddress,
         Utils.formatNanoValue(initialDeployTopUpAmount));
 
@@ -347,8 +459,6 @@ public class Blockchain {
           log.info("{} deployed at address {}", contract.getName(), nonBounceableAddress);
         }
       }
-    } else {
-      log.info("emulator regular");
     }
   }
 
@@ -425,9 +535,6 @@ public class Blockchain {
           log.info("{} deployed at address {}", contractName, nonBounceableAddress);
         }
       }
-
-    } else {
-      log.info("emulator regular");
     }
   }
 }
