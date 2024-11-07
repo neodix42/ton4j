@@ -60,6 +60,11 @@ public class MultiSigWallet implements Contract {
   }
 
   @Override
+  public void setTonlib(Tonlib pTonlib) {
+    tonlib = pTonlib;
+  }
+
+  @Override
   public long getWorkchain() {
     return wc;
   }

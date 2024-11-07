@@ -57,6 +57,11 @@ public class WalletV4R2 implements Contract {
   }
 
   @Override
+  public void setTonlib(Tonlib pTonlib) {
+    tonlib = pTonlib;
+  }
+
+  @Override
   public long getWorkchain() {
     return wc;
   }

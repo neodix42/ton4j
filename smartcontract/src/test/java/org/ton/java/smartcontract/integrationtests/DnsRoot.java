@@ -1,5 +1,7 @@
 package org.ton.java.smartcontract.integrationtests;
 
+import static java.util.Objects.isNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,8 +11,6 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.utils.Utils;
-
-import static java.util.Objects.isNull;
 
 /**
  * Address address1; address of ".ton" dns resolver smart contract in basechain
@@ -42,6 +42,11 @@ public class DnsRoot implements Contract {
     @Override
     public Tonlib getTonlib() {
         return tonlib;
+    }
+
+    @Override
+    public void setTonlib(Tonlib pTonlib) {
+        tonlib = pTonlib;
     }
 
     @Override

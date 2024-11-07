@@ -1,6 +1,9 @@
 package org.ton.java.smartcontract.token.ft;
 
+import static java.util.Objects.isNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.address.Address;
@@ -16,10 +19,6 @@ import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.tonlib.types.TvmStackEntrySlice;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-
-import static java.util.Objects.isNull;
 
 @Builder
 @Getter
@@ -51,6 +50,11 @@ public class JettonWalletStableCoin implements Contract {
     @Override
     public Tonlib getTonlib() {
         return tonlib;
+    }
+
+    @Override
+    public void setTonlib(Tonlib pTonlib) {
+        tonlib = pTonlib;
     }
 
     @Override

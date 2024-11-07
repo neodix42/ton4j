@@ -1,6 +1,10 @@
 package org.ton.java.smartcontract.wallet.v1;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.cell.Cell;
@@ -13,11 +17,6 @@ import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 @Builder
 @Getter
@@ -50,6 +49,11 @@ public class WalletV1R1 implements Contract {
     return tonlib;
   }
 
+  @Override
+  public void setTonlib(Tonlib pTonlib) {
+    tonlib = pTonlib;
+  }
+  
   @Override
   public long getWorkchain() {
     return wc;

@@ -646,7 +646,7 @@ public class TestTxEmulator {
         txEmulator.emulateTransaction(shardAccountBocBase64, intMsg.toCell().toBase64());
 
     log.info("result emulateTransaction:  {}", result);
-    assertThat(result.success).isTrue();
+    assertThat(result.isSuccess()).isTrue();
 
     ShardAccount newShardAccount = result.getNewShardAccount();
     log.info("new ShardAccount {}", newShardAccount);

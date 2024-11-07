@@ -63,6 +63,11 @@ public class JettonMinterStableCoin implements Contract {
   }
 
   @Override
+  public void setTonlib(Tonlib pTonlib) {
+    tonlib = pTonlib;
+  }
+
+  @Override
   public long getWorkchain() {
     return wc;
   }
@@ -176,7 +181,7 @@ public class JettonMinterStableCoin implements Contract {
   }
 
   /**
-   * @param jettonContentUri: String
+   * @param jettonContentUri String
    * @param queryId long
    * @return Cell
    */

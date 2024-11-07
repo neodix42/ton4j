@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.emulator.EmulateTransactionResult;
 import org.ton.java.emulator.tvm.TvmEmulator;
 import org.ton.java.emulator.tvm.TvmVerbosityLevel;
 import org.ton.java.emulator.tx.TxEmulator;
@@ -23,8 +24,8 @@ import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.StateInit;
+import org.ton.java.tlb.types.*;
+import org.ton.java.tolk.TolkRunner;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
@@ -35,6 +36,7 @@ public class Blockchain {
 
   private FuncRunner funcRunner;
   private FiftRunner fiftRunner;
+  private TolkRunner tolkRunner;
   private Tonlib tonlib;
   private Network network;
   VerbosityLevel tonlibVerbosityLevel;
@@ -49,10 +51,13 @@ public class Blockchain {
   Cell customContractBodyCell;
   String customGlobalConfigPath;
   String customEmulatorPath;
+  ShardAccount customEmulatorShardAccount;
   private static SmartContractCompiler smartContractCompiler;
   private static TxEmulator txEmulator;
   private static TvmEmulator tvmEmulator;
   private static StateInit stateInit;
+  private static Cell codeCell;
+  private static Cell dataCell;
 
   /** default 0.1 toncoin */
   BigInteger initialDeployTopUpAmount;
@@ -72,165 +77,270 @@ public class Blockchain {
           super.initialDeployTopUpAmount = Utils.toNano(0.1);
         }
 
-        // initiate tonlib
-        if (super.network != Network.EMULATOR) {
-          if (isNull(super.tonlib)) {
-            if (StringUtils.isNotEmpty(super.customGlobalConfigPath)) {
-              super.tonlib =
-                  Tonlib.builder()
-                      .ignoreCache(false)
-                      .pathToGlobalConfig(super.customGlobalConfigPath)
-                      .build();
-            } else if (super.network == Network.MAINNET) {
-              super.tonlib =
-                  Tonlib.builder()
-                      .testnet(false)
-                      .ignoreCache(false)
-                      .verbosityLevel(
-                          nonNull(super.tonlibVerbosityLevel)
-                              ? super.tonlibVerbosityLevel
-                              : VerbosityLevel.INFO)
-                      .build();
-            } else if (super.network == Network.TESTNET) {
-              super.tonlib =
-                  Tonlib.builder()
-                      .testnet(true)
-                      .ignoreCache(false)
-                      .verbosityLevel(
-                          nonNull(super.tonlibVerbosityLevel)
-                              ? super.tonlibVerbosityLevel
-                              : VerbosityLevel.INFO)
-                      .build();
+        initializeTonlib();
 
-            } else { // MyLocalTon
-              if (StringUtils.isNotEmpty(super.myLocalTonInstallationPath)) {
-                super.tonlib =
-                    Tonlib.builder()
-                        .ignoreCache(false)
-                        .verbosityLevel(
-                            nonNull(super.tonlibVerbosityLevel)
-                                ? super.tonlibVerbosityLevel
-                                : VerbosityLevel.INFO)
-                        .pathToGlobalConfig(
-                            super.myLocalTonInstallationPath
-                                + "/genesis/db/my-ton-global.config.json")
-                        .build();
-              } else {
-                throw new Error(
-                    "When using MyLocalTon network myLocalTonInstallationPath must bet set.");
-              }
-            }
-          }
-        }
+        initializeSmartContractCompiler();
 
-        if (isNull(super.funcRunner)) {
-          super.funcRunner = FuncRunner.builder().build();
-        }
+        compileSmartContract();
 
-        if (isNull(super.fiftRunner)) {
-          super.fiftRunner = FiftRunner.builder().build();
-        }
+        initializeEmulators();
 
-        smartContractCompiler =
-            SmartContractCompiler.builder()
-                .fiftRunner(super.fiftRunner)
-                .funcRunner(super.funcRunner)
-                .build();
+        printBlockchainInfo();
 
-        // compile contract with Contract interface
-        if (nonNull(super.contract)) {
-          tvmEmulator =
-              TvmEmulator.builder()
-                  .codeBoc(super.contract.createCodeCell().toBase64())
-                  .dataBoc(super.contract.createDataCell().toBase64())
-                  .verbosityLevel(super.tvmEmulatorVerbosityLevel)
-                  .build();
-          stateInit =
-              StateInit.builder()
-                  .code(super.contract.createCodeCell())
-                  .data(super.contract.createDataCell())
-                  .build();
-
-          txEmulator = TxEmulator.builder().verbosityLevel(super.txEmulatorVerbosityLevel).build();
-        } else {
-          // compile custom contract
-          if (nonNull(super.customContractAsResource)) {
-            smartContractCompiler.setContractAsResource(super.customContractAsResource);
-          } else if (nonNull(super.customContractPath)) {
-            smartContractCompiler.setContractPath(super.customContractPath);
-          } else {
-            throw new Error(
-                "Specify path to custom contract via customContractAsResource or customContractPath.");
-          }
-
-          Cell codeCell = smartContractCompiler.compileToCell();
-          if (isNull(super.customContractDataCell)) {
-            throw new Error("Custom contract requires customContractDataCell to be specified.");
-          }
-          tvmEmulator =
-              TvmEmulator.builder()
-                  .codeBoc(codeCell.toBase64())
-                  .dataBoc(super.customContractDataCell.toBase64())
-                  .verbosityLevel(super.tvmEmulatorVerbosityLevel)
-                  .build();
-
-          stateInit = StateInit.builder().code(codeCell).data(super.customContractDataCell).build();
-
-          txEmulator = TxEmulator.builder().verbosityLevel(super.txEmulatorVerbosityLevel).build();
-        }
-        if (super.network == Network.EMULATOR) {
-
-          log.info(
-              "\nJava Blockchain configuration:\n"
-                  + "Target network: {}\n"
-                  + "Emulator location: {}, configType: {}, txVerbosity: {}, tvmVerbosity: {}\n"
-                  + "Func location: {}\n"
-                  + "Fift location: {}, FIFTPATH={}\n"
-                  + "Contract: {}\n",
-              super.network,
-              Utils.detectAbsolutePath("emulator", true),
-              txEmulator.getConfigType(),
-              txEmulator.getVerbosityLevel(),
-              tvmEmulator.getVerbosityLevel(),
-              super.funcRunner.getFuncPath(),
-              super.fiftRunner.getFiftPath(),
-              super.fiftRunner.getLibsPath(),
-              nonNull(super.contract)
-                  ? "standard contract " + super.contract.getName()
-                  : isNull(super.customContractPath)
-                      ? "integrated resource " + super.customContractAsResource
-                      : super.customContractPath);
-        } else {
-          log.info(
-              "\nBlockchain configuration:\n"
-                  + "Target network: {}\n"
-                  + "Emulator not used\n"
-                  + "Tonlib location: {}\n"
-                  + "Tonlib global config: {}\n"
-                  + "Func location: {}\n"
-                  + "Fift location: {}, FIFTPATH={}\n"
-                  + "Contract: {}\n",
-              super.network,
-              super.tonlib.pathToTonlibSharedLib,
-              super.tonlib.pathToGlobalConfig,
-              super.funcRunner.getFuncPath(),
-              super.fiftRunner.getFiftPath(),
-              super.fiftRunner.getLibsPath(),
-              nonNull(super.contract)
-                  ? "standard contract " + super.contract.getName()
-                  : isNull(super.customContractPath)
-                      ? "integrated resource " + super.customContractAsResource
-                      : super.customContractPath);
-        }
       } catch (Exception e) {
         e.printStackTrace();
         throw new Error("Error creating blockchain instance: " + e.getMessage());
       }
       return super.build();
     }
+
+    private void initializeEmulators() {
+      if (super.network == Network.EMULATOR) {
+        tvmEmulator =
+            TvmEmulator.builder()
+                .codeBoc(codeCell.toBase64())
+                .dataBoc(dataCell.toBase64())
+                .verbosityLevel(super.tvmEmulatorVerbosityLevel)
+                .build();
+
+        txEmulator = TxEmulator.builder().verbosityLevel(super.txEmulatorVerbosityLevel).build();
+
+        if (isNull(super.customEmulatorShardAccount)) {
+          super.customEmulatorShardAccount =
+              ShardAccount.builder()
+                  .account(
+                      Account.builder()
+                          .isNone(false)
+                          .address(MsgAddressIntStd.of(stateInit.getAddress()))
+                          .storageInfo(
+                              StorageInfo.builder()
+                                  .storageUsed(
+                                      StorageUsed.builder()
+                                          .cellsUsed(BigInteger.ZERO)
+                                          .bitsUsed(BigInteger.ZERO)
+                                          .publicCellsUsed(BigInteger.ZERO)
+                                          .build())
+                                  .lastPaid(System.currentTimeMillis() / 1000)
+                                  .duePayment(BigInteger.ZERO)
+                                  .build())
+                          .accountStorage(
+                              AccountStorage.builder()
+                                  .lastTransactionLt(BigInteger.ZERO)
+                                  .balance(
+                                      CurrencyCollection.builder()
+                                          .coins(super.initialDeployTopUpAmount) // initial balance
+                                          .build())
+                                  .accountState(
+                                      AccountStateActive.builder()
+                                          .stateInit(
+                                              StateInit.builder()
+                                                  .code(codeCell)
+                                                  .data(dataCell)
+                                                  .build())
+                                          .build())
+                                  .build())
+                          .build())
+                  .lastTransHash(BigInteger.ZERO)
+                  .lastTransLt(BigInteger.ZERO)
+                  .build();
+        }
+      } else {
+        super.contract.setTonlib(super.tonlib);
+      }
+    }
+
+    private void compileSmartContract() {
+      if (isNull(super.contract)) {
+        if (nonNull(super.customContractAsResource)) {
+          smartContractCompiler.setContractAsResource(super.customContractAsResource);
+        } else if (nonNull(super.customContractPath)) {
+          smartContractCompiler.setContractPath(super.customContractPath);
+        } else {
+          throw new Error(
+              "Specify path to custom contract via customContractAsResource or customContractPath.");
+        }
+
+        codeCell = smartContractCompiler.compileToCell();
+        if (isNull(super.customContractDataCell)) {
+          throw new Error("Custom contract requires customContractDataCell to be specified.");
+        }
+        dataCell = super.customContractDataCell;
+      } else {
+        // no need to compile regular smart-contract
+        codeCell = super.contract.createCodeCell();
+        dataCell = super.contract.createDataCell();
+      }
+      stateInit = StateInit.builder().code(codeCell).data(dataCell).build();
+    }
+
+    private void initializeSmartContractCompiler() {
+      if (isNull(super.funcRunner)) {
+        super.funcRunner = FuncRunner.builder().build();
+      }
+
+      if (isNull(super.fiftRunner)) {
+        super.fiftRunner = FiftRunner.builder().build();
+      }
+
+      if (isNull(super.tolkRunner)) {
+        super.tolkRunner = TolkRunner.builder().build();
+      }
+
+      smartContractCompiler =
+          SmartContractCompiler.builder()
+              .fiftRunner(super.fiftRunner)
+              .funcRunner(super.funcRunner)
+              .tolkRunner(super.tolkRunner)
+              .build();
+    }
+
+    private void printBlockchainInfo() {
+      if (super.network == Network.EMULATOR) {
+
+        log.info(
+            "\nJava Blockchain configuration:\n"
+                + "Target network: {}\n"
+                + "Emulator location: {}, configType: {}, txVerbosity: {}, tvmVerbosity: {}\n"
+                + "Emulator ShardAccount: balance {}, address: {}, lastPaid: {}, lastTransLt: {}\n"
+                + "Func location: {}\n"
+                + "Tolk location: {}\n"
+                + "Fift location: {}, FIFTPATH={}\n"
+                + "Contract: {}\n",
+            super.network,
+            Utils.detectAbsolutePath("emulator", true),
+            txEmulator.getConfigType(),
+            txEmulator.getVerbosityLevel(),
+            tvmEmulator.getVerbosityLevel(),
+            Utils.formatNanoValue(super.customEmulatorShardAccount.getBalance()),
+            super.customEmulatorShardAccount.getAccount().getAddress().toAddress().toBounceable(),
+            super.customEmulatorShardAccount.getAccount().getStorageInfo().getLastPaid(),
+            super.customEmulatorShardAccount.getLastTransLt(),
+            super.funcRunner.getFuncPath(),
+            super.tolkRunner.getTolkPath(),
+            super.fiftRunner.getFiftPath(),
+            super.fiftRunner.getLibsPath(),
+            nonNull(super.contract)
+                ? "standard contract " + super.contract.getName()
+                : isNull(super.customContractPath)
+                    ? "integrated resource " + super.customContractAsResource
+                    : super.customContractPath);
+      } else {
+        log.info(
+            "\nBlockchain configuration:\n"
+                + "Target network: {}\n"
+                + "Emulator not used\n"
+                + "Tonlib location: {}\n"
+                + "Tonlib global config: {}\n"
+                + "Func location: {}\n"
+                + "Tolk location: {}\n"
+                + "Fift location: {}, FIFTPATH={}\n"
+                + "Contract: {}\n",
+            super.network,
+            super.tonlib.pathToTonlibSharedLib,
+            super.tonlib.pathToGlobalConfig,
+            super.funcRunner.getFuncPath(),
+            super.tolkRunner.getTolkPath(),
+            super.fiftRunner.getFiftPath(),
+            super.fiftRunner.getLibsPath(),
+            nonNull(super.contract)
+                ? "standard contract " + super.contract.getName()
+                : isNull(super.customContractPath)
+                    ? "integrated resource " + super.customContractAsResource
+                    : super.customContractPath);
+      }
+    }
+
+    private void initializeTonlib() {
+      if (super.network != Network.EMULATOR) {
+        if (isNull(super.tonlib)) {
+          if (StringUtils.isNotEmpty(super.customGlobalConfigPath)) {
+            super.tonlib =
+                Tonlib.builder()
+                    .ignoreCache(false)
+                    .pathToGlobalConfig(super.customGlobalConfigPath)
+                    .build();
+          } else if (super.network == Network.MAINNET) {
+            super.tonlib =
+                Tonlib.builder()
+                    .testnet(false)
+                    .ignoreCache(false)
+                    .verbosityLevel(
+                        nonNull(super.tonlibVerbosityLevel)
+                            ? super.tonlibVerbosityLevel
+                            : VerbosityLevel.INFO)
+                    .build();
+          } else if (super.network == Network.TESTNET) {
+            super.tonlib =
+                Tonlib.builder()
+                    .testnet(true)
+                    .ignoreCache(false)
+                    .verbosityLevel(
+                        nonNull(super.tonlibVerbosityLevel)
+                            ? super.tonlibVerbosityLevel
+                            : VerbosityLevel.INFO)
+                    .build();
+
+          } else { // MyLocalTon
+            if (StringUtils.isNotEmpty(super.myLocalTonInstallationPath)) {
+              super.tonlib =
+                  Tonlib.builder()
+                      .ignoreCache(false)
+                      .verbosityLevel(
+                          nonNull(super.tonlibVerbosityLevel)
+                              ? super.tonlibVerbosityLevel
+                              : VerbosityLevel.INFO)
+                      .pathToGlobalConfig(
+                          super.myLocalTonInstallationPath
+                              + "/genesis/db/my-ton-global.config.json")
+                      .build();
+            } else {
+              throw new Error(
+                  "When using MyLocalTon network myLocalTonInstallationPath must bet set.");
+            }
+          }
+        }
+      }
+    }
   }
 
-  public void deploy(int waitForDeploymentSeconds) {
+  public SendExternalResult sendExternal(Message message) {
+    log.info("sending external message on {}", network);
+
+    ExtMessageInfo tonlibResult = null;
+    try {
+      if (network != Network.EMULATOR) {
+        tonlibResult = tonlib.sendRawMessage(message.toCell().toBase64());
+        if (tonlibResult.getError().getCode() != 0) {
+          throw new Error(
+              "Cannot send external message on "
+                  + network
+                  + ". Error code "
+                  + tonlibResult.getError().getCode());
+        } else {
+          log.info("successfully sent external message on {}", network);
+        }
+        return SendExternalResult.builder().tonlibResult(tonlibResult).build();
+      } else { // emulator
+        EmulateTransactionResult emulateTransactionResult =
+            txEmulator.emulateTransaction(
+                customEmulatorShardAccount.toCell().toBase64(), message.toCell().toBase64());
+        if (emulateTransactionResult.isSuccess()) {
+          customEmulatorShardAccount = emulateTransactionResult.getNewShardAccount();
+          emulateTransactionResult.getTransaction().printTransactionFees(true, true);
+          emulateTransactionResult.getTransaction().printAllMessages(true);
+        } else {
+          log.error("Cannot emulate transaction. Error " + emulateTransactionResult.getError());
+        }
+        return SendExternalResult.builder().emulatorResult(emulateTransactionResult).build();
+      }
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new Error("Cannot send external message on " + network + ". Error " + e.getMessage());
+    }
+  }
+
+  public boolean deploy(int waitForDeploymentSeconds) {
     log.info("deploying on {}", network);
     try {
 
@@ -240,9 +350,11 @@ public class Blockchain {
         deployCustomContract(stateInit, waitForDeploymentSeconds);
       }
       log.info("deployed on {}", network);
+      return true;
     } catch (Exception e) {
+      log.error("Cannot deploy the contract on " + network + ". Error " + e.getMessage());
       e.printStackTrace();
-      throw new Error("Cannot deploy the contract on " + network + ". Error " + e.getMessage());
+      return false;
     }
   }
 
@@ -417,7 +529,7 @@ public class Blockchain {
               waitForDeploymentSeconds,
               nonBounceableAddress);
           tonlib.waitForBalanceChange(address, waitForDeploymentSeconds);
-          log.info("now sending external message with deploy instructions...");
+          log.info("sending external message with deploy instructions...");
           Message msg = contract.prepareDeployMsg();
           result = tonlib.sendRawMessage(msg.toCell().toBase64());
           assert result.getError().getCode() != 0;
@@ -432,7 +544,7 @@ public class Blockchain {
           BigInteger newBalance =
               TestnetFaucet.topUpContract(tonlib, contract.getAddress(), initialDeployTopUpAmount);
           log.info("topped up successfully, new balance {}", Utils.formatNanoValue(newBalance));
-          log.info("now sending external message with deploy instructions...");
+          log.info("sending external message with deploy instructions...");
           Message msg = contract.prepareDeployMsg();
           result = tonlib.sendRawMessage(msg.toCell().toBase64());
           if (result.getError().getCode() != 0) {
@@ -481,7 +593,7 @@ public class Blockchain {
               waitForDeploymentSeconds,
               nonBounceableAddress);
           tonlib.waitForBalanceChange(address, waitForDeploymentSeconds);
-          log.info("now sending external message with deploy instructions...");
+          log.info("sending external message with deploy instructions...");
           Message msg =
               MsgUtils.createExternalMessage(
                   address,
@@ -500,7 +612,7 @@ public class Blockchain {
           BigInteger newBalance =
               TestnetFaucet.topUpContract(tonlib, address, initialDeployTopUpAmount);
           log.info("topped up successfully, new balance {}", Utils.formatNanoValue(newBalance));
-          log.info("now sending external message with deploy instructions...");
+          log.info("sending external message with deploy instructions...");
           Message msg =
               MsgUtils.createExternalMessage(
                   address,

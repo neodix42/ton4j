@@ -1,13 +1,19 @@
 package org.ton.java;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.address.Address;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.smartcontract.faucet.TestnetFaucet;
+import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
+import org.ton.java.tlb.types.Message;
 import org.ton.java.utils.Utils;
 
 @Slf4j
@@ -18,7 +24,7 @@ public class BlockchainTest {
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
     WalletV3R2 wallet = WalletV3R2.builder().keyPair(keyPair).walletId(42).build();
     Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
   }
 
   @Test
@@ -27,7 +33,7 @@ public class BlockchainTest {
     WalletV5 wallet =
         WalletV5.builder().keyPair(keyPair).walletId(42).isSigAuthAllowed(true).build();
     Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
   }
 
   @Test
@@ -41,7 +47,7 @@ public class BlockchainTest {
             .myLocalTonInstallationPath("G:/Git_Projects/MyLocalTon/myLocalTon")
             .contract(wallet)
             .build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
   }
 
   @Test
@@ -50,7 +56,7 @@ public class BlockchainTest {
     WalletV5 wallet =
         WalletV5.builder().keyPair(keyPair).walletId(42).isSigAuthAllowed(true).build();
     Blockchain blockchain = Blockchain.builder().network(Network.TESTNET).contract(wallet).build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
   }
 
   @Test
@@ -68,7 +74,7 @@ public class BlockchainTest {
                         32) // unique integer, to make contract address random each time
                     .endCell())
             .build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
   }
 
   @Test
@@ -84,7 +90,7 @@ public class BlockchainTest {
                     .storeInt(Utils.getRandomInt(), 32)
                     .endCell())
             .build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
   }
 
   @Test
@@ -104,7 +110,7 @@ public class BlockchainTest {
                     .storeUint(1, 32) // seqno
                     .endCell())
             .build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
   }
 
   @Test
@@ -112,7 +118,7 @@ public class BlockchainTest {
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
     WalletV3R2 wallet = WalletV3R2.builder().keyPair(keyPair).walletId(42).build();
     Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
     GetterResult result = blockchain.runGetMethod("seqno");
     log.info("result {}", result);
     log.info("seqno {}", blockchain.runGetSeqNo());
@@ -125,7 +131,7 @@ public class BlockchainTest {
     WalletV5 wallet =
         WalletV5.builder().keyPair(keyPair).walletId(42).isSigAuthAllowed(true).build();
     Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
     GetterResult result = blockchain.runGetMethod("seqno");
     log.info("result {}", result);
     log.info("seqno {}", blockchain.runGetSeqNo());
@@ -155,7 +161,7 @@ public class BlockchainTest {
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
     WalletV3R2 wallet = WalletV3R2.builder().keyPair(keyPair).walletId(42).build();
     Blockchain blockchain = Blockchain.builder().network(Network.TESTNET).contract(wallet).build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
     GetterResult result = blockchain.runGetMethod("seqno");
     log.info("result {}", result);
     log.info("seqno {}", blockchain.runGetSeqNo());
@@ -168,7 +174,7 @@ public class BlockchainTest {
     WalletV5 wallet =
         WalletV5.builder().keyPair(keyPair).walletId(42).isSigAuthAllowed(true).build();
     Blockchain blockchain = Blockchain.builder().network(Network.TESTNET).contract(wallet).build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
     GetterResult result = blockchain.runGetMethod("seqno");
     log.info("result {}", result);
     log.info("seqno {}", blockchain.runGetSeqNo());
@@ -188,7 +194,7 @@ public class BlockchainTest {
                     .storeInt(Utils.getRandomInt(), 32)
                     .endCell())
             .build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
     GetterResult result = blockchain.runGetMethod("unique");
     log.info("result {}", result);
     log.info("seqno {}", blockchain.runGetSeqNo());
@@ -206,9 +212,53 @@ public class BlockchainTest {
                     .storeInt(Utils.getRandomInt(), 32)
                     .endCell())
             .build();
-    blockchain.deploy(30);
+    assertThat(blockchain.deploy(30)).isTrue();
     GetterResult result = blockchain.runGetMethod("unique");
     log.info("result {}", result);
     log.info("seqno {}", blockchain.runGetSeqNo());
+  }
+
+  @Test
+  public void testSendMessageV3R2ContractOnTestnet() {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    WalletV3R2 wallet = WalletV3R2.builder().keyPair(keyPair).walletId(42).build();
+    Blockchain blockchain = Blockchain.builder().network(Network.TESTNET).contract(wallet).build();
+    assertThat(blockchain.deploy(30)).isTrue();
+
+    WalletV3Config configA =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(blockchain.runGetSeqNo().longValue())
+            .destination(Address.of(TestnetFaucet.FAUCET_ADDRESS_RAW))
+            .amount(Utils.toNano(0.05))
+            .comment("ton4j-test")
+            .mode(3)
+            .build();
+
+    Message msg = wallet.prepareExternalMsg(configA);
+
+    blockchain.sendExternal(msg);
+  }
+
+  @Test
+  public void testSendMessageV3R2ContractOnEmulator() {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    WalletV3R2 wallet = WalletV3R2.builder().keyPair(keyPair).walletId(42).build();
+    Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
+    assertThat(blockchain.deploy(30)).isTrue();
+
+    WalletV3Config configA =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(blockchain.runGetSeqNo().longValue())
+            .destination(Address.of(TestnetFaucet.FAUCET_ADDRESS_RAW))
+            .amount(Utils.toNano(0.05))
+            .comment("ton4j-test")
+            .mode(3)
+            .build();
+
+    Message msg = wallet.prepareExternalMsg(configA);
+
+    blockchain.sendExternal(msg);
   }
 }

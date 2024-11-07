@@ -19,6 +19,13 @@ public interface Contract {
 
   Tonlib getTonlib();
 
+  /**
+   * Used for late tonlib assignment
+   *
+   * @param pTonlib Tonlib instance
+   */
+  void setTonlib(Tonlib pTonlib);
+
   long getWorkchain();
 
   String getName();

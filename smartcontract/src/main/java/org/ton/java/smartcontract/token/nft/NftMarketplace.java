@@ -15,60 +15,63 @@ import static java.util.Objects.isNull;
 @Builder
 @Getter
 public class NftMarketplace implements Contract {
-    public static final String NFT_MARKETPLACE_CODE_HEX = "B5EE9C7241010401006D000114FF00F4A413F4BCF2C80B01020120020300AAD23221C700915BE0D0D3030171B0915BE0FA40ED44D0FA403012C705F2E19101D31F01C0018E2BFA003001D4D43021F90070C8CA07CBFFC9D077748018C8CB05CB0258CF165004FA0213CB6BCCCCC971FB00915BE20004F2308EF7CCE7";
+  public static final String NFT_MARKETPLACE_CODE_HEX =
+      "B5EE9C7241010401006D000114FF00F4A413F4BCF2C80B01020120020300AAD23221C700915BE0D0D3030171B0915BE0FA40ED44D0FA403012C705F2E19101D31F01C0018E2BFA003001D4D43021F90070C8CA07CBFFC9D077748018C8CB05CB0258CF165004FA0213CB6BCCCCC971FB00915BE20004F2308EF7CCE7";
 
-    TweetNaclFast.Signature.KeyPair keyPair;
-    Address adminAddress;
+  TweetNaclFast.Signature.KeyPair keyPair;
+  Address adminAddress;
 
-    public static class NftMarketplaceBuilder {
-    }
+  public static class NftMarketplaceBuilder {}
 
-    public static NftMarketplaceBuilder builder() {
-        return new CustomNftMarketplaceBuilder();
-    }
+  public static NftMarketplaceBuilder builder() {
+    return new CustomNftMarketplaceBuilder();
+  }
 
-    private static class CustomNftMarketplaceBuilder extends NftMarketplaceBuilder {
-        @Override
-        public NftMarketplace build() {
-            if (isNull(super.keyPair)) {
-                super.keyPair = Utils.generateSignatureKeyPair();
-            }
-            if (isNull(super.adminAddress)) {
-                throw new IllegalArgumentException("adminAddress parameter is mandatory.");
-            }
-            return super.build();
-        }
-    }
-
-    private Tonlib tonlib;
-    private long wc;
-
+  private static class CustomNftMarketplaceBuilder extends NftMarketplaceBuilder {
     @Override
-    public Tonlib getTonlib() {
-        return tonlib;
+    public NftMarketplace build() {
+      if (isNull(super.keyPair)) {
+        super.keyPair = Utils.generateSignatureKeyPair();
+      }
+      if (isNull(super.adminAddress)) {
+        throw new IllegalArgumentException("adminAddress parameter is mandatory.");
+      }
+      return super.build();
     }
+  }
 
-    @Override
-    public long getWorkchain() {
-        return wc;
-    }
+  private Tonlib tonlib;
+  private long wc;
 
-    public String getName() {
-        return "nftMarketplace";
-    }
+  @Override
+  public Tonlib getTonlib() {
+    return tonlib;
+  }
 
-    /**
-     * @return Cell cell contains nft marketplace data
-     */
-    @Override
-    public Cell createDataCell() {
-        return CellBuilder.beginCell()
-                .storeAddress(adminAddress)
-                .endCell();
-    }
+  @Override
+  public void setTonlib(Tonlib pTonlib) {
+    tonlib = pTonlib;
+  }
 
-    @Override
-    public Cell createCodeCell() {
-        return CellBuilder.beginCell().fromBoc(NFT_MARKETPLACE_CODE_HEX).endCell();
-    }
+  @Override
+  public long getWorkchain() {
+    return wc;
+  }
+
+  public String getName() {
+    return "nftMarketplace";
+  }
+
+  /**
+   * @return Cell cell contains nft marketplace data
+   */
+  @Override
+  public Cell createDataCell() {
+    return CellBuilder.beginCell().storeAddress(adminAddress).endCell();
+  }
+
+  @Override
+  public Cell createCodeCell() {
+    return CellBuilder.beginCell().fromBoc(NFT_MARKETPLACE_CODE_HEX).endCell();
+  }
 }

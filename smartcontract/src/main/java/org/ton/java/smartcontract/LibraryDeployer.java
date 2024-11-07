@@ -17,70 +17,68 @@ import org.ton.java.tonlib.types.ExtMessageInfo;
 @Data
 public class LibraryDeployer implements Contract {
 
-    private Tonlib tonlib;
-    private long wc;
-    Cell libraryDeployerCode;
-    Cell libraryCode;
+  private Tonlib tonlib;
+  private long wc;
+  Cell libraryDeployerCode;
+  Cell libraryCode;
 
+  @Override
+  public Tonlib getTonlib() {
+    return tonlib;
+  }
+
+  @Override
+  public void setTonlib(Tonlib pTonlib) {
+    tonlib = pTonlib;
+  }
+
+  @Override
+  public long getWorkchain() {
+    return -1;
+  }
+
+  @Override
+  public String getName() {
+    return "LibraryDeployer";
+  }
+
+  @Override
+  public Cell createCodeCell() {
+    if (isNull(libraryDeployerCode)) {
+      return CellBuilder.beginCell().fromBoc(WalletCodes.libraryDeployer.getValue()).endCell();
+    } else {
+      return libraryDeployerCode;
+    }
+  }
+
+  @Override
+  public Cell createDataCell() {
+    return libraryCode;
+  }
+
+  public static class LibraryDeployerBuilder {}
+
+  public static LibraryDeployerBuilder builder() {
+    return new CustomLibraryDeployerBuilder();
+  }
+
+  private static class CustomLibraryDeployerBuilder extends LibraryDeployerBuilder {
     @Override
-    public Tonlib getTonlib() {
-        return tonlib;
+    public LibraryDeployer build() {
+
+      return super.build();
     }
+  }
 
-    @Override
-    public long getWorkchain() {
-        return -1;
-    }
+  public Message prepareDeployMsg() {
 
-    @Override
-    public String getName() {
-        return "LibraryDeployer";
-    }
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .build();
+  }
 
-    @Override
-    public Cell createCodeCell() {
-        if (isNull(libraryDeployerCode)) {
-            return CellBuilder.beginCell().
-                    fromBoc(WalletCodes.libraryDeployer.getValue()).
-                    endCell();
-        } else {
-            return libraryDeployerCode;
-        }
-    }
-
-    @Override
-    public Cell createDataCell() {
-        return libraryCode;
-    }
-
-
-    public static class LibraryDeployerBuilder {
-    }
-
-    public static LibraryDeployerBuilder builder() {
-        return new CustomLibraryDeployerBuilder();
-    }
-
-    private static class CustomLibraryDeployerBuilder extends LibraryDeployerBuilder {
-        @Override
-        public LibraryDeployer build() {
-
-            return super.build();
-        }
-    }
-
-    public Message prepareDeployMsg() {
-
-        return Message.builder()
-                .info(ExternalMessageInInfo.builder()
-                        .dstAddr(getAddressIntStd())
-                        .build())
-                .init(getStateInit())
-                .build();
-    }
-
-    public ExtMessageInfo deploy() {
-        return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
-    }
-
+  public ExtMessageInfo deploy() {
+    return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+  }
 }

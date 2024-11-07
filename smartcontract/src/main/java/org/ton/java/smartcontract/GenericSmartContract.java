@@ -30,6 +30,16 @@ public class GenericSmartContract implements Contract {
   }
 
   @Override
+  public Tonlib getTonlib() {
+    return tonlib;
+  }
+
+  @Override
+  public void setTonlib(Tonlib pTonlib) {
+    tonlib = pTonlib;
+  }
+
+  @Override
   public String getName() {
     return "GenericSmartContract";
   }

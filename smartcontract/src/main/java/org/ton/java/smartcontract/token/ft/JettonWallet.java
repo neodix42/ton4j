@@ -1,5 +1,6 @@
 package org.ton.java.smartcontract.token.ft;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.address.Address;
@@ -15,8 +16,6 @@ import org.ton.java.tonlib.types.TvmStackEntryCell;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.tonlib.types.TvmStackEntrySlice;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
 
 @Builder
 @Getter
@@ -45,6 +44,11 @@ public class JettonWallet implements Contract {
     @Override
     public Tonlib getTonlib() {
         return tonlib;
+    }
+
+    @Override
+    public void setTonlib(Tonlib pTonlib) {
+        tonlib = pTonlib;
     }
 
     @Override

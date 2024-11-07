@@ -43,24 +43,24 @@ public class TestnetFaucet {
     do {
       try {
         if (i++ > 10) {
-          throw new Error("Cannot get faucet balance. Restart.");
+          throw new Error("Cannot get testnet faucet balance. Restart.");
         }
 
         faucetBalance = faucet.getBalance();
         log.info(
-            "Faucet address {}, balance {}",
+            "Testnet faucet address {}, balance {}",
             faucet.getAddress().toBounceable(),
             Utils.formatNanoValue(faucetBalance));
         if (faucetBalance.compareTo(amount) < 0) {
           throw new Error(
-              "Faucet does not have that much toncoins. faucet balance "
+              "Testnet faucet does not have that much toncoins. Faucet balance "
                   + Utils.formatNanoValue(faucetBalance)
                   + ", requested "
                   + Utils.formatNanoValue(amount));
         }
       } catch (Exception e) {
-        log.info("Cannot get faucet balance. Restarting...");
-        Utils.sleep(5, "Waiting for faucet balance");
+        log.info("Cannot get testnet faucet balance. Restarting...");
+        Utils.sleep(5, "Waiting for testnet faucet balance");
       }
     } while (isNull(faucetBalance));
 
@@ -79,7 +79,7 @@ public class TestnetFaucet {
       throw new Error(extMessageInfo.getError().getMessage());
     }
 
-    ContractUtils.waitForBalanceChange(tonlib, destinationAddress, 120);
+    ContractUtils.waitForBalanceChange(tonlib, destinationAddress, 60);
 
     return tonlib.getAccountBalance(destinationAddress);
   }
