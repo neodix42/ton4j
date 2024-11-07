@@ -43,7 +43,7 @@ public class FiftRunner {
             throw new Error("Cannot execute simple Fift command.\n" + errorMsg);
           }
           fiftAbsolutePath = Utils.detectAbsolutePath("fift", false);
-          log.info("fift found at " + fiftAbsolutePath);
+          log.info("Fift found at " + fiftAbsolutePath);
           fiftExecutable = "fift";
         } catch (Exception e) {
           throw new Error("Cannot execute simple Fift command.\n" + errorMsg);

@@ -24,6 +24,7 @@
         <module>tonconnect</module>
         <module>fift</module>
         <module>func</module>
+        <module>tolk</module>
         <module>devenv</module>
         <module>blockchain</module>
     </modules>

@@ -98,4 +98,24 @@ public class TestSmartContractCompiler {
 
     log.info("codeCellHex {}", codeCellHex);
   }
+
+  @Test
+  public void testSmartContractCompilerFuncSimple() {
+    SmartContractCompiler smcFunc =
+        SmartContractCompiler.builder()
+            .contractAsResource("simple.fc")
+            .printFiftAsmOutput(true)
+            .build();
+    smcFunc.compile();
+  }
+
+  @Test
+  public void testSmartContractCompilerTolkSimple() {
+    SmartContractCompiler smcTolk =
+        SmartContractCompiler.builder()
+            .contractAsResource("simple.tolk")
+            .printFiftAsmOutput(true)
+            .build();
+    smcTolk.compile();
+  }
 }

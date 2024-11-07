@@ -70,9 +70,11 @@ public class Executor {
             String.join(
                 " ", "powershell", "-c", "'" + stdin + "' | " + pathToBinary + " " + include);
       } else { // linux & macos
-        pb = null; // todo
+        pb = null; // todo test
         cmd = String.join(" ", "echo", "'" + stdin + "' | " + pathToBinary + " " + include);
       }
+
+      log.info("execute: {}", cmd);
 
       pb.directory(new File(workDir));
       Process p = pb.start();

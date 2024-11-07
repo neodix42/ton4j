@@ -193,4 +193,22 @@ public class BlockchainTest {
     log.info("result {}", result);
     log.info("seqno {}", blockchain.runGetSeqNo());
   }
+
+  @Test
+  public void testGetMethodsCustomContractOnTestnetTolk() {
+    Blockchain blockchain =
+        Blockchain.builder()
+            .network(Network.TESTNET)
+            .customContractAsResource("simple.tolk")
+            .customContractDataCell(
+                CellBuilder.beginCell()
+                    .storeUint(0, 32)
+                    .storeInt(Utils.getRandomInt(), 32)
+                    .endCell())
+            .build();
+    blockchain.deploy(30);
+    GetterResult result = blockchain.runGetMethod("unique");
+    log.info("result {}", result);
+    log.info("seqno {}", blockchain.runGetSeqNo());
+  }
 }

@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.fift.FiftRunner;
 import org.ton.java.func.FuncRunner;
+import org.ton.java.tolk.TolkRunner;
 
 /**
  * Make sure you have fift and func installed. See <a
@@ -28,6 +29,8 @@ public class SmartContractCompiler {
   private FiftRunner fiftRunner;
 
   private FuncRunner funcRunner;
+
+  private TolkRunner tolkRunner;
 
   private boolean printFiftAsmOutput;
 
@@ -46,6 +49,9 @@ public class SmartContractCompiler {
       if (isNull(super.fiftRunner)) {
         super.fiftRunner = FiftRunner.builder().build();
       }
+      if (isNull(super.tolkRunner)) {
+        super.tolkRunner = TolkRunner.builder().build();
+      }
       return super.build();
     }
   }
@@ -58,7 +64,6 @@ public class SmartContractCompiler {
   public String compile() {
     if (StringUtils.isNotEmpty(contractAsResource)) {
       try {
-        //        log.info("getClass {}", SmartContractCompiler.class.getClassLoader());
         URL resource = SmartContractCompiler.class.getClassLoader().getResource(contractAsResource);
         contractPath = Paths.get(resource.toURI()).toFile().getAbsolutePath();
       } catch (Exception e) {
@@ -67,21 +72,39 @@ public class SmartContractCompiler {
     }
     log.info("workdir " + new File(contractPath).getParent());
 
-    String outputFiftAsmFile = funcRunner.run(new File(contractPath).getParent(), contractPath);
+    String outputFiftAsmFile;
+    if (contractPath.contains(".func") || contractPath.contains(".fc")) {
+      outputFiftAsmFile = funcRunner.run(new File(contractPath).getParent(), contractPath);
+      // add missing includes, PROGRAM and to boc conversion
+      outputFiftAsmFile =
+          "\"\"\"\"TonUtil.fif\"\"\"\" include \"\"\"\"Asm.fif\"\"\"\" include PROGRAM{ "
+              + outputFiftAsmFile
+              + "}END>c 2 boc+>B dup Bx.";
+      outputFiftAsmFile =
+          outputFiftAsmFile
+              .replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "")
+              .replaceAll("\n", " ")
+              .replaceAll("\r", " ");
+    } else { // told
+      outputFiftAsmFile = tolkRunner.run(new File(contractPath).getParent(), contractPath);
+      // add to boc conversion
+      outputFiftAsmFile =
+          "\"\"\"\"TonUtil.fif\"\"\"\" include \"\"\"\"Asm.fif\"\"\"\" include "
+              + outputFiftAsmFile
+              + " 2 boc+>B dup Bx.";
+      outputFiftAsmFile =
+          outputFiftAsmFile
+              .replaceAll("\"Asm.fif\" include", "")
+              .replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "")
+              .replaceAll("\n", " ")
+              .replaceAll("\r", " ");
+    }
 
     if (outputFiftAsmFile.contains("cannot generate code")
         || outputFiftAsmFile.contains("error: undefined function")) {
       throw new Error("Compile error: " + outputFiftAsmFile);
     }
-    outputFiftAsmFile =
-        "\"\"\"\"TonUtil.fif\"\"\"\" include \"\"\"\"Asm.fif\"\"\"\" include PROGRAM{ "
-            + outputFiftAsmFile
-            + "}END>c 2 boc+>B dup Bx.";
-    outputFiftAsmFile =
-        outputFiftAsmFile
-            .replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "")
-            .replaceAll("\n", " ")
-            .replaceAll("\r", " ");
+
     if (printFiftAsmOutput) {
       System.out.println(outputFiftAsmFile);
     }
