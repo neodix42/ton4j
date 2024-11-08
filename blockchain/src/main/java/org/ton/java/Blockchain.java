@@ -213,7 +213,7 @@ public class Blockchain {
       if (super.network == Network.EMULATOR) {
 
         System.out.printf(
-            "Java Blockchain configuration:\n"
+            "Blockchain configuration:\n"
                 + "Target network: %s\n"
                 + "Emulator location: %s, configType: %s, txVerbosity: %s, tvmVerbosity: %s\n"
                 + "Emulator ShardAccount: balance %s, address: %s, lastPaid: %s, lastTransLt: %s\n"
@@ -241,7 +241,7 @@ public class Blockchain {
                     : super.customContractPath);
       } else {
         System.out.printf(
-            "\nBlockchain configuration:\n"
+            "Blockchain configuration:\n"
                 + "Target network: %s\n"
                 + "Emulator not used\n"
                 + "Tonlib location: %s\n"
@@ -380,7 +380,16 @@ public class Blockchain {
   public GetterResult runGetMethod(String methodName) {
     System.out.printf("running GetMethod %s on %s\n", methodName, network);
     if (network == Network.EMULATOR) {
-      return GetterResult.builder().emulatorResult(tvmEmulator.runGetMethod(methodName)).build();
+      GetterResult result =
+          GetterResult.builder().emulatorResult(tvmEmulator.runGetMethod(methodName)).build();
+      if (result.getEmulatorResult().getVm_exit_code() != 0) {
+        throw new Error(
+            "Cannot execute run method ("
+                + methodName
+                + "), Error:\n"
+                + result.getEmulatorResult().getVm_log());
+      }
+      return result;
     } else {
       Address address;
       if (nonNull(contract)) {
@@ -396,6 +405,7 @@ public class Blockchain {
     System.out.printf("running %s on %s\n", "seqno", network);
     if (network == Network.EMULATOR) {
       return tvmEmulator.runGetSeqNo();
+
     } else {
       Address address;
       if (nonNull(contract)) {

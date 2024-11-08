@@ -570,7 +570,7 @@ public class Transaction {
   }
 
   public static void printTxHeader() {
-    System.out.println("Transactions");
+    System.out.println("\nTransactions");
     System.out.println(
         "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
     System.out.println(

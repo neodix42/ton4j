@@ -4,7 +4,7 @@ import "@stdlib/gas-payments"
 
 @inline
 fun onInternalMessage(myTonBalance: int, msgValue: int, inMsgFull: cell, inMsgBody: slice) {
-    debugPrint(40);
+    debugPrint(140);
     debugPrint(myTonBalance);
 
     var cs: slice = inMsgFull.beginParse();
@@ -18,7 +18,7 @@ fun onInternalMessage(myTonBalance: int, msgValue: int, inMsgFull: cell, inMsgBo
 
 @inline
 fun onExternalMessage(inMsgBody: slice) {
-    debugPrint(41);
+    debugPrint(141);
 
     var msgSeqno = inMsgBody.loadUint(32);
     var ds = getContractData().beginParse();
@@ -33,11 +33,11 @@ fun onExternalMessage(inMsgBody: slice) {
 }
 
 get seqno(): int {
-    debugPrint(42);
+    debugPrint(142);
     return getContractData().beginParse().preloadUint(32);
 }
 
 get unique(): int {
-    debugPrint(42);
+    debugPrint(143);
     return getContractData().beginParse().skipBits(32).preloadUint(32);
 }

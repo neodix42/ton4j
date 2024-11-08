@@ -8,9 +8,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
+import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV3Config;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
 import org.ton.java.tlb.types.Message;
@@ -19,6 +21,8 @@ import org.ton.java.utils.Utils;
 @Slf4j
 @RunWith(JUnit4.class)
 public class BlockchainTest {
+  Address dummyAddress = Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G");
+
   @Test
   public void testDeployV3R2ContractOnEmulator() {
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
@@ -247,6 +251,8 @@ public class BlockchainTest {
     Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
     assertThat(blockchain.deploy(30)).isTrue();
 
+    blockchain.runGetMethod("seqno");
+
     WalletV3Config configA =
         WalletV3Config.builder()
             .walletId(42)
@@ -259,7 +265,17 @@ public class BlockchainTest {
 
     Message msg = wallet.prepareExternalMsg(configA);
 
-    blockchain.sendExternal(msg);
+    SendExternalResult result = blockchain.sendExternal(msg);
+    log.info("result {}", result);
+  }
+
+  @Test(expected = Error.class)
+  public void testSendMessageV3R2ContractOnEmulatorErrorNoMethod() {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    WalletV3R2 wallet = WalletV3R2.builder().keyPair(keyPair).walletId(42).build();
+    Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
+    assertThat(blockchain.deploy(30)).isTrue();
+    blockchain.runGetMethod("unique");
   }
 
   @Test
@@ -278,5 +294,35 @@ public class BlockchainTest {
     GetterResult result = blockchain.runGetMethod("unique");
     System.out.printf("result %s\n", result);
     System.out.printf("returned seqno %s\n", blockchain.runGetSeqNo());
+  }
+
+  @Test
+  public void testSendMessageCustomContractOnEmulatorTolk() {
+    Blockchain blockchain =
+        Blockchain.builder()
+            .network(Network.EMULATOR)
+            .customContractAsResource("simple.tolk")
+            .customContractDataCell(
+                CellBuilder.beginCell()
+                    .storeUint(0, 32)
+                    .storeInt(Utils.getRandomInt(), 32)
+                    .endCell())
+            //            .tvmEmulatorVerbosityLevel(TvmVerbosityLevel.WITH_ALL_STACK_VALUES)
+            //            .txEmulatorVerbosityLevel(TxVerbosityLevel.WITH_ALL_STACK_VALUES)
+            .build();
+    assertThat(blockchain.deploy(30)).isTrue();
+    blockchain.runGetMethod("unique");
+    System.out.printf("returned seqno %s\n", blockchain.runGetSeqNo());
+
+    Cell bodyCell =
+        CellBuilder.beginCell()
+            .storeUint(0, 32) // seqno
+            .endCell();
+
+    Message extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
+
+    SendExternalResult result = blockchain.sendExternal(extMsg);
+    //    log.info("result {}", result);
+
   }
 }

@@ -6,6 +6,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinNT;
 import java.math.BigInteger;
 import java.util.Collections;
 import lombok.Builder;
@@ -61,8 +63,11 @@ public class TvmEmulator {
 
       super.tvmEmulatorI = Native.load(super.pathToEmulatorSharedLib, TvmEmulatorI.class);
       if (isNull(super.verbosityLevel)) {
-        super.verbosityLevel = TvmVerbosityLevel.WITH_ALL_STACK_VALUES;
+        super.verbosityLevel = TvmVerbosityLevel.TRUNCATED;
       }
+
+      redirectNativeOutput();
+
       if (isNull(super.codeBoc)) {
         throw new Error("codeBoc is not set");
       }
@@ -72,6 +77,10 @@ public class TvmEmulator {
       super.tvmEmulator =
           super.tvmEmulatorI.tvm_emulator_create(
               super.codeBoc, super.dataBoc, super.verbosityLevel.ordinal());
+
+      if (super.verbosityLevel == TvmVerbosityLevel.WITH_ALL_STACK_VALUES) {
+        super.tvmEmulatorI.tvm_emulator_set_debug_enabled(super.tvmEmulator, true);
+      }
 
       if (super.tvmEmulator == 0) {
         throw new Error("Can't create emulator instance");
@@ -102,13 +111,19 @@ public class TvmEmulator {
   }
 
   /**
+   *
+   *
+   * <pre>
    * Prepares the c7 tuple (virtual machine context) for a compute phase of a transaction.
-   *
-   * <p>C7 tlb-scheme FYI:
-   *
-   * <p>smc_info#076ef1ea actions:uint16 msgs_sent:uint16 unixtime:uint32 block_lt:uint64
-   * trans_lt:uint64 rand_seed:bits256 balance_remaining:CurrencyCollection myself:MsgAddressInt
-   * global_config:(Maybe Cell) = SmartContractInfo;
+   * C7 tlb-scheme FYI:
+   * smc_info#076ef1ea
+   *   actions:uint16 msgs_sent:uint16
+   *   unixtime:uint32 block_lt:uint64
+   *   trans_lt:uint64 rand_seed:bits256
+   *   balance_remaining:CurrencyCollection
+   *   myself:MsgAddressInt
+   *   global_config:(Maybe Cell) = SmartContractInfo;
+   * </pre>
    *
    * <p>Set c7 parameters
    *
@@ -208,8 +223,28 @@ public class TvmEmulator {
     return gson.fromJson(result, GetMethodResult.class);
   }
 
+  /**
+   * Run get method
+   *
+   * @param methodName String method id
+   * @param stackBoc Base64 encoded BoC serialized stack (VmStack)
+   * @return Json object with error: { "success": false, "error": "Error description" } Or success:
+   *     { "success": true "vm_log": "...", "vm_exit_code": 0, "stack": "Base64 encoded BoC
+   *     serialized stack (VmStack)", "missing_library": null, "gas_used": 1212 }
+   */
+  public GetMethodResult runGetMethod(String methodName, String stackBoc) {
+    String result =
+        tvmEmulatorI.tvm_emulator_run_get_method(
+            tvmEmulator, Utils.calculateMethodId(methodName), stackBoc);
+    Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
+    return gson.fromJson(result, GetMethodResult.class);
+  }
+
   public BigInteger runGetSeqNo() {
     GetMethodResult methodResult = runGetMethod(Utils.calculateMethodId("seqno"));
+    if (methodResult.getVm_exit_code() != 0) {
+      throw new Error("Cannot execute run method (seqno), Error:\n" + methodResult.getVm_log());
+    }
     VmStack stack = methodResult.getStack();
     VmStackList vmStackList = stack.getStack();
     return VmStackValueTinyInt.deserialize(
@@ -219,6 +254,10 @@ public class TvmEmulator {
 
   public BigInteger runGetSubWalletId() {
     GetMethodResult methodResult = runGetMethod(Utils.calculateMethodId("get_subwallet_id"));
+    if (methodResult.getVm_exit_code() != 0) {
+      throw new Error(
+          "Cannot execute run method (get_subwallet_id), Error:\n" + methodResult.getVm_log());
+    }
     VmStack stack = methodResult.getStack();
     VmStackList vmStackList = stack.getStack();
     return VmStackValueTinyInt.deserialize(
@@ -228,6 +267,10 @@ public class TvmEmulator {
 
   public String runGetPublicKey() {
     GetMethodResult methodResult = runGetMethod(Utils.calculateMethodId("get_public_key"));
+    if (methodResult.getVm_exit_code() != 0) {
+      throw new Error(
+          "Cannot execute run method (get_public_key), Error:\n" + methodResult.getVm_log());
+    }
     VmStack stack = methodResult.getStack();
     int depth = stack.getDepth();
     VmStackList vmStackList = stack.getStack();
@@ -283,5 +326,35 @@ public class TvmEmulator {
         tvmEmulatorI.tvm_emulator_send_internal_message(tvmEmulator, messageBodyBoc, amount);
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, SendInternalMessageResult.class);
+  }
+
+  private static void redirectNativeOutput() {
+
+    // Redirect native output on Windows
+    WinNT.HANDLE originalOut = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
+    WinNT.HANDLE originalErr = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
+
+    //    try (FileOutputStream nulStream = new FileOutputStream("NUL")) {
+    WinNT.HANDLE hNul =
+        Kernel32.INSTANCE.CreateFile(
+            "NUL",
+            Kernel32.GENERIC_WRITE,
+            Kernel32.FILE_SHARE_WRITE,
+            null,
+            Kernel32.OPEN_EXISTING,
+            0,
+            null);
+
+    // Redirect stdout and stderr to NUL
+    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, hNul);
+    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, hNul);
+
+    //      // Close the handle to NUL
+    //      Kernel32.INSTANCE.CloseHandle(hNul);
+    //    } finally {
+    //      // Restore original stdout and stderr
+    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, originalOut);
+    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, originalErr);
+    //    }
   }
 }

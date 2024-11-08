@@ -62,14 +62,14 @@ public class TxEmulator {
 
         super.txEmulatorI = Native.load(super.pathToEmulatorSharedLib, TxEmulatorI.class);
 
+        if (isNull(super.verbosityLevel)) {
+          super.verbosityLevel = TxVerbosityLevel.TRUNCATED;
+        }
+
         redirectNativeOutput();
 
-        if (isNull(super.verbosityLevel)) {
-          super.verbosityLevel = TxVerbosityLevel.WITH_ALL_STACK_VALUES;
-        }
         if (isNull(super.configType)) {
           super.configType = TxEmulatorConfig.MAINNET;
-          //          log.info("Using default TxEmulator Config - MAINNET");
         }
 
         String configBoc = "";
@@ -103,7 +103,12 @@ public class TxEmulator {
             super.txEmulatorI.transaction_emulator_create(
                 configBoc, super.verbosityLevel.ordinal());
 
-        super.txEmulatorI.emulator_set_verbosity_level(super.txEmulator, 0);
+        super.txEmulatorI.emulator_set_verbosity_level(
+            super.txEmulator, super.verbosityLevel.ordinal());
+
+        if (super.verbosityLevel == TxVerbosityLevel.WITH_ALL_STACK_VALUES) {
+          super.txEmulatorI.transaction_emulator_set_debug_enabled(super.txEmulator, true);
+        }
 
         if (super.txEmulator == 0) {
           throw new Error("Can't create tx emulator instance");

@@ -52,7 +52,7 @@ public class MessageFees {
   public static void printMessageFeesHeader() {
     String header =
         "| in/out | type         | op       | value           | fwdFee          | ihrFee          | importFee       | timestamp           | lt             | src             | dst             |";
-    System.out.println("Messages");
+    System.out.println("\nMessages");
     System.out.println(
         "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
     System.out.println(header);

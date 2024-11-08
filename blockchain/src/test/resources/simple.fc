@@ -3,7 +3,7 @@
 #include "stdlib.fc";
 
 () recv_internal(int my_ton_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure inline {
-    ~dump(40);
+    ~dump(140);
     ~dump(my_ton_balance);
 
     slice cs = in_msg_full.begin_parse();
@@ -16,7 +16,7 @@
 }
 
 () recv_external(slice in_msg_body) impure inline {
-    ~dump(41);
+    ~dump(141);
 
     var msg_seqno = in_msg_body~load_uint(32);
     var ds = get_data().begin_parse();
@@ -31,11 +31,11 @@
 }
 
 int seqno() method_id {
-    ~dump(42);
+    ~dump(142);
     return get_data().begin_parse().preload_uint(32);
 }
 
 int unique() method_id {
-    ~dump(42);
+    ~dump(143);
     return get_data().begin_parse().skip_bits(32).preload_uint(32);
 }
