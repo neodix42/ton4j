@@ -32,6 +32,8 @@ public class SmartContractCompiler {
 
   private TolkRunner tolkRunner;
 
+  private Boolean printInfo;
+
   private boolean printFiftAsmOutput;
 
   public static class SmartContractCompilerBuilder {}
@@ -43,6 +45,9 @@ public class SmartContractCompiler {
   private static class CustomSmartContractCompilerBuilder extends SmartContractCompilerBuilder {
     @Override
     public SmartContractCompiler build() {
+      if (isNull(super.printInfo)) {
+        super.printInfo = true;
+      }
       if (isNull(super.funcRunner)) {
         super.funcRunner = FuncRunner.builder().build();
       }
@@ -70,7 +75,9 @@ public class SmartContractCompiler {
         throw new Error("Can't find resource " + contractAsResource);
       }
     }
-    log.info("workdir " + new File(contractPath).getParent());
+    if (isNull(printInfo)) {
+      log.info("workdir " + new File(contractPath).getParent());
+    }
 
     String outputFiftAsmFile;
     if (contractPath.contains(".func") || contractPath.contains(".fc")) {

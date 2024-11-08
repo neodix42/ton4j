@@ -1,5 +1,7 @@
 package org.ton.java.tolk;
 
+import static java.util.Objects.isNull;
+
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import org.ton.java.utils.Utils;
 public class TolkRunner {
 
   public String tolkExecutablePath;
+  private Boolean printInfo;
 
   public static String tolkExecutable = "";
 
@@ -25,8 +28,15 @@ public class TolkRunner {
 
     @Override
     public TolkRunner build() {
+
+      if (isNull(super.printInfo)) {
+        super.printInfo = true;
+      }
+
       if (StringUtils.isEmpty(super.tolkExecutablePath)) {
-        log.info("Checking if Tolk is installed...");
+        if (super.printInfo) {
+          log.info("Checking if Tolk is installed...");
+        }
 
         String errorMsg =
             "Make sure you have Tolk installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.tolkExecutablePath().";
@@ -39,7 +49,9 @@ public class TolkRunner {
           }
           String tolkAbsolutePath = Utils.detectAbsolutePath("tolk", false);
 
-          log.info("Tolk found at " + tolkAbsolutePath);
+          if (super.printInfo) {
+            log.info("Tolk found at " + tolkAbsolutePath);
+          }
           tolkExecutable = "tolk";
 
         } catch (Exception e) {
@@ -47,7 +59,9 @@ public class TolkRunner {
           throw new Error("Cannot execute simple Tolk command.\n" + errorMsg);
         }
       } else {
-        log.info("using " + super.tolkExecutablePath);
+        if (super.printInfo) {
+          log.info("using " + super.tolkExecutablePath);
+        }
         tolkExecutable = super.tolkExecutablePath;
       }
       return super.build();

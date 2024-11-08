@@ -1,5 +1,7 @@
 package org.ton.java.func;
 
+import static java.util.Objects.isNull;
+
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +14,7 @@ import org.ton.java.utils.Utils;
 public class FuncRunner {
 
   public String funcExecutablePath;
-
+  private Boolean printInfo;
   public static String funcExecutable = "";
 
   public static class FuncRunnerBuilder {}
@@ -25,8 +27,13 @@ public class FuncRunner {
 
     @Override
     public FuncRunner build() {
+      if (isNull(super.printInfo)) {
+        super.printInfo = true;
+      }
       if (StringUtils.isEmpty(super.funcExecutablePath)) {
-        log.info("Checking if Func is installed...");
+        if (isNull(super.printInfo)) {
+          log.info("Checking if Func is installed...");
+        }
 
         String errorMsg =
             "Make sure you have Func installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.funcExecutablePath().";
@@ -39,7 +46,9 @@ public class FuncRunner {
           }
           String funcAbsolutePath = Utils.detectAbsolutePath("func", false);
 
-          log.info("Func found at " + funcAbsolutePath);
+          if (isNull(super.printInfo)) {
+            log.info("Func found at " + funcAbsolutePath);
+          }
           funcExecutable = "func";
 
         } catch (Exception e) {
@@ -47,7 +56,9 @@ public class FuncRunner {
           throw new Error("Cannot execute simple Func command.\n" + errorMsg);
         }
       } else {
-        log.info("using " + super.funcExecutablePath);
+        if (isNull(super.printInfo)) {
+          log.info("using " + super.funcExecutablePath);
+        }
         funcExecutable = super.funcExecutablePath;
       }
       return super.build();

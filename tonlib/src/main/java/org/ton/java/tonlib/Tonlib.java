@@ -7,6 +7,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinNT;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -89,6 +91,8 @@ public class Tonlib {
 
   private TonlibJsonI tonlibJson;
 
+  private Boolean printInfo;
+
   private static final Gson gson =
       new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
 
@@ -109,6 +113,10 @@ public class Tonlib {
     public Tonlib build() {
 
       try {
+
+        if (isNull(super.printInfo)) {
+          super.printInfo = true;
+        }
 
         if (isNull(super.pathToTonlibSharedLib)) {
           if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
@@ -206,48 +214,53 @@ public class Tonlib {
         globalConfigCurrent.setLiteservers(newLiteServers);
 
         super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
+
+        redirectNativeOutput();
+
         super.tonlib = super.tonlibJson.tonlib_client_json_create();
 
-        log.info(
-            String.format(
-                "Java Tonlib configuration:\n"
-                    + "Location: %s\n"
-                    + "Verbosity level: %s (%s)\n"
-                    + "Keystore in memory: %s\n"
-                    + "Keystore path: %s\n"
-                    + "Path to global config: %s\n"
-                    + "Global config as string: %s\n"
-                    + "lite-servers found: %s\n"
-                    + "dht-nodes found: %s\n"
-                    + "init-block seqno: %s\n"
-                    + "%s\n"
-                    + "Ignore cache: %s\n"
-                    + "Testnet: %s\n"
-                    + "Receive timeout: %s seconds\n"
-                    + "Receive retry times: %s%n",
-                super.pathToTonlibSharedLib,
-                super.verbosityLevel,
-                super.verbosityLevel.ordinal(),
-                super.keystoreInMemory,
-                super.keystorePath,
-                super.pathToGlobalConfig,
-                (nonNull(super.globalConfigAsString) && super.globalConfigAsString.length() > 33)
-                    ? super.globalConfigAsString.substring(0, 33)
-                    : "",
-                super.originalGlobalConfigInternal.getLiteservers().length,
-                globalConfigCurrent.getDht().getStatic_nodes().getNodes().length,
-                globalConfigCurrent.getValidator().getInit_block().getSeqno(),
-                (super.usingAllLiteServers)
-                    ? "using lite-servers: all"
-                    : "using lite-server at index: "
-                        + super.liteServerIndex
-                        + " ("
-                        + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
-                        + ")",
-                super.ignoreCache,
-                super.testnet,
-                super.receiveTimeout,
-                super.receiveRetryTimes));
+        if (super.printInfo) {
+          log.info(
+              String.format(
+                  "Java Tonlib configuration:\n"
+                      + "Location: %s\n"
+                      + "Verbosity level: %s (%s)\n"
+                      + "Keystore in memory: %s\n"
+                      + "Keystore path: %s\n"
+                      + "Path to global config: %s\n"
+                      + "Global config as string: %s\n"
+                      + "lite-servers found: %s\n"
+                      + "dht-nodes found: %s\n"
+                      + "init-block seqno: %s\n"
+                      + "%s\n"
+                      + "Ignore cache: %s\n"
+                      + "Testnet: %s\n"
+                      + "Receive timeout: %s seconds\n"
+                      + "Receive retry times: %s%n",
+                  super.pathToTonlibSharedLib,
+                  super.verbosityLevel,
+                  super.verbosityLevel.ordinal(),
+                  super.keystoreInMemory,
+                  super.keystorePath,
+                  super.pathToGlobalConfig,
+                  (nonNull(super.globalConfigAsString) && super.globalConfigAsString.length() > 33)
+                      ? super.globalConfigAsString.substring(0, 33)
+                      : "",
+                  super.originalGlobalConfigInternal.getLiteservers().length,
+                  globalConfigCurrent.getDht().getStatic_nodes().getNodes().length,
+                  globalConfigCurrent.getValidator().getInit_block().getSeqno(),
+                  (super.usingAllLiteServers)
+                      ? "using lite-servers: all"
+                      : "using lite-server at index: "
+                          + super.liteServerIndex
+                          + " ("
+                          + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
+                          + ")",
+                  super.ignoreCache,
+                  super.testnet,
+                  super.receiveTimeout,
+                  super.receiveRetryTimes));
+        }
 
         // set verbosity
         VerbosityLevelQuery verbosityLevelQuery =
@@ -260,12 +273,14 @@ public class Tonlib {
         initTonlibConfig(globalConfigCurrent);
 
         if (super.usingAllLiteServers) {
-          log.info(
-              "Using lite-server at index: "
-                  + (super.liteServerIndex)
-                  + " ("
-                  + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
-                  + ")");
+          if (super.printInfo) {
+            log.info(
+                "Using lite-server at index: "
+                    + (super.liteServerIndex)
+                    + " ("
+                    + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
+                    + ")");
+          }
         }
 
       } catch (Exception e) {
@@ -1588,5 +1603,35 @@ public class Tonlib {
       }
       Utils.sleep(2);
     } while (initialBalance.equals(getAccountBalance(address)));
+  }
+
+  private static void redirectNativeOutput() {
+
+    // Redirect native output on Windows
+    WinNT.HANDLE originalOut = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
+    WinNT.HANDLE originalErr = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
+
+    //    try (FileOutputStream nulStream = new FileOutputStream("NUL")) {
+    WinNT.HANDLE hNul =
+        Kernel32.INSTANCE.CreateFile(
+            "NUL",
+            Kernel32.GENERIC_WRITE,
+            Kernel32.FILE_SHARE_WRITE,
+            null,
+            Kernel32.OPEN_EXISTING,
+            0,
+            null);
+
+    // Redirect stdout and stderr to NUL
+    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, hNul);
+    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, hNul);
+
+    //      // Close the handle to NUL
+    //      Kernel32.INSTANCE.CloseHandle(hNul);
+    //    } finally {
+    //      // Restore original stdout and stderr
+    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, originalOut);
+    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, originalErr);
+    //    }
   }
 }

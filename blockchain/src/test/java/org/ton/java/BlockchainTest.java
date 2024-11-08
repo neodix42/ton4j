@@ -261,4 +261,22 @@ public class BlockchainTest {
 
     blockchain.sendExternal(msg);
   }
+
+  @Test
+  public void testSendMessageCustomContractOnTestnetTolk() {
+    Blockchain blockchain =
+        Blockchain.builder()
+            .network(Network.TESTNET)
+            .customContractAsResource("simple.tolk")
+            .customContractDataCell(
+                CellBuilder.beginCell()
+                    .storeUint(0, 32)
+                    .storeInt(Utils.getRandomInt(), 32)
+                    .endCell())
+            .build();
+    assertThat(blockchain.deploy(30)).isTrue();
+    GetterResult result = blockchain.runGetMethod("unique");
+    System.out.printf("result %s\n", result);
+    System.out.printf("returned seqno %s\n", blockchain.runGetSeqNo());
+  }
 }

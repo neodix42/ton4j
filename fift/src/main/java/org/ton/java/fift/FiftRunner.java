@@ -1,5 +1,6 @@
 package org.ton.java.fift;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.File;
@@ -17,6 +18,7 @@ public class FiftRunner {
   String fiftAsmLibraryPath;
   String fiftSmartcontLibraryPath;
   public String fiftExecutablePath;
+  private Boolean printInfo;
 
   public static String fiftExecutable = "";
 
@@ -31,8 +33,14 @@ public class FiftRunner {
 
     @Override
     public FiftRunner build() {
+      if (isNull(super.printInfo)) {
+        super.printInfo = true;
+      }
+
       if (StringUtils.isEmpty(super.fiftExecutablePath)) {
-        log.info("Checking if Fift is installed...");
+        if (super.printInfo) {
+          log.info("Checking if Fift is installed...");
+        }
         String errorMsg =
             "Make sure you have Fift installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.fiftExecutablePath().";
         try {
@@ -43,13 +51,17 @@ public class FiftRunner {
             throw new Error("Cannot execute simple Fift command.\n" + errorMsg);
           }
           fiftAbsolutePath = Utils.detectAbsolutePath("fift", false);
-          log.info("Fift found at " + fiftAbsolutePath);
+          if (super.printInfo) {
+            log.info("Fift found at " + fiftAbsolutePath);
+          }
           fiftExecutable = "fift";
         } catch (Exception e) {
           throw new Error("Cannot execute simple Fift command.\n" + errorMsg);
         }
       } else {
-        log.info("using " + super.fiftExecutablePath);
+        if (super.printInfo) {
+          log.info("using " + super.fiftExecutablePath);
+        }
         fiftExecutable = super.fiftExecutablePath;
       }
 
@@ -83,12 +95,14 @@ public class FiftRunner {
           }
         }
       }
-      log.info(
-          "using include dirs: "
-              + super.fiftAsmLibraryPath
-              + ", "
-              + super.fiftSmartcontLibraryPath);
 
+      if (super.printInfo) {
+        log.info(
+            "using include dirs: "
+                + super.fiftAsmLibraryPath
+                + ", "
+                + super.fiftSmartcontLibraryPath);
+      }
       return super.build();
     }
   }

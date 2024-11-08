@@ -6,6 +6,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinNT;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -33,6 +35,7 @@ public class TxEmulator {
   private TxEmulatorConfig configType;
   private String customConfig;
   private TxVerbosityLevel verbosityLevel;
+  private Boolean printEmulatorInfo;
 
   public static class TxEmulatorBuilder {}
 
@@ -53,9 +56,16 @@ public class TxEmulator {
           }
         }
 
+        if (isNull(super.printEmulatorInfo)) {
+          super.printEmulatorInfo = true;
+        }
+
         super.txEmulatorI = Native.load(super.pathToEmulatorSharedLib, TxEmulatorI.class);
+
+        redirectNativeOutput();
+
         if (isNull(super.verbosityLevel)) {
-          super.verbosityLevel = TxVerbosityLevel.TRUNCATED;
+          super.verbosityLevel = TxVerbosityLevel.WITH_ALL_STACK_VALUES;
         }
         if (isNull(super.configType)) {
           super.configType = TxEmulatorConfig.MAINNET;
@@ -93,23 +103,58 @@ public class TxEmulator {
             super.txEmulatorI.transaction_emulator_create(
                 configBoc, super.verbosityLevel.ordinal());
 
+        super.txEmulatorI.emulator_set_verbosity_level(super.txEmulator, 0);
+
         if (super.txEmulator == 0) {
           throw new Error("Can't create tx emulator instance");
         }
 
-        log.info(
-            "\nTON Tx Emulator configuration:\n"
-                + "Location: {}\n"
-                + "Config: {}\n"
-                + "Verbosity level: {}",
-            super.pathToEmulatorSharedLib,
-            super.configType,
-            super.verbosityLevel);
+        if (super.printEmulatorInfo) {
+
+          log.info(
+              "\nTON Tx Emulator configuration:\n"
+                  + "Location: {}\n"
+                  + "Config: {}\n"
+                  + "Verbosity level: {}",
+              super.pathToEmulatorSharedLib,
+              super.configType,
+              super.verbosityLevel);
+        }
         return super.build();
       } catch (Exception e) {
         throw new Error("Error creating tx emulator instance: " + e.getMessage());
       }
     }
+  }
+
+  private static void redirectNativeOutput() {
+
+    // Redirect native output on Windows
+    WinNT.HANDLE originalOut = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
+    WinNT.HANDLE originalErr = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
+
+    //    try (FileOutputStream nulStream = new FileOutputStream("NUL")) {
+    WinNT.HANDLE hNul =
+        Kernel32.INSTANCE.CreateFile(
+            "NUL",
+            Kernel32.GENERIC_WRITE,
+            Kernel32.FILE_SHARE_WRITE,
+            null,
+            Kernel32.OPEN_EXISTING,
+            0,
+            null);
+
+    // Redirect stdout and stderr to NUL
+    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, hNul);
+    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, hNul);
+
+    //      // Close the handle to NUL
+    //      Kernel32.INSTANCE.CloseHandle(hNul);
+    //    } finally {
+    //      // Restore original stdout and stderr
+    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, originalOut);
+    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, originalErr);
+    //    }
   }
 
   public void destroy() {

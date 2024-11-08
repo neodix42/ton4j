@@ -35,6 +35,7 @@ public class TvmEmulator {
   private String codeBoc;
   private String dataBoc;
   private TvmVerbosityLevel verbosityLevel;
+  private Boolean printEmulatorInfo;
 
   public static class TvmEmulatorBuilder {}
 
@@ -52,6 +53,10 @@ public class TvmEmulator {
         } else {
           super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("libemulator", true);
         }
+      }
+
+      if (isNull(super.printEmulatorInfo)) {
+        super.printEmulatorInfo = true;
       }
 
       super.tvmEmulatorI = Native.load(super.pathToEmulatorSharedLib, TvmEmulatorI.class);
@@ -72,10 +77,12 @@ public class TvmEmulator {
         throw new Error("Can't create emulator instance");
       }
 
-      log.info(
-          "\nTON TVM Emulator configuration:\n" + "Location: {}\n" + "Verbosity level: {}\n",
-          super.pathToEmulatorSharedLib,
-          super.verbosityLevel);
+      if (super.printEmulatorInfo) {
+        log.info(
+            "\nTON TVM Emulator configuration:\n" + "Location: {}\n" + "Verbosity level: {}\n",
+            super.pathToEmulatorSharedLib,
+            super.verbosityLevel);
+      }
       return super.build();
     }
   }
