@@ -7,7 +7,6 @@ import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.types.WalletV1R3Config;
-import org.ton.java.smartcontract.wallet.ContractUtils;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
@@ -79,7 +78,7 @@ public class TestnetFaucet {
       throw new Error(extMessageInfo.getError().getMessage());
     }
 
-    ContractUtils.waitForBalanceChange(tonlib, destinationAddress, 60);
+    tonlib.waitForBalanceChange(destinationAddress, 60);
 
     return tonlib.getAccountBalance(destinationAddress);
   }

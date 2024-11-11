@@ -23,7 +23,7 @@ public class TestSmartContractCompiler {
   public void testSmartContractCompiler() {
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            .contractAsResource("/contracts/wallets/new-wallet-v4r2.fc")
+            .contractAsResource("contracts/wallets/new-wallet-v4r2.fc")
             .build();
 
     String codeCellHex = smcFunc.compile();
@@ -79,7 +79,7 @@ public class TestSmartContractCompiler {
   public void testWalletV5Compiler() {
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            .contractAsResource("/contracts/wallets/new-wallet-v5.fc")
+            .contractAsResource("contracts/wallets/new-wallet-v5.fc")
             .build();
 
     String codeCellHex = smcFunc.compile();
@@ -91,7 +91,7 @@ public class TestSmartContractCompiler {
   public void testLibraryDeployerCompiler() {
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            .contractAsResource("/contracts/wallets/library-deployer.fc")
+            .contractAsResource("contracts/wallets/library-deployer.fc")
             .build();
 
     String codeCellHex = smcFunc.compile();

@@ -459,7 +459,9 @@ public class Tonlib {
                   (sync.getSync_state().getCurrent_seqno() * 100)
                       / (double) sync.getSync_state().getTo_seqno();
             }
-            log.info("Synchronized: " + String.format("%.2f%%", pct));
+            if (pct < 99.5) {
+              log.info("Synchronized: " + String.format("%.2f%%", pct));
+            }
           }
           if (isNull(response)) {
             throw new RuntimeException("Error in waitForSyncDone(), response is null.");
@@ -478,7 +480,6 @@ public class Tonlib {
                 "Error in tonlib.receive(), "
                     + receiveRetryTimes
                     + " times was not able retrieve result from lite-server.");
-            // break outterloop;
           }
 
           tonlibJson.tonlib_client_json_send(tonlib, query);
@@ -1583,7 +1584,11 @@ public class Tonlib {
   }
 
   public void waitForDeployment(Address address, int timeoutSeconds) {
-    log.info("waiting for deployment (up to {}s)", timeoutSeconds);
+    log.info(
+        "Waiting for deployment (up to {}s) - {} - ({})",
+        timeoutSeconds,
+        testnet ? address.toBounceableTestnet() : address.toBounceable(),
+        address.toRaw());
     int i = 0;
     do {
       if (++i * 2 >= timeoutSeconds) {
@@ -1594,12 +1599,17 @@ public class Tonlib {
   }
 
   public void waitForBalanceChange(Address address, int timeoutSeconds) {
-    log.info("waiting for balance change up to {}s", timeoutSeconds);
+    log.info(
+        "Waiting for balance change up to {}s - {} - ({})",
+        timeoutSeconds,
+        testnet ? address.toBounceableTestnet() : address.toBounceable(),
+        address.toRaw());
     BigInteger initialBalance = getAccountBalance(address);
     int i = 0;
     do {
       if (++i * 2 >= timeoutSeconds) {
-        throw new Error("Balance was not changed within specified timeout.");
+        throw new Error(
+            "Balance of " + address.toRaw() + "was not changed within specified timeout.");
       }
       Utils.sleep(2);
     } while (initialBalance.equals(getAccountBalance(address)));
@@ -1633,5 +1643,9 @@ public class Tonlib {
     //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, originalOut);
     //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, originalErr);
     //    }
+  }
+
+  public boolean isTestnet() {
+    return testnet;
   }
 }

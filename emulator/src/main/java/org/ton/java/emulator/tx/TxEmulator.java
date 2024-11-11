@@ -8,6 +8,8 @@ import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinNT;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -134,32 +136,40 @@ public class TxEmulator {
 
   private static void redirectNativeOutput() {
 
-    // Redirect native output on Windows
-    WinNT.HANDLE originalOut = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
-    WinNT.HANDLE originalErr = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
+    if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
+      // Redirect native output on Windows
+      WinNT.HANDLE originalOut = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
+      WinNT.HANDLE originalErr = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
 
-    //    try (FileOutputStream nulStream = new FileOutputStream("NUL")) {
-    WinNT.HANDLE hNul =
-        Kernel32.INSTANCE.CreateFile(
-            "NUL",
-            Kernel32.GENERIC_WRITE,
-            Kernel32.FILE_SHARE_WRITE,
-            null,
-            Kernel32.OPEN_EXISTING,
-            0,
-            null);
+      try (FileOutputStream nulStream = new FileOutputStream("NUL")) {
+        WinNT.HANDLE hNul =
+            Kernel32.INSTANCE.CreateFile(
+                "NUL",
+                Kernel32.GENERIC_WRITE,
+                Kernel32.FILE_SHARE_WRITE,
+                null,
+                Kernel32.OPEN_EXISTING,
+                0,
+                null);
 
-    // Redirect stdout and stderr to NUL
-    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, hNul);
-    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, hNul);
+        // Redirect stdout and stderr to NUL
+        Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, hNul);
+        Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, hNul);
 
-    //      // Close the handle to NUL
-    //      Kernel32.INSTANCE.CloseHandle(hNul);
-    //    } finally {
-    //      // Restore original stdout and stderr
-    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, originalOut);
-    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, originalErr);
-    //    }
+        // Close the handle to NUL
+        Kernel32.INSTANCE.CloseHandle(hNul);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      } finally {
+        // Restore original stdout and stderr
+        Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, originalOut);
+        Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, originalErr);
+      }
+    } else if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
+      // asdf
+    } else if ((Utils.getOS() == Utils.OS.MAC) || (Utils.getOS() == Utils.OS.MAC_ARM64)) {
+      // asdf
+    }
   }
 
   public void destroy() {

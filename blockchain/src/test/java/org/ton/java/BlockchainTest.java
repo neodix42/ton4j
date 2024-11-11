@@ -3,6 +3,7 @@ package org.ton.java;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -251,8 +252,6 @@ public class BlockchainTest {
     Blockchain blockchain = Blockchain.builder().network(Network.EMULATOR).contract(wallet).build();
     assertThat(blockchain.deploy(30)).isTrue();
 
-    blockchain.runGetMethod("seqno");
-
     WalletV3Config configA =
         WalletV3Config.builder()
             .walletId(42)
@@ -293,7 +292,17 @@ public class BlockchainTest {
     assertThat(blockchain.deploy(30)).isTrue();
     GetterResult result = blockchain.runGetMethod("unique");
     System.out.printf("result %s\n", result);
-    System.out.printf("returned seqno %s\n", blockchain.runGetSeqNo());
+    System.out.printf("current seqno %s\n", blockchain.runGetSeqNo());
+
+    Cell bodyCell =
+        CellBuilder.beginCell()
+            .storeUint(0, 32) // seqno
+            .endCell();
+
+    Message extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
+
+    blockchain.sendExternal(extMsg);
+    System.out.printf("current seqno %s\n", blockchain.runGetSeqNo());
   }
 
   @Test
@@ -312,7 +321,7 @@ public class BlockchainTest {
             .build();
     assertThat(blockchain.deploy(30)).isTrue();
     blockchain.runGetMethod("unique");
-    System.out.printf("returned seqno %s\n", blockchain.runGetSeqNo());
+    System.out.printf("current seqno %s\n", blockchain.runGetSeqNo());
 
     Cell bodyCell =
         CellBuilder.beginCell()
@@ -321,8 +330,50 @@ public class BlockchainTest {
 
     Message extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
 
-    SendExternalResult result = blockchain.sendExternal(extMsg);
-    //    log.info("result {}", result);
+    blockchain.sendExternal(extMsg);
+    System.out.printf("current seqno %s\n", blockchain.runGetSeqNo());
+  }
 
+  @Test
+  public void testSendMessagesChainCustomContractOnEmulatorTolk() {
+    Blockchain blockchain =
+        Blockchain.builder()
+            .network(Network.EMULATOR)
+            .customContractAsResource("simple.tolk")
+            .customContractDataCell(
+                CellBuilder.beginCell()
+                    .storeUint(0, 32)
+                    .storeInt(Utils.getRandomInt(), 32)
+                    .endCell())
+            //            .tvmEmulatorVerbosityLevel(TvmVerbosityLevel.WITH_ALL_STACK_VALUES)
+            //            .txEmulatorVerbosityLevel(TxVerbosityLevel.WITH_ALL_STACK_VALUES)
+            .build();
+    assertThat(blockchain.deploy(30)).isTrue();
+    blockchain.runGetMethod("unique");
+    BigInteger currentSeqno = blockchain.runGetSeqNo();
+    System.out.printf("current seqno %s\n", currentSeqno);
+
+    Cell bodyCell =
+        CellBuilder.beginCell()
+            .storeUint(0, 32) // seqno
+            .endCell();
+
+    Message extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
+
+    blockchain.sendExternal(extMsg);
+
+    currentSeqno = blockchain.runGetSeqNo();
+    System.out.printf("current seqno %s\n", currentSeqno);
+
+    bodyCell =
+        CellBuilder.beginCell()
+            .storeUint(1, 32) // seqno
+            .endCell();
+
+    extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
+
+    blockchain.sendExternal(extMsg);
+    currentSeqno = blockchain.runGetSeqNo();
+    System.out.printf("current seqno %s\n", currentSeqno);
   }
 }

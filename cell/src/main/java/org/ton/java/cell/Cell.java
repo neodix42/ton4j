@@ -10,11 +10,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.bitstring.BitString;
 import org.ton.java.utils.Utils;
 
 /** Implements Cell class, where BitString having elements of Boolean type. */
+@Slf4j
 public class Cell {
 
   BitString bits;
@@ -210,7 +212,6 @@ public class Cell {
         off = hashIndex - hashIndexOffset - 1;
         byte[] partHash = new byte[32];
         System.arraycopy(hashes, off * 32, partHash, 0, (off + 1) * 32);
-        //                System.out.println("partHash "+Utils.bytesToHex(partHash));
         hash = Utils.concatBytes(hash, partHash);
       }
 
@@ -597,7 +598,7 @@ public class Cell {
     try {
       Files.write(Paths.get(filename), boc);
     } catch (Exception e) {
-      System.err.println("Cannot write to file. " + e.getMessage());
+      log.error("Cannot write to file. Error: {} ", e.getMessage());
     }
   }
 

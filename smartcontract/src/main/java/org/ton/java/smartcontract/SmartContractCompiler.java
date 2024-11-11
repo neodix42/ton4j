@@ -113,7 +113,7 @@ public class SmartContractCompiler {
     }
 
     if (printFiftAsmOutput) {
-      System.out.println(outputFiftAsmFile);
+      log.info(outputFiftAsmFile);
     }
     return fiftRunner.runStdIn(new File(contractPath).getParent(), outputFiftAsmFile);
   }

@@ -4,9 +4,13 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -116,12 +120,12 @@ public class FiftRunner {
       withInclude = new String[] {"-I", fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath};
     }
     String[] all = ArrayUtils.addAll(withInclude, params);
-    Pair<Process, String> result = Executor.execute(fiftExecutable, workdir, all);
+    Pair<Process, String> result = execute(fiftExecutable, workdir, all);
     if (nonNull(result)) {
       try {
         return result.getRight();
       } catch (Exception e) {
-        log.info("executeFift error " + e.getMessage());
+        log.error("executeFift error " + e.getMessage());
         return null;
       }
     } else {
@@ -138,13 +142,12 @@ public class FiftRunner {
       withInclude = "-I" + fiftAsmLibraryPath + ":" + fiftSmartcontLibraryPath + " -s -";
     }
 
-    Pair<Process, String> result =
-        Executor.executeStdIn(fiftExecutable, workdir, stdin, withInclude);
+    Pair<Process, String> result = executeStdIn(fiftExecutable, workdir, stdin, withInclude);
     if (nonNull(result)) {
       try {
         return result.getRight();
       } catch (Exception e) {
-        log.info("executeFift error " + e.getMessage());
+        log.error("executeFift error " + e.getMessage());
         return null;
       }
     } else {
@@ -162,5 +165,96 @@ public class FiftRunner {
 
   public String getFiftPath() {
     return Utils.detectAbsolutePath("fift", false);
+  }
+
+  public Pair<Process, String> execute(String pathToBinary, String workDir, String... command) {
+
+    String[] withBinaryCommand = new String[] {pathToBinary};
+
+    withBinaryCommand = ArrayUtils.addAll(withBinaryCommand, command);
+
+    try {
+      if (printInfo) {
+        log.info("execute: {}", String.join(" ", withBinaryCommand));
+      }
+
+      final ProcessBuilder pb = new ProcessBuilder(withBinaryCommand).redirectErrorStream(true);
+
+      pb.directory(new File(workDir));
+      Process p = pb.start();
+
+      p.waitFor(1, TimeUnit.SECONDS);
+
+      String resultInput = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
+
+      p.getInputStream().close();
+      p.getErrorStream().close();
+      p.getOutputStream().close();
+      if (p.exitValue() == 2 || p.exitValue() == 0) {
+        return Pair.of(p, resultInput);
+      } else {
+        log.error("exit value {}", p.exitValue());
+        log.error(resultInput);
+        throw new Exception("Error running " + Arrays.toString(withBinaryCommand));
+      }
+
+    } catch (final IOException e) {
+      log.error(e.getMessage());
+      return null;
+    } catch (Exception e) {
+      log.error(e.getMessage());
+      throw new RuntimeException(e);
+    }
+  }
+
+  public Pair<Process, String> executeStdIn(
+      String pathToBinary, String workDir, String stdin, String include) {
+
+    try {
+      final ProcessBuilder pb;
+      String cmd = "";
+      if (Utils.getOS() == Utils.OS.WINDOWS) {
+
+        pb =
+            new ProcessBuilder(
+                    "powershell", "-c", "'" + stdin + "' | " + pathToBinary + " " + include)
+                .redirectErrorStream(true);
+        cmd =
+            String.join(
+                " ", "powershell", "-c", "'" + stdin + "' | " + pathToBinary + " " + include);
+      } else { // linux & macos
+        pb = null; // todo test
+        cmd = String.join(" ", "echo", "'" + stdin + "' | " + pathToBinary + " " + include);
+      }
+
+      if (printInfo) {
+        log.info("execute: {}", cmd);
+      }
+
+      pb.directory(new File(workDir));
+      Process p = pb.start();
+
+      p.waitFor(1, TimeUnit.SECONDS);
+
+      String resultInput = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
+
+      p.getInputStream().close();
+      p.getErrorStream().close();
+      p.getOutputStream().close();
+      if (p.exitValue() == 2 || p.exitValue() == 0) {
+        return Pair.of(p, resultInput);
+      } else {
+        log.error("exit value {}", p.exitValue());
+        log.error(resultInput);
+        throw new Exception("Error running " + cmd);
+      }
+
+    } catch (final IOException e) {
+      log.info(e.getMessage());
+      return null;
+    } catch (Exception e) {
+      log.info(e.getMessage());
+      throw new RuntimeException(e);
+    }
   }
 }

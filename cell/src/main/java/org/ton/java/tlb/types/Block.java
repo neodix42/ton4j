@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -22,6 +23,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
+@Slf4j
 public class Block {
   long magic;
   int globalId;
@@ -105,7 +107,7 @@ public class Block {
   public void printAllTransactions() {
     List<Transaction> txs = getAllTransactions();
     if (txs.isEmpty()) {
-      System.out.println("No transactions");
+      log.info("No transactions");
       return;
     }
     Transaction.printTxHeader();
@@ -128,7 +130,7 @@ public class Block {
   public void printAllMessages() {
     List<MessageFees> msgFees = getAllMessageFees();
     if (msgFees.isEmpty()) {
-      System.out.println("No messages");
+      log.info("No messages");
       return;
     }
     MessageFees.printMessageFeesHeader();

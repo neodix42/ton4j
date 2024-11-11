@@ -112,7 +112,16 @@ public interface Contract {
   }
 
   default void waitForBalanceChange(int timeoutSeconds) {
-    System.out.println("waiting for balance change (up to " + timeoutSeconds + "s)");
+    System.out.println(
+        "waiting for balance change (up to "
+            + timeoutSeconds
+            + "s) - "
+            + (getTonlib().isTestnet()
+                ? getAddress().toBounceableTestnet()
+                : getAddress().toBounceable())
+            + " - ("
+            + getAddress().toRaw()
+            + ")");
     BigInteger initialBalance = getBalance();
     int i = 0;
     do {

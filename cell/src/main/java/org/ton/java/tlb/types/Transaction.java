@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -39,6 +40,7 @@ import org.ton.java.utils.Utils;
  */
 @Builder
 @Data
+@Slf4j
 public class Transaction {
   int magic;
   BigInteger accountAddr;
@@ -132,7 +134,7 @@ public class Transaction {
     //        if (nonNull(tx.getInOut().getOut())) { // todo cleanup
     //            for (Map.Entry<Object, Object> entry : tx.getInOut().getOut().elements.entrySet())
     // {
-    //                System.out.println("key " + entry.getKey() + ", value " + ((Message)
+    //                log.info("key " + entry.getKey() + ", value " + ((Message)
     // entry.getValue()));
     //            }
     //        }
@@ -390,7 +392,7 @@ public class Transaction {
             txFees.getExitCode(),
             txFees.getActionCode(),
             txFees.getAccount());
-    System.out.println(str);
+    log.info(str);
     if (withFooter) {
       printTxFooter();
     }
@@ -555,7 +557,7 @@ public class Transaction {
   public void printAllMessages(boolean withHeader) {
     List<MessageFees> msgFees = getAllMessageFees();
     if (msgFees.isEmpty()) {
-      System.out.println("No messages");
+      log.info("No messages");
       return;
     }
 
@@ -570,17 +572,18 @@ public class Transaction {
   }
 
   public static void printTxHeader() {
-    System.out.println("\nTransactions");
-    System.out.println(
+    log.info("");
+    log.info("Transactions");
+    log.info(
         "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
-    System.out.println(
+    log.info(
         "| op       | type         | valueIn        | valueOut       | totalFees    | inForwardFee | outForwardFee | outActions | outMsgs | computeFee    | exitCode | actionCode | account       |");
-    System.out.println(
+    log.info(
         "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
   }
 
   public static void printTxFooter() {
-    System.out.println(
+    log.info(
         "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
   }
 

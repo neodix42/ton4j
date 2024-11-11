@@ -20,8 +20,9 @@ public class ContractUtils {
     return StringUtils.isNotEmpty(tonlib.getRawAccountState(address).getCode());
   }
 
+  @Deprecated
   public static void waitForDeployment(Tonlib tonlib, Address address, int timeoutSeconds) {
-    log.info("waiting for deployment (up to " + timeoutSeconds + "s)");
+    log.info("Waiting for deployment (up to {}s) - {}", timeoutSeconds, address.toRaw());
     int i = 0;
     do {
       if (++i * 2 >= timeoutSeconds) {
@@ -31,8 +32,9 @@ public class ContractUtils {
     } while (!isDeployed(tonlib, address));
   }
 
+  @Deprecated
   public static void waitForBalanceChange(Tonlib tonlib, Address address, int timeoutSeconds) {
-    log.info("waiting for balance change (up to " + timeoutSeconds + "s)");
+    log.info("Waiting for balance change (up to {}s) - {}", timeoutSeconds, address.toRaw());
     BigInteger initialBalance = tonlib.getAccountBalance(address);
     int i = 0;
     do {
@@ -45,12 +47,13 @@ public class ContractUtils {
 
   public static void waitForJettonBalanceChange(
       Tonlib tonlib, Address jettonMinter, Address address, int timeoutSeconds) {
-    log.info("waiting for jetton balance change (up to " + timeoutSeconds + "s)");
+    log.info("Waiting for jetton balance change (up to {}s) - {}", timeoutSeconds, address.toRaw());
     BigInteger initialBalance = getJettonBalance(tonlib, jettonMinter, address);
     int i = 0;
     do {
       if (++i * 2 >= timeoutSeconds) {
-        throw new Error("Balance was not changed within specified timeout.");
+        throw new Error(
+            "Balance of " + address.toRaw() + " was not changed within specified timeout.");
       }
       Utils.sleep(2);
     } while (initialBalance.equals(getJettonBalance(tonlib, jettonMinter, address)));

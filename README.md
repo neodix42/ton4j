@@ -52,7 +52,9 @@ You can use each submodule individually. Click the module below to get more deta
 * [Liteclient](liteclient/README.md) - wrapper for using with external precompiled lite-client binary.
 * [Fift](fift/README.md) - wrapper for using with external precompiled fift binary.
 * [Func](func/README.md) - wrapper for using with external precompiled func binary.
+* [Tolk](tolk/README.md) - wrapper for using with external precompiled tolk binary.
 * [TonConnect](tonconnect/README.md) - implementation of Ton Connect standard.
+* [Blockchain](blockchain/README.md) - To Do.
 * [Utils](utils/README.md) - create private and public keys, convert data, etc.
 
 ### Features

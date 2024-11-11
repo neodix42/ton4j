@@ -5,11 +5,13 @@ import static java.util.Objects.isNull;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.utils.Utils;
 
 @Builder
 @Data
+@Slf4j
 public class MessageFees {
   String direction;
   String type;
@@ -46,22 +48,23 @@ public class MessageFees {
             isNull(msgFee.getCreatedLt()) ? "N/A" : msgFee.getCreatedLt().toString(),
             getSrc(),
             getDst());
-    System.out.println(str);
+    log.info(str);
   }
 
   public static void printMessageFeesHeader() {
     String header =
         "| in/out | type         | op       | value           | fwdFee          | ihrFee          | importFee       | timestamp           | lt             | src             | dst             |";
-    System.out.println("\nMessages");
-    System.out.println(
+    log.info("");
+    log.info("Messages");
+    log.info(
         "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
-    System.out.println(header);
-    System.out.println(
+    log.info(header);
+    log.info(
         "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
   }
 
   public static void printMessageFeesFooter() {
-    System.out.println(
+    log.info(
         "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
   }
 
