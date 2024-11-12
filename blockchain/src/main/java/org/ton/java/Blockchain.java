@@ -346,6 +346,9 @@ public class Blockchain {
         }
         return SendExternalResult.builder().tonlibResult(tonlibResult).build();
       } else { // emulator
+
+        String initialBalance = Utils.formatNanoValue(customEmulatorShardAccount.getBalance());
+
         log.info(
             "Sending external message to bounceable address {} on {}...",
             stateInit.getAddress().toBounceable(),
@@ -367,7 +370,12 @@ public class Blockchain {
                   .printEmulatorInfo(false)
                   .build();
 
-          emulateTransactionResult.getTransaction().printTransactionFees(true, true);
+          emulateTransactionResult
+              .getTransaction()
+              .printTransactionFees(true, true, initialBalance);
+          log.info(
+              "final balance {}",
+              Utils.formatNanoValue(emulateTransactionResult.getNewShardAccount().getBalance()));
           emulateTransactionResult.getTransaction().printAllMessages(true);
         } else {
           log.error(

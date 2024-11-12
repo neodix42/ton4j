@@ -110,7 +110,7 @@ public class Block {
       log.info("No transactions");
       return;
     }
-    Transaction.printTxHeader();
+    Transaction.printTxHeader("");
     for (Transaction tx : txs) {
       tx.printTransactionFees();
     }

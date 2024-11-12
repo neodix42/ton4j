@@ -370,29 +370,27 @@ public class Transaction {
     printTransactionFees(false, false);
   }
 
+  public void printTransactionFees(boolean withHeader, boolean withFooter, String balance) {
+    TransactionFees txFees = getTransactionFees();
+
+    if (withHeader) {
+      printTxHeader(" (initial balance " + balance + ")");
+    }
+    printTxData(txFees);
+
+    if (withFooter) {
+      printTxFooter();
+    }
+  }
+
   public void printTransactionFees(boolean withHeader, boolean withFooter) {
     TransactionFees txFees = getTransactionFees();
 
     if (withHeader) {
-      printTxHeader();
+      printTxHeader("");
     }
-    String str =
-        String.format(
-            "| %-9s| %-13s| %-15s| %-15s| %-13s| %-13s| %-14s| %-11s| %-8s| %-14s| %-9s| %-11s| %-13s |",
-            txFees.getOp(),
-            txFees.getType(),
-            Utils.formatNanoValueZero(txFees.getValueIn()),
-            Utils.formatNanoValueZero(txFees.getValueOut()),
-            Utils.formatNanoValueZero(txFees.getTotalFees()),
-            Utils.formatNanoValueZero(txFees.getInForwardFee()),
-            Utils.formatNanoValueZero(txFees.getOutForwardFee()),
-            txFees.getTotalActions(),
-            txFees.getOutMsgs(),
-            Utils.formatNanoValueZero(txFees.getComputeFee()),
-            txFees.getExitCode(),
-            txFees.getActionCode(),
-            txFees.getAccount());
-    log.info(str);
+    printTxData(txFees);
+
     if (withFooter) {
       printTxFooter();
     }
@@ -571,9 +569,9 @@ public class Transaction {
     MessageFees.printMessageFeesFooter();
   }
 
-  public static void printTxHeader() {
+  public static void printTxHeader(String balance) {
     log.info("");
-    log.info("Transactions");
+    log.info("Transactions" + balance);
     log.info(
         "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
     log.info(
@@ -585,6 +583,26 @@ public class Transaction {
   public static void printTxFooter() {
     log.info(
         "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+  }
+
+  public static void printTxData(TransactionFees txFees) {
+    String str =
+        String.format(
+            "| %-9s| %-13s| %-15s| %-15s| %-13s| %-13s| %-14s| %-11s| %-8s| %-14s| %-9s| %-11s| %-13s |",
+            txFees.getOp(),
+            txFees.getType(),
+            Utils.formatNanoValueZero(txFees.getValueIn()),
+            Utils.formatNanoValueZero(txFees.getValueOut()),
+            Utils.formatNanoValueZero(txFees.getTotalFees()),
+            Utils.formatNanoValueZero(txFees.getInForwardFee()),
+            Utils.formatNanoValueZero(txFees.getOutForwardFee()),
+            txFees.getTotalActions(),
+            txFees.getOutMsgs(),
+            Utils.formatNanoValueZero(txFees.getComputeFee()),
+            txFees.getExitCode(),
+            txFees.getActionCode(),
+            txFees.getAccount());
+    log.info(str);
   }
 
   private String formatMsgType(String fullMsgType) {
