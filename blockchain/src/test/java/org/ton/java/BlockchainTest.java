@@ -11,12 +11,15 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.emulator.tvm.TvmVerbosityLevel;
+import org.ton.java.emulator.tx.TxVerbosityLevel;
 import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
 import org.ton.java.tlb.types.Message;
+import org.ton.java.tonlib.types.VerbosityLevel;
 import org.ton.java.utils.Utils;
 
 @Slf4j
@@ -288,20 +291,23 @@ public class BlockchainTest {
                     .storeUint(0, 32)
                     .storeInt(Utils.getRandomInt(), 32)
                     .endCell())
+            .tvmEmulatorVerbosityLevel(TvmVerbosityLevel.WITH_ALL_STACK_VALUES)
+            .txEmulatorVerbosityLevel(TxVerbosityLevel.WITH_ALL_STACK_VALUES)
+//            .tonlibVerbosityLevel(VerbosityLevel.DEBUG)
             .build();
+
     assertThat(blockchain.deploy(30)).isTrue();
-    GetterResult result = blockchain.runGetMethod("unique");
-    System.out.printf("result %s\n", result);
+
+    blockchain.runGetMethod("unique");
     System.out.printf("current seqno %s\n", blockchain.runGetSeqNo());
 
     Cell bodyCell =
         CellBuilder.beginCell()
-            .storeUint(0, 32) // seqno
+            .storeUint(1, 32) // seqno
             .endCell();
 
-    Message extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
-
-    blockchain.sendExternal(extMsg);
+    blockchain.sendExternal(bodyCell);
+    //wait till delivered
     System.out.printf("current seqno %s\n", blockchain.runGetSeqNo());
   }
 
@@ -313,24 +319,24 @@ public class BlockchainTest {
             .customContractAsResource("simple.tolk")
             .customContractDataCell(
                 CellBuilder.beginCell()
-                    .storeUint(0, 32)
+                    .storeUint(1, 32)
                     .storeInt(Utils.getRandomInt(), 32)
                     .endCell())
             //            .tvmEmulatorVerbosityLevel(TvmVerbosityLevel.WITH_ALL_STACK_VALUES)
             //            .txEmulatorVerbosityLevel(TxVerbosityLevel.WITH_ALL_STACK_VALUES)
             .build();
+
     assertThat(blockchain.deploy(30)).isTrue();
+
     blockchain.runGetMethod("unique");
     System.out.printf("current seqno %s\n", blockchain.runGetSeqNo());
 
     Cell bodyCell =
         CellBuilder.beginCell()
-            .storeUint(0, 32) // seqno
+            .storeUint(1, 32) // seqno
             .endCell();
 
-    Message extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
-
-    blockchain.sendExternal(extMsg);
+    blockchain.sendExternal(bodyCell);
     System.out.printf("current seqno %s\n", blockchain.runGetSeqNo());
   }
 
@@ -358,8 +364,7 @@ public class BlockchainTest {
             .storeUint(0, 32) // seqno
             .endCell();
 
-    Message extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
-    blockchain.sendExternal(extMsg);
+    blockchain.sendExternal(bodyCell);
 
     currentSeqno = blockchain.runGetSeqNo();
     System.out.printf("current seqno %s\n", currentSeqno);
@@ -369,8 +374,45 @@ public class BlockchainTest {
             .storeUint(1, 32) // seqno
             .endCell();
 
-    extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
-    blockchain.sendExternal(extMsg);
+    blockchain.sendExternal(bodyCell);
+    currentSeqno = blockchain.runGetSeqNo();
+    System.out.printf("current seqno %s\n", currentSeqno);
+  }
+
+
+  @Test
+  public void testSendMessagesChainCustomContractOnEmulatorFunc() {
+    Blockchain blockchain =
+            Blockchain.builder()
+                    .network(Network.EMULATOR)
+                    .customContractAsResource("simple.fc")
+                    .customContractDataCell(
+                            CellBuilder.beginCell()
+                                    .storeUint(0, 32)
+                                    .storeInt(Utils.getRandomInt(), 32)
+                                    .endCell())
+                    .build();
+    assertThat(blockchain.deploy(30)).isTrue();
+    blockchain.runGetMethod("unique");
+    BigInteger currentSeqno = blockchain.runGetSeqNo();
+    System.out.printf("current seqno %s\n", currentSeqno);
+
+    Cell bodyCell =
+            CellBuilder.beginCell()
+                    .storeUint(0, 32) // seqno
+                    .endCell();
+
+    blockchain.sendExternal(bodyCell);
+
+    currentSeqno = blockchain.runGetSeqNo();
+    System.out.printf("current seqno %s\n", currentSeqno);
+
+    bodyCell =
+            CellBuilder.beginCell()
+                    .storeUint(1, 32) // seqno
+                    .endCell();
+
+    blockchain.sendExternal(bodyCell);
     currentSeqno = blockchain.runGetSeqNo();
     System.out.printf("current seqno %s\n", currentSeqno);
   }

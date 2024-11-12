@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.fift.FiftRunner;
@@ -83,39 +84,52 @@ public class SmartContractCompiler {
     if (contractPath.contains(".func") || contractPath.contains(".fc")) {
       outputFiftAsmFile = funcRunner.run(new File(contractPath).getParent(), contractPath);
       // add missing includes, PROGRAM and to boc conversion
-      outputFiftAsmFile =
-          "\"\"\"\"TonUtil.fif\"\"\"\" include \"\"\"\"Asm.fif\"\"\"\" include PROGRAM{ "
-              + outputFiftAsmFile
-              + "}END>c 2 boc+>B dup Bx.";
-      outputFiftAsmFile =
-          outputFiftAsmFile
-              .replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "")
-              .replaceAll("\n", " ")
-              .replaceAll("\r", " ");
-    } else { // told
+
+        outputFiftAsmFile =
+                "\"TonUtil.fif\" include \"Asm.fif\" include PROGRAM{ "
+                        + outputFiftAsmFile
+                        + "}END>c 2 boc+>B dup Bx.";
+        outputFiftAsmFile =
+                outputFiftAsmFile
+                        .replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "")
+                        .replaceAll("\n", " ")
+                        .replaceAll("\r", " ");
+
+    } else { // tolk
       outputFiftAsmFile = tolkRunner.run(new File(contractPath).getParent(), contractPath);
-      // add to boc conversion
+
       outputFiftAsmFile =
-          "\"\"\"\"TonUtil.fif\"\"\"\" include \"\"\"\"Asm.fif\"\"\"\" include "
-              + outputFiftAsmFile
-              + " 2 boc+>B dup Bx.";
+              "\"TonUtil.fif\" include "
+               +outputFiftAsmFile
+               +" 2 boc+>B dup Bx.";
+
       outputFiftAsmFile =
           outputFiftAsmFile
-              .replaceAll("\"Asm.fif\" include", "")
               .replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "")
               .replaceAll("\n", " ")
               .replaceAll("\r", " ");
     }
 
     if (outputFiftAsmFile.contains("cannot generate code")
-        || outputFiftAsmFile.contains("error: undefined function")) {
+        || outputFiftAsmFile.contains("error: undefined function") || outputFiftAsmFile.contains("Failed to discover")) {
       throw new Error("Compile error: " + outputFiftAsmFile);
     }
 
     if (printFiftAsmOutput) {
       log.info(outputFiftAsmFile);
     }
-    return fiftRunner.runStdIn(new File(contractPath).getParent(), outputFiftAsmFile);
+
+      String result;
+      try {
+        File fiftFile = new File(contractPath + ".fif");
+        FileUtils.writeStringToFile(fiftFile, outputFiftAsmFile);
+        result = fiftRunner.run(new File(contractPath).getParent(), "-s", fiftFile.getAbsolutePath());
+        FileUtils.deleteQuietly(fiftFile);
+        return result;
+      }
+      catch (Exception e) {
+        throw new Error("Cannot compile "+contractPath+ ", error " + e.getMessage());
+      }
   }
 
   /**

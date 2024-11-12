@@ -223,8 +223,12 @@ public class FiftRunner {
             String.join(
                 " ", "powershell", "-c", "'" + stdin + "' | " + pathToBinary + " " + include);
       } else { // linux & macos
-        pb = null; // todo test
-        cmd = String.join(" ", "echo", "'" + stdin + "' | " + pathToBinary + " " + include);
+        pb =
+                new ProcessBuilder(
+                        "/bin/bash", "-c",
+                        "echo", "\"" + stdin + "\" | " + pathToBinary + " " + include )
+                        .redirectErrorStream(true);
+        cmd = String.join(" ", "/bin/bash", "-c",  "\"echo", "'" , stdin , "'|", pathToBinary + " " + include + "\"");
       }
 
       if (printInfo) {

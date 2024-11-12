@@ -322,16 +322,44 @@ public class Blockchain {
     }
   }
 
+  /**
+   * There is a huge difference between <code>sendExternal(Cell body)</code> and <code>sendExternal(Message message)</code>.
+   * The first one sends a body to itself, the second one - sends the message to a destination specified in a message.
+   * Basically, in the first method we construct <code>MsgUtils.createExternalMessage()</code> with replaced destination address.
+   *
+   * @param body Cell
+   * @return SendExternalResult
+   */
+  public SendExternalResult sendExternal(Cell body) {
+    Address address;
+    if (nonNull(contract)) {
+      address = contract.getAddress();
+    } else {
+      address = stateInit.getAddress();
+    }
+    Message message = MsgUtils.createExternalMessage(address, null, body);
+    return sendExternal(message);
+  }
+
   public SendExternalResult sendExternal(Message message) {
 
     try {
+
+      Address address;
+      if (nonNull(contract)) {
+        address = contract.getAddress();
+      } else {
+        address = stateInit.getAddress();
+      }
+      String bounceableAddress =
+              (network == Network.TESTNET) ? address.toBounceableTestnet() : address.toBounceable();
+
       if (network != Network.EMULATOR) {
-        String bounceableAddress =
-            (network == Network.TESTNET)
-                ? contract.getAddress().toBounceableTestnet()
-                : contract.getAddress().toBounceable();
+        String initialBalance = Utils.formatNanoValue(tonlib.getAccountBalance(address));
+        log.info("initialBalance {}", initialBalance);
         log.info(
-            "Sending external message to bounceable address {} on {}...",
+            "Sending external message (cell-hash: {}) to bounceable address {} on {}...",
+            message.toCell().getShortHash(),
             bounceableAddress,
             network);
         ExtMessageInfo tonlibResult = tonlib.sendRawMessage(message.toCell().toBase64());
@@ -350,9 +378,9 @@ public class Blockchain {
         String initialBalance = Utils.formatNanoValue(customEmulatorShardAccount.getBalance());
 
         log.info(
-            "Sending external message to bounceable address {} on {}...",
-            stateInit.getAddress().toBounceable(),
-            network);
+            "Sending external message (cell-hash: {}) to bounceable address {} on {}...",
+                message.toCell().getShortHash(),
+                bounceableAddress, network);
         EmulateTransactionResult emulateTransactionResult =
             txEmulator.emulateTransaction(
                 customEmulatorShardAccount.toCell().toBase64(), message.toCell().toBase64());

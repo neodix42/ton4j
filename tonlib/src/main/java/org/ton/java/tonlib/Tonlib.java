@@ -7,8 +7,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
-import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.WinNT;
+
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -155,7 +154,6 @@ public class Tonlib {
         super.runResultParser = new RunResultParser();
         super.libraryResultParser = new LibraryResultParser();
 
-        //                String originalGlobalConfigStr;
         if (isNull(super.pathToGlobalConfig)) {
 
           if (isNull(super.globalConfigAsString)) {
@@ -215,9 +213,11 @@ public class Tonlib {
 
         super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
 
-        redirectNativeOutput();
+        Utils.disableNativeOutput();
 
         super.tonlib = super.tonlibJson.tonlib_client_json_create();
+
+        Utils.enableNativeOutput();
 
         if (super.printInfo) {
           log.info(
@@ -267,8 +267,11 @@ public class Tonlib {
             VerbosityLevelQuery.builder()
                 .new_verbosity_level(super.verbosityLevel.ordinal())
                 .build();
+
+        Utils.disableNativeOutput();
         super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(verbosityLevelQuery));
         super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
+        Utils.enableNativeOutput();
 
         initTonlibConfig(globalConfigCurrent);
 
@@ -315,8 +318,10 @@ public class Tonlib {
                       .build())
               .build();
 
+      Utils.disableNativeOutput();
       super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(tonlibSetup));
       super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
+      Utils.enableNativeOutput();
     }
   }
 
@@ -325,7 +330,9 @@ public class Tonlib {
     // recreate tonlib instance
     // tonlibJson.tonlib_client_json_destroy(tonlib);
     destroy();
+
     tonlibJson = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
+    Utils.disableNativeOutput();
     tonlib = tonlibJson.tonlib_client_json_create();
 
     // set verbosity
@@ -360,10 +367,14 @@ public class Tonlib {
 
     tonlibJson.tonlib_client_json_send(tonlib, gson.toJson(tonlibSetup));
     tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
+
+    Utils.enableNativeOutput();
   }
 
   public void destroy() {
+    Utils.disableNativeOutput();
     tonlibJson.tonlib_client_json_destroy(tonlib);
+    Utils.enableNativeOutput();
   }
 
   private String receive() {
@@ -371,7 +382,7 @@ public class Tonlib {
     int retry = 0;
     while (isNull(result)) {
       if (retry > 0) {
-        log.info("retry " + retry);
+//        log.info("retry " + retry);
       }
       if (++retry > receiveRetryTimes) {
         throw new Error(
@@ -379,7 +390,9 @@ public class Tonlib {
                 + receiveRetryTimes
                 + " times was not able retrieve result from lite-server.");
       }
+//      Utils.disableNativeOutput();
       result = tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
+//      Utils.enableNativeOutput();
     }
     return result;
   }
@@ -387,9 +400,11 @@ public class Tonlib {
   private String syncAndRead(String query) {
     String response = null;
     try {
+      Utils.disableNativeOutput();
       tonlibJson.tonlib_client_json_send(tonlib, query);
       TimeUnit.MILLISECONDS.sleep(200);
       response = receive();
+      Utils.enableNativeOutput();
       int retry = 0;
       outterloop:
       do {
@@ -430,7 +445,9 @@ public class Tonlib {
 
               reinitTonlibConfig(globalConfigCurrent);
               // repeat request
+              Utils.disableNativeOutput();
               tonlibJson.tonlib_client_json_send(tonlib, query);
+              Utils.enableNativeOutput();
             }
           } else if (response.contains("\"@type\":\"ok\"")) {
             String queryExtraId = StringUtils.substringBetween(query, "@extra\":\"", "\"}");
@@ -445,9 +462,10 @@ public class Tonlib {
           if (response.contains(" : duplicate message\"")) {
             break outterloop;
           }
+          Utils.disableNativeOutput();
           TimeUnit.MILLISECONDS.sleep(200);
           response = receive();
-
+          Utils.enableNativeOutput();
           UpdateSyncState sync = gson.fromJson(response, UpdateSyncState.class);
           if (nonNull(sync)
               && nonNull(sync.getSync_state())
@@ -482,7 +500,9 @@ public class Tonlib {
                     + " times was not able retrieve result from lite-server.");
           }
 
+          Utils.disableNativeOutput();
           tonlibJson.tonlib_client_json_send(tonlib, query);
+          Utils.enableNativeOutput();
         }
       } while (response.contains("error") || response.contains("syncStateInProgress"));
 
@@ -1487,7 +1507,9 @@ public class Tonlib {
             .try_decode_message(false)
             .build();
 
+    Utils.disableNativeOutput();
     String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
+    Utils.enableNativeOutput();
     RawTransactions res = gson.fromJson(result, RawTransactions.class);
     List<RawTransaction> t = res.getTransactions();
     if (t.size() >= 1) {
@@ -1600,7 +1622,7 @@ public class Tonlib {
 
   public void waitForBalanceChange(Address address, int timeoutSeconds) {
     log.info(
-        "Waiting for balance change up to {}s - {} - ({})",
+        "Waiting for balance change (up to {}s) - {} - ({})",
         timeoutSeconds,
         testnet ? address.toBounceableTestnet() : address.toBounceable(),
         address.toRaw());
@@ -1613,36 +1635,6 @@ public class Tonlib {
       }
       Utils.sleep(2);
     } while (initialBalance.equals(getAccountBalance(address)));
-  }
-
-  private static void redirectNativeOutput() {
-
-    // Redirect native output on Windows
-    WinNT.HANDLE originalOut = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
-    WinNT.HANDLE originalErr = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
-
-    //    try (FileOutputStream nulStream = new FileOutputStream("NUL")) {
-    WinNT.HANDLE hNul =
-        Kernel32.INSTANCE.CreateFile(
-            "NUL",
-            Kernel32.GENERIC_WRITE,
-            Kernel32.FILE_SHARE_WRITE,
-            null,
-            Kernel32.OPEN_EXISTING,
-            0,
-            null);
-
-    // Redirect stdout and stderr to NUL
-    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, hNul);
-    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, hNul);
-
-    //      // Close the handle to NUL
-    //      Kernel32.INSTANCE.CloseHandle(hNul);
-    //    } finally {
-    //      // Restore original stdout and stderr
-    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, originalOut);
-    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, originalErr);
-    //    }
   }
 
   public boolean isTestnet() {

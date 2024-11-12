@@ -6,10 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
-import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.WinNT;
-import java.io.FileOutputStream;
-import java.io.IOException;
+
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -68,8 +65,6 @@ public class TxEmulator {
           super.verbosityLevel = TxVerbosityLevel.TRUNCATED;
         }
 
-        redirectNativeOutput();
-
         if (isNull(super.configType)) {
           super.configType = TxEmulatorConfig.MAINNET;
         }
@@ -101,6 +96,8 @@ public class TxEmulator {
             }
         }
 
+        Utils.disableNativeOutput();
+
         super.txEmulator =
             super.txEmulatorI.transaction_emulator_create(
                 configBoc, super.verbosityLevel.ordinal());
@@ -111,6 +108,8 @@ public class TxEmulator {
         if (super.verbosityLevel == TxVerbosityLevel.WITH_ALL_STACK_VALUES) {
           super.txEmulatorI.transaction_emulator_set_debug_enabled(super.txEmulator, true);
         }
+
+        Utils.enableNativeOutput();
 
         if (super.txEmulator == 0) {
           throw new Error("Can't create tx emulator instance");
@@ -134,43 +133,7 @@ public class TxEmulator {
     }
   }
 
-  private static void redirectNativeOutput() {
 
-    if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
-      // Redirect native output on Windows
-      WinNT.HANDLE originalOut = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
-      WinNT.HANDLE originalErr = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
-
-      try (FileOutputStream nulStream = new FileOutputStream("NUL")) {
-        WinNT.HANDLE hNul =
-            Kernel32.INSTANCE.CreateFile(
-                "NUL",
-                Kernel32.GENERIC_WRITE,
-                Kernel32.FILE_SHARE_WRITE,
-                null,
-                Kernel32.OPEN_EXISTING,
-                0,
-                null);
-
-        // Redirect stdout and stderr to NUL
-        Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, hNul);
-        Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, hNul);
-
-        // Close the handle to NUL
-        Kernel32.INSTANCE.CloseHandle(hNul);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      } finally {
-        // Restore original stdout and stderr
-        Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, originalOut);
-        Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, originalErr);
-      }
-    } else if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
-      // asdf
-    } else if ((Utils.getOS() == Utils.OS.MAC) || (Utils.getOS() == Utils.OS.MAC_ARM64)) {
-      // asdf
-    }
-  }
 
   public void destroy() {
     txEmulatorI.transaction_emulator_destroy(txEmulator);
@@ -189,9 +152,11 @@ public class TxEmulator {
    *     actions boc (OutList n)", "elapsed_time": 0.02 }
    */
   public EmulateTransactionResult emulateTransaction(String shardAccountBoc, String messageBoc) {
+    Utils.disableNativeOutput();
     String result =
         txEmulatorI.transaction_emulator_emulate_transaction(
             txEmulator, shardAccountBoc, messageBoc);
+    Utils.enableNativeOutput();
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, EmulateTransactionResult.class);
   }
@@ -245,9 +210,11 @@ public class TxEmulator {
 
     String shardAccountBocBase64 = shardAccount.toCell().toBase64();
 
+    Utils.disableNativeOutput();
     String result =
         txEmulatorI.transaction_emulator_emulate_transaction(
             txEmulator, shardAccountBocBase64, messageBoc);
+    Utils.enableNativeOutput();
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, EmulateTransactionResult.class);
   }
@@ -259,7 +226,9 @@ public class TxEmulator {
    *     debug)
    */
   public void setVerbosityLevel(int verbosityLevel) {
+    Utils.disableNativeOutput();
     txEmulatorI.emulator_set_verbosity_level(txEmulator, verbosityLevel);
+    Utils.enableNativeOutput();
   }
 
   /**
@@ -269,7 +238,10 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setDebugEnabled(boolean debugEnabled) {
-    return txEmulatorI.transaction_emulator_set_debug_enabled(txEmulator, debugEnabled);
+    Utils.disableNativeOutput();
+    boolean result = txEmulatorI.transaction_emulator_set_debug_enabled(txEmulator, debugEnabled);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -279,7 +251,10 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setLibs(String libsBoc) {
-    return txEmulatorI.transaction_emulator_set_libs(txEmulator, libsBoc);
+    Utils.disableNativeOutput();
+    boolean result = txEmulatorI.transaction_emulator_set_libs(txEmulator, libsBoc);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -289,7 +264,10 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setPrevBlockInfo(String infoBoc) {
-    return txEmulatorI.transaction_emulator_set_prev_blocks_info(txEmulator, infoBoc);
+    Utils.disableNativeOutput();
+    boolean result = txEmulatorI.transaction_emulator_set_prev_blocks_info(txEmulator, infoBoc);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -299,7 +277,10 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setRandSeed(String randSeedHex) {
-    return txEmulatorI.transaction_emulator_set_rand_seed(txEmulator, randSeedHex);
+    Utils.disableNativeOutput();
+    boolean result = txEmulatorI.transaction_emulator_set_rand_seed(txEmulator, randSeedHex);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -309,6 +290,7 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setUnixTime(long utime) {
+    Utils.disableNativeOutput();
     return txEmulatorI.transaction_emulator_set_unixtime(txEmulator, utime);
   }
 
@@ -319,7 +301,10 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setConfig(String configBoc) {
-    return txEmulatorI.transaction_emulator_set_config(txEmulator, configBoc);
+    Utils.disableNativeOutput();
+    boolean result = txEmulatorI.transaction_emulator_set_config(txEmulator, configBoc);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -329,7 +314,10 @@ public class TxEmulator {
    * @return Pointer to Config object or nullptr in case of error
    */
   public long createConfig(String configBoc) {
-    return txEmulatorI.emulator_config_create(configBoc);
+    Utils.disableNativeOutput();
+    long result = txEmulatorI.emulator_config_create(configBoc);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -338,7 +326,9 @@ public class TxEmulator {
    * @param config Pointer to Config object
    */
   public void destroyConfig(long config) {
+    Utils.disableNativeOutput();
     txEmulatorI.emulator_config_destroy(config);
+    Utils.enableNativeOutput();
   }
 
   /**
@@ -354,6 +344,7 @@ public class TxEmulator {
    */
   public EmulateTransactionResult emulateTickTockTransaction(
       String shardAccountBoc, boolean isTock) {
+    Utils.disableNativeOutput();
     String result =
         txEmulatorI.transaction_emulator_emulate_tick_tock_transaction(
             txEmulator, shardAccountBoc, isTock);
@@ -368,7 +359,10 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setEmulatorLt(long lt) {
-    return txEmulatorI.transaction_emulator_set_lt(txEmulator, lt);
+    Utils.disableNativeOutput();
+    boolean result = txEmulatorI.transaction_emulator_set_lt(txEmulator, lt);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -378,6 +372,9 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setIgnoreCheckSignature(boolean ignoreChksig) {
-    return txEmulatorI.transaction_emulator_set_ignore_chksig(txEmulator, ignoreChksig);
+    Utils.disableNativeOutput();
+    boolean result = txEmulatorI.transaction_emulator_set_ignore_chksig(txEmulator, ignoreChksig);
+    Utils.enableNativeOutput();
+    return result;
   }
 }

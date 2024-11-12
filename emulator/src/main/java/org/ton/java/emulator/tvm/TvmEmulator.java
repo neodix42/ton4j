@@ -6,8 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
-import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.WinNT;
+
 import java.math.BigInteger;
 import java.util.Collections;
 import lombok.Builder;
@@ -66,7 +65,7 @@ public class TvmEmulator {
         super.verbosityLevel = TvmVerbosityLevel.TRUNCATED;
       }
 
-      redirectNativeOutput();
+      Utils.disableNativeOutput();
 
       if (isNull(super.codeBoc)) {
         throw new Error("codeBoc is not set");
@@ -81,6 +80,8 @@ public class TvmEmulator {
       if (super.verbosityLevel == TvmVerbosityLevel.WITH_ALL_STACK_VALUES) {
         super.tvmEmulatorI.tvm_emulator_set_debug_enabled(super.tvmEmulator, true);
       }
+
+      Utils.enableNativeOutput();
 
       if (super.tvmEmulator == 0) {
         throw new Error("Can't create emulator instance");
@@ -97,7 +98,9 @@ public class TvmEmulator {
   }
 
   public void destroy() {
+    Utils.disableNativeOutput();
     tvmEmulatorI.tvm_emulator_destroy(tvmEmulator);
+    Utils.enableNativeOutput();
   }
 
   /**
@@ -107,7 +110,10 @@ public class TvmEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setLibs(String libsBoc) {
-    return tvmEmulatorI.tvm_emulator_set_libraries(tvmEmulator, libsBoc);
+    Utils.disableNativeOutput();
+    boolean result = tvmEmulatorI.tvm_emulator_set_libraries(tvmEmulator, libsBoc);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -136,8 +142,11 @@ public class TvmEmulator {
    */
   public boolean setC7(
       String address, long unixTime, long balance, String randSeedHex, String config) {
-    return tvmEmulatorI.tvm_emulator_set_c7(
+    Utils.disableNativeOutput();
+    boolean result = tvmEmulatorI.tvm_emulator_set_c7(
         tvmEmulator, address, unixTime, balance, randSeedHex, config);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -147,7 +156,10 @@ public class TvmEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setPrevBlockInfo(String infoBoc) {
-    return tvmEmulatorI.tvm_emulator_set_prev_blocks_info(tvmEmulator, infoBoc);
+    Utils.disableNativeOutput();
+    boolean result = tvmEmulatorI.tvm_emulator_set_prev_blocks_info(tvmEmulator, infoBoc);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -157,7 +169,10 @@ public class TvmEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setGasLimit(long gasLimit) {
-    return tvmEmulatorI.tvm_emulator_set_gas_limit(tvmEmulator, gasLimit);
+    Utils.disableNativeOutput();
+    boolean result = tvmEmulatorI.tvm_emulator_set_gas_limit(tvmEmulator, gasLimit);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -167,7 +182,10 @@ public class TvmEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setDebugEnabled(boolean debugEnabled) {
-    return tvmEmulatorI.tvm_emulator_set_debug_enabled(tvmEmulator, debugEnabled);
+    Utils.disableNativeOutput();
+    boolean result = tvmEmulatorI.tvm_emulator_set_debug_enabled(tvmEmulator, debugEnabled);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -180,7 +198,9 @@ public class TvmEmulator {
    *     serialized stack (VmStack)", "missing_library": null, "gas_used": 1212 }
    */
   public GetMethodResult runGetMethod(int methodId, String stackBoc) {
+    Utils.disableNativeOutput();
     String result = tvmEmulatorI.tvm_emulator_run_get_method(tvmEmulator, methodId, stackBoc);
+    Utils.enableNativeOutput();
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, GetMethodResult.class);
   }
@@ -194,6 +214,7 @@ public class TvmEmulator {
    *     serialized stack (VmStack)", "missing_library": null, "gas_used": 1212 }
    */
   public GetMethodResult runGetMethod(int methodId) {
+    Utils.disableNativeOutput();
     String result =
         tvmEmulatorI.tvm_emulator_run_get_method(
             tvmEmulator,
@@ -204,11 +225,13 @@ public class TvmEmulator {
                 .build()
                 .toCell()
                 .toBase64());
+    Utils.enableNativeOutput();
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, GetMethodResult.class);
   }
 
   public GetMethodResult runGetMethod(String methodName) {
+    Utils.disableNativeOutput();
     String result =
         tvmEmulatorI.tvm_emulator_run_get_method(
             tvmEmulator,
@@ -219,6 +242,7 @@ public class TvmEmulator {
                 .build()
                 .toCell()
                 .toBase64());
+    Utils.enableNativeOutput();
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, GetMethodResult.class);
   }
@@ -233,9 +257,11 @@ public class TvmEmulator {
    *     serialized stack (VmStack)", "missing_library": null, "gas_used": 1212 }
    */
   public GetMethodResult runGetMethod(String methodName, String stackBoc) {
+    Utils.disableNativeOutput();
     String result =
         tvmEmulatorI.tvm_emulator_run_get_method(
             tvmEmulator, Utils.calculateMethodId(methodName), stackBoc);
+    Utils.enableNativeOutput();
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, GetMethodResult.class);
   }
@@ -291,7 +317,10 @@ public class TvmEmulator {
    *     result$_ exit_code:(## 32) gas_used:(## 32) stack:^VmStack
    */
   public String emulateRunMethod(int len, String paramsBoc, long gasLimit) {
-    return tvmEmulatorI.tvm_emulator_emulate_run_method(len, paramsBoc, gasLimit);
+    Utils.disableNativeOutput();
+    String result = tvmEmulatorI.tvm_emulator_emulate_run_method(len, paramsBoc, gasLimit);
+    Utils.enableNativeOutput();
+    return result;
   }
 
   /**
@@ -305,7 +334,9 @@ public class TvmEmulator {
    *     type (OutList n)" }
    */
   public SendExternalMessageResult sendExternalMessage(String messageBodyBoc) {
+    Utils.disableNativeOutput();
     String result = tvmEmulatorI.tvm_emulator_send_external_message(tvmEmulator, messageBodyBoc);
+    Utils.enableNativeOutput();
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, SendExternalMessageResult.class);
   }
@@ -322,39 +353,11 @@ public class TvmEmulator {
    *     type (OutList n)" }
    */
   public SendInternalMessageResult sendInternalMessage(String messageBodyBoc, long amount) {
+    Utils.disableNativeOutput();
     String result =
         tvmEmulatorI.tvm_emulator_send_internal_message(tvmEmulator, messageBodyBoc, amount);
+    Utils.enableNativeOutput();
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, SendInternalMessageResult.class);
-  }
-
-  private static void redirectNativeOutput() {
-
-    // Redirect native output on Windows
-    WinNT.HANDLE originalOut = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
-    WinNT.HANDLE originalErr = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
-
-    //    try (FileOutputStream nulStream = new FileOutputStream("NUL")) {
-    WinNT.HANDLE hNul =
-        Kernel32.INSTANCE.CreateFile(
-            "NUL",
-            Kernel32.GENERIC_WRITE,
-            Kernel32.FILE_SHARE_WRITE,
-            null,
-            Kernel32.OPEN_EXISTING,
-            0,
-            null);
-
-    // Redirect stdout and stderr to NUL
-    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, hNul);
-    Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, hNul);
-
-    //      // Close the handle to NUL
-    //      Kernel32.INSTANCE.CloseHandle(hNul);
-    //    } finally {
-    //      // Restore original stdout and stderr
-    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, originalOut);
-    //      Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, originalErr);
-    //    }
   }
 }

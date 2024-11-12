@@ -1,9 +1,9 @@
 package org.ton.java.utils;
 
 import com.iwebpp.crypto.TweetNaclFast;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+
+import java.io.*;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -21,6 +21,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import com.sun.jna.Library;
+import com.sun.jna.Native;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinNT;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -1036,5 +1041,127 @@ public class Utils {
 
   public static long getRandomLong() {
     return new Random().nextLong();
+  }
+
+  public interface CStdLib extends Library {
+    int dup(int oldfd);              // Duplicate a file descriptor
+    int dup2(int oldfd, int newfd);  // Duplicate a file descriptor to a specified descriptor
+    int close(int fd);               // Close a file descriptor
+  }
+
+  // Redirect native output on Windows
+  static WinNT.HANDLE originalOut;
+  static WinNT.HANDLE originalErr;
+  static int originalStdoutFD;
+  static int originalStderrFD;
+  static  CStdLib cStdLib;
+
+  public static void disableNativeOutput() {
+//    System.out.println("disable");
+    try {
+      if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
+        // Redirect native output on Windows
+        originalOut = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_OUTPUT_HANDLE);
+        originalErr = Kernel32.INSTANCE.GetStdHandle(Kernel32.STD_ERROR_HANDLE);
+
+        try {
+          FileOutputStream nulStream = new FileOutputStream("NUL");
+
+          WinNT.HANDLE hNul =
+                  Kernel32.INSTANCE.CreateFile(
+                          "NUL",
+                          Kernel32.GENERIC_WRITE,
+                          Kernel32.FILE_SHARE_WRITE,
+                          null,
+                          Kernel32.OPEN_EXISTING,
+                          0,
+                          null);
+
+          // Redirect stdout and stderr to NUL
+          Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, hNul);
+          Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, hNul);
+
+          // Close the handle to NUL
+          Kernel32.INSTANCE.CloseHandle(hNul);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      } else if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
+        try {
+          // Load the native library
+          cStdLib = Native.load("c", CStdLib.class);
+
+          // Save original stdout and stderr file descriptors
+          originalStdoutFD = cStdLib.dup(1);
+          originalStderrFD = cStdLib.dup(2);
+
+          // Redirect stdout and stderr to /dev/null
+          try (FileOutputStream devNull = new FileOutputStream("/dev/null")) {
+            // Get the file descriptor for /dev/null
+            FileDescriptor fd = devNull.getFD();
+
+            // Get the file descriptor integer value by accessing the private field via reflection
+            // Retrieve the field that holds the actual fd (in a private field)
+            Field fdField = FileDescriptor.class.getDeclaredField("fd");
+            fdField.setAccessible(true);
+            int devNullFD = (int) fdField.get(fd);
+
+            cStdLib.dup2(devNullFD, 1);
+            cStdLib.dup2(devNullFD, 2);
+
+          } catch (IOException | NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+          }
+        } catch (Exception e) {
+          System.out.println("error here " + e.getMessage());
+        }
+      } else if ((Utils.getOS() == Utils.OS.MAC) || (Utils.getOS() == Utils.OS.MAC_ARM64)) {
+        // Load the native library
+        CStdLib cStdLib = Native.load("c", CStdLib.class);
+
+        // Redirect stdout and stderr to /dev/null
+        try (FileOutputStream devNull = new FileOutputStream("/dev/null")) {
+          // Get the file descriptor for /dev/null
+          FileDescriptor fd = devNull.getFD();
+
+          // Get the file descriptor integer value by accessing the private field via reflection
+          // Retrieve the field that holds the actual fd (in a private field)
+          Field fdField = FileDescriptor.class.getDeclaredField("fd");
+          fdField.setAccessible(true);
+          int devNullFD = (int) fdField.get(fd);
+
+          // Duplicate and redirect stdout and stderr
+          int stdoutFD = 1;  // File descriptor for stdout
+          int stderrFD = 2;  // File descriptor for stderr
+          cStdLib.dup2(devNullFD, stdoutFD);
+          cStdLib.dup2(devNullFD, stderrFD);
+
+        } catch (IOException | NoSuchFieldException | IllegalAccessException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+    catch (Exception e) {
+      System.err.println("cannot disable native stdout");
+    }
+  }
+
+  public static void enableNativeOutput() {
+    try {
+      if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
+        Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_OUTPUT_HANDLE, originalOut);
+        Kernel32.INSTANCE.SetStdHandle(Kernel32.STD_ERROR_HANDLE, originalErr);
+      } else if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
+        cStdLib.dup2(originalStdoutFD, 1);
+        cStdLib.dup2(originalStderrFD, 2);
+      } else if ((Utils.getOS() == Utils.OS.MAC) || (Utils.getOS() == Utils.OS.MAC_ARM64)) {
+        cStdLib.dup2(originalStdoutFD, 1);
+        cStdLib.dup2(originalStderrFD, 2);
+      }
+    }
+      catch (Exception e) {
+      System.err.println("cannot enable native stdout");
+    }
+//    System.out.println("enable");
   }
 }

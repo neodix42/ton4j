@@ -669,6 +669,11 @@ public class Cell {
     return getHash(levelMask.getLevel());
   }
 
+  public String getShortHash() {
+    String hashHex = Utils.bytesToHex(getHash(levelMask.getLevel()));
+    return hashHex.substring(0, 4) + ".." + hashHex.substring(hashHex.length() - 5, hashHex.length() - 1);
+  }
+
   public byte[] getHash(int lvl) {
     int hashIndex = levelMask.apply(lvl).getHashIndex();
     if (type == CellType.PRUNED_BRANCH) {

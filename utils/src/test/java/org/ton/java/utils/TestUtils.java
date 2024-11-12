@@ -2,6 +2,7 @@ package org.ton.java.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -432,6 +433,15 @@ public class TestUtils {
         ip = "135.181.177.59"; // mainnet [2] - 135.181.177.59
         log.info("ip {}", ip2int(ip));
         assertThat(ip2int(ip)).isEqualTo(-2018135749);
+    }
 
+    @Test
+    public void testDisableEnableSystemOutput() {
+        long l = System.currentTimeMillis();
+        for (int i = 0; i < 10000; i++) {
+            Utils.disableNativeOutput();
+            Utils.enableNativeOutput();
+        }
+        log.info("10k switches took {}ms", System.currentTimeMillis() - l);
     }
 }
