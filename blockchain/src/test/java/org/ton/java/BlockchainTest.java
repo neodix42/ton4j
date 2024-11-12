@@ -70,7 +70,7 @@ public class BlockchainTest {
     Blockchain blockchain =
         Blockchain.builder()
             .network(Network.EMULATOR)
-            .customContractAsResource("simple.fc")
+            .customContractAsResource("simple.tolk")
             .customContractDataCell(
                 CellBuilder.beginCell()
                     .storeUint(0, 32) // seqno
@@ -359,7 +359,6 @@ public class BlockchainTest {
             .endCell();
 
     Message extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
-
     blockchain.sendExternal(extMsg);
 
     currentSeqno = blockchain.runGetSeqNo();
@@ -371,7 +370,6 @@ public class BlockchainTest {
             .endCell();
 
     extMsg = MsgUtils.createExternalMessage(dummyAddress, null, bodyCell);
-
     blockchain.sendExternal(extMsg);
     currentSeqno = blockchain.runGetSeqNo();
     System.out.printf("current seqno %s\n", currentSeqno);

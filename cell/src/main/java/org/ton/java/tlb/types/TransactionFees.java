@@ -22,4 +22,5 @@ public class TransactionFees {
   long now;
   BigInteger lt;
   String account;
+  BigInteger balance;
 }
