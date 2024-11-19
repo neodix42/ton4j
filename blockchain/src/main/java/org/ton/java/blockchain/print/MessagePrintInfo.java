@@ -1,4 +1,4 @@
-package org.ton.java.tlb.types;
+package org.ton.java.blockchain.print;
 
 import lombok.Builder;
 import lombok.Data;

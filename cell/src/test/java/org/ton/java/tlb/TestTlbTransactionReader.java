@@ -37,7 +37,6 @@ public class TestTlbTransactionReader {
         CellSlice cs = CellSlice.beginParse(c);
         Transaction transaction = Transaction.deserialize(cs);
         log.info("transaction {}", transaction);
-        transaction.printTransactionInfo(true, true, "", "(0,600000000000000,233232)");
     }
 
     @Test
@@ -47,6 +46,5 @@ public class TestTlbTransactionReader {
         CellSlice cs = CellSlice.beginParse(c);
         Transaction transaction = Transaction.deserialize(cs);
         log.info("transaction {}", transaction);
-        transaction.printTransactionInfo(true, true, "");
     }
 }

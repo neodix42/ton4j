@@ -111,7 +111,7 @@ public class SmartContractCompiler {
         }
 
         if (outputFiftAsmFile.contains("cannot generate code")
-                || outputFiftAsmFile.contains("error: undefined function")
+                || outputFiftAsmFile.contains(": error:")
                 || outputFiftAsmFile.contains("Failed to discover")) {
             throw new Error("Compile error: " + outputFiftAsmFile);
         }

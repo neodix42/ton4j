@@ -55,11 +55,6 @@
         </dependency>
         <dependency>
             <groupId>io.github.neodix42</groupId>
-            <artifactId>liteclient</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.neodix42</groupId>
             <artifactId>utils</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

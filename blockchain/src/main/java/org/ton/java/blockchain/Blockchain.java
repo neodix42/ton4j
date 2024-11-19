@@ -1,10 +1,15 @@
-package org.ton.java;
+package org.ton.java.blockchain;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
+import org.ton.java.blockchain.print.MessagePrintInfo;
+import org.ton.java.blockchain.print.TransactionPrintInfo;
+import org.ton.java.blockchain.types.GetterResult;
+import org.ton.java.blockchain.types.Network;
+import org.ton.java.blockchain.types.SendExternalResult;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -16,9 +21,6 @@ import org.ton.java.emulator.tx.TxEmulatorConfig;
 import org.ton.java.emulator.tx.TxVerbosityLevel;
 import org.ton.java.fift.FiftRunner;
 import org.ton.java.func.FuncRunner;
-import org.ton.java.liteclient.LiteClient;
-import org.ton.java.liteclient.LiteClientParser;
-import org.ton.java.liteclient.api.ResultLastBlock;
 import org.ton.java.smartcontract.SmartContractCompiler;
 import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV3Config;
@@ -33,7 +35,6 @@ import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 import java.math.BigInteger;
-import java.util.List;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -46,7 +47,6 @@ public class Blockchain {
     private FiftRunner fiftRunner;
     private TolkRunner tolkRunner;
     private Tonlib tonlib;
-    private LiteClient liteClient;
     private Network network;
     VerbosityLevel tonlibVerbosityLevel;
     TxEmulatorConfig txEmulatorConfig;
@@ -104,8 +104,6 @@ public class Blockchain {
                 }
 
                 initializeTonlib();
-
-                initializeLiteClient();
 
                 initializeSmartContractCompiler();
 
@@ -277,7 +275,6 @@ public class Blockchain {
                                 + "Emulator not used\n"
                                 + "Tonlib location: {}\n"
                                 + "Tonlib global config: {}\n"
-                                + "Lite-client location: {}\n"
                                 + "Func location: {}\n"
                                 + "Tolk location: {}\n"
                                 + "Fift location: {}, FIFTPATH={}\n"
@@ -285,7 +282,6 @@ public class Blockchain {
                         super.network,
                         super.tonlib.pathToTonlibSharedLib,
                         super.tonlib.pathToGlobalConfig,
-                        super.liteClient.getLiteClientPath(),
                         super.funcRunner.getFuncPath(),
                         super.tolkRunner.getTolkPath(),
                         super.fiftRunner.getFiftPath(),
@@ -295,31 +291,6 @@ public class Blockchain {
                                 : isNull(super.customContractPath)
                                 ? "integrated resource " + super.customContractAsResource
                                 : super.customContractPath);
-            }
-        }
-
-        private void initializeLiteClient() {
-            if (super.network != Network.EMULATOR) {
-                if (isNull(super.liteClient)) {
-                    if (StringUtils.isNotEmpty(super.customGlobalConfigPath)) {
-                        super.liteClient =
-                                LiteClient.builder()
-                                        .pathToGlobalConfig(super.customGlobalConfigPath)
-                                        .printInfo(false)
-                                        .build();
-                    } else if (super.network == Network.MAINNET) {
-                        super.liteClient = LiteClient.builder().testnet(false).printInfo(true).build();
-                    } else if (super.network == Network.TESTNET) {
-                        super.liteClient = LiteClient.builder().testnet(true).printInfo(true).build();
-                    } else { // MyLocalTon
-                        super.liteClient =
-                                LiteClient.builder()
-                                        .pathToGlobalConfig(
-                                                super.myLocalTonInstallationPath + "/genesis/db/my-ton-global.config.json")
-                                        .printInfo(false)
-                                        .build();
-                    }
-                }
             }
         }
 
@@ -432,16 +403,13 @@ public class Blockchain {
      * @return SendExternalResult
      */
     public SendExternalResult sendExternal(Message message, int pauseInSeconds) {
-
         try {
-
             Address address = getAddr();
             String bounceableAddress =
                     (network == Network.TESTNET) ? address.toBounceableTestnet() : address.toBounceable();
 
             if (network != Network.EMULATOR) {
                 String initialBalance = Utils.formatNanoValue(tonlib.getAccountBalance(address));
-//                log.info("initialBalance {}", initialBalance);
                 log.info(
                         "Sending external message (cell-hash: {}) to bounceable address {} on {}...",
                         message.toCell().getShortHash(),
@@ -492,13 +460,13 @@ public class Blockchain {
                                     .printEmulatorInfo(false)
                                     .build();
 
-                    emulateTransactionResult
-                            .getTransaction()
-                            .printTransactionInfo(true, true, initialBalance);
+                    Transaction transaction = emulateTransactionResult.getTransaction();
+
+                    TransactionPrintInfo.printTransactionInfo(transaction, true, true, initialBalance);
                     log.info(
                             "final balance {}",
                             Utils.formatNanoValue(emulateTransactionResult.getNewShardAccount().getBalance()));
-                    emulateTransactionResult.getTransaction().printAllMessages(true, true);
+                    TransactionPrintInfo.printAllMessages(transaction, true, true);
                 } else {
                     log.error(
                             "Cannot emulate transaction. Error: "
@@ -926,94 +894,31 @@ public class Blockchain {
 //                log.info("total txs: {}", rawTransactions.getTransactions().size());
 
                 if (printTxBlockData) {
-                    Transaction.printTxHeader("");
+                    TransactionPrintInfo.printTxHeader("");
                     for (RawTransaction tx : rawTransactions.getTransactions()) {
                         Transaction transaction = Transaction.deserialize(CellSlice.beginParse(CellBuilder.beginCell().fromBocBase64(tx.getData()).endCell()));
                         BlockIdExt block = tonlib.lookupBlock(0, address.wc, address.getShardAsLong(), 0, transaction.getNow());
-                        transaction.printTransactionInfo(false, false, initialBalance, block.getShortBlockSeqno());
+                        TransactionPrintInfo.printTransactionInfo(transaction, false, false, initialBalance, block.getShortBlockSeqno());
 
                     }
-                    Transaction.printTxFooter();
+                    TransactionPrintInfo.printTxFooter();
                 } else {
-                    Transaction.printTxHeaderWithoutBlock("");
+                    TransactionPrintInfo.printTxHeaderWithoutBlock("");
                     for (RawTransaction tx : rawTransactions.getTransactions()) {
                         Transaction transaction = Transaction.deserialize(CellSlice.beginParse(CellBuilder.beginCell().fromBocBase64(tx.getData()).endCell()));
-                        transaction.printTransactionInfo(false, false, initialBalance);
+                        TransactionPrintInfo.printTransactionInfo(transaction, false, false, initialBalance);
                     }
-                    Transaction.printTxFooterWithoutBlock();
+                    TransactionPrintInfo.printTxFooterWithoutBlock();
                 }
 
                 MessagePrintInfo.printMessageInfoHeader();
 
                 for (RawTransaction txa : rawTransactions.getTransactions()) {
                     Transaction transactiona = Transaction.deserialize(CellSlice.beginParse(CellBuilder.beginCell().fromBocBase64(txa.getData()).endCell()));
-                    transactiona.printAllMessages(false);
+                    TransactionPrintInfo.printAllMessages(transactiona, false);
                 }
                 MessagePrintInfo.printMessageInfoFooter();
             }
         }
     }
-
-    public void showTxLiteClient(String address) {
-        ResultLastBlock resultLastBlock = LiteClientParser.parseLast(liteClient.executeLast());
-        //    log.info("resultLastBlock {}", resultLastBlock);
-
-        for (int i = 0; i < 8; i++) {
-
-            try {
-                ResultLastBlock blockId = resultLastBlock;
-
-                if (i != 0) {
-                    resultLastBlock.setSeqno(resultLastBlock.getSeqno().add(BigInteger.ONE));
-                    blockId =
-                            LiteClientParser.parseBySeqno(
-                                    liteClient.executeBySeqno(
-                                            resultLastBlock.getWc(),
-                                            resultLastBlock.getShard(),
-                                            resultLastBlock.getSeqno()));
-                }
-
-                log.info("resultLastBlock {}", blockId);
-
-                List<org.ton.java.liteclient.api.block.Transaction> result =
-                        liteClient.getAccountTransactionsFromBlockAndAllShards(blockId, address);
-
-                if (!result.isEmpty()) {
-                    org.ton.java.liteclient.api.block.Transaction.printTxHeader("");
-                    for (org.ton.java.liteclient.api.block.Transaction tx : result) {
-                        tx.printTransactionFees();
-                    }
-                    org.ton.java.liteclient.api.block.Transaction.printTxFooter();
-
-                    org.ton.java.liteclient.api.block.MessageFees.printMessageFeesHeader();
-                    for (org.ton.java.liteclient.api.block.Transaction tx : result) {
-                        tx.printAllMessages(false);
-                    }
-                    org.ton.java.liteclient.api.block.MessageFees.printMessageFeesFooter();
-                    //          break;
-                }
-            } catch (Exception e) {
-                // asdf
-            }
-        }
-    }
-
-    public void showTxLiteClient() {
-
-        List<org.ton.java.liteclient.api.block.Transaction> result =
-                liteClient.getAllTransactionsFromLatestBlockAndAllShards();
-
-        org.ton.java.liteclient.api.block.Transaction.printTxHeader("");
-        for (org.ton.java.liteclient.api.block.Transaction tx : result) {
-            tx.printTransactionFees();
-        }
-        org.ton.java.liteclient.api.block.Transaction.printTxFooter();
-
-        org.ton.java.liteclient.api.block.MessageFees.printMessageFeesHeader();
-        for (org.ton.java.liteclient.api.block.Transaction tx : result) {
-            tx.printAllMessages(false);
-        }
-        org.ton.java.liteclient.api.block.MessageFees.printMessageFeesFooter();
-    }
-
 }

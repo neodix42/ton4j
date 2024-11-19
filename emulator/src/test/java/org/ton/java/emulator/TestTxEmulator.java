@@ -203,8 +203,6 @@ public class TestTxEmulator {
                 txEmulator.emulateTickTockTransaction(shardAccountBocBase64, false);
         log.info("result {}", result);
         assertThat(result.success).isTrue();
-        result.getTransaction().printTransactionInfo(true, true);
-        result.getTransaction().printAllMessages(true);
         log.info("vm log {}", result.getVm_log());
     }
 
@@ -224,8 +222,6 @@ public class TestTxEmulator {
                 txEmulator.emulateTickTockTransaction(shardAccountBocBase64, true);
         log.info("result {}", result);
         assertThat(result.success).isTrue();
-        result.getTransaction().printTransactionInfo(true, true);
-        result.getTransaction().printAllMessages(true);
     }
 
     @Test
@@ -265,9 +261,6 @@ public class TestTxEmulator {
                 txEmulator.emulateTransaction(shardAccountBocBase64, internalMsgBocBase64);
         log.info("result {}", result);
         assertThat(result.isSuccess()).isTrue();
-        result.getTransaction().printTransactionInfo(true, true);
-
-        result.getTransaction().printAllMessages(true);
     }
 
     @Test
@@ -310,8 +303,6 @@ public class TestTxEmulator {
         log.info("new shardAccount {}", result.getNewShardAccount());
         log.info("new transaction {}", result.getTransaction());
         log.info("new actions {}", result.getActions());
-        result.getTransaction().printTransactionInfo(true, true);
-        result.getTransaction().printAllMessages(true);
     }
 
     @Test
@@ -432,9 +423,6 @@ public class TestTxEmulator {
         //    log.info("txDescOrd "+ txDescOrd);
         assertThat(txDescOrd.isAborted()).isFalse();
 
-        result.getTransaction().printTransactionInfo(true, true);
-        result.getTransaction().printAllMessages(true);
-
         // transfer one more time
         walletV5Config =
                 WalletV5Config.builder()
@@ -478,9 +466,6 @@ public class TestTxEmulator {
         assertThat(newShardAccount.getAccount().getAccountStorage().getBalance().getCoins())
                 .isLessThan(Utils.toNano(3.2));
         assertThat(newShardAccount.getBalance()).isLessThan(Utils.toNano(3.2)); // same as above
-
-        result.getTransaction().printTransactionInfo(true, true);
-        result.getTransaction().printAllMessages(true);
     }
 
     @Test
@@ -542,10 +527,6 @@ public class TestTxEmulator {
         EmulateTransactionResult result =
                 txEmulator.emulateTransaction(
                         codeCell, dataCell, Utils.toNano(2), extMsg.toCell().toBase64());
-
-        //    log.info("result sendExternalMessage[1]: "+ result);
-        //    log.info("txFees: "+ result.getTransaction().getTransactionFees());
-        result.getTransaction().printTransactionInfo(true, true);
     }
 
     @Test
@@ -665,10 +646,6 @@ public class TestTxEmulator {
 
         log.info("txDescOrd {}", txDescOrd);
         assertThat(txDescOrd.isAborted()).isFalse();
-
-        result.getTransaction().printTransactionInfo(true, true);
-        result.getTransaction().printAllMessages(true);
-
         // second transfer using new shard account
 
         walletV5Config =
@@ -717,9 +694,6 @@ public class TestTxEmulator {
         assertThat(newShardAccount.getAccount().getAccountStorage().getBalance().getCoins())
                 .isLessThan(Utils.toNano(3.2));
         assertThat(newShardAccount.getBalance()).isLessThan(Utils.toNano(3.2)); // same as above
-
-        result.getTransaction().printTransactionInfo(true, true);
-        result.getTransaction().printAllMessages(true);
     }
 
     private static Cell getLibs() {

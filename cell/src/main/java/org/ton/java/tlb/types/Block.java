@@ -102,40 +102,4 @@ public class Block {
         }
         return result;
     }
-
-    public void printAllTransactions() {
-        List<Transaction> txs = getAllTransactions();
-        if (txs.isEmpty()) {
-            log.info("No transactions");
-            return;
-        }
-        Transaction.printTxHeader("");
-        for (Transaction tx : txs) {
-            tx.printTransactionInfo();
-        }
-        Transaction.printTxFooter();
-    }
-
-    public List<MessagePrintInfo> getAllMessageFees() {
-        List<Transaction> txs = getAllTransactions();
-        List<MessagePrintInfo> msgFees = new ArrayList<>();
-        for (Transaction tx : txs) {
-            msgFees.addAll(tx.getAllMessagePrintInfo());
-        }
-
-        return msgFees;
-    }
-
-    public void printAllMessages() {
-        List<MessagePrintInfo> msgFees = getAllMessageFees();
-        if (msgFees.isEmpty()) {
-            log.info("No messages");
-            return;
-        }
-        MessagePrintInfo.printMessageInfoHeader();
-        for (MessagePrintInfo msgFee : msgFees) {
-            msgFee.printMessageInfo();
-        }
-        MessagePrintInfo.printMessageInfoFooter();
-    }
 }
