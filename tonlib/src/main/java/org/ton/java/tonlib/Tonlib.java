@@ -1514,16 +1514,17 @@ public class Tonlib {
   /**
    * PR pending https://github.com/ton-blockchain/ton/pull/1379 todo
    *
-   * @param address
-   * @param msgHexHash
-   * @return
+   * @param address String
+   * @param msgHashBase64 msgHexHash
+   * @return RawTransaction
    */
-  private RawTransaction getTxByMessageHash(String address, String msgHexHash) {
+  private RawTransaction getTxByMessageHash(String address, String msgHashBase64) {
     RawTransactions rawTransactions = getRawTransactions(address, null, null);
     for (RawTransaction tx : rawTransactions.getTransactions()) {
       if (nonNull(tx.getIn_msg())) {
-//          if (tx.getIn_msg().hashCode()) {
-//          }
+          if (tx.getIn_msg().getHash().equals(msgHashBase64)) {
+              return tx;
+          }
         }
     }
     return null;

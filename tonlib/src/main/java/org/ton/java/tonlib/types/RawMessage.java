@@ -17,7 +17,7 @@ import static java.util.Objects.nonNull;
 public class RawMessage implements Serializable {
     @SerializedName("@type")
     final String type = "raw.message";
-
+    String hash;
     AccountAddressOnly source;
     AccountAddressOnly destination;
     String value;
