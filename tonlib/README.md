@@ -13,10 +13,11 @@ You can get the latest tonlib library by:
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
 ```xml
+
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>tonlib</artifactId>
-    <version>0.7.1</version>
+    <version>0.8.0</version>
 </dependency>
 ```
 
@@ -27,7 +28,7 @@ You can get the latest tonlib library by:
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>tonlib</artifactId>
-    <version>0.7.1</version>
+    <version>0.8.0</version>
 </dependency>
 ```
 
