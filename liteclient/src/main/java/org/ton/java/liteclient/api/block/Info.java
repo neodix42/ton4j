@@ -1,23 +1,22 @@
 package org.ton.java.liteclient.api.block;
 
-import lombok.Builder;import lombok.Data;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
+import org.ton.java.utils.Utils;
 
 import java.io.Serializable;
 import java.math.BigInteger;
 
 /**
- * Block header. Another non-split component of a shardchain block
- * is the block header, which contains general information such as (w, s) (i.e.,
- * the workchain_id and the common binary prefix of all account_ids assigned
- * to the current shardchain), the block’s sequence number (defined to be the
- * smallest non-negative integer larger than the sequence numbers of its predecessors),
- * logical time, and generation unixtime. It also contains the hash of
- * the immediate antecessor of the block (or of its two immediate antecessors
- * in the case of a preceding shardchain merge event), the hashes of its initial
- * and final states (i.e., of the states of the shardchain immediately before and
- * immediately after processing the current block), and the hash of the most
+ * Block header. Another non-split component of a shardchain block is the block header, which
+ * contains general information such as (w, s) (i.e., the workchain_id and the common binary prefix
+ * of all account_ids assigned to the current shardchain), the block’s sequence number (defined to
+ * be the smallest non-negative integer larger than the sequence numbers of its predecessors),
+ * logical time, and generation unixtime. It also contains the hash of the immediate antecessor of
+ * the block (or of its two immediate antecessors in the case of a preceding shardchain merge
+ * event), the hashes of its initial and final states (i.e., of the states of the shardchain
+ * immediately before and immediately after processing the current block), and the hash of the most
  * recent masterchain block known when the shardchain block was generated.
  */
 @Builder
@@ -48,4 +47,12 @@ public class Info implements Serializable {
     BigInteger prevEndLt;
     String prevRootHash;
     String prevFileHash;
+    BigInteger shardPrefix;
+    Integer shardPrefixBits;
+    Long shardWorkchain;
+
+    public String getShortBlockSeqno() {
+        return String.format(
+                "(%d,%s,%d)", wc, Utils.convertShardIdentToShard(shardPrefix, shardPrefixBits), seqNo);
+    }
 }

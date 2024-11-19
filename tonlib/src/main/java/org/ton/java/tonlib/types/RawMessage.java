@@ -2,9 +2,7 @@ package org.ton.java.tonlib.types;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.apache.commons.codec.binary.Hex;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
@@ -15,12 +13,11 @@ import java.io.Serializable;
 import static java.util.Objects.nonNull;
 
 @Builder
-@Setter
-@Getter
-@ToString
+@Data
 public class RawMessage implements Serializable {
     @SerializedName("@type")
     final String type = "raw.message";
+
     AccountAddressOnly source;
     AccountAddressOnly destination;
     String value;
@@ -31,8 +28,8 @@ public class RawMessage implements Serializable {
     MsgData msg_data;
 
     /**
-     * Returns base64 result which is encoded in base64 by default.
-     * This is a wrapper around msg_data.getBody(), but additionally decodes text message from base64 to plain string.
+     * Returns base64 result which is encoded in base64 by default. This is a wrapper around
+     * msg_data.getBody(), but additionally decodes text message from base64 to plain string.
      *
      * @return String
      */
@@ -72,7 +69,8 @@ public class RawMessage implements Serializable {
 
     public String getComment() {
         if (nonNull(msg_data.getText())) {
-            return CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(msg_data.getText()))).loadSnakeString();
+            return CellSlice.beginParse(Cell.fromHex(Utils.base64ToHexString(msg_data.getText())))
+                    .loadSnakeString();
         } else {
             return "";
         }

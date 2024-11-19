@@ -30,6 +30,7 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.mnemonic.Mnemonic;
 import org.ton.java.tlb.types.ConfigParams8;
+import org.ton.java.tlb.types.Transaction;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.tonlib.types.globalconfig.*;
 import org.ton.java.utils.Utils;
@@ -358,6 +359,8 @@ public class TestTonlibJson {
     RawTransactions rawTransactions = tonlib.getRawTransactions(address.toRaw(), null, null, 3);
 
     for (RawTransaction tx : rawTransactions.getTransactions()) {
+        Transaction transaction = Transaction.deserialize(CellSlice.beginParse(CellBuilder.beginCell().fromBocBase64(tx.getData()).endCell()));
+        log.info("transaction {}", transaction);
       if (nonNull(tx.getIn_msg())
           && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
         log.info(
@@ -956,5 +959,61 @@ public class TestTonlibJson {
 
     assertThat(result.getResult().get(0).getHash())
         .isEqualTo("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M=");
+  }
+
+  @Test
+  public void testTonlibRunMethodGetSrcAddr() {
+    Tonlib tonlib = Tonlib.builder().testnet(false).ignoreCache(false).build();
+    Address smc = Address.of("EQD-BJSVUJviud_Qv7Ymfd3qzXdrmV525e3YDzWQoHIAiInL");
+
+    Deque<String> stack = new ArrayDeque<>();
+    BigInteger arg1 =
+        new BigInteger("6aaf20fed58ba5e6db692909e78e5c5c6525e28d1cfa8bd22dc216729b4841b3", 16);
+    BigInteger arg2 =
+        new BigInteger("e4cf3b2f4c6d6a61ea0f2b5447d266785b26af3637db2deee6bcd1aa826f3412", 16);
+    stack.offer("[num," + arg1 + "]");
+    stack.offer("[num," + arg2 + "]");
+
+    RunResult result = tonlib.runMethod(smc, "get_source_item_address", stack);
+    log.info("result {}", result);
+    TvmStackEntrySlice slice = ((TvmStackEntrySlice) result.getStack().get(0));
+    String b64 = Utils.base64ToHexString(slice.getSlice().getBytes());
+    log.info("b64 {}", b64);
+
+    // @formatter:off
+    // tonlib
+    //         4          4    desc    slice                                                                    crc
+    // b5ee9c72410101010024 00 ---- 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 7111e8d8
+    Cell c = CellBuilder.beginCell().fromBoc(b64).endCell();
+    log.info("c {}", c.toHex(true));
+
+    // b5ee9c72010101010024 00 00     43801f0111d15a69c7d42a36433173c773ce24bf905542d3d38dd073462b4a5b136c30 subbotin-1
+    // b5ee9c72010101010024 00 00     43800f2034101a96276a66c408417b1d38f5fcb3d6187226930600e8273b43c92a6970 subbotin-2
+
+    // slice returned by lite-client
+    // "0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0"
+
+    // ton4j to boc       6    6
+    // b5ee9c72410101010024 00      0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 7111e8d8 tonlib
+    //
+    //         4
+    // b5ee9c72410101010024 00 0048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 cad13166 with crc + store all bytes
+    // b5ee9c72410101010026 00 0048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 cad13166 crc + store 267 bits
+    // b5ee9c72c10101010026 00 2600 480043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 fe87f4b3 crc+index
+    // b5ee9c72010101010026 00 6048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 pruned
+    // b5ee9c72010101010026 00 0048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 ordinary
+    // b5ee9c72010101010026 00 0048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 library
+    // go lang
+    // b5ee9c72410101010024 00 0043 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3    fd0 d197c327 store 267 bits
+    // b5ee9c72410101010026 00 0048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 cad13166
+    // pytoniq-core
+    //
+    // slice returned by lite-client and trimmed front
+    // "801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0"
+    //         4          4
+    // b5ee9c72410101010024 00 0044 801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 98f3b93d
+
+
+    // @formatter:on
   }
 }

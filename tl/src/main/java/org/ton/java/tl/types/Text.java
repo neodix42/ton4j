@@ -22,7 +22,7 @@ public class Text {
     @ToString.Exclude
     private byte[] val;
     @ToString.Exclude
-    private int chunksNum = 1;
+    private int chunksNum;
 
     public Cell toCell() {
         if (value.isEmpty()) {

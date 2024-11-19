@@ -1,15 +1,14 @@
 package org.ton.java.cell;
 
-import org.ton.java.address.Address;
-import org.ton.java.bitstring.BitString;
-import org.ton.java.utils.Utils;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import org.ton.java.address.Address;
+import org.ton.java.bitstring.BitString;
+import org.ton.java.utils.Utils;
 
 public class CellBuilder {
 
@@ -218,6 +217,13 @@ public class CellBuilder {
     public CellBuilder storeBitString(BitString bitString) {
         checkBitsOverflow(bitString.getUsedBits());
         cell.bits.writeBitString(bitString.clone());
+        return this;
+    }
+
+    public CellBuilder storeBitString(BitString bitString, int bits) {
+        checkBitsOverflow(bits);
+        BitString temp = bitString.readBits(267);
+        cell.bits.writeBitString(temp.clone());
         return this;
     }
 

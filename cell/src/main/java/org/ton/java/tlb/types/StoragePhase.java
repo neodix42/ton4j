@@ -10,7 +10,8 @@ import java.math.BigInteger;
 
 /**
  * <pre>
- * tr_phase_storage$_ storage_fees_collected:Grams
+ * tr_phase_storage$_
+ *   storage_fees_collected:Grams
  *   storage_fees_due:(Maybe Grams)
  *   status_change:AccStatusChange
  *   = TrStoragePhase;
