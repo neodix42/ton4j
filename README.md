@@ -15,7 +15,7 @@ found [here](https://github.com/ton-blockchain/ton/actions).
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>0.8.0</version>
+    <version>0.8.1</version>
 </dependency>
 ```
 
@@ -36,7 +36,7 @@ found [here](https://github.com/ton-blockchain/ton/actions).
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>ton4j</artifactId>
-    <version>0.8.0</version>
+    <version>0.8.1</version>
 </dependency>
 ```
 

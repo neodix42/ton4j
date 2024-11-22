@@ -36,7 +36,7 @@ public class FuncRunner {
         super.printInfo = true;
       }
       if (StringUtils.isEmpty(super.funcExecutablePath)) {
-        if (isNull(super.printInfo)) {
+        if (super.printInfo) {
           log.info("Checking if Func is installed...");
         }
 
@@ -51,7 +51,7 @@ public class FuncRunner {
           }
           String funcAbsolutePath = Utils.detectAbsolutePath("func", false);
 
-          if (isNull(super.printInfo)) {
+          if (super.printInfo) {
             log.info("Func found at " + funcAbsolutePath);
           }
           funcExecutable = "func";
@@ -61,7 +61,7 @@ public class FuncRunner {
           throw new Error("Cannot execute simple Func command.\n" + errorMsg);
         }
       } else {
-        if (isNull(super.printInfo)) {
+        if (super.printInfo) {
           log.info("using " + super.funcExecutablePath);
         }
         funcExecutable = super.funcExecutablePath;
