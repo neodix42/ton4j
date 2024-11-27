@@ -1,9 +1,18 @@
 package org.ton.java.tonlib;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -16,631 +25,619 @@ import org.ton.java.tonlib.types.*;
 import org.ton.java.tonlib.types.globalconfig.*;
 import org.ton.java.utils.Utils;
 
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-
 @Slf4j
 @Builder
 public class Tonlib {
 
-    /**
-     * If not specified then tries to find tonlib in system folder, more info <a
-     * href="https://github.com/ton-blockchain/packages">here</a>
-     */
-    public String pathToTonlibSharedLib;
+  /**
+   * If not specified then tries to find tonlib in system folder, more info <a
+   * href="https://github.com/ton-blockchain/packages">here</a>
+   */
+  public String pathToTonlibSharedLib;
 
-    /**
-     * if not specified and globalConfigAsString is null then integrated global-config.json is used;
-     *
-     * <p>if not specified and globalConfigAsString is filled then globalConfigAsString is used;
-     *
-     * <p>If not specified and testnet=true then integrated testnet-global.config.json is used;
-     */
-    public String pathToGlobalConfig;
+  /**
+   * if not specified and globalConfigAsString is null then integrated global-config.json is used;
+   *
+   * <p>if not specified and globalConfigAsString is filled then globalConfigAsString is used;
+   *
+   * <p>If not specified and testnet=true then integrated testnet-global.config.json is used;
+   */
+  public String pathToGlobalConfig;
 
-    /**
-     * if not specified and pathToGlobalConfig is null then integrated global-config.json is used;
-     *
-     * <p>if not specified and pathToGlobalConfig is filled then pathToGlobalConfig is used;
-     */
-    private String globalConfigAsString;
+  /**
+   * if not specified and pathToGlobalConfig is null then integrated global-config.json is used;
+   *
+   * <p>if not specified and pathToGlobalConfig is filled then pathToGlobalConfig is used;
+   */
+  private String globalConfigAsString;
 
-    private TonGlobalConfig globalConfig;
+  private TonGlobalConfig globalConfig;
 
-    /**
-     * Valid values are:<br>
-     * 0 - FATAL<br>
-     * 1 - ERROR<br>
-     * 2 - WARNING<br>
-     * 3 - INFO<br>
-     * 4 - DEBUG<br>
-     */
-    private VerbosityLevel verbosityLevel;
+  /**
+   * Valid values are:<br>
+   * 0 - FATAL<br>
+   * 1 - ERROR<br>
+   * 2 - WARNING<br>
+   * 3 - INFO<br>
+   * 4 - DEBUG<br>
+   */
+  private VerbosityLevel verbosityLevel;
 
-    private Boolean ignoreCache;
+  private Boolean ignoreCache;
 
-    /**
-     * Ignored if pathToGlobalConfig is not null.
-     */
-    private boolean testnet;
+  /** Ignored if pathToGlobalConfig is not null. */
+  private boolean testnet;
 
-    private boolean keystoreInMemory;
+  private boolean keystoreInMemory;
 
-    private String keystorePath;
+  private String keystorePath;
 
-    private Integer liteServerIndex;
-    private Boolean usingAllLiteServers;
+  private Integer liteServerIndex;
+  private Boolean usingAllLiteServers;
 
-    /**
-     * Do not use! Reserved for internal usage.
-     */
-    private TonGlobalConfig originalGlobalConfigInternal;
+  /** Do not use! Reserved for internal usage. */
+  private TonGlobalConfig originalGlobalConfigInternal;
 
-    /**
-     * Do not use! Reserved for internal usage.
-     */
-    private String originalGlobalConfigStr;
+  /** Do not use! Reserved for internal usage. */
+  private String originalGlobalConfigStr;
 
-    /**
-     * Default value 5
-     */
-    private int receiveRetryTimes;
+  /** Default value 5 */
+  private int receiveRetryTimes;
 
-    /**
-     * In seconds. Default value 10.0 seconds
-     */
-    private double receiveTimeout;
+  /** In seconds. Default value 10.0 seconds */
+  private double receiveTimeout;
 
-    private TonlibJsonI tonlibJson;
+  private TonlibJsonI tonlibJson;
 
-    private Boolean printInfo;
+  private Boolean printInfo;
 
-    private static final Gson gson =
-            new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
+  private static final Gson gson =
+      new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
 
-    private long tonlib;
+  private long tonlib;
 
-    RunResultParser runResultParser;
+  RunResultParser runResultParser;
 
-    LibraryResultParser libraryResultParser;
+  LibraryResultParser libraryResultParser;
 
-    public static class TonlibBuilder {
-    }
+  public static class TonlibBuilder {}
 
-    public static TonlibBuilder builder() {
-        return new CustomTonlibBuilder();
-    }
+  public static TonlibBuilder builder() {
+    return new CustomTonlibBuilder();
+  }
 
-    private static class CustomTonlibBuilder extends TonlibBuilder {
-        @Override
-        public Tonlib build() {
+  private static class CustomTonlibBuilder extends TonlibBuilder {
+    @Override
+    public Tonlib build() {
 
-            try {
+      try {
 
-                if (isNull(super.printInfo)) {
-                    super.printInfo = true;
-                }
+        if (isNull(super.printInfo)) {
+          super.printInfo = true;
+        }
 
-                if (isNull(super.pathToTonlibSharedLib)) {
-                    if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
-                        super.pathToTonlibSharedLib = Utils.detectAbsolutePath("tonlibjson", true);
-                    } else {
-                        super.pathToTonlibSharedLib = Utils.detectAbsolutePath("libtonlibjson", true);
-                    }
-                }
+        if (isNull(super.pathToTonlibSharedLib)) {
+          if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
+            super.pathToTonlibSharedLib = Utils.detectAbsolutePath("tonlibjson", true);
+          } else {
+            super.pathToTonlibSharedLib = Utils.detectAbsolutePath("libtonlibjson", true);
+          }
+        }
 
-                if (isNull(super.verbosityLevel)) {
-                    super.verbosityLevel = VerbosityLevel.FATAL;
-                }
+        if ((nonNull(super.pathToTonlibSharedLib)
+                && (super.pathToTonlibSharedLib.contains("INFO:")))
+            || isNull(super.pathToTonlibSharedLib)) {
+          throw new Error(
+              "tonlibjson shared library not found. Set the absolute path to it using pathToTonlibSharedLib in the Tonlib builder.\nYou can download the latest tonlibjson from the official TON release page https://github.com/ton-blockchain/ton/releases/latest");
+        }
 
-                if (isNull(super.keystorePath)) {
-                    super.keystorePath = ".";
-                }
+        if (isNull(super.verbosityLevel)) {
+          super.verbosityLevel = VerbosityLevel.FATAL;
+        }
 
-                if (isNull(super.liteServerIndex)) {
-                    super.liteServerIndex = -1;
-                }
+        if (isNull(super.keystorePath)) {
+          super.keystorePath = ".";
+        }
 
-                super.keystorePath = super.keystorePath.replace("\\", "/");
+        if (isNull(super.liteServerIndex)) {
+          super.liteServerIndex = -1;
+        }
 
-                if (super.receiveRetryTimes == 0) {
-                    super.receiveRetryTimes = 5;
-                }
+        super.keystorePath = super.keystorePath.replace("\\", "/");
 
-                if (super.receiveTimeout == 0) {
-                    super.receiveTimeout = 10.0;
-                }
+        if (super.receiveRetryTimes == 0) {
+          super.receiveRetryTimes = 5;
+        }
 
-                if (isNull(super.ignoreCache)) {
-                    super.ignoreCache = true;
-                }
+        if (super.receiveTimeout == 0) {
+          super.receiveTimeout = 10.0;
+        }
 
-                super.runResultParser = new RunResultParser();
-                super.libraryResultParser = new LibraryResultParser();
+        if (isNull(super.ignoreCache)) {
+          super.ignoreCache = true;
+        }
 
-                if (isNull(super.pathToGlobalConfig)) {
+        super.runResultParser = new RunResultParser();
+        super.libraryResultParser = new LibraryResultParser();
 
-                    if (isNull(super.globalConfigAsString)) {
-                        InputStream config;
-                        if (super.testnet) {
-                            super.pathToGlobalConfig = "testnet-global.config.json (integrated resource)";
-                            config =
-                                    Tonlib.class.getClassLoader().getResourceAsStream("testnet-global.config.json");
-                        } else {
-                            super.pathToGlobalConfig = "global-config.json (integrated resource)";
-                            config = Tonlib.class.getClassLoader().getResourceAsStream("global-config.json");
-                        }
-                        super.originalGlobalConfigStr = Utils.streamToString(config);
+        if (isNull(super.pathToGlobalConfig)) {
 
-                        if (nonNull(config)) {
-                            config.close();
-                        }
-                    } else {
-                        super.originalGlobalConfigStr = super.globalConfigAsString;
-                    }
-                } else if (nonNull(super.globalConfig)) {
-                    super.originalGlobalConfigStr = gson.toJson(super.globalConfig);
-                } else {
-                    if (Files.exists(Paths.get(super.pathToGlobalConfig))) {
-                        super.originalGlobalConfigStr =
-                                new String(Files.readAllBytes(Paths.get(super.pathToGlobalConfig)));
-                    } else {
-                        throw new RuntimeException(
-                                "Global config is not found in path: " + super.pathToGlobalConfig);
-                    }
-                }
-
-                TonGlobalConfig globalConfigCurrent =
-                        gson.fromJson(super.originalGlobalConfigStr, TonGlobalConfig.class);
-                super.originalGlobalConfigInternal =
-                        gson.fromJson(super.originalGlobalConfigStr, TonGlobalConfig.class);
-
-                if (super.liteServerIndex != -1) {
-                    super.usingAllLiteServers = false;
-                    if (super.liteServerIndex > globalConfigCurrent.getLiteservers().length - 1) {
-                        throw new RuntimeException(
-                                "Specified lite-server index is greater than total number of lite-servers in config.");
-                    }
-                } else {
-                    super.liteServerIndex = 0;
-                    super.usingAllLiteServers = true;
-                }
-
-                // always construct global config with one lite-server
-                // pick the first one if user hasn't specified any specific lite-server
-                // in case of error, the second lite-server from the original list of lite-servers will be
-                // picked
-                LiteServers[] liteServers = super.originalGlobalConfigInternal.getLiteservers();
-                LiteServers[] newLiteServers = new LiteServers[1];
-                newLiteServers[0] = liteServers[super.liteServerIndex];
-                globalConfigCurrent.setLiteservers(newLiteServers);
-
-                super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
-
-                Utils.disableNativeOutput();
-
-                super.tonlib = super.tonlibJson.tonlib_client_json_create();
-
-                Utils.enableNativeOutput();
-
-                if (super.printInfo) {
-                    log.info(
-                            String.format(
-                                    "Java Tonlib configuration:\n"
-                                            + "Location: %s\n"
-                                            + "Verbosity level: %s (%s)\n"
-                                            + "Keystore in memory: %s\n"
-                                            + "Keystore path: %s\n"
-                                            + "Path to global config: %s\n"
-                                            + "Global config as string: %s\n"
-                                            + "lite-servers found: %s\n"
-                                            + "dht-nodes found: %s\n"
-                                            + "init-block seqno: %s\n"
-                                            + "%s\n"
-                                            + "Ignore cache: %s\n"
-                                            + "Testnet: %s\n"
-                                            + "Receive timeout: %s seconds\n"
-                                            + "Receive retry times: %s%n",
-                                    super.pathToTonlibSharedLib,
-                                    super.verbosityLevel,
-                                    super.verbosityLevel.ordinal(),
-                                    super.keystoreInMemory,
-                                    super.keystorePath,
-                                    super.pathToGlobalConfig,
-                                    (nonNull(super.globalConfigAsString) && super.globalConfigAsString.length() > 33)
-                                            ? super.globalConfigAsString.substring(0, 33)
-                                            : "",
-                                    super.originalGlobalConfigInternal.getLiteservers().length,
-                                    globalConfigCurrent.getDht().getStatic_nodes().getNodes().length,
-                                    globalConfigCurrent.getValidator().getInit_block().getSeqno(),
-                                    (super.usingAllLiteServers)
-                                            ? "using lite-servers: all"
-                                            : "using lite-server at index: "
-                                            + super.liteServerIndex
-                                            + " ("
-                                            + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
-                                            + ")",
-                                    super.ignoreCache,
-                                    super.testnet,
-                                    super.receiveTimeout,
-                                    super.receiveRetryTimes));
-                }
-
-                // set verbosity
-                VerbosityLevelQuery verbosityLevelQuery =
-                        VerbosityLevelQuery.builder()
-                                .new_verbosity_level(super.verbosityLevel.ordinal())
-                                .build();
-
-                Utils.disableNativeOutput();
-                super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(verbosityLevelQuery));
-                super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
-                Utils.enableNativeOutput();
-
-                initTonlibConfig(globalConfigCurrent);
-
-                if (super.usingAllLiteServers) {
-                    if (super.printInfo) {
-                        log.info(
-                                "Using lite-server at index: "
-                                        + (super.liteServerIndex)
-                                        + " ("
-                                        + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
-                                        + ")");
-                    }
-                }
-
-            } catch (Exception e) {
-                throw new RuntimeException("Error creating tonlib instance: " + e.getMessage());
+          if (isNull(super.globalConfigAsString)) {
+            InputStream config;
+            if (super.testnet) {
+              super.pathToGlobalConfig =
+                  "integrated resource - https://github.com/neodix42/ton4j/blob/main/tonlib/src/main/resources/testnet-global.config.json";
+              config =
+                  Tonlib.class.getClassLoader().getResourceAsStream("testnet-global.config.json");
+            } else {
+              super.pathToGlobalConfig =
+                  "integrated resource - https://github.com/neodix42/ton4j/blob/main/tonlib/src/main/resources/global-config.json";
+              config = Tonlib.class.getClassLoader().getResourceAsStream("global-config.json");
             }
-            return super.build();
+            super.originalGlobalConfigStr = Utils.streamToString(config);
+
+            if (nonNull(config)) {
+              config.close();
+            }
+          } else {
+            super.originalGlobalConfigStr = super.globalConfigAsString;
+          }
+        } else if (nonNull(super.globalConfig)) {
+          super.originalGlobalConfigStr = gson.toJson(super.globalConfig);
+        } else {
+          if (Files.exists(Paths.get(super.pathToGlobalConfig))) {
+            super.originalGlobalConfigStr =
+                new String(Files.readAllBytes(Paths.get(super.pathToGlobalConfig)));
+          } else {
+            throw new RuntimeException(
+                "Global config is not found in path: " + super.pathToGlobalConfig);
+          }
         }
 
-        private void initTonlibConfig(TonGlobalConfig tonGlobalConfig) {
-            TonlibSetup tonlibSetup =
-                    TonlibSetup.builder()
-                            .type("init")
-                            .options(
-                                    TonlibOptions.builder()
-                                            .type("options")
-                                            .config(
-                                                    TonlibConfig.builder()
-                                                            .type("config")
-                                                            .config(gson.toJson(tonGlobalConfig))
-                                                            .use_callbacks_for_network(false)
-                                                            .blockchain_name("")
-                                                            .ignore_cache(super.ignoreCache)
-                                                            .build())
-                                            .keystore_type(
-                                                    super.keystoreInMemory
-                                                            ? KeyStoreTypeMemory.builder().type("keyStoreTypeInMemory").build()
-                                                            : KeyStoreTypeDirectory.builder()
-                                                            .type("keyStoreTypeDirectory")
-                                                            .directory(
-                                                                    super.keystorePath.equals(".") ? "." : super.keystorePath)
-                                                            .build())
-                                            .build())
-                            .build();
+        TonGlobalConfig globalConfigCurrent =
+            gson.fromJson(super.originalGlobalConfigStr, TonGlobalConfig.class);
+        super.originalGlobalConfigInternal =
+            gson.fromJson(super.originalGlobalConfigStr, TonGlobalConfig.class);
 
-            Utils.disableNativeOutput();
-            super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(tonlibSetup));
-            super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
-            Utils.enableNativeOutput();
+        if (super.liteServerIndex != -1) {
+          super.usingAllLiteServers = false;
+          if (super.liteServerIndex > globalConfigCurrent.getLiteservers().length - 1) {
+            throw new RuntimeException(
+                "Specified lite-server index is greater than total number of lite-servers in config.");
+          }
+        } else {
+          super.liteServerIndex = 0;
+          super.usingAllLiteServers = true;
         }
-    }
 
-    private void reinitTonlibConfig(TonGlobalConfig tonGlobalConfig) {
+        // always construct global config with one lite-server
+        // pick the first one if user hasn't specified any specific lite-server
+        // in case of error, the second lite-server from the original list of lite-servers will be
+        // picked
+        LiteServers[] liteServers = super.originalGlobalConfigInternal.getLiteservers();
+        LiteServers[] newLiteServers = new LiteServers[1];
+        newLiteServers[0] = liteServers[super.liteServerIndex];
+        globalConfigCurrent.setLiteservers(newLiteServers);
 
-        // recreate tonlib instance
-        // tonlibJson.tonlib_client_json_destroy(tonlib);
-        destroy();
+        super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
 
-        tonlibJson = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
         Utils.disableNativeOutput();
-        tonlib = tonlibJson.tonlib_client_json_create();
+
+        super.tonlib = super.tonlibJson.tonlib_client_json_create();
+
+        Utils.enableNativeOutput();
+
+        if (super.printInfo) {
+          log.info(
+              String.format(
+                  "Java Tonlib configuration:\n"
+                      + "Location: %s\n"
+                      + "Verbosity level: %s (%s)\n"
+                      + "Keystore in memory: %s\n"
+                      + "Keystore path: %s\n"
+                      + "Path to global config: %s\n"
+                      + "Global config as string: %s\n"
+                      + "lite-servers found: %s\n"
+                      + "dht-nodes found: %s\n"
+                      + "init-block seqno: %s\n"
+                      + "%s\n"
+                      + "Ignore cache: %s\n"
+                      + "Testnet: %s\n"
+                      + "Receive timeout: %s seconds\n"
+                      + "Receive retry times: %s%n",
+                  super.pathToTonlibSharedLib,
+                  super.verbosityLevel,
+                  super.verbosityLevel.ordinal(),
+                  super.keystoreInMemory,
+                  super.keystorePath,
+                  super.pathToGlobalConfig,
+                  (nonNull(super.globalConfigAsString) && super.globalConfigAsString.length() > 33)
+                      ? super.globalConfigAsString.substring(0, 33)
+                      : "",
+                  super.originalGlobalConfigInternal.getLiteservers().length,
+                  globalConfigCurrent.getDht().getStatic_nodes().getNodes().length,
+                  globalConfigCurrent.getValidator().getInit_block().getSeqno(),
+                  (super.usingAllLiteServers)
+                      ? "using lite-servers: all"
+                      : "using lite-server at index: "
+                          + super.liteServerIndex
+                          + " ("
+                          + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
+                          + ")",
+                  super.ignoreCache,
+                  super.testnet,
+                  super.receiveTimeout,
+                  super.receiveRetryTimes));
+        }
 
         // set verbosity
         VerbosityLevelQuery verbosityLevelQuery =
-                VerbosityLevelQuery.builder().new_verbosity_level(verbosityLevel.ordinal()).build();
-        tonlibJson.tonlib_client_json_send(tonlib, gson.toJson(verbosityLevelQuery));
-        tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
+            VerbosityLevelQuery.builder()
+                .new_verbosity_level(super.verbosityLevel.ordinal())
+                .build();
 
-        TonlibSetup tonlibSetup =
-                TonlibSetup.builder()
-                        .type("init")
-                        .options(
-                                TonlibOptions.builder()
-                                        .type("options")
-                                        .config(
-                                                TonlibConfig.builder()
-                                                        .type("config")
-                                                        .config(gson.toJson(tonGlobalConfig))
-                                                        .use_callbacks_for_network(false)
-                                                        .blockchain_name("")
-                                                        .ignore_cache(ignoreCache)
-                                                        .build())
-                                        .keystore_type(
-                                                keystoreInMemory
-                                                        ? KeyStoreTypeMemory.builder().type("keyStoreTypeInMemory").build()
-                                                        : KeyStoreTypeDirectory.builder()
-                                                        .type("keyStoreTypeDirectory")
-                                                        .directory(keystorePath.equals(".") ? "." : keystorePath)
-                                                        .build())
-                                        .build())
-                        .build();
-
-        tonlibJson.tonlib_client_json_send(tonlib, gson.toJson(tonlibSetup));
-        tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
-
-        Utils.enableNativeOutput();
-    }
-
-    public void destroy() {
         Utils.disableNativeOutput();
-        tonlibJson.tonlib_client_json_destroy(tonlib);
+        super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(verbosityLevelQuery));
+        super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
         Utils.enableNativeOutput();
+
+        initTonlibConfig(globalConfigCurrent);
+
+        if (super.usingAllLiteServers) {
+          if (super.printInfo) {
+            log.info(
+                "Using lite-server at index: "
+                    + (super.liteServerIndex)
+                    + " ("
+                    + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
+                    + ")");
+          }
+        }
+
+      } catch (Exception e) {
+        throw new RuntimeException("Error creating tonlib instance: " + e.getMessage());
+      }
+      return super.build();
     }
 
-    private String receive() {
-        String result = null;
-        int retry = 0;
-        while (isNull(result)) {
-            //      if (retry > 0) {
-            //        log.info("retry " + retry);
-            //      }
+    private void initTonlibConfig(TonGlobalConfig tonGlobalConfig) {
+      TonlibSetup tonlibSetup =
+          TonlibSetup.builder()
+              .type("init")
+              .options(
+                  TonlibOptions.builder()
+                      .type("options")
+                      .config(
+                          TonlibConfig.builder()
+                              .type("config")
+                              .config(gson.toJson(tonGlobalConfig))
+                              .use_callbacks_for_network(false)
+                              .blockchain_name("")
+                              .ignore_cache(super.ignoreCache)
+                              .build())
+                      .keystore_type(
+                          super.keystoreInMemory
+                              ? KeyStoreTypeMemory.builder().type("keyStoreTypeInMemory").build()
+                              : KeyStoreTypeDirectory.builder()
+                                  .type("keyStoreTypeDirectory")
+                                  .directory(
+                                      super.keystorePath.equals(".") ? "." : super.keystorePath)
+                                  .build())
+                      .build())
+              .build();
+
+      Utils.disableNativeOutput();
+      super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(tonlibSetup));
+      super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
+      Utils.enableNativeOutput();
+    }
+  }
+
+  private void reinitTonlibConfig(TonGlobalConfig tonGlobalConfig) {
+
+    // recreate tonlib instance
+    // tonlibJson.tonlib_client_json_destroy(tonlib);
+    destroy();
+
+    tonlibJson = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
+    Utils.disableNativeOutput();
+    tonlib = tonlibJson.tonlib_client_json_create();
+
+    // set verbosity
+    VerbosityLevelQuery verbosityLevelQuery =
+        VerbosityLevelQuery.builder().new_verbosity_level(verbosityLevel.ordinal()).build();
+    tonlibJson.tonlib_client_json_send(tonlib, gson.toJson(verbosityLevelQuery));
+    tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
+
+    TonlibSetup tonlibSetup =
+        TonlibSetup.builder()
+            .type("init")
+            .options(
+                TonlibOptions.builder()
+                    .type("options")
+                    .config(
+                        TonlibConfig.builder()
+                            .type("config")
+                            .config(gson.toJson(tonGlobalConfig))
+                            .use_callbacks_for_network(false)
+                            .blockchain_name("")
+                            .ignore_cache(ignoreCache)
+                            .build())
+                    .keystore_type(
+                        keystoreInMemory
+                            ? KeyStoreTypeMemory.builder().type("keyStoreTypeInMemory").build()
+                            : KeyStoreTypeDirectory.builder()
+                                .type("keyStoreTypeDirectory")
+                                .directory(keystorePath.equals(".") ? "." : keystorePath)
+                                .build())
+                    .build())
+            .build();
+
+    tonlibJson.tonlib_client_json_send(tonlib, gson.toJson(tonlibSetup));
+    tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
+
+    Utils.enableNativeOutput();
+  }
+
+  public void destroy() {
+    Utils.disableNativeOutput();
+    tonlibJson.tonlib_client_json_destroy(tonlib);
+    Utils.enableNativeOutput();
+  }
+
+  private String receive() {
+    String result = null;
+    int retry = 0;
+    while (isNull(result)) {
+      //      if (retry > 0) {
+      //        log.info("retry " + retry);
+      //      }
+      if (++retry > receiveRetryTimes) {
+        throw new Error(
+            "Error in tonlib.receive(), "
+                + receiveRetryTimes
+                + " times was not able retrieve result from lite-server.");
+      }
+      result = tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
+    }
+    return result;
+  }
+
+  private String syncAndRead(String query) {
+    String response = null;
+    try {
+      Utils.disableNativeOutput();
+      tonlibJson.tonlib_client_json_send(tonlib, query);
+      TimeUnit.MILLISECONDS.sleep(200);
+      response = receive();
+      Utils.enableNativeOutput();
+      int retry = 0;
+      outterloop:
+      do {
+        do {
+
+          if (response.contains("error")) {
+            log.info(response);
+
             if (++retry > receiveRetryTimes) {
-                throw new Error(
-                        "Error in tonlib.receive(), "
-                                + receiveRetryTimes
-                                + " times was not able retrieve result from lite-server.");
+              throw new Error(
+                  "Error in tonlib.receive(), "
+                      + receiveRetryTimes
+                      + " times was not able retrieve result from lite-server.");
             }
-            result = tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
-        }
-        return result;
-    }
 
-    private String syncAndRead(String query) {
-        String response = null;
-        try {
-            Utils.disableNativeOutput();
-            tonlibJson.tonlib_client_json_send(tonlib, query);
-            TimeUnit.MILLISECONDS.sleep(200);
-            response = receive();
-            Utils.enableNativeOutput();
-            int retry = 0;
-            outterloop:
-            do {
-                do {
-
-                    if (response.contains("error")) {
-                        log.info(response);
-
-                        if (++retry > receiveRetryTimes) {
-                            throw new Error(
-                                    "Error in tonlib.receive(), "
-                                            + receiveRetryTimes
-                                            + " times was not able retrieve result from lite-server.");
-                        }
-
-                        if (response.contains("Failed to unpack account state")) {
-                            log.info(
-                                    "You are trying to deploy a contract on address that does not have toncoins.");
-                            break outterloop;
-                        }
-
-                        if (usingAllLiteServers) {
-                            // try next lite-server from the list
-                            TonGlobalConfig globalConfigCurrent =
-                                    gson.fromJson(originalGlobalConfigStr, TonGlobalConfig.class);
-                            LiteServers[] liteServers = originalGlobalConfigInternal.getLiteservers();
-                            LiteServers[] newLiteServers = new LiteServers[1];
-                            newLiteServers[0] =
-                                    liteServers[retry % originalGlobalConfigInternal.getLiteservers().length];
-                            globalConfigCurrent.setLiteservers(newLiteServers);
-
-                            log.info(
-                                    "Trying next lite-server at index: "
-                                            + (retry % originalGlobalConfigInternal.getLiteservers().length)
-                                            + " ("
-                                            + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
-                                            + ")");
-
-                            reinitTonlibConfig(globalConfigCurrent);
-                            // repeat request
-                            Utils.disableNativeOutput();
-                            tonlibJson.tonlib_client_json_send(tonlib, query);
-                            Utils.enableNativeOutput();
-                        }
-                    } else if (response.contains("\"@type\":\"ok\"")) {
-                        String queryExtraId = StringUtils.substringBetween(query, "@extra\":\"", "\"}");
-                        String responseExtraId = StringUtils.substringBetween(response, "@extra\":\"", "\"}");
-                        if (queryExtraId.equals(responseExtraId)) {
-                            break outterloop;
-                        }
-                    } else if (response.contains("\"@extra\"")) {
-                        break outterloop;
-                    }
-
-                    if (response.contains(" : duplicate message\"")) {
-                        break outterloop;
-                    }
-                    Utils.disableNativeOutput();
-                    TimeUnit.MILLISECONDS.sleep(200);
-                    response = receive();
-                    Utils.enableNativeOutput();
-                    UpdateSyncState sync = gson.fromJson(response, UpdateSyncState.class);
-                    if (nonNull(sync)
-                            && nonNull(sync.getSync_state())
-                            && sync.getType().equals("updateSyncState")
-                            && !response.contains("syncStateDone")) {
-                        double pct = 0.0;
-                        if (sync.getSync_state().getTo_seqno() != 0) {
-                            pct =
-                                    (sync.getSync_state().getCurrent_seqno() * 100)
-                                            / (double) sync.getSync_state().getTo_seqno();
-                        }
-                        if (pct < 99.5) {
-                            log.info("Synchronized: " + String.format("%.2f%%", pct));
-                        }
-                    }
-                    if (isNull(response)) {
-                        throw new RuntimeException("Error in waitForSyncDone(), response is null.");
-                    }
-
-                } while (response.contains("error") || response.contains("syncStateInProgress"));
-
-                if (response.contains("syncStateDone")) {
-                    response = receive();
-                }
-                if (response.contains("error")) {
-                    log.info(response);
-
-                    if (++retry > receiveRetryTimes) {
-                        throw new Error(
-                                "Error in tonlib.receive(), "
-                                        + receiveRetryTimes
-                                        + " times was not able retrieve result from lite-server.");
-                    }
-
-                    Utils.disableNativeOutput();
-                    tonlibJson.tonlib_client_json_send(tonlib, query);
-                    Utils.enableNativeOutput();
-                }
-            } while (response.contains("error") || response.contains("syncStateInProgress"));
-
-            return response;
-
-        } catch (Exception e) {
-            log.info(e.getMessage());
-            return response;
-        }
-    }
-
-    /**
-     * Get BlockIdExt by parameters.
-     *
-     * @param seqno     long, can be zero if unknown
-     * @param workchain long, -1 or 0
-     * @param shard     long
-     * @param lt        long
-     * @param utime     long
-     * @return BlockIdExt
-     */
-    public BlockIdExt lookupBlock(long seqno, long workchain, long shard, long lt, long utime) {
-        synchronized (gson) {
-            int mode = 0;
-            if (seqno != 0) {
-                mode += 1;
+            if (response.contains("Failed to unpack account state")) {
+              log.info(
+                  "You are trying to deploy a contract on address that does not have toncoins.");
+              break outterloop;
             }
-            if (lt != 0) {
-                mode += 2;
+
+            if (usingAllLiteServers) {
+              // try next lite-server from the list
+              TonGlobalConfig globalConfigCurrent =
+                  gson.fromJson(originalGlobalConfigStr, TonGlobalConfig.class);
+              LiteServers[] liteServers = originalGlobalConfigInternal.getLiteservers();
+              LiteServers[] newLiteServers = new LiteServers[1];
+              newLiteServers[0] =
+                  liteServers[retry % originalGlobalConfigInternal.getLiteservers().length];
+              globalConfigCurrent.setLiteservers(newLiteServers);
+
+              log.info(
+                  "Trying next lite-server at index: "
+                      + (retry % originalGlobalConfigInternal.getLiteservers().length)
+                      + " ("
+                      + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
+                      + ")");
+
+              reinitTonlibConfig(globalConfigCurrent);
+              // repeat request
+              Utils.disableNativeOutput();
+              tonlibJson.tonlib_client_json_send(tonlib, query);
+              Utils.enableNativeOutput();
             }
-            if (utime != 0) {
-                mode += 4;
+          } else if (response.contains("\"@type\":\"ok\"")) {
+            String queryExtraId = StringUtils.substringBetween(query, "@extra\":\"", "\"}");
+            String responseExtraId = StringUtils.substringBetween(response, "@extra\":\"", "\"}");
+            if (queryExtraId.equals(responseExtraId)) {
+              break outterloop;
             }
-            LookupBlockQuery lookupBlockQuery =
-                    LookupBlockQuery.builder()
-                            .mode(mode)
-                            .id(BlockId.builder().seqno(seqno).workchain(workchain).shard(shard).build())
-                            .lt(lt)
-                            .utime(utime)
-                            .build();
+          } else if (response.contains("\"@extra\"")) {
+            break outterloop;
+          }
 
-            String result = syncAndRead(gson.toJson(lookupBlockQuery));
-            return gson.fromJson(result, BlockIdExt.class);
+          if (response.contains(" : duplicate message\"")) {
+            break outterloop;
+          }
+          Utils.disableNativeOutput();
+          TimeUnit.MILLISECONDS.sleep(200);
+          response = receive();
+          Utils.enableNativeOutput();
+          UpdateSyncState sync = gson.fromJson(response, UpdateSyncState.class);
+          if (nonNull(sync)
+              && nonNull(sync.getSync_state())
+              && sync.getType().equals("updateSyncState")
+              && !response.contains("syncStateDone")) {
+            double pct = 0.0;
+            if (sync.getSync_state().getTo_seqno() != 0) {
+              pct =
+                  (sync.getSync_state().getCurrent_seqno() * 100)
+                      / (double) sync.getSync_state().getTo_seqno();
+            }
+            if (pct < 99.5) {
+              log.info("Synchronized: " + String.format("%.2f%%", pct));
+            }
+          }
+          if (isNull(response)) {
+            throw new RuntimeException("Error in waitForSyncDone(), response is null.");
+          }
+
+        } while (response.contains("error") || response.contains("syncStateInProgress"));
+
+        if (response.contains("syncStateDone")) {
+          response = receive();
         }
-    }
+        if (response.contains("error")) {
+          log.info(response);
 
-    public BlockIdExt lookupBlock(long seqno, long workchain, long shard, long lt) {
-        return lookupBlock(seqno, workchain, shard, lt, 0);
-    }
+          if (++retry > receiveRetryTimes) {
+            throw new Error(
+                "Error in tonlib.receive(), "
+                    + receiveRetryTimes
+                    + " times was not able retrieve result from lite-server.");
+          }
 
-    public MasterChainInfo getLast() {
-        synchronized (gson) {
-            GetLastQuery getLastQuery = GetLastQuery.builder().build();
-
-            String result = syncAndRead(gson.toJson(getLastQuery));
-            return gson.fromJson(result, MasterChainInfo.class);
+          Utils.disableNativeOutput();
+          tonlibJson.tonlib_client_json_send(tonlib, query);
+          Utils.enableNativeOutput();
         }
+      } while (response.contains("error") || response.contains("syncStateInProgress"));
+
+      return response;
+
+    } catch (Exception e) {
+      log.info(e.getMessage());
+      return response;
+    }
+  }
+
+  /**
+   * Get BlockIdExt by parameters.
+   *
+   * @param seqno long, can be zero if unknown
+   * @param workchain long, -1 or 0
+   * @param shard long
+   * @param lt long
+   * @param utime long
+   * @return BlockIdExt
+   */
+  public BlockIdExt lookupBlock(long seqno, long workchain, long shard, long lt, long utime) {
+    synchronized (gson) {
+      int mode = 0;
+      if (seqno != 0) {
+        mode += 1;
+      }
+      if (lt != 0) {
+        mode += 2;
+      }
+      if (utime != 0) {
+        mode += 4;
+      }
+      LookupBlockQuery lookupBlockQuery =
+          LookupBlockQuery.builder()
+              .mode(mode)
+              .id(BlockId.builder().seqno(seqno).workchain(workchain).shard(shard).build())
+              .lt(lt)
+              .utime(utime)
+              .build();
+
+      String result = syncAndRead(gson.toJson(lookupBlockQuery));
+      return gson.fromJson(result, BlockIdExt.class);
+    }
+  }
+
+  public BlockIdExt lookupBlock(long seqno, long workchain, long shard, long lt) {
+    return lookupBlock(seqno, workchain, shard, lt, 0);
+  }
+
+  public MasterChainInfo getLast() {
+    synchronized (gson) {
+      GetLastQuery getLastQuery = GetLastQuery.builder().build();
+
+      String result = syncAndRead(gson.toJson(getLastQuery));
+      return gson.fromJson(result, MasterChainInfo.class);
+    }
+  }
+
+  public MasterChainInfo getMasterChainInfo() {
+    return getLast();
+  }
+
+  public Shards getShards(BlockIdExt id) {
+    synchronized (gson) {
+      GetShardsQuery getShardsQuery = GetShardsQuery.builder().id(id).build();
+
+      String result = syncAndRead(gson.toJson(getShardsQuery));
+      return gson.fromJson(result, Shards.class);
+    }
+  }
+
+  public Shards getShards(long seqno, long lt, long unixtime) {
+    if ((seqno <= 0) && (lt <= 0) && (unixtime <= 0)) {
+      throw new Error("Seqno, LT or unixtime should be defined");
     }
 
-    public MasterChainInfo getMasterChainInfo() {
-        return getLast();
+    long wc = -1;
+    long shard = -9223372036854775808L;
+
+    BlockIdExt fullblock = lookupBlock(seqno, wc, shard, lt, unixtime);
+
+    synchronized (gson) {
+      GetShardsQuery getShardsQuery = GetShardsQuery.builder().id(fullblock).build();
+
+      String result = syncAndRead(gson.toJson(getShardsQuery));
+      return gson.fromJson(result, Shards.class);
     }
+  }
 
-    public Shards getShards(BlockIdExt id) {
-        synchronized (gson) {
-            GetShardsQuery getShardsQuery = GetShardsQuery.builder().id(id).build();
+  public Key createNewKey() {
+    synchronized (gson) {
+      NewKeyQuery newKeyQuery = NewKeyQuery.builder().build();
 
-            String result = syncAndRead(gson.toJson(getShardsQuery));
-            return gson.fromJson(result, Shards.class);
-        }
+      String result = syncAndRead(gson.toJson(newKeyQuery));
+      return gson.fromJson(result, Key.class);
     }
+  }
 
-    public Shards getShards(long seqno, long lt, long unixtime) {
-        if ((seqno <= 0) && (lt <= 0) && (unixtime <= 0)) {
-            throw new Error("Seqno, LT or unixtime should be defined");
-        }
+  public Data encrypt(String data, String secret) {
+    synchronized (gson) {
+      EncryptQuery encryptQuery =
+          EncryptQuery.builder().decrypted_data(data).secret(secret).build();
 
-        long wc = -1;
-        long shard = -9223372036854775808L;
-
-        BlockIdExt fullblock = lookupBlock(seqno, wc, shard, lt, unixtime);
-
-        synchronized (gson) {
-            GetShardsQuery getShardsQuery = GetShardsQuery.builder().id(fullblock).build();
-
-            String result = syncAndRead(gson.toJson(getShardsQuery));
-            return gson.fromJson(result, Shards.class);
-        }
+      String result = syncAndRead(gson.toJson(encryptQuery));
+      return gson.fromJson(result, Data.class);
     }
+  }
 
-    public Key createNewKey() {
-        synchronized (gson) {
-            NewKeyQuery newKeyQuery = NewKeyQuery.builder().build();
+  public Data decrypt(String data, String secret) {
+    synchronized (gson) {
+      DecryptQuery decryptQuery =
+          DecryptQuery.builder().encrypted_data(data).secret(secret).build();
 
-            String result = syncAndRead(gson.toJson(newKeyQuery));
-            return gson.fromJson(result, Key.class);
-        }
+      String result = syncAndRead(gson.toJson(decryptQuery));
+      return gson.fromJson(result, Data.class);
     }
+  }
 
-    public Data encrypt(String data, String secret) {
-        synchronized (gson) {
-            EncryptQuery encryptQuery =
-                    EncryptQuery.builder().decrypted_data(data).secret(secret).build();
+  public BlockHeader getBlockHeader(BlockIdExt fullblock) {
+    synchronized (gson) {
+      BlockHeaderQuery blockHeaderQuery = BlockHeaderQuery.builder().id(fullblock).build();
 
-            String result = syncAndRead(gson.toJson(encryptQuery));
-            return gson.fromJson(result, Data.class);
-        }
+      String result = syncAndRead(gson.toJson(blockHeaderQuery));
+      return gson.fromJson(result, BlockHeader.class);
     }
+  }
 
-    public Data decrypt(String data, String secret) {
-        synchronized (gson) {
-            DecryptQuery decryptQuery =
-                    DecryptQuery.builder().encrypted_data(data).secret(secret).build();
-
-            String result = syncAndRead(gson.toJson(decryptQuery));
-            return gson.fromJson(result, Data.class);
-        }
-    }
-
-    public BlockHeader getBlockHeader(BlockIdExt fullblock) {
-        synchronized (gson) {
-            BlockHeaderQuery blockHeaderQuery = BlockHeaderQuery.builder().id(fullblock).build();
-
-            String result = syncAndRead(gson.toJson(blockHeaderQuery));
-            return gson.fromJson(result, BlockHeader.class);
-        }
-    }
-
-    // @formatter:off
+  // @formatter:off
 
   /**
    * @param address String
@@ -1522,10 +1519,10 @@ public class Tonlib {
     RawTransactions rawTransactions = getRawTransactions(address, null, null);
     for (RawTransaction tx : rawTransactions.getTransactions()) {
       if (nonNull(tx.getIn_msg())) {
-          if (tx.getIn_msg().getHash().equals(msgHashBase64)) {
-              return tx;
-          }
+        if (tx.getIn_msg().getHash().equals(msgHashBase64)) {
+          return tx;
         }
+      }
     }
     return null;
   }

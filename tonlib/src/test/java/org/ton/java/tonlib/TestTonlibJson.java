@@ -49,12 +49,19 @@ public class TestTonlibJson {
 
   @BeforeClass
   public static void setUpBeforeClass() {
-    tonlib = Tonlib.builder().receiveTimeout(5).ignoreCache(false).build();
+
+    // works only when running tests, since ton4j does not ship integrated tonlibjson shared library
+    String resourcePath = Utils.getResourceAbsoluteDirectory(ClassLoader.getSystemClassLoader(), "tonlibjson.dll");
+
+    tonlib = Tonlib.builder()
+    .pathToTonlibSharedLib(resourcePath)
+    .receiveTimeout(5)
+    .ignoreCache(false)
+    .build();
   }
 
   @Test
   public void testIssue13() {
-    Tonlib tonlib = Tonlib.builder().build();
     BlockIdExt block = tonlib.getLast().getLast();
     log.info("block {}", block);
   }
