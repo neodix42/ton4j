@@ -6,6 +6,7 @@ import static java.util.Objects.nonNull;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -30,7 +31,11 @@ public class MsgAddressIntStd implements MsgAddressInt {
 
   @Override
   public String toString() {
-    return nonNull(address) ? (workchainId + ":" + address.toString(16)) : null;
+    String addressStr = address.toString(16);
+    if (addressStr.length() != 64) {
+      addressStr = StringUtils.leftPad(addressStr, 64, "0");
+    }
+    return nonNull(address) ? (workchainId + ":" + addressStr) : null;
   }
 
   public Cell toCell() {

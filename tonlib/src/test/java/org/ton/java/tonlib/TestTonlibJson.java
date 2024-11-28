@@ -6,16 +6,14 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iwebpp.crypto.TweetNaclFast;
+import com.sun.jna.Library;
 import com.sun.jna.Native;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.Map;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -51,24 +49,39 @@ public class TestTonlibJson {
   public static void setUpBeforeClass() {
 
     // works only when running tests, since ton4j does not ship integrated tonlibjson shared library
-    String resourcePath = Utils.getResourceAbsoluteDirectory(ClassLoader.getSystemClassLoader(), "tonlibjson.dll");
-
-    tonlib = Tonlib.builder()
-    .pathToTonlibSharedLib(resourcePath)
-    .receiveTimeout(5)
-    .ignoreCache(false)
-    .build();
+//    String resourcePath = Utils.getResourceAbsoluteDirectory(ClassLoader.getSystemClassLoader(), "tonlibjson.dll");
+//
+//    tonlib = Tonlib.builder()
+//      .pathToTonlibSharedLib(resourcePath)
+//      .receiveTimeout(5)
+//      .ignoreCache(false)
+//      .build();
   }
 
   @Test
   public void testIssue13() {
+    System.setProperty("jna.library.path","G:\\Git_Projects\\ton-neodix42\\artifacts");
+
+  Tonlib tonlib = Tonlib.builder()
+    .pathToTonlibSharedLib("tonlibjson.dll")
+    .receiveTimeout(5)
+    .ignoreCache(false)
+    .build();
+
     BlockIdExt block = tonlib.getLast().getLast();
     log.info("block {}", block);
   }
 
+    @Test
+    public void testGetLiteServerVersion() {
+      LiteServerVersion liteServerVersion = tonlib.getLiteServerVersion();
+      log.info("liteServerVersion {}", liteServerVersion);
+    }
+
   @Test
   public void testInitTonlibJson() throws IOException {
-    TonlibJsonI tonlibJson = Native.load("tonlibjson.dll", TonlibJsonI.class);
+    TonlibJsonI tonlibJson = Native.load("tonlibjson", TonlibJsonI.class,
+    Collections.singletonMap(Library.OPTION_STRING_ENCODING, "UTF-8"));
 
     long tonlib = tonlibJson.tonlib_client_json_create();
 
@@ -356,6 +369,96 @@ public class TestTonlibJson {
 
     assertThat(rawTransactions.getTransactions().size()).isLessThan(20);
   }
+
+    @Test
+    public void testTonlibGetTxsByAddressTestnet() {
+
+          // works only when running tests, since ton4j does not ship integrated tonlibjson shared library
+          String resourcePath = Utils.getResourceAbsoluteDirectory(ClassLoader.getSystemClassLoader(), "tonlibjson.dll");
+
+          Tonlib tonlib = Tonlib.builder()
+          .pathToTonlibSharedLib(resourcePath)
+          .verbosityLevel(VerbosityLevel.DEBUG)
+          .ignoreCache(false)
+          .testnet(true)
+          .build();
+      Address address = Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
+
+      log.info("address: " + address.toBounceable());
+
+      RawTransactions rawTransactions = tonlib.getRawTransactions(address.toRaw(), null, null);
+
+      log.info("total txs: {}", rawTransactions.getTransactions().size());
+
+      for (RawTransaction tx : rawTransactions.getTransactions()) {
+        if (nonNull(tx.getIn_msg())
+            && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+            log.info("rawTx {}", tx);
+          log.info(
+              "{}, {} <<<<< {} : {} ",
+              Utils.toUTC(tx.getUtime()),
+              tx.getIn_msg().getSource().getAccount_address(),
+              tx.getIn_msg().getDestination().getAccount_address(),
+              Utils.formatNanoValue(tx.getIn_msg().getValue()));
+        }
+        if (nonNull(tx.getOut_msgs())) {
+          for (RawMessage msg : tx.getOut_msgs()) {
+            log.info(
+                "{}, {} >>>>> {} : {} ",
+                Utils.toUTC(tx.getUtime()),
+                msg.getSource().getAccount_address(),
+                msg.getDestination().getAccount_address(),
+                Utils.formatNanoValue(msg.getValue()));
+          }
+        }
+      }
+    }
+
+    @Test
+    public void testTonlibGetTxsV2ByAddressTestnet() {
+
+          // works only when running tests, since ton4j does not ship integrated tonlibjson shared library
+          String resourcePath = Utils.getResourceAbsoluteDirectory(ClassLoader.getSystemClassLoader(), "tonlibjson.dll");
+
+          Tonlib tonlib = Tonlib.builder()
+          .pathToTonlibSharedLib(resourcePath)
+          .verbosityLevel(VerbosityLevel.DEBUG)
+          .ignoreCache(false)
+          .testnet(true)
+          .build();
+      Address address = Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
+
+      log.info("address: " + address.toBounceable());
+
+      RawTransactions rawTransactions = tonlib.getRawTransactionsV2(address.toRaw(), null, null, 10, true);
+
+      log.info("total txs: {}", rawTransactions.getTransactions().size());
+
+      for (RawTransaction tx : rawTransactions.getTransactions()) {
+        if (nonNull(tx.getIn_msg())
+            && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+            log.info("rawTx {}", tx);
+          log.info(
+              "{}, {} <<<<< {} : {} ",
+              Utils.toUTC(tx.getUtime()),
+              tx.getIn_msg().getSource().getAccount_address(),
+              tx.getIn_msg().getDestination().getAccount_address(),
+              Utils.formatNanoValue(tx.getIn_msg().getValue()));
+        }
+        if (nonNull(tx.getOut_msgs())) {
+          for (RawMessage msg : tx.getOut_msgs()) {
+            log.info(
+                "{}, {} >>>>> {} : {} ",
+                Utils.toUTC(tx.getUtime()),
+                msg.getSource().getAccount_address(),
+                msg.getDestination().getAccount_address(),
+                Utils.formatNanoValue(msg.getValue()));
+          }
+        }
+      }
+
+      assertThat(rawTransactions.getTransactions().size()).isLessThan(20);
+    }
 
   @Test
   public void testTonlibGetTxsWithLimitByAddress() {
@@ -967,6 +1070,27 @@ public class TestTonlibJson {
     assertThat(result.getResult().get(0).getHash())
         .isEqualTo("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M=");
   }
+
+    @Test
+    public void testTonlibGetLibrariesExt() {
+      BigInteger arg1 =
+              new BigInteger("6aaf20fed58ba5e6db692909e78e5c5c6525e28d1cfa8bd22dc216729b4841b3", 16);
+
+      SmcLibraryQueryExt smcLibraryQueryExt = SmcLibraryQueryExt.builder()
+        .boc("b5ee9c72410101010024000043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb07111e8d8")
+        .max_libs(10)
+        .hash(arg1.longValue())
+      .build();
+      List<SmcLibraryQueryExt> list = new ArrayList<>();
+      list.add(smcLibraryQueryExt);
+
+      SmcLibraryResult result =
+          tonlib.getLibrariesExt(list);
+      log.info("result: {}", result);
+
+      assertThat(result.getResult().get(0).getHash())
+          .isEqualTo("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M=");
+    }
 
   @Test
   public void testTonlibRunMethodGetSrcAddr() {

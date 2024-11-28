@@ -50,8 +50,10 @@ internal.transactionId lt:int64 hash:bytes = internal.TransactionId;
 ton.blockId workchain:int32 shard:int64 seqno:int32 = internal.BlockId;
 ton.blockIdExt workchain:int32 shard:int64 seqno:int32 root_hash:bytes file_hash:bytes = ton.BlockIdExt;
 
-raw.fullAccountState balance:int64 code:bytes data:bytes last_transaction_id:internal.transactionId block_id:ton.blockIdExt frozen_hash:bytes sync_utime:int53 = raw.FullAccountState;
-raw.message source:accountAddress destination:accountAddress value:int64 fwd_fee:int64 ihr_fee:int64 created_lt:int64 body_hash:bytes msg_data:msg.Data = raw.Message;
+extraCurrency id:int32 amount:int64 = ExtraCurrency;
+
+raw.fullAccountState balance:int64 extra_currencies:vector<extraCurrency> code:bytes data:bytes last_transaction_id:internal.transactionId block_id:ton.blockIdExt frozen_hash:bytes sync_utime:int53 = raw.FullAccountState;
+raw.message hash:bytes source:accountAddress destination:accountAddress value:int64 extra_currencies:vector<extraCurrency> fwd_fee:int64 ihr_fee:int64 created_lt:int64 body_hash:bytes msg_data:msg.Data = raw.Message;
 raw.transaction address:accountAddress utime:int53 data:bytes transaction_id:internal.transactionId fee:int64 storage_fee:int64 other_fee:int64 in_msg:raw.message out_msgs:vector<raw.message> = raw.Transaction;
 raw.transactions transactions:vector<raw.transaction> previous_transaction_id:internal.transactionId = raw.Transactions;
 
@@ -61,6 +63,7 @@ pchan.config alice_public_key:string alice_address:accountAddress bob_public_key
 
 raw.initialAccountState code:bytes data:bytes = InitialAccountState;
 wallet.v3.initialAccountState public_key:string wallet_id:int64 = InitialAccountState;
+wallet.v4.initialAccountState public_key:string wallet_id:int64 = InitialAccountState;
 wallet.highload.v1.initialAccountState public_key:string wallet_id:int64 = InitialAccountState;
 wallet.highload.v2.initialAccountState public_key:string wallet_id:int64 = InitialAccountState;
 
@@ -71,21 +74,22 @@ rwallet.initialAccountState init_public_key:string public_key:string wallet_id:i
 dns.initialAccountState public_key:string wallet_id:int64 = InitialAccountState;
 pchan.initialAccountState config:pchan.config = InitialAccountState;
 
-raw.account code:bytes data:bytes frozen_hash:bytes = AccountState;
-wallet.v3.account wallet_id:int64 seqno:int32 = AccountState;
-wallet.highload.v1.account wallet_id:int64 seqno:int32 = AccountState;
-wallet.highload.v2.account wallet_id:int64 = AccountState;
-dns.account wallet_id:int64 = AccountState;
-rwallet.account wallet_id:int64 seqno:int32 unlocked_balance:int64 config:rwallet.config = AccountState;
+raw.accountState code:bytes data:bytes frozen_hash:bytes = AccountState;
+wallet.v3.accountState wallet_id:int64 seqno:int32 = AccountState;
+wallet.v4.accountState wallet_id:int64 seqno:int32 = AccountState;
+wallet.highload.v1.accountState wallet_id:int64 seqno:int32 = AccountState;
+wallet.highload.v2.accountState wallet_id:int64 = AccountState;
+dns.accountState wallet_id:int64 = AccountState;
+rwallet.accountState wallet_id:int64 seqno:int32 unlocked_balance:int64 config:rwallet.config = AccountState;
 
 pchan.stateInit signed_A:Bool signed_B:Bool min_A:int64 min_B:int64 expire_at:int53 A:int64 B:int64 = pchan.State;
 pchan.stateClose signed_A:Bool signed_B:Bool min_A:int64 min_B:int64 expire_at:int53 A:int64 B:int64 = pchan.State;
 pchan.statePayout A:int64 B:int64 = pchan.State;
 
-pchan.account config:pchan.config state:pchan.State description:string = AccountState;
-uninited.account frozen_hash:bytes = AccountState;
+pchan.accountState config:pchan.config state:pchan.State description:string = AccountState;
+uninited.accountState frozen_hash:bytes = AccountState;
 
-fullAccountState address:accountAddress balance:int64 last_transaction_id:internal.transactionId block_id:ton.blockIdExt sync_utime:int53 account_state:AccountState revision:int32 = FullAccountState;
+fullAccountState address:accountAddress balance:int64 extra_currencies:vector<extraCurrency> last_transaction_id:internal.transactionId block_id:ton.blockIdExt sync_utime:int53 account_state:AccountState revision:int32 = FullAccountState;
 
 accountRevisionList revisions:vector<fullAccountState> = AccountRevisionList;
 accountList accounts:vector<fullAccountState> = AccountList;
@@ -108,7 +112,7 @@ msg.dataDecrypted proof:bytes data:msg.Data = msg.DataDecrypted;
 msg.dataEncryptedArray elements:vector<msg.dataEncrypted> = msg.DataEncryptedArray;
 msg.dataDecryptedArray elements:vector<msg.dataDecrypted> = msg.DataDecryptedArray;
 
-msg.message destination:accountAddress public_key:string amount:int64 data:msg.Data send_mode:int32 = msg.Message;
+msg.message destination:accountAddress public_key:string amount:int64 extra_currencies:vector<extraCurrency> data:msg.Data send_mode:int32 = msg.Message;
 
 //
 // DNS
@@ -184,6 +188,10 @@ smc.runResult gas_used:int53 stack:vector<tvm.StackEntry> exit_code:int32 = smc.
 smc.libraryEntry hash:int256 data:bytes = smc.LibraryEntry;
 smc.libraryResult result:(vector smc.libraryEntry) = smc.LibraryResult;
 
+smc.libraryQueryExt.one hash:int256 = smc.LibraryQueryExt;
+smc.libraryQueryExt.scanBoc boc:bytes max_libs:int32 = smc.LibraryQueryExt;
+smc.libraryResultExt dict_boc:bytes libs_ok:(vector int256) libs_not_found:(vector int256) = smc.LibraryResultExt;
+
 updateSendLiteServerQuery id:int64 data:bytes = Update;
 updateSyncState sync_state:SyncState = Update;
 
@@ -212,8 +220,8 @@ liteServer.info now:int53 version:int32 capabilities:int64 = liteServer.Info;
 
 blocks.masterchainInfo last:ton.BlockIdExt state_root_hash:bytes init:ton.BlockIdExt = blocks.MasterchainInfo;
 blocks.shards shards:vector<ton.BlockIdExt> = blocks.Shards;
-blocks.accountTransactionId accountHelper:bytes lt:int64 = blocks.AccountTransactionId;
-blocks.shortTxId mode:# accountHelper:mode.0?bytes lt:mode.1?int64 hash:mode.2?bytes = liteServer.TransactionId;
+blocks.accountTransactionId account:bytes lt:int64 = blocks.AccountTransactionId;
+blocks.shortTxId mode:# account:mode.0?bytes lt:mode.1?int64 hash:mode.2?bytes = liteServer.TransactionId;
 blocks.transactions id:ton.blockIdExt req_count:int32 incomplete:Bool transactions:vector<blocks.shortTxId> = blocks.Transactions;
 blocks.transactionsExt id:ton.blockIdExt req_count:int32 incomplete:Bool transactions:vector<raw.transaction> = blocks.TransactionsExt;
 blocks.header id:ton.blockIdExt global_id:int32 version:int32 flags:# after_merge:Bool after_split:Bool before_split:Bool want_merge:Bool want_split:Bool validator_list_hash_short:int32 catchain_seqno:int32 min_ref_mc_seqno:int32 is_key_block:Bool prev_key_block_seqno:int32 start_lt:int64 end_lt:int64 gen_utime:int53 vert_seqno:# prev_blocks:vector<ton.blockIdExt> = blocks.Header;
@@ -224,6 +232,8 @@ blocks.blockSignatures id:ton.blockIdExt signatures:(vector blocks.signature) = 
 blocks.shardBlockLink id:ton.blockIdExt proof:bytes = blocks.ShardBlockLink;
 blocks.blockLinkBack to_key_block:Bool from:ton.blockIdExt to:ton.blockIdExt dest_proof:bytes proof:bytes state_proof:bytes = blocks.BlockLinkBack;
 blocks.shardBlockProof from:ton.blockIdExt mc_id:ton.blockIdExt links:(vector blocks.shardBlockLink) mc_proof:(vector blocks.blockLinkBack) = blocks.ShardBlockProof;
+blocks.outMsgQueueSize id:ton.blockIdExt size:int32 = blocks.OutMsgQueueSize;
+blocks.outMsgQueueSizes shards:(vector blocks.outMsgQueueSize) ext_msg_queue_size_limit:int32 = blocks.OutMsgQueueSizes;
 
 configInfo config:tvm.cell = ConfigInfo;
 
@@ -303,9 +313,11 @@ smc.forget id:int53 = Ok;
 smc.getCode id:int53 = tvm.Cell;
 smc.getData id:int53 = tvm.Cell;
 smc.getState id:int53 = tvm.Cell;
+smc.getRawFullAccountState id:int53 = raw.FullAccountState;
 smc.runGetMethod id:int53 method:smc.MethodId stack:vector<tvm.StackEntry> = smc.RunResult;
 
 smc.getLibraries library_list:(vector int256) = smc.LibraryResult;
+smc.getLibrariesExt list:(vector smc.LibraryQueryExt) = smc.LibraryResultExt;
 
 dns.resolve account_address:accountAddress name:string category:int256 ttl:int32 = dns.Resolved;
 
@@ -324,6 +336,7 @@ blocks.getTransactionsExt id:ton.blockIdExt mode:# count:# after:blocks.accountT
 blocks.getBlockHeader id:ton.blockIdExt = blocks.Header;
 blocks.getMasterchainBlockSignatures seqno:int32 = blocks.BlockSignatures;
 blocks.getShardBlockProof id:ton.blockIdExt mode:# from:mode.0?ton.blockIdExt = blocks.ShardBlockProof;
+blocks.getOutMsgQueueSizes mode:# wc:mode.0?int32 shard:mode.0?int64 = blocks.OutMsgQueueSizes;
 
 onLiteServerQueryResult id:int64 bytes:bytes = Ok;
 onLiteServerQueryError id:int64 error:error = Ok;

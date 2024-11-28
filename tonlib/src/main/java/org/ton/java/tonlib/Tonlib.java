@@ -6,6 +6,7 @@ import static java.util.Objects.nonNull;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
+import com.sun.jna.Library;
 import com.sun.jna.Native;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -219,12 +220,19 @@ public class Tonlib {
         newLiteServers[0] = liteServers[super.liteServerIndex];
         globalConfigCurrent.setLiteservers(newLiteServers);
 
-        super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
+        super.tonlibJson =
+            Native.load(
+                super.pathToTonlibSharedLib,
+                //                "tonlibjson",
+                TonlibJsonI.class,
+                //                W32APIOptions.DEFAULT_OPTIONS
+                Collections.singletonMap(Library.OPTION_STRING_ENCODING, "UTF-8"));
 
         Utils.disableNativeOutput();
 
         super.tonlib = super.tonlibJson.tonlib_client_json_create();
-
+        super.tonlibJson.tonlib_client_set_verbosity_level(
+            super.tonlib, super.verbosityLevel.ordinal());
         Utils.enableNativeOutput();
 
         if (super.printInfo) {
@@ -294,7 +302,8 @@ public class Tonlib {
           }
         }
 
-      } catch (Exception e) {
+      } catch (Throwable e) {
+        e.printStackTrace();
         throw new RuntimeException("Error creating tonlib instance: " + e.getMessage());
       }
       return super.build();
@@ -344,10 +353,12 @@ public class Tonlib {
     tonlib = tonlibJson.tonlib_client_json_create();
 
     // set verbosity
-    VerbosityLevelQuery verbosityLevelQuery =
-        VerbosityLevelQuery.builder().new_verbosity_level(verbosityLevel.ordinal()).build();
-    tonlibJson.tonlib_client_json_send(tonlib, gson.toJson(verbosityLevelQuery));
-    tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
+    //    VerbosityLevelQuery verbosityLevelQuery =
+    //        VerbosityLevelQuery.builder().new_verbosity_level(verbosityLevel.ordinal()).build();
+    //    tonlibJson.tonlib_client_json_send(tonlib, gson.toJson(verbosityLevelQuery));
+    //    tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
+
+    tonlibJson.tonlib_client_set_verbosity_level(tonlib, verbosityLevel.ordinal());
 
     TonlibSetup tonlibSetup =
         TonlibSetup.builder()
@@ -568,6 +579,15 @@ public class Tonlib {
     }
   }
 
+  public LiteServerVersion getLiteServerVersion() {
+    synchronized (gson) {
+      GetLiteServerInfoQuery getLiteServerQuery = GetLiteServerInfoQuery.builder().build();
+
+      String result = syncAndRead(gson.toJson(getLiteServerQuery));
+      return gson.fromJson(result, LiteServerVersion.class);
+    }
+  }
+
   public MasterChainInfo getMasterChainInfo() {
     return getLast();
   }
@@ -661,6 +681,37 @@ public class Tonlib {
               .account_address(AccountAddressOnly.builder().account_address(address).build())
               .from_transaction_id(
                   LastTransactionId.builder().lt(fromTxLt).hash(fromTxHash).build())
+              .build();
+
+      String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
+      return gson.fromJson(result, RawTransactions.class);
+    }
+  }
+
+  /**
+   * @param address String
+   * @param fromTxLt BigInteger
+   * @param fromTxHash String in base64 format
+   * @return RawTransactions
+   */
+  public RawTransactions getRawTransactionsV2(
+      String address, BigInteger fromTxLt, String fromTxHash, int count, boolean tryDecodeMessage) {
+
+    if (isNull(fromTxLt) || isNull(fromTxHash)) {
+      RawAccountState fullAccountState =
+          getRawAccountState(AccountAddressOnly.builder().account_address(address).build());
+      fromTxLt = fullAccountState.getLast_transaction_id().getLt();
+      fromTxHash = fullAccountState.getLast_transaction_id().getHash();
+    }
+
+    synchronized (gson) {
+      GetRawTransactionsV2Query getRawTransactionsQuery =
+          GetRawTransactionsV2Query.builder()
+              .account_address(AccountAddressOnly.builder().account_address(address).build())
+              .from_transaction_id(
+                  LastTransactionId.builder().lt(fromTxLt).hash(fromTxHash).build())
+              .count(count)
+              .try_decode_message(tryDecodeMessage)
               .build();
 
       String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
@@ -1630,6 +1681,20 @@ public class Tonlib {
     synchronized (gson) {
       GetLibrariesQuery getLibrariesQuery =
           GetLibrariesQuery.builder().library_list(librariesHashes).build();
+
+      String result = syncAndRead(gson.toJson(getLibrariesQuery));
+      return libraryResultParser.parse(result);
+    }
+  }
+
+  /**
+   * @param librariesHashes list of SmcLibraryQueryExt
+   * @return SmcLibraryResult
+   */
+  public SmcLibraryResult getLibrariesExt(List<SmcLibraryQueryExt> librariesHashes) {
+    synchronized (gson) {
+      GetLibrariesExtQuery getLibrariesQuery =
+          GetLibrariesExtQuery.builder().list(librariesHashes).build();
 
       String result = syncAndRead(gson.toJson(getLibrariesQuery));
       return libraryResultParser.parse(result);

@@ -1,16 +1,15 @@
 package org.ton.java.tonlib.types;
 
+import static java.util.Objects.nonNull;
+
 import com.google.gson.annotations.SerializedName;
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.codec.binary.Hex;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.utils.Utils;
-
-import java.io.Serializable;
-
-import static java.util.Objects.nonNull;
 
 @Builder
 @Data
@@ -37,7 +36,7 @@ public class RawMessage implements Serializable {
         if (nonNull(msg_data.getBody())) {
             return msg_data.getBody();
         } else {
-            return Utils.base64ToString(msg_data.getText());
+            return Utils.base64ToString(msg_data.getText());    
         }
     }
 
