@@ -1156,6 +1156,16 @@ public class TestTonlibJson {
   }
 
   @Test
+  public void testTonlibGetConfigs() {
+    log.info("config1 {}", tonlib.getConfigParam1());
+    log.info("config2 {}", tonlib.getConfigParam2());
+    //    log.info("config3 {}", tonlib.getConfigParam3());
+    log.info("config4 {}", tonlib.getConfigParam4());
+    log.info("config5 {}", tonlib.getConfigParam5());
+    //    log.info("config6 {}", tonlib.getConfigParam6());
+  }
+
+  @Test
   public void testTonlibRunMethodGetSrcAddr() {
     Address smc = Address.of("EQD-BJSVUJviud_Qv7Ymfd3qzXdrmV525e3YDzWQoHIAiInL");
 

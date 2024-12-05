@@ -20,8 +20,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
+import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.queries.*;
 import org.ton.java.tonlib.types.*;
+import org.ton.java.tonlib.types.BlockIdExt;
 import org.ton.java.tonlib.types.globalconfig.*;
 import org.ton.java.utils.Utils;
 
@@ -1095,6 +1098,30 @@ public class Tonlib {
           .fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes()))
           .endCell();
     }
+  }
+
+  public ConfigParams1 getConfigParam1() {
+    return ConfigParams1.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 1)));
+  }
+
+  public ConfigParams2 getConfigParam2() {
+    return ConfigParams2.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 2)));
+  }
+
+  public ConfigParams3 getConfigParam3() {
+    return ConfigParams3.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 3)));
+  }
+
+  public ConfigParams4 getConfigParam4() {
+    return ConfigParams4.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 4)));
+  }
+
+  public ConfigParams5 getConfigParam5() {
+    return ConfigParams5.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 5)));
+  }
+
+  public ConfigParams6 getConfigParam6() {
+    return ConfigParams6.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 6)));
   }
 
   public long loadContract(AccountAddressOnly address) {
