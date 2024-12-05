@@ -9,6 +9,7 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
+/** _ config_addr:bits256 = ConfigParam 0; */
 public class ConfigParams0 {
   BigInteger configAddr;
 

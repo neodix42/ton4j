@@ -9,6 +9,7 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
+/** _ elector_addr:bits256 = ConfigParam 1; */
 public class ConfigParams1 {
   BigInteger electorAddr;
 

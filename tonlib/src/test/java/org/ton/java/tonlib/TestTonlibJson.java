@@ -1157,6 +1157,7 @@ public class TestTonlibJson {
 
   @Test
   public void testTonlibGetConfigs() {
+    log.info("config0 {}", tonlib.getConfigParam0());
     log.info("config1 {}", tonlib.getConfigParam1());
     log.info("config2 {}", tonlib.getConfigParam2());
     //    log.info("config3 {}", tonlib.getConfigParam3());

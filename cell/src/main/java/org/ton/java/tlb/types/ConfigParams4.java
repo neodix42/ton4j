@@ -9,6 +9,7 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
+/** _ dns_root_addr:bits256 = ConfigParam 4; // root TON DNS resolver */
 public class ConfigParams4 {
   BigInteger dnsRootAddr;
 

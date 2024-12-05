@@ -9,6 +9,13 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
+/**
+ *
+ *
+ * <pre>
+ * _ fee_collector_addr:bits256 = ConfigParam 3; // ConfigParam 1 is used if absent
+ * </pre>
+ */
 public class ConfigParams3 {
   BigInteger feeCollectorAddr;
 

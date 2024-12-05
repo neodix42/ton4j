@@ -1100,6 +1100,10 @@ public class Tonlib {
     }
   }
 
+  public ConfigParams0 getConfigParam0() {
+    return ConfigParams0.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 0)));
+  }
+
   public ConfigParams1 getConfigParam1() {
     return ConfigParams1.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 1)));
   }

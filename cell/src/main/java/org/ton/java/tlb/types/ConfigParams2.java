@@ -9,6 +9,7 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
+/** _ minter_addr:bits256 = ConfigParam 2; // ConfigParam 0 is used if absent */
 public class ConfigParams2 {
   BigInteger minterAddr;
 

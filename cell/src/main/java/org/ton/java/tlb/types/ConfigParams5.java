@@ -9,6 +9,17 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
+/**
+ *
+ *
+ * <pre>{@code
+ *     burning_config#01
+ *   blackhole_addr:(Maybe bits256)
+ *   fee_burn_num:#
+ *   fee_burn_denom:# { fee_burn_num <= fee_burn_denom } { fee_burn_denom >= 1 } = BurningConfig;
+ * _ BurningConfig = ConfigParam 5;
+ * }</pre>
+ */
 public class ConfigParams5 {
   long magic;
   BigInteger blackholeAddr;
@@ -18,6 +29,7 @@ public class ConfigParams5 {
   public Cell toCell() {
     return CellBuilder.beginCell()
         .storeUint(01, 8)
+        .storeBit(true)
         .storeUint(blackholeAddr, 256)
         .storeUint(feeBurnNum, 32)
         .storeUint(feeBurnDenom, 32)
