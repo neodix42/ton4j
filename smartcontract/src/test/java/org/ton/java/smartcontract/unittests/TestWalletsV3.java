@@ -18,8 +18,6 @@ import org.ton.java.tlb.types.CurrencyCollection;
 import org.ton.java.tlb.types.InternalMessageInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.MsgAddressIntStd;
-import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 @Slf4j
@@ -34,15 +32,7 @@ public class TestWalletsV3 {
         Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
     TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .testnet(true)
-            .ignoreCache(false)
-            //                .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
-
-    WalletV3R1 contract =
-        WalletV3R1.builder().wc(0).keyPair(keyPair).walletId(42).tonlib(tonlib).build();
+    WalletV3R1 contract = WalletV3R1.builder().wc(0).keyPair(keyPair).walletId(42).build();
 
     String codeAsHex = contract.getStateInit().getCode().bitStringToHex();
     String dataAsHex = contract.getStateInit().getData().bitStringToHex();
@@ -70,15 +60,7 @@ public class TestWalletsV3 {
         Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
     TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .testnet(true)
-            .ignoreCache(false)
-            //                .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
-
-    WalletV3R2 contract =
-        WalletV3R2.builder().wc(0).keyPair(keyPair).walletId(42).tonlib(tonlib).build();
+    WalletV3R2 contract = WalletV3R2.builder().wc(0).keyPair(keyPair).walletId(42).build();
 
     String codeAsHex = contract.getStateInit().getCode().bitStringToHex();
     String dataAsHex = contract.getStateInit().getData().bitStringToHex();
@@ -106,15 +88,14 @@ public class TestWalletsV3 {
     WalletV3Config config =
         WalletV3Config.builder()
             .walletId(42)
-            .seqno(contract.getSeqno())
+            .seqno(0)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(0.8))
             .build();
 
     msg = contract.prepareExternalMsg(config);
-
-    ExtMessageInfo ext = tonlib.sendRawMessage(msg.toCell().toBase64());
-    log.info("ext {}", ext);
+    log.info("msg {}", msg);
+    // tonlib.sendRawMessage(msg.toCell().toBase64());
   }
 
   /** >fift -s new-wallet-v3.fif -1 42 */

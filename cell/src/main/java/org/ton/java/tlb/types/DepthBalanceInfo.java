@@ -8,27 +8,29 @@ import org.ton.java.cell.CellSlice;
 import org.ton.java.utils.Utils;
 
 /**
- * <pre>
+ *
+ *
+ * <pre>{@code
  * depth_balance$_ split_depth:(#<= 30) balance:CurrencyCollection = DepthBalanceInfo;
- * </pre>
+ * }</pre>
  */
 @Builder
 @Data
 public class DepthBalanceInfo {
-    int depth;
-    CurrencyCollection currencies;
+  int depth;
+  CurrencyCollection currencies;
 
-    public Cell toCell() {
-        return CellBuilder.beginCell()
-                .storeUint(depth, Utils.log2Ceil(depth))
-                .storeCell(currencies.toCell())
-                .endCell();
-    }
+  public Cell toCell() {
+    return CellBuilder.beginCell()
+        .storeUint(depth, Utils.log2Ceil(depth))
+        .storeCell(currencies.toCell())
+        .endCell();
+  }
 
-    public static DepthBalanceInfo deserialize(CellSlice cs) {
-        return DepthBalanceInfo.builder()
-                .depth(cs.loadUint(5).intValue()) // tlb #<= 60
-                .currencies(CurrencyCollection.deserialize(cs))
-                .build();
-    }
+  public static DepthBalanceInfo deserialize(CellSlice cs) {
+    return DepthBalanceInfo.builder()
+        .depth(cs.loadUint(5).intValue()) // tlb #<= 60
+        .currencies(CurrencyCollection.deserialize(cs))
+        .build();
+  }
 }

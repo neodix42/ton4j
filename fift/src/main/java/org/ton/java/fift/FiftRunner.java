@@ -69,6 +69,10 @@ public class FiftRunner {
         fiftExecutable = super.fiftExecutablePath;
       }
 
+      if (isNull(fiftAbsolutePath)) {
+        fiftAbsolutePath = super.fiftExecutablePath;
+      }
+
       if (StringUtils.isEmpty(super.fiftAsmLibraryPath)) {
         if (Utils.getOS() == Utils.OS.WINDOWS) {
           super.fiftAsmLibraryPath =
@@ -224,11 +228,22 @@ public class FiftRunner {
                 " ", "powershell", "-c", "'" + stdin + "' | " + pathToBinary + " " + include);
       } else { // linux & macos
         pb =
-                new ProcessBuilder(
-                        "/bin/bash", "-c",
-                        "echo", "\"" + stdin + "\" | " + pathToBinary + " " + include )
-                        .redirectErrorStream(true);
-        cmd = String.join(" ", "/bin/bash", "-c",  "\"echo", "'" , stdin , "'|", pathToBinary + " " + include + "\"");
+            new ProcessBuilder(
+                    "/bin/bash",
+                    "-c",
+                    "echo",
+                    "\"" + stdin + "\" | " + pathToBinary + " " + include)
+                .redirectErrorStream(true);
+        cmd =
+            String.join(
+                " ",
+                "/bin/bash",
+                "-c",
+                "\"echo",
+                "'",
+                stdin,
+                "'|",
+                pathToBinary + " " + include + "\"");
       }
 
       if (printInfo) {

@@ -1,22 +1,22 @@
 package org.ton.java.tlb.types;
 
+import static java.util.Objects.isNull;
+
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-import java.math.BigInteger;
-
-import static java.util.Objects.isNull;
-
 /**
- * <pre>
+ * <pre>{@code
  * shard_ident$00
  *  shard_pfx_bits:(#<= 60)
  *  workchain_id:int32
  *  shard_prefix:uint64
  *  = ShardIdent;
+ *  }
  *  </pre>
  */
 @Builder

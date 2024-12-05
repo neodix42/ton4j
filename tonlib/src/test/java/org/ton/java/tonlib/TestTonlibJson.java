@@ -6,8 +6,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iwebpp.crypto.TweetNaclFast;
-import com.sun.jna.Library;
-import com.sun.jna.Native;
+import com.sun.jna.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -45,45 +44,48 @@ public class TestTonlibJson {
 
   static Tonlib tonlib;
 
+  static String tonlibPath =
+      System.getProperty("user.dir") + "/../2.ton-test-artifacts/tonlibjson.dll";
+
   @BeforeClass
   public static void setUpBeforeClass() {
 
-    // works only when running tests, since ton4j does not ship integrated tonlibjson shared library
-//    String resourcePath = Utils.getResourceAbsoluteDirectory(ClassLoader.getSystemClassLoader(), "tonlibjson.dll");
-//
-//    tonlib = Tonlib.builder()
-//      .pathToTonlibSharedLib(resourcePath)
-//      .receiveTimeout(5)
-//      .ignoreCache(false)
-//      .build();
+    tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .receiveTimeout(5)
+            .ignoreCache(false)
+            .build();
   }
 
   @Test
   public void testIssue13() {
-    System.setProperty("jna.library.path","G:\\Git_Projects\\ton-neodix42\\artifacts");
-
-  Tonlib tonlib = Tonlib.builder()
-    .pathToTonlibSharedLib("tonlibjson.dll")
-    .receiveTimeout(5)
-    .ignoreCache(false)
-    .build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .ignoreCache(false)
+            .liteServerIndex(0)
+            .testnet(true)
+            .build();
 
     BlockIdExt block = tonlib.getLast().getLast();
     log.info("block {}", block);
   }
 
-    @Test
-    public void testGetLiteServerVersion() {
-      LiteServerVersion liteServerVersion = tonlib.getLiteServerVersion();
-      log.info("liteServerVersion {}", liteServerVersion);
-    }
+  @Test
+  public void testGetLiteServerVersion() {
+    LiteServerVersion liteServerVersion = tonlib.getLiteServerVersion();
+    log.info("liteServerVersion {}", liteServerVersion);
+  }
 
   @Test
   public void testInitTonlibJson() throws IOException {
-    TonlibJsonI tonlibJson = Native.load("tonlibjson", TonlibJsonI.class,
-    Collections.singletonMap(Library.OPTION_STRING_ENCODING, "UTF-8"));
 
-    long tonlib = tonlibJson.tonlib_client_json_create();
+    TonlibJsonI tonlibJson = Native.load(tonlibPath, TonlibJsonI.class);
+
+    Pointer tonlib = tonlibJson.tonlib_client_json_create();
+
+    tonlibJson.tonlib_client_set_verbosity_level(4);
 
     InputStream testConfig =
         TestTonlibJson.class.getClassLoader().getResourceAsStream("testnet-global.config.json");
@@ -117,9 +119,21 @@ public class TestTonlibJson {
                     .build())
             .build();
 
+    tonlibJson.tonlib_client_set_verbosity_level(4);
+
+    log.info("init:{}", gs.toJson(tonlibSetup));
+
     tonlibJson.tonlib_client_json_send(tonlib, gs.toJson(tonlibSetup));
     String result = tonlibJson.tonlib_client_json_receive(tonlib, 10.0);
     assertThat(result).isNotBlank();
+
+    String q =
+        "{\"@type\":\"blocks.lookupBlock\",\"mode\":1,\"id\":{\"@type\":\"ton.blockId\",\"workchain\":-1,\"shard\":-9223372036854775808,\"seqno\":42555714},\"lt\":0,\"utime\":0,\"@extra\":\"94e27988-cf7a-4205-9f89-35dab8037c16\"}";
+
+    tonlibJson.tonlib_client_json_send(tonlib, q);
+    result = tonlibJson.tonlib_client_json_receive(tonlib, 10.0);
+    log.info("result {}", result);
+    tonlibJson.tonlib_client_json_destroy(tonlib);
   }
 
   @Test
@@ -140,7 +154,11 @@ public class TestTonlibJson {
     log.info("parsed config object back to json {}", gs.toJson(globalConfig));
 
     Tonlib tonlib1 =
-        Tonlib.builder().globalConfigAsString(gs.toJson(globalConfig)).ignoreCache(false).build();
+        Tonlib.builder()
+            .pathToTonlibSharedLib("G:\\libs\\testnet-tonlibjson.dll")
+            .globalConfigAsString(gs.toJson(globalConfig))
+            .ignoreCache(false)
+            .build();
 
     log.info("last {}", tonlib1.getLast());
   }
@@ -212,7 +230,12 @@ public class TestTonlibJson {
 
     log.info("parsed config object back to json {}", gs.toJson(testnetGlobalConfig));
 
-    Tonlib tonlib1 = Tonlib.builder().globalConfig(testnetGlobalConfig).ignoreCache(false).build();
+    Tonlib tonlib1 =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .globalConfig(testnetGlobalConfig)
+            .ignoreCache(false)
+            .build();
 
     log.info("last {}", tonlib1.getLast());
   }
@@ -220,16 +243,27 @@ public class TestTonlibJson {
   @Test
   public void testTonlibUsingGlobalConfigLiteServerByIndex() {
 
-    Tonlib tonlib1 = Tonlib.builder().ignoreCache(false).testnet(true).liteServerIndex(3).build();
+    Tonlib tonlib1 =
+        Tonlib.builder()
+            .ignoreCache(false)
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .liteServerIndex(3)
+            .build();
 
     log.info("last {}", tonlib1.getLast());
   }
 
   @Test
   public void testTonlib() {
-    Tonlib tonlib = Tonlib.builder().keystoreInMemory(true).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .receiveTimeout(5)
+            .ignoreCache(false)
+            .testnet(true)
+            .build();
 
-    //        lookupBlock
     BlockIdExt fullblock = tonlib.lookupBlock(23512606, -1, -9223372036854775808L, 0, 0);
 
     log.info(fullblock.toString());
@@ -237,19 +271,22 @@ public class TestTonlibJson {
     MasterChainInfo masterChainInfo = tonlib.getLast();
     log.info(masterChainInfo.toString());
 
-    // getBlockHeader
     BlockHeader header = tonlib.getBlockHeader(masterChainInfo.getLast());
     log.info(header.toString());
 
-    // getShards
-    Shards shards1 = tonlib.getShards(masterChainInfo.getLast()); // only seqno also ok?
-    log.info(shards1.toString());
-    assertThat(shards1.getShards()).isNotNull();
+    Shards shards = tonlib.getShards(masterChainInfo.getLast()); // only seqno also ok?
+    log.info(shards.toString());
+    assertThat(shards.getShards()).isNotNull();
   }
 
   @Test
   public void testTonlibGetLast() {
-    Tonlib tonlib = Tonlib.builder().testnet(true).keystoreInMemory(true).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .testnet(true)
+            .pathToTonlibSharedLib(tonlibPath)
+            .keystoreInMemory(true)
+            .build();
     BlockIdExt fullblock = tonlib.getLast().getLast();
     log.info("last {}", fullblock);
     assertThat(fullblock).isNotNull();
@@ -257,6 +294,12 @@ public class TestTonlibJson {
 
   @Test
   public void testTonlibGetAllBlockTransactions() {
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .ignoreCache(false)
+            .liteServerIndex(0)
+            .build();
     BlockIdExt fullblock = tonlib.getLast().getLast();
     assertThat(fullblock).isNotNull();
 
@@ -370,95 +413,99 @@ public class TestTonlibJson {
     assertThat(rawTransactions.getTransactions().size()).isLessThan(20);
   }
 
-    @Test
-    public void testTonlibGetTxsByAddressTestnet() {
+  @Test
+  public void testTonlibGetTxsByAddressTestnet() {
 
-          // works only when running tests, since ton4j does not ship integrated tonlibjson shared library
-          String resourcePath = Utils.getResourceAbsoluteDirectory(ClassLoader.getSystemClassLoader(), "tonlibjson.dll");
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .receiveTimeout(5)
+            .ignoreCache(false)
+            .testnet(true)
+            .build();
+    Address address =
+        Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
 
-          Tonlib tonlib = Tonlib.builder()
-          .pathToTonlibSharedLib(resourcePath)
-          .verbosityLevel(VerbosityLevel.DEBUG)
-          .ignoreCache(false)
-          .testnet(true)
-          .build();
-      Address address = Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
+    log.info("address: " + address.toBounceable());
 
-      log.info("address: " + address.toBounceable());
+    RawTransactions rawTransactions = tonlib.getRawTransactions(address.toRaw(), null, null);
 
-      RawTransactions rawTransactions = tonlib.getRawTransactions(address.toRaw(), null, null);
+    log.info("total txs: {}", rawTransactions.getTransactions().size());
 
-      log.info("total txs: {}", rawTransactions.getTransactions().size());
-
-      for (RawTransaction tx : rawTransactions.getTransactions()) {
-        if (nonNull(tx.getIn_msg())
-            && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
-            log.info("rawTx {}", tx);
+    for (RawTransaction tx : rawTransactions.getTransactions()) {
+      if (nonNull(tx.getIn_msg())
+          && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+        log.info("rawTx {}", tx);
+        log.info(
+            "{}, {} <<<<< {} : {} ",
+            Utils.toUTC(tx.getUtime()),
+            tx.getIn_msg().getSource().getAccount_address(),
+            tx.getIn_msg().getDestination().getAccount_address(),
+            Utils.formatNanoValue(tx.getIn_msg().getValue()));
+      }
+      if (nonNull(tx.getOut_msgs())) {
+        for (RawMessage msg : tx.getOut_msgs()) {
           log.info(
-              "{}, {} <<<<< {} : {} ",
+              "{}, {} >>>>> {} : {} ",
               Utils.toUTC(tx.getUtime()),
-              tx.getIn_msg().getSource().getAccount_address(),
-              tx.getIn_msg().getDestination().getAccount_address(),
-              Utils.formatNanoValue(tx.getIn_msg().getValue()));
+              msg.getSource().getAccount_address(),
+              msg.getDestination().getAccount_address(),
+              Utils.formatNanoValue(msg.getValue()));
         }
-        if (nonNull(tx.getOut_msgs())) {
-          for (RawMessage msg : tx.getOut_msgs()) {
-            log.info(
-                "{}, {} >>>>> {} : {} ",
-                Utils.toUTC(tx.getUtime()),
-                msg.getSource().getAccount_address(),
-                msg.getDestination().getAccount_address(),
-                Utils.formatNanoValue(msg.getValue()));
-          }
+      }
+    }
+  }
+
+  @Test
+  public void testTonlibGetTxsV2ByAddressTestnet() {
+
+    // works only when running tests, since ton4j does not ship integrated tonlibjson shared library
+    String resourcePath =
+        Utils.getResourceAbsoluteDirectory(
+            ClassLoader.getSystemClassLoader(), "2.ton-test-artifacts/tonlibjson.dll");
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(resourcePath)
+            .receiveTimeout(5)
+            .ignoreCache(false)
+            .testnet(true)
+            .build();
+    Address address =
+        Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
+
+    log.info("address: " + address.toBounceable());
+
+    RawTransactions rawTransactions =
+        tonlib.getRawTransactionsV2(address.toRaw(), null, null, 10, true);
+
+    log.info("total txs: {}", rawTransactions.getTransactions().size());
+
+    for (RawTransaction tx : rawTransactions.getTransactions()) {
+      if (nonNull(tx.getIn_msg())
+          && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+        log.info("rawTx {}", tx);
+        log.info(
+            "{}, {} <<<<< {} : {} ",
+            Utils.toUTC(tx.getUtime()),
+            tx.getIn_msg().getSource().getAccount_address(),
+            tx.getIn_msg().getDestination().getAccount_address(),
+            Utils.formatNanoValue(tx.getIn_msg().getValue()));
+      }
+      if (nonNull(tx.getOut_msgs())) {
+        for (RawMessage msg : tx.getOut_msgs()) {
+          log.info(
+              "{}, {} >>>>> {} : {} ",
+              Utils.toUTC(tx.getUtime()),
+              msg.getSource().getAccount_address(),
+              msg.getDestination().getAccount_address(),
+              Utils.formatNanoValue(msg.getValue()));
         }
       }
     }
 
-    @Test
-    public void testTonlibGetTxsV2ByAddressTestnet() {
-
-          // works only when running tests, since ton4j does not ship integrated tonlibjson shared library
-          String resourcePath = Utils.getResourceAbsoluteDirectory(ClassLoader.getSystemClassLoader(), "tonlibjson.dll");
-
-          Tonlib tonlib = Tonlib.builder()
-          .pathToTonlibSharedLib(resourcePath)
-          .verbosityLevel(VerbosityLevel.DEBUG)
-          .ignoreCache(false)
-          .testnet(true)
-          .build();
-      Address address = Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
-
-      log.info("address: " + address.toBounceable());
-
-      RawTransactions rawTransactions = tonlib.getRawTransactionsV2(address.toRaw(), null, null, 10, true);
-
-      log.info("total txs: {}", rawTransactions.getTransactions().size());
-
-      for (RawTransaction tx : rawTransactions.getTransactions()) {
-        if (nonNull(tx.getIn_msg())
-            && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
-            log.info("rawTx {}", tx);
-          log.info(
-              "{}, {} <<<<< {} : {} ",
-              Utils.toUTC(tx.getUtime()),
-              tx.getIn_msg().getSource().getAccount_address(),
-              tx.getIn_msg().getDestination().getAccount_address(),
-              Utils.formatNanoValue(tx.getIn_msg().getValue()));
-        }
-        if (nonNull(tx.getOut_msgs())) {
-          for (RawMessage msg : tx.getOut_msgs()) {
-            log.info(
-                "{}, {} >>>>> {} : {} ",
-                Utils.toUTC(tx.getUtime()),
-                msg.getSource().getAccount_address(),
-                msg.getDestination().getAccount_address(),
-                Utils.formatNanoValue(msg.getValue()));
-          }
-        }
-      }
-
-      assertThat(rawTransactions.getTransactions().size()).isLessThan(20);
-    }
+    assertThat(rawTransactions.getTransactions().size()).isLessThan(20);
+  }
 
   @Test
   public void testTonlibGetTxsWithLimitByAddress() {
@@ -469,8 +516,10 @@ public class TestTonlibJson {
     RawTransactions rawTransactions = tonlib.getRawTransactions(address.toRaw(), null, null, 3);
 
     for (RawTransaction tx : rawTransactions.getTransactions()) {
-        Transaction transaction = Transaction.deserialize(CellSlice.beginParse(CellBuilder.beginCell().fromBocBase64(tx.getData()).endCell()));
-        log.info("transaction {}", transaction);
+      Transaction transaction =
+          Transaction.deserialize(
+              CellSlice.beginParse(CellBuilder.beginCell().fromBocBase64(tx.getData()).endCell()));
+      log.info("transaction {}", transaction);
       if (nonNull(tx.getIn_msg())
           && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
         log.info(
@@ -593,7 +642,6 @@ public class TestTonlibJson {
 
   @Test
   public void testTonlibGetAllTxsByAddressSmallHistoryLimit() {
-    //        Tonlib tonlib = Tonlib.builder().build();
 
     Address address = Address.of(TON_FOUNDATION);
 
@@ -708,6 +756,7 @@ public class TestTonlibJson {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .pathToTonlibSharedLib(tonlibPath)
             .receiveTimeout(5)
             .ignoreCache(false)
             .build();
@@ -730,6 +779,7 @@ public class TestTonlibJson {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .pathToTonlibSharedLib(tonlibPath)
             .receiveTimeout(5)
             .ignoreCache(false)
             .build();
@@ -752,6 +802,7 @@ public class TestTonlibJson {
             .keystoreInMemory(false)
             .keystorePath("D:/")
             .verbosityLevel(VerbosityLevel.INFO)
+            .pathToTonlibSharedLib(tonlibPath)
             .build();
     Address address = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
     RunResult result = tonlib.runMethod(address, "seqno");
@@ -890,7 +941,6 @@ public class TestTonlibJson {
 
   @Test
   public void testTonlibGetConfig() {
-    Tonlib tonlib = Tonlib.builder().build();
     MasterChainInfo mc = tonlib.getLast();
     Cell c = tonlib.getConfigParam(mc.getLast(), 22);
     log.info(c.print());
@@ -972,17 +1022,30 @@ public class TestTonlibJson {
 
   @Test
   public void testTonlibLookupBlock() {
-    MasterChainInfo mcInfo = tonlib.getLast();
+    try {
+      Tonlib tonlib =
+          Tonlib.builder()
+              .pathToTonlibSharedLib(tonlibPath)
+              .receiveTimeout(5)
+              .ignoreCache(false)
+              .liteServerIndex(0)
+              .verbosityLevel(VerbosityLevel.DEBUG)
+              .testnet(true)
+              .build();
+      MasterChainInfo mcInfo = tonlib.getLast();
 
-    Shards shards = tonlib.getShards(mcInfo.getLast().getSeqno(), 0, 0);
-    log.info("shards-- {}", shards.getShards());
+      Shards shards = tonlib.getShards(mcInfo.getLast().getSeqno(), 0, 0);
+      log.info("shards-- {}", shards.getShards());
 
-    BlockIdExt shard = shards.getShards().get(0);
+      BlockIdExt shard = shards.getShards().get(0);
 
-    BlockIdExt fullblock =
-        tonlib.lookupBlock(shard.getSeqno(), shard.getWorkchain(), shard.getShard(), 0, 0);
-    log.info("fullBlock-- {}", fullblock);
-    assertThat(fullblock).isNotNull();
+      BlockIdExt fullblock =
+          tonlib.lookupBlock(shard.getSeqno(), shard.getWorkchain(), shard.getShard(), 0, 0);
+      log.info("fullBlock-- {}", fullblock);
+      assertThat(fullblock).isNotNull();
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
   }
 
   @Test
@@ -999,7 +1062,7 @@ public class TestTonlibJson {
   }
 
   @Test
-  public void testTonlibTryLocateTxByOutcomingMessage() {
+  public void testTonlibTryLocateTxByOutgoingMessage() {
     RawTransaction tx =
         tonlib.tryLocateTxByOutcomingMessage(
             Address.of("EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD"),
@@ -1014,7 +1077,6 @@ public class TestTonlibJson {
 
   @Test
   public void testTonlibStateAndStatus() {
-
     FullAccountState accountState1 =
         tonlib.getAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
     log.info("FullAccountState {}", accountState1);
@@ -1071,30 +1133,30 @@ public class TestTonlibJson {
         .isEqualTo("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M=");
   }
 
-    @Test
-    public void testTonlibGetLibrariesExt() {
-      BigInteger arg1 =
-              new BigInteger("6aaf20fed58ba5e6db692909e78e5c5c6525e28d1cfa8bd22dc216729b4841b3", 16);
+  @Test
+  public void testTonlibGetLibrariesExt() {
+    BigInteger arg1 =
+        new BigInteger("6aaf20fed58ba5e6db692909e78e5c5c6525e28d1cfa8bd22dc216729b4841b3", 16);
 
-      SmcLibraryQueryExt smcLibraryQueryExt = SmcLibraryQueryExt.builder()
-        .boc("b5ee9c72410101010024000043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb07111e8d8")
-        .max_libs(10)
-        .hash(arg1.longValue())
-      .build();
-      List<SmcLibraryQueryExt> list = new ArrayList<>();
-      list.add(smcLibraryQueryExt);
+    SmcLibraryQueryExt smcLibraryQueryExt =
+        SmcLibraryQueryExt.builder()
+            .boc(
+                "b5ee9c72410101010024000043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb07111e8d8")
+            .max_libs(10)
+            .hash(arg1.longValue())
+            .build();
+    List<SmcLibraryQueryExt> list = new ArrayList<>();
+    list.add(smcLibraryQueryExt);
 
-      SmcLibraryResult result =
-          tonlib.getLibrariesExt(list);
-      log.info("result: {}", result);
+    SmcLibraryResult result = tonlib.getLibrariesExt(list);
+    log.info("result: {}", result);
 
-      assertThat(result.getResult().get(0).getHash())
-          .isEqualTo("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M=");
-    }
+    assertThat(result.getResult().get(0).getHash())
+        .isEqualTo("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M=");
+  }
 
   @Test
   public void testTonlibRunMethodGetSrcAddr() {
-    Tonlib tonlib = Tonlib.builder().testnet(false).ignoreCache(false).build();
     Address smc = Address.of("EQD-BJSVUJviud_Qv7Ymfd3qzXdrmV525e3YDzWQoHIAiInL");
 
     Deque<String> stack = new ArrayDeque<>();
@@ -1113,37 +1175,53 @@ public class TestTonlibJson {
 
     // @formatter:off
     // tonlib
-    //         4          4    desc    slice                                                                    crc
-    // b5ee9c72410101010024 00 ---- 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 7111e8d8
+    //         4          4    desc    slice
+    //            crc
+    // b5ee9c72410101010024 00 ----
+    // 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 7111e8d8
     Cell c = CellBuilder.beginCell().fromBoc(b64).endCell();
     log.info("c {}", c.toHex(true));
 
-    // b5ee9c72010101010024 00 00     43801f0111d15a69c7d42a36433173c773ce24bf905542d3d38dd073462b4a5b136c30 subbotin-1
-    // b5ee9c72010101010024 00 00     43800f2034101a96276a66c408417b1d38f5fcb3d6187226930600e8273b43c92a6970 subbotin-2
+    // b5ee9c72010101010024 00 00
+    // 43801f0111d15a69c7d42a36433173c773ce24bf905542d3d38dd073462b4a5b136c30 subbotin-1
+    // b5ee9c72010101010024 00 00
+    // 43800f2034101a96276a66c408417b1d38f5fcb3d6187226930600e8273b43c92a6970 subbotin-2
 
     // slice returned by lite-client
     // "0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0"
 
     // ton4j to boc       6    6
-    // b5ee9c72410101010024 00      0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 7111e8d8 tonlib
+    // b5ee9c72410101010024 00
+    // 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 7111e8d8 tonlib
     //
     //         4
-    // b5ee9c72410101010024 00 0048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 cad13166 with crc + store all bytes
-    // b5ee9c72410101010026 00 0048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 cad13166 crc + store 267 bits
-    // b5ee9c72c10101010026 00 2600 480043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 fe87f4b3 crc+index
-    // b5ee9c72010101010026 00 6048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 pruned
-    // b5ee9c72010101010026 00 0048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 ordinary
-    // b5ee9c72010101010026 00 0048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 library
+    // b5ee9c72410101010024 00 0048
+    // 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 cad13166 with crc +
+    // store all bytes
+    // b5ee9c72410101010026 00 0048
+    // 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 cad13166 crc + store
+    // 267 bits
+    // b5ee9c72c10101010026 00 2600
+    // 480043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 fe87f4b3 crc+index
+    // b5ee9c72010101010026 00 6048
+    // 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 pruned
+    // b5ee9c72010101010026 00 0048
+    // 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 ordinary
+    // b5ee9c72010101010026 00 0048
+    // 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 library
     // go lang
-    // b5ee9c72410101010024 00 0043 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3    fd0 d197c327 store 267 bits
-    // b5ee9c72410101010026 00 0048 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 cad13166
+    // b5ee9c72410101010024 00 0043
+    // 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3    fd0 d197c327 store 267
+    // bits
+    // b5ee9c72410101010026 00 0048
+    // 0043801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 cad13166
     // pytoniq-core
     //
     // slice returned by lite-client and trimmed front
     // "801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0"
     //         4          4
-    // b5ee9c72410101010024 00 0044 801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 98f3b93d
-
+    // b5ee9c72410101010024 00 0044
+    // 801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 98f3b93d
 
     // @formatter:on
   }

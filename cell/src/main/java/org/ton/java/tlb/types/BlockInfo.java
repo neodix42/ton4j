@@ -1,15 +1,14 @@
 package org.ton.java.tlb.types;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-import java.math.BigInteger;
-
 /**
- * <pre>
+ * <pre>{@code
  * block_info#9bc7a987
  *   version:uint32
  *   not_master:(## 1)
@@ -37,6 +36,7 @@ import java.math.BigInteger;
  *   prev_ref:^(BlkPrevInfo after_merge)
  *   prev_vert_ref:vert_seqno_incr?^(BlkPrevInfo 0)
  *   = BlockInfo;
+ *   }
  *   <pre>
  */
 @Builder

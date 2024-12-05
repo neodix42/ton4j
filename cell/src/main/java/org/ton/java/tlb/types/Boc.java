@@ -1,5 +1,7 @@
 package org.ton.java.tlb.types;
 
+import java.math.BigInteger;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -7,11 +9,8 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
-import java.util.List;
-
 /**
- * <pre>
+ * <pre>{@code
  * serialized_boc#b5ee9c72
  * has_idx:(## 1)
  * has_crc32c:(## 1)
@@ -28,6 +27,7 @@ import java.util.List;
  * cell_data:(tot_cells_size * [ uint8 ])
  * crc32c:has_crc32c?uint32
  * = BagOfCells;
+ * }
  * </pre>
  */
 @Builder

@@ -23,7 +23,8 @@ public class TestTolkRunner {
     File tolkFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = tolkFile.getAbsolutePath();
 
-    TolkRunner tolkRunner = TolkRunner.builder().build();
+    String tolkPath = System.getProperty("user.dir") + "/2.ton-test-artifacts/tolk.exe";
+    TolkRunner tolkRunner = TolkRunner.builder().tolkExecutablePath(tolkPath).build();
 
     String result = tolkRunner.run(tolkFile.getParent(), absolutePath);
     log.info("output: {}", result);

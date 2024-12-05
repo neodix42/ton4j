@@ -6,8 +6,7 @@ import static java.util.Objects.nonNull;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
-import com.sun.jna.Library;
-import com.sun.jna.Native;
+import com.sun.jna.*;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -55,12 +54,16 @@ public class Tonlib {
   private TonGlobalConfig globalConfig;
 
   /**
-   * Valid values are:<br>
-   * 0 - FATAL<br>
-   * 1 - ERROR<br>
-   * 2 - WARNING<br>
-   * 3 - INFO<br>
-   * 4 - DEBUG<br>
+   *
+   *
+   * <pre>
+   * Valid values are:
+   * 0 - FATAL
+   * 1 - ERROR
+   * 2 - WARNING
+   * 3 - INFO
+   * 4 - DEBUG
+   * </pre>
    */
   private VerbosityLevel verbosityLevel;
 
@@ -95,7 +98,7 @@ public class Tonlib {
   private static final Gson gson =
       new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
 
-  private long tonlib;
+  private Pointer tonlib;
 
   RunResultParser runResultParser;
 
@@ -220,20 +223,12 @@ public class Tonlib {
         newLiteServers[0] = liteServers[super.liteServerIndex];
         globalConfigCurrent.setLiteservers(newLiteServers);
 
-        super.tonlibJson =
-            Native.load(
-                super.pathToTonlibSharedLib,
-                //                "tonlibjson",
-                TonlibJsonI.class,
-                //                W32APIOptions.DEFAULT_OPTIONS
-                Collections.singletonMap(Library.OPTION_STRING_ENCODING, "UTF-8"));
+        super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
 
-        Utils.disableNativeOutput();
-
+        Utils.disableNativeOutput(super.verbosityLevel.ordinal());
         super.tonlib = super.tonlibJson.tonlib_client_json_create();
-        super.tonlibJson.tonlib_client_set_verbosity_level(
-            super.tonlib, super.verbosityLevel.ordinal());
-        Utils.enableNativeOutput();
+        super.tonlibJson.tonlib_client_set_verbosity_level(super.verbosityLevel.ordinal());
+        Utils.enableNativeOutput(super.verbosityLevel.ordinal());
 
         if (super.printInfo) {
           log.info(
@@ -277,17 +272,6 @@ public class Tonlib {
                   super.receiveTimeout,
                   super.receiveRetryTimes));
         }
-
-        // set verbosity
-        VerbosityLevelQuery verbosityLevelQuery =
-            VerbosityLevelQuery.builder()
-                .new_verbosity_level(super.verbosityLevel.ordinal())
-                .build();
-
-        Utils.disableNativeOutput();
-        super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(verbosityLevelQuery));
-        super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
-        Utils.enableNativeOutput();
 
         initTonlibConfig(globalConfigCurrent);
 
@@ -335,10 +319,10 @@ public class Tonlib {
                       .build())
               .build();
 
-      Utils.disableNativeOutput();
+      Utils.disableNativeOutput(super.verbosityLevel.ordinal());
       super.tonlibJson.tonlib_client_json_send(super.tonlib, gson.toJson(tonlibSetup));
       super.tonlibJson.tonlib_client_json_receive(super.tonlib, super.receiveTimeout);
-      Utils.enableNativeOutput();
+      Utils.enableNativeOutput(super.verbosityLevel.ordinal());
     }
   }
 
@@ -349,16 +333,10 @@ public class Tonlib {
     destroy();
 
     tonlibJson = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
-    Utils.disableNativeOutput();
+    Utils.disableNativeOutput(verbosityLevel.ordinal());
     tonlib = tonlibJson.tonlib_client_json_create();
 
-    // set verbosity
-    //    VerbosityLevelQuery verbosityLevelQuery =
-    //        VerbosityLevelQuery.builder().new_verbosity_level(verbosityLevel.ordinal()).build();
-    //    tonlibJson.tonlib_client_json_send(tonlib, gson.toJson(verbosityLevelQuery));
-    //    tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
-
-    tonlibJson.tonlib_client_set_verbosity_level(tonlib, verbosityLevel.ordinal());
+    tonlibJson.tonlib_client_set_verbosity_level(verbosityLevel.ordinal());
 
     TonlibSetup tonlibSetup =
         TonlibSetup.builder()
@@ -387,13 +365,13 @@ public class Tonlib {
     tonlibJson.tonlib_client_json_send(tonlib, gson.toJson(tonlibSetup));
     tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
 
-    Utils.enableNativeOutput();
+    Utils.enableNativeOutput(verbosityLevel.ordinal());
   }
 
   public void destroy() {
-    Utils.disableNativeOutput();
+    Utils.disableNativeOutput(verbosityLevel.ordinal());
     tonlibJson.tonlib_client_json_destroy(tonlib);
-    Utils.enableNativeOutput();
+    Utils.enableNativeOutput(verbosityLevel.ordinal());
   }
 
   private String receive() {
@@ -417,11 +395,12 @@ public class Tonlib {
   private String syncAndRead(String query) {
     String response = null;
     try {
-      Utils.disableNativeOutput();
+      Utils.disableNativeOutput(verbosityLevel.ordinal());
       tonlibJson.tonlib_client_json_send(tonlib, query);
+      // {"@type":"blocks.lookupBlock","mode":1,"id":{"@type":"ton.blockId","workchain":-1,"shard":-9223372036854775808,"seqno":42555714},"lt":0,"utime":0,"@extra":"94e27988-cf7a-4205-9f89-35dab8037c16"}
       TimeUnit.MILLISECONDS.sleep(200);
       response = receive();
-      Utils.enableNativeOutput();
+      Utils.enableNativeOutput(verbosityLevel.ordinal());
       int retry = 0;
       outterloop:
       do {
@@ -462,9 +441,9 @@ public class Tonlib {
 
               reinitTonlibConfig(globalConfigCurrent);
               // repeat request
-              Utils.disableNativeOutput();
+              Utils.disableNativeOutput(verbosityLevel.ordinal());
               tonlibJson.tonlib_client_json_send(tonlib, query);
-              Utils.enableNativeOutput();
+              Utils.enableNativeOutput(verbosityLevel.ordinal());
             }
           } else if (response.contains("\"@type\":\"ok\"")) {
             String queryExtraId = StringUtils.substringBetween(query, "@extra\":\"", "\"}");
@@ -479,10 +458,10 @@ public class Tonlib {
           if (response.contains(" : duplicate message\"")) {
             break outterloop;
           }
-          Utils.disableNativeOutput();
+          Utils.disableNativeOutput(verbosityLevel.ordinal());
           TimeUnit.MILLISECONDS.sleep(200);
           response = receive();
-          Utils.enableNativeOutput();
+          Utils.enableNativeOutput(verbosityLevel.ordinal());
           UpdateSyncState sync = gson.fromJson(response, UpdateSyncState.class);
           if (nonNull(sync)
               && nonNull(sync.getSync_state())
@@ -517,9 +496,9 @@ public class Tonlib {
                     + " times was not able retrieve result from lite-server.");
           }
 
-          Utils.disableNativeOutput();
+          Utils.disableNativeOutput(verbosityLevel.ordinal());
           tonlibJson.tonlib_client_json_send(tonlib, query);
-          Utils.enableNativeOutput();
+          Utils.enableNativeOutput(verbosityLevel.ordinal());
         }
       } while (response.contains("error") || response.contains("syncStateInProgress"));
 
@@ -1593,9 +1572,9 @@ public class Tonlib {
             .try_decode_message(false)
             .build();
 
-    Utils.disableNativeOutput();
+    Utils.disableNativeOutput(verbosityLevel.ordinal());
     String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
-    Utils.enableNativeOutput();
+    Utils.enableNativeOutput(verbosityLevel.ordinal());
     RawTransactions res = gson.fromJson(result, RawTransactions.class);
     List<RawTransaction> t = res.getTransactions();
     if (t.size() >= 1) {

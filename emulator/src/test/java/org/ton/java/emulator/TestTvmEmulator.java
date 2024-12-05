@@ -10,7 +10,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,12 +26,15 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.emulator.tvm.*;
+import org.ton.java.fift.FiftRunner;
+import org.ton.java.func.FuncRunner;
 import org.ton.java.smartcontract.SmartContractCompiler;
 import org.ton.java.smartcontract.types.NewPlugin;
 import org.ton.java.smartcontract.types.WalletV4R2Config;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.tlb.types.*;
+import org.ton.java.tolk.TolkRunner;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.BlockIdExt;
 import org.ton.java.tonlib.types.SmcLibraryEntry;
@@ -49,6 +51,17 @@ public class TestTvmEmulator {
       new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
   static WalletV4R2 walletV4R2;
 
+  static String emulatorPath =
+      System.getProperty("user.dir") + "/../2.ton-test-artifacts/emulator.dll";
+
+  static String tonlibPath =
+      System.getProperty("user.dir") + "/../2.ton-test-artifacts/tonlibjson.dll";
+
+  static String funcPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/func.exe";
+
+  static String fiftPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/fift.exe";
+  static String tolkPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/tolk.exe";
+
   @BeforeClass
   public static void setUpBeforeClass() {
     byte[] secretKey =
@@ -57,7 +70,8 @@ public class TestTvmEmulator {
 
     log.info("pubKey {}", Utils.bytesToHex(keyPair.getPublicKey()));
     log.info("prvKey {}", Utils.bytesToHex(keyPair.getSecretKey()));
-    tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    tonlib =
+        Tonlib.builder().testnet(true).pathToTonlibSharedLib(tonlibPath).ignoreCache(false).build();
 
     walletV4R2 = WalletV4R2.builder().tonlib(tonlib).keyPair(keyPair).walletId(42).build();
 
@@ -74,6 +88,7 @@ public class TestTvmEmulator {
 
     tvmEmulator =
         TvmEmulator.builder()
+            .pathToEmulatorSharedLib(emulatorPath)
             .codeBoc(code.toBase64())
             .dataBoc(data.toBase64())
             .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
@@ -83,9 +98,7 @@ public class TestTvmEmulator {
 
   @Test
   public void testInitTvmEmulator() {
-    //    TvmEmulatorI tvmEmulatorI = Native.load("emulator.dll", TvmEmulatorI.class);
-    TvmEmulatorI tvmEmulatorI =
-        Native.load(Utils.detectAbsolutePath("emulator", true), TvmEmulatorI.class);
+    TvmEmulatorI tvmEmulatorI = Native.load(emulatorPath, TvmEmulatorI.class);
     long emulator =
         tvmEmulatorI.tvm_emulator_create(
             walletV4R2.getStateInit().getCode().toBase64(),
@@ -336,11 +349,14 @@ public class TestTvmEmulator {
   }
 
   @Test
-  public void testTvmEmulatorSendExternalMessageCustom() throws IOException {
+  public void testTvmEmulatorSendExternalMessageCustom() {
 
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
             .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
+            .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
+            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
     String codeCellHex = smcFunc.compile();
@@ -635,10 +651,13 @@ public class TestTvmEmulator {
   }
 
   @Test
-  public void testTvmEmulatorSendInternalMessageCustomContract() throws IOException {
+  public void testTvmEmulatorSendInternalMessageCustomContract() {
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
             .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
+            .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
+            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
     String codeCellHex = smcFunc.compile();

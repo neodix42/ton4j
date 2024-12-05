@@ -1,8 +1,8 @@
 package org.ton.java.tlb.types;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
-import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -10,17 +10,13 @@ import org.ton.java.cell.CellSlice;
 @Builder
 @Data
 public class ConfigParams0 {
-    Address configAddr;
+  BigInteger configAddr;
 
-    public Cell toCell() {
-        return CellBuilder.beginCell()
-                .storeAddress(configAddr)
-                .endCell();
-    }
+  public Cell toCell() {
+    return CellBuilder.beginCell().storeUint(configAddr, 256).endCell();
+  }
 
-    public static ConfigParams0 deserialize(CellSlice cs) {
-        return ConfigParams0.builder()
-                .configAddr(Address.of(cs.loadBits(256).toByteArray())) // bounceable and workchain -1
-                .build();
-    }
+  public static ConfigParams0 deserialize(CellSlice cs) {
+    return ConfigParams0.builder().configAddr(cs.loadUint(256)).build();
+  }
 }

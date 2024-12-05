@@ -1,5 +1,6 @@
 package org.ton.java.tlb.types;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -7,10 +8,8 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
-import java.math.BigInteger;
-
 /**
- * <pre>
+ * <pre>{@code
  * validators_ext#12
  *   utime_since:uint32
  *   utime_until:uint32
@@ -18,6 +17,7 @@ import java.math.BigInteger;
  *   main:(## 16) { main <= total } { main >= 1 }
  *   total_weight:uint64
  *   list:(HashmapE 16 ValidatorDescr) = ValidatorSet;
+ *   }
  *   </pre>
  */
 @Builder
