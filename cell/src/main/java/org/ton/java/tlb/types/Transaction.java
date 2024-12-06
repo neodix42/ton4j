@@ -11,7 +11,6 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
-import org.ton.java.utils.Utils;
 
 /**
  *
@@ -53,7 +52,7 @@ public class Transaction {
   HashUpdate stateUpdate;
   TransactionDescription description;
 
-  String hash; // not in tl-b scheme. equals to in_msg.hash in base64 - TODO testing
+  String hash; // not used
 
   private String getMagic() {
     return Long.toBinaryString(magic);
@@ -128,9 +127,9 @@ public class Transaction {
     tx.setTotalFees(CurrencyCollection.deserialize(cs));
     tx.setStateUpdate(HashUpdate.deserialize(CellSlice.beginParse(cs.loadRef())));
     tx.setDescription(TransactionDescription.deserialize(CellSlice.beginParse(cs.loadRef())));
-    if (nonNull(msg)) {
-      tx.setHash(Utils.bytesToBase64(msg.toCell().getHash()));
-    }
+    //    if (nonNull(msg)) {
+    //      tx.setHash(Utils.bytesToBase64(msg.toCell().getHash()));
+    //    }
     return tx;
   }
 
