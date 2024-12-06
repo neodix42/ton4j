@@ -26,12 +26,24 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 
 ## Usage
 
+Notice, if you installed TON binaries using [package managers](https://github.com/ton-blockchain/packages) like brew,
+apt or chocolatey you can omit specifying path to a fift executable and simply use it as follows:
+
+```java
+FiftRunner fiftRunne=FiftRunner.builder().build();
+```
+
 ```java
 URL resource=TestFiftRunner.class.getResource("/test.fift");
         File fiftFile=Paths.get(resource.toURI()).toFile();
         String absolutePath=fiftFile.getAbsolutePath();
 
-        FiftRunner fiftRunner=FiftRunner.builder().build();
+        FiftRunner fiftRunner=
+        FiftRunner.builder()
+        .fiftExecutablePath(fiftPath)
+        //            .fiftAsmLibraryPath(libPath)
+        //            .fiftSmartcontLibraryPath(smartcontPath)
+        .build();
 
         String result=fiftRunner.run(fiftFile.getParent(),"-s",absolutePath);
         log.info("output: {}",result);

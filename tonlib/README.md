@@ -34,6 +34,15 @@ You can get the latest tonlib library by:
 
 ## Constructor, getLast, lookupBlock, getBlockHeader, getShards
 
+Notice, if you installed TON binaries using [package managers](https://github.com/ton-blockchain/packages) like brew,
+apt or chocolatey you can omit specifying path to a tonlib library and simply use it as follows:
+
+```java
+Tonlib tonlib=Tonlib.builder()
+        .testnet(true)
+        .build();
+```
+
 ```java
 // builder
 Tonlib tonlib=Tonlib.builder()

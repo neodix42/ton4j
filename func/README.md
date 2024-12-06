@@ -26,12 +26,19 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 
 ## Usage
 
+Notice, if you installed TON binaries using [package managers](https://github.com/ton-blockchain/packages) like brew,
+apt or chocolatey you can omit specifying path to a func executable and simply use it as follows:
+
 ```java
-URL resource=TestFuncRunner.class.getResource("/test.fc");
+FuncRunner funcRunner=FuncRunner.builder().build();
+```
+
+```java
+        URL resource=TestFuncRunner.class.getResource("/test.fc");
         File funcFile=Paths.get(resource.toURI()).toFile();
         String absolutePath=funcFile.getAbsolutePath();
 
-        FuncRunner funcRunner=FuncRunner.builder().build();
+        FuncRunner funcRunner=FuncRunner.builder().funcExecutablePath(resourcePath).build();
 
         String result=funcRunner.run(funcFile.getParent(),"-PA",absolutePath);
         log.info("output: {}",result);

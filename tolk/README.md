@@ -26,12 +26,19 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 
 ## Usage
 
+Notice, if you installed TON binaries using [package managers](https://github.com/ton-blockchain/packages) like brew,
+apt or chocolatey you can omit specifying path to a func executable and simply use it as follows:
+
+```java
+TolkRunner tolkRunner=TolkRunner.builder().build();
+```
+
 ```java
 URL resource=TestTolkRunner.class.getResource("/test.tolk");
         File tolkFile=Paths.get(resource.toURI()).toFile();
         String absolutePath=tolkFile.getAbsolutePath();
 
-        TolkRunner tolkRunner=TolkRunner.builder().build();
+        TolkRunner tolkRunner=TolkRunner.builder().tolkExecutablePath(tolkPath).build();
 
         String result=tolkRunner.run(tolkFile.getParent(),absolutePath);
         log.info("output: {}",result);

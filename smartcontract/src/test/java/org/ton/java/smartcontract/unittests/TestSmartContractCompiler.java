@@ -6,9 +6,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.fift.FiftRunner;
+import org.ton.java.func.FuncRunner;
 import org.ton.java.smartcontract.GenericSmartContract;
 import org.ton.java.smartcontract.SmartContractCompiler;
-import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tolk.TolkRunner;
 import org.ton.java.utils.Utils;
 
 @Slf4j
@@ -19,11 +21,19 @@ public class TestSmartContractCompiler {
    * href="https://github.com/ton-blockchain/packages">packages</a> for instructions. Example is
    * based on new-wallet-v4r2.fc smart contract. You can specify path to any smart contract.
    */
+  static String funcPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/func.exe";
+
+  static String fiftPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/fift.exe";
+  static String tolkPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/tolk.exe";
+
   @Test
   public void testSmartContractCompiler() {
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
             .contractAsResource("contracts/wallets/new-wallet-v4r2.fc")
+            .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
+            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
     String codeCellHex = smcFunc.compile();
@@ -42,15 +52,8 @@ public class TestSmartContractCompiler {
     log.info("codeCellHex {}", codeCellHex);
     log.info("dataCellHex {}", dataCellHex);
 
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
-
     GenericSmartContract smc =
-        GenericSmartContract.builder()
-            .tonlib(tonlib)
-            .keyPair(keyPair)
-            .code(codeCellHex)
-            .data(dataCellHex)
-            .build();
+        GenericSmartContract.builder().keyPair(keyPair).code(codeCellHex).data(dataCellHex).build();
 
     String nonBounceableAddress = smc.getAddress().toNonBounceable();
     String bounceableAddress = smc.getAddress().toBounceable();
@@ -80,6 +83,9 @@ public class TestSmartContractCompiler {
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
             .contractAsResource("contracts/wallets/new-wallet-v5.fc")
+            .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
+            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
     String codeCellHex = smcFunc.compile();
@@ -91,7 +97,10 @@ public class TestSmartContractCompiler {
   public void testLibraryDeployerCompiler() {
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            .contractAsResource("contracts/wallets/library-deployer.fc")
+            .contractPath("G:/smartcontracts/nlibrary-deployer.fc")
+            .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
+            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
     String codeCellHex = smcFunc.compile();
@@ -105,6 +114,9 @@ public class TestSmartContractCompiler {
         SmartContractCompiler.builder()
             .contractAsResource("simple.fc")
             .printFiftAsmOutput(true)
+            .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
+            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
     smcFunc.compile();
   }
@@ -114,6 +126,9 @@ public class TestSmartContractCompiler {
     SmartContractCompiler smcTolk =
         SmartContractCompiler.builder()
             .contractAsResource("simple.tolk")
+            .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
+            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .printFiftAsmOutput(true)
             .build();
     smcTolk.compile();

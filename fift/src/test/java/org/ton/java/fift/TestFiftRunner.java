@@ -31,8 +31,8 @@ public class TestFiftRunner {
     FiftRunner fiftRunner =
         FiftRunner.builder()
             .fiftExecutablePath(fiftPath)
-            .fiftAsmLibraryPath(libPath)
-            .fiftSmartcontLibraryPath(smartcontPath)
+            //            .fiftAsmLibraryPath(libPath)
+            //            .fiftSmartcontLibraryPath(smartcontPath)
             .build();
 
     String result = fiftRunner.run(fiftFile.getParent(), "-s", absolutePath);
