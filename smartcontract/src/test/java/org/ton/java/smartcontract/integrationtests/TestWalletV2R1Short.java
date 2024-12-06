@@ -13,6 +13,7 @@ import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV2R1Config;
 import org.ton.java.smartcontract.wallet.v2.WalletV2R1;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.RawTransaction;
 import org.ton.java.utils.Utils;
 
 @Slf4j
@@ -40,7 +41,7 @@ public class TestWalletV2R1Short extends CommonTest {
     ExtMessageInfo extMessageInfo = contract.deploy();
     assertThat(extMessageInfo.getError().getCode()).isZero();
 
-    contract.waitForDeployment(20);
+    contract.waitForDeployment();
 
     // transfer coins from new wallet (back to faucet)
     WalletV2R1Config config =
@@ -50,11 +51,11 @@ public class TestWalletV2R1Short extends CommonTest {
             .amount1(Utils.toNano(0.1))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    RawTransaction rawTransaction = contract.sendWithConfirmation(config);
+    assertThat(rawTransaction).isNotNull();
 
     log.info("sending to one destination");
-    contract.waitForBalanceChange(90);
+    contract.waitForBalanceChange();
 
     // multi send
     config =

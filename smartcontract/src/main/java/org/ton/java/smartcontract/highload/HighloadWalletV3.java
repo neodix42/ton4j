@@ -13,14 +13,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.Destination;
-import org.ton.java.smartcontract.types.HighloadV3Config;
-import org.ton.java.smartcontract.types.HighloadV3InternalMessageBody;
-import org.ton.java.smartcontract.types.WalletCodes;
+import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.RawTransaction;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
@@ -180,6 +178,35 @@ public class HighloadWalletV3 implements Contract {
             .build();
 
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+  }
+
+  /**
+   * Sends amount of nano toncoins to destination address and waits till message found among
+   * account's transactions
+   */
+  public RawTransaction sendWithConfirmation(HighloadV3Config highloadConfig) {
+    Address ownAddress = getAddress();
+
+    Cell body = createTransferMessage(highloadConfig);
+
+    Message externalMessage =
+        Message.builder()
+            .info(
+                ExternalMessageInInfo.builder()
+                    .dstAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId(ownAddress.wc)
+                            .address(ownAddress.toBigInteger())
+                            .build())
+                    .build())
+            .body(
+                CellBuilder.beginCell()
+                    .storeBytes(
+                        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                    .storeRef(body)
+                    .endCell())
+            .build();
+    return tonlib.sendRawMessageWithConfirmation(externalMessage.toCell().toBase64(), getAddress());
   }
 
   public ExtMessageInfo deploy(HighloadV3Config highloadConfig) {

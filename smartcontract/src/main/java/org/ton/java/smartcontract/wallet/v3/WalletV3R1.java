@@ -16,6 +16,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.RawTransaction;
 import org.ton.java.utils.Utils;
 
 @Builder
@@ -158,6 +159,15 @@ public class WalletV3R1 implements Contract {
 
   public ExtMessageInfo send(WalletV3Config config) {
     return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
+  }
+
+  /**
+   * Sends amount of nano toncoins to destination address and waits till message found among
+   * account's transactions
+   */
+  public RawTransaction sendWithConfirmation(WalletV3Config config) {
+    return tonlib.sendRawMessageWithConfirmation(
+        prepareExternalMsg(config).toCell().toBase64(), getAddress());
   }
 
   public Message prepareExternalMsg(WalletV3Config config) {

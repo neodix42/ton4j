@@ -12,10 +12,8 @@ import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.*;
+import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.types.Destination;
-import org.ton.java.smartcontract.types.WalletCodes;
-import org.ton.java.smartcontract.types.WalletV5Config;
-import org.ton.java.smartcontract.types.WalletV5InnerRequest;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
@@ -146,6 +144,15 @@ public class WalletV5 implements Contract {
 
   public ExtMessageInfo send(WalletV5Config config) {
     return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
+  }
+
+  /**
+   * Sends amount of nano toncoins to destination address and waits till message found among
+   * account's transactions
+   */
+  public RawTransaction sendWithConfirmation(WalletV5Config config) {
+    return tonlib.sendRawMessageWithConfirmation(
+        prepareExternalMsg(config).toCell().toBase64(), getAddress());
   }
 
   /** Deploy wallet without any extensions. One can be installed later into the wallet. */

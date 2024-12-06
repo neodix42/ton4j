@@ -23,6 +23,7 @@ import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.RawTransaction;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
@@ -304,5 +305,25 @@ public class LockupWalletV1 implements Contract {
             .build();
 
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+  }
+
+  /**
+   * Sends amount of nano toncoins to destination address and waits till message found among
+   * account's transactions
+   */
+  public RawTransaction sendWithConfirmation(LockupWalletV1Config config) {
+    Cell body = createTransferBody(config);
+
+    Message externalMessage =
+        Message.builder()
+            .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+            .body(
+                CellBuilder.beginCell()
+                    .storeBytes(
+                        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                    .storeCell(body)
+                    .endCell())
+            .build();
+    return tonlib.sendRawMessageWithConfirmation(externalMessage.toCell().toBase64(), getAddress());
   }
 }

@@ -1395,6 +1395,46 @@ public class Tonlib {
     }
   }
 
+  /**
+   * Sends raw message, bag of cells encoded in base64, with deliver confirmation. After the message
+   * has been sent to the network this method looks up specified account transactions and returns
+   * true if message was found among them. Timeout 60 seconds.
+   *
+   * @param serializedBoc - base64 encoded BoC
+   * @return RawTransaction in case of success, null if message not found within a timeout and
+   *     throws Error in case of failure.
+   */
+  public RawTransaction sendRawMessageWithConfirmation(String serializedBoc, Address account) {
+    synchronized (gson) {
+      SendRawMessageQuery sendMessageQuery =
+          SendRawMessageQuery.builder().body(serializedBoc).build();
+
+      String result = syncAndRead(gson.toJson(sendMessageQuery));
+
+      if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
+        TonlibError error = gson.fromJson(result, TonlibError.class);
+        throw new Error("Cannot send message. Error " + error.toString());
+      } else {
+        ExtMessageInfo extMessageInfo = gson.fromJson(result, ExtMessageInfo.class);
+        extMessageInfo.setError(TonlibError.builder().code(0).build());
+        log.info("Message has been successfully sent. Waiting for deliver. {}", extMessageInfo);
+        RawTransactions rawTransactions = null;
+        for (int i = 0; i < 12; i++) {
+          rawTransactions = getRawTransactions(account.toRaw(), null, null);
+          for (RawTransaction tx : rawTransactions.getTransactions()) {
+            if (nonNull(tx.getIn_msg())
+                && tx.getIn_msg().getHash().equals(extMessageInfo.getHash())) {
+              log.info("Message has been delivered.");
+              return tx;
+            }
+          }
+          Utils.sleep(5);
+        }
+        return null;
+      }
+    }
+  }
+
   public QueryFees estimateFees(
       String destinationAddress,
       String body,

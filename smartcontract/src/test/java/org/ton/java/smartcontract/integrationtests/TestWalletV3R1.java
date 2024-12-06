@@ -17,6 +17,7 @@ import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.RawTransaction;
 import org.ton.java.utils.Utils;
 
 @Slf4j
@@ -81,6 +82,56 @@ public class TestWalletV3R1 extends CommonTest {
             .build();
 
     extMessageInfo = contract.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForBalanceChange(90);
+
+    balance = contract.getBalance();
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
+  }
+
+  @Test
+  public void testWalletV3R1SendRawMessageWithConfirmation() throws InterruptedException {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    WalletV3R1 contract = WalletV3R1.builder().tonlib(tonlib).keyPair(keyPair).walletId(42).build();
+
+    Message msg =
+        MsgUtils.createExternalMessageWithSignedBody(
+            keyPair,
+            contract.getAddress(),
+            contract.getStateInit(),
+            CellBuilder.beginCell()
+                .storeUint(42, 32) // subwallet
+                .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32) // valid-until
+                .storeUint(0, 32) // seqno
+                .endCell());
+    Address address = msg.getInit().getAddress();
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonlib, Address.of(address.toNonBounceable()), Utils.toNano(1));
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    // deploy new wallet
+    RawTransaction tx = tonlib.sendRawMessageWithConfirmation(msg.toCell().toBase64(), address);
+    log.info("msg found in tx {}", tx);
+    assertThat(tx).isNotNull();
+
+    contract.waitForDeployment(40);
+
+    // try to transfer coins from new wallet (back to faucet)
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .seqno(contract.getSeqno())
+            .walletId(42)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.8))
+            .comment("testWalletV3R1")
+            .build();
+
+    ExtMessageInfo extMessageInfo = contract.send(config);
     assertThat(extMessageInfo.getError().getCode()).isZero();
 
     contract.waitForBalanceChange(90);

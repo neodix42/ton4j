@@ -399,6 +399,15 @@ public class WalletV4R2 implements Contract {
     return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
   }
 
+  /**
+   * Sends amount of nano toncoins to destination address and waits till message found among
+   * account's transactions
+   */
+  public RawTransaction sendWithConfirmation(WalletV4R2Config config) {
+    return tonlib.sendRawMessageWithConfirmation(
+        prepareExternalMsg(config).toCell().toBase64(), getAddress());
+  }
+
   public Message prepareExternalMsg(WalletV4R2Config config) {
     Cell body = createTransferBody(config);
     return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);

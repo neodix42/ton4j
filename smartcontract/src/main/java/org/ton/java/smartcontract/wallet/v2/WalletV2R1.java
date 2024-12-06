@@ -20,6 +20,7 @@ import org.ton.java.tlb.types.InternalMessageInfo;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
+import org.ton.java.tonlib.types.RawTransaction;
 import org.ton.java.utils.Utils;
 
 @Builder
@@ -148,6 +149,15 @@ public class WalletV2R1 implements Contract {
   public ExtMessageInfo send(WalletV2R1Config config) {
 
     return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
+  }
+
+  /**
+   * Sends amount of nano toncoins to destination address and waits till message found among
+   * account's transactions
+   */
+  public RawTransaction sendWithConfirmation(WalletV2R1Config config) {
+    return tonlib.sendRawMessageWithConfirmation(
+        prepareExternalMsg(config).toCell().toBase64(), getAddress());
   }
 
   public Message prepareExternalMsg(WalletV2R1Config config) {
