@@ -1,17 +1,12 @@
 package org.ton.java.tonconnect;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @Builder
-@Setter
-@Getter
-@ToString
+@Data
 public class TonProof {
-    private long timestamp;
-    private Domain domain;
-    private String signature; // Base64UrlSafe
-    private String payload;   // plain
+  private long timestamp;
+  private Domain domain;
+  private String signature; // Base64Url
+  private String payload; // plain
 }

@@ -1,15 +1,10 @@
 package org.ton.java.tonconnect;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @Builder
-@Setter
-@Getter
-@ToString
+@Data
 public class Domain {
-    private int lengthBytes;
-    private String value;
+  private int lengthBytes;
+  private String value;
 }

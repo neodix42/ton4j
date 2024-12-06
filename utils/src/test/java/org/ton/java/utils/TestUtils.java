@@ -1,13 +1,13 @@
 package org.ton.java.utils;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.Assert.assertThrows;
 import static org.ton.java.utils.Utils.getCRC32ChecksumAsLong;
 import static org.ton.java.utils.Utils.int2ip;
 import static org.ton.java.utils.Utils.ip2int;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.junit.Test;
@@ -305,54 +305,89 @@ public class TestUtils {
   }
 
   @Test
-  public void testNano() {
-    BigInteger i1 = Utils.toNano(2);
-    assertThat(i1).isEqualTo(BigInteger.valueOf(2000000000L));
+  public void testToNano() {
+    BigInteger i = Utils.toNano(2);
+    assertThat(i).isEqualTo(BigInteger.valueOf(2000000000L));
 
-    BigInteger i2 = Utils.toNano(2.2);
-    assertThat(i2).isEqualTo(BigInteger.valueOf(2200000000L));
+    i = Utils.toNano(2.2);
+    assertThat(i).isEqualTo(BigInteger.valueOf(2200000000L));
 
-    BigInteger i3 = Utils.toNano(2684354.2684513200);
-    assertThat(i3).isEqualTo(BigInteger.valueOf(2684354268451320L));
+    i = Utils.toNano(2684354.2684513200);
+    assertThat(i).isEqualTo(BigInteger.valueOf(2684354268451320L));
 
-    BigInteger i4 = Utils.toNano(5L * BLN1);
+    i = Utils.toNano(5L * BLN1);
 
-    assertThat(i4).isEqualTo(BigInteger.valueOf(5 * BLN1 * BLN1));
-    assertThat(i4.toString()).isEqualTo("5000000000000000000");
+    assertThat(i).isEqualTo(BigInteger.valueOf(5 * BLN1 * BLN1));
+    assertThat(i.toString()).isEqualTo("5000000000000000000");
 
-    BigInteger i7 = Utils.toNano("2");
-    assertThat(i7).isEqualTo(BigInteger.valueOf(2000000000L));
+    i = Utils.toNano("2");
+    assertThat(i).isEqualTo(BigInteger.valueOf(2000000000L));
 
-    BigInteger i8 = Utils.toNano("2.3");
-    assertThat(i8).isEqualTo(BigInteger.valueOf(2300000000L));
+    i = Utils.toNano("2.3");
+    assertThat(i).isEqualTo(BigInteger.valueOf(2300000000L));
 
-    BigInteger i9 = Utils.toNano("2684354.2684513200");
-    assertThat(i9).isEqualTo(BigInteger.valueOf(2684354268451320L));
+    i = Utils.toNano("2684354.2684513200");
+    assertThat(i).isEqualTo(BigInteger.valueOf(2684354268451320L));
 
-    BigDecimal d1 = Utils.fromNano(2684354268451321234L);
-    assertThat(d1).isEqualTo(new BigDecimal("2684354268.451321234"));
+    i = Utils.toNano("2684354.2684513200", 2);
+    assertThat(i).isEqualTo(BigInteger.valueOf(268435426));
 
-    log.info(Utils.formatNanoValue("2684354268451321234"));
+    i = Utils.toNano(new BigDecimal("2684354.2684513200"), 2);
+    assertThat(i).isEqualTo(BigInteger.valueOf(268435426));
 
-    BigDecimal d2 = Utils.fromNano(968434L);
-    assertThat(d2).isEqualTo(new BigDecimal("0.000968434"));
+    i = Utils.toNano(2684354.2684513200, 2);
+    assertThat(i).isEqualTo(BigInteger.valueOf(268435426));
   }
 
   @Test
-  public void testNanoFail() {
-    assertThrows(
-        Error.class,
-        () -> {
-          BigInteger i5 =
-              Utils.toNano(2684354.26845132123456789); // picks only 9 digits after decimal point
-          assertThat(i5).isEqualTo(BigInteger.valueOf(2684354268451321L));
+  public void testFromNano() {
+    BigDecimal d = Utils.fromNano(2684354268451321234L);
+    assertThat(d).isEqualTo(new BigDecimal("2684354268.451321234"));
 
-          BigInteger i6 =
-              Utils.toNano(
-                  BigDecimal.valueOf(
-                      2684354.26845132123456789)); // picks only 9 digits after decimal point
-          assertThat(i6).isEqualTo(BigInteger.valueOf(2684354268451321L));
-        });
+    d = Utils.fromNano(968434L);
+    assertThat(d).isEqualTo(new BigDecimal("0.000968434"));
+
+    d = Utils.fromNano(2684354268451321234L, 2);
+    assertThat(d).isEqualTo(new BigDecimal("26843542684513212.34"));
+
+    d = Utils.fromNano(2684354268451321234L, 3);
+    assertThat(d).isEqualTo(new BigDecimal("2684354268451321.234"));
+
+    d = Utils.fromNano(2684354268451321234L, 3);
+    assertThat(d).isEqualTo(new BigDecimal("2684354268451321.234"));
+
+    d = Utils.fromNano(new BigInteger("2684354268451321234"), 3);
+    assertThat(d).isEqualTo(new BigDecimal("2684354268451321.234"));
+
+    d = Utils.fromNano(2684354268451321234L, 1);
+    assertThat(d).isEqualTo(new BigDecimal("268435426845132123.4"));
+
+    d = Utils.fromNano("2684354268451321234", 1);
+    assertThat(d).isEqualTo(new BigDecimal("268435426845132123.4"));
+
+    d = Utils.fromNano(new BigDecimal("2684354268451321234"), 1);
+    assertThat(d).isEqualTo(new BigDecimal("268435426845132123.4"));
+
+    log.info(Utils.formatNanoValue("2684354268451321234"));
+    log.info(Utils.formatCoins("2684354268451321234"));
+    log.info(Utils.formatCoins("2684354268451321234", 2));
+    log.info(Utils.formatNanoValue("2684354268451321234", 4));
+    log.info(Utils.formatNanoValue("2684354268451321234", 4, RoundingMode.HALF_UP));
+    log.info(Utils.formatNanoValue("2684354268451391234", 4, RoundingMode.HALF_UP));
+  }
+
+  @Test(expected = java.lang.Error.class)
+  public void testNanoFail() {
+
+    BigInteger i5 =
+        Utils.toNano(2684354.26845132123456789); // picks only 9 digits after decimal point
+    assertThat(i5).isEqualTo(BigInteger.valueOf(2684354268451321L));
+
+    BigInteger i6 =
+        Utils.toNano(
+            BigDecimal.valueOf(
+                2684354.26845132123456789)); // picks only 9 digits after decimal point
+    assertThat(i6).isEqualTo(BigInteger.valueOf(2684354268451321L));
   }
 
   @Test
