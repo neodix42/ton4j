@@ -754,7 +754,7 @@ public class Utils {
 
   public static BigInteger toNano(long toncoins) {
     checkToncoinsOverflow(BigInteger.valueOf(toncoins).multiply(BI_BLN1));
-    return BigInteger.valueOf(toncoins * BLN1);
+    return BigInteger.valueOf(toncoins).multiply(BI_BLN1);
   }
 
   public static BigInteger toNano(String toncoins) {
@@ -773,7 +773,7 @@ public class Utils {
     if (BigDecimal.valueOf(toncoins).scale() > 9) {
       throw new Error("Round the number to 9 decimals first");
     }
-    return BigDecimal.valueOf(toncoins * BLN1).toBigInteger();
+    return BigDecimal.valueOf(toncoins).multiply(BigDecimal.valueOf(BLN1)).toBigInteger();
   }
 
   public static BigInteger toNano(float toncoins) {
@@ -782,7 +782,7 @@ public class Utils {
     if (BigDecimal.valueOf(toncoins).scale() > 9) {
       throw new Error("Round the number to 9 decimals first");
     }
-    return BigDecimal.valueOf(toncoins * BLN1).toBigInteger();
+    return BigDecimal.valueOf(toncoins).multiply(BigDecimal.valueOf(BLN1)).toBigInteger();
   }
 
   public static BigInteger toNano(BigDecimal toncoins) {
