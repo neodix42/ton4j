@@ -9,7 +9,6 @@ def? $1 { @' $1 } { "" } cond constant suffix
 
 wc_master setworkchain
 13 setglobalid   // negative value means a test instance of the blockchain
-0x11EF55AA default-subwallet-id!  // use this subwallet id in user wallets by default
 
 // Initial state of Workchain 0 (Basic workchain)
 
@@ -25,61 +24,9 @@ Bhashu dup =: basestate0_fhash
 hashu dup =: basestate0_rhash
 ."root hash=" dup 64x. space 256 u>B dup B>base64url type cr
 "basestate0" +suffix +".rhash" B>file
-
-// root-hash file-hash start-at actual-min-split min-split-depth max-split-depth wc-id
 basestate0_rhash basestate0_fhash now 0 4 8 0 add-std-workchain
 config.workchains!
 
-/*
- *
- *  Initial wallets (test)
- *
- */
-
-// Stage 1 wallets
-
-PK'Puasxr0QfFZZnYISRphVse7XHKfW7pZU5SJarVHXvQ+rpzkD rwallet-init-pubkey !
--86400 rwallet-start-at +!
-
-{ swap create-wallet3 } : stage1
-{ bl word $>GR bl word parse-pubkey } : parse-amount-pubkey
-{ parse-amount-pubkey stage1 } : StA
-
-// test
-StA 1001 PuZ8WoEOTgSR8-HopmCIVlOVSL94tNn9zgraiJqMk1SnioEQ
-
-// Stage 2 wallets
-
-{ swap create-wallet0 } : stage2
-{ parse-amount-pubkey stage2 } : StB
-
-// test
-StB 999. PubMMGvqM08jx_6BibYldMclwjl-D88r7-u0_IEcDXHA30-G
-
-// Lockdowns
-
-{ swap create-wallet3b } : stage3
-{ parse-amount-pubkey stage3 } : StC
-
-// SmartContract #1 (Advanced wallet)
-
-// Create new advanced wallet; code adapted from `auto/wallet3-code.fif`
-WCode3 // code
-<b 0 32 u, 0 32 u,  // subwallet-id=0
-   "main-wallet" +suffix +".pk" load-generate-keypair drop
-   B, 
-b> // data
-empty_cell // libs
-GR$4999999000 allocated-balance - // balance
-0 // split_depth
-0 // ticktock
-AllOnes 1 * // address
-6 // mode: create+setaddr
-register_smc
-dup make_special dup constant smc1_addr  
-Masterchain over 
-2dup ."main wallet address = " .addr cr 2dup 6 .Addr cr
-"main-wallet" +suffix +".addr" save-address-verbose
 
 /*
  *

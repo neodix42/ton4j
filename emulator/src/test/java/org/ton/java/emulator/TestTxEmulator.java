@@ -497,6 +497,7 @@ public class TestTxEmulator {
             .build();
 
     Cell codeCell = smcFunc.compileToCell();
+    log.info("codeCellHex {}", codeCell.toHex());
 
     byte[] publicKey =
         Utils.hexToSignedBytes("82A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB");

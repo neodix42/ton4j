@@ -14,8 +14,10 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.smartcontract.faucet.TestnetFaucet;
+import org.ton.java.smartcontract.highload.HighloadWallet;
 import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
+import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RawMessage;
 import org.ton.java.tonlib.types.RawTransaction;
@@ -219,5 +221,191 @@ public class TestWalletV3R2Short extends CommonTest {
 
     contract.deploy();
     contract.waitForDeployment(60);
+  }
+
+  @Test
+  public void testWalletV3R2MyLocalTonDockerFaucet() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib("path to libtonlibjson.so/dll/dylib")
+            .pathToGlobalConfig(
+                "<user>/global.config.json") // global config from MyLocalTon
+                                             // (http://127.0.0.1:8000/global.config.json)
+            .ignoreCache(false)
+            .build();
+
+    log.info("last {}", tonlib.getLast());
+
+    byte[] prvKey =
+        Utils.hexToSignedBytes("249489b5c1bfa6f62451be3714679581ee04cc8f82a8e3f74b432a58f3e4fedf");
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(prvKey);
+
+    WalletV3R2 contract =
+        WalletV3R2.builder().tonlib(tonlib).wc(-1).keyPair(keyPair).walletId(42).build();
+    log.info("WalletV3R2 address {}", contract.getAddress().toRaw());
+    assertThat(contract.getAddress().toRaw())
+        .isEqualTo("-1:db7ef76c48e888b7a35d3c88ed61cc33e2ec84b74f0ce2d159e4dd6cd34f406c");
+  }
+
+  @Test
+  public void testWalletV3R2MyLocalTonDockerFaucetHighLoad() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .ignoreCache(false)
+            .build();
+
+    log.info("last {}", tonlib.getLast());
+
+    byte[] prvKey =
+        Utils.hexToSignedBytes("ee26cd8f2709404b63bc172148ec6179bfc7049b1045a22c3ea5446c5d425347");
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(prvKey);
+
+    HighloadWallet contract =
+        HighloadWallet.builder()
+            .tonlib(tonlib)
+            .wc(-1)
+            .keyPair(keyPair)
+            .walletId(42)
+            .queryId(BigInteger.ZERO)
+            .build();
+
+    assertThat(contract.getAddress().toRaw())
+        .isEqualTo("-1:fee48a6002da9ad21c61a6a2e4dd73c005d46101450b52bf47d1ce16cdc8230f");
+  }
+
+  @Test
+  public void testWalletV3R2MyLocalTonDockerValidator1() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .ignoreCache(false)
+            .build();
+
+    log.info("last {}", tonlib.getLast());
+
+    byte[] prvKey =
+        Utils.hexToSignedBytes("001624080b055bf5ea72a252c1acc2c18552df27b4073a412fbde398d8061316");
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(prvKey);
+
+    WalletV3R2 contract =
+        WalletV3R2.builder().tonlib(tonlib).wc(-1).keyPair(keyPair).walletId(42).build();
+    assertThat(contract.getAddress().toRaw())
+        .isEqualTo("-1:0e4160632db47d34bad8a24b55a56f46ca3b6fc84826d90515cd2b6313bd7cf6");
+  }
+
+  @Test
+  public void testWalletV3R2MyLocalTonDockerValidator2() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .ignoreCache(false)
+            .build();
+
+    log.info("last {}", tonlib.getLast());
+
+    byte[] prvKey =
+        Utils.hexToSignedBytes("1da5f8b57104cc6c8af748c0541abc8a735362cd241aa96c201d696623684672");
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(prvKey);
+
+    WalletV3R2 contract =
+        WalletV3R2.builder().tonlib(tonlib).wc(-1).keyPair(keyPair).walletId(42).build();
+    assertThat(contract.getAddress().toRaw())
+        .isEqualTo("-1:ddd8df36e13e3bcec0ffbcfb4de51535d39937311b3c5cad520a0802d3de9b54");
+  }
+
+  @Test
+  public void testWalletV3R2MyLocalTonDockerValidator3() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .ignoreCache(false)
+            .build();
+
+    log.info("last {}", tonlib.getLast());
+
+    byte[] prvKey =
+        Utils.hexToSignedBytes("fe968161dfe5aa6d7a6f8fdd1d43ceeee9395f1ca61bb8224d4f60e48fdc589d");
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(prvKey);
+
+    WalletV3R2 contract =
+        WalletV3R2.builder().tonlib(tonlib).wc(-1).keyPair(keyPair).walletId(42).build();
+    assertThat(contract.getAddress().toRaw())
+        .isEqualTo("-1:1ea99012e00cee2aef95c6ac245ee28894080801e4e5fae2d91363f2ef5a7232");
+  }
+
+  @Test
+  public void testWalletV3R2MyLocalTonDockerValidator4() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .ignoreCache(false)
+            .build();
+
+    log.info("last {}", tonlib.getLast());
+
+    byte[] prvKey =
+        Utils.hexToSignedBytes("49cce23987cacbd05fac13978eff826e9107d694c0040a1e98bca4c2872d80f8");
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(prvKey);
+
+    WalletV3R2 contract =
+        WalletV3R2.builder().tonlib(tonlib).wc(-1).keyPair(keyPair).walletId(42).build();
+    assertThat(contract.getAddress().toRaw())
+        .isEqualTo("-1:c21b6e9f20c35f31a3c46e510daae29261c3127e43aa2c90e5d1463451f623f8");
+  }
+
+  @Test
+  public void testWalletV3R2MyLocalTonDockerValidator5() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .ignoreCache(false)
+            .build();
+
+    log.info("last {}", tonlib.getLast());
+
+    byte[] prvKey =
+        Utils.hexToSignedBytes("b5e0ce4fba8ae2e3f44a393ac380549bfa44c3a5ba33a49171d502f1e4ac6c1d");
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(prvKey);
+
+    WalletV3R2 contract =
+        WalletV3R2.builder().tonlib(tonlib).wc(-1).keyPair(keyPair).walletId(42).build();
+    assertThat(contract.getAddress().toRaw())
+        .isEqualTo("-1:a485d0e84de33e212d66eb025fbbaecbeed9dbad7f78cd8cd2058afe20cebde9");
+  }
+
+  @Test
+  public void testWalletV3R2MyLocalTonDockerGenesis() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .ignoreCache(false)
+            .build();
+
+    log.info("last {}", tonlib.getLast());
+
+    byte[] prvKey =
+        Utils.hexToSignedBytes("5f14ebefc57461002fc07f9438a63ad35ff609759bb0ae334fedabbfb4bfdce8");
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(prvKey);
+
+    WalletV3R2 contract =
+        WalletV3R2.builder().tonlib(tonlib).wc(-1).keyPair(keyPair).walletId(42).build();
+    assertThat(contract.getAddress().toRaw())
+        .isEqualTo("-1:0755526dfc926d1b6d468801099cad2d588f40a6a6088bcd3e059566c0ef907c");
   }
 }
