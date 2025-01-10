@@ -25,6 +25,7 @@
         <module>fift</module>
         <module>func</module>
         <module>tolk</module>
+        <module>disassembler</module>
     </modules>
 
     <properties>
