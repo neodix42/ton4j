@@ -1,4 +1,4 @@
-#pragma version =0.4.4;
+#pragma version >=0.4.4;
 
 #include "stdlib.fc";
 
