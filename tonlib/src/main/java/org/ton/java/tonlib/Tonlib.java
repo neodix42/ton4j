@@ -7,14 +7,18 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.*;
+import java.io.File;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
@@ -88,6 +92,9 @@ public class Tonlib {
   /** Do not use! Reserved for internal usage. */
   private String originalGlobalConfigStr;
 
+  /** Do not use! Reserved for internal usage. */
+  private String downloadedGlobalConfigStr;
+
   /** Default value 5 */
   private int receiveRetryTimes;
 
@@ -129,13 +136,24 @@ public class Tonlib {
           } else {
             super.pathToTonlibSharedLib = Utils.detectAbsolutePath("libtonlibjson", true);
           }
-        }
 
-        if ((nonNull(super.pathToTonlibSharedLib)
-                && (super.pathToTonlibSharedLib.contains("INFO:")))
-            || isNull(super.pathToTonlibSharedLib)) {
-          throw new Error(
-              "tonlibjson shared library not found. Set the absolute path to it using pathToTonlibSharedLib in the Tonlib builder.\nYou can download the latest tonlibjson from the official TON release page https://github.com/ton-blockchain/ton/releases/latest");
+          if ((nonNull(super.pathToTonlibSharedLib)
+                  && (super.pathToTonlibSharedLib.contains("INFO:")))
+              || isNull(super.pathToTonlibSharedLib)) {
+            throw new Error(
+                "tonlibjson shared library not found. Set the absolute path to it using pathToTonlibSharedLib in the Tonlib builder.\nYou can download the latest tonlibjson from the official TON release page https://github.com/ton-blockchain/ton/releases/latest");
+          }
+        } else {
+          if (super.pathToTonlibSharedLib.contains("http")
+              && super.pathToTonlibSharedLib.contains("://")) {
+            File tmpGlobalConfig = new File("downloaded.tonlibjson");
+            if (!tmpGlobalConfig.exists()) {
+              FileUtils.copyURLToFile(new URL(super.pathToTonlibSharedLib), tmpGlobalConfig);
+            } else {
+              log.info("tonlibjson already downloaded");
+            }
+            super.pathToTonlibSharedLib = tmpGlobalConfig.getAbsolutePath();
+          }
         }
 
         if (isNull(super.verbosityLevel)) {
@@ -192,7 +210,18 @@ public class Tonlib {
         } else if (nonNull(super.globalConfig)) {
           super.originalGlobalConfigStr = gson.toJson(super.globalConfig);
         } else {
-          if (Files.exists(Paths.get(super.pathToGlobalConfig))) {
+          if (super.pathToGlobalConfig.contains("http")
+              && super.pathToGlobalConfig.contains("://")) {
+            File tmpGlobalConfig = new File("downloaded.global.config");
+            if (!tmpGlobalConfig.exists()) {
+              FileUtils.copyURLToFile(new URL(super.pathToGlobalConfig), tmpGlobalConfig);
+            } else {
+              log.info("global.config already downloaded");
+            }
+            super.downloadedGlobalConfigStr =
+                FileUtils.readFileToString(tmpGlobalConfig, StandardCharsets.UTF_8);
+            super.originalGlobalConfigStr = super.downloadedGlobalConfigStr;
+          } else if (Files.exists(Paths.get(super.pathToGlobalConfig))) {
             super.originalGlobalConfigStr =
                 new String(Files.readAllBytes(Paths.get(super.pathToGlobalConfig)));
           } else {

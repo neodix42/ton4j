@@ -79,6 +79,47 @@ public class TestTonlibJson {
   }
 
   @Test
+  public void testGlobalConfigDownload() {
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("https://ton-blockchain.github.io/testnet-global.config.json")
+            .ignoreCache(false)
+            .build();
+
+    BlockIdExt block = tonlib.getLast().getLast();
+    log.info("block {}", block);
+  }
+
+  @Test
+  public void testGlobalTonlibDownload() {
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(
+                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/tonlibjson.dll")
+            .testnet(true)
+            .ignoreCache(false)
+            .build();
+
+    BlockIdExt block = tonlib.getLast().getLast();
+    log.info("block {}", block);
+  }
+
+  @Test
+  public void testGlobalTonlibAndConfigDownload() {
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(
+                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/tonlibjson.dll")
+            .pathToGlobalConfig("https://ton-blockchain.github.io/testnet-global.config.json")
+            .ignoreCache(false)
+            .build();
+
+    BlockIdExt block = tonlib.getLast().getLast();
+    log.info("block {}", block);
+  }
+
+  @Test
   public void testInitTonlibJson() throws IOException {
 
     TonlibJsonI tonlibJson = Native.load(tonlibPath, TonlibJsonI.class);
@@ -869,6 +910,7 @@ public class TestTonlibJson {
   public void testTonlibRunMethodParticipantsListInThePast() {
     Tonlib tonlib =
         Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
             .pathToGlobalConfig("g:/libs/global-config-archive.json")
             .receiveTimeout(5)
             .ignoreCache(false)
@@ -903,6 +945,7 @@ public class TestTonlibJson {
   public void testTonlibRunMethodActiveElectionIdAtSeqno() {
     Tonlib tonlib =
         Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
             .pathToGlobalConfig("g:/libs/global-config-archive.json")
             .receiveTimeout(5)
             .ignoreCache(false)

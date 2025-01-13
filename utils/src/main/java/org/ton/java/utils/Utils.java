@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -1255,5 +1256,9 @@ public class Utils {
     } catch (Exception e) {
       throw new Error("Cannot get absolute directory of resource " + resource);
     }
+  }
+
+  public static long now() {
+    return Instant.now().getEpochSecond();
   }
 }
