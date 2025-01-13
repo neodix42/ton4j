@@ -11,24 +11,24 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>disassembler</artifactId>
-    <version>1.0.0</version>
+    <version>0.8.2</version>
 </dependency>
 ```
 
 ## Usage
 
 ```java
-Tonlib tonlib = Tonlib.builder()
+Tonlib tonlib=Tonlib.builder()
         .testnet(false)
         .ignoreCache(false)
         .build();
 
-Address address = Address.of(addr);
-FullAccountState accountState = this.tonlib.getAccountState(this.address);
+        Address address=Address.of(addr);
+        FullAccountState accountState=this.tonlib.getAccountState(address);
 
-byte[] accountStateCode = Utils.base64ToBytes(this.accountState.getAccount_state().getCode());
+        byte[]accountStateCode=Utils.base64ToBytes(accountState.getAccount_state().getCode());
 
-String disassembledInstruction = Disassembler.fromBoc(this.accountStateCode);
+        String disassembledInstruction=Disassembler.fromBoc(accountStateCode);
 ```
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/disassembler?color=red

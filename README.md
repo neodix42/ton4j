@@ -54,6 +54,7 @@ You can use each submodule individually. Click the module below to get more deta
 * [Func](func/README.md) - wrapper for using with external precompiled func binary.
 * [Tolk](tolk/README.md) - wrapper for using with external precompiled tolk binary.
 * [TonConnect](tonconnect/README.md) - implementation of Ton Connect standard.
+* [Disassembler](disassembler/README.md) - implementation of Ton Connect standard.
 * [Utils](utils/README.md) - create private and public keys, convert data, etc.
 
 ### Features
@@ -79,13 +80,6 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ Wallets - Simple (V1), V2, V3, V4 (plugins), V5, Lockup, Highload/Highload-V3, DNS, Jetton, StableCoin, NFT,
   Payment-channels, Multisig V1
 * ✅ HashMap, HashMapE, PfxHashMap, PfxHashMapE, HashMapAug, HashMapAugE serialization / deserialization
-
-## Support ton4j development
-
-If you want to speed up ton4j development and thus change its priority in my backlog, you are welcome to donate some
-toncoins:
-
-```UQBguBMWc_wUA8pJjC-A9JbTJFzb7lbFbbkiFYajA33-U9YU```
 
 ## Star History
 
