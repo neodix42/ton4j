@@ -1,0 +1,11 @@
+"Asm.fif" include
+// automatically generated from `D:\release-v1\ton-disassembler4j\src\test\resources\test.fc` 
+PROGRAM{
+  DECLPROC main
+  83229 DECLMETHOD owner
+  main PROC:<{
+  }>
+  owner PROC:<{
+  }>
+}END>c
+2 boc+>B dup Bx.

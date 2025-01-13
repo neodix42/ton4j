@@ -1,0 +1,112 @@
+SETCP0
+(:methods
+  recv_internal:
+    0 PUSHINT
+    s2 PUSH
+    CTOS
+    s3 POP
+    s2 PUSH
+    3 PUSHINT
+    SDSKIPFIRST
+    1 PLDU
+    s2 PUSH
+    SEMPTY
+    <{
+      s0 PUSH
+      0 EQINT
+      <{
+        s2 PUSH
+        853192861 PUSHINT
+        1 JMP
+        6 BLKDROP
+        RET
+      }> PUSHCONT
+      IFJMP
+      6 BLKDROP
+      RET
+    }> PUSHCONT
+    IFJMP
+    s2 PUSH
+    32 LDU
+    s4 POP
+    s1 PUSH
+    1 EQINT
+    <{
+      s0 PUSH
+      7 PUSHINT
+      1 JMP
+      7 BLKDROP
+      RET
+    }> PUSHCONT
+    IFJMP
+    s3 PUSH
+    s1 PUSH
+    1 JMP
+    7 BLKDROP
+
+  775908857:
+
+  825700012:
+
+  853192861:
+    0 PUSHINT
+    c4 PUSH
+    CTOS
+    s0 PUSH
+    LDDICT
+    s2 POP
+    s2 POP
+    s0 PUSH
+    129 LDSLICE
+    s2 POP
+    c7 PUSH
+    s2 PUSH
+    TPUSH
+    s3 PUSH
+    TPUSH
+    s1 PUSH
+    TPUSH
+    s0 PUSH
+    c7 POP
+    4 BLKDROP
+    s0 POP
+    NEWC
+    c7 PUSH
+    2 INDEX
+    s0 s1 XCHG
+    STDICT
+    c7 PUSH
+    3 INDEX
+    STSLICER
+    c7 PUSH
+    1 INDEX
+    STSLICER
+    s0 PUSH
+    ENDC
+    c4 POP
+    s0 POP
+    0 PUSHINT
+    ONLYTOPX
+    RET
+
+  1347199168:
+
+  recv_external:
+) 32 DICTPUSHCONST
+s2 PUSH
+1 EQINT
+<{
+  DICTIGETJMP
+}> PUSHCONT
+IFNOTJMP
+PUSHREFCONT
+c3 POP
+ROT
+s0 POP
+DICTUGETJMP
+(:methods
+  7:
+    s0 POP
+    RET
+) 32 DICTPUSHCONST
+DICTUGETJMP

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.neodix42</groupId>
+    <artifactId>top</artifactId>
+    <version>0.8.2</version>
+  </parent>
+
+  <artifactId>disassembler</artifactId>
+  <name>TON Java Boc Disassembler</name>
+
+  <url>https://github.com/neodiX42/ton4j</url>
+
+  <properties>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <surefire.plugin.version>3.0.0-M7</surefire.plugin.version>
+    <maven.compiler.plugin>3.10.1</maven.compiler.plugin>
+    <maven.source.plugin>2.2.1</maven.source.plugin>
+    <maven.javadoc.plugin>3.4.1</maven.javadoc.plugin>
+    <maven.gpg.plugin>1.5</maven.gpg.plugin>
+    <central.publishing.maven.plugin>0.6.0</central.publishing.maven.plugin>
+    <nexus.staging.plugin>1.6.7</nexus.staging.plugin>
+  </properties>
+
+  <developers>
+    <developer>
+      <name>h6x0r</name>
+      <email>inteldom5@gmail.com</email>
+    </developer>
+    <developer>
+      <name>neodiX</name>
+      <email>neodiX@ton.org</email>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git://github.com/neodiX42/ton4j.git</connection>
+    <developerConnection>scm:git:ssh://github.com/neodiX42/ton4j.git</developerConnection>
+    <url>https://github.com/neodiX42/ton4j/tree/main</url>
+  </scm>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.github.neodix42</groupId>
+      <artifactId>smartcontract</artifactId>
+      <version>${project.parent.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.9.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.9.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>5.3.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>5.3.1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>
