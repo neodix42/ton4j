@@ -129,6 +129,7 @@
             <groupId>io.github.h6x0r</groupId>
             <artifactId>tonapi4j</artifactId>
             <version>1.0.5</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
