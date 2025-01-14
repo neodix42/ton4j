@@ -12,10 +12,7 @@ import org.ton.java.address.Address;
 import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.AccountAddressOnly;
-import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.FullAccountState;
-import org.ton.java.tonlib.types.VerbosityLevel;
+import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 @Slf4j
@@ -33,8 +30,8 @@ public class TestFaucet {
   @Test
   public void testFaucetBalance() {
     Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
-    FullAccountState state =
-        tonlib.getAccountState(
+    RawAccountState state =
+        tonlib.getRawAccountState(
             AccountAddressOnly.builder().account_address(FAUCET_ADDRESS_RAW).build());
     log.info("account {}", state);
     log.info("TEST FAUCET BALANCE {}", Utils.formatNanoValue(state.getBalance(), 2));

@@ -103,7 +103,12 @@ public class WalletV3R1 implements Contract {
                             .workchainId(config.getDestination().wc)
                             .address(config.getDestination().toBigInteger())
                             .build())
-                    .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                    .value(
+                        CurrencyCollection.builder()
+                            .coins(config.getAmount())
+                            .extraCurrencies(
+                                convertExtraCurrenciesToHashMap(config.getExtraCurrencies()))
+                            .build())
                     .build())
             .init(config.getStateInit())
             .body(

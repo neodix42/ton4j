@@ -53,6 +53,8 @@ public class TvmEmulator {
         } else {
           super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("libemulator", true);
         }
+      } else {
+        super.pathToEmulatorSharedLib = Utils.download(super.pathToEmulatorSharedLib);
       }
 
       if (isNull(super.printEmulatorInfo)) {

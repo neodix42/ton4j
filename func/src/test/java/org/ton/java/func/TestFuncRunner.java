@@ -30,4 +30,21 @@ public class TestFuncRunner {
     String result = funcRunner.run(funcFile.getParent(), "-PA", absolutePath);
     log.info("output: {}", result);
   }
+
+  @Test
+  public void testFuncRunnerDownload() throws URISyntaxException {
+
+    URL resource = TestFuncRunner.class.getResource("/test.fc");
+    File funcFile = Paths.get(resource.toURI()).toFile();
+    String absolutePath = funcFile.getAbsolutePath();
+
+    FuncRunner funcRunner =
+        FuncRunner.builder()
+            .funcExecutablePath(
+                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/func.exe")
+            .build();
+
+    String result = funcRunner.run(funcFile.getParent(), "-PA", absolutePath);
+    log.info("output: {}", result);
+  }
 }

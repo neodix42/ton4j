@@ -140,6 +140,18 @@ public class TestTxEmulator {
   }
 
   @Test
+  public void testTxEmulatorDownload() {
+    TxEmulator txEmulator =
+        TxEmulator.builder()
+            .pathToEmulatorSharedLib(
+                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/libemulator.dll")
+            .configType(TxEmulatorConfig.TESTNET)
+            .verbosityLevel(TxVerbosityLevel.TRUNCATED)
+            .build();
+    txEmulator.setVerbosityLevel(4);
+  }
+
+  @Test
   public void testSetDebugEnabled() {
     assertTrue(txEmulator.setDebugEnabled(false));
   }
@@ -553,7 +565,9 @@ public class TestTxEmulator {
   @Test
   public void testTxEmulatorWalletV5InternalMsg() {
 
-    String contractAbsolutePath = "G:/smartcontracts/contracts/wallets/new-wallet-v5.fc";
+    String contractAbsolutePath =
+        System.getProperty("user.dir")
+            + "/../smartcontract/src/test/resources/contracts/wallets/new-wallet-v5.fc";
 
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()

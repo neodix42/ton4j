@@ -254,9 +254,14 @@ public class TestHighloadWalletV3 extends CommonTest {
                 contract.createSingleTransfer(
                     destAddress,
                     Utils.toNano(0.02),
+                    //                    Collections.singletonList(
+                    //                        ExtraCurrency.builder()
+                    //                            .id(100)
+                    //                            .amount(BigInteger.valueOf(600000000))
+                    //                            .build()),
                     true,
                     null,
-                    //                        MsgUtils.createTextMessageBody("ton4j")
+                    // MsgUtils.createTextMessageBody("ton4j")
                     CellBuilder.beginCell().endCell()))
             .build();
 

@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -1260,5 +1262,34 @@ public class Utils {
 
   public static long now() {
     return Instant.now().getEpochSecond();
+  }
+
+  /**
+   * download file at address, if address is not a http link returns the address
+   *
+   * @param linkToFile String
+   * @return absolute path to downloaded file or linkToFile if it is not a http url.
+   */
+  public static String download(String linkToFile) {
+    if (linkToFile.contains("http") && linkToFile.contains("://")) {
+      try {
+        URL url = new URL(linkToFile);
+        String filename = FilenameUtils.getName(url.getPath());
+
+        File tmpFile = new File(filename);
+        if (!tmpFile.exists()) {
+          FileUtils.copyURLToFile(url, tmpFile);
+        } else {
+          log.info("{} already downloaded", filename);
+        }
+        return tmpFile.getAbsolutePath();
+
+      } catch (Exception e) {
+        log.error(e.getMessage());
+        throw new Error("Cannot download file. Error " + e.getMessage());
+      }
+    } else {
+      return linkToFile;
+    }
   }
 }

@@ -93,7 +93,12 @@ public class WalletV1R2 implements Contract {
                             .workchainId(config.getDestination().wc)
                             .address(config.getDestination().toBigInteger())
                             .build())
-                    .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                    .value(
+                        CurrencyCollection.builder()
+                            .coins(config.getAmount())
+                            .extraCurrencies(
+                                convertExtraCurrenciesToHashMap(config.getExtraCurrencies()))
+                            .build())
                     .build())
             .body(
                 (isNull(config.getBody()) && nonNull(config.getComment()))
@@ -170,7 +175,12 @@ public class WalletV1R2 implements Contract {
             InternalMessageInfo.builder()
                 .srcAddr(getAddressIntStd())
                 .dstAddr(getAddressIntStd())
-                .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                .value(
+                    CurrencyCollection.builder()
+                        .coins(config.getAmount())
+                        .extraCurrencies(
+                            convertExtraCurrenciesToHashMap(config.getExtraCurrencies()))
+                        .build())
                 .build())
         .body(body)
         .build();

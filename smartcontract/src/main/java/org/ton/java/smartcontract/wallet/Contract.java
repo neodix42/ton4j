@@ -1,16 +1,20 @@
 package org.ton.java.smartcontract.wallet;
 
+import static java.util.Objects.isNull;
+
 import java.math.BigInteger;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.types.WalletConfig;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R1;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tlb.types.MsgAddressIntStd;
 import org.ton.java.tlb.types.StateInit;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.tonlib.types.ExtraCurrency;
 import org.ton.java.tonlib.types.RawTransaction;
 import org.ton.java.utils.Utils;
 
@@ -119,7 +123,7 @@ public interface Contract {
 
   /** Checks every 2 seconds for 60 if account balance was changed */
   default void waitForBalanceChange() {
-    waitForDeployment(60);
+    waitForBalanceChange(60);
   }
 
   /** Checks every 2 seconds for timeoutSeconds if account balance was changed */
@@ -145,7 +149,7 @@ public interface Contract {
   }
 
   default BigInteger getBalance() {
-    return new BigInteger(getTonlib().getAccountState(getAddress()).getBalance());
+    return new BigInteger(getTonlib().getRawAccountState(getAddress()).getBalance());
   }
 
   default List<RawTransaction> getTransactions(int historyLimit) {
@@ -189,5 +193,18 @@ public interface Contract {
       default:
         throw new Error("Unknown wallet version");
     }
+  }
+
+  default TonHashMapE convertExtraCurrenciesToHashMap(List<ExtraCurrency> extraCurrencies) {
+
+    if (isNull(extraCurrencies)) {
+      return null;
+    }
+    TonHashMapE x = new TonHashMapE(32);
+
+    for (ExtraCurrency ec : extraCurrencies) {
+      x.elements.put(ec.getId(), ec.getAmount());
+    }
+    return x;
   }
 }

@@ -404,6 +404,39 @@ public class MultiSigWallet implements Contract {
   }
 
   /**
+   * @param destination address
+   * @param amount values in nano-tons
+   * @param extraCurrencies value with extra-currencies
+   * @param mode send mode
+   * @return Cell
+   */
+  public static Cell createOneInternalMsg(
+      Address destination, BigInteger amount, List<ExtraCurrency> extraCurrencies, int mode) {
+    Message internalMessage =
+        Message.builder()
+            .info(
+                InternalMessageInfo.builder()
+                    .dstAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId(destination.wc)
+                            .address(destination.toBigInteger())
+                            .build())
+                    .value(
+                        CurrencyCollection.builder()
+                            .coins(amount)
+                            .extraCurrencies(convertExtraCurrenciesToMap(extraCurrencies))
+                            .build())
+                    .build())
+            .build();
+
+    CellBuilder p = CellBuilder.beginCell();
+    p.storeUint(mode, 8);
+    p.storeRef(internalMessage.toCell());
+
+    return p.endCell();
+  }
+
+  /**
    * @param internalMsgs List of Cells, where Cell is internal msg, defining target destinations
    *     with amounts
    * @return Cell Order
@@ -748,5 +781,18 @@ public class MultiSigWallet implements Contract {
     }
     TvmStackEntryNumber cnt = (TvmStackEntryNumber) result.getStack().get(0);
     return cnt.getNumber().longValue();
+  }
+
+  private static TonHashMapE convertExtraCurrenciesToMap(List<ExtraCurrency> extraCurrencies) {
+
+    if (isNull(extraCurrencies)) {
+      return null;
+    }
+    TonHashMapE x = new TonHashMapE(32);
+
+    for (ExtraCurrency ec : extraCurrencies) {
+      x.elements.put(ec.getId(), ec.getAmount());
+    }
+    return x;
   }
 }

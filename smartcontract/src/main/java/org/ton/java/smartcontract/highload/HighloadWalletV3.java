@@ -14,13 +14,11 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.types.*;
+import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.RawTransaction;
-import org.ton.java.tonlib.types.RunResult;
-import org.ton.java.tonlib.types.TvmStackEntryNumber;
+import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 @Builder
@@ -283,6 +281,41 @@ public class HighloadWalletV3 implements Contract {
         .toCell();
   }
 
+  public Cell createSingleTransfer(
+      Address destAddress,
+      BigInteger amount,
+      List<ExtraCurrency> extraCurrencies,
+      Boolean bounce,
+      StateInit stateInit,
+      Cell body) {
+
+    return MessageRelaxed.builder()
+        .info(
+            InternalMessageInfoRelaxed.builder()
+                .bounce(bounce)
+                .srcAddr(MsgAddressExtNone.builder().build())
+                .dstAddr(
+                    MsgAddressIntStd.builder()
+                        .workchainId(destAddress.wc)
+                        .address(destAddress.toBigInteger())
+                        .build())
+                .value(
+                    CurrencyCollection.builder()
+                        .coins(amount)
+                        .extraCurrencies(convertExtraCurrenciesToHashMap(extraCurrencies))
+                        .build())
+                .build())
+        .init(stateInit)
+        .body(
+            CellBuilder.beginCell()
+                .storeBytes(
+                    Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                .storeRef(body)
+                .endCell())
+        .build()
+        .toCell();
+  }
+
   public Cell createBulkTransfer(BigInteger totalAmount, Cell bulkMessages) {
     Address ownAddress = getAddress();
     return MessageRelaxed.builder()
@@ -424,7 +457,12 @@ public class HighloadWalletV3 implements Contract {
                                   .address(dstAddress.toBigInteger())
                                   .build())
                           .value(
-                              CurrencyCollection.builder().coins(destination.getAmount()).build())
+                              CurrencyCollection.builder()
+                                  .coins(destination.getAmount())
+                                  .extraCurrencies(
+                                      convertExtraCurrenciesToHashMap(
+                                          destination.getExtraCurrencies()))
+                                  .build())
                           .build())
                   // .init() is not supported
                   .body(
@@ -446,7 +484,12 @@ public class HighloadWalletV3 implements Contract {
                       InternalMessageInfoRelaxed.builder()
                           .dstAddr(getAddressIntStd())
                           .value(
-                              CurrencyCollection.builder().coins(destination.getAmount()).build())
+                              CurrencyCollection.builder()
+                                  .coins(destination.getAmount())
+                                  .extraCurrencies(
+                                      convertExtraCurrenciesToHashMap(
+                                          destination.getExtraCurrencies()))
+                                  .build())
                           .build())
                   .body(enclosedMessages)
                   .build())

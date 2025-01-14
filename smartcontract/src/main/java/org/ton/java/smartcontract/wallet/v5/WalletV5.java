@@ -190,7 +190,12 @@ public class WalletV5 implements Contract {
             InternalMessageInfo.builder()
                 .srcAddr(getAddressIntStd())
                 .dstAddr(getAddressIntStd())
-                .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                .value(
+                    CurrencyCollection.builder()
+                        .coins(config.getAmount())
+                        .extraCurrencies(
+                            convertExtraCurrenciesToHashMap(config.getExtraCurrencies()))
+                        .build())
                 .build())
         .body(body)
         .build();
@@ -351,7 +356,15 @@ public class WalletV5 implements Contract {
                                 .workchainId(dstAddress.wc)
                                 .address(dstAddress.toBigInteger())
                                 .build())
-                        .value(CurrencyCollection.builder().coins(destination.getAmount()).build())
+                        .value(
+                            CurrencyCollection.builder()
+                                .coins(destination.getAmount())
+                                .extraCurrencies(
+                                    convertExtraCurrenciesToHashMap(
+                                        destination.getExtraCurrencies()))
+                                .build())
+                        //
+                        // .value(CurrencyCollection.builder().coins(destination.getAmount()).build())
                         .build())
                 .init(getStateInit())
                 .body(

@@ -82,7 +82,7 @@ public class TestWalletV1R3 extends CommonTest {
 
     contract.waitForBalanceChange(30);
 
-    balance = new BigInteger(tonlib.getAccountState(address).getBalance());
+    balance = new BigInteger(tonlib.getRawAccountState(address).getBalance());
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
     assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
 
@@ -156,7 +156,7 @@ public class TestWalletV1R3 extends CommonTest {
 
     contract.waitForBalanceChange(30);
 
-    balance = new BigInteger(tonlib.getAccountState(address).getBalance());
+    balance = new BigInteger(tonlib.getRawAccountState(address).getBalance());
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
     assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
 

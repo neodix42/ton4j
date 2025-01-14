@@ -62,6 +62,9 @@ public class TestTvmEmulator {
   static String fiftPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/fift.exe";
   static String tolkPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/tolk.exe";
 
+  static Cell code;
+  static Cell data;
+
   @BeforeClass
   public static void setUpBeforeClass() {
     byte[] secretKey =
@@ -83,8 +86,8 @@ public class TestTvmEmulator {
     log.info("pub-key {}", Utils.bytesToHex(walletV4R2.getKeyPair().getPublicKey()));
     log.info("prv-key {}", Utils.bytesToHex(walletV4R2.getKeyPair().getSecretKey()));
 
-    Cell code = walletV4R2.getStateInit().getCode();
-    Cell data = walletV4R2.getStateInit().getData();
+    code = walletV4R2.getStateInit().getCode();
+    data = walletV4R2.getStateInit().getData();
 
     tvmEmulator =
         TvmEmulator.builder()
@@ -105,6 +108,19 @@ public class TestTvmEmulator {
             walletV4R2.getStateInit().getData().toBase64(),
             TvmVerbosityLevel.UNLIMITED.ordinal());
     assertNotEquals(0, emulator);
+  }
+
+  @Test
+  public void testTvmEmulatorDownload() {
+    TvmEmulator tvmEmulator =
+        TvmEmulator.builder()
+            .pathToEmulatorSharedLib(
+                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/libemulator.dll")
+            .codeBoc(code.toBase64())
+            .dataBoc(data.toBase64())
+            .verbosityLevel(TvmVerbosityLevel.TRUNCATED)
+            .build();
+    tvmEmulator.setDebugEnabled(true);
   }
 
   @Test
@@ -189,9 +205,6 @@ public class TestTvmEmulator {
 
     log.info("methodResult stack: {}", methodResult.getStack());
 
-    //    Cell cellResult =
-    // CellBuilder.beginCell().fromBocBase64(methodResult.getStack()).endCell();
-    //        log.info("cellResult {}", cellResult);
     VmStack stack = methodResult.getStack();
     int depth = stack.getDepth();
     log.info("vmStack depth: {}", depth);

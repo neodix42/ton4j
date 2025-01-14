@@ -1,13 +1,14 @@
 package org.ton.java.smartcontract.types;
 
+import java.math.BigInteger;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.java.tlb.types.StateInit;
-
-import java.math.BigInteger;
+import org.ton.java.tonlib.types.ExtraCurrency;
 
 @Builder
 @Data
@@ -20,6 +21,7 @@ public class WalletV4R2Config implements WalletConfig {
     boolean bounce;
     Address destination;
     BigInteger amount;
+    List<ExtraCurrency> extraCurrencies;
     Cell body;
     StateInit stateInit;
     String comment;

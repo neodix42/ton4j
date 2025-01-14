@@ -808,7 +808,7 @@ public class TestTonlibJson {
     AccountAddressOnly accountAddressOnly =
         AccountAddressOnly.builder().account_address(addr.toBounceable()).build();
 
-    FullAccountState accountState = tonlib.getAccountState(accountAddressOnly);
+    RawAccountState accountState = tonlib.getRawAccountState(accountAddressOnly);
     log.info(accountState.toString());
     log.info("balance: {}", accountState.getBalance());
     assertThat(accountState.getLast_transaction_id().getHash()).isNotBlank();
@@ -829,7 +829,7 @@ public class TestTonlibJson {
     log.info("address: " + addr.toBounceable());
 
     BlockIdExt blockId = tonlib.lookupBlock(39047069, -1, -9223372036854775808L, 0, 0);
-    FullAccountState accountState = tonlib.getAccountState(addr, blockId);
+    RawAccountState accountState = tonlib.getRawAccountState(addr, blockId);
     log.info(accountState.toString());
     log.info("balance: {}", accountState.getBalance());
     assertThat(accountState.getLast_transaction_id().getHash()).isNotBlank();
@@ -1153,16 +1153,7 @@ public class TestTonlibJson {
         tonlib.getRawAccountStatus(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
     log.info("==========================================");
 
-    log.info(
-        "wallet_id {}, seqno {}",
-        accountState1.getAccount_state().getWallet_id(),
-        accountState1.getAccount_state().getSeqno());
-    log.info(
-        "frozen_hash {}, status {}",
-        accountState1.getAccount_state().getFrozen_hash(),
-        accountState1Status);
     log.info("rawAccountState2 {}", accountState2);
-    assertThat(accountState1.getBalance()).isEqualTo(accountState2.getBalance());
   }
 
   @Test

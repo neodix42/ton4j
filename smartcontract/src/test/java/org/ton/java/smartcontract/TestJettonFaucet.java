@@ -21,7 +21,7 @@ import org.ton.java.smartcontract.wallet.ContractUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
-import org.ton.java.tonlib.types.FullAccountState;
+import org.ton.java.tonlib.types.RawAccountState;
 import org.ton.java.utils.Utils;
 
 /** Faucet for NEOJ jettons. */
@@ -57,7 +57,7 @@ public class TestJettonFaucet {
 
     JettonWallet adminJettonWallet = jettonMinterWallet.getJettonWallet(adminWallet.getAddress());
 
-    FullAccountState state = tonlib.getAccountState(Address.of(FAUCET_MASTER_ADDRESS));
+    RawAccountState state = tonlib.getRawAccountState(Address.of(FAUCET_MASTER_ADDRESS));
 
     log.info("TEST FAUCET BALANCE IN TONCOINS {}", Utils.formatNanoValue(state.getBalance(), 2));
     log.info(

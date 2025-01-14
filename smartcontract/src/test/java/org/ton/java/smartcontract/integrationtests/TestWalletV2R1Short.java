@@ -77,7 +77,7 @@ public class TestWalletV2R1Short extends CommonTest {
     log.info("sending to four destinations");
     contract.waitForBalanceChange(90);
 
-    balance = new BigInteger(tonlib.getAccountState(Address.of(bounceableAddress)).getBalance());
+    balance = new BigInteger(tonlib.getRawAccountState(Address.of(bounceableAddress)).getBalance());
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
     assertThat(balance.longValue()).isLessThan(Utils.toNano(0.3).longValue());
 

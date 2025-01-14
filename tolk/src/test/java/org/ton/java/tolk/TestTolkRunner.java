@@ -17,7 +17,7 @@ public class TestTolkRunner {
    * href="https://github.com/ton-blockchain/packages">packages</a> for instructions.
    */
   @Test
-  public void testFuncRunner() throws URISyntaxException {
+  public void testTolkRunner() throws URISyntaxException {
 
     URL resource = TestTolkRunner.class.getResource("/test.tolk");
     File tolkFile = Paths.get(resource.toURI()).toFile();
@@ -25,6 +25,23 @@ public class TestTolkRunner {
 
     String tolkPath = System.getProperty("user.dir") + "/2.ton-test-artifacts/tolk.exe";
     TolkRunner tolkRunner = TolkRunner.builder().tolkExecutablePath(tolkPath).build();
+
+    String result = tolkRunner.run(tolkFile.getParent(), absolutePath);
+    log.info("output: {}", result);
+  }
+
+  @Test
+  public void testTolkRunnerDownload() throws URISyntaxException {
+
+    URL resource = TestTolkRunner.class.getResource("/test.tolk");
+    File tolkFile = Paths.get(resource.toURI()).toFile();
+    String absolutePath = tolkFile.getAbsolutePath();
+
+    TolkRunner tolkRunner =
+        TolkRunner.builder()
+            .tolkExecutablePath(
+                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/tolk.exe")
+            .build();
 
     String result = tolkRunner.run(tolkFile.getParent(), absolutePath);
     log.info("output: {}", result);

@@ -180,6 +180,7 @@ public class HighloadWallet implements Contract {
               MsgUtils.createInternalMessage(
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
+                      destination.getExtraCurrencies(),
                       null,
                       CellBuilder.beginCell()
                           .storeUint(0, 32)
@@ -192,6 +193,7 @@ public class HighloadWallet implements Contract {
               MsgUtils.createInternalMessage(
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
+                      destination.getExtraCurrencies(),
                       null,
                       destination.getBody(),
                       true)
@@ -201,6 +203,7 @@ public class HighloadWallet implements Contract {
               MsgUtils.createInternalMessage(
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
+                      destination.getExtraCurrencies(),
                       null,
                       null,
                       true)
@@ -212,6 +215,7 @@ public class HighloadWallet implements Contract {
               MsgUtils.createInternalMessage(
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
+                      destination.getExtraCurrencies(),
                       null,
                       CellBuilder.beginCell()
                           .storeUint(0, 32)
@@ -224,6 +228,7 @@ public class HighloadWallet implements Contract {
               MsgUtils.createInternalMessage(
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
+                      destination.getExtraCurrencies(),
                       null,
                       destination.getBody(),
                       false)
@@ -233,6 +238,7 @@ public class HighloadWallet implements Contract {
               MsgUtils.createInternalMessage(
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
+                      destination.getExtraCurrencies(),
                       null,
                       null,
                       false)

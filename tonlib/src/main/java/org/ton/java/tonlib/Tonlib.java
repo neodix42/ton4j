@@ -10,7 +10,6 @@ import com.sun.jna.*;
 import java.io.File;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -144,16 +143,7 @@ public class Tonlib {
                 "tonlibjson shared library not found. Set the absolute path to it using pathToTonlibSharedLib in the Tonlib builder.\nYou can download the latest tonlibjson from the official TON release page https://github.com/ton-blockchain/ton/releases/latest");
           }
         } else {
-          if (super.pathToTonlibSharedLib.contains("http")
-              && super.pathToTonlibSharedLib.contains("://")) {
-            File tmpGlobalConfig = new File("downloaded.tonlibjson");
-            if (!tmpGlobalConfig.exists()) {
-              FileUtils.copyURLToFile(new URL(super.pathToTonlibSharedLib), tmpGlobalConfig);
-            } else {
-              log.info("tonlibjson already downloaded");
-            }
-            super.pathToTonlibSharedLib = tmpGlobalConfig.getAbsolutePath();
-          }
+          super.pathToTonlibSharedLib = Utils.download(super.pathToTonlibSharedLib);
         }
 
         if (isNull(super.verbosityLevel)) {
@@ -210,20 +200,12 @@ public class Tonlib {
         } else if (nonNull(super.globalConfig)) {
           super.originalGlobalConfigStr = gson.toJson(super.globalConfig);
         } else {
-          if (super.pathToGlobalConfig.contains("http")
-              && super.pathToGlobalConfig.contains("://")) {
-            File tmpGlobalConfig = new File("downloaded.global.config");
-            if (!tmpGlobalConfig.exists()) {
-              FileUtils.copyURLToFile(new URL(super.pathToGlobalConfig), tmpGlobalConfig);
-            } else {
-              log.info("global.config already downloaded");
-            }
-            super.downloadedGlobalConfigStr =
-                FileUtils.readFileToString(tmpGlobalConfig, StandardCharsets.UTF_8);
-            super.originalGlobalConfigStr = super.downloadedGlobalConfigStr;
-          } else if (Files.exists(Paths.get(super.pathToGlobalConfig))) {
+          String tmpGlobalConfig = Utils.download(super.pathToGlobalConfig);
+
+          if (Files.exists(Paths.get(tmpGlobalConfig))) {
             super.originalGlobalConfigStr =
-                new String(Files.readAllBytes(Paths.get(super.pathToGlobalConfig)));
+                FileUtils.readFileToString(new File(tmpGlobalConfig), StandardCharsets.UTF_8);
+
           } else {
             throw new RuntimeException(
                 "Global config is not found in path: " + super.pathToGlobalConfig);
@@ -743,10 +725,10 @@ public class Tonlib {
       String address, BigInteger fromTxLt, String fromTxHash, int limit) {
 
     if (isNull(fromTxLt) || isNull(fromTxHash)) {
-      FullAccountState fullAccountState =
-          getAccountState(AccountAddressOnly.builder().account_address(address).build());
-      fromTxLt = fullAccountState.getLast_transaction_id().getLt();
-      fromTxHash = fullAccountState.getLast_transaction_id().getHash();
+      RawAccountState rawAccountState =
+          getRawAccountState(AccountAddressOnly.builder().account_address(address).build());
+      fromTxLt = rawAccountState.getLast_transaction_id().getLt();
+      fromTxHash = rawAccountState.getLast_transaction_id().getHash();
     }
     synchronized (gson) {
       GetRawTransactionsQuery getRawTransactionsQuery =

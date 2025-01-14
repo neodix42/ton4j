@@ -103,6 +103,7 @@ public class WalletV2R1 implements Contract {
           MsgUtils.createInternalMessage(
               config.getDestination1(),
               config.getAmount1(),
+              config.getExtraCurrencies1(),
               config.getStateInit(),
               config.getBody(),
               config.getBounce());
@@ -114,6 +115,7 @@ public class WalletV2R1 implements Contract {
           MsgUtils.createInternalMessage(
               config.getDestination2(),
               config.getAmount2(),
+              config.getExtraCurrencies2(),
               config.getStateInit(),
               config.getBody(),
               config.getBounce());
@@ -125,6 +127,7 @@ public class WalletV2R1 implements Contract {
           MsgUtils.createInternalMessage(
               config.getDestination3(),
               config.getAmount3(),
+              config.getExtraCurrencies3(),
               config.getStateInit(),
               config.getBody(),
               config.getBounce());
@@ -136,6 +139,7 @@ public class WalletV2R1 implements Contract {
           MsgUtils.createInternalMessage(
               config.getDestination4(),
               config.getAmount3(),
+              config.getExtraCurrencies4(),
               config.getStateInit(),
               config.getBody(),
               config.getBounce());

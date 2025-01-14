@@ -72,7 +72,6 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
         </dependency>
         <!--  recompiled from source with Java 8 -->
         <dependency>

@@ -145,7 +145,7 @@ public class TestLockupWallet extends CommonTest {
         "restricted balance {}", Utils.formatNanoValue(contract.getNominalRestrictedBalance()));
     log.info("time-locked balance {}", Utils.formatNanoValue(contract.getNominalLockedBalance()));
 
-    balance = new BigInteger(tonlib.getAccountState(address).getBalance());
+    balance = new BigInteger(tonlib.getRawAccountState(address).getBalance());
     log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
 
     assertThat(balance.longValue()).isGreaterThan(Utils.toNano(0.9).longValue());
@@ -167,7 +167,7 @@ public class TestLockupWallet extends CommonTest {
         "restricted balance {}", Utils.formatNanoValue(contract.getNominalRestrictedBalance()));
     log.info("time-locked balance {}", Utils.formatNanoValue(contract.getNominalLockedBalance()));
 
-    balance = new BigInteger(tonlib.getAccountState(address).getBalance());
+    balance = new BigInteger(tonlib.getRawAccountState(address).getBalance());
     log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
     assertThat(balance.longValue()).isLessThan(Utils.toNano(0.7).longValue());
   }
