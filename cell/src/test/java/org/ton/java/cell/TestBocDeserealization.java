@@ -20,7 +20,7 @@ import org.ton.java.utils.Utils;
 public class TestBocDeserealization {
 
   @Test
-  public void testTxDes() {
+  public void testTxDeserialization() {
     String base64boc =
         "te6cckECBwEAAXYAA7V5QBVtaGBzXelnC+DoDhctQO99SeiHtx97kPR6CqcKIBAAAY3pKFDwECaGi15kBA/sg+mS5AXFRbdn6kqS4yBQE7nybKbPnPtQAAGN4NmfWBZxzFkwACBgQSDoAQIDAgHgBAUAgnJQdVmYCFXS9KgXRepSXHT8e+rFn5z5+QuRNP8kfXkPQu1TOHkZ0mu5gLKdK7eCsCXnvOxGjTz0QiYLq2OyHJBWAB8ETQjmJaABwDAgjTMEEa1AAK9oAct9CC/XwHCKXyewXhMtNci1Zua3V+FLpl8rt7T586IZACUAVbWhgc13pZwvg6A4XLUDvfUnoh7cfe5D0egqnCiATmJaAAYII1oAADG9JJAMBM45ixpAAQHfBgC3WAEoAq2tDA5rvSzhfB0BwuWoHe+pPRD24+9yHo9BVOFEAwA5b6EF+vgOEUvk9gvCZaa5Fqzc1ur8KXTL5Xb2nz50Qw5J8AAGCCNaAAAxvSUKHgTOOYsmf////8AumLaq";
 
@@ -410,5 +410,20 @@ public class TestBocDeserealization {
     log.info("hash {}", hash);
     assertThat(hash)
         .isEqualTo("bf76eed0ac2f54e30c93c36e587a6dacd4526f45dcbf01a476c149f1991cb78a"); // works
+  }
+
+  @Test
+  public void testShouldDeserializeWithIndex() {
+
+    String base64boc =
+        "te6ccsECGQEAAyAAAC8ABAAlAAoAIwAjACMAIwAjACMAIwAjACMAIwAjACMAIwAjACMAIwAjACMAIwAjAAIBWAE6PKZW9o1z+pxN/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMOAQIAAgQBQ4AVbI3QbNBPZOU2lvWmkC6D5GH+E0/YXOkxJmbqRomWohADABA3ODIuanNvbgFAK2XOc1p54RiIV1OZXA2QtW069my8jDBhSF/kB2XtJVYFAUCQkV4WX1yctIWDBWKNN2JH2kQNp6xAHbwZP0C39+893AYBQFWlFihxm7HTors7oqYzC2WgS3Auq5R2cSjgr/oULwaJBwFAdv39XlOSV01NCbwzSPc+thqPbVi87Hp9z0HGmAG6pHgIAUAqTRRwlXh7yfq5o2ooL2MC0htVto8rVVumR9oHUhQScgkBQO9se90YAZAGFexI8XYrjWGTN8zuvDlXXOHLJxdbiZUyCgFAtytmSOfezGGxdJOudK779l5GRJrPdpfnbiAxSGRWCB4LAUBV+BMVKusSQlyYI5CHbxuRpDmIqJST54/nccPGrpUZ/QwBQPxScBZQ/hNEFTwlDR4v7GGJrwIbga8mLspStKzgFkPGDQFAQAsZhENoOhmyrprhpFCE036JSpqFmjLKmvBQ6X06zD0OAUCvKLjXQHFQYoh+JiQY4RCOfghj9r8JtuwA0EmfL8NxhA8BQH8XTAu7mxI6mHiprv6AFXjbBrF94WdtZpcBeOZ9GXPyEAFARHwZR9CmMlQ+PSC+Qxg7AlO1hGBuE0oEj81L0bqO6J8RAUDWFnlB77aCuO4ECOT6Gyks1RFluW4yixYulAunz+FkPhIBQFLBa6rp5wdntIdq5871+YIy/JF5+sTPZC3KfyYGrXnCEwFAWUaLdF52not6QE6XAarmhbLGf5gXCOz8U0DlZZwySQQUAUB6cqNhKyqWGxOKDa4aBUNN9BBzi2Va6LcNbGqkYeca6hUBQD7lHrVnYKzoPWNLxQY31kqqaHW+DVhPCmsShDqSBkiQFgFAZzR8CxscwmDwWJa/p0A+SAq9HbReM9k5JOSlPdTPWV4XAUAsVe1s6adoB1I4y2TyDSacV+f5zycVLjA9wdzZKnBOvhgAAEJi9TU=";
+
+    byte[] rawBoc1 = Utils.base64ToSignedBytes(base64boc);
+
+    Cell cell = CellBuilder.beginCell().fromBoc(rawBoc1).endCell();
+
+    log.info("CellType {}", cell.getCellType());
+    log.info(cell.print());
+    log.info(Utils.bytesToHex(cell.toBoc(true)));
   }
 }
