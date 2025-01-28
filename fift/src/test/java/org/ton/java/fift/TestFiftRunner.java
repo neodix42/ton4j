@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -24,15 +25,15 @@ public class TestFiftRunner {
     File fiftFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = fiftFile.getAbsolutePath();
 
-    String fiftPath = System.getProperty("user.dir") + "2.ton-test-artifacts/fift.exe";
-    String libPath = System.getProperty("user.dir") + "2.ton-test-artifacts/lib";
-    String smartcontPath = System.getProperty("user.dir") + "2.ton-test-artifacts/smartcont";
+    String fiftPath = Utils.getArtifactGithubUrl("fift", "v2024.12-1");
+    String libPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/lib";
+    String smartcontPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/smartcont";
 
     FiftRunner fiftRunner =
         FiftRunner.builder()
             .fiftExecutablePath(fiftPath)
-            //            .fiftAsmLibraryPath(libPath)
-            //            .fiftSmartcontLibraryPath(smartcontPath)
+            .fiftAsmLibraryPath(libPath)
+            .fiftSmartcontLibraryPath(smartcontPath)
             .build();
 
     String result = fiftRunner.run(fiftFile.getParent(), "-s", absolutePath);
@@ -46,15 +47,15 @@ public class TestFiftRunner {
     File fiftFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = fiftFile.getAbsolutePath();
 
-    String fiftPath = "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/fift.exe";
-    String libPath = System.getProperty("user.dir") + "2.ton-test-artifacts/lib";
-    String smartcontPath = System.getProperty("user.dir") + "2.ton-test-artifacts/smartcont";
+    String fiftPath = Utils.getArtifactGithubUrl("fift", "v2024.12-1");
+    String libPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/lib";
+    String smartcontPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/smartcont";
 
     FiftRunner fiftRunner =
         FiftRunner.builder()
             .fiftExecutablePath(fiftPath)
-            //            .fiftAsmLibraryPath(libPath)
-            //            .fiftSmartcontLibraryPath(smartcontPath)
+            .fiftAsmLibraryPath(libPath)
+            .fiftSmartcontLibraryPath(smartcontPath)
             .build();
 
     String result = fiftRunner.run(fiftFile.getParent(), "-s", absolutePath);

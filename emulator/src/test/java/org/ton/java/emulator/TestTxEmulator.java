@@ -50,19 +50,19 @@ public class TestTxEmulator {
 
   static Account testAccount;
 
-  static String emulatorPath =
-      System.getProperty("user.dir") + "/../2.ton-test-artifacts/emulator.dll";
+  static String emulatorPath = Utils.getArtifactGithubUrl("libemulator", "v2024.12-1");
 
-  static String tonlibPath =
-      System.getProperty("user.dir") + "/../2.ton-test-artifacts/tonlibjson.dll";
+  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "v2024.12-1");
 
-  static String liteClientPath =
-      System.getProperty("user.dir") + "/../2.ton-test-artifacts/lite-client.exe";
+  static String funcPath = Utils.getArtifactGithubUrl("func", "v2024.12-1");
 
-  static String funcPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/func.exe";
+  static String fiftPath = Utils.getArtifactGithubUrl("fift", "v2024.12-1");
+  static String tolkPath = Utils.getArtifactGithubUrl("tolk", "v2024.12-1");
 
-  static String fiftPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/fift.exe";
-  static String tolkPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/tolk.exe";
+  String libPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/lib";
+  String smartcontPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/smartcont";
+
+  static String liteClientPath = Utils.getArtifactGithubUrl("lite-client", "v2024.12-1");
 
   @BeforeClass
   public static void setUpBeforeClass() {
@@ -129,7 +129,7 @@ public class TestTxEmulator {
                 TestTxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
             StandardCharsets.UTF_8);
 
-    TxEmulatorI txEmulatorI = Native.load(emulatorPath, TxEmulatorI.class);
+    TxEmulatorI txEmulatorI = Native.load("emulator.dll", TxEmulatorI.class);
     long emulator = txEmulatorI.transaction_emulator_create(configAllTestnet, 2);
     assertNotEquals(0, emulator);
   }
@@ -338,7 +338,12 @@ public class TestTxEmulator {
         SmartContractCompiler.builder()
             .contractPath("G:/smartcontracts/new-wallet-v5.fc")
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
-            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .fiftRunner(
+                FiftRunner.builder()
+                    .fiftExecutablePath(fiftPath)
+                    .fiftAsmLibraryPath(libPath)
+                    .fiftSmartcontLibraryPath(smartcontPath)
+                    .build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
@@ -504,7 +509,12 @@ public class TestTxEmulator {
         SmartContractCompiler.builder()
             .contractPath("G:/smartcontracts/new-wallet-v5.fc")
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
-            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .fiftRunner(
+                FiftRunner.builder()
+                    .fiftExecutablePath(fiftPath)
+                    .fiftAsmLibraryPath(libPath)
+                    .fiftSmartcontLibraryPath(smartcontPath)
+                    .build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
@@ -573,7 +583,12 @@ public class TestTxEmulator {
         SmartContractCompiler.builder()
             .contractPath(contractAbsolutePath)
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
-            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .fiftRunner(
+                FiftRunner.builder()
+                    .fiftExecutablePath(fiftPath)
+                    .fiftAsmLibraryPath(libPath)
+                    .fiftSmartcontLibraryPath(smartcontPath)
+                    .build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 

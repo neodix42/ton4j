@@ -44,8 +44,7 @@ public class TestTonlibJson {
 
   static Tonlib tonlib;
 
-  static String tonlibPath =
-      System.getProperty("user.dir") + "/../2.ton-test-artifacts/tonlibjson.dll";
+  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "v2024.12-1");
 
   @BeforeClass
   public static void setUpBeforeClass() {
@@ -92,20 +91,6 @@ public class TestTonlibJson {
   }
 
   @Test
-  public void testGlobalTonlibDownload() {
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(
-                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/tonlibjson.dll")
-            .testnet(true)
-            .ignoreCache(false)
-            .build();
-
-    BlockIdExt block = tonlib.getLast().getLast();
-    log.info("block {}", block);
-  }
-
-  @Test
   public void testGlobalTonlibAndConfigDownload() {
     Tonlib tonlib =
         Tonlib.builder()
@@ -122,7 +107,7 @@ public class TestTonlibJson {
   @Test
   public void testInitTonlibJson() throws IOException {
 
-    TonlibJsonI tonlibJson = Native.load(tonlibPath, TonlibJsonI.class);
+    TonlibJsonI tonlibJson = Native.load("tonlibjson.dll", TonlibJsonI.class);
 
     Pointer tonlib = tonlibJson.tonlib_client_json_create();
 
@@ -500,18 +485,6 @@ public class TestTonlibJson {
   @Test
   public void testTonlibGetTxsV2ByAddressTestnet() {
 
-    // works only when running tests, since ton4j does not ship integrated tonlibjson shared library
-    String resourcePath =
-        Utils.getResourceAbsoluteDirectory(
-            ClassLoader.getSystemClassLoader(), "2.ton-test-artifacts/tonlibjson.dll");
-
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(resourcePath)
-            .receiveTimeout(5)
-            .ignoreCache(false)
-            .testnet(true)
-            .build();
     Address address =
         Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
 

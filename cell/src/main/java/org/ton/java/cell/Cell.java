@@ -805,7 +805,6 @@ public class Cell {
         Utils.concatBytes(
             data, Utils.dynamicIntBytes(BigInteger.valueOf(payload.length), sizeBytes));
 
-    // for roots TODO
     for (Cell c : roots) {
       data =
           Utils.concatBytes(
@@ -890,7 +889,7 @@ public class Cell {
       idxSlice.add(value);
     }
 
-    idxSlice.sort(Comparator.comparing(lhs -> lhs.index)); // todo review
+    idxSlice.sort(Comparator.comparing(lhs -> lhs.index));
 
     boolean verifyOrder = true;
     while (verifyOrder) {

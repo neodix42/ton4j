@@ -230,15 +230,19 @@ public interface Contract {
         for (ExtraCurrency ec : tx.getIn_msg().getExtra_currencies()) {
           if (ec.getId() == extraCurrencyId) {
             Transaction tlbTransaction = tx.getTransactionAsTlb();
-            BouncePhase bouncePhase = tlbTransaction.getOrdinaryTransaction().getBouncePhase();
-            if (isNull(bouncePhase)) {
-              return tx;
-            } else {
-              if (bouncePhase instanceof BouncePhaseOk) {
-                throw new Error("extra-currency transaction has bounced");
-              } else {
+            if (tlbTransaction.getDescription() instanceof TransactionDescriptionOrdinary) {
+              BouncePhase bouncePhase = tlbTransaction.getOrdinaryTransaction().getBouncePhase();
+              if (isNull(bouncePhase)) {
                 return tx;
+              } else {
+                if (bouncePhase instanceof BouncePhaseOk) {
+                  throw new Error("extra-currency transaction has bounced");
+                } else {
+                  return tx;
+                }
               }
+            } else {
+              return tx;
             }
           }
         }

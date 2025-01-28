@@ -34,7 +34,11 @@ public class LiteClientTest {
   @BeforeClass
   public static void executedBeforeEach() {
 
-    liteClient = LiteClient.builder().testnet(true).build();
+    liteClient =
+        LiteClient.builder()
+            .testnet(true)
+            .pathToLiteClientBinary(Utils.getArtifactGithubUrl("lite-client", "v2024.12-1"))
+            .build();
   }
 
   @Test
@@ -46,25 +50,10 @@ public class LiteClientTest {
   }
 
   @Test
-  public void testLastExecutedDownload() {
-    LiteClient liteClient =
-        LiteClient.builder()
-            .pathToLiteClientBinary(
-                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/lite-client.exe")
-            .testnet(true)
-            .build();
-    assertThat(liteClient.executeLast())
-        .isNotNull()
-        .contains("last masterchain block is")
-        .contains("server time is");
-  }
-
-  @Test
   public void testLastExecutedDownloadBoth() {
     LiteClient liteClient =
         LiteClient.builder()
-            .pathToLiteClientBinary(
-                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/lite-client.exe")
+            .pathToLiteClientBinary(Utils.getArtifactGithubUrl("lite-client", "v2024.12-1"))
             .pathToGlobalConfig("https://ton-blockchain.github.io/testnet-global.config.json")
             .build();
     assertThat(liteClient.executeLast())

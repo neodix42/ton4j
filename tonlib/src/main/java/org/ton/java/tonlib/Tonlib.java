@@ -143,7 +143,7 @@ public class Tonlib {
                 "tonlibjson shared library not found. Set the absolute path to it using pathToTonlibSharedLib in the Tonlib builder.\nYou can download the latest tonlibjson from the official TON release page https://github.com/ton-blockchain/ton/releases/latest");
           }
         } else {
-          super.pathToTonlibSharedLib = Utils.download(super.pathToTonlibSharedLib);
+          super.pathToTonlibSharedLib = Utils.getLocalOrDownload(super.pathToTonlibSharedLib);
         }
 
         if (isNull(super.verbosityLevel)) {
@@ -200,7 +200,7 @@ public class Tonlib {
         } else if (nonNull(super.globalConfig)) {
           super.originalGlobalConfigStr = gson.toJson(super.globalConfig);
         } else {
-          String tmpGlobalConfig = Utils.download(super.pathToGlobalConfig);
+          String tmpGlobalConfig = Utils.getLocalOrDownload(super.pathToGlobalConfig);
 
           if (Files.exists(Paths.get(tmpGlobalConfig))) {
             super.originalGlobalConfigStr =

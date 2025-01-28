@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -23,25 +24,8 @@ public class TestTolkRunner {
     File tolkFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = tolkFile.getAbsolutePath();
 
-    String tolkPath = System.getProperty("user.dir") + "/2.ton-test-artifacts/tolk.exe";
+    String tolkPath = Utils.getArtifactGithubUrl("tolk", "v2024.12-1");
     TolkRunner tolkRunner = TolkRunner.builder().tolkExecutablePath(tolkPath).build();
-
-    String result = tolkRunner.run(tolkFile.getParent(), absolutePath);
-    log.info("output: {}", result);
-  }
-
-  @Test
-  public void testTolkRunnerDownload() throws URISyntaxException {
-
-    URL resource = TestTolkRunner.class.getResource("/test.tolk");
-    File tolkFile = Paths.get(resource.toURI()).toFile();
-    String absolutePath = tolkFile.getAbsolutePath();
-
-    TolkRunner tolkRunner =
-        TolkRunner.builder()
-            .tolkExecutablePath(
-                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/tolk.exe")
-            .build();
 
     String result = tolkRunner.run(tolkFile.getParent(), absolutePath);
     log.info("output: {}", result);

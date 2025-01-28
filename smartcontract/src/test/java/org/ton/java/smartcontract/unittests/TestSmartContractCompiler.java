@@ -21,10 +21,14 @@ public class TestSmartContractCompiler {
    * href="https://github.com/ton-blockchain/packages">packages</a> for instructions. Example is
    * based on new-wallet-v4r2.fc smart contract. You can specify path to any smart contract.
    */
-  static String funcPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/func.exe";
+  static String funcPath = Utils.getArtifactGithubUrl("func", "v2024.12-1");
 
-  static String fiftPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/fift.exe";
-  static String tolkPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/tolk.exe";
+  static String fiftPath = Utils.getArtifactGithubUrl("fift", "v2024.12-1");
+  static String tolkPath = Utils.getArtifactGithubUrl("tolk", "v2024.12-1");
+  String libPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/lib";
+  String smartcontPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/smartcont";
+  String tolkStdLibPath =
+      System.getProperty("user.dir") + "/../2.ton-test-artifacts/smartcont/tolk-stdlib";
 
   @Test
   public void testSmartContractCompiler() {
@@ -32,7 +36,12 @@ public class TestSmartContractCompiler {
         SmartContractCompiler.builder()
             .contractAsResource("contracts/wallets/new-wallet-v4r2.fc")
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
-            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .fiftRunner(
+                FiftRunner.builder()
+                    .fiftExecutablePath(fiftPath)
+                    .fiftAsmLibraryPath(libPath)
+                    .fiftSmartcontLibraryPath(smartcontPath)
+                    .build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
@@ -84,7 +93,12 @@ public class TestSmartContractCompiler {
         SmartContractCompiler.builder()
             .contractAsResource("contracts/wallets/new-wallet-v5.fc")
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
-            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .fiftRunner(
+                FiftRunner.builder()
+                    .fiftExecutablePath(fiftPath)
+                    .fiftAsmLibraryPath(libPath)
+                    .fiftSmartcontLibraryPath(smartcontPath)
+                    .build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
@@ -97,9 +111,14 @@ public class TestSmartContractCompiler {
   public void testLibraryDeployerCompiler() {
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            .contractPath("G:/smartcontracts/nlibrary-deployer.fc")
+            .contractPath("G:/smartcontracts/library-deployer.fc")
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
-            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .fiftRunner(
+                FiftRunner.builder()
+                    .fiftExecutablePath(fiftPath)
+                    .fiftAsmLibraryPath(libPath)
+                    .fiftSmartcontLibraryPath(smartcontPath)
+                    .build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
@@ -115,7 +134,12 @@ public class TestSmartContractCompiler {
             .contractAsResource("simple.fc")
             .printFiftAsmOutput(true)
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
-            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .fiftRunner(
+                FiftRunner.builder()
+                    .fiftExecutablePath(fiftPath)
+                    .fiftAsmLibraryPath(libPath)
+                    .fiftSmartcontLibraryPath(smartcontPath)
+                    .build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
     smcFunc.compile();
@@ -127,8 +151,17 @@ public class TestSmartContractCompiler {
         SmartContractCompiler.builder()
             .contractAsResource("simple.tolk")
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
-            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
-            .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
+            .fiftRunner(
+                FiftRunner.builder()
+                    .fiftExecutablePath(fiftPath)
+                    .fiftAsmLibraryPath(libPath)
+                    .fiftSmartcontLibraryPath(smartcontPath)
+                    .build())
+            .tolkRunner(
+                TolkRunner.builder()
+                    .tolkExecutablePath(tolkPath)
+                    .tolkStdLibPath(tolkStdLibPath)
+                    .build())
             .printFiftAsmOutput(true)
             .build();
     smcTolk.compile();

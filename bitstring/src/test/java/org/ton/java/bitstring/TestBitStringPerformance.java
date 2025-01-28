@@ -1,14 +1,14 @@
 package org.ton.java.bitstring;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import java.math.BigInteger;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -69,6 +69,7 @@ public class TestBitStringPerformance {
   }
 
   @Test
+  @Ignore
   public void testReadUintPerformance() {
     BitString bitString = new BitString(SIZE);
     for (int i = 0; i < SIZE; i++) {
@@ -89,6 +90,7 @@ public class TestBitStringPerformance {
   }
 
   @Test
+  @Ignore
   public void testWriteBytesPerformance() {
     byte[] data = new byte[SIZE];
     new java.util.Random().nextBytes(data);

@@ -701,7 +701,12 @@ public class Utils {
         return OS.LINUX;
       }
     } else if (operSys.contains("mac")) {
-      if ((operArch.contains("arm")) || (operArch.contains("aarch")) || (operArch.contains("m1"))) {
+      if (operArch.contains("arm")
+          || operArch.contains("aarch")
+          || operArch.contains("m1")
+          || operArch.contains("m2")
+          || operArch.contains("m3")
+          || operArch.contains("m4")) {
         return OS.MAC_ARM64;
       } else {
         return OS.MAC;
@@ -1085,6 +1090,24 @@ public class Utils {
     }
   }
 
+  public static String getArtifactExtension(String artifactName) {
+    if (artifactName.contains("emulator") || artifactName.contains("tonlib")) {
+      if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == OS.WINDOWS_ARM)) {
+        return ".dll";
+      } else if ((Utils.getOS() == OS.MAC) || (Utils.getOS() == OS.MAC_ARM64)) {
+        return ".dylib";
+      } else {
+        return ".so";
+      }
+    } else {
+      if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == OS.WINDOWS_ARM)) {
+        return ".exe";
+      } else {
+        return "";
+      }
+    }
+  }
+
   public static int getRandomInt() {
     return new Random().nextInt();
   }
@@ -1270,7 +1293,7 @@ public class Utils {
    * @param linkToFile String
    * @return absolute path to downloaded file or linkToFile if it is not a http url.
    */
-  public static String download(String linkToFile) {
+  public static String getLocalOrDownload(String linkToFile) {
     if (linkToFile.contains("http") && linkToFile.contains("://")) {
       try {
         URL url = new URL(linkToFile);
@@ -1290,6 +1313,54 @@ public class Utils {
       }
     } else {
       return linkToFile;
+    }
+  }
+
+  public static String getLiteClientGithubUrl() {
+    return getArtifactGithubUrl("lite-client", "");
+  }
+
+  public static String getEmulatorGithubUrl() {
+    return getArtifactGithubUrl("libemulator", "");
+  }
+
+  public static String getTonlibGithubUrl() {
+    return getArtifactGithubUrl("tonlibjson", "");
+  }
+
+  public static String getFuncGithubUrl() {
+    return getArtifactGithubUrl("func", "");
+  }
+
+  public static String getTolkGithubUrl() {
+    return getArtifactGithubUrl("tolk", "");
+  }
+
+  public static String getFiftGithubUrl() {
+    return getArtifactGithubUrl("fift", "");
+  }
+
+  public static String getArtifactGithubUrl(String artifactName, String release) {
+    String baseUrl;
+    if (StringUtils.isNotEmpty(release)) {
+
+      baseUrl = "https://github.com/ton-blockchain/ton/releases/download/" + release + "/";
+    } else {
+      baseUrl = "https://github.com/ton-blockchain/ton/releases/latest/download/";
+    }
+
+    if ((getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == OS.WINDOWS_ARM)) {
+      return baseUrl + artifactName + getArtifactExtension(artifactName);
+    } else if (Utils.getOS() == OS.MAC) {
+      return baseUrl + artifactName + "-mac-x86_64" + getArtifactExtension(artifactName);
+    } else if (Utils.getOS() == OS.MAC_ARM64) {
+      return baseUrl + artifactName + "-mac-arm64" + getArtifactExtension(artifactName);
+    } else if (Utils.getOS() == OS.LINUX) {
+      return baseUrl + artifactName + "-linux-x86_64" + getArtifactExtension(artifactName);
+    } else if (Utils.getOS() == OS.LINUX_ARM) {
+      return baseUrl + artifactName + "-linux-arm64" + getArtifactExtension(artifactName);
+    } else {
+      throw new Error("unknown requested OS");
     }
   }
 }

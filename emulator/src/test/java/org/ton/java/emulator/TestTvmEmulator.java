@@ -51,16 +51,17 @@ public class TestTvmEmulator {
       new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
   static WalletV4R2 walletV4R2;
 
-  static String emulatorPath =
-      System.getProperty("user.dir") + "/../2.ton-test-artifacts/emulator.dll";
+  static String emulatorPath = Utils.getArtifactGithubUrl("libemulator", "v2024.12-1");
 
-  static String tonlibPath =
-      System.getProperty("user.dir") + "/../2.ton-test-artifacts/tonlibjson.dll";
+  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "v2024.12-1");
 
-  static String funcPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/func.exe";
+  static String funcPath = Utils.getArtifactGithubUrl("func", "v2024.12-1");
 
-  static String fiftPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/fift.exe";
-  static String tolkPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/tolk.exe";
+  static String fiftPath = Utils.getArtifactGithubUrl("fift", "v2024.12-1");
+  static String tolkPath = Utils.getArtifactGithubUrl("tolk", "v2024.12-1");
+
+  String libPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/lib";
+  String smartcontPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/smartcont";
 
   static Cell code;
   static Cell data;
@@ -101,7 +102,7 @@ public class TestTvmEmulator {
 
   @Test
   public void testInitTvmEmulator() {
-    TvmEmulatorI tvmEmulatorI = Native.load(emulatorPath, TvmEmulatorI.class);
+    TvmEmulatorI tvmEmulatorI = Native.load("libemulator.dll", TvmEmulatorI.class);
     long emulator =
         tvmEmulatorI.tvm_emulator_create(
             walletV4R2.getStateInit().getCode().toBase64(),
@@ -368,7 +369,12 @@ public class TestTvmEmulator {
         SmartContractCompiler.builder()
             .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
-            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .fiftRunner(
+                FiftRunner.builder()
+                    .fiftExecutablePath(fiftPath)
+                    .fiftAsmLibraryPath(libPath)
+                    .fiftSmartcontLibraryPath(smartcontPath)
+                    .build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 
@@ -669,7 +675,12 @@ public class TestTvmEmulator {
         SmartContractCompiler.builder()
             .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
-            .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
+            .fiftRunner(
+                FiftRunner.builder()
+                    .fiftExecutablePath(fiftPath)
+                    .fiftAsmLibraryPath(libPath)
+                    .fiftSmartcontLibraryPath(smartcontPath)
+                    .build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
             .build();
 

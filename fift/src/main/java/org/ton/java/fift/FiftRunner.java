@@ -63,7 +63,7 @@ public class FiftRunner {
           throw new Error("Cannot execute simple Fift command.\n" + errorMsg);
         }
       } else {
-        super.fiftExecutablePath = Utils.download(super.fiftExecutablePath);
+        super.fiftExecutablePath = Utils.getLocalOrDownload(super.fiftExecutablePath);
         if (super.printInfo) {
           log.info("using " + super.fiftExecutablePath);
         }

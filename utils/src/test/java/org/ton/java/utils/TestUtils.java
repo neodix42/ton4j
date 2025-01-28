@@ -1,9 +1,7 @@
 package org.ton.java.utils;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.ton.java.utils.Utils.getCRC32ChecksumAsLong;
-import static org.ton.java.utils.Utils.int2ip;
-import static org.ton.java.utils.Utils.ip2int;
+import static org.ton.java.utils.Utils.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -499,5 +497,63 @@ public class TestUtils {
       Utils.enableNativeOutput(1);
     }
     log.info("10k switches took {}ms", System.currentTimeMillis() - l);
+  }
+
+  @Test
+  public void testGetArtifactUrl() {
+
+    if (Utils.getOS() == OS.WINDOWS) {
+      assertThat(getArtifactGithubUrl("fift", "v2024.12-1"))
+          .isEqualTo("https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/fift.exe");
+      assertThat(getLiteClientGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/lite-client.exe");
+      assertThat(getFiftGithubUrl())
+          .isEqualTo("https://github.com/ton-blockchain/ton/releases/latest/download/fift.exe");
+      assertThat(getFuncGithubUrl())
+          .isEqualTo("https://github.com/ton-blockchain/ton/releases/latest/download/func.exe");
+      assertThat(getTolkGithubUrl())
+          .isEqualTo("https://github.com/ton-blockchain/ton/releases/latest/download/tolk.exe");
+
+      assertThat(getTonlibGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/tonlibjson.dll");
+      assertThat(getEmulatorGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/libemulator.dll");
+    }
+
+    if (Utils.getOS() == OS.LINUX) {
+      assertThat(getFiftGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/fift-linux-x86_64");
+      assertThat(getFuncGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/func-linux-x86_64");
+      assertThat(getTolkGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/tolk-linux-x86_64");
+      assertThat(getTonlibGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/tonlibjson-linux-x86_64.so");
+    }
+
+    if (Utils.getOS() == OS.MAC) {
+      assertThat(getTonlibGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/tonlibjson-mac-x86-64.dylib");
+    }
+
+    if (Utils.getOS() == OS.MAC_ARM64) {
+      assertThat(getFiftGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/fift-mac-arm64");
+      assertThat(getEmulatorGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/libemulator-mac-arm64.dylib");
+      assertThat(getTonlibGithubUrl())
+          .isEqualTo(
+              "https://github.com/ton-blockchain/ton/releases/latest/download/tonlibjson-mac-arm64.dylib");
+    }
   }
 }

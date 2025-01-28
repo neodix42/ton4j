@@ -66,7 +66,7 @@ public class TolkRunner {
           throw new Error("Cannot execute simple Tolk command.\n" + errorMsg);
         }
       } else {
-        super.tolkExecutablePath = Utils.download(super.tolkExecutablePath);
+        super.tolkExecutablePath = Utils.getLocalOrDownload(super.tolkExecutablePath);
         if (super.printInfo) {
           log.info("using " + super.tolkExecutablePath);
         }

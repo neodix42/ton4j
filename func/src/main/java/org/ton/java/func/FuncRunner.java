@@ -61,7 +61,7 @@ public class FuncRunner {
           throw new Error("Cannot execute simple Func command.\n" + errorMsg);
         }
       } else {
-        super.funcExecutablePath = Utils.download(super.funcExecutablePath);
+        super.funcExecutablePath = Utils.getLocalOrDownload(super.funcExecutablePath);
         if (super.printInfo) {
           log.info("using " + super.funcExecutablePath);
         }

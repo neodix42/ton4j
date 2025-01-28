@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -23,7 +24,7 @@ public class TestFuncRunner {
     File funcFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = funcFile.getAbsolutePath();
 
-    String resourcePath = System.getProperty("user.dir") + "2.ton-test-artifacts/func.exe";
+    String resourcePath = Utils.getArtifactGithubUrl("func", "v2024.12-1");
 
     FuncRunner funcRunner = FuncRunner.builder().funcExecutablePath(resourcePath).build();
 
@@ -40,8 +41,7 @@ public class TestFuncRunner {
 
     FuncRunner funcRunner =
         FuncRunner.builder()
-            .funcExecutablePath(
-                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/func.exe")
+            .funcExecutablePath(Utils.getArtifactGithubUrl("func", "v2024.12-1"))
             .build();
 
     String result = funcRunner.run(funcFile.getParent(), "-PA", absolutePath);

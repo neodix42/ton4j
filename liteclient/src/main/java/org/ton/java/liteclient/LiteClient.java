@@ -96,7 +96,7 @@ public class LiteClient {
             throw new Error("Cannot execute simple lite-client command.\n" + errorMsg);
           }
         } else {
-          super.pathToLiteClientBinary = Utils.download(super.pathToLiteClientBinary);
+          super.pathToLiteClientBinary = Utils.getLocalOrDownload(super.pathToLiteClientBinary);
         }
 
         if (super.timeout == 0) {

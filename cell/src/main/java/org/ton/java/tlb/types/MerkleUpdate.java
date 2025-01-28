@@ -1,5 +1,6 @@
 package org.ton.java.tlb.types;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -7,9 +8,9 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.CellType;
 
-import java.math.BigInteger;
-
 /**
+ *
+ *
  * <pre>
  * !merkle_update#02 {X:Type} old_hash:bits256 new_hash:bits256 old:^X new:^X  = MERKLE_UPDATE X;
  *  update_hashes#72 {X:Type} old_hash:bits256 new_hash:bits256                = HASH_UPDATE X;
@@ -18,45 +19,50 @@ import java.math.BigInteger;
  */
 @Builder
 @Data
-
 public class MerkleUpdate {
-    //    ShardState oldOne;
-    BigInteger oldHash;
-    BigInteger newHash;
-    ShardState oldShardState;
-    ShardState newShardState;
+  BigInteger oldHash;
+  BigInteger newHash;
+  BigInteger oldDepth;
+  BigInteger newDepth;
+  ShardState oldShardState;
+  ShardState newShardState;
 
-    public Cell toCell() {
-        return CellBuilder.beginCell()
-                .storeUint(oldHash, 256)
-                .storeUint(newHash, 256)
-                .storeRef(oldShardState.toCell())
-                .storeRef(newShardState.toCell())
-                .endCell();
+  public Cell toCell() {
+    return CellBuilder.beginCell()
+        .storeUint(oldHash, 256)
+        .storeUint(newHash, 256)
+        .storeUint(oldDepth, 16)
+        .storeUint(newDepth, 16)
+        .storeRef(oldShardState.toCell())
+        .storeRef(newShardState.toCell())
+        .endCell();
+  }
+
+  public static MerkleUpdate deserialize(CellSlice cs) {
+
+    if (cs.type != CellType.MERKLE_UPDATE) {
+      return null;
     }
 
-    public static MerkleUpdate deserialize(CellSlice cs) {
+    long magic = cs.loadUint(8).intValue();
+    assert (magic == 0x04)
+        : "MerkleUpdate: magic not equal to 0x04, found 0x" + Long.toHexString(magic);
 
-        if (cs.type != CellType.MERKLE_UPDATE) {
-            return null;
-        }
+    return MerkleUpdate.builder()
+        .oldHash(cs.loadUint(256))
+        .newHash(cs.loadUint(256))
+        .oldDepth(cs.loadUint(16))
+        .newDepth(cs.loadUint(16))
+        .oldShardState(ShardState.deserialize(CellSlice.beginParse(cs.loadRef())))
+        .newShardState(ShardState.deserialize(CellSlice.beginParse(cs.loadRef())))
+        .build();
+  }
 
-        long magic = cs.loadUint(8).intValue();
-//        assert (magic == 0x02) : "MerkleUpdate: magic not equal to 0x02, found 0x" + Long.toHexString(magic);
+  private String getOldHash() {
+    return oldHash.toString(16);
+  }
 
-        return MerkleUpdate.builder()
-                .oldHash(cs.loadUint(256))
-                .newHash(cs.loadUint(256))
-                .oldShardState(ShardState.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .newShardState(ShardState.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .build();
-    }
-
-    private String getOldHash() {
-        return oldHash.toString(16);
-    }
-
-    private String getNewHash() {
-        return newHash.toString(16);
-    }
+  private String getNewHash() {
+    return newHash.toString(16);
+  }
 }

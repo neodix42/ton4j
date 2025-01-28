@@ -37,3 +37,8 @@ jobs:
         run: |
           cd cell
           mvn test
+
+      - name: Run disassembler tests
+        run: |
+          cd disassembler
+          mvn test
