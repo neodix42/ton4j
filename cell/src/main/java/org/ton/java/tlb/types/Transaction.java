@@ -176,4 +176,12 @@ public class Transaction {
     }
     return null;
   }
+
+  public TransactionDescriptionOrdinary getOrdinaryTransaction() {
+    return (TransactionDescriptionOrdinary) getDescription();
+  }
+
+  public BouncePhase getBouncePhase() {
+    return (BouncePhase) ((TransactionDescriptionOrdinary) getDescription()).getBouncePhase();
+  }
 }

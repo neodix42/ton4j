@@ -95,4 +95,85 @@ public class TestExtraCurrency extends CommonTest {
     rawAccountState = tonlib.getRawAccountState(Address.of(rawAddress));
     log.info("rawState {}", rawAccountState);
   }
+
+  /**
+   *
+   *
+   * <pre>
+   * 1. deploys two wallets: wallet1 and wallet1
+   * 2. wallet1 requests and receives extra-currency ECHIDNA from faucet
+   * 3. wallet1 sends to wallet2 3 ECHIDNA with comment
+   * 4. wallet2 waits for ECHIDNAS from wallet1 and checks if tx with EC has comment and bounce=false.
+   * </pre>
+   */
+  @Test
+  public void testExtraCurrencyMonitor() throws InterruptedException {
+
+    WalletV3R2 wallet1 = deployWallet();
+    WalletV3R2 wallet2 = deployWallet();
+
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(wallet1.getSeqno())
+            .destination(Address.of(ecSwapAddress))
+            .amount(Utils.toNano(3.7))
+            .build();
+
+    // send request to EC Swap faucet contract in order to receive test extra-currency (ECHIDNA)
+    wallet1.sendWithConfirmation(config);
+
+    long EC_ECHIDNA_ID = 100;
+    wallet1.waitForExtraCurrency(EC_ECHIDNA_ID);
+
+    log.info("send extra-currency from wallet1 to wallet2 with comment and bounce=false");
+    config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(wallet1.getSeqno())
+            .destination(wallet2.getAddress())
+            .amount(BigInteger.ZERO)
+            .comment("send ec wallet1->wallet2")
+            .extraCurrencies(
+                Collections.singletonList(
+                    ExtraCurrency.builder().id(100).amount(BigInteger.valueOf(300000000)).build()))
+            .build();
+
+    wallet1.sendWithConfirmation(config);
+
+    RawTransaction tx = wallet2.waitForExtraCurrency(EC_ECHIDNA_ID);
+    log.info(
+        "wallet2({}) received from wallet1({}) extra-currency with id {}, value {}, comment: {}",
+        tx.getIn_msg().getDestination().getAccount_address(),
+        tx.getIn_msg().getSource().getAccount_address(),
+        tx.getFirstExtraCurrencyId(),
+        tx.getFirstExtraCurrencyValue(),
+        tx.getIn_msg().getComment());
+  }
+
+  private static WalletV3R2 deployWallet() throws InterruptedException {
+    log.info("deploying new wallet...");
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    WalletV3R2 wallet = WalletV3R2.builder().tonlib(tonlib).keyPair(keyPair).walletId(42).build();
+
+    String rawAddress = wallet.getAddress().toRaw();
+
+    log.info("         raw address: {}", rawAddress);
+    log.info("nonBounceableAddress: {}", wallet.getAddress().toNonBounceableTestnet());
+    log.info("bounceableAddress: {}", wallet.getAddress().toBounceableTestnet());
+
+    // top up initial WalletV3R2 wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            tonlib, Address.of(wallet.getAddress().toNonBounceableTestnet()), Utils.toNano(4));
+    log.info("topped up {}", Utils.formatNanoValue(balance));
+
+    // deploy WalletV3R2 code
+    ExtMessageInfo extMessageInfo = wallet.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+    wallet.waitForDeployment();
+    log.info("wallet {} deployed", rawAddress);
+    return wallet;
+  }
 }

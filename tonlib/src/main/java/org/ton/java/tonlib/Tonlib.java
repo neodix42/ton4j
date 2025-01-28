@@ -1428,7 +1428,9 @@ public class Tonlib {
       } else {
         ExtMessageInfo extMessageInfo = gson.fromJson(result, ExtMessageInfo.class);
         extMessageInfo.setError(TonlibError.builder().code(0).build());
-        log.info("Message has been successfully sent. Waiting for deliver. {}", extMessageInfo);
+        log.info(
+            "Message has been successfully sent. Waiting for delivery of message with hash {}",
+            extMessageInfo.getHash());
         RawTransactions rawTransactions = null;
         for (int i = 0; i < 12; i++) {
           rawTransactions = getRawTransactions(account.toRaw(), null, null);

@@ -31,7 +31,8 @@ public class RawMessage implements Serializable {
 
   /**
    * Returns base64 result which is encoded in base64 by default. This is a wrapper around
-   * msg_data.getBody(), but additionally decodes text message from base64 to plain string.
+   * msg_data.getBody(), but additionally decodes text message from base64 to plain string. Also see
+   * <b>getComment()</b> to load long text messages;
    *
    * @return String
    */

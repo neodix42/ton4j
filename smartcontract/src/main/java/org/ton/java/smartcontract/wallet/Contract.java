@@ -10,12 +10,11 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.types.WalletConfig;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R1;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MsgAddressIntStd;
-import org.ton.java.tlb.types.StateInit;
+import org.ton.java.tlb.types.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtraCurrency;
 import org.ton.java.tonlib.types.RawTransaction;
+import org.ton.java.tonlib.types.RawTransactions;
 import org.ton.java.utils.Utils;
 
 /** Interface for all smart contract objects in ton4j. */
@@ -206,5 +205,46 @@ public interface Contract {
       x.elements.put(ec.getId(), ec.getAmount());
     }
     return x;
+  }
+
+  default RawTransaction waitForExtraCurrency(long extraCurrencyId) {
+    return waitForExtraCurrency(extraCurrencyId, null, null, 10);
+  }
+
+  default RawTransaction waitForExtraCurrency(
+      long extraCurrencyId, BigInteger fromTxLt, String fromTxHash) {
+    return waitForExtraCurrency(extraCurrencyId, fromTxLt, fromTxHash, 10);
+  }
+
+  /**
+   * @param extraCurrencyId custom specified extra-currency id
+   * @param attempts number of attempts to wait for tx with EC, an attempt runs every 5 sec.
+   * @return RawTransaction if found
+   */
+  default RawTransaction waitForExtraCurrency(
+      long extraCurrencyId, BigInteger fromTxLt, String fromTxHash, int attempts) {
+    for (int i = 0; i < attempts; i++) {
+      RawTransactions txs =
+          getTonlib().getRawTransactions(getAddress().toRaw(), fromTxLt, fromTxHash);
+      for (RawTransaction tx : txs.getTransactions()) {
+        for (ExtraCurrency ec : tx.getIn_msg().getExtra_currencies()) {
+          if (ec.getId() == extraCurrencyId) {
+            Transaction tlbTransaction = tx.getTransactionAsTlb();
+            BouncePhase bouncePhase = tlbTransaction.getOrdinaryTransaction().getBouncePhase();
+            if (isNull(bouncePhase)) {
+              return tx;
+            } else {
+              if (bouncePhase instanceof BouncePhaseOk) {
+                throw new Error("extra-currency transaction has bounced");
+              } else {
+                return tx;
+              }
+            }
+          }
+        }
+      }
+      Utils.sleep(5);
+    }
+    throw new Error("time out waiting for extra-currency with id " + extraCurrencyId);
   }
 }
