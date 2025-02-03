@@ -229,9 +229,8 @@ public class TestWalletV3R2Short extends CommonTest {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib("path to libtonlibjson.so/dll/dylib")
-            .pathToGlobalConfig(
-                "<user>/global.config.json") // global config from MyLocalTon
-                                             // (http://127.0.0.1:8000/global.config.json)
+            .pathToGlobalConfig("<user>/global.config.json") // global config from MyLocalTon
+            // (http://127.0.0.1:8000/global.config.json)
             .ignoreCache(false)
             .build();
 
@@ -253,7 +252,8 @@ public class TestWalletV3R2Short extends CommonTest {
 
     Tonlib tonlib =
         Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
+            .pathToTonlibSharedLib(
+                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
             .pathToGlobalConfig("g:/libs/global.config-mlt.json")
             .ignoreCache(false)
             .build();
@@ -282,7 +282,8 @@ public class TestWalletV3R2Short extends CommonTest {
 
     Tonlib tonlib =
         Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
+            .pathToTonlibSharedLib(
+                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
             .pathToGlobalConfig("g:/libs/global.config-mlt.json")
             .ignoreCache(false)
             .build();
@@ -304,7 +305,8 @@ public class TestWalletV3R2Short extends CommonTest {
 
     Tonlib tonlib =
         Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
+            .pathToTonlibSharedLib(
+                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
             .pathToGlobalConfig("g:/libs/global.config-mlt.json")
             .ignoreCache(false)
             .build();
@@ -326,7 +328,8 @@ public class TestWalletV3R2Short extends CommonTest {
 
     Tonlib tonlib =
         Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
+            .pathToTonlibSharedLib(
+                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
             .pathToGlobalConfig("g:/libs/global.config-mlt.json")
             .ignoreCache(false)
             .build();
@@ -348,7 +351,8 @@ public class TestWalletV3R2Short extends CommonTest {
 
     Tonlib tonlib =
         Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
+            .pathToTonlibSharedLib(
+                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
             .pathToGlobalConfig("g:/libs/global.config-mlt.json")
             .ignoreCache(false)
             .build();
@@ -370,7 +374,8 @@ public class TestWalletV3R2Short extends CommonTest {
 
     Tonlib tonlib =
         Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
+            .pathToTonlibSharedLib(
+                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
             .pathToGlobalConfig("g:/libs/global.config-mlt.json")
             .ignoreCache(false)
             .build();
@@ -392,7 +397,8 @@ public class TestWalletV3R2Short extends CommonTest {
 
     Tonlib tonlib =
         Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
+            .pathToTonlibSharedLib(
+                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
             .pathToGlobalConfig("g:/libs/global.config-mlt.json")
             .ignoreCache(false)
             .build();

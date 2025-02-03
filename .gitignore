@@ -1,5 +1,6 @@
 **/*.boc
 **/*.exe
+**/*.dll
 **/*.json
 **/**/tonlib.libcache
 **/lite-client.exe
@@ -51,6 +52,8 @@ target/
 .idea/modules
 **/*.ipr
 **/*.iml
+**/smartcont/*.*
+**/lib
 
 # CMake
 cmake-build-*/

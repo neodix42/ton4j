@@ -36,3 +36,9 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+smartcont/
+lib/
+**/*.boc
+**/*.exe
+**/*.dll

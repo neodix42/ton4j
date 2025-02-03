@@ -39,3 +39,6 @@ build/
 
 smartcont/
 lib/
+**/*.boc
+**/*.exe
+**/*.dll

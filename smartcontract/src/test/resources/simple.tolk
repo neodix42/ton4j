@@ -1,4 +1,4 @@
-tolk 0.6
+tolk 0.7
 
 import "@stdlib/gas-payments"
 

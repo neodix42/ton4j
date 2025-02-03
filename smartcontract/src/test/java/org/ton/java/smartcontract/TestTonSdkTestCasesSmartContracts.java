@@ -47,6 +47,9 @@ import org.ton.java.utils.Utils;
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestTonSdkTestCasesSmartContracts {
+
+  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+
   public static final String numbersTestFileUrl =
       "https://raw.githubusercontent.com/neodix42/ton-sdk-test-cases/main/smartcontracts.json";
   Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
@@ -585,7 +588,12 @@ public class TestTonSdkTestCasesSmartContracts {
     String forwardComment = testCase.getInput().get("forwardComment").toString();
 
     // careful - mainnet
-    Tonlib tonlib = Tonlib.builder().testnet(false).ignoreCache(false).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .testnet(false)
+            .pathToTonlibSharedLib(tonlibPath)
+            .ignoreCache(false)
+            .build();
 
     Address usdtMasterAddress = Address.of(usdtMasterContractAddress);
 
@@ -703,7 +711,12 @@ public class TestTonSdkTestCasesSmartContracts {
         new BigInteger(testCase.getInput().get("forwardAmountNanocoins").toString());
 
     // careful - mainnet
-    Tonlib tonlib = Tonlib.builder().testnet(false).ignoreCache(false).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .testnet(false)
+            .pathToTonlibSharedLib(tonlibPath)
+            .ignoreCache(false)
+            .build();
 
     Address usdtMasterAddress = Address.of(usdtMasterContractAddress);
 

@@ -12,13 +12,13 @@ import org.junit.runner.RunWith;
 import org.ton.java.address.Address;
 import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.tonlib.types.MasterChainInfo;
+import org.ton.java.utils.Utils;
 
 @Slf4j
 @RunWith(ConcurrentTestRunner.class)
 public class TestConcurrentTonlib {
 
-  static String tonlibPath =
-      System.getProperty("user.dir") + "/../2.ton-test-artifacts/tonlibjson.dll";
+  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
 
   private static Tonlib tonlib =
       Tonlib.builder().testnet(true).ignoreCache(false).pathToTonlibSharedLib(tonlibPath).build();

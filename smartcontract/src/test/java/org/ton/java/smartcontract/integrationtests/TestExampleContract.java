@@ -19,7 +19,7 @@ import org.ton.java.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestExampleContract {
+public class TestExampleContract extends CommonTest {
 
   @Test
   public void testExampleContract() throws InterruptedException {

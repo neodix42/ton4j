@@ -17,7 +17,6 @@ import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV1R3Config;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.java.tlb.types.Message;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.QueryFees;
 import org.ton.java.utils.Utils;
@@ -28,8 +27,6 @@ public class TestWalletFeesV1 extends CommonTest {
 
   @Test
   public void testWalletFeesV1() throws InterruptedException {
-
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
     TweetNaclFast.Signature.KeyPair keyPairA = Utils.generateSignatureKeyPair();
 
@@ -125,8 +122,6 @@ public class TestWalletFeesV1 extends CommonTest {
   @Test
   public void testWithDeployedWalletsV1AB() {
 
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
-
     TweetNaclFast.Box.KeyPair keyPairBoxA =
         Utils.generateKeyPairFromSecretKey(
             Utils.hexToSignedBytes(
@@ -194,8 +189,6 @@ public class TestWalletFeesV1 extends CommonTest {
 
   @Test
   public void testWalletStorageFeeSpeedV1() {
-
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
     TweetNaclFast.Box.KeyPair keyPairBoxA =
         Utils.generateKeyPairFromSecretKey(

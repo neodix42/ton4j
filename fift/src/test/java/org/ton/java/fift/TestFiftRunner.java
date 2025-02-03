@@ -24,16 +24,9 @@ public class TestFiftRunner {
     File fiftFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = fiftFile.getAbsolutePath();
 
-    String fiftPath = "https://github.com/neodix42/ton/releases/download/v2025.01-19/fift.exe";
-    String libPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/lib";
-    String smartcontPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/smartcont";
+    String fiftPath = "https://github.com/neodix42/ton/releases/download/v2025.02/fift.exe";
 
-    FiftRunner fiftRunner =
-        FiftRunner.builder()
-            .fiftExecutablePath(fiftPath)
-            .fiftAsmLibraryPath(libPath)
-            .fiftSmartcontLibraryPath(smartcontPath)
-            .build();
+    FiftRunner fiftRunner = FiftRunner.builder().fiftExecutablePath(fiftPath).build();
 
     String result = fiftRunner.run(fiftFile.getParent(), "-s", absolutePath);
     log.info("output: {}", result);
@@ -46,7 +39,7 @@ public class TestFiftRunner {
     File fiftFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = fiftFile.getAbsolutePath();
 
-    String fiftPath = "https://github.com/neodix42/ton/releases/download/v2025.01-19/fift.exe";
+    String fiftPath = "https://github.com/neodix42/ton/releases/download/v2025.02/fift.exe";
 
     FiftRunner fiftRunner = FiftRunner.builder().fiftExecutablePath(fiftPath).build();
 

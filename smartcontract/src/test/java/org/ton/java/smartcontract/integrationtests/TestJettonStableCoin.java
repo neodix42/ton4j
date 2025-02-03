@@ -33,7 +33,13 @@ public class TestJettonStableCoin {
 
   @BeforeClass
   public static void setUpBeforeClass() throws InterruptedException {
-    tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    tonlib =
+        Tonlib.builder()
+            .testnet(true)
+            .pathToTonlibSharedLib(
+                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
+            .ignoreCache(false)
+            .build();
     adminWallet = GenerateWallet.randomV3R1(tonlib, 3);
     wallet2 = GenerateWallet.randomV3R1(tonlib, 2);
   }

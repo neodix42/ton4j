@@ -1347,7 +1347,7 @@ public class Utils {
   public static String getArtifactGithubUrl(
       String artifactName, String release, String githubUsername, String githubRepository) {
     String baseUrl;
-    if (StringUtils.isNotEmpty(release)) {
+    if (StringUtils.isNotEmpty(release) && !release.contains("latest")) {
 
       baseUrl =
           "https://github.com/"

@@ -38,3 +38,6 @@ build/
 .DS_Store
 smartcont/
 lib/
+**/*.boc
+**/*.exe
+**/*.dll

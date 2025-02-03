@@ -20,15 +20,12 @@ import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.utils.Utils;
 
 public class DisassemblerTest {
-  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "v2024.12-1");
+  static String emulatorPath =
+      Utils.getArtifactGithubUrl("libemulator", "latest", "neodix42", "ton");
+  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+  static String funcPath = Utils.getArtifactGithubUrl("func", "latest", "neodix42", "ton");
+  static String fiftPath = Utils.getArtifactGithubUrl("fift", "latest", "neodix42", "ton");
 
-  static String funcPath = Utils.getArtifactGithubUrl("func", "v2024.12-1");
-
-  static String fiftPath = Utils.getArtifactGithubUrl("fift", "v2024.12-1");
-  static String tolkPath = Utils.getArtifactGithubUrl("tolk", "v2024.12-1");
-
-  String libPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/lib";
-  String smartcontPath = System.getProperty("user.dir") + "/../2.ton-test-artifacts/smartcont";
   private static final String BASE_DIR = "src/test/resources/";
   private static final String BOC_DIR = BASE_DIR + "bocs/";
   private static final String TXT_DIR = BASE_DIR + "snapshots/";
@@ -146,12 +143,7 @@ public class DisassemblerTest {
       }
     }
 
-    FiftRunner fiftRunner =
-        FiftRunner.builder()
-            .fiftExecutablePath(fiftPath)
-            .fiftAsmLibraryPath(libPath)
-            .fiftSmartcontLibraryPath(smartcontPath)
-            .build();
+    FiftRunner fiftRunner = FiftRunner.builder().fiftExecutablePath(fiftPath).build();
 
     return fiftRunner.run(fiftFile.getParent(), "-s", fiftFile.getAbsolutePath());
   }

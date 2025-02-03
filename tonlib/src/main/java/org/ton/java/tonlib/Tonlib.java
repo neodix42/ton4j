@@ -437,27 +437,29 @@ public class Tonlib {
             }
 
             if (usingAllLiteServers) {
-              // try next lite-server from the list
-              TonGlobalConfig globalConfigCurrent =
-                  gson.fromJson(originalGlobalConfigStr, TonGlobalConfig.class);
-              LiteServers[] liteServers = originalGlobalConfigInternal.getLiteservers();
-              LiteServers[] newLiteServers = new LiteServers[1];
-              newLiteServers[0] =
-                  liteServers[retry % originalGlobalConfigInternal.getLiteservers().length];
-              globalConfigCurrent.setLiteservers(newLiteServers);
+              if (retry < originalGlobalConfigInternal.getLiteservers().length) {
+                // try next lite-server from the list
+                TonGlobalConfig globalConfigCurrent =
+                    gson.fromJson(originalGlobalConfigStr, TonGlobalConfig.class);
+                LiteServers[] liteServers = originalGlobalConfigInternal.getLiteservers();
+                LiteServers[] newLiteServers = new LiteServers[1];
+                newLiteServers[0] =
+                    liteServers[retry % originalGlobalConfigInternal.getLiteservers().length];
+                globalConfigCurrent.setLiteservers(newLiteServers);
 
-              log.info(
-                  "Trying next lite-server at index: "
-                      + (retry % originalGlobalConfigInternal.getLiteservers().length)
-                      + " ("
-                      + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
-                      + ")");
+                log.info(
+                    "Trying next lite-server at index: "
+                        + (retry % originalGlobalConfigInternal.getLiteservers().length)
+                        + " ("
+                        + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
+                        + ")");
 
-              reinitTonlibConfig(globalConfigCurrent);
-              // repeat request
-              Utils.disableNativeOutput(verbosityLevel.ordinal());
-              tonlibJson.tonlib_client_json_send(tonlib, query);
-              Utils.enableNativeOutput(verbosityLevel.ordinal());
+                reinitTonlibConfig(globalConfigCurrent);
+                // repeat request
+                Utils.disableNativeOutput(verbosityLevel.ordinal());
+                tonlibJson.tonlib_client_json_send(tonlib, query);
+                Utils.enableNativeOutput(verbosityLevel.ordinal());
+              }
             }
           } else if (response.contains("\"@type\":\"ok\"")) {
             String queryExtraId = StringUtils.substringBetween(query, "@extra\":\"", "\"}");

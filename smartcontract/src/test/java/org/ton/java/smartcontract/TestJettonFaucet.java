@@ -29,6 +29,8 @@ import org.ton.java.utils.Utils;
 @RunWith(JUnit4.class)
 public class TestJettonFaucet {
 
+  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+
   static String ADMIN_WALLET_PUBLIC_KEY =
       "d1d4515b2635b81de98d58f65502f2c242bb0e63615520341b83a12dd4d0f516";
   static String ADMIN_WALLET_SECRET_KEY =
@@ -41,7 +43,12 @@ public class TestJettonFaucet {
 
   @Test
   public void testJettonFaucetBalance() {
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .testnet(false)
+            .pathToTonlibSharedLib(tonlibPath)
+            .ignoreCache(false)
+            .build();
 
     TweetNaclFast.Signature.KeyPair keyPair =
         TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(ADMIN_WALLET_SECRET_KEY));
@@ -88,7 +95,12 @@ public class TestJettonFaucet {
     byte[] secretKey = Utils.hexToSignedBytes(ADMIN_WALLET_SECRET_KEY);
     TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
 
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .testnet(false)
+            .pathToTonlibSharedLib(tonlibPath)
+            .ignoreCache(false)
+            .build();
 
     WalletV3R2 adminWallet =
         WalletV3R2.builder().tonlib(tonlib).walletId(42).keyPair(keyPair).build();
@@ -111,7 +123,12 @@ public class TestJettonFaucet {
   @Test
   public void deployJettonFaucetMinter() {
 
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .testnet(false)
+            .pathToTonlibSharedLib(tonlibPath)
+            .ignoreCache(false)
+            .build();
 
     byte[] secretKey = Utils.hexToSignedBytes(ADMIN_WALLET_SECRET_KEY);
     TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
@@ -147,7 +164,12 @@ public class TestJettonFaucet {
 
   @Test
   public void mintTestJettonsFaucet() {
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .testnet(false)
+            .pathToTonlibSharedLib(tonlibPath)
+            .ignoreCache(false)
+            .build();
 
     byte[] secretKey = Utils.hexToSignedBytes(ADMIN_WALLET_SECRET_KEY);
     TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
@@ -179,7 +201,12 @@ public class TestJettonFaucet {
 
   @Test
   public void topUpAnyContractWithNeoJettons() {
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .testnet(false)
+            .pathToTonlibSharedLib(tonlibPath)
+            .ignoreCache(false)
+            .build();
     BigInteger newBalance =
         TestnetJettonFaucet.topUpContractWithNeoj(
             tonlib,
@@ -191,7 +218,12 @@ public class TestJettonFaucet {
   @Test
   public void testJettonBalance() {
 
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .testnet(false)
+            .pathToTonlibSharedLib(tonlibPath)
+            .ignoreCache(false)
+            .build();
 
     log.info(
         "balance: {}",

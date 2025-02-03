@@ -1,5 +1,8 @@
 package org.ton.java.smartcontract.integrationtests;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -13,10 +16,6 @@ import org.ton.java.smartcontract.types.*;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -41,12 +40,6 @@ public class TestPayments extends CommonTest {
 
     @Test
     public void testPayments() {
-
-//        tonlib = Tonlib.builder()
-//                .testnet(true)
-//                .ignoreCache(false)
-//                .verbosityLevel(VerbosityLevel.DEBUG)
-//                .build();
 
         log.info("walletA address {}", walletAddressA);
         log.info("walletB address {}", walletAddressB);

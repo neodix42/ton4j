@@ -5,18 +5,21 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.tonlib.Tonlib;
+import org.ton.java.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class CommonTest {
   static Tonlib tonlib;
 
-  static String tonlibPath =
-      System.getProperty("user.dir") + "/../2.ton-test-artifacts/tonlibjson.dll";
-
   @BeforeClass
   public static void setUpBeforeClass() {
     tonlib =
-        Tonlib.builder().testnet(true).pathToTonlibSharedLib(tonlibPath).ignoreCache(false).build();
+        Tonlib.builder()
+            .testnet(true)
+            .pathToTonlibSharedLib(
+                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
+            .ignoreCache(false)
+            .build();
   }
 }
