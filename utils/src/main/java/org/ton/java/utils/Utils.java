@@ -1341,12 +1341,29 @@ public class Utils {
   }
 
   public static String getArtifactGithubUrl(String artifactName, String release) {
+    return getArtifactGithubUrl(artifactName, release, "ton-blockchain", "ton");
+  }
+
+  public static String getArtifactGithubUrl(
+      String artifactName, String release, String githubUsername, String githubRepository) {
     String baseUrl;
     if (StringUtils.isNotEmpty(release)) {
 
-      baseUrl = "https://github.com/ton-blockchain/ton/releases/download/" + release + "/";
+      baseUrl =
+          "https://github.com/"
+              + githubUsername
+              + "/"
+              + githubRepository
+              + "/releases/download/"
+              + release
+              + "/";
     } else {
-      baseUrl = "https://github.com/ton-blockchain/ton/releases/latest/download/";
+      baseUrl =
+          "https://github.com/"
+              + githubUsername
+              + "/"
+              + githubRepository
+              + "/releases/latest/download/";
     }
 
     if ((getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == OS.WINDOWS_ARM)) {

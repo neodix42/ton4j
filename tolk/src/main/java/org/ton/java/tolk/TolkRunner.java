@@ -5,10 +5,13 @@ import static java.util.Objects.isNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -56,8 +59,11 @@ public class TolkRunner {
           }
           String tolkAbsolutePath = Utils.detectAbsolutePath("tolk", false);
 
+          if (StringUtils.isEmpty(super.tolkStdLibPath)) {
+            super.tolkStdLibPath = getTolkSystemStdLibPath();
+          }
           if (super.printInfo) {
-            log.info("Tolk found at " + tolkAbsolutePath);
+            log.info("Tolk found at {}, TOLK_STDLIB={} ", tolkAbsolutePath, super.tolkStdLibPath);
           }
           tolkExecutable = "tolk";
 
@@ -66,13 +72,44 @@ public class TolkRunner {
           throw new Error("Cannot execute simple Tolk command.\n" + errorMsg);
         }
       } else {
+        if (super.tolkExecutablePath.contains("http") && super.tolkExecutablePath.contains("://")) {
+          try {
+            String smartcont =
+                StringUtils.substringBeforeLast(super.tolkExecutablePath, "/")
+                    + "/smartcont_lib.zip";
+
+            String smartcontPath = Utils.getLocalOrDownload(smartcont);
+            ZipFile zipFile = new ZipFile(smartcontPath);
+            zipFile.extractAll(new File(smartcontPath).getParent());
+            Files.delete(Paths.get(smartcontPath));
+          } catch (Exception e) {
+            log.error("cannot download smartcont_lib.zip");
+          }
+        }
+
         super.tolkExecutablePath = Utils.getLocalOrDownload(super.tolkExecutablePath);
+        if (StringUtils.isEmpty(super.tolkStdLibPath)) {
+          super.tolkStdLibPath =
+              new File(super.tolkExecutablePath).getParent() + "/smartcont/tolk-stdlib";
+        }
+
         if (super.printInfo) {
-          log.info("using " + super.tolkExecutablePath);
+          log.info("Using {}, TOLK_STDLIB={}", super.tolkExecutablePath, super.tolkStdLibPath);
         }
         tolkExecutable = super.tolkExecutablePath;
       }
+
       return super.build();
+    }
+
+    private String getTolkSystemStdLibPath() {
+      if (Utils.getOS() == Utils.OS.WINDOWS) {
+        return "C:/ProgramData/chocolatey/lib/ton/bin/smartcont/tolk-stdlib";
+      } else if (Utils.getOS() == Utils.OS.MAC) {
+        return "/opt/homebrew/share/ton/ton/smartcont/tolk-stdlib";
+      } else {
+        return "/usr/share/ton/smartcont/tolk-stdlib";
+      }
     }
   }
 
@@ -86,7 +123,7 @@ public class TolkRunner {
     return "";
   }
 
-  public String getTolkPath() {
+  public String getTolkSystemPath() {
     return Utils.detectAbsolutePath("tolk", false);
   }
 

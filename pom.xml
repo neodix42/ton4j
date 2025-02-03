@@ -7,7 +7,7 @@
     <groupId>io.github.neodix42</groupId>
     <artifactId>top</artifactId>
     <packaging>pom</packaging>
-    <version>0.9.1</version>
+    <version>0.9.2</version>
 
     <modules>
         <module>bitstring</module>
@@ -50,6 +50,7 @@
         <maven.deploy.plugin>3.1.3</maven.deploy.plugin>
         <commons-io.version>2.18.0</commons-io.version>
         <log4j.version>2.17.1</log4j.version>
+        <zip4j.version>2.11.3</zip4j.version>
     </properties>
 
     <name>ton4j parent module</name>
@@ -204,6 +205,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <executable>C:\Program Files\Git\usr\bin\gpg.exe</executable>
+                </configuration>
             </plugin>
 
             <!-- Nexus Staging Maven Plugin for Deployment and Release -->

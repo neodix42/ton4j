@@ -6,10 +6,13 @@ import static java.util.Objects.nonNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import net.lingala.zip4j.ZipFile;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -63,9 +66,30 @@ public class FiftRunner {
           throw new Error("Cannot execute simple Fift command.\n" + errorMsg);
         }
       } else {
+        if (super.fiftExecutablePath.contains("http") && super.fiftExecutablePath.contains("://")) {
+          try {
+            String smartcont =
+                StringUtils.substringBeforeLast(super.fiftExecutablePath, "/")
+                    + "/smartcont_lib.zip";
+
+            String smartcontPath = Utils.getLocalOrDownload(smartcont);
+            ZipFile zipFile = new ZipFile(smartcontPath);
+            zipFile.extractAll(new File(smartcontPath).getParent());
+            Files.delete(Paths.get(smartcontPath));
+          } catch (Exception e) {
+            log.error("cannot download smartcont_lib.zip");
+          }
+        }
         super.fiftExecutablePath = Utils.getLocalOrDownload(super.fiftExecutablePath);
+        if (StringUtils.isEmpty(super.fiftAsmLibraryPath)) {
+          super.fiftAsmLibraryPath = new File(super.fiftExecutablePath).getParent() + "/lib";
+        }
+        if (StringUtils.isEmpty(super.fiftSmartcontLibraryPath)) {
+          super.fiftSmartcontLibraryPath =
+              new File(super.fiftExecutablePath).getParent() + "/smartcont";
+        }
         if (super.printInfo) {
-          log.info("using " + super.fiftExecutablePath);
+          log.info("Using {}", super.fiftExecutablePath);
         }
         fiftExecutable = super.fiftExecutablePath;
       }
@@ -75,44 +99,49 @@ public class FiftRunner {
       }
 
       if (StringUtils.isEmpty(super.fiftAsmLibraryPath)) {
-        if (Utils.getOS() == Utils.OS.WINDOWS) {
-          super.fiftAsmLibraryPath =
-              new File(fiftAbsolutePath).getParent() + File.separator + "lib";
-        } else if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
-          super.fiftAsmLibraryPath = "/usr/lib/fift";
-        } else { // mac
-          if (new File("/usr/local/lib/fift").exists()) {
-            super.fiftAsmLibraryPath = "/usr/local/lib/fift";
-          } else if (new File("/opt/homebrew/lib/fift").exists()) {
-            super.fiftAsmLibraryPath = "/opt/homebrew/lib/fift";
-          }
-        }
+        super.fiftAsmLibraryPath = getFiftSystemLibPath();
       }
 
       if (StringUtils.isEmpty(super.fiftSmartcontLibraryPath)) {
-        if (Utils.getOS() == Utils.OS.WINDOWS) {
-          super.fiftSmartcontLibraryPath =
-              new File(fiftAbsolutePath).getParent() + File.separator + "smartcont";
-        }
-        if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
-          super.fiftSmartcontLibraryPath = "/usr/share/ton/smartcont";
-        } else { // mac
-          if (new File("/usr/local/share/ton/ton/smartcont").exists()) {
-            super.fiftSmartcontLibraryPath = "/usr/local/share/ton/ton/smartcont";
-          } else if (new File("/opt/homebrew/share/ton/ton/smartcont").exists()) {
-            super.fiftSmartcontLibraryPath = "/opt/homebrew/share/ton/ton/smartcont";
-          }
-        }
+        super.fiftSmartcontLibraryPath = getFiftSystemSmartcontPath();
       }
 
       if (super.printInfo) {
         log.info(
-            "using include dirs: "
-                + super.fiftAsmLibraryPath
-                + ", "
-                + super.fiftSmartcontLibraryPath);
+            "Using include dirs: {}, {}", super.fiftAsmLibraryPath, super.fiftSmartcontLibraryPath);
       }
       return super.build();
+    }
+
+    private String getFiftSystemLibPath() {
+      if (Utils.getOS() == Utils.OS.WINDOWS) {
+        return new File(fiftAbsolutePath).getParent() + File.separator + "lib";
+      } else if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
+        return "/usr/lib/fift";
+      } else { // mac
+        if (new File("/usr/local/lib/fift").exists()) {
+          return "/usr/local/lib/fift";
+        } else if (new File("/opt/homebrew/lib/fift").exists()) {
+          return "/opt/homebrew/lib/fift";
+        }
+      }
+      return null;
+    }
+
+    private String getFiftSystemSmartcontPath() {
+      if (Utils.getOS() == Utils.OS.WINDOWS) {
+        return new File(fiftAbsolutePath).getParent() + File.separator + "smartcont";
+      }
+      if ((Utils.getOS() == Utils.OS.LINUX) || (Utils.getOS() == Utils.OS.LINUX_ARM)) {
+        return "/usr/share/ton/smartcont";
+      } else { // mac
+        if (new File("/usr/local/share/ton/ton/smartcont").exists()) {
+          return "/usr/local/share/ton/ton/smartcont";
+        } else if (new File("/opt/homebrew/share/ton/ton/smartcont").exists()) {
+          return "/opt/homebrew/share/ton/ton/smartcont";
+        }
+      }
+      return null;
     }
   }
 

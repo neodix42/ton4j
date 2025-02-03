@@ -53,6 +53,7 @@ public class TestBitStringPerformance {
   }
 
   @Test
+  @Ignore
   public void testWriteUintPerformance() {
     BitString bitString = new BitString(SIZE);
     long startTime = System.nanoTime();

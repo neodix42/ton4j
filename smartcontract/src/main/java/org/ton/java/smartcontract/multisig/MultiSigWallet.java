@@ -19,9 +19,13 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
+/**
+ * @deprecated please switch to a multisig wallet v2.
+ */
 @Builder
 @Getter
 @Slf4j
+@Deprecated
 public class MultiSigWallet implements Contract {
 
   // https://github.com/akifoq/multisig/blob/master/multisig-code.fc

@@ -1,5 +1,11 @@
 package org.ton.java.smartcontract;
 
+import static java.util.Objects.isNull;
+
+import java.io.File;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -9,13 +15,6 @@ import org.ton.java.cell.Cell;
 import org.ton.java.fift.FiftRunner;
 import org.ton.java.func.FuncRunner;
 import org.ton.java.tolk.TolkRunner;
-
-import java.io.File;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.file.Paths;
-
-import static java.util.Objects.isNull;
 
 /**
  * Make sure you have fift and func installed. See <a
@@ -112,7 +111,8 @@ public class SmartContractCompiler {
 
         if (outputFiftAsmFile.contains("cannot generate code")
                 || outputFiftAsmFile.contains(": error:")
-                || outputFiftAsmFile.contains("Failed to discover")) {
+                || outputFiftAsmFile.contains("Failed to discover")
+                || outputFiftAsmFile.contains("  ^  ")) {
             throw new Error("Compile error: " + outputFiftAsmFile);
         }
 

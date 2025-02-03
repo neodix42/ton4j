@@ -24,8 +24,12 @@ import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
 
+/**
+ * @deprecated - will be removed in future releases, please switch to Highload Wallet v3
+ */
 @Builder
 @Getter
+@Deprecated
 public class HighloadWallet implements Contract {
 
   // https://github.com/ton-blockchain/ton/blob/master/crypto/smartcont/highload-wallet-v2-code.fc

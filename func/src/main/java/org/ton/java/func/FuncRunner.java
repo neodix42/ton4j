@@ -63,7 +63,7 @@ public class FuncRunner {
       } else {
         super.funcExecutablePath = Utils.getLocalOrDownload(super.funcExecutablePath);
         if (super.printInfo) {
-          log.info("using " + super.funcExecutablePath);
+          log.info("Using " + super.funcExecutablePath);
         }
         funcExecutable = super.funcExecutablePath;
       }
