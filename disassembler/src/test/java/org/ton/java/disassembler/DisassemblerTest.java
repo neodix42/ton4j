@@ -20,8 +20,6 @@ import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.utils.Utils;
 
 public class DisassemblerTest {
-  static String emulatorPath =
-      Utils.getArtifactGithubUrl("libemulator", "latest", "neodix42", "ton");
   static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
   static String funcPath = Utils.getArtifactGithubUrl("func", "latest", "neodix42", "ton");
   static String fiftPath = Utils.getArtifactGithubUrl("fift", "latest", "neodix42", "ton");

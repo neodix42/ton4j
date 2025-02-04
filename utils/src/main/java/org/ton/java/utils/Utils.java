@@ -1302,6 +1302,8 @@ public class Utils {
         File tmpFile = new File(filename);
         if (!tmpFile.exists()) {
           FileUtils.copyURLToFile(url, tmpFile);
+          tmpFile.setExecutable(true);
+
         } else {
           log.info("{} already downloaded", filename);
         }
