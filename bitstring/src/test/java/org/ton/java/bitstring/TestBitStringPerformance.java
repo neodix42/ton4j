@@ -12,12 +12,12 @@ import org.junit.runners.JUnit4;
 
 @Slf4j
 @RunWith(JUnit4.class)
+@Ignore
 public class TestBitStringPerformance {
 
   private static final int SIZE = 1_000_000;
 
   @Test
-  @Ignore
   public void testWriteBitStringPerformance() {
     BitString bitString = new BitString(SIZE);
     long startTime = System.nanoTime();
@@ -34,7 +34,6 @@ public class TestBitStringPerformance {
   }
 
   @Test
-  @Ignore
   public void testReadBitStringPerformance() {
     BitString bitString = new BitString(SIZE);
     for (int i = 0; i < SIZE; i++) {
@@ -55,7 +54,6 @@ public class TestBitStringPerformance {
   }
 
   @Test
-  @Ignore
   public void testWriteUintPerformance() {
     BitString bitString = new BitString(SIZE);
     long startTime = System.nanoTime();
@@ -72,7 +70,6 @@ public class TestBitStringPerformance {
   }
 
   @Test
-  @Ignore
   public void testReadUintPerformance() {
     BitString bitString = new BitString(SIZE);
     for (int i = 0; i < SIZE; i++) {
@@ -93,7 +90,6 @@ public class TestBitStringPerformance {
   }
 
   @Test
-  @Ignore
   public void testWriteBytesPerformance() {
     byte[] data = new byte[SIZE];
     new java.util.Random().nextBytes(data);
@@ -110,7 +106,6 @@ public class TestBitStringPerformance {
   }
 
   @Test
-  @Ignore
   public void testReadBytesPerformance() {
     byte[] data = new byte[SIZE];
     new java.util.Random().nextBytes(data);
@@ -129,7 +124,6 @@ public class TestBitStringPerformance {
   }
 
   @Test
-  @Ignore
   public void testWriteUint() {
     BitString bitString = new BitString(SIZE);
 
