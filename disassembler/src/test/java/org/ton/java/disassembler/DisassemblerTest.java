@@ -1,6 +1,6 @@
 package org.ton.java.disassembler;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,8 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.fift.FiftRunner;
@@ -19,6 +20,7 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.FullAccountState;
 import org.ton.java.utils.Utils;
 
+@RunWith(JUnit4.class)
 public class DisassemblerTest {
   static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
   static String funcPath = Utils.getArtifactGithubUrl("func", "latest", "neodix42", "ton");
@@ -28,17 +30,8 @@ public class DisassemblerTest {
   private static final String BOC_DIR = BASE_DIR + "bocs/";
   private static final String TXT_DIR = BASE_DIR + "snapshots/";
 
-  private static Tonlib tonlib;
-
-  @BeforeAll
-  public static void init() {
-    tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(false)
-            .ignoreCache(false)
-            .build();
-  }
+  private static Tonlib tonlib =
+      Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(false).ignoreCache(false).build();
 
   @Test
   public void shouldDisassembleConfig() throws Exception {
@@ -46,14 +39,14 @@ public class DisassemblerTest {
     String result = normalizeLines(Disassembler.fromBoc(boc));
     String actual = loadSnapshot("config");
 
-    assertEquals(actual, result);
+    assertThat(actual).isEqualTo(result);
   }
 
   @Test
   public void shouldDisassembleNft() throws Exception {
     byte[] boc = fetchCodeOrSnapshot("EQBmG4YwsdGsUHG46rL-_GtGxsUrdmn-8Tau1DKkzQMNsGaW");
     String result = normalizeLines(Disassembler.fromBoc(boc));
-    assertEquals(loadSnapshot("nft"), result);
+    assertThat(loadSnapshot("nft")).isEqualTo(result);
   }
 
   @Test
@@ -61,28 +54,28 @@ public class DisassemblerTest {
     String code = loadFiftFromFunc();
     Cell codeCell = Cell.fromBoc(code);
     String result = normalizeLines(Disassembler.fromCode(codeCell));
-    assertEquals(loadSnapshot("dump"), result);
+    assertThat(loadSnapshot("dump")).isEqualTo(result);
   }
 
   @Test
   public void shouldDisassembleElector() throws Exception {
     byte[] boc = fetchCodeOrSnapshot("Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF");
     String result = normalizeLines(Disassembler.fromBoc(boc));
-    assertEquals(loadSnapshot("elector"), result);
+    assertThat(loadSnapshot("elector")).isEqualTo(result);
   }
 
   @Test
   public void shouldDisassembleContract() throws Exception {
     byte[] boc = fetchCodeOrSnapshot("EQBRrTk63wHpvreMs7_cDKWh6zrYmQcSBOjKz1i6GcbRTLZX");
     String result = normalizeLines(Disassembler.fromBoc(boc));
-    assertEquals(loadSnapshot("contract"), result);
+    assertThat(loadSnapshot("contract")).isEqualTo(result);
   }
 
   @Test
   public void shouldDisassembleNumber5() throws Exception {
     byte[] boc = fetchCodeOrSnapshot("EQDSbgHX03B9_0cNBAMdlmhVbvhRNYhZNhTRH4wfNBmisKB5");
     String result = normalizeLines(Disassembler.fromBoc(boc));
-    assertEquals(loadSnapshot("numberFive"), result);
+    assertThat(loadSnapshot("numberFive")).isEqualTo(result);
   }
 
   private byte[] fetchCodeOrSnapshot(String addr) throws Exception {
