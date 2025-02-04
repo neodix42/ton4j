@@ -27,17 +27,11 @@ jobs:
           cd address
           mvn test
 
-      - name: Run BitString tests
-        timeout-minutes: 5
-        run: |
-          cd bitstring
-          mvn -X test
-
       - name: Run Cell tests
         timeout-minutes: 5
         run: |
           cd cell
-          mvn -X test
+          mvn test
 
       - name: Run tonlib tests
         timeout-minutes: 5
@@ -55,4 +49,10 @@ jobs:
         timeout-minutes: 5
         run: |
           cd disassembler
-          mvn -X test
+          mvn test
+
+      - name: Run BitString tests
+        timeout-minutes: 5
+        run: |
+          cd bitstring
+          mvn test
