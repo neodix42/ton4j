@@ -19,7 +19,7 @@ jobs:
           distribution: 'adopt'
 
       - name: Compile all
-        run: mvn -DskipTests -Dgpg.skip install
+        run: mvn install -"DskipTests" -"Dgpg.skip"
 
       - name: Run Address tests
         run: |
@@ -36,11 +36,6 @@ jobs:
           cd cell
           mvn test
 
-      - name: Run Disassembler tests
-        run: |
-          cd disassembler
-          mvn test
-
       - name: Run tonlib tests
         run: |
           cd tonlib
@@ -49,4 +44,9 @@ jobs:
       - name: Run Utils tests
         run: |
           cd utils
+          mvn test
+
+      - name: Run Disassembler tests
+        run: |
+          cd disassembler
           mvn test
