@@ -19,7 +19,7 @@ jobs:
           distribution: 'adopt'
 
       - name: Compile all
-        run: mvn -DskipTests install
+        run: mvn -DskipTests -Dgpg.skip install
 
       - name: Run Address tests
         run: |
