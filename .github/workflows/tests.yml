@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-22.04, ubuntu-22.04-arm, macos-13, macos-14, windows-2019 ]
+        os: [ ubuntu-22.04, macos-13, macos-14, windows-2019 ]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -19,13 +19,7 @@ jobs:
           distribution: 'adopt'
 
       - name: Compile all
-        run: |
-          mvn clean compile
-
-      - name: Run Utils tests
-        run: |
-          cd utils
-          mvn test
+        run: mvn -DskipTests package
 
       - name: Run Address tests
         run: |
@@ -42,7 +36,7 @@ jobs:
           cd cell
           mvn test
 
-      - name: Run disassembler tests
+      - name: Run Disassembler tests
         run: |
           cd disassembler
           mvn test
@@ -51,3 +45,8 @@ jobs:
         run: |
           cd tonlib
           mvn test -Dtest=TestTonlibJson#testTonlibGetAllBlockTransactions
+
+      - name: Run Utils tests
+        run: |
+          cd utils
+          mvn test
