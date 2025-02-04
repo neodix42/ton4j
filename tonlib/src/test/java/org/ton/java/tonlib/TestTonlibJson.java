@@ -44,7 +44,7 @@ public class TestTonlibJson {
 
   static Tonlib tonlib;
 
-  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "v2024.12-1");
+  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
 
   @BeforeClass
   public static void setUpBeforeClass() {

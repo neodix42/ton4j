@@ -32,11 +32,7 @@ public class TestFaucet {
   @Test
   public void testFaucetBalance() {
     Tonlib tonlib =
-        Tonlib.builder()
-            .testnet(false)
-            .pathToTonlibSharedLib(tonlibPath)
-            .ignoreCache(false)
-            .build();
+        Tonlib.builder().testnet(true).pathToTonlibSharedLib(tonlibPath).ignoreCache(false).build();
     RawAccountState state =
         tonlib.getRawAccountState(
             AccountAddressOnly.builder().account_address(FAUCET_ADDRESS_RAW).build());
@@ -94,7 +90,12 @@ public class TestFaucet {
 
   @Test
   public void topUpAnyContract() throws InterruptedException {
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    Tonlib tonlib =
+        Tonlib.builder()
+            .testnet(true)
+            .pathToTonlibSharedLib("tonlibjson.dll")
+            .ignoreCache(false)
+            .build();
     BigInteger newBalance =
         TestnetFaucet.topUpContract(
             tonlib,

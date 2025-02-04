@@ -1369,7 +1369,7 @@ public class Utils {
     if ((getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == OS.WINDOWS_ARM)) {
       return baseUrl + artifactName + getArtifactExtension(artifactName);
     } else if (Utils.getOS() == OS.MAC) {
-      return baseUrl + artifactName + "-mac-x86_64" + getArtifactExtension(artifactName);
+      return baseUrl + artifactName + "-mac-x86-64" + getArtifactExtension(artifactName);
     } else if (Utils.getOS() == OS.MAC_ARM64) {
       return baseUrl + artifactName + "-mac-arm64" + getArtifactExtension(artifactName);
     } else if (Utils.getOS() == OS.LINUX) {

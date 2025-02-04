@@ -1,10 +1,14 @@
-name: Run Tests
+name: Tests
 
 on: [ push,workflow_dispatch,workflow_call,pull_request ]
 
 jobs:
   build:
-    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-22.04, ubuntu-22.04-arm, macos-13, macos-14, windows-2019 ]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v3
@@ -42,3 +46,8 @@ jobs:
         run: |
           cd disassembler
           mvn test
+
+      - name: Run tonlib tests
+        run: |
+          cd tonlib
+          mvn test -Dtest=TestTonlibJson#testTonlibGetAllBlockTransactions

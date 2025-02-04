@@ -11,7 +11,6 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.CustomContractConfig;
-import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
@@ -28,8 +27,6 @@ public class TestExampleContract extends CommonTest {
     // byte[] secretKey =
     // Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
     // TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(secretKey);
-
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
 
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
