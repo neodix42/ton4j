@@ -22,31 +22,37 @@ jobs:
         run: mvn install -"DskipTests" -"Dgpg.skip"
 
       - name: Run Address tests
+        timeout-minutes: 5
         run: |
           cd address
           mvn test
 
       - name: Run BitString tests
+        timeout-minutes: 5
         run: |
           cd bitstring
-          mvn test
+          mvn -X test
 
       - name: Run Cell tests
+        timeout-minutes: 5
         run: |
           cd cell
-          mvn test
+          mvn -X test
 
       - name: Run tonlib tests
+        timeout-minutes: 5
         run: |
           cd tonlib
           mvn test -Dtest=TestTonlibJson#testTonlibGetAllBlockTransactions
 
       - name: Run Utils tests
+        timeout-minutes: 5
         run: |
           cd utils
           mvn test
 
       - name: Run Disassembler tests
+        timeout-minutes: 5
         run: |
           cd disassembler
-          mvn test
+          mvn -X test
