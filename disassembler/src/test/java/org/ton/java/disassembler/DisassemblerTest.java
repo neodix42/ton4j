@@ -39,14 +39,14 @@ public class DisassemblerTest {
     String result = normalizeLines(Disassembler.fromBoc(boc));
     String actual = loadSnapshot("config");
 
-    assertThat(actual).isEqualTo(result);
+    assertThat(actual).isEqualToNormalizingNewlines(result);
   }
 
   @Test
   public void shouldDisassembleNft() throws Exception {
     byte[] boc = fetchCodeOrSnapshot("EQBmG4YwsdGsUHG46rL-_GtGxsUrdmn-8Tau1DKkzQMNsGaW");
     String result = normalizeLines(Disassembler.fromBoc(boc));
-    assertThat(loadSnapshot("nft")).isEqualTo(result);
+    assertThat(loadSnapshot("nft")).isEqualToNormalizingNewlines(result);
   }
 
   @Test
@@ -54,28 +54,28 @@ public class DisassemblerTest {
     String code = loadFiftFromFunc();
     Cell codeCell = Cell.fromBoc(code);
     String result = normalizeLines(Disassembler.fromCode(codeCell));
-    assertThat(loadSnapshot("dump")).isEqualTo(result);
+    assertThat(loadSnapshot("dump")).isEqualToNormalizingNewlines(result);
   }
 
   @Test
   public void shouldDisassembleElector() throws Exception {
     byte[] boc = fetchCodeOrSnapshot("Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF");
     String result = normalizeLines(Disassembler.fromBoc(boc));
-    assertThat(loadSnapshot("elector")).isEqualTo(result);
+    assertThat(loadSnapshot("elector")).isEqualToNormalizingNewlines(result);
   }
 
   @Test
   public void shouldDisassembleContract() throws Exception {
     byte[] boc = fetchCodeOrSnapshot("EQBRrTk63wHpvreMs7_cDKWh6zrYmQcSBOjKz1i6GcbRTLZX");
     String result = normalizeLines(Disassembler.fromBoc(boc));
-    assertThat(loadSnapshot("contract")).isEqualTo(result);
+    assertThat(loadSnapshot("contract")).isEqualToNormalizingNewlines(result);
   }
 
   @Test
   public void shouldDisassembleNumber5() throws Exception {
     byte[] boc = fetchCodeOrSnapshot("EQDSbgHX03B9_0cNBAMdlmhVbvhRNYhZNhTRH4wfNBmisKB5");
     String result = normalizeLines(Disassembler.fromBoc(boc));
-    assertThat(loadSnapshot("numberFive")).isEqualTo(result);
+    assertThat(loadSnapshot("numberFive")).isEqualToNormalizingNewlines(result);
   }
 
   private byte[] fetchCodeOrSnapshot(String addr) throws Exception {
@@ -142,6 +142,6 @@ public class DisassemblerTest {
   // visually exactly the same lines would be generated
   // normalizes default file formatting
   private String normalizeLines(String s) {
-    return s.replaceAll("\r", "").replaceAll("\n", "\r\n");
+    return s.replaceAll("\r", "");
   }
 }
