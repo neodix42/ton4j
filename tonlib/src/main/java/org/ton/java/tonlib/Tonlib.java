@@ -237,8 +237,8 @@ public class Tonlib {
         newLiteServers[0] = liteServers[super.liteServerIndex];
         globalConfigCurrent.setLiteservers(newLiteServers);
 
-        super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
-
+        TonlibJsonI rawLibrary = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
+        super.tonlibJson = (TonlibJsonI) Native.synchronizedLibrary(rawLibrary);
         Utils.disableNativeOutput(super.verbosityLevel.ordinal());
         super.tonlib = super.tonlibJson.tonlib_client_json_create();
         super.tonlibJson.tonlib_client_set_verbosity_level(super.verbosityLevel.ordinal());

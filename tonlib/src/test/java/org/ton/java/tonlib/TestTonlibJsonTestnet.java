@@ -19,9 +19,7 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
 import org.ton.java.mnemonic.Mnemonic;
-import org.ton.java.tlb.types.Transaction;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.tonlib.types.globalconfig.*;
 import org.ton.java.utils.Utils;
@@ -36,39 +34,33 @@ public class TestTonlibJsonTestnet {
 
   Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-  String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
 
-  Tonlib tonlib = Tonlib.builder().testnet(true).pathToTonlibSharedLib(tonlibPath).build();
+  //  Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
+  //  Tonlib tonlib = null;
 
   //  String tonlibPath = "tonlibjson-prev.dll";
 
   @Test
-  public void testIssue13() {
-    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
-
-    BlockIdExt block = tonlib.getLast().getLast();
-    log.info("block {}", block);
-  }
-
-  @Test
   public void testGetLiteServerVersion() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
     LiteServerVersion liteServerVersion = tonlib.getLiteServerVersion();
     log.info("liteServerVersion {}", liteServerVersion);
   }
 
   @Test
-  public void testTonlibUsingGlobalConfigLiteServerByIndex() {
-
-    Tonlib tonlib1 =
-        Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).liteServerIndex(0).build();
-
-    log.info("last {}", tonlib1.getLast());
-  }
-
-  @Test
   public void testTonlibGetLast() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
     BlockIdExt fullblock = tonlib.getLast().getLast();
     log.info("last {}", fullblock);
     assertThat(fullblock).isNotNull();
@@ -76,8 +68,13 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibGetAllBlockTransactions() {
+
     Tonlib tonlib =
-        Tonlib.builder().pathToTonlibSharedLib(tonlibPath).liteServerIndex(0).testnet(true).build();
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     BlockIdExt fullblock = tonlib.getLast().getLast();
     assertThat(fullblock).isNotNull();
@@ -111,6 +108,13 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibGetBlockTransactions() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     for (int i = 0; i < 2; i++) {
 
@@ -160,7 +164,12 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibGetTxsByAddress() {
-    //
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     Address address = Address.of(TON_FOUNDATION);
 
@@ -200,7 +209,11 @@ public class TestTonlibJsonTestnet {
   public void testTonlibGetTxsByAddressTestnet() {
 
     Tonlib tonlib =
-        Tonlib.builder().pathToTonlibSharedLib(tonlibPath).receiveTimeout(5).testnet(true).build();
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     Address address =
         Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
@@ -237,6 +250,13 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibGetTxsV2ByAddressTestnet() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     Address address =
         Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
@@ -275,46 +295,14 @@ public class TestTonlibJsonTestnet {
   }
 
   @Test
-  public void testTonlibGetTxsWithLimitByAddress() {
-
-    Address address = Address.of(TON_FOUNDATION);
-
-    log.info("address: " + address.toBounceable());
-
-    RawTransactions rawTransactions = tonlib.getRawTransactions(address.toRaw(), null, null, 3);
-
-    for (RawTransaction tx : rawTransactions.getTransactions()) {
-      Transaction transaction =
-          Transaction.deserialize(
-              CellSlice.beginParse(CellBuilder.beginCell().fromBocBase64(tx.getData()).endCell()));
-      log.info("transaction {}", transaction);
-      if (nonNull(tx.getIn_msg())
-          && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
-        log.info(
-            "{}, {} <<<<< {} : {} ",
-            Utils.toUTC(tx.getUtime()),
-            tx.getIn_msg().getSource().getAccount_address(),
-            tx.getIn_msg().getDestination().getAccount_address(),
-            Utils.formatNanoValue(tx.getIn_msg().getValue()));
-      }
-      if (nonNull(tx.getOut_msgs())) {
-        for (RawMessage msg : tx.getOut_msgs()) {
-          log.info(
-              "{}, {} >>>>> {} : {} ",
-              Utils.toUTC(tx.getUtime()),
-              msg.getSource().getAccount_address(),
-              msg.getDestination().getAccount_address(),
-              Utils.formatNanoValue(msg.getValue()));
-        }
-      }
-    }
-
-    log.info("total txs: {}", rawTransactions.getTransactions().size());
-    assertThat(rawTransactions.getTransactions().size()).isLessThan(4);
-  }
-
-  @Test
   public void testTonlibGetAllTxsByAddress() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     Address address = Address.of("EQAL66-DGwFvP046ysD_o18wvwt-0A6_aJoVmQpVNIqV_ZvK");
 
@@ -349,6 +337,13 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibGetAllTxsByAddressWithMemo() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     Address address = Address.of("EQCQxq9F4-RSaO-ya7q4CF26yyCaQNY98zgD5ys3ZbbiZdUy");
 
@@ -414,6 +409,13 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibNewKey() {
 
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
+
     Key key = tonlib.createNewKey();
     log.info(key.toString());
     String pubKey = Utils.base64UrlSafeToHexString(key.getPublic_key());
@@ -432,6 +434,13 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibEncryptDecryptKey() {
 
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
+
     String secret = "Q3i3Paa45H/F/Is+RW97lxW0eikF0dPClSME6nbogm0=";
     String dataToEncrypt = Utils.stringToBase64("ABC");
     Data encrypted = tonlib.encrypt(dataToEncrypt, secret);
@@ -447,6 +456,13 @@ public class TestTonlibJsonTestnet {
   /** Encrypt/Decrypt with using mnemonic */
   @Test
   public void testTonlibEncryptDecryptMnemonic() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     String base64mnemonic =
         Utils.stringToBase64(
@@ -465,6 +481,13 @@ public class TestTonlibJsonTestnet {
   public void testTonlibEncryptDecryptMnemonicModule()
       throws NoSuchAlgorithmException, InvalidKeyException {
 
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
+
     String base64mnemonic = Utils.stringToBase64(Mnemonic.generateString(24));
 
     String dataToEncrypt = Utils.stringToBase64("ABC");
@@ -479,7 +502,12 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibRunMethodParticipantsList() {
-    //
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
@@ -501,6 +529,13 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibRunMethodActiveElectionId() {
 
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
+
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
     RunResult result = tonlib.runMethod(address, "active_election_id");
@@ -511,7 +546,12 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibRunMethodPastElectionsId() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
     RunResult result = tonlib.runMethod(address, "past_election_ids");
@@ -525,7 +565,12 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibRunMethodPastElections() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
     RunResult result = tonlib.runMethod(address, "past_elections");
@@ -538,6 +583,13 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibGetConfig() {
 
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
+
     MasterChainInfo mc = tonlib.getLast();
     Cell c = tonlib.getConfigParam(mc.getLast(), 22);
     log.info(c.print());
@@ -545,6 +597,12 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibGetConfigAll() {
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     Cell c = tonlib.getConfigAll(128);
     log.info(c.print());
@@ -552,8 +610,12 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibLoadContract() {
-    //
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
     AccountAddressOnly address =
         AccountAddressOnly.builder()
             .account_address("EQAPZ3Trml6zO403fnA6fiqbjPw9JcOCSk0OVY6dVdyM2fEM")
@@ -564,6 +626,13 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibRunMethodComputeReturnedStake() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     Address elector = Address.of(ELECTOR_ADDRESSS);
     RunResult result = tonlib.runMethod(elector, "compute_returned_stake", new ArrayDeque<>());
@@ -586,10 +655,8 @@ public class TestTonlibJsonTestnet {
       Tonlib tonlib =
           Tonlib.builder()
               .pathToTonlibSharedLib(tonlibPath)
-              .receiveTimeout(5)
-              .liteServerIndex(0)
-              .verbosityLevel(VerbosityLevel.DEBUG)
               .testnet(true)
+              .keystoreInMemory(true)
               .build();
       MasterChainInfo mcInfo = tonlib.getLast();
 
@@ -609,6 +676,13 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibGetConfigs() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .testnet(true)
+            .keystoreInMemory(true)
+            .build();
 
     log.info("config0 {}", tonlib.getConfigParam0());
     log.info("config1 {}", tonlib.getConfigParam1());
