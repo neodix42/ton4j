@@ -32,7 +32,12 @@ jobs:
           cd cell
           mvn test
 
-      - name: Run tonlib tests
+      - name: Run tonlib - testTonlibGetTxsByAddress
+        run: |
+          cd tonlib
+          mvn test -Dtest=TestTonlibJsonTestnet#testTonlibGetTxsByAddress
+
+      - name: Run tonlib - testTonlibRunMethodParticipantsList
         run: |
           cd tonlib
           mvn test -Dtest=TestTonlibJsonTestnet#testTonlibRunMethodParticipantsList
