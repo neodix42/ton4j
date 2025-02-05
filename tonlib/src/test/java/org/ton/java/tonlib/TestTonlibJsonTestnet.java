@@ -36,20 +36,14 @@ public class TestTonlibJsonTestnet {
 
   static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
 
-  //  Tonlib tonlib =
-  // Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).verbosityLevel(VerbosityLevel.DEBUG).build();
+  //  Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
   //  Tonlib tonlib = null;
 
   //  String tonlibPath = "tonlibjson-prev.dll";
 
   @Test
   public void testGetLiteServerVersion() {
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     LiteServerVersion liteServerVersion = tonlib.getLiteServerVersion();
     log.info("liteServerVersion {}", liteServerVersion);
@@ -58,12 +52,7 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibGetLast() {
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     BlockIdExt fullblock = tonlib.getLast().getLast();
     log.info("last {}", fullblock);
@@ -74,12 +63,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibGetAllBlockTransactions() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     BlockIdExt fullblock = tonlib.getLast().getLast();
     assertThat(fullblock).isNotNull();
@@ -115,12 +99,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibGetBlockTransactions() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     for (int i = 0; i < 2; i++) {
 
@@ -171,12 +150,7 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibGetTxsByAddress() {
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address address = Address.of(TON_FOUNDATION);
 
@@ -215,12 +189,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibGetTxsByAddressTestnet() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address address =
         Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
@@ -259,12 +228,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibGetTxsV2ByAddressTestnet() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address address =
         Address.of("0:b52a16ba3735501df19997550e7ed4c41754ee501ded8a841088ce4278b66de4");
@@ -305,12 +269,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibGetAllTxsByAddress() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address address = Address.of("EQAL66-DGwFvP046ysD_o18wvwt-0A6_aJoVmQpVNIqV_ZvK");
 
@@ -346,12 +305,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibGetAllTxsByAddressWithMemo() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address address = Address.of("EQCQxq9F4-RSaO-ya7q4CF26yyCaQNY98zgD5ys3ZbbiZdUy");
 
@@ -417,12 +371,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibNewKey() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Key key = tonlib.createNewKey();
     log.info(key.toString());
@@ -443,12 +392,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibEncryptDecryptKey() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     String secret = "Q3i3Paa45H/F/Is+RW97lxW0eikF0dPClSME6nbogm0=";
     String dataToEncrypt = Utils.stringToBase64("ABC");
@@ -466,12 +410,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibEncryptDecryptMnemonic() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     String base64mnemonic =
         Utils.stringToBase64(
@@ -490,12 +429,7 @@ public class TestTonlibJsonTestnet {
   public void testTonlibEncryptDecryptMnemonicModule()
       throws NoSuchAlgorithmException, InvalidKeyException {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     String base64mnemonic = Utils.stringToBase64(Mnemonic.generateString(24));
 
@@ -511,12 +445,7 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibRunMethodParticipantsList() {
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
@@ -538,12 +467,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibRunMethodActiveElectionId() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
@@ -556,12 +480,7 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibRunMethodPastElectionsId() {
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
@@ -577,12 +496,7 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibRunMethodPastElections() {
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
@@ -596,12 +510,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibGetConfig() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     MasterChainInfo mc = tonlib.getLast();
     Cell c = tonlib.getConfigParam(mc.getLast(), 22);
@@ -611,12 +520,7 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibGetConfigAll() {
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Cell c = tonlib.getConfigAll(128);
     log.info(c.print());
@@ -625,12 +529,7 @@ public class TestTonlibJsonTestnet {
 
   @Test
   public void testTonlibLoadContract() {
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     AccountAddressOnly address =
         AccountAddressOnly.builder()
@@ -644,12 +543,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibRunMethodComputeReturnedStake() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address elector = Address.of(ELECTOR_ADDRESSS);
     RunResult result = tonlib.runMethod(elector, "compute_returned_stake", new ArrayDeque<>());
@@ -670,12 +564,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibLookupBlock() {
     try {
-      Tonlib tonlib =
-          Tonlib.builder()
-              .pathToTonlibSharedLib(tonlibPath)
-              .testnet(true)
-              .verbosityLevel(VerbosityLevel.DEBUG)
-              .build();
+      Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
       MasterChainInfo mcInfo = tonlib.getLast();
 
@@ -696,12 +585,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibGetConfigs() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .testnet(true)
-            .verbosityLevel(VerbosityLevel.DEBUG)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     log.info("config0 {}", tonlib.getConfigParam0());
     log.info("config1 {}", tonlib.getConfigParam1());
