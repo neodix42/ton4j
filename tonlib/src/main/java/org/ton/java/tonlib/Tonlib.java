@@ -169,7 +169,7 @@ public class Tonlib {
         }
 
         if (isNull(super.ignoreCache)) {
-          super.ignoreCache = true;
+          super.ignoreCache = false;
         }
 
         super.runResultParser = new RunResultParser();
