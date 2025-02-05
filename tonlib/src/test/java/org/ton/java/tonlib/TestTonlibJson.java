@@ -38,16 +38,13 @@ public class TestTonlibJson {
 
   String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
 
-  Tonlib tonlib =
-      Tonlib.builder()
-          .pathToTonlibSharedLib(tonlibPath)
-          .pathToGlobalConfig("g:/libs/global-config-archive.json")
-          .testnet(false)
-          .build();
-
   @Test
   public void testIssue13() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     BlockIdExt block = tonlib.getLast().getLast();
     log.info("block {}", block);
   }
@@ -212,11 +209,16 @@ public class TestTonlibJson {
             .build();
 
     log.info("last {}", tonlib1.getLast());
+    tonlib1.destroy();
   }
 
   @Test
   public void testTonlib() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     BlockIdExt fullblock = tonlib.lookupBlock(23512606, -1, -9223372036854775808L, 0, 0);
 
     log.info(fullblock.toString());
@@ -229,12 +231,17 @@ public class TestTonlibJson {
 
     Shards shards = tonlib.getShards(masterChainInfo.getLast()); // only seqno also ok?
     log.info(shards.toString());
+    tonlib.destroy();
     assertThat(shards.getShards()).isNotNull();
   }
 
   @Test
   public void testTonlibGetAllTxsByAddressSmallHistoryLimit() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     Address address = Address.of(TON_FOUNDATION);
 
     log.info("address: " + address.toString(true));
@@ -262,13 +269,17 @@ public class TestTonlibJson {
         }
       }
     }
-
+    tonlib.destroy();
     assertThat(rawTransactions.getTransactions().size()).isLessThan(4);
   }
 
   @Test
   public void testTonlibAccountState() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     Address addr = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
     log.info("address: " + addr.toBounceable());
 
@@ -278,13 +289,18 @@ public class TestTonlibJson {
     FullAccountState accountState = tonlib.getAccountState(accountAddressOnly);
     log.info(accountState.toString());
     log.info("balance: {}", accountState.getBalance());
+    tonlib.destroy();
     assertThat(accountState.getLast_transaction_id().getHash()).isNotBlank();
     log.info("last {}", tonlib.getLast());
   }
 
   @Test
   public void testTonlibAccountStateAtSeqno() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     Address addr = Address.of("Ef8-sf_0CQDgwW6kNuNY8mUvRW-MGQ34Evffj8O0Z9Ly1tZ4");
     log.info("address: " + addr.toBounceable());
 
@@ -292,6 +308,7 @@ public class TestTonlibJson {
     RawAccountState accountState = tonlib.getRawAccountState(addr, blockId);
     log.info(accountState.toString());
     log.info("balance: {}", accountState.getBalance());
+    tonlib.destroy();
     assertThat(accountState.getLast_transaction_id().getHash()).isNotBlank();
     log.info("last {}", tonlib.getLast());
   }
@@ -310,45 +327,65 @@ public class TestTonlibJson {
     log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
     TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
     log.info("seqno: {}", seqno.getNumber());
+    tonlib.destroy();
     assertThat(result.getExit_code()).isZero();
   }
 
   @Test
   public void testTonlibRunMethodSeqno() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     Address address = Address.of(TON_FOUNDATION);
     RunResult result = tonlib.runMethod(address, "seqno");
     log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
     TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
     log.info("seqno: {}", seqno.getNumber());
+    tonlib.destroy();
     assertThat(result.getExit_code()).isZero();
   }
 
   @Test
   public void testTonlibRunMethodSeqnoAtBlockId() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     Address address = Address.of(TON_FOUNDATION);
     RunResult result = tonlib.runMethod(address, "seqno", 39047069);
     log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
     TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
     log.info("seqno: {}", seqno.getNumber());
+    tonlib.destroy();
     assertThat(result.getExit_code()).isZero();
   }
 
   @Test
   public void testTonlibRunMethodGetJetton() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     Address address = Address.of("EQBYzFXx0QTPW5Lo63ArbNasI_GWRj7NwcAcJR2IWo7_3nTp");
     RunResult result = tonlib.runMethod(address, "get_jetton_data");
     log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());
     log.info("result: {}", result);
+    tonlib.destroy();
     assertThat(result.getExit_code()).isZero();
   }
 
   @Test
   @Ignore // TVM stack size exceeds limit
   public void testTonlibRunMethodParticipantsListInThePast() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
 
@@ -362,29 +399,40 @@ public class TestTonlibJson {
       TvmStackEntryNumber stake = (TvmStackEntryNumber) tuple.getElements().get(1);
       log.info("{}, {}", addr.getNumber(), stake.getNumber());
     }
+    tonlib.destroy();
     assertThat(result.getExit_code()).isZero();
   }
 
   @Test
   public void testTonlibRunMethodActiveElectionIdAtSeqno() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
     RunResult result = tonlib.runMethod(address, "active_election_id", 39047069);
     TvmStackEntryNumber electionId = (TvmStackEntryNumber) result.getStack().get(0);
     log.info("electionId: {}", electionId.getNumber());
+    tonlib.destroy();
     assertThat(result.getExit_code()).isZero();
   }
 
   @Test
   public void testTonlibLoadContractSeqno() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     AccountAddressOnly address =
         AccountAddressOnly.builder()
             .account_address("EQAPZ3Trml6zO403fnA6fiqbjPw9JcOCSk0OVY6dVdyM2fEM")
             .build();
     long result = tonlib.loadContract(address, 36661567);
     log.info("result {}", result);
+    tonlib.destroy();
   }
 
   @Test
@@ -416,11 +464,16 @@ public class TestTonlibJson {
 
     log.info("full accountState {}", accountState1);
     log.info("raw  accountState {}", accountState2);
+    tonlib.destroy();
   }
 
   @Test
   public void testTonlibTryLocateTxByIncomingMessage() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     RawTransaction tx =
         tonlib.tryLocateTxByIncomingMessage(
             Address.of("EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD"),
@@ -428,12 +481,17 @@ public class TestTonlibJson {
             26521292000002L);
 
     log.info("found tx {}", tx);
-
+    tonlib.destroy();
     assertThat(tx.getIn_msg()).isNotNull();
   }
 
   @Test
   public void testTonlibTryLocateTxByOutgoingMessage() {
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     RawTransaction tx =
         tonlib.tryLocateTxByOutcomingMessage(
             Address.of("EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD"),
@@ -441,14 +499,18 @@ public class TestTonlibJson {
             26521292000002L);
 
     log.info("found tx {}", tx);
-
+    tonlib.destroy();
     assertThat(tx.getIn_msg()).isNotNull();
     assertThat(tx.getOut_msgs()).isNotNull();
   }
 
   @Test
   public void testTonlibStateAndStatus() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     FullAccountState accountState1 =
         tonlib.getAccountState(Address.of("EQCtPHFrtkIw3UC2rNfSgVWYT1MiMLDUtgMy2M7j1P_eNMDq"));
     log.info("FullAccountState {}", accountState1);
@@ -483,16 +545,22 @@ public class TestTonlibJson {
     log.info("==========================================");
 
     log.info("rawAccountState2 {}", accountState2);
+    tonlib.destroy();
   }
 
   @Test
   @Ignore
   public void testTonlibGetLibraries() {
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     SmcLibraryResult result =
         tonlib.getLibraries(
             Collections.singletonList("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
     log.info("result: {}", result);
-
+    tonlib.destroy();
     assertThat(result.getResult().get(0).getHash())
         .isEqualTo("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M=");
   }
@@ -500,7 +568,11 @@ public class TestTonlibJson {
   @Test
   @Ignore
   public void testTonlibGetLibrariesExt() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     BigInteger arg1 =
         new BigInteger("6aaf20fed58ba5e6db692909e78e5c5c6525e28d1cfa8bd22dc216729b4841b3", 16);
 
@@ -516,14 +588,18 @@ public class TestTonlibJson {
 
     SmcLibraryResult result = tonlib.getLibrariesExt(list);
     log.info("result: {}", result);
-
+    tonlib.destroy();
     assertThat(result.getResult().get(0).getHash())
         .isEqualTo("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M=");
   }
 
   @Test
   public void testTonlibRunMethodGetSrcAddr() {
-
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            .build();
     Address smc = Address.of("EQD-BJSVUJviud_Qv7Ymfd3qzXdrmV525e3YDzWQoHIAiInL");
 
     Deque<String> stack = new ArrayDeque<>();
@@ -591,5 +667,6 @@ public class TestTonlibJson {
     // 801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0 98f3b93d
 
     // @formatter:on
+    tonlib.destroy();
   }
 }

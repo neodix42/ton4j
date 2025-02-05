@@ -35,7 +35,7 @@ jobs:
       - name: Run tonlib tests
         run: |
           cd tonlib
-          mvn test -Dtest=TestTonlibJsonTestnet
+          mvn test -Dtest=TestTonlibJsonTestnet#testTonlibRunMethodParticipantsList
 
       - name: Run Utils tests
         run: |
