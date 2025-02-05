@@ -346,7 +346,9 @@ public class Tonlib {
     // tonlibJson.tonlib_client_json_destroy(tonlib);
     destroy();
 
-    tonlibJson = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
+    TonlibJsonI rawLibrary = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
+    tonlibJson = (TonlibJsonI) Native.synchronizedLibrary(rawLibrary);
+    //    tonlibJson = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
     Utils.disableNativeOutput(verbosityLevel.ordinal());
     tonlib = tonlibJson.tonlib_client_json_create();
 
@@ -999,36 +1001,34 @@ public class Tonlib {
 
   public FullAccountState getAccountState(Address address, BlockIdExt blockId) {
     synchronized (gson) {
-      synchronized (gson) {
-        if (StringUtils.isEmpty(blockId.getRoot_hash())) { // retrieve hashes
-          blockId = lookupBlock(blockId.getSeqno(), blockId.getWorkchain(), blockId.getShard(), 0);
-          if (StringUtils.isEmpty(blockId.getRoot_hash())) {
-            throw new Error(
-                "Cannot lookup block for hashes by seqno. Probably block not in db. Try to specify block's root and file hashes manually in base64 format.");
-          }
-          log.info("got hashes " + blockId);
+      if (StringUtils.isEmpty(blockId.getRoot_hash())) { // retrieve hashes
+        blockId = lookupBlock(blockId.getSeqno(), blockId.getWorkchain(), blockId.getShard(), 0);
+        if (StringUtils.isEmpty(blockId.getRoot_hash())) {
+          throw new Error(
+              "Cannot lookup block for hashes by seqno. Probably block not in db. Try to specify block's root and file hashes manually in base64 format.");
         }
-
-        AccountAddressOnly accountAddressOnly =
-            AccountAddressOnly.builder().account_address(address.toString(false)).build();
-
-        GetAccountStateQueryOnly getAccountStateQuery =
-            GetAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
-
-        GetAccountStateOnlyWithBlockQuery getAccountStateOnlyWithBlockQuery =
-            GetAccountStateOnlyWithBlockQuery.builder()
-                .id(blockId)
-                .function(getAccountStateQuery)
-                .build();
-
-        String result = syncAndRead(gson.toJson(getAccountStateOnlyWithBlockQuery));
-
-        if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
-          throw new Error("Cannot getAccountState, error" + result);
-        }
-
-        return gson.fromJson(result, FullAccountState.class);
+        log.info("got hashes " + blockId);
       }
+
+      AccountAddressOnly accountAddressOnly =
+          AccountAddressOnly.builder().account_address(address.toString(false)).build();
+
+      GetAccountStateQueryOnly getAccountStateQuery =
+          GetAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+
+      GetAccountStateOnlyWithBlockQuery getAccountStateOnlyWithBlockQuery =
+          GetAccountStateOnlyWithBlockQuery.builder()
+              .id(blockId)
+              .function(getAccountStateQuery)
+              .build();
+
+      String result = syncAndRead(gson.toJson(getAccountStateOnlyWithBlockQuery));
+
+      if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
+        throw new Error("Cannot getAccountState, error" + result);
+      }
+
+      return gson.fromJson(result, FullAccountState.class);
     }
   }
 
