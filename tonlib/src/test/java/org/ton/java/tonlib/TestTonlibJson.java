@@ -39,6 +39,20 @@ public class TestTonlibJson {
   String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
 
   @Test
+  public void testTonlibRunMethodActiveElectionId() {
+
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(false).build();
+
+    Address address =
+        Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
+    RunResult result = tonlib.runMethod(address, "active_election_id");
+    TvmStackEntryNumber electionId = (TvmStackEntryNumber) result.getStack().get(0);
+    log.info("electionId: {}", electionId.getNumber());
+    tonlib.destroy();
+    assertThat(result.getExit_code()).isZero();
+  }
+
+  @Test
   public void testIssue13() {
     Tonlib tonlib =
         Tonlib.builder()
