@@ -17,8 +17,7 @@ public class CommonTest {
     tonlib =
         Tonlib.builder()
             .testnet(true)
-            .pathToTonlibSharedLib(
-                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
+            .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
             .ignoreCache(false)
             .build();
   }

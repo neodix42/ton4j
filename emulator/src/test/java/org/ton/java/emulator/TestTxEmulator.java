@@ -50,15 +50,12 @@ public class TestTxEmulator {
 
   static Account testAccount;
 
-  static String emulatorPath =
-      Utils.getArtifactGithubUrl("libemulator", "latest", "neodix42", "ton");
-  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
-  static String funcPath = Utils.getArtifactGithubUrl("func", "latest", "neodix42", "ton");
-  static String fiftPath = Utils.getArtifactGithubUrl("fift", "latest", "neodix42", "ton");
-  static String tolkPath = Utils.getArtifactGithubUrl("tolk", "latest", "neodix42", "ton");
-
-  static String liteClientPath =
-      Utils.getArtifactGithubUrl("lite-client", "latest", "neodix42", "ton");
+  static String emulatorPath = Utils.getEmulatorGithubUrl();
+  static String tonlibPath = Utils.getTonlibGithubUrl();
+  static String funcPath = Utils.getFuncGithubUrl();
+  static String fiftPath = Utils.getFiftGithubUrl();
+  static String tolkPath = Utils.getTolkGithubUrl();
+  static String liteClientPath = Utils.getLiteClientGithubUrl();
 
   @BeforeClass
   public static void setUpBeforeClass() {

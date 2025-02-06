@@ -51,12 +51,11 @@ public class TestTvmEmulator {
       new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
   static WalletV4R2 walletV4R2;
 
-  static String emulatorPath =
-      Utils.getArtifactGithubUrl("libemulator", "latest", "neodix42", "ton");
-  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
-  static String funcPath = Utils.getArtifactGithubUrl("func", "latest", "neodix42", "ton");
-  static String fiftPath = Utils.getArtifactGithubUrl("fift", "latest", "neodix42", "ton");
-  static String tolkPath = Utils.getArtifactGithubUrl("tolk", "latest", "neodix42", "ton");
+  static String emulatorPath = Utils.getEmulatorGithubUrl();
+  static String tonlibPath = Utils.getTonlibGithubUrl();
+  static String funcPath = Utils.getFuncGithubUrl();
+  static String fiftPath = Utils.getFiftGithubUrl();
+  static String tolkPath = Utils.getTolkGithubUrl();
 
   static Cell code;
   static Cell data;

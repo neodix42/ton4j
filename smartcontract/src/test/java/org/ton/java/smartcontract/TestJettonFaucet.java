@@ -29,7 +29,7 @@ import org.ton.java.utils.Utils;
 @RunWith(JUnit4.class)
 public class TestJettonFaucet {
 
-  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+  static String tonlibPath = Utils.getTonlibGithubUrl();
 
   static String ADMIN_WALLET_PUBLIC_KEY =
       "d1d4515b2635b81de98d58f65502f2c242bb0e63615520341b83a12dd4d0f516";

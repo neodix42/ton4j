@@ -37,7 +37,7 @@ public class TestJettonStableCoin {
         Tonlib.builder()
             .testnet(true)
             .pathToTonlibSharedLib(
-                Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton"))
+                Utils.getTonlibGithubUrl();
             .ignoreCache(false)
             .build();
     adminWallet = GenerateWallet.randomV3R1(tonlib, 3);

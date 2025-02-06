@@ -22,9 +22,9 @@ import org.ton.java.utils.Utils;
 
 @RunWith(JUnit4.class)
 public class DisassemblerTest {
-  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
-  static String funcPath = Utils.getArtifactGithubUrl("func", "latest", "neodix42", "ton");
-  static String fiftPath = Utils.getArtifactGithubUrl("fift", "latest", "neodix42", "ton");
+  static String tonlibPath = Utils.getTonlibGithubUrl();
+  static String funcPath = Utils.getFuncGithubUrl();
+  static String fiftPath = Utils.getFiftGithubUrl();
 
   private static final String BASE_DIR = "src/test/resources/";
   private static final String BOC_DIR = BASE_DIR + "bocs/";

@@ -36,7 +36,7 @@ public class TestTonlibJson {
 
   Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-  String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+  String tonlibPath = Utils.getTonlibGithubUrl();
 
   @Test
   public void testTonlibRunMethodActiveElectionId() {
@@ -123,7 +123,6 @@ public class TestTonlibJson {
   }
 
   @Test
-  @Ignore
   public void testGlobalConfigJsonParser() throws IOException {
 
     InputStream testConfig =
@@ -154,6 +153,13 @@ public class TestTonlibJson {
 
     TonGlobalConfig testnetGlobalConfig =
         TonGlobalConfig.builder()
+            .dht(
+                Dht.builder()
+                    .static_nodes(
+                        StaticNodes.builder()
+                            .nodes(new DhtNode[] {DhtNode.builder().build()})
+                            .build())
+                    .build())
             .liteservers(
                 ArrayUtils.toArray(
                     LiteServers.builder()
@@ -208,6 +214,7 @@ public class TestTonlibJson {
                                 .seqno(5176527)
                                 .shard(-9223372036854775808L)
                                 .build()))
+                    .init_block(BlockInfo.builder().build())
                     .build())
             .build();
     log.info("config object: {}", testnetGlobalConfig);
@@ -219,7 +226,7 @@ public class TestTonlibJson {
     Tonlib tonlib1 =
         Tonlib.builder()
             .pathToTonlibSharedLib(tonlibPath)
-            .globalConfig(testnetGlobalConfig)
+            .globalConfigAsObject(testnetGlobalConfig)
             .build();
 
     log.info("last {}", tonlib1.getLast());

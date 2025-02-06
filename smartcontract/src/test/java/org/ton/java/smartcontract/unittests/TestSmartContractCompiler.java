@@ -21,10 +21,10 @@ public class TestSmartContractCompiler {
    * href="https://github.com/ton-blockchain/packages">packages</a> for instructions. Example is
    * based on new-wallet-v4r2.fc smart contract. You can specify path to any smart contract.
    */
-  static String funcPath = Utils.getArtifactGithubUrl("func", "latest", "neodix42", "ton");
+  static String funcPath = Utils.getFuncGithubUrl();
 
-  static String fiftPath = Utils.getArtifactGithubUrl("fift", "latest", "neodix42", "ton");
-  static String tolkPath = Utils.getArtifactGithubUrl("tolk", "latest", "neodix42", "ton");
+  static String fiftPath = Utils.getFiftGithubUrl();
+  static String tolkPath = Utils.getTolkGithubUrl();
 
   @Test
   public void testSmartContractCompiler() {

@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatObject;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.io.InputStream;
@@ -37,7 +38,7 @@ public class LiteClientTest {
     liteClient =
         LiteClient.builder()
             .testnet(true)
-            .pathToLiteClientBinary(Utils.getArtifactGithubUrl("lite-client", "v2024.12-1"))
+            .pathToLiteClientBinary(Utils.getLiteClientGithubUrl())
             .build();
   }
 
@@ -53,8 +54,8 @@ public class LiteClientTest {
   public void testLastExecutedDownloadBoth() {
     LiteClient liteClient =
         LiteClient.builder()
-            .pathToLiteClientBinary(Utils.getArtifactGithubUrl("lite-client", "v2024.12-1"))
-            .pathToGlobalConfig("https://ton-blockchain.github.io/testnet-global.config.json")
+            .pathToLiteClientBinary(Utils.getLiteClientGithubUrl())
+            .pathToGlobalConfig(Utils.getGlobalConfigUrlMainnet())
             .build();
     assertThat(liteClient.executeLast())
         .isNotNull()
@@ -222,7 +223,7 @@ public class LiteClientTest {
     // when
     assertNotNull(stdoutLast);
     ResultLastBlock blockIdLast = LiteClientParser.parseLast(stdoutLast);
-
+    assertNotNull(blockIdLast);
     String stdoutListblocktrans = liteClient.executeListblocktrans(blockIdLast, 0);
     log.info(stdoutListblocktrans);
     // then
@@ -256,7 +257,7 @@ public class LiteClientTest {
     String stdoutLast = liteClient.executeLast();
     assertNotNull(stdoutLast);
     ResultLastBlock blockIdLast = LiteClientParser.parseLast(stdoutLast);
-
+    assertNotNull(blockIdLast);
     String stdoutListblocktrans = liteClient.executeListblocktrans(blockIdLast, 0);
     assertNotNull(stdoutListblocktrans);
     log.info(stdoutListblocktrans);
@@ -318,6 +319,7 @@ public class LiteClientTest {
     String stdoutLast = liteClient.executeLast();
     assertNotNull(stdoutLast);
     ResultLastBlock blockIdLast = LiteClientParser.parseLast(stdoutLast);
+    assertNotNull(blockIdLast);
     String stdoutDumpblock = liteClient.executeDumpblock(blockIdLast);
 
     Block block = LiteClientParser.parseDumpblock(stdoutDumpblock, false, false);
@@ -355,6 +357,7 @@ public class LiteClientTest {
     String stdoutLast = liteClient.executeLast();
     assertNotNull(stdoutLast);
     ResultLastBlock blockIdLast = LiteClientParser.parseLast(stdoutLast);
+    assertNotNull(blockIdLast);
     String stdoutAllShards = liteClient.executeAllshards(blockIdLast);
     //    log.info(stdoutAllShards);
 

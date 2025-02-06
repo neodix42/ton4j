@@ -33,7 +33,7 @@ import org.ton.tonapi.sync.methods.GaslessMethod;
 @Slf4j
 public class GaslessTransactionTest {
 
-  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+  static String tonlibPath = Utils.getTonlibGithubUrl();
 
   private static final String API_KEY = "";
 

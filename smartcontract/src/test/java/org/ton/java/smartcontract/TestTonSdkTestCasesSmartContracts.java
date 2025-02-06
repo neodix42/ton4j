@@ -48,7 +48,7 @@ import org.ton.java.utils.Utils;
 @RunWith(JUnit4.class)
 public class TestTonSdkTestCasesSmartContracts {
 
-  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+  static String tonlibPath = Utils.getTonlibGithubUrl();
 
   public static final String numbersTestFileUrl =
       "https://raw.githubusercontent.com/neodix42/ton-sdk-test-cases/main/smartcontracts.json";

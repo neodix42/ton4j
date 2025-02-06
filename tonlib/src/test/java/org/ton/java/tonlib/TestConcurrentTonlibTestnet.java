@@ -18,7 +18,7 @@ import org.ton.java.utils.Utils;
 @RunWith(ConcurrentTestRunner.class)
 public class TestConcurrentTonlibTestnet {
 
-  String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+  String tonlibPath = Utils.getTonlibGithubUrl();
   //  static String tonlibPath = "tonlibjson-prev.dll";
 
   private Tonlib tonlib = Tonlib.builder().testnet(true).pathToTonlibSharedLib(tonlibPath).build();

@@ -24,7 +24,7 @@ public class TestTolkRunner {
     File tolkFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = tolkFile.getAbsolutePath();
 
-    String tolkPath = Utils.getArtifactGithubUrl("tolk", "latest", "neodix42", "ton");
+    String tolkPath = Utils.getTolkGithubUrl();
     TolkRunner tolkRunner = TolkRunner.builder().tolkExecutablePath(tolkPath).build();
 
     String result = tolkRunner.run(tolkFile.getParent(), absolutePath);

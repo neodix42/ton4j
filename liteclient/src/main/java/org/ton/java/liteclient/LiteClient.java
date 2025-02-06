@@ -5,9 +5,7 @@ import static java.util.Objects.nonNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -18,7 +16,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -103,42 +100,7 @@ public class LiteClient {
           super.timeout = 10;
         }
 
-        if (isNull(super.pathToGlobalConfig)) {
-
-          InputStream config;
-          if (super.testnet) {
-            config =
-                LiteClient.class.getClassLoader().getResourceAsStream("testnet-global.config.json");
-            File f = new File("testnet-global.config.json");
-            FileUtils.copyInputStreamToFile(config, f);
-            super.pathToGlobalConfig = f.getAbsolutePath();
-          } else {
-            config = LiteClient.class.getClassLoader().getResourceAsStream("global-config.json");
-            File f = new File("global.config.json");
-            FileUtils.copyInputStreamToFile(config, f);
-            super.pathToGlobalConfig = f.getAbsolutePath();
-          }
-
-          config.close();
-
-        } else {
-
-          if (super.pathToGlobalConfig.contains("http")
-              && super.pathToGlobalConfig.contains("://")) {
-            File tmpGlobalConfig = new File("downloaded.global.config");
-            if (!tmpGlobalConfig.exists()) {
-              FileUtils.copyURLToFile(new URL(super.pathToGlobalConfig), tmpGlobalConfig);
-            } else {
-              log.info("global.config already downloaded");
-            }
-            super.pathToGlobalConfig = tmpGlobalConfig.getAbsolutePath();
-          }
-
-          if (!Files.exists(Paths.get(super.pathToGlobalConfig))) {
-            throw new RuntimeException(
-                "Global config is not found in path: " + super.pathToGlobalConfig);
-          }
-        }
+        super.pathToGlobalConfig = resolvePathToGlobalConfig();
 
         if (super.printInfo) {
           log.info(
@@ -153,6 +115,26 @@ public class LiteClient {
         throw new RuntimeException("Error creating lite-client instance: " + e.getMessage());
       }
       return super.build();
+    }
+
+    private String resolvePathToGlobalConfig() {
+      String globalConfigPath;
+
+      if (isNull(super.pathToGlobalConfig)) {
+        if (super.testnet) {
+          globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlTestnet());
+        } else {
+          globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlMainnet());
+        }
+      } else {
+        globalConfigPath = Utils.getLocalOrDownload(super.pathToGlobalConfig);
+      }
+
+      if (!Files.exists(Paths.get(globalConfigPath))) {
+        throw new RuntimeException(
+            "Global config is not found in path: " + super.pathToGlobalConfig);
+      }
+      return globalConfigPath;
     }
   }
 

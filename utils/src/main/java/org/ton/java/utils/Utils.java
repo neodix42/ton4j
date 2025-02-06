@@ -1296,6 +1296,7 @@ public class Utils {
   public static String getLocalOrDownload(String linkToFile) {
     if (linkToFile.contains("http") && linkToFile.contains("://")) {
       try {
+        log.info("downloading {}", linkToFile);
         URL url = new URL(linkToFile);
         String filename = FilenameUtils.getName(url.getPath());
 
@@ -1381,5 +1382,13 @@ public class Utils {
     } else {
       throw new Error("unknown requested OS");
     }
+  }
+
+  public static String getGlobalConfigUrlMainnet() {
+    return "https://ton.org/global-config.json";
+  }
+
+  public static String getGlobalConfigUrlTestnet() {
+    return "https://ton.org/testnet-global.config.json";
   }
 }

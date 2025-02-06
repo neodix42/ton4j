@@ -19,7 +19,7 @@ import org.ton.java.utils.Utils;
 @RunWith(JUnit4.class)
 public class TestFaucet {
 
-  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+  static String tonlibPath = Utils.getTonlibGithubUrl();
 
   static String PUBLIC_KEY = "c02ece00eceb299066597ccc7a8ac0b2d08f0ad425f28c0ea92e74e2064f41f0";
   static String SECRET_KEY =
