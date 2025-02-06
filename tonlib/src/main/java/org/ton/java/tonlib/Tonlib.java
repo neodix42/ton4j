@@ -237,8 +237,10 @@ public class Tonlib {
         newLiteServers[0] = liteServers[super.liteServerIndex];
         globalConfigCurrent.setLiteservers(newLiteServers);
 
-        TonlibJsonI rawLibrary = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
-        super.tonlibJson = (TonlibJsonI) Native.synchronizedLibrary(rawLibrary);
+        //        TonlibJsonI rawLibrary = Native.load(super.pathToTonlibSharedLib,
+        // TonlibJsonI.class);
+        //        super.tonlibJson = (TonlibJsonI) Native.synchronizedLibrary(rawLibrary);
+        super.tonlibJson = Native.load(super.pathToTonlibSharedLib, TonlibJsonI.class);
         Utils.disableNativeOutput(super.verbosityLevel.ordinal());
         super.tonlib = super.tonlibJson.tonlib_client_json_create();
         super.tonlibJson.tonlib_client_set_verbosity_level(super.verbosityLevel.ordinal());
@@ -346,9 +348,9 @@ public class Tonlib {
     // tonlibJson.tonlib_client_json_destroy(tonlib);
     destroy();
 
-    TonlibJsonI rawLibrary = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
-    tonlibJson = (TonlibJsonI) Native.synchronizedLibrary(rawLibrary);
-    //    tonlibJson = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
+    //    TonlibJsonI rawLibrary = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
+    //    tonlibJson = (TonlibJsonI) Native.synchronizedLibrary(rawLibrary);
+    tonlibJson = Native.load(pathToTonlibSharedLib, TonlibJsonI.class);
     Utils.disableNativeOutput(verbosityLevel.ordinal());
     tonlib = tonlibJson.tonlib_client_json_create();
 
@@ -1139,6 +1141,10 @@ public class Tonlib {
 
   public ConfigParams6 getConfigParam6() {
     return ConfigParams6.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 6)));
+  }
+
+  public ConfigParams8 getConfigParam8() {
+    return ConfigParams8.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 8)));
   }
 
   public long loadContract(AccountAddressOnly address) {

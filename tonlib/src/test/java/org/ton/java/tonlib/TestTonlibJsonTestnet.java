@@ -34,12 +34,13 @@ public class TestTonlibJsonTestnet {
 
   Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
+  //  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42",
+  // "ton");
 
   //  Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
   //  Tonlib tonlib = null;
 
-  //  String tonlibPath = "tonlibjson-prev.dll";
+  String tonlibPath = "tonlibjson.dll";
 
   @Test
   public void testGetLiteServerVersion() {
@@ -467,7 +468,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibRunMethodActiveElectionId() {
 
-    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(false).build();
 
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
@@ -590,10 +591,10 @@ public class TestTonlibJsonTestnet {
     log.info("config0 {}", tonlib.getConfigParam0());
     log.info("config1 {}", tonlib.getConfigParam1());
     log.info("config2 {}", tonlib.getConfigParam2());
-    //    log.info("config3 {}", tonlib.getConfigParam3());
     log.info("config4 {}", tonlib.getConfigParam4());
     log.info("config5 {}", tonlib.getConfigParam5());
-    //    log.info("config6 {}", tonlib.getConfigParam6());
+    log.info("config8 {}", tonlib.getConfigParam8());
+    log.info("config28 {}", tonlib.getConfigParam(tonlib.getLast().getLast(), 28));
     tonlib.destroy();
   }
 }
