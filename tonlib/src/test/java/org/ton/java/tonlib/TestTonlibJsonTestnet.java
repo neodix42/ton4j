@@ -34,13 +34,12 @@ public class TestTonlibJsonTestnet {
 
   Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-  //  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42",
-  // "ton");
+  static String tonlibPath = Utils.getArtifactGithubUrl("tonlibjson", "latest", "neodix42", "ton");
 
   //  Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
   //  Tonlib tonlib = null;
 
-  String tonlibPath = "tonlibjson.dll";
+  //  String tonlibPath = "tonlibjson.dll";
 
   @Test
   public void testGetLiteServerVersion() {
