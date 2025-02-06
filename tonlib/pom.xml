@@ -38,11 +38,6 @@
         <url>https://github.com/neodiX42/ton4j/tree/main</url>
     </scm>
 
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.github.neodix42</groupId>
