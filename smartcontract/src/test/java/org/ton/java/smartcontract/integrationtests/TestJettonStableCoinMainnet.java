@@ -34,8 +34,7 @@ public class TestJettonStableCoinMainnet {
     tonlib =
         Tonlib.builder()
             .testnet(false)
-            .pathToTonlibSharedLib(
-                Utils.getTonlibGithubUrl();
+            .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
             .ignoreCache(false)
             .build();
 
@@ -137,8 +136,7 @@ public class TestJettonStableCoinMainnet {
     tonlib =
         Tonlib.builder()
             .testnet(false)
-            .pathToTonlibSharedLib(
-                Utils.getTonlibGithubUrl();
+            .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
             .ignoreCache(false)
             .build();
 
