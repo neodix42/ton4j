@@ -105,6 +105,8 @@ public class Tonlib {
 
   private static Pointer tonlib;
 
+  public static class TonlibBuilder {}
+
   public static TonlibBuilder builder() {
     return new CustomTonlibBuilder();
   }
