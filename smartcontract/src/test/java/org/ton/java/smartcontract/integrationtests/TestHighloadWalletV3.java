@@ -123,7 +123,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
-        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(12));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(2));
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
@@ -619,7 +619,7 @@ public class TestHighloadWalletV3 extends CommonTest {
           Destination.builder()
               .bounce(false)
               .address(dstDummyAddress)
-              .amount(Utils.toNano(0.01))
+              .amount(Utils.toNano(0.001))
               //                    .comment("comment-" + i)
               .build());
     }
