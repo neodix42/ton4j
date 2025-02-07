@@ -21,10 +21,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1390,5 +1387,17 @@ public class Utils {
 
   public static String getGlobalConfigUrlTestnet() {
     return "https://ton.org/testnet-global.config.json";
+  }
+
+  public static String generateRandomAddress(long workchain) {
+    try {
+      return workchain
+          + ":"
+          + Utils.bytesToHex(
+              MessageDigest.getInstance("SHA-256")
+                  .digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+    } catch (Throwable e) {
+      throw new Error("cannot generate random address. Error " + e.getMessage());
+    }
   }
 }

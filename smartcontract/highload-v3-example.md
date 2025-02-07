@@ -49,7 +49,7 @@ HighloadWalletV3 contract=HighloadWalletV3.builder()
         List<Destination> createDummyDestinations(int count)throws NoSuchAlgorithmException{
         List<Destination> result=new ArrayList<>();
         for(int i=0;i<count; i++){
-        String dstDummyAddress="0:"+Utils.bytesToHex(MessageDigest.getInstance("SHA-256").digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+        String dstDummyAddress=Utils.generateRandomAddress(0);
 
         result.add(Destination.builder()
         .bounce(false)

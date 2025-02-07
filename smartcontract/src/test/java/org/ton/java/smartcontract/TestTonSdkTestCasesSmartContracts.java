@@ -11,13 +11,10 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -815,7 +812,7 @@ public class TestTonSdkTestCasesSmartContracts {
   }
 
   @Test
-  public void testSmartContracts16() throws InterruptedException, NoSuchAlgorithmException {
+  public void testSmartContracts16() throws InterruptedException {
 
     String testId = "smartcontracts-16";
     TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
@@ -867,11 +864,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
     contract.waitForDeployment(60);
 
-    String singleRandomAddress =
-        "0:"
-            + Utils.bytesToHex(
-                MessageDigest.getInstance("SHA-256")
-                    .digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+    String singleRandomAddress = Utils.generateRandomAddress(0);
     config =
         HighloadV3Config.builder()
             .walletId(42)
@@ -988,7 +981,7 @@ public class TestTonSdkTestCasesSmartContracts {
   }
 
   @Test
-  public void testSmartContracts18() throws InterruptedException, NoSuchAlgorithmException {
+  public void testSmartContracts18() throws InterruptedException {
 
     String testId = "smartcontracts-18";
     TonSdkTestCases.TestCase testCase = tonSdkTestCases.getTestCases().get(testId);
@@ -1060,11 +1053,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
     highloadWalletV3.waitForDeployment(60);
 
-    String singleRandomAddress =
-        "0:"
-            + Utils.bytesToHex(
-                MessageDigest.getInstance("SHA-256")
-                    .digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+    String singleRandomAddress = Utils.generateRandomAddress(0);
 
     JettonMinter jettonMinterWallet =
         JettonMinter.builder()
@@ -1353,11 +1342,7 @@ public class TestTonSdkTestCasesSmartContracts {
       throws NoSuchAlgorithmException {
     List<Destination> result = new ArrayList<>();
     for (int i = 0; i < count; i++) {
-      String dstDummyAddress =
-          "0:"
-              + Utils.bytesToHex(
-                  MessageDigest.getInstance("SHA-256")
-                      .digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+      String dstDummyAddress = Utils.generateRandomAddress(0);
 
       result.add(
           Destination.builder()
@@ -1382,11 +1367,7 @@ public class TestTonSdkTestCasesSmartContracts {
       throws NoSuchAlgorithmException {
     List<Destination> result = new ArrayList<>();
     for (int i = 0; i < count; i++) {
-      String dstDummyAddress =
-          "0:"
-              + Utils.bytesToHex(
-                  MessageDigest.getInstance("SHA-256")
-                      .digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+      String dstDummyAddress = Utils.generateRandomAddress(0);
       Address addr = Address.of(dstDummyAddress);
       log.info("dummy destination address {} - {} ", i, addr.toBounceable());
       globalDummyDestinations.add(addr);

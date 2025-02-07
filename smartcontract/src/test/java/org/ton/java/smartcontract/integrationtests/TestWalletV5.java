@@ -1,6 +1,12 @@
 package org.ton.java.smartcontract.integrationtests;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.java.address.Address;
@@ -25,15 +31,6 @@ import org.ton.java.tlb.types.ExtendedActionType;
 import org.ton.java.tlb.types.Message;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
-
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.util.*;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 public class TestWalletV5 extends CommonTest {
@@ -1225,11 +1222,7 @@ public class TestWalletV5 extends CommonTest {
     List<Destination> createDummyDestinations(int count) throws NoSuchAlgorithmException {
         List<Destination> result = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            String dstDummyAddress =
-                    "0:"
-                            + Utils.bytesToHex(
-                            MessageDigest.getInstance("SHA-256")
-                                    .digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+            String dstDummyAddress = Utils.generateRandomAddress(0);
 
             result.add(
                     Destination.builder()

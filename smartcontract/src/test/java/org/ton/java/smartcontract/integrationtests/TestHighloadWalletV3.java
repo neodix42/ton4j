@@ -5,8 +5,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -463,12 +461,7 @@ public class TestHighloadWalletV3 extends CommonTest {
       throws NoSuchAlgorithmException {
     List<OutAction> outActions = new ArrayList<>();
     for (int i = 0; i < numRecipients; i++) {
-      Address destinationAddress =
-          Address.of(
-              "0:"
-                  + Utils.bytesToHex(
-                      MessageDigest.getInstance("SHA-256")
-                          .digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8))));
+      Address destinationAddress = Address.of(Utils.generateRandomAddress(0));
       log.info("dest {} is {}", i, destinationAddress.toBounceable());
       OutAction outAction =
           ActionSendMsg.builder()
@@ -567,11 +560,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
     myHighLoadWalletV3.waitForDeployment(60);
 
-    String singleRandomAddress =
-        "0:"
-            + Utils.bytesToHex(
-                MessageDigest.getInstance("SHA-256")
-                    .digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+    String singleRandomAddress = Utils.generateRandomAddress(0);
 
     JettonMinter jettonMinterWallet =
         JettonMinter.builder()
@@ -621,14 +610,10 @@ public class TestHighloadWalletV3 extends CommonTest {
     log.info("balanceOfDestinationWallet in jettons: {}", randomJettonWallet.getBalance());
   }
 
-  List<Destination> createDummyDestinations(int count) throws NoSuchAlgorithmException {
+  List<Destination> createDummyDestinations(int count) {
     List<Destination> result = new ArrayList<>();
     for (int i = 0; i < count; i++) {
-      String dstDummyAddress =
-          "0:"
-              + Utils.bytesToHex(
-                  MessageDigest.getInstance("SHA-256")
-                      .digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+      String dstDummyAddress = Utils.generateRandomAddress(0);
 
       result.add(
           Destination.builder()

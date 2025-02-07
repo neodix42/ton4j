@@ -3,12 +3,9 @@ package org.ton.java.smartcontract.integrationtests;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
@@ -317,11 +314,7 @@ public class TestJetton {
       throws NoSuchAlgorithmException {
     List<Destination> result = new ArrayList<>();
     for (int i = 0; i < count; i++) {
-      String dstDummyAddress =
-          "0:"
-              + Utils.bytesToHex(
-                  MessageDigest.getInstance("SHA-256")
-                      .digest(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+      String dstDummyAddress = Utils.generateRandomAddress(0);
 
       result.add(
           Destination.builder()
