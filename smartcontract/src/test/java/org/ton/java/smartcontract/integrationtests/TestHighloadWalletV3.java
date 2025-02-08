@@ -103,8 +103,7 @@ public class TestHighloadWalletV3 extends CommonTest {
 
   /** Sends 1000 messages with values without comment/memo field */
   @Test
-  public void testBulkTransferSimplified_1000()
-      throws InterruptedException, NoSuchAlgorithmException {
+  public void testBulkTransferSimplified_1000() throws InterruptedException {
 
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 

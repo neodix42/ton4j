@@ -342,7 +342,9 @@ public class HighloadWalletV3 implements Contract {
     BigInteger totalAmount = BigInteger.ZERO;
 
     for (Destination destination : recipients) {
-      totalAmount = totalAmount.add(destination.getAmount());
+      totalAmount =
+          totalAmount.add(
+              isNull(destination.getAmount()) ? BigInteger.ZERO : destination.getAmount());
     }
 
     List<Destination> tmpRecipients = new ArrayList<>(recipients);
@@ -477,19 +479,13 @@ public class HighloadWalletV3 implements Contract {
           .build();
     } else {
       return ActionSendMsg.builder()
-          .mode((destination.getMode() == 0) ? 3 : destination.getMode())
+          .mode(3)
           .outMsg(
               MessageRelaxed.builder()
                   .info(
                       InternalMessageInfoRelaxed.builder()
-                          .dstAddr(getAddressIntStd())
-                          .value(
-                              CurrencyCollection.builder()
-                                  .coins(destination.getAmount())
-                                  .extraCurrencies(
-                                      convertExtraCurrenciesToHashMap(
-                                          destination.getExtraCurrencies()))
-                                  .build())
+                          .dstAddr(getAddressIntStd()) // self needs value, connecting message
+                          .value(CurrencyCollection.builder().coins(Utils.toNano(0.01)).build())
                           .build())
                   .body(enclosedMessages)
                   .build())

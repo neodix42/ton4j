@@ -6,7 +6,6 @@ import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -275,16 +274,13 @@ public class TestExtraCurrency {
             .queryId(HighloadQueryId.fromSeqno(2).getQueryId())
             .body(
                 contract.createBulkTransfer(
-                    createDummyDestinationsWithEc(900),
+                    createDummyDestinationsWithEc(1000),
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(2).getQueryId())))
             .build();
 
     extMessageInfo = contract.send(config);
-    AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
-    log.info("sent 1000 messages");
-
-    extMessageInfo = contract.send(config);
     assertThat(extMessageInfo.getError().getCode()).isZero();
+    log.info("sent 1000 messages");
 
     contract.waitForBalanceChange();
 
@@ -304,7 +300,8 @@ public class TestExtraCurrency {
           Destination.builder()
               .bounce(false)
               .address(dstDummyAddress)
-              .amount(Utils.toNano(0.0025))
+              // .amount(Utils.toNano(0)) // send extra-currency only, but you can attach toncoins
+              // as well
               .extraCurrencies(
                   Collections.singletonList(
                       ExtraCurrency.builder()
