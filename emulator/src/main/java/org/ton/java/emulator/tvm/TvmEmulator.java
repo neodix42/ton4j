@@ -17,10 +17,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
-import org.ton.java.tlb.types.VmStack;
-import org.ton.java.tlb.types.VmStackList;
-import org.ton.java.tlb.types.VmStackValueInt;
-import org.ton.java.tlb.types.VmStackValueTinyInt;
+import org.ton.java.tlb.*;
 import org.ton.java.utils.Utils;
 
 @Slf4j

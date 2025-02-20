@@ -41,6 +41,12 @@
     <dependencies>
         <dependency>
             <groupId>io.github.neodix42</groupId>
+            <artifactId>tlb</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
             <artifactId>utils</artifactId>
             <version>${project.parent.version}</version>
             <scope>compile</scope>

@@ -32,7 +32,7 @@ import org.ton.java.smartcontract.SmartContractCompiler;
 import org.ton.java.smartcontract.types.Destination;
 import org.ton.java.smartcontract.types.WalletV5Config;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
-import org.ton.java.tlb.types.*;
+import org.ton.java.tlb.*;
 import org.ton.java.tolk.TolkRunner;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.SmcLibraryEntry;

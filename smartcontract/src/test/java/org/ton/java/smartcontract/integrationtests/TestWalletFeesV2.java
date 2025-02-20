@@ -16,7 +16,7 @@ import org.ton.java.address.Address;
 import org.ton.java.smartcontract.faucet.TestnetFaucet;
 import org.ton.java.smartcontract.types.WalletV2R2Config;
 import org.ton.java.smartcontract.wallet.v2.WalletV2R2;
-import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.Message;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.QueryFees;
 import org.ton.java.utils.Utils;

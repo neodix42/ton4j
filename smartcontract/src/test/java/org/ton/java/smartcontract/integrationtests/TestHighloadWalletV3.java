@@ -25,7 +25,7 @@ import org.ton.java.smartcontract.types.HighloadQueryId;
 import org.ton.java.smartcontract.types.HighloadV3Config;
 import org.ton.java.smartcontract.types.HighloadV3InternalMessageBody;
 import org.ton.java.smartcontract.utils.MsgUtils;
-import org.ton.java.tlb.types.*;
+import org.ton.java.tlb.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.VerbosityLevel;

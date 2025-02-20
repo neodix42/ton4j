@@ -1,6 +1,11 @@
 package org.ton.java.smartcontract.unittests;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 import com.iwebpp.crypto.TweetNaclFast;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,14 +18,8 @@ import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R1;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R2;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R3;
-import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.Message;
 import org.ton.java.utils.Utils;
-
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)

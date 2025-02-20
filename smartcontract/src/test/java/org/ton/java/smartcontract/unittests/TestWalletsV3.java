@@ -14,10 +14,7 @@ import org.ton.java.smartcontract.types.WalletV3Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
-import org.ton.java.tlb.types.CurrencyCollection;
-import org.ton.java.tlb.types.InternalMessageInfo;
-import org.ton.java.tlb.types.Message;
-import org.ton.java.tlb.types.MsgAddressIntStd;
+import org.ton.java.tlb.*;
 import org.ton.java.utils.Utils;
 
 @Slf4j

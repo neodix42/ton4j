@@ -21,9 +21,12 @@ import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.tlb.types.ConfigParams8;
+import org.ton.java.tlb.*;
 import org.ton.java.tonlib.types.*;
+import org.ton.java.tonlib.types.BlockIdExt;
 import org.ton.java.tonlib.types.globalconfig.*;
+import org.ton.java.tonlib.types.globalconfig.BlockInfo;
+import org.ton.java.tonlib.types.globalconfig.Validator;
 import org.ton.java.utils.Utils;
 
 @Slf4j

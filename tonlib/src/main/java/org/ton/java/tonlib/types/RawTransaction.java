@@ -10,7 +10,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.tlb.types.Transaction;
+import org.ton.java.tlb.Transaction;
 
 @Builder
 @Setter
@@ -57,6 +57,6 @@ public class RawTransaction implements Serializable {
 
   public Transaction getTransactionAsTlb() {
     return Transaction.deserialize(
-            CellSlice.beginParse(CellBuilder.beginCell().fromBocBase64(getData()).endCell()));
+        CellSlice.beginParse(CellBuilder.beginCell().fromBocBase64(getData()).endCell()));
   }
 }

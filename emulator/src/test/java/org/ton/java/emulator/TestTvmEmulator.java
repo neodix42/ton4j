@@ -30,7 +30,7 @@ import org.ton.java.smartcontract.types.NewPlugin;
 import org.ton.java.smartcontract.types.WalletV4R2Config;
 import org.ton.java.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
-import org.ton.java.tlb.types.*;
+import org.ton.java.tlb.*;
 import org.ton.java.tolk.TolkRunner;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.BlockIdExt;

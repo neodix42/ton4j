@@ -55,6 +55,7 @@ You can use each submodule individually. Click the module below to get more deta
 * [Tolk](tolk/README.md) - wrapper for using with external precompiled tolk binary.
 * [TonConnect](tonconnect/README.md) - implementation of Ton Connect standard.
 * [Disassembler](disassembler/README.md) - implementation of Ton Connect standard.
+* [TL-B](tlb/README.md) - TL-B structures and their de/serialization.
 * [Utils](utils/README.md) - create private and public keys, convert data, etc.
 
 ### Features

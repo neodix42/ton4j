@@ -26,6 +26,7 @@
         <module>func</module>
         <module>tolk</module>
         <module>disassembler</module>
+        <module>tlb</module>
     </modules>
 
     <properties>

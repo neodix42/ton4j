@@ -5,7 +5,7 @@ import lombok.*;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.tlb.types.*;
+import org.ton.java.tlb.*;
 
 @Builder
 @Data

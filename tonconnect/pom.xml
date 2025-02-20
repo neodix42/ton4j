@@ -40,7 +40,7 @@
     <dependencies>
         <dependency>
             <groupId>io.github.neodix42</groupId>
-            <artifactId>cell</artifactId>
+            <artifactId>tlb</artifactId>
             <version>${project.parent.version}</version>
             <scope>compile</scope>
         </dependency>

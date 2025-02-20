@@ -36,7 +36,7 @@ import org.ton.java.smartcontract.wallet.ContractUtils;
 import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.java.smartcontract.wallet.v5.WalletV5;
-import org.ton.java.tlb.types.Message;
+import org.ton.java.tlb.Message;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;

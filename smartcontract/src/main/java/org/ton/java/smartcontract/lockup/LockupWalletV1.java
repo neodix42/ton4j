@@ -20,7 +20,7 @@ import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.types.LockupWalletV1Config;
 import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.wallet.Contract;
-import org.ton.java.tlb.types.*;
+import org.ton.java.tlb.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RawTransaction;

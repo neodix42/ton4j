@@ -45,11 +45,16 @@
     <dependencies>
         <dependency>
             <groupId>io.github.neodix42</groupId>
+            <artifactId>tlb</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
             <artifactId>utils</artifactId>
             <version>${project.parent.version}</version>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
@@ -101,12 +106,6 @@
             <artifactId>smartcontract</artifactId>
             <version>0.9.2</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.neodix42</groupId>
-            <artifactId>cell</artifactId>
-            <version>0.9.2</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 

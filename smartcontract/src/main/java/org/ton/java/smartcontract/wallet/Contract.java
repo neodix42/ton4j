@@ -10,7 +10,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.smartcontract.types.WalletConfig;
 import org.ton.java.smartcontract.wallet.v1.WalletV1R1;
-import org.ton.java.tlb.types.*;
+import org.ton.java.tlb.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtraCurrency;
 import org.ton.java.tonlib.types.RawTransaction;

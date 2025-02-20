@@ -7,7 +7,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
-import org.ton.java.tlb.types.OutList;
+import org.ton.java.tlb.*;
 
 @Builder
 @Setter
