@@ -19,35 +19,26 @@ import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
-/**
- * @deprecated please switch to a multisig wallet v2.
- */
+/** <a href="https://github.com/ton-blockchain/multisig-contract-v2">multisig-v2</a> */
 @Builder
 @Getter
 @Slf4j
-@Deprecated
-public class MultiSigWallet implements Contract {
+public class MultiSigWalletV2 implements Contract {
 
-  // https://github.com/akifoq/multisig/blob/master/multisig-code.fc
   TweetNaclFast.Signature.KeyPair keyPair;
   long walletId;
   MultiSigConfig config;
 
-  /**
-   * interface to <a href="https://github.com/akifoq/multisig/blob/master/multisig-code.fc">multisig
-   * wallet smart-contract</a>
-   *
-   * <p>mandatory - highloadQueryId, walletId, publicKey
-   */
-  public static class MultiSigWalletBuilder {}
+  /** mandatory - highloadQueryId, walletId, publicKey */
+  public static class MultiSigWalletV2Builder {}
 
-  public static MultiSigWalletBuilder builder() {
-    return new CustomMultiSigWalletBuilder();
+  public static MultiSigWalletV2Builder builder() {
+    return new CustomMultiSigWalletV2Builder();
   }
 
-  private static class CustomMultiSigWalletBuilder extends MultiSigWalletBuilder {
+  private static class CustomMultiSigWalletV2Builder extends MultiSigWalletV2Builder {
     @Override
-    public MultiSigWallet build() {
+    public MultiSigWalletV2 build() {
       if (isNull(super.keyPair)) {
         super.keyPair = Utils.generateSignatureKeyPair();
       }
@@ -75,7 +66,7 @@ public class MultiSigWallet implements Contract {
 
   @Override
   public String getName() {
-    return "multisig";
+    return "multisig-v2";
   }
 
   /**
@@ -109,7 +100,7 @@ public class MultiSigWallet implements Contract {
 
   @Override
   public Cell createCodeCell() {
-    return CellBuilder.beginCell().fromBoc(WalletCodes.multisig.getValue()).endCell();
+    return CellBuilder.beginCell().fromBoc(WalletCodes.multisigV2.getValue()).endCell();
   }
 
   private Cell createSigningMessageInternal(int pubkeyIndex, Cell order) {
@@ -700,7 +691,7 @@ public class MultiSigWallet implements Contract {
    * Returns -1 for processed queries, 0 for unprocessed, 1 for unknown (forgotten) and the mask of
    * signed positions of pubkeys
    *
-   * @return Pair &lt;Long, Long&gt; status, mask
+   * @return Pair<Long, Long> status, mask
    */
   public Pair<Long, Long> getQueryState(BigInteger queryId) {
 
@@ -726,7 +717,7 @@ public class MultiSigWallet implements Contract {
    *
    * @param tonlib Tonlib
    * @param query Cell of serialized list of signatures and order
-   * @return Pair &lt;Long, Long&gt; count of correct signatures and the mask
+   * @return Pair<Long, Long> count of correct signatures and the mask
    */
   public Pair<Long, Long> checkQuerySignatures(Tonlib tonlib, Cell query) {
 

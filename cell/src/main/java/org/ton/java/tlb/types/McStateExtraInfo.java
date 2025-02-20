@@ -17,7 +17,7 @@ import org.ton.java.cell.TonHashMapAugE;
  *
  * <pre>
  * ...
- *   ^[ flags:(## 16) { flags <= 1 }
+ *   ^[ flags:(## 16) { flags &lt;= 1 }
  *      validator_info:ValidatorInfo
  *      prev_blocks:OldMcBlocksInfo
  *      after_key_block:Bool
@@ -80,7 +80,7 @@ public class McStateExtraInfo {
   public List<KeyExtBlkRef> getPrevBlocksAsList() {
     List<KeyExtBlkRef> prevBlock = new ArrayList<>();
     for (Map.Entry<Object, Pair<Object, Object>> entry : prevBlocks.elements.entrySet()) {
-        prevBlock.add((KeyExtBlkRef) entry.getValue().getLeft());
+      prevBlock.add((KeyExtBlkRef) entry.getValue().getLeft());
     }
     return prevBlock;
   }

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,6 +35,18 @@ public class TestBocDeserealization {
         .isEqualTo("9UNypzdgZ4qSUGIQnk+ugSufV5nUtui7OYm1gMLtrn4=");
     log.info(
         "tx in_msg-body hash {}", Utils.bytesToBase64(tx.getInOut().getIn().getBody().getHash()));
+  }
+
+  @Test
+  @Ignore // todo should fail
+  public void testTxDeserialization2() {
+    String base64boc =
+        "te6ccgECGQEAA7AAAkWIAI+aL17Fvh0IhnTL21WEByHCAQRl7b7K81+QEY6ThSSYHgECAgE0AwQBnPU3cAba6JtfOqlr1KBxP4Nl5/TZEUjHpbcfQw7h7Lkl7e/jZmzyNOYaf8D0qwrfEIsLaIVTvEGj6Ne3xrPAIQ8pqaMXf////wAAAAAAAxgBFP8A9KQT9LzyyAsFAFEAAAAAKamjFw3F1ysM7zATphUivjqF6xJCT04AZ2sjG7ak2rBy2ROFQAIBIAYHAgFICAkE+PKDCNcYINMf0x/THwL4I7vyZO1E0NMf0x/T//QE0VFDuvKhUVG68qIF+QFUEGT5EPKj+AAkpMjLH1JAyx9SMMv/UhD0AMntVPgPAdMHIcAAn2xRkyDXSpbTB9QC+wDoMOAhwAHjACHAAuMAAcADkTDjDQOkyMsfEssfy/8UFRYXAubQAdDTAyFxsJJfBOAi10nBIJJfBOAC0x8hghBwbHVnvSKCEGRzdHK9sJJfBeAD+kAwIPpEAcjKB8v/ydDtRNCBAUDXIfQEMFyBAQj0Cm+hMbOSXwfgBdM/yCWCEHBsdWe6kjgw4w0DghBkc3RyupJfBuMNCgsCASAMDQB4AfoA9AQw+CdvIjBQCqEhvvLgUIIQcGx1Z4MesXCAGFAEywUmzxZY+gIZ9ADLaRfLH1Jgyz8gyYBA+wAGAIpQBIEBCPRZMO1E0IEBQNcgyAHPFvQAye1UAXKwjiOCEGRzdHKDHrFwgBhQBcsFUAPPFiP6AhPLassfyz/JgED7AJJfA+ICASAODwBZvSQrb2omhAgKBrkPoCGEcNQICEekk30pkQzmkD6f+YN4EoAbeBAUiYcVnzGEAgFYEBEAEbjJftRNDXCx+AA9sp37UTQgQFA1yH0BDACyMoHy//J0AGBAQj0Cm+hMYAIBIBITABmtznaiaEAga5Drhf/AABmvHfaiaEAQa5DrhY/AAG7SB/oA1NQi+QAFyMoHFcv/ydB3dIAYyMsFywIizxZQBfoCFMtrEszMyXP7AMhAFIEBCPRR8qcCAHCBAQjXGPoA0z/IVCBHgQEI9FHyp4IQbm90ZXB0gBjIywXLAlAGzxZQBPoCFMtqEssfyz/Jc/sAAgBsgQEI1xj6ANM/MFIkgQEI9Fnyp4IQZHN0cnB0gBjIywXLAlAFzxZQA/oCE8tqyx8Syz/Jc/sAAAr0AMntVABiQgBNFkVP6b/VDIiOP/G0Xt9D7qHLzEA6uFr4gEh41V4PbwgIAAAAAAAAAAAAAAAAAAA=";
+
+    byte[] rawBoc1 = Utils.base64ToSignedBytes(base64boc);
+
+    Cell c = CellBuilder.beginCell().fromBoc(rawBoc1).endCell();
+    log.info("cell {}", c);
   }
 
   /** <a href="https://github.com/toncenter/tonweb/issues/70">issue 70</a> */

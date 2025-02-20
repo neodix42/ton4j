@@ -35,6 +35,26 @@ import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class Utils {
+
+  public static final String ANSI_RESET = "\u001B[0m";
+  public static final String ANSI_BLACK = "\u001B[30m";
+  public static final String ANSI_RED = "\u001B[31m";
+  public static final String ANSI_GREEN = "\u001B[32m";
+  public static final String ANSI_YELLOW = "\u001B[33m";
+  public static final String ANSI_BLUE = "\u001B[34m";
+  public static final String ANSI_PURPLE = "\u001B[35m";
+  public static final String ANSI_CYAN = "\u001B[36m";
+  public static final String ANSI_WHITE = "\u001B[37m";
+
+  public static final String ANSI_BLACK_BACKGROUND = "\u001B[40m";
+  public static final String ANSI_RED_BACKGROUND = "\u001B[41m";
+  public static final String ANSI_GREEN_BACKGROUND = "\u001B[42m";
+  public static final String ANSI_YELLOW_BACKGROUND = "\u001B[43m";
+  public static final String ANSI_BLUE_BACKGROUND = "\u001B[44m";
+  public static final String ANSI_PURPLE_BACKGROUND = "\u001B[45m";
+  public static final String ANSI_CYAN_BACKGROUND = "\u001B[46m";
+  public static final String ANSI_WHITE_BACKGROUND = "\u001B[47m";
+
   private static final String HEXES = "0123456789ABCDEF";
   private static final long BLN1 = 1000000000L;
   private static final BigInteger BI_BLN1 = BigInteger.valueOf(BLN1);
@@ -649,6 +669,10 @@ public class Utils {
       signature = new TweetNaclFast.Signature(pubKey, keyPair.getSecretKey());
     }
     return signature;
+  }
+
+  public static TweetNaclFast.Signature.KeyPair keyPairFromHex(String hex) {
+    return Utils.generateSignatureKeyPairFromSeed(Utils.hexToSignedBytes(hex));
   }
 
   /**
@@ -1293,17 +1317,16 @@ public class Utils {
   public static String getLocalOrDownload(String linkToFile) {
     if (linkToFile.contains("http") && linkToFile.contains("://")) {
       try {
-        log.info("downloading {}", linkToFile);
         URL url = new URL(linkToFile);
         String filename = FilenameUtils.getName(url.getPath());
-
         File tmpFile = new File(filename);
         if (!tmpFile.exists()) {
+          log.info("downloading {}", linkToFile);
           FileUtils.copyURLToFile(url, tmpFile);
           tmpFile.setExecutable(true);
 
         } else {
-          log.info("{} already downloaded", filename);
+          //          log.info("{} already downloaded", filename);
         }
         return tmpFile.getAbsolutePath();
 

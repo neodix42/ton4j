@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -93,7 +92,7 @@ public class TestWalletV3R2Short extends CommonTest {
     contract1.waitForDeployment(30);
 
     extMessageInfo = contract2.deploy();
-    AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
 
     contract2.waitForDeployment(30);
 
@@ -108,7 +107,7 @@ public class TestWalletV3R2Short extends CommonTest {
 
     // transfer coins from new wallet (back to faucet)
     extMessageInfo = contract1.send(config);
-    AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
 
     contract1.waitForBalanceChange(90);
 
@@ -122,7 +121,7 @@ public class TestWalletV3R2Short extends CommonTest {
             .build();
 
     extMessageInfo = contract2.send(config);
-    AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
 
     contract2.waitForBalanceChange(90);
 

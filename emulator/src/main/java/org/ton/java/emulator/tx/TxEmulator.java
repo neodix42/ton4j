@@ -1,6 +1,7 @@
 package org.ton.java.emulator.tx;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -8,12 +9,15 @@ import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.TonHashMapE;
 import org.ton.java.emulator.EmulateTransactionResult;
 import org.ton.java.tlb.types.*;
 import org.ton.java.utils.Utils;
@@ -34,6 +38,7 @@ public class TxEmulator {
   private String customConfig;
   private TxVerbosityLevel verbosityLevel;
   private Boolean printEmulatorInfo;
+  private List<Cell> libraries;
 
   public static class TxEmulatorBuilder {}
 
@@ -110,6 +115,11 @@ public class TxEmulator {
           super.txEmulatorI.transaction_emulator_set_debug_enabled(super.txEmulator, true);
         }
 
+        if (nonNull(super.libraries)) {
+          super.txEmulatorI.transaction_emulator_set_libs(
+              super.txEmulator, convertLibsToHashMap(super.libraries).toBase64());
+        }
+
         Utils.enableNativeOutput(super.verbosityLevel.ordinal());
 
         if (super.txEmulator == 0) {
@@ -132,6 +142,18 @@ public class TxEmulator {
         throw new Error("Error creating tx emulator instance: " + e.getMessage());
       }
     }
+  }
+
+  private static Cell convertLibsToHashMap(List<Cell> libs) {
+
+    TonHashMapE x = new TonHashMapE(256);
+
+    for (Cell c : libs) {
+      x.elements.put(c.getHash(), c);
+    }
+    return x.serialize(
+        k -> CellBuilder.beginCell().storeBytes((byte[]) k, 256).endCell().getBits(),
+        v -> CellBuilder.beginCell().storeRef(((Cell) v)).endCell());
   }
 
   public void destroy() {

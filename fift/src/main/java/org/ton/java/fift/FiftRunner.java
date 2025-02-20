@@ -49,7 +49,7 @@ public class FiftRunner {
           log.info("Checking if Fift is installed...");
         }
         String errorMsg =
-            "Make sure you have Fift installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.fiftExecutablePath().";
+            "You can specify full path via FiftRunner.builder().fiftExecutablePath(Utils.getFiftGithubUrl()).\nOr make sure you have Fift installed. See https://github.com/ton-blockchain/packages for instructions.";
         try {
           ProcessBuilder pb = new ProcessBuilder("fift", "-h").redirectErrorStream(true);
           Process p = pb.start();
@@ -72,10 +72,16 @@ public class FiftRunner {
                 StringUtils.substringBeforeLast(super.fiftExecutablePath, "/")
                     + "/smartcont_lib.zip";
 
-            String smartcontPath = Utils.getLocalOrDownload(smartcont);
-            ZipFile zipFile = new ZipFile(smartcontPath);
-            zipFile.extractAll(new File(smartcontPath).getParent());
-            Files.delete(Paths.get(smartcontPath));
+            File tmpFileSmartcont =
+                new File(System.getProperty("user.dir") + "/smartcont/stdlib.fc");
+            if (!tmpFileSmartcont.exists()) {
+              String smartcontPath = Utils.getLocalOrDownload(smartcont);
+              ZipFile zipFile = new ZipFile(smartcontPath);
+              zipFile.extractAll(new File(smartcontPath).getParent());
+              Files.delete(Paths.get(smartcontPath));
+            } else {
+              //              log.info("smartcont_lib.zip already downloaded");
+            }
           } catch (Exception e) {
             log.error("cannot download smartcont_lib.zip");
           }

@@ -9,8 +9,10 @@ import com.google.gson.ToNumberPolicy;
 import com.sun.jna.*;
 import java.io.File;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -132,7 +134,7 @@ public class Tonlib {
                   && (super.pathToTonlibSharedLib.contains("INFO:")))
               || isNull(super.pathToTonlibSharedLib)) {
             throw new Error(
-                "tonlibjson shared library not found. Set the absolute path to it using pathToTonlibSharedLib in the Tonlib builder.\nYou can download the latest tonlibjson from the official TON release page https://github.com/ton-blockchain/ton/releases/latest");
+                "tonlibjson shared library not found.\nYou can specify full path via Tonlib.builder().pathToTonlibSharedLib(Utils.getTonlibGithubUrl()).");
           }
         } else {
           super.pathToTonlibSharedLib = Utils.getLocalOrDownload(super.pathToTonlibSharedLib);
@@ -838,7 +840,7 @@ public class Tonlib {
    * @param fullblock - workchain, shard, seqno, root-hash, file-hash
    * @param count - limit result
    * @param afterTx - filter out Tx before this one
-   * @return Map<String, RawTransactions>
+   * @return Map &lt;String, RawTransactions&gt;
    */
   public Map<String, RawTransactions> getAllBlockTransactions(
       BlockIdExt fullblock, long count, AccountTransactionId afterTx) {
@@ -1640,27 +1642,29 @@ public class Tonlib {
   public RawTransaction getRawTransaction(byte workchain, ShortTxId tx) {
     String addressHex = Utils.base64ToHexString(tx.getAccount());
     String address = Address.of(workchain + ":" + addressHex).toString(false);
-    GetRawTransactionsV2Query getRawTransactionsQuery =
-        GetRawTransactionsV2Query.builder()
-            .account_address(AccountAddressOnly.builder().account_address(address).build())
-            .from_transaction_id(
-                LastTransactionId.builder()
-                    .lt(BigInteger.valueOf(tx.getLt()))
-                    .hash(tx.getHash())
-                    .build())
-            .count(1)
-            .try_decode_message(false)
-            .build();
+    synchronized (gson) {
+      GetRawTransactionsV2Query getRawTransactionsQuery =
+          GetRawTransactionsV2Query.builder()
+              .account_address(AccountAddressOnly.builder().account_address(address).build())
+              .from_transaction_id(
+                  LastTransactionId.builder()
+                      .lt(BigInteger.valueOf(tx.getLt()))
+                      .hash(tx.getHash())
+                      .build())
+              .count(1)
+              .try_decode_message(false)
+              .build();
 
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
-    String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
-    RawTransactions res = gson.fromJson(result, RawTransactions.class);
-    List<RawTransaction> t = res.getTransactions();
-    if (t.size() >= 1) {
-      return t.get(0);
-    } else {
-      return RawTransaction.builder().build();
+      Utils.disableNativeOutput(verbosityLevel.ordinal());
+      String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
+      Utils.enableNativeOutput(verbosityLevel.ordinal());
+      RawTransactions res = gson.fromJson(result, RawTransactions.class);
+      List<RawTransaction> t = res.getTransactions();
+      if (t.size() >= 1) {
+        return t.get(0);
+      } else {
+        return RawTransaction.builder().build();
+      }
     }
   }
 
@@ -1798,5 +1802,44 @@ public class Tonlib {
 
   public boolean isTestnet() {
     return testnet;
+  }
+
+  public void updateInitBlock() {
+    updateInitBlock(pathToGlobalConfig);
+  }
+
+  public void updateInitBlock(String pathToGlobalConfig) {
+
+    try {
+      if (Files.exists(Path.of(pathToGlobalConfig))) {
+        MasterChainInfo masterChainInfo = getLast();
+        BlockHeader blockHeader = getBlockHeader(masterChainInfo.getLast());
+
+        BlockIdExt blockIdExt =
+            lookupBlock(blockHeader.getPrev_key_block_seqno(), -1, -9223372036854775808L, 0);
+        //        log.info(
+        //            "seqno {}, fileHash {}, rootHash {}",
+        //            blockIdExt.getSeqno(),
+        //            blockIdExt.getFile_hash(),
+        //            blockIdExt.getRoot_hash());
+
+        String content =
+            FileUtils.readFileToString(new File(pathToGlobalConfig), StandardCharsets.UTF_8);
+
+        TonGlobalConfig tonGlobalConfig = gson.fromJson(content, TonGlobalConfig.class);
+
+        tonGlobalConfig.getValidator().getInit_block().setSeqno(blockIdExt.getSeqno());
+        tonGlobalConfig.getValidator().getInit_block().setShard(blockIdExt.getShard());
+        tonGlobalConfig.getValidator().getInit_block().setWorkchain(blockIdExt.getWorkchain());
+        tonGlobalConfig.getValidator().getInit_block().setFile_hash(blockIdExt.getFile_hash());
+        tonGlobalConfig.getValidator().getInit_block().setRoot_hash(blockIdExt.getRoot_hash());
+        Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+        FileUtils.writeStringToFile(
+            new File(pathToGlobalConfig), gs.toJson(tonGlobalConfig), Charset.defaultCharset());
+        log.info("init-block updated");
+      }
+    } catch (Exception e) {
+      log.error("cannot update init-block in " + pathToGlobalConfig);
+    }
   }
 }

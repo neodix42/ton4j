@@ -49,7 +49,7 @@ public class TolkRunner {
         }
 
         String errorMsg =
-            "Make sure you have Tolk installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.tolkExecutablePath().";
+            "You can specify full path via TolkRunner.builder().tolkExecutablePath(Utils.getTolkGithubUrl()).\nOr make sure you have Tolk installed. See https://github.com/ton-blockchain/packages for instructions.";
         try {
           ProcessBuilder pb = new ProcessBuilder("tolk", "-h").redirectErrorStream(true);
           Process p = pb.start();
@@ -78,10 +78,16 @@ public class TolkRunner {
                 StringUtils.substringBeforeLast(super.tolkExecutablePath, "/")
                     + "/smartcont_lib.zip";
 
-            String smartcontPath = Utils.getLocalOrDownload(smartcont);
-            ZipFile zipFile = new ZipFile(smartcontPath);
-            zipFile.extractAll(new File(smartcontPath).getParent());
-            Files.delete(Paths.get(smartcontPath));
+            File tmpFileSmartcont =
+                new File(System.getProperty("user.dir") + "/smartcont/stdlib.fc");
+            if (!tmpFileSmartcont.exists()) {
+              String smartcontPath = Utils.getLocalOrDownload(smartcont);
+              ZipFile zipFile = new ZipFile(smartcontPath);
+              zipFile.extractAll(new File(smartcontPath).getParent());
+              Files.delete(Paths.get(smartcontPath));
+            } else {
+              //              log.info("smartcont_lib.zip already downloaded");
+            }
           } catch (Exception e) {
             log.error("cannot download smartcont_lib.zip");
           }

@@ -528,6 +528,14 @@ public class TestTonlibJsonTestnet {
   }
 
   @Test
+  public void testTonlibUpdateInitBlock() {
+    Tonlib tonlib = Tonlib.builder().testnet(true).build();
+    tonlib.getLast();
+    tonlib.updateInitBlock();
+    tonlib.destroy();
+  }
+
+  @Test
   public void testTonlibLoadContract() {
     Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 

@@ -23,6 +23,7 @@ public interface TvmEmulatorI extends Library {
 
   /**
    * Set config for TVM emulator
+   *
    * @param tmvEmulator Pointer to TVM emulator
    * @param config Pointer to Config object
    * @return true in case of success, false in case of error
@@ -100,8 +101,16 @@ public interface TvmEmulatorI extends Library {
    * Optimized version of "run get method" with all passed parameters in a single call
    *
    * @param len Length of params_boc buffer
-   * @param paramsBoc BoC serialized parameters, scheme: request$_ code:^Cell data:^Cell
-   *     stack:^VmStack params:^[c7:^VmStack libs:^Cell] method_id:(## 32)
+   * @param paramsBoc BoC serialized parameters,
+   *     <pre>
+   * scheme: request$_
+   *   code:^Cell
+   *   data:^Cell
+   *   stack:^VmStack
+   *   params:^[c7:^VmStack libs:^Cell]
+   *   method_id:(## 32)
+   * </pre>
+   *
    * @param gasLimit Gas limit
    * @return String with first 4 bytes defining length, and the rest BoC serialized result Scheme:
    *     result$_ exit_code:(## 32) gas_used:(## 32) stack:^VmStack
@@ -134,4 +143,11 @@ public interface TvmEmulatorI extends Library {
    *     type (OutList n)" }
    */
   String tvm_emulator_send_internal_message(long tvmEmulator, String messageBodyBoc, long amount);
+
+  /**
+   * @param tvmEmulator Pointer to TVM emulator
+   * @param extra_currencies String in format currency_id1=balance1 currency_id2=balance2
+   * @return true in case of success, false in case of error
+   */
+  boolean tvm_emulator_set_extra_currencies(long tvmEmulator, String extra_currencies);
 }

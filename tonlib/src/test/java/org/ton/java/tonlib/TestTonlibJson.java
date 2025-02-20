@@ -235,6 +235,7 @@ public class TestTonlibJson {
 
   @Test
   public void testTonlib() {
+
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib(tonlibPath)
@@ -254,6 +255,20 @@ public class TestTonlibJson {
     log.info(shards.toString());
     tonlib.destroy();
     assertThat(shards.getShards()).isNotNull();
+  }
+
+  @Test
+  public void testTonlibBlockHeader() {
+
+    Tonlib tonlib =
+        Tonlib.builder()
+            .pathToTonlibSharedLib(tonlibPath)
+            .pathToGlobalConfig(Utils.getGlobalConfigUrlMainnet())
+            .ignoreCache(false)
+            .build();
+
+    BlockHeader header = tonlib.getBlockHeader(tonlib.getLast().getLast());
+    log.info(header.toString());
   }
 
   @Test

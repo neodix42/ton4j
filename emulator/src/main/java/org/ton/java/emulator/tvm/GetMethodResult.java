@@ -8,6 +8,7 @@ import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.tlb.types.VmCellSlice;
 import org.ton.java.tlb.types.VmStack;
 
 @Builder
@@ -28,5 +29,26 @@ public class GetMethodResult implements Serializable {
       return VmStack.deserialize(CellSlice.beginParse(Cell.fromBocBase64(stack)));
     }
     return VmStack.builder().build();
+  }
+
+  public Cell getStackAsCell() {
+    if (StringUtils.isNotEmpty(stack)) {
+      return VmStack.deserialize(CellSlice.beginParse(Cell.fromBocBase64(stack))).toCell();
+    }
+    return VmStack.builder().build().toCell();
+  }
+
+  public Cell getStackFirstEntryAsSlice() {
+    if (StringUtils.isNotEmpty(stack)) {
+      return VmCellSlice.deserialize(
+              CellSlice.beginParse(
+                  VmStack.deserialize(CellSlice.beginParse(Cell.fromBocBase64(stack)))
+                      .getStack()
+                      .getTos()
+                      .get(0)
+                      .toCell()))
+          .getCell();
+    }
+    return VmCellSlice.builder().build().toCell();
   }
 }

@@ -1,12 +1,12 @@
 package org.ton.java.tlb.types;
 
+import static java.util.Objects.isNull;
+
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import static java.util.Objects.isNull;
 
 /**
  *
@@ -31,24 +31,25 @@ public class Message {
     c.storeCell(info.toCell());
 
     if (isNull(init)) {
-      c.storeBit(false);
+      c.storeBit(false); // maybe false
     } else { // init:(Maybe (Either StateInit ^StateInit))
-      c.storeBit(true);
+      c.storeBit(true); // maybe true
       Cell initCell = init.toCell();
       // -1:  need at least one bit for body
-      if ((c.getFreeBits() - 1 >= initCell.getBits().getUsedBits())) {
-        c.storeBit(false);
+      if ((c.getFreeBits() - 2 >= initCell.getBits().getUsedBits())
+          && (c.getFreeRefs() >= initCell.getRefs().size())) {
+        c.storeBit(false); // Either left
         c.storeCell(initCell);
       } else {
-        c.storeBit(true);
-        c.storeRef(initCell); // todo check if can be stored in the same cell, not in ref
+        c.storeBit(true); // Either right
+        c.storeRef(initCell);
       }
     }
 
     if (isNull(body)) {
       c.storeBit(false);
     } else {
-      if ((c.getFreeBits() >= body.getBits().getUsedBits())
+      if ((c.getFreeBits() - 1 >= body.getBits().getUsedBits())
           && c.getFreeRefs() >= body.getUsedRefs()) {
         c.storeBit(false);
         c.storeCell(body);

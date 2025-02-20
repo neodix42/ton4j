@@ -81,8 +81,11 @@ public class WalletV3R1 implements Contract {
   }
 
   /**
-   * Creates message payload with subwallet-id, valid-until and seqno, equivalent to: <b
-   * subwallet-id 32 u, timestamp 32 i, seqno 32 u, b> // signing message
+   * Creates message payload with subwallet-id, valid-until and seqno, equivalent to:
+   *
+   * <pre>
+   *     &lt;b subwallet-id 32 u, timestamp 32 i, seqno 32 u, b&gt;
+   * </pre>
    */
   public Cell createTransferBody(WalletV3Config config) {
 

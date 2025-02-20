@@ -1,0 +1,35 @@
+;; Simple library keeper
+
+#include "../imports/stdlib.fc";
+#include "../messages.func";
+
+const int DEFAULT_DURATION = 3600 * 24 * 365 * 10; ;; 10 years, can top-up in any time
+const int ONE_TON = 1000000000;
+
+;; https://docs.ton.org/tvm.pdf, page 138, SETLIBCODE
+() set_lib_code(cell code, int mode) impure asm "SETLIBCODE";
+
+cell empty_cell() asm "<b b> PUSHREF";
+
+() recv_internal(int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    slice in_msg_full_slice = in_msg_full.begin_parse();
+    int msg_flags = in_msg_full_slice~load_msg_flags();
+    slice sender_address = in_msg_full_slice~load_msg_addr();
+
+    cell lib_to_publish = get_data();
+
+    int initial_gas = gas_consumed();
+    (int order_cells, int order_bits, _) = compute_data_size(lib_to_publish, 1000); ;; according network config, max cells in library = 1000
+    int size_counting_gas = gas_consumed() - initial_gas;
+
+    int to_reserve = get_simple_compute_fee(MASTERCHAIN, size_counting_gas) +
+                     get_storage_fee(MASTERCHAIN, DEFAULT_DURATION, order_bits, order_cells);
+    raw_reserve(to_reserve, RESERVE_BOUNCE_ON_ACTION_FAIL);
+
+    send_message_with_only_body(sender_address, 0, begin_cell(), NON_BOUNCEABLE, SEND_MODE_CARRY_ALL_BALANCE);
+    ;; https://docs.ton.org/tvm.pdf, page 138, SETLIBCODE
+    set_lib_code(lib_to_publish, 2); ;; if x = 2, the library is added as a public library (and becomes available to all smart contracts if the current smart contract resides in the masterchain);
+    ;; brick contract
+    set_code(empty_cell());
+    set_data(empty_cell());
+}

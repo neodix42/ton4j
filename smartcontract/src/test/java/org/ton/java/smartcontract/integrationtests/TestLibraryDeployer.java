@@ -43,10 +43,10 @@ public class TestLibraryDeployer extends CommonTest {
     log.info(
         "new wallet {} balance: {}", libraryDeployer.getName(), Utils.formatNanoValue(balanceLib));
     libraryDeployer.deploy();
-    //
+
     Utils.sleep(
         10,
-        "deployment of LibraryDeployer will never happen an Lite-server will return an error, but the library will be deployed");
+        "Deployment of LibraryDeployer will never happen. Lite-server will return an error, but the library will be deployed");
 
     SmcLibraryResult smcLibraryResult =
         tonlib.getLibraries(

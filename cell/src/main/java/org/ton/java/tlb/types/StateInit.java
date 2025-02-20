@@ -1,5 +1,8 @@
 package org.ton.java.tlb.types;
 
+import static java.util.Objects.nonNull;
+
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.address.Address;
@@ -8,11 +11,9 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.utils.Utils;
 
-import java.math.BigInteger;
-
-import static java.util.Objects.nonNull;
-
 /**
+ *
+ *
  * <pre>
  * _ split_depth:(Maybe (## 5))
  *   special:(Maybe TickTock)
@@ -23,56 +24,57 @@ import static java.util.Objects.nonNull;
  */
 @Builder
 @Data
-
 public class StateInit {
-    BigInteger depth;
-    TickTock tickTock;
-    Cell code;
-    Cell data;
-    Cell lib;
+  BigInteger depth;
+  TickTock tickTock;
+  Cell code;
+  Cell data;
+  Cell lib;
 
-    public Cell toCell() {
-        if (nonNull(depth)) {
-            return CellBuilder.beginCell()
-                    .storeBit(true)
-                    .storeUint(depth, 5)
-                    .storeCellMaybe(nonNull(tickTock) ? tickTock.toCell() : null)
-                    .storeRefMaybe(code)
-                    .storeRefMaybe(data)
-                    .storeRefMaybe(lib)
-                    .endCell();
+  public Cell toCell() {
 
-        } else {
-            return CellBuilder.beginCell()
-                    .storeBit(false)
-                    .storeCellMaybe(nonNull(tickTock) ? tickTock.toCell() : null)
-                    .storeRefMaybe(code)
-                    .storeRefMaybe(data)
-                    .storeRefMaybe(lib)
-                    .endCell();
-        }
+    CellBuilder result = CellBuilder.beginCell();
+
+    if (nonNull(depth)) {
+      result.storeBit(true);
+      result.storeUint(depth, 5);
+    } else {
+      result.storeBit(false);
     }
 
-    public static StateInit deserialize(CellSlice cs) {
-        return StateInit.builder()
-                .depth(cs.loadBit() ? cs.loadUint(5) : BigInteger.ZERO)
-                .tickTock(cs.loadBit() ? TickTock.deserialize(cs) : null)
-                .code(cs.loadMaybeRefX())
-                .data(cs.loadMaybeRefX())
-                .lib(cs.loadMaybeRefX())
-                .build();
+    if (nonNull(tickTock)) {
+      result.storeBit(true);
+      result.storeCell(tickTock.toCell());
+    } else {
+      result.storeBit(false);
     }
+    result.storeRefMaybe(code);
+    result.storeRefMaybe(data);
+    result.storeRefMaybe(lib);
 
-    public Address getAddress(long wc) {
-        return Address.of(wc + ":" + Utils.bytesToHex(this.toCell().getHash()));
-    }
+    return result.endCell();
+  }
 
-    public Address getAddress() {
-        return Address.of("0:" + Utils.bytesToHex(this.toCell().getHash()));
-    }
+  public static StateInit deserialize(CellSlice cs) {
+    return StateInit.builder()
+        .depth(cs.loadBit() ? cs.loadUint(5) : null)
+        .tickTock(cs.loadBit() ? TickTock.deserialize(cs) : null)
+        .code(cs.loadMaybeRefX())
+        .data(cs.loadMaybeRefX())
+        .lib(cs.loadMaybeRefX())
+        .build();
+  }
 
-    public Address getAddressNonBounceable(boolean isTestOnly) {
-        Address address = Address.of("0:" + Utils.bytesToHex(this.toCell().getHash()));
-        return Address.of(address.toString(true, true, false, isTestOnly));
-    }
+  public Address getAddress(long wc) {
+    return Address.of(wc + ":" + Utils.bytesToHex(this.toCell().getHash()));
+  }
+
+  public Address getAddress() {
+    return Address.of("0:" + Utils.bytesToHex(this.toCell().getHash()));
+  }
+
+  public Address getAddressNonBounceable(boolean isTestOnly) {
+    Address address = Address.of("0:" + Utils.bytesToHex(this.toCell().getHash()));
+    return Address.of(address.toString(true, true, false, isTestOnly));
+  }
 }

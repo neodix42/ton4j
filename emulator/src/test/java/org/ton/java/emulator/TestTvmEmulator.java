@@ -1,7 +1,6 @@
 package org.ton.java.emulator;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import static java.util.Objects.*;
 import static org.junit.Assert.*;
 import static org.ton.java.smartcontract.wallet.v4.WalletV4R2.createPluginDataCell;
 
@@ -10,21 +9,19 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
-import org.ton.java.cell.TonHashMapE;
+import org.ton.java.cell.*;
 import org.ton.java.emulator.tvm.*;
 import org.ton.java.fift.FiftRunner;
 import org.ton.java.func.FuncRunner;
@@ -89,7 +86,7 @@ public class TestTvmEmulator {
             .pathToEmulatorSharedLib(emulatorPath)
             .codeBoc(code.toBase64())
             .dataBoc(data.toBase64())
-            .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
+            .verbosityLevel(TvmVerbosityLevel.WITH_ALL_STACK_VALUES)
             .build();
     tvmEmulator.setDebugEnabled(true);
   }
@@ -145,11 +142,15 @@ public class TestTvmEmulator {
    * unsigned 256-bit Integer, and other data kept in c7.
    */
   @Test
-  public void testTvmEmulatorSetC7() {
+  public void testTvmEmulatorSetC7() throws IOException {
     String address = walletV4R2.getAddress().toBounceable();
     String randSeedHex = Utils.sha256("ABC");
 
-    Cell config = tonlib.getConfigAll(128); // 128 - all config
+    String configAllTestnet =
+        IOUtils.toString(
+            requireNonNull(TestTxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
+            StandardCharsets.UTF_8);
+    Cell config = Cell.fromBocBase64(configAllTestnet);
 
     assertTrue(
         tvmEmulator.setC7(
@@ -162,7 +163,7 @@ public class TestTvmEmulator {
   }
 
   @Test
-  public void testTvmEmulatorEmulateRunMethod() {
+  public void testTvmEmulatorEmulateRunMethod() throws IOException {
 
     VmStack stack =
         VmStack.builder()
@@ -170,16 +171,60 @@ public class TestTvmEmulator {
             .stack(VmStackList.builder().tos(Collections.emptyList()).build())
             .build();
 
+    String configAllTestnet =
+        IOUtils.toString(
+            requireNonNull(TestTxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
+            StandardCharsets.UTF_8);
+
+    VmStack c7 =
+        VmStack.builder()
+            .depth(10)
+            .stack(
+                VmStackList.builder()
+                    .tos(
+                        List.of(
+                            VmStackValueInt.builder().value(BigInteger.ZERO).build(), // actions
+                            VmStackValueInt.builder().value(BigInteger.ZERO).build(), // msgs sent
+                            VmStackValueInt.builder().value(BigInteger.ZERO).build(), // unixtime
+                            VmStackValueInt.builder().value(BigInteger.ZERO).build(), // block lt
+                            VmStackValueInt.builder().value(BigInteger.ZERO).build(), // trans lt
+                            VmStackValueInt.builder().value(BigInteger.ZERO).build(), // rand seed
+                            VmStackValueCell.builder() // balance remaining
+                                .cell(
+                                    CurrencyCollection.builder()
+                                        .coins(BigInteger.ONE)
+                                        .build()
+                                        .toCell())
+                                .build(),
+                            VmStackValueCell.builder() // myself
+                                .cell(
+                                    MsgAddressIntStd.of(walletV4R2.getStateInit().getAddress())
+                                        .toCell())
+                                .build(),
+                            VmStackValueCell.builder() // global config
+                                .cell(Cell.fromBocBase64(configAllTestnet))
+                                .build(),
+                            VmStackValueCell.builder() // #10
+                                .cell(walletV4R2.getStateInit().getCode())
+                                .build()))
+                    .build())
+            .build();
+
+    TonHashMapE dictLibs = new TonHashMapE(32);
+
+    Cell libs =
+        dictLibs.serialize(
+            k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
+            v -> CellBuilder.beginCell().storeCell((Cell) v).endCell());
+
+    //    Cell libs = CellBuilder.beginCell().endCell();
+
     String paramsBocBase64 =
         CellBuilder.beginCell()
             .storeRef(walletV4R2.getStateInit().getCode())
             .storeRef(walletV4R2.getStateInit().getData())
             .storeRef(stack.toCell())
-            .storeRef(
-                CellBuilder.beginCell()
-                    .storeRef(stack.toCell()) // c7 ^VmStack
-                    //                    .storeRef(getLibs()) // libs ^Cell
-                    .endCell())
+            .storeRef(CellBuilder.beginCell().storeRef(c7.toCell()).storeRefMaybe(libs).endCell())
             .storeUint(Utils.calculateMethodId("seqno"), 32) // method-id - seqno
             .endCell()
             .toBase64();

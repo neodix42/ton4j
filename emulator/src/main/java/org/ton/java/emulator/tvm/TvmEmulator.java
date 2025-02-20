@@ -1,6 +1,7 @@
 package org.ton.java.emulator.tvm;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -8,10 +9,14 @@ import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
 import java.math.BigInteger;
 import java.util.Collections;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.ton.java.cell.Cell;
+import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.TonHashMapE;
 import org.ton.java.tlb.types.VmStack;
 import org.ton.java.tlb.types.VmStackList;
 import org.ton.java.tlb.types.VmStackValueInt;
@@ -36,6 +41,8 @@ public class TvmEmulator {
   private String dataBoc;
   private TvmVerbosityLevel verbosityLevel;
   private Boolean printEmulatorInfo;
+  private List<Cell> libraries;
+  private String extraCurrencies;
 
   public static class TvmEmulatorBuilder {}
 
@@ -82,6 +89,16 @@ public class TvmEmulator {
         super.tvmEmulatorI.tvm_emulator_set_debug_enabled(super.tvmEmulator, true);
       }
 
+      if (nonNull(super.libraries)) {
+        super.tvmEmulatorI.tvm_emulator_set_libraries(
+            super.tvmEmulator, convertLibsToHashMap(super.libraries).toBase64());
+      }
+
+      if (nonNull(super.extraCurrencies)) {
+        super.tvmEmulatorI.tvm_emulator_set_extra_currencies(
+            super.tvmEmulator, super.extraCurrencies);
+      }
+
       Utils.enableNativeOutput(super.verbosityLevel.ordinal());
 
       if (super.tvmEmulator == 0) {
@@ -124,9 +141,12 @@ public class TvmEmulator {
    * Prepares the c7 tuple (virtual machine context) for a compute phase of a transaction.
    * C7 tlb-scheme FYI:
    * smc_info#076ef1ea
-   *   actions:uint16 msgs_sent:uint16
-   *   unixtime:uint32 block_lt:uint64
-   *   trans_lt:uint64 rand_seed:bits256
+   *   actions:uint16
+   *   msgs_sent:uint16
+   *   unixtime:uint32
+   *   block_lt:uint64
+   *   trans_lt:uint64
+   *   rand_seed:bits256
    *   balance_remaining:CurrencyCollection
    *   myself:MsgAddressInt
    *   global_config:(Maybe Cell) = SmartContractInfo;
@@ -280,6 +300,19 @@ public class TvmEmulator {
         .getValue();
   }
 
+  public BigInteger runGetMethodWithIntParam(String methodName, int param1) {
+    GetMethodResult methodResult = runGetMethod(Utils.calculateMethodId(methodName));
+    if (methodResult.getVm_exit_code() != 0) {
+      throw new Error(
+          "Cannot execute run method (" + methodName + "), Error:\n" + methodResult.getVm_log());
+    }
+    VmStack stack = methodResult.getStack();
+    VmStackList vmStackList = stack.getStack();
+    return VmStackValueTinyInt.deserialize(
+            CellSlice.beginParse(vmStackList.getTos().get(0).toCell()))
+        .getValue();
+  }
+
   public BigInteger runGetSubWalletId() {
     GetMethodResult methodResult = runGetMethod(Utils.calculateMethodId("get_subwallet_id"));
     if (methodResult.getVm_exit_code() != 0) {
@@ -361,5 +394,28 @@ public class TvmEmulator {
     Utils.enableNativeOutput(verbosityLevel.ordinal());
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, SendInternalMessageResult.class);
+  }
+
+  /**
+   * @param extraCurrencies in format currency_id1=balance1 currency_id2=balance2
+   * @return true in case of success, false in case of error
+   */
+  public boolean setExtraCurrencies(String extraCurrencies) {
+    Utils.disableNativeOutput(verbosityLevel.ordinal());
+    boolean result = tvmEmulatorI.tvm_emulator_set_extra_currencies(tvmEmulator, extraCurrencies);
+    Utils.enableNativeOutput(verbosityLevel.ordinal());
+    return result;
+  }
+
+  private static Cell convertLibsToHashMap(List<Cell> libs) {
+
+    TonHashMapE x = new TonHashMapE(256);
+
+    for (Cell c : libs) {
+      x.elements.put(c.getHash(), c);
+    }
+    return x.serialize(
+        k -> CellBuilder.beginCell().storeBytes((byte[]) k, 256).endCell().getBits(),
+        v -> CellBuilder.beginCell().storeRef(((Cell) v)).endCell());
   }
 }

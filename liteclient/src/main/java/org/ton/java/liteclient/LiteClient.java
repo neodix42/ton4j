@@ -76,7 +76,7 @@ public class LiteClient {
             log.info("checking if lite-client is installed...");
           }
           String errorMsg =
-              "Make sure you have lite-client installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via LiteClientBuilder.pathToLiteClientBinary().";
+              "You can specify full path via LiteClient.builder().pathToLiteClientBinary(Utils.getLiteClientGithubUrl()).\nMake sure you have lite-client installed. See https://github.com/ton-blockchain/packages for instructions.";
           try {
             ProcessBuilder pb = new ProcessBuilder("lite-client", "-h").redirectErrorStream(true);
             Process p = pb.start();

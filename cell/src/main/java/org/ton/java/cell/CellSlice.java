@@ -527,11 +527,7 @@ public class CellSlice {
     return result;
   }
 
-  /**
-   * Loads unsigned integer less than n by reading minimal number of bits encoding n-1
-   *
-   * <p>#<= p
-   */
+  /** Loads unsigned integer less than n by reading minimal number of bits encoding n-1 */
   public BigInteger loadUintLess(BigInteger n) {
     return loadUintLEQ(n.subtract(BigInteger.ONE));
   }
@@ -539,7 +535,9 @@ public class CellSlice {
   /**
    * Loads VarUInteger
    *
-   * <p>var_uint$_ {n:#} len:(#< n) value:(uint (len * 8)) = VarUInteger n;
+   * <pre>
+   *     var_uint$_ {n:#} len:(#&lt; n) value:(uint (len * 8)) = VarUInteger n;
+   * </pre>
    */
   public BigInteger loadVarUInteger(BigInteger bitLength) {
     BigInteger len = loadUint(bitLength.intValue());

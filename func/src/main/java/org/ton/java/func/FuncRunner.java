@@ -41,7 +41,7 @@ public class FuncRunner {
         }
 
         String errorMsg =
-            "Make sure you have Func installed. See https://github.com/ton-blockchain/packages for instructions.\nYou can also specify full path via SmartContractCompiler.funcExecutablePath().";
+            "You can specify full path via FuncRunner.builder().funcExecutablePath(Utils.getFuncGithubUrl()).\nOr make sure you have Func installed. See https://github.com/ton-blockchain/packages for instructions.";
         try {
           ProcessBuilder pb = new ProcessBuilder("func", "-h").redirectErrorStream(true);
           Process p = pb.start();

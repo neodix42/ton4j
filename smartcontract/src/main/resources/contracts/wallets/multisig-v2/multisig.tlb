@@ -1,0 +1,85 @@
+/*
+ *
+ *   FROM hashmap.tlb
+ *
+ */
+// ordinary Hashmap / HashmapE, with fixed length keys
+//
+
+bit$_ (## 1) = Bit;
+nothing$0 {X:Type} = Maybe X;
+just$1 {X:Type} value:X = Maybe X;
+
+hm_edge#_ {n:#} {X:Type} {l:#} {m:#} label:(HmLabel ~l n)
+          {n = (~m) + l} node:(HashmapNode m X) = Hashmap n X;
+
+hmn_leaf#_ {X:Type} value:X = HashmapNode 0 X;
+hmn_fork#_ {n:#} {X:Type} left:^(Hashmap n X)
+           right:^(Hashmap n X) = HashmapNode (n + 1) X;
+
+hml_short$0 {m:#} {n:#} len:(Unary ~n) {n <= m} s:(n * Bit) = HmLabel ~n m;
+hml_long$10 {m:#} n:(#<= m) s:(n * Bit) = HmLabel ~n m;
+hml_same$11 {m:#} v:Bit n:(#<= m) = HmLabel ~n m;
+
+unary_zero$0 = Unary ~0;
+unary_succ$1 {n:#} x:(Unary ~n) = Unary ~(n + 1);
+
+hme_empty$0 {n:#} {X:Type} = HashmapE n X;
+hme_root$1 {n:#} {X:Type} root:^(Hashmap n X) = HashmapE n X;
+
+// ============= Addresses
+
+addr_none$00 = MsgAddressExt;
+addr_extern$01 len:(## 9) external_address:(bits len)
+             = MsgAddressExt;
+anycast_info$_ depth:(#<= 30) { depth >= 1 }
+   rewrite_pfx:(bits depth) = Anycast;
+addr_std$10 anycast:(Maybe Anycast)
+   workchain_id:int8 address:bits256  = MsgAddressInt;
+addr_var$11 anycast:(Maybe Anycast) addr_len:(## 9)
+   workchain_id:int32 address:(bits addr_len) = MsgAddressInt;
+
+
+
+// ===================== Multisig =====================
+
+
+send_message#f1381e5b mode:uint8 message:^Cell = Action;
+update_multisig_param#1d0cfbd3 threshold:uint8
+                               signers:^(Hashmap 8 MsgAddressInt)
+                               proposers:(HashmapE 8 MsgAddressInt) = Action;
+
+_ _:(Hashmap 8 Action) = Order;
+
+
+
+new_order#f718510f query_id:uint64
+                   order_seqno:uint256
+                   signer:(## 1)
+                   index:uint8
+                   expiration_date:uint48
+                   order:^Order = InternalMsgBody;
+execute#75097f5d query_id:uint64 
+                 order_seqno:uint256
+                 expiration_date:uint48
+                 approvals_num:uint8
+                 signers_hash:bits256
+                 order:^Order = InternalMsgBody;
+execute_internal#a32c59bf query_id:uint64 order:^Order = InternalMsgBody;
+
+// ===================== Order =====================
+
+//comment_approve#00000000617070726f7665 = InternalMsgBody;
+
+init#9c73fba2 query_id:uint64
+              threshold:uint8
+              signers:^(Hashmap 8 MsgAddressInt)
+              expiration_date:uint48
+              order:^Order
+              approve_on_init:(## 1)
+              signer_index:approve_on_init?uint8 = InternalMsgBody;
+
+approve#a762230f query_id:uint64 signer_index:uint8 = InternalMsgBody;
+approve_accepted#82609bf6 query_id:uint64 = InternalMsgBody;
+approve_rejected#afaf283e query_id:uint64 exit_code:uint32 = InternalMsgBody;
+

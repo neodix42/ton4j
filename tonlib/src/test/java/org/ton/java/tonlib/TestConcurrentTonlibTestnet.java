@@ -1,17 +1,13 @@
 package org.ton.java.tonlib;
 
-import static org.ton.java.tonlib.TestTonlibJson.ELECTOR_ADDRESSS;
+import static java.util.Objects.nonNull;
 
 import com.anarsoft.vmlens.concurrent.junit.ConcurrentTestRunner;
 import com.anarsoft.vmlens.concurrent.junit.ThreadCount;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.ton.java.address.Address;
-import org.ton.java.tonlib.types.FullAccountState;
-import org.ton.java.tonlib.types.MasterChainInfo;
+import org.ton.java.tonlib.types.*;
 import org.ton.java.utils.Utils;
 
 @Slf4j
@@ -21,7 +17,7 @@ public class TestConcurrentTonlibTestnet {
   String tonlibPath = Utils.getTonlibGithubUrl();
   //  static String tonlibPath = "tonlibjson-prev.dll";
 
-  private Tonlib tonlib = Tonlib.builder().testnet(true).pathToTonlibSharedLib(tonlibPath).build();
+  private Tonlib tonlib = Tonlib.builder().testnet(false).pathToTonlibSharedLib(tonlibPath).build();
 
   @Test
   @ThreadCount(10)
@@ -31,15 +27,23 @@ public class TestConcurrentTonlibTestnet {
     log.info("last: {}", last);
     Thread.sleep(100);
 
-    FullAccountState accountState =
-        tonlib.getAccountState(Address.of("EQCwHyzOrKP1lBHbvMrFHChifc1TLgeJVpKgHpL9sluHU-gV"));
-    log.info("account {}", accountState.getBalance());
-
-    Address elector = Address.of(ELECTOR_ADDRESSS);
-    Deque<String> stack = new ArrayDeque<>();
-    Address address = Address.of("EQCwHyzOrKP1lBHbvMrFHChifc1TLgeJVpKgHpL9sluHU-gV");
-    stack.offer("[num, " + address.toDecimal() + "]");
-
-    log.info("seqno {}", tonlib.getSeqno(address));
+    BlockIdExt initialBlock = tonlib.getMasterChainInfo().getLast();
+    Shards shards = tonlib.getShards(initialBlock.getSeqno(), 0, 0);
+    log.info("shards {}", shards);
+    for (BlockIdExt shard : shards.getShards()) {
+      BlockIdExt currentBlock =
+          tonlib.lookupBlock(shard.getSeqno(), shard.getWorkchain(), shard.getShard(), 0);
+      log.info("currentBlock {}", currentBlock);
+      BlockTransactions txs = tonlib.getBlockTransactions(currentBlock, 10);
+      log.info("txs {}", txs.getTransactions().size());
+      if (nonNull(txs.getTransactions())) {
+        for (ShortTxId tx : txs.getTransactions()) {
+          String addressHex = Utils.base64ToHexString(tx.getAccount());
+          log.info("addressHex {}", addressHex);
+          RawTransaction extendedTransaction = tonlib.getRawTransaction((byte) 0, tx); // FAIL here
+          log.info("tx is {}", extendedTransaction);
+        }
+      }
+    }
   }
 }
