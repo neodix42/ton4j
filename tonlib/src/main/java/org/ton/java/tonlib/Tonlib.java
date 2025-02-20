@@ -12,7 +12,6 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -1811,7 +1810,7 @@ public class Tonlib {
   public void updateInitBlock(String pathToGlobalConfig) {
 
     try {
-      if (Files.exists(Path.of(pathToGlobalConfig))) {
+      if (Files.exists(new File(pathToGlobalConfig).toPath())) {
         MasterChainInfo masterChainInfo = getLast();
         BlockHeader blockHeader = getBlockHeader(masterChainInfo.getLast());
 

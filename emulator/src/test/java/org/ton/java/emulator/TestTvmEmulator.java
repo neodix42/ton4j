@@ -182,7 +182,7 @@ public class TestTvmEmulator {
             .stack(
                 VmStackList.builder()
                     .tos(
-                        List.of(
+                        Arrays.asList(
                             VmStackValueInt.builder().value(BigInteger.ZERO).build(), // actions
                             VmStackValueInt.builder().value(BigInteger.ZERO).build(), // msgs sent
                             VmStackValueInt.builder().value(BigInteger.ZERO).build(), // unixtime
