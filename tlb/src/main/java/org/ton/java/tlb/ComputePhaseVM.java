@@ -1,12 +1,11 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import java.math.BigInteger;
 
 /**
  *
@@ -50,7 +49,7 @@ public class ComputePhaseVM implements ComputePhase {
         .storeBit(msgStateUsed)
         .storeBit(accountActivated)
         .storeCoins(gasFees)
-        .storeSlice(CellSlice.beginParse(details.toCell()))
+        .storeRef(details.toCell())
         .endCell();
   }
 

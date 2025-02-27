@@ -1,13 +1,12 @@
 package org.ton.java.bitstring;
 
-import org.ton.java.address.Address;
-import org.ton.java.utils.Utils;
+import static java.util.Objects.isNull;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
-import static java.util.Objects.isNull;
+import org.ton.java.address.Address;
+import org.ton.java.utils.Utils;
 
 /**
  * Implements BitString where each bit is actually a Boolean variable in memory.
@@ -301,7 +300,7 @@ public class BitString implements Bits<Boolean> {
             writeUint(BigInteger.ZERO, 4);
         } else {
             int bytesSize = (amount.bitLength() + 7) / 8;
-            if (bytesSize >= 16) {
+            if (bytesSize > 16) {
                 throw new Error("Amount is too big. Maximum amount 2^120-1");
             }
             writeUint(BigInteger.valueOf(bytesSize), 4);
@@ -315,7 +314,7 @@ public class BitString implements Bits<Boolean> {
             writeUint(BigInteger.ZERO, bitLength);
         } else {
             int bytesSize = (value.bitLength() + 7) / 8;
-            if (bytesSize >= bitLength) {
+            if (bytesSize > bitLength) {
                 throw new Error("Amount is too big. Should fit in " + bitLength + " bits");
             }
             writeUint(BigInteger.valueOf(bytesSize), bitLength);

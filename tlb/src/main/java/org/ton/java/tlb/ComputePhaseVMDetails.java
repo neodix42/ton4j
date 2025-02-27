@@ -1,12 +1,11 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import java.math.BigInteger;
 
 /**
  *
@@ -31,7 +30,7 @@ public class ComputePhaseVMDetails {
   BigInteger gasCredit;
   int mode;
   long exitCode;
-  long exitArg;
+  BigInteger exitArg;
   long vMSteps;
   BigInteger vMInitStateHash;
   BigInteger vMFinalStateHash;
@@ -46,7 +45,7 @@ public class ComputePhaseVMDetails {
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        .storeVarUint(gasCredit, 3) // (VarUInteger 7)
+        .storeVarUint(gasUsed, 3) // (VarUInteger 7)
         .storeVarUint(gasLimit, 3)
         .storeVarUintMaybe(gasCredit, 2)
         .storeInt(mode, 8)
@@ -62,10 +61,10 @@ public class ComputePhaseVMDetails {
     return ComputePhaseVMDetails.builder()
         .gasUsed(cs.loadVarUInteger(BigInteger.valueOf(3))) // (VarUInteger 7)
         .gasLimit(cs.loadVarUInteger(BigInteger.valueOf(3)))
-        .gasCredit(cs.loadBit() ? cs.loadVarUInteger(BigInteger.valueOf(2)) : BigInteger.ZERO)
+        .gasCredit(cs.loadBit() ? cs.loadVarUInteger(BigInteger.valueOf(2)) : null)
         .mode(cs.loadUint(8).intValue())
         .exitCode(cs.loadUint(32).longValue())
-        .exitArg(cs.loadBit() ? cs.loadUint(32).longValue() : 0L)
+        .exitArg(cs.loadBit() ? cs.loadInt(32) : null)
         .vMSteps(cs.loadUint(32).longValue())
         .vMInitStateHash(cs.loadUint(256))
         .vMFinalStateHash(cs.loadUint(256))

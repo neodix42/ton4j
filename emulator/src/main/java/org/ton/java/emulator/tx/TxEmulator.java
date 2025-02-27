@@ -215,7 +215,7 @@ public class TxEmulator {
                                     .bitsUsed(BigInteger.ZERO)
                                     .publicCellsUsed(BigInteger.ZERO)
                                     .build())
-                            .lastPaid(System.currentTimeMillis() / 1000)
+                            .lastPaid(0)
                             .duePayment(BigInteger.ZERO)
                             .build())
                     .accountStorage(

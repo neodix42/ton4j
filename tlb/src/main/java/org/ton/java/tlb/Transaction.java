@@ -67,6 +67,14 @@ public class Transaction {
     }
   }
 
+  public String getAccountAddr() {
+    if (nonNull(accountAddr)) {
+      return StringUtils.leftPad(accountAddr.toString(16), 64, "0");
+    } else {
+      return "";
+    }
+  }
+
   private String getPrevTxHash() {
     if (nonNull(accountAddr)) {
       return prevTxHash.toString(16);

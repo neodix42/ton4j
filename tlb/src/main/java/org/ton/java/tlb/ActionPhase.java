@@ -39,7 +39,7 @@ public class ActionPhase {
   BigInteger totalFwdFees;
   BigInteger totalActionFees;
   long resultCode;
-  long resultArg;
+  BigInteger resultArg;
   long totalActions;
   long specActions;
   long skippedActions;
@@ -56,7 +56,7 @@ public class ActionPhase {
         .storeBit(success)
         .storeBit(valid)
         .storeBit(noFunds)
-        .storeSlice(CellSlice.beginParse(((AccStatusChange) statusChange).toCell()))
+        .storeCell(statusChange.toCell())
         .storeCoinsMaybe(totalFwdFees)
         .storeCoinsMaybe(totalActionFees)
         .storeInt(resultCode, 32)
@@ -76,10 +76,10 @@ public class ActionPhase {
         .valid(cs.loadBit())
         .noFunds(cs.loadBit())
         .statusChange(AccStatusChange.deserialize(cs))
-        .totalFwdFees(cs.loadBit() ? cs.loadCoins() : BigInteger.ZERO)
-        .totalActionFees(cs.loadBit() ? cs.loadCoins() : BigInteger.ZERO)
-        .resultCode(cs.loadUint(32).longValue())
-        .resultArg(cs.loadBit() ? cs.loadUint(32).longValue() : 0)
+        .totalFwdFees(cs.loadBit() ? cs.loadCoins() : null)
+        .totalActionFees(cs.loadBit() ? cs.loadCoins() : null)
+        .resultCode(cs.loadInt(32).longValue())
+        .resultArg(cs.loadBit() ? cs.loadInt(32) : null)
         .totalActions(cs.loadUint(16).longValue())
         .specActions(cs.loadUint(16).longValue())
         .skippedActions(cs.loadUint(16).longValue())

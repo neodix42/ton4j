@@ -1,5 +1,7 @@
 package org.ton.java.tlb;
 
+import static java.util.Objects.nonNull;
+
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -43,12 +45,12 @@ public class TransactionDescriptionOrdinary implements TransactionDescription {
     return CellBuilder.beginCell()
         .storeUint(0b0000, 4)
         .storeBit(creditFirst)
-        .storeCellMaybe(storagePhase.toCell())
-        .storeCellMaybe(creditPhase.toCell())
+        .storeCellMaybe(nonNull(storagePhase) ? storagePhase.toCell() : null)
+        .storeCellMaybe(nonNull(creditPhase) ? creditPhase.toCell() : null)
         .storeCell(computePhase.toCell())
-        .storeRefMaybe(actionPhase.toCell())
+        .storeRefMaybe(nonNull(actionPhase) ? actionPhase.toCell() : null)
         .storeBit(aborted)
-        .storeCellMaybe(bouncePhase.toCell())
+        .storeCellMaybe(nonNull(bouncePhase) ? bouncePhase.toCell() : null)
         .storeBit(destroyed)
         .endCell();
   }
