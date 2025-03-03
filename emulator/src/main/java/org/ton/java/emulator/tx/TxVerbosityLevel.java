@@ -5,6 +5,8 @@ import java.io.Serializable;
 public enum TxVerbosityLevel implements Serializable {
   TRUNCATED,
   UNLIMITED,
-  WITH_CELL_HASH_AND_OFFSET,
-  WITH_ALL_STACK_VALUES
+  WITH_EXEC_LOCATION,
+  WITH_GAS_REMAINING,
+  DUMP_STACK,
+  DUMP_STACK_VERBOSE_C5
 }

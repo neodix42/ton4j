@@ -82,7 +82,7 @@ public class TvmEmulator {
           super.tvmEmulatorI.tvm_emulator_create(
               super.codeBoc, super.dataBoc, super.verbosityLevel.ordinal());
 
-      if (super.verbosityLevel == TvmVerbosityLevel.WITH_ALL_STACK_VALUES) {
+      if (super.verbosityLevel.ordinal() > TvmVerbosityLevel.UNLIMITED.ordinal()) {
         super.tvmEmulatorI.tvm_emulator_set_debug_enabled(super.tvmEmulator, true);
       }
 

@@ -1,0 +1,8 @@
+@startuml
+Deployer_V3R2 -> Multisig_V2: seqno=0, StateInit, 0.2 tons
+Deployer_V3R2 -> Multisig_V2: seqno=1, op::new_order = 0xf718510f\norder=1
+Multisig_V2 --> Order: StateInit\nop::init = 0x9c73fba2
+
+Signer_V2 -> Order: approve
+
+@enduml

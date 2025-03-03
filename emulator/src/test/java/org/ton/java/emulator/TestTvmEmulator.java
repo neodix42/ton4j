@@ -86,7 +86,7 @@ public class TestTvmEmulator {
             .pathToEmulatorSharedLib(emulatorPath)
             .codeBoc(code.toBase64())
             .dataBoc(data.toBase64())
-            .verbosityLevel(TvmVerbosityLevel.WITH_ALL_STACK_VALUES)
+            .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
             .build();
     tvmEmulator.setDebugEnabled(true);
   }

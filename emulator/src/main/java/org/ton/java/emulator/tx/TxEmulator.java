@@ -111,7 +111,7 @@ public class TxEmulator {
         super.txEmulatorI.emulator_set_verbosity_level(
             super.txEmulator, super.verbosityLevel.ordinal());
 
-        if (super.verbosityLevel == TxVerbosityLevel.WITH_ALL_STACK_VALUES) {
+        if (super.verbosityLevel.ordinal() > TxVerbosityLevel.UNLIMITED.ordinal()) {
           super.txEmulatorI.transaction_emulator_set_debug_enabled(super.txEmulator, true);
         }
 
