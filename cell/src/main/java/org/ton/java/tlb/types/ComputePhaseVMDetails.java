@@ -63,7 +63,7 @@ public class ComputePhaseVMDetails {
                 .gasLimit(cs.loadVarUInteger(BigInteger.valueOf(3)))
                 .gasCredit(cs.loadBit() ? cs.loadVarUInteger(BigInteger.valueOf(2)) : BigInteger.ZERO)
                 .mode(cs.loadUint(8).intValue())
-                .exitCode(cs.loadUint(32).longValue())
+                .exitCode(cs.loadInt(32).longValue())
                 .exitArg(cs.loadBit() ? cs.loadUint(32).longValue() : 0L)
                 .vMSteps(cs.loadUint(32).longValue())
                 .vMInitStateHash(cs.loadUint(256))
