@@ -19,9 +19,8 @@ import org.ton.java.cell.TonHashMapE;
  *   main:(## 16) { main <= total } { main >= 1 }
  *   total_weight:uint64
  *   list:(HashmapE 16 ValidatorDescr) = ValidatorSet;
- *   }
  *
- * </pre>
+ * }</pre>
  */
 @Builder
 @Data
@@ -45,7 +44,7 @@ public class ValidatorsExt implements ValidatorSet {
         .storeUint(totalWeight, 64)
         .storeDict(
             list.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 16).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 16).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((ValidatorDescr) v).toCell()).endCell()))
         .endCell();
   }

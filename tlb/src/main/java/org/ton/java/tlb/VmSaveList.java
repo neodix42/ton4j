@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -17,7 +18,7 @@ public class VmSaveList {
     return CellBuilder.beginCell()
         .storeDict(
             cregs.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 4).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 4).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((VmStackValue) v).toCell()).endCell()))
         .endCell();
   }

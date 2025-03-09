@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class InMsgDescr {
     return CellBuilder.beginCell()
         .storeDict(
             inMsg.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((InMsg) v).toCell()),
                 e -> CellBuilder.beginCell().storeCell(((ImportFees) e).toCell()),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

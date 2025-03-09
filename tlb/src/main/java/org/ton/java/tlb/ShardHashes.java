@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.*;
@@ -21,7 +22,7 @@ public class ShardHashes {
     return CellBuilder.beginCell()
         .storeDict(
             shardHashes.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 32).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((BinTree) v).toCell()).endCell()))
         .endCell();
   }

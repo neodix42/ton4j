@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -20,7 +21,7 @@ public class ConfigParams44 {
         .storeUint(0x00, 8)
         .storeDict(
             suspendedAddressList.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 288).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 288).endCell().getBits(),
                 v -> CellBuilder.beginCell().endCell()))
         .storeUint(suspendedUntil, 32)
         .endCell();

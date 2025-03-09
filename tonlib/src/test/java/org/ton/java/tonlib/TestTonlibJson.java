@@ -39,7 +39,9 @@ public class TestTonlibJson {
 
   Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-  String tonlibPath = Utils.getTonlibGithubUrl();
+  //  String tonlibPath = Utils.getTonlibGithubUrl();
+  static String tonlibPath =
+      Utils.getArtifactGithubUrl("tonlibjson", "v2025.03", "neodix42", "ton");
 
   @Test
   public void testTonlibRunMethodActiveElectionId() {

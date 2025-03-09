@@ -156,6 +156,23 @@ public class TestHashMap {
         v -> CellBuilder.beginCell().storeUint((BigInteger) v, 8).endCell());
   }
 
+  @Test
+  public void testEmulators3() {
+
+    String t =
+        "B5EE9C72010105010076000201CD01020201200304004348016C5F89EE89FB0151AE1272F35924A90C0D6BDB1100ECE090DA7340CCEFD1919700432002A454624C156E52AA6916661B35F90E1C06187AB4DEB0286638ABACD1F7546E7400432001D46ABA5D40C11911344497965107CCE5DB77A95CBD22E2BD46C5461A105D3B2C";
+
+    Cell cellWithDict = CellBuilder.beginCell().fromBoc(t).endCell();
+    log.info("cell {}", cellWithDict.print());
+    log.info("cell {}", Utils.bytesToHex(cellWithDict.toBoc()));
+
+    // TonHashMap dex = new TonHashMap(16);
+    CellSlice cs = CellSlice.beginParse(cellWithDict);
+    TonHashMap dex = cs.loadDict(8, k -> k.readUint(8), v -> CellSlice.beginParse(v).loadAddress());
+
+    log.info("Deserialized hashmap from cell {}", dex);
+  }
+
   @Test // works with bits.writeBitString(bitString); does not -
   // bits.writeBitStringFromRead(bitString);
   public void testHashMapDeserializationWithMixedEmptyEdges() {

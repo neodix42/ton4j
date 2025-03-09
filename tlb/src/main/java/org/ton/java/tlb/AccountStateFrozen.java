@@ -1,12 +1,11 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import java.math.BigInteger;
 
 @Builder
 @Data
@@ -20,6 +19,9 @@ public class AccountStateFrozen implements AccountState {
   }
 
   public static AccountStateFrozen deserialize(CellSlice cs) {
-    return null;
+    return AccountStateFrozen.builder()
+        .magic(cs.loadUint(2).intValue())
+        .stateHash(cs.getRestBits() >= 256 ? cs.loadUint(256) : null)
+        .build();
   }
 }

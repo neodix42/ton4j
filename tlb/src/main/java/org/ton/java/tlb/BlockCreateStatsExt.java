@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public class BlockCreateStatsExt implements BlockCreateStats {
         .storeUint(0x17, 8)
         .storeDict(
             counters.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((CreatorStats) v).toCell()),
                 e -> CellBuilder.beginCell().storeUint((Long) e, 32),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

@@ -31,7 +31,7 @@ public class CurrencyCollection {
     if (nonNull(extraCurrencies)) {
       dict =
           extraCurrencies.serialize(
-              k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
+              k -> CellBuilder.beginCell().storeUint((BigInteger) k, 32).endCell().getBits(),
               v -> CellBuilder.beginCell().storeVarUint((BigInteger) v, 5).endCell());
     }
     return CellBuilder.beginCell().storeCoins(coins).storeDict(dict).endCell();

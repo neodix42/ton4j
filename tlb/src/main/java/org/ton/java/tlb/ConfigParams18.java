@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -18,7 +19,7 @@ public class ConfigParams18 {
 
     dict =
         storagePrices.serialize(
-            k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
+            k -> CellBuilder.beginCell().storeUint((BigInteger) k, 32).endCell().getBits(),
             v -> CellBuilder.beginCell().storeCell(((StoragePrices) v).toCell()).endCell());
     return CellBuilder.beginCell().storeDict(dict).endCell();
   }

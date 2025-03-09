@@ -1,19 +1,13 @@
 package org.ton.java.emulator.tvm;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import java.io.Serializable;
+import java.math.BigInteger;
+import lombok.*;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 
-import java.io.Serializable;
-import java.math.BigInteger;
-
 @Builder
-@Setter
-@Getter
-@ToString
+@Data
 public class GetMethodParams implements Serializable {
   Cell code;
   Cell data;

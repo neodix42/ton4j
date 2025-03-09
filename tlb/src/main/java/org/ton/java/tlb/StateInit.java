@@ -74,11 +74,6 @@ public class StateInit {
     return Address.of("0:" + Utils.bytesToHex(this.toCell().getHash()));
   }
 
-  public Address getAddressNonBounceable(boolean isTestOnly) {
-    Address address = Address.of("0:" + Utils.bytesToHex(this.toCell().getHash()));
-    return Address.of(address.toString(true, true, false, isTestOnly));
-  }
-
   @ToString.Include
   public String codeAsBoc() {
     return nonNull(code) ? code.toHex() : "";

@@ -8,15 +8,22 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.Native;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
+import org.ton.java.emulator.EmulatorConfig;
+import org.ton.java.emulator.tx.TxEmulator;
 import org.ton.java.tlb.*;
 import org.ton.java.utils.Utils;
 
@@ -33,7 +40,9 @@ public class TvmEmulator {
 
   private final TvmEmulatorI tvmEmulatorI;
   private final long tvmEmulator;
-
+  private BigInteger balance;
+  private EmulatorConfig configType;
+  private String customConfig;
   private String codeBoc;
   private String dataBoc;
   private TvmVerbosityLevel verbosityLevel;
@@ -50,65 +59,119 @@ public class TvmEmulator {
   private static class CustomTvmEmulatorBuilder extends TvmEmulatorBuilder {
     @Override
     public TvmEmulator build() {
-
-      if (isNull(super.pathToEmulatorSharedLib)) {
-        if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
-          super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("emulator", true);
+      try {
+        if (isNull(super.pathToEmulatorSharedLib)) {
+          if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
+            super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("emulator", true);
+          } else {
+            super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("libemulator", true);
+          }
         } else {
-          super.pathToEmulatorSharedLib = Utils.detectAbsolutePath("libemulator", true);
+          super.pathToEmulatorSharedLib = Utils.getLocalOrDownload(super.pathToEmulatorSharedLib);
         }
-      } else {
-        super.pathToEmulatorSharedLib = Utils.getLocalOrDownload(super.pathToEmulatorSharedLib);
-      }
 
-      if (isNull(super.printEmulatorInfo)) {
-        super.printEmulatorInfo = true;
-      }
+        if (isNull(super.printEmulatorInfo)) {
+          super.printEmulatorInfo = true;
+        }
 
-      super.tvmEmulatorI = Native.load(super.pathToEmulatorSharedLib, TvmEmulatorI.class);
-      if (isNull(super.verbosityLevel)) {
-        super.verbosityLevel = TvmVerbosityLevel.TRUNCATED;
-      }
+        super.tvmEmulatorI = Native.load(super.pathToEmulatorSharedLib, TvmEmulatorI.class);
+        if (isNull(super.verbosityLevel)) {
+          super.verbosityLevel = TvmVerbosityLevel.TRUNCATED;
+        }
 
-      Utils.disableNativeOutput(super.verbosityLevel.ordinal());
+        Utils.disableNativeOutput(super.verbosityLevel.ordinal());
 
-      if (isNull(super.codeBoc)) {
-        throw new Error("codeBoc is not set");
-      }
-      if (isNull(super.dataBoc)) {
-        throw new Error("dataBoc is not set");
-      }
-      super.tvmEmulator =
-          super.tvmEmulatorI.tvm_emulator_create(
-              super.codeBoc, super.dataBoc, super.verbosityLevel.ordinal());
+        if (isNull(super.configType)) {
+          super.configType = EmulatorConfig.MAINNET;
+        }
 
-      if (super.verbosityLevel.ordinal() > TvmVerbosityLevel.UNLIMITED.ordinal()) {
-        super.tvmEmulatorI.tvm_emulator_set_debug_enabled(super.tvmEmulator, true);
-      }
+        if (isNull(super.balance)) {
+          super.balance = Utils.toNano(1);
+        }
 
-      if (nonNull(super.libraries)) {
-        super.tvmEmulatorI.tvm_emulator_set_libraries(
-            super.tvmEmulator, convertLibsToHashMap(super.libraries).toBase64());
-      }
+        String configBoc = "";
+        switch (super.configType) {
+          case MAINNET:
+            {
+              configBoc =
+                  IOUtils.toString(
+                      Objects.requireNonNull(
+                          TxEmulator.class.getResourceAsStream("/config-all-mainnet.txt")),
+                      StandardCharsets.UTF_8);
+              break;
+            }
+          case TESTNET:
+            {
+              configBoc =
+                  IOUtils.toString(
+                      Objects.requireNonNull(
+                          TxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
+                      StandardCharsets.UTF_8);
+              break;
+            }
+          case CUSTOM:
+            {
+              configBoc = super.customConfig;
+              break;
+            }
+        }
 
-      if (nonNull(super.extraCurrencies)) {
-        super.tvmEmulatorI.tvm_emulator_set_extra_currencies(
-            super.tvmEmulator, super.extraCurrencies);
-      }
+        if (isNull(super.codeBoc)) {
+          throw new Error("codeBoc is not set");
+        }
+        if (isNull(super.dataBoc)) {
+          throw new Error("dataBoc is not set");
+        }
 
-      Utils.enableNativeOutput(super.verbosityLevel.ordinal());
+        super.tvmEmulator =
+            super.tvmEmulatorI.tvm_emulator_create(
+                super.codeBoc, super.dataBoc, super.verbosityLevel.ordinal());
 
-      if (super.tvmEmulator == 0) {
-        throw new Error("Can't create emulator instance");
-      }
+        if (super.verbosityLevel.ordinal() > TvmVerbosityLevel.UNLIMITED.ordinal()) {
+          super.tvmEmulatorI.tvm_emulator_set_debug_enabled(super.tvmEmulator, true);
+        }
+        StateInit stateInit =
+            StateInit.builder()
+                .code(Cell.fromBocBase64(super.codeBoc))
+                .data(Cell.fromBocBase64(super.dataBoc))
+                .build();
 
-      if (super.printEmulatorInfo) {
-        log.info(
-            "\nTON TVM Emulator configuration:\n" + "Location: {}\n" + "Verbosity level: {}\n",
-            super.pathToEmulatorSharedLib,
-            super.verbosityLevel);
+        String randSeedHex = Utils.sha256(UUID.randomUUID().toString());
+
+        super.tvmEmulatorI.tvm_emulator_set_c7(
+            super.tvmEmulator,
+            stateInit.getAddress().toRaw(),
+            Instant.now().getEpochSecond(),
+            super.balance.longValue(), // smc balance
+            randSeedHex,
+            configBoc);
+
+        if (nonNull(super.libraries)) {
+          super.tvmEmulatorI.tvm_emulator_set_libraries(
+              super.tvmEmulator, convertLibsToHashMap(super.libraries).toBase64());
+        }
+
+        if (nonNull(super.extraCurrencies)) {
+          super.tvmEmulatorI.tvm_emulator_set_extra_currencies(
+              super.tvmEmulator, super.extraCurrencies);
+        }
+
+        Utils.enableNativeOutput(super.verbosityLevel.ordinal());
+
+        if (super.tvmEmulator == 0) {
+          throw new Error("Can't create emulator instance");
+        }
+
+        if (super.printEmulatorInfo) {
+          log.info(
+              "\nTON TVM Emulator configuration:\n" + "Location: {}\n" + "Verbosity level: {}\n",
+              super.pathToEmulatorSharedLib,
+              super.verbosityLevel);
+        }
+        return super.build();
+      } catch (Exception e) {
+        throw new Error("Error creating TVM emulator instance: " + e.getMessage());
       }
-      return super.build();
     }
   }
 

@@ -1412,6 +1412,14 @@ public class Utils {
     return "https://ton.org/testnet-global.config.json";
   }
 
+  public static String getGlobalConfigUrlMainnetGithub() {
+    return "https://raw.githubusercontent.com/ton-blockchain/ton-blockchain.github.io/main/global.config.json";
+  }
+
+  public static String getGlobalConfigUrlTestnetGithub() {
+    return "https://raw.githubusercontent.com/ton-blockchain/ton-blockchain.github.io/main/testnet-global.config.json";
+  }
+
   public static String generateRandomAddress(long workchain) {
     try {
       return workchain

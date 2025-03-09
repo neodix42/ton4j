@@ -127,7 +127,7 @@ public class Transaction {
     TonHashMapE out =
         inOutMsgs.loadDictE(
             15,
-            k -> k.readInt(15),
+            k -> k.readUint(15),
             v -> Message.deserialize(CellSlice.beginParse(CellSlice.beginParse(v).loadRef())));
 
     tx.setInOut(TransactionIO.builder().in(msg).out(out).build());

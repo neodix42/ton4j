@@ -1,13 +1,12 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
-
-import java.math.BigInteger;
 
 /**
  *
@@ -30,7 +29,7 @@ public class BlockSignaturesPure {
         .storeUint(sigWeight, 64)
         .storeDict(
             signatures.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 16).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 16).endCell().getBits(),
                 v ->
                     CellBuilder.beginCell()
                         .storeCell(((CryptoSignaturePair) v).toCell())

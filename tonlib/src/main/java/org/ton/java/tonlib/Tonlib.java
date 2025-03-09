@@ -283,9 +283,17 @@ public class Tonlib {
 
       if (isNull(super.pathToGlobalConfig)) {
         if (super.testnet) {
-          globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlTestnet());
+          try {
+            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlTestnet());
+          } catch (Error e) {
+            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlTestnetGithub());
+          }
         } else {
-          globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlMainnet());
+          try {
+            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlMainnet());
+          } catch (Error e) {
+            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlMainnetGithub());
+          }
         }
       } else {
         globalConfigPath = Utils.getLocalOrDownload(super.pathToGlobalConfig);

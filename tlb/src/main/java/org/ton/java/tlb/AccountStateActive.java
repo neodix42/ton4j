@@ -18,6 +18,9 @@ public class AccountStateActive implements AccountState {
   }
 
   public static AccountStateActive deserialize(CellSlice cs) {
-    return AccountStateActive.builder().stateInit(StateInit.deserialize(cs)).build();
+    return AccountStateActive.builder()
+        .magic(cs.loadUint(1).intValue())
+        .stateInit(StateInit.deserialize(cs))
+        .build();
   }
 }

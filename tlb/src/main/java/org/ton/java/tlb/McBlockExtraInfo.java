@@ -1,13 +1,14 @@
 package org.ton.java.tlb;
 
+import static java.util.Objects.isNull;
+
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
-
-import static java.util.Objects.isNull;
 
 /**
  *
@@ -30,7 +31,7 @@ public class McBlockExtraInfo {
         CellBuilder.beginCell()
             .storeDict(
                 prevBlkSignatures.serialize(
-                    k -> CellBuilder.beginCell().storeUint((Long) k, 16).endCell().getBits(),
+                    k -> CellBuilder.beginCell().storeUint((BigInteger) k, 16).endCell().getBits(),
                     v ->
                         CellBuilder.beginCell()
                             .storeCell((Cell) v)

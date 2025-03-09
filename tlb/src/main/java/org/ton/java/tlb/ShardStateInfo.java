@@ -1,13 +1,12 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
-
-import java.math.BigInteger;
 
 /**
  *
@@ -40,7 +39,7 @@ public class ShardStateInfo {
         .storeCell(totalValidatorFees.toCell())
         .storeDict(
             libraries.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((LibDescr) v).toCell()).endCell()))
         .storeCellMaybe(masterRef.toCell())
         .endCell();

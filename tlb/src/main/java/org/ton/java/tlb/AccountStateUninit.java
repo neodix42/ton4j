@@ -17,6 +17,6 @@ public class AccountStateUninit implements AccountState {
   }
 
   public static AccountStateUninit deserialize(CellSlice cs) {
-    return null;
+    return AccountStateUninit.builder().magic(cs.loadUint(2).intValue()).build();
   }
 }

@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -25,7 +26,7 @@ public class BlockCreateStatsOrdinary implements BlockCreateStats {
         .storeUint(0x17, 8)
         .storeDict(
             list.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((CreatorStats) v).toCell()).endCell()))
         .endCell();
   }

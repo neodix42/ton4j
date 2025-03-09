@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.address.Address;
@@ -7,8 +8,6 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
-
-import java.math.BigInteger;
 
 @Builder
 @Data
@@ -25,7 +24,7 @@ public class OracleBridgeParams {
         .storeAddress(oracleMultiSigAddress)
         .storeDict(
             oracles.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeUint((BigInteger) v, 256).endCell()))
         .storeUint(externalChainAddress, 256)
         .endCell();

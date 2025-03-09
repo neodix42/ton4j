@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ public class ShardFees {
     return CellBuilder.beginCell()
         .storeDict(
             shardFees.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 96).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 96).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((ShardFeeCreated) v).toCell()).endCell(),
                 e -> CellBuilder.beginCell().storeCell(((ShardFeeCreated) e).toCell()),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

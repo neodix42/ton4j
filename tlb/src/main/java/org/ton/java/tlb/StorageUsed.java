@@ -1,12 +1,11 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import java.math.BigInteger;
 
 /**
  *
@@ -27,8 +26,8 @@ public class StorageUsed {
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        .storeVarUint(bitsUsed, 3)
         .storeVarUint(cellsUsed, 3)
+        .storeVarUint(bitsUsed, 3)
         .storeVarUint(publicCellsUsed, 3)
         .endCell();
   }

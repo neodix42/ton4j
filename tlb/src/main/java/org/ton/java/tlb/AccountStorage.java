@@ -1,12 +1,11 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import java.math.BigInteger;
 
 /**
  *
@@ -42,21 +41,19 @@ public class AccountStorage {
     BigInteger lastTransactionLt = cs.loadUint(64);
     CurrencyCollection coins = CurrencyCollection.deserialize(cs);
 
-    boolean isStatusActive = cs.loadBit();
+    boolean isStatusActive = cs.preloadBit();
     if (isStatusActive) {
       accountStorage.setAccountStatus("ACTIVE");
       accountStorage.setAccountState(AccountStateActive.deserialize(cs));
     } else {
-      boolean isStatusFrozen = cs.loadBit();
+
+      boolean isStatusFrozen = cs.preloadBitAt(2);
       if (isStatusFrozen) {
         accountStorage.setAccountStatus("FROZEN");
-        if (cs.getRestBits() != 0) {
-          BigInteger stateHash = cs.loadUint(256);
-          accountStorage.setAccountState(AccountStateFrozen.builder().stateHash(stateHash).build());
-        }
+        accountStorage.setAccountState(AccountStateFrozen.deserialize(cs));
       } else {
         accountStorage.setAccountStatus("UNINIT");
-        accountStorage.setAccountState(AccountStateUninit.builder().build());
+        accountStorage.setAccountState(AccountStateUninit.deserialize(cs));
       }
     }
     accountStorage.setLastTransactionLt(lastTransactionLt);

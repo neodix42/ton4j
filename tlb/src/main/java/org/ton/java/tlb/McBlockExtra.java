@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -47,7 +48,7 @@ public class McBlockExtra {
         //                .storeCell(shardFees.toCell())
         .storeDict(
             shardFees.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 96).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 96).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell((Cell) v), // todo ShardFeeCreated
                 e -> CellBuilder.beginCell().storeCell((Cell) e), // todo ShardFeeCreated
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

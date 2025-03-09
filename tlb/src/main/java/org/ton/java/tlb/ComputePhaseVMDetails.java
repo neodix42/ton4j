@@ -1,8 +1,11 @@
 package org.ton.java.tlb;
 
+import static java.util.Objects.nonNull;
+
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
+import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -35,17 +38,19 @@ public class ComputePhaseVMDetails {
   BigInteger vMInitStateHash;
   BigInteger vMFinalStateHash;
 
-  private String getVmInitStateHash() {
-    return vMInitStateHash.toString(16);
+  @ToString.Include(name = "vmInitStateHashHex")
+  public String getVmInitStateHashHex() {
+    return nonNull(vMInitStateHash) ? vMInitStateHash.toString(16) : "";
   }
 
-  private String getVmFinalStateHash() {
-    return vMFinalStateHash.toString(16);
+  @ToString.Include(name = "vmFinalStateHashHex")
+  public String getVmFinalStateHashHex() {
+    return nonNull(vMFinalStateHash) ? vMFinalStateHash.toString(16) : "";
   }
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        .storeVarUint(gasUsed, 3) // (VarUInteger 7)
+        .storeVarUint(gasUsed, 3)
         .storeVarUint(gasLimit, 3)
         .storeVarUintMaybe(gasCredit, 2)
         .storeInt(mode, 8)
@@ -59,11 +64,11 @@ public class ComputePhaseVMDetails {
 
   public static ComputePhaseVMDetails deserialize(CellSlice cs) {
     return ComputePhaseVMDetails.builder()
-        .gasUsed(cs.loadVarUInteger(BigInteger.valueOf(3))) // (VarUInteger 7)
+        .gasUsed(cs.loadVarUInteger(BigInteger.valueOf(3)))
         .gasLimit(cs.loadVarUInteger(BigInteger.valueOf(3)))
         .gasCredit(cs.loadBit() ? cs.loadVarUInteger(BigInteger.valueOf(2)) : null)
-        .mode(cs.loadUint(8).intValue())
-        .exitCode(cs.loadUint(32).longValue())
+        .mode(cs.loadInt(8).intValue())
+        .exitCode(cs.loadInt(32).longValue())
         .exitArg(cs.loadBit() ? cs.loadInt(32) : null)
         .vMSteps(cs.loadUint(32).longValue())
         .vMInitStateHash(cs.loadUint(256))

@@ -22,7 +22,6 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.emulator.tx.TxEmulator;
-import org.ton.java.emulator.tx.TxEmulatorConfig;
 import org.ton.java.emulator.tx.TxEmulatorI;
 import org.ton.java.emulator.tx.TxVerbosityLevel;
 import org.ton.java.fift.FiftRunner;
@@ -69,7 +68,7 @@ public class TestTxEmulator {
     txEmulator =
         TxEmulator.builder()
             .pathToEmulatorSharedLib(emulatorPath)
-            .configType(TxEmulatorConfig.TESTNET)
+            .configType(EmulatorConfig.TESTNET)
             .verbosityLevel(TxVerbosityLevel.TRUNCATED)
             .build();
 
@@ -138,7 +137,7 @@ public class TestTxEmulator {
         TxEmulator.builder()
             .pathToEmulatorSharedLib(
                 "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/libemulator.dll")
-            .configType(TxEmulatorConfig.TESTNET)
+            .configType(EmulatorConfig.TESTNET)
             .verbosityLevel(TxVerbosityLevel.TRUNCATED)
             .build();
     txEmulator.setVerbosityLevel(4);
@@ -160,7 +159,7 @@ public class TestTxEmulator {
 
     txEmulator =
         TxEmulator.builder()
-            .configType(TxEmulatorConfig.CUSTOM)
+            .configType(EmulatorConfig.CUSTOM)
             .customConfig(configAllTestnet)
             .verbosityLevel(TxVerbosityLevel.UNLIMITED)
             .build();

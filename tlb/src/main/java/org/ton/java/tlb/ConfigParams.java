@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.address.Address;
@@ -19,7 +20,7 @@ public class ConfigParams {
         .storeAddress(configAddr)
         .storeDict(
             config.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 32).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeRef((Cell) v).endCell()))
         .endCell();
   }

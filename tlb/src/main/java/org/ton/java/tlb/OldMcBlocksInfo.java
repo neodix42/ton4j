@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.isNull;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public class OldMcBlocksInfo {
     return CellBuilder.beginCell()
         .storeDict(
             list.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 32).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((KeyExtBlkRef) v).toCell()),
                 e -> CellBuilder.beginCell().storeCell(((KeyMaxLt) e).toCell()),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo

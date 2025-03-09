@@ -1,6 +1,7 @@
 package org.ton.java.tlb;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +10,8 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 /**
+ *
+ *
  * <pre>
  * message$_ {X:Type}
  * info:CommonMsgInfoRelaxed
@@ -20,41 +23,84 @@ import org.ton.java.cell.CellSlice;
 @Builder
 @Data
 public class MessageRelaxed {
-    CommonMsgInfoRelaxed info;
-    StateInit init;
+  CommonMsgInfoRelaxed info;
+  StateInit init;
+  Cell body;
+  Boolean forceStateInitRef;
+  Boolean forceBodyRef;
+
+  public Cell toCell() {
+    boolean needRef;
+    CellBuilder c = CellBuilder.beginCell();
+    c.storeCell(info.toCell());
+
+    if (isNull(init)) {
+      c.storeBit(false); // maybe false
+    } else { // init:(Maybe (Either StateInit ^StateInit))
+      c.storeBit(true); // maybe true
+      Cell initCell = init.toCell();
+      needRef = false;
+      if (nonNull(forceStateInitRef) && forceStateInitRef) {
+        needRef = true;
+      } else if (c.getFreeBits() - 2
+          < (initCell.getBits().getUsedBits()
+              + (isNull(body) ? 0 : body.getBits().getUsedBits()))) {
+        needRef = false;
+      }
+      if (needRef) {
+        c.storeBit(true);
+        c.storeRef(initCell);
+      } else {
+        c.storeBit(false);
+        c.storeCell(initCell);
+      }
+    }
+
+    if (isNull(body)) {
+      c.storeBit(false);
+    } else {
+      needRef = false;
+
+      if (nonNull(forceBodyRef) && forceBodyRef) {
+        needRef = true;
+      } else if ((c.getFreeBits() - 1 < body.getBits().getUsedBits())
+          || (c.getFreeRefs() + body.getUsedRefs() > 4)) {
+        needRef = false;
+      }
+
+      if (needRef) {
+        c.storeBit(true);
+        c.storeRef(body);
+      } else {
+        c.storeBit(false);
+        c.storeCell(body);
+      }
+    }
+    return c.endCell();
+  }
+
+  public static MessageRelaxed deserialize(CellSlice cs) {
+    MessageRelaxed message =
+        MessageRelaxed.builder().info(CommonMsgInfoRelaxed.deserialize(cs)).build();
+    StateInit stateInit = null;
+    if (cs.loadBit()) {
+      if (cs.loadBit()) { // load from ref
+        stateInit = StateInit.deserialize(CellSlice.beginParse(cs.loadRef()));
+      } else { // load from slice
+        stateInit = StateInit.deserialize(cs);
+      }
+    }
+    message.setInit(stateInit);
+
     Cell body;
-
-    public Cell toCell() {
-        CellBuilder c = CellBuilder.beginCell();
-        c.storeCell(info.toCell());
-
-        if (isNull(init)) {
-            c.storeBit(false);
-        } else { // init:(Maybe (Either StateInit ^StateInit))
-            c.storeBit(true);
-            c.storeBit(true);
-            c.storeRef(init.toCell()); // todo check if can be stored in the same cell, not in ref
-        }
-
-        if (isNull(body)) {
-            c.storeBit(false);
-        } else {
-            c.storeBit(true);
-            c.storeRef(body);
-        }
-        return c.endCell();
+    if (cs.loadBit()) {
+      body = cs.loadRef();
+    } else {
+      body = cs.sliceToCell();
+      cs.loadBits(cs.getRestBits());
     }
 
-    public static MessageRelaxed deserialize(CellSlice cs) {
-        return MessageRelaxed.builder()
-                .info(CommonMsgInfoRelaxed.deserialize(cs))
-                .init(cs.loadBit() ?
-                        (cs.loadBit() ?
-                                StateInit.deserialize(CellSlice.beginParse(cs.loadRef()))
-                                : StateInit.deserialize(cs))
-                        : StateInit.builder().build())
-                .body(cs.loadBit() ?
-                        cs.loadRef() : CellBuilder.beginCell().storeBitString(cs.loadBits(cs.getRestBits())).endCell())
-                .build();
-    }
+    message.setBody(body);
+    return message;
+  }
 }

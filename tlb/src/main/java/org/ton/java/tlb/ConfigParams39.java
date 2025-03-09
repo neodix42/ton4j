@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -24,7 +25,7 @@ public class ConfigParams39 {
     return CellBuilder.beginCell()
         .storeDict(
             validatorSignedTemp.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 256).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
                 v ->
                     CellBuilder.beginCell()
                         .storeCell(((ValidatorSignedTempKey) v).toCell())

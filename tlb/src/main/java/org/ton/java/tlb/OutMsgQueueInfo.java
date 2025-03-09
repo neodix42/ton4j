@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.*;
@@ -24,18 +25,18 @@ public class OutMsgQueueInfo {
     return CellBuilder.beginCell()
         .storeDict(
             outMsgQueue.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 352).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 352).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((EnqueuedMsg) v).toCell()),
-                e -> CellBuilder.beginCell().storeUint((Long) e, 64).endCell().getBits(),
+                e -> CellBuilder.beginCell().storeUint((BigInteger) e, 64).endCell().getBits(),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1))) // todo
         .storeDict(
             processedInfo.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 96).endCell().getBits(),
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 96).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((ProcessedUpto) v).toCell()).endCell()))
         .storeDict(
             ihrPendingInfo.serialize(
-                k -> CellBuilder.beginCell().storeUint((Long) k, 320).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeUint((Long) v, 64).endCell()))
+                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 320).endCell().getBits(),
+                v -> CellBuilder.beginCell().storeUint((BigInteger) v, 64).endCell()))
         .endCell();
   }
 

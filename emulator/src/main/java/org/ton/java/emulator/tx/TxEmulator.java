@@ -19,6 +19,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.TonHashMapE;
 import org.ton.java.emulator.EmulateTransactionResult;
+import org.ton.java.emulator.EmulatorConfig;
 import org.ton.java.tlb.*;
 import org.ton.java.utils.Utils;
 
@@ -34,7 +35,7 @@ public class TxEmulator {
   public String pathToEmulatorSharedLib;
   private final TxEmulatorI txEmulatorI;
   private final long txEmulator;
-  private TxEmulatorConfig configType;
+  private EmulatorConfig configType;
   private String customConfig;
   private TxVerbosityLevel verbosityLevel;
   private Boolean printEmulatorInfo;
@@ -72,7 +73,7 @@ public class TxEmulator {
         }
 
         if (isNull(super.configType)) {
-          super.configType = TxEmulatorConfig.MAINNET;
+          super.configType = EmulatorConfig.MAINNET;
         }
 
         String configBoc = "";
@@ -144,7 +145,7 @@ public class TxEmulator {
     }
   }
 
-  private static Cell convertLibsToHashMap(List<Cell> libs) {
+  public static Cell convertLibsToHashMap(List<Cell> libs) {
 
     TonHashMapE x = new TonHashMapE(256);
 
@@ -274,6 +275,15 @@ public class TxEmulator {
   public boolean setLibs(String libsBoc) {
     Utils.disableNativeOutput(verbosityLevel.ordinal());
     boolean result = txEmulatorI.transaction_emulator_set_libs(txEmulator, libsBoc);
+    Utils.enableNativeOutput(verbosityLevel.ordinal());
+    return result;
+  }
+
+  public boolean setLibs(List<Cell> libCells) {
+    Utils.disableNativeOutput(verbosityLevel.ordinal());
+    boolean result =
+        txEmulatorI.transaction_emulator_set_libs(
+            txEmulator, convertLibsToHashMap(libCells).toBase64());
     Utils.enableNativeOutput(verbosityLevel.ordinal());
     return result;
   }

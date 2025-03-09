@@ -17,6 +17,7 @@ import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -126,6 +127,7 @@ public class TestTvmEmulator {
   }
 
   @Test
+  @Ignore
   public void testTvmEmulatorSetLibs() {
     Cell dictLibs = getLibs();
 

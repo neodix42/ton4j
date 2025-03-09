@@ -3,6 +3,7 @@ package org.ton.java.emulator;
 import java.io.Serializable;
 import lombok.*;
 import org.apache.commons.lang3.StringUtils;
+import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.*;
@@ -13,11 +14,13 @@ public class EmulateTransactionResult implements Serializable {
   boolean success;
   String error;
   boolean external_not_accepted;
-  String transaction; // "Base64 encoded Transaction boc"
-  String shard_account; // "Base64 encoded new ShardAccount boc"
+  @ToString.Exclude String transaction; // "Base64 encoded Transaction boc"
+
+  @ToString.Exclude String shard_account; // "Base64 encoded new ShardAccount boc"
+
   int vm_exit_code;
   String vm_log; //  "execute DUP..."
-  String actions; // Base64 encoded compute phase actions boc (OutList n)"
+  @ToString.Exclude String actions; // Base64 encoded compute phase actions boc (OutList n)"
   double elapsed_time;
 
   public ShardAccount getNewShardAccount() {
@@ -26,6 +29,32 @@ public class EmulateTransactionResult implements Serializable {
     } else {
       return ShardAccount.builder().build();
     }
+  }
+
+  public Address getNewShardAccountAddress() {
+    if (StringUtils.isNotEmpty(shard_account)) {
+      return ShardAccount.deserialize(CellSlice.beginParse(Cell.fromBocBase64(shard_account)))
+          .getAccount()
+          .getAddress()
+          .toAddress();
+    } else {
+      return null;
+    }
+  }
+
+  @ToString.Include(name = "transactionBase64")
+  public String getTransactionBase64() {
+    return transaction;
+  }
+
+  @ToString.Include(name = "shardAccountBase64")
+  public String getShardAccountBase64() {
+    return shard_account;
+  }
+
+  @ToString.Include(name = "actionsBase64")
+  public String getActionsBase64() {
+    return actions;
   }
 
   public Transaction getTransaction() {

@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +30,8 @@ public class TransactionIO {
 
     Cell dictCell =
         out.serialize(
-            k -> CellBuilder.beginCell().storeUint((Long) k, 15).endCell().getBits(),
-            v -> CellBuilder.beginCell().storeRef((Cell) v).endCell());
+            k -> CellBuilder.beginCell().storeUint((BigInteger) k, 15).endCell().getBits(),
+            v -> CellBuilder.beginCell().storeRef(((Message) v).toCell()).endCell());
     return CellBuilder.beginCell().storeRefMaybe(in.toCell()).storeDict(dictCell).endCell();
   }
 
