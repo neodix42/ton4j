@@ -5,7 +5,6 @@ import static java.util.Objects.nonNull;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.ToString;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -30,11 +29,6 @@ public class Message {
 
   Boolean forceStateInitRef;
   Boolean forceBodyRef;
-
-  @ToString.Include(name = "bodyBoc")
-  public String getBodyBoc() {
-    return nonNull(body) ? body.toHex() : "";
-  }
 
   public Cell toCell() {
     boolean needRef;

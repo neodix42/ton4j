@@ -5,7 +5,6 @@ import static java.util.Objects.nonNull;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
-import lombok.ToString;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -72,20 +71,5 @@ public class StateInit {
 
   public Address getAddress() {
     return Address.of("0:" + Utils.bytesToHex(this.toCell().getHash()));
-  }
-
-  @ToString.Include
-  public String codeAsBoc() {
-    return nonNull(code) ? code.toHex() : "";
-  }
-
-  @ToString.Include
-  public String dataAsBoc() {
-    return nonNull(data) ? data.toHex() : "";
-  }
-
-  @ToString.Include
-  public String libAsBoc() {
-    return nonNull(lib) ? lib.toHex() : "";
   }
 }

@@ -1,7 +1,5 @@
 package org.ton.java.smartcontract.types;
 
-import static java.util.Objects.nonNull;
-
 import java.math.BigInteger;
 import java.util.List;
 import lombok.Builder;
@@ -23,12 +21,7 @@ public class MultiSigV2OrderData {
   public long approvals_mask;
   public long approvals_num;
   public long expirationDate;
-  @ToString.Exclude public Cell order;
-
-  @ToString.Include(name = "orderBoc")
-  public String getOrderBoc() {
-    return nonNull(order) ? order.toHex() : "";
-  }
+  public Cell order;
 
   @ToString.Include(name = "expirationDateString")
   public String getExpirationDateString() {

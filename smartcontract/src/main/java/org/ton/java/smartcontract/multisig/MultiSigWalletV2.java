@@ -189,7 +189,7 @@ public class MultiSigWalletV2 implements Contract {
         .storeUint(orderSeqno, 256)
         .storeUint(expirationDate, 48)
         .storeUint(numberOfApprovals, 8)
-        .storeBytes(signersCell.getHash(), 256) // signers_hash todo
+        .storeBytes(signersCell.getHash(), 256)
         .storeRef(order)
         .endCell();
   }
