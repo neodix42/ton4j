@@ -29,6 +29,7 @@ import org.ton.java.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
+@Deprecated
 public class TestWalletMultiSig extends CommonTest {
 
   TweetNaclFast.Signature.KeyPair ownerKeyPair = Utils.generateSignatureKeyPair();

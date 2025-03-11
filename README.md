@@ -50,9 +50,9 @@ You can use each submodule individually. Click the module below to get more deta
 * [Mnemonic](mnemonic/README.md) - helpful methods for generating deterministic keys for TON blockchain.
 * [Emulator](emulator/README.md) - wrapper for using with external precompiled emulator shared library.
 * [Liteclient](liteclient/README.md) - wrapper for using with external precompiled lite-client binary.
-* [Fift](fift/README.md) - wrapper for using with external precompiled fift binary.
-* [Func](func/README.md) - wrapper for using with external precompiled func binary.
-* [Tolk](tolk/README.md) - wrapper for using with external precompiled tolk binary.
+* [Fift](fift/README.md) - wrapper for using external precompiled fift binary.
+* [Func](func/README.md) - wrapper for using external precompiled func binary.
+* [Tolk](tolk/README.md) - wrapper for using external precompiled tolk binary.
 * [TonConnect](tonconnect/README.md) - implementation of Ton Connect standard.
 * [Disassembler](disassembler/README.md) - implementation of Ton Connect standard.
 * [TL-B](tlb/README.md) - TL-B structures and their de/serialization.
