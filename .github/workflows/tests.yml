@@ -22,6 +22,11 @@ jobs:
       - name: Compile all
         run: mvn install -"DskipTests" -"Dgpg.skip"
 
+      - name: Run Utils tests
+        run: |
+          cd utils
+          mvn test
+
       - name: Run Cell tests
         run: |
           cd cell
@@ -57,21 +62,6 @@ jobs:
           cd cell
           mvn test
 
-      - name: Run tonlib - testTonlibGetTxsByAddress
-        run: |
-          cd tonlib
-          mvn test -Dtest=TestTonlibJsonTestnet#testTonlibGetTxsByAddress
-
-      - name: Run tonlib - testTonlibRunMethodParticipantsList
-        run: |
-          cd tonlib
-          mvn test -Dtest=TestTonlibJsonTestnet#testTonlibRunMethodParticipantsList
-
-      - name: Run Utils tests
-        run: |
-          cd utils
-          mvn test
-
       - name: Run Disassembler tests
         run: |
           cd disassembler
@@ -81,3 +71,13 @@ jobs:
         run: |
           cd bitstring
           mvn test
+
+      - name: Run tonlib - testTonlibGetTxsByAddress
+        run: |
+          cd tonlib
+          mvn test -Dtest=TestTonlibJsonTestnet#testTonlibGetTxsByAddress
+
+      - name: Run tonlib - testTonlibRunMethodParticipantsList
+        run: |
+          cd tonlib
+          mvn test -Dtest=TestTonlibJsonTestnet#testTonlibRunMethodParticipantsList

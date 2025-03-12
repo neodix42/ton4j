@@ -6,6 +6,7 @@ import static org.ton.java.utils.Utils.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.junit.Test;
@@ -501,6 +502,13 @@ public class TestUtils {
 
   @Test
   public void testGetArtifactUrl() {
+
+    String operSys = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
+    String operArch = System.getProperty("os.arch").toLowerCase(Locale.ENGLISH);
+
+    log.info("operSys {}, operArch {}", operSys, operArch);
+
+    log.info("OS {}", Utils.getOS());
 
     if (Utils.getOS() == OS.WINDOWS) {
       assertThat(getArtifactGithubUrl("fift", "v2024.12-1"))

@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,6 +17,12 @@ public class TestFuncRunner {
 
   @Test
   public void testFuncRunner() throws URISyntaxException {
+    String operSys = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
+    String operArch = System.getProperty("os.arch").toLowerCase(Locale.ENGLISH);
+
+    log.info("operSys {}, operArch {}", operSys, operArch);
+
+    log.info("OS {}", Utils.getOS());
 
     URL resource = TestFuncRunner.class.getResource("/test.fc");
     File funcFile = Paths.get(resource.toURI()).toFile();
