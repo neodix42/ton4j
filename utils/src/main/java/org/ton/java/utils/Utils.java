@@ -1153,7 +1153,7 @@ public class Utils {
   static CStdLib cStdLib;
 
   public static void disableNativeOutput(int verbosityLevel) {
-    if (verbosityLevel > 2) {
+    if (verbosityLevel >= 0) {
       return;
     }
 
@@ -1246,7 +1246,7 @@ public class Utils {
   }
 
   public static void enableNativeOutput(int verbosityLevel) {
-    if (verbosityLevel == 4) {
+    if (verbosityLevel >= 0) {
       return;
     }
     try {
