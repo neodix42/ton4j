@@ -38,7 +38,7 @@ URL resource=TestTolkRunner.class.getResource("/test.tolk");
         File tolkFile=Paths.get(resource.toURI()).toFile();
         String absolutePath=tolkFile.getAbsolutePath();
 
-        TolkRunner tolkRunner=TolkRunner.builder().tolkExecutablePath(tolkPath).build();
+        TolkRunner tolkRunner=TolkRunner.builder().tolkExecutablePath(Utils.getTolkGithubUrl()).build();
 
         String result=tolkRunner.run(tolkFile.getParent(),absolutePath);
         log.info("output: {}",result);

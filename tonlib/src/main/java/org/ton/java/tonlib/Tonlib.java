@@ -41,20 +41,10 @@ public class Tonlib {
    */
   public String pathToTonlibSharedLib;
 
-  /**
-   * if not specified and globalConfigAsString is null then integrated global-config.json is used;
-   *
-   * <p>if not specified and globalConfigAsString is filled then globalConfigAsString is used;
-   *
-   * <p>If not specified and testnet=true then integrated testnet-global.config.json is used;
-   */
+  /** if not specified and globalConfigAsString is filled then globalConfigAsString is used; */
   public String pathToGlobalConfig;
 
-  /**
-   * if not specified and pathToGlobalConfig is null then integrated global-config.json is used;
-   *
-   * <p>if not specified and pathToGlobalConfig is filled then pathToGlobalConfig is used;
-   */
+  /** if not specified and pathToGlobalConfig is filled then pathToGlobalConfig is used; */
   private String globalConfigAsString;
 
   private TonGlobalConfig globalConfigAsObject;

@@ -13,10 +13,7 @@ import org.ton.java.utils.Utils;
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestFuncRunner {
-  /**
-   * Make sure you have fift and func installed in your system. See <a
-   * href="https://github.com/ton-blockchain/packages">packages</a> for instructions.
-   */
+
   @Test
   public void testFuncRunner() throws URISyntaxException {
 
@@ -24,9 +21,8 @@ public class TestFuncRunner {
     File funcFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = funcFile.getAbsolutePath();
 
-    String resourcePath = Utils.getArtifactGithubUrl("func", "v2024.12-1");
-
-    FuncRunner funcRunner = FuncRunner.builder().funcExecutablePath(resourcePath).build();
+    FuncRunner funcRunner =
+        FuncRunner.builder().funcExecutablePath(Utils.getFuncGithubUrl()).build();
 
     String result = funcRunner.run(funcFile.getParent(), "-PA", absolutePath);
     log.info("output: {}", result);
@@ -40,9 +36,7 @@ public class TestFuncRunner {
     String absolutePath = funcFile.getAbsolutePath();
 
     FuncRunner funcRunner =
-        FuncRunner.builder()
-            .funcExecutablePath(Utils.getArtifactGithubUrl("func", "v2024.12-1"))
-            .build();
+        FuncRunner.builder().funcExecutablePath(Utils.getFuncGithubUrl()).build();
 
     String result = funcRunner.run(funcFile.getParent(), "-PA", absolutePath);
     log.info("output: {}", result);

@@ -28,9 +28,8 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 
 ```java
 LiteClient liteClient=LiteClient.builder()
-        .pathToLiteClientBinary(pathToLiteClient)
+        .pathToLiteClientBinary(Utils.getLiteClientGithubUrl())
         .testnet(true)
-        .pathToGlobalConfig(pathToGlobalConfig)
         .build();
 
         String stdout=liteClient.executeLast();

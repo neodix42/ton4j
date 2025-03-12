@@ -38,12 +38,7 @@ URL resource=TestFiftRunner.class.getResource("/test.fift");
         File fiftFile=Paths.get(resource.toURI()).toFile();
         String absolutePath=fiftFile.getAbsolutePath();
 
-        FiftRunner fiftRunner=
-        FiftRunner.builder()
-        .fiftExecutablePath(fiftPath)
-        //            .fiftAsmLibraryPath(libPath)
-        //            .fiftSmartcontLibraryPath(smartcontPath)
-        .build();
+        FiftRunner fiftRunner=FiftRunner.builder().fiftExecutablePath(Utils.getFiftGithubUrl()).build();
 
         String result=fiftRunner.run(fiftFile.getParent(),"-s",absolutePath);
         log.info("output: {}",result);

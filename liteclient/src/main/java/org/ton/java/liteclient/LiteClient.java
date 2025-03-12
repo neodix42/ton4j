@@ -37,13 +37,7 @@ public class LiteClient {
 
   private String pathToLiteClientBinary;
 
-  /**
-   * if not specified and globalConfigAsString is null then integrated global-config.json is used;
-   *
-   * <p>if not specified and globalConfigAsString is filled then globalConfigAsString is used;
-   *
-   * <p>If not specified and testnet=true then integrated testnet-global.config.json is used;
-   */
+  /** if not specified and globalConfigAsString is filled then globalConfigAsString is used; */
   private String pathToGlobalConfig;
 
   private int timeout;
@@ -122,9 +116,17 @@ public class LiteClient {
 
       if (isNull(super.pathToGlobalConfig)) {
         if (super.testnet) {
-          globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlTestnet());
+          try {
+            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlTestnet());
+          } catch (Error e) {
+            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlTestnetGithub());
+          }
         } else {
-          globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlMainnet());
+          try {
+            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlMainnet());
+          } catch (Error e) {
+            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlMainnetGithub());
+          }
         }
       } else {
         globalConfigPath = Utils.getLocalOrDownload(super.pathToGlobalConfig);

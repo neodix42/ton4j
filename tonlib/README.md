@@ -46,8 +46,7 @@ Tonlib tonlib=Tonlib.builder()
 ```java
 // builder
 Tonlib tonlib=Tonlib.builder()
-        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
-        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
         .verbosityLevel(VerbosityLevel.FATAL)
         .testnet(true)
         .build();
@@ -79,8 +78,7 @@ Tonlib tonlib=Tonlib.builder()
 
 ```java
 Tonlib tonlib=Tonlib.builder()
-        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
-        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
         .verbosityLevel(VerbosityLevel.FATAL)
         .testnet(true)
         .build();
@@ -125,8 +123,7 @@ Tonlib tonlib=Tonlib.builder()
 
 ```java
 Tonlib tonlib=Tonlib.builder()
-        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
-        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
         .verbosityLevel(VerbosityLevel.FATAL)
         .testnet(true)
         .build();
@@ -165,8 +162,7 @@ Tonlib tonlib=Tonlib.builder()
 
 ```java
 Tonlib tonlib=Tonlib.builder()
-        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
-        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
         .verbosityLevel(VerbosityLevel.FATAL)
         .testnet(true)
         .build();
@@ -184,7 +180,7 @@ Tonlib tonlib=Tonlib.builder()
 
 // result
         address:kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E
-        FullAccountState(address=AccountAddressOnly(account_address=kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E),balance=4995640997,last_transaction_id=LastTransactionId(type=internal.transactionId,lt=491384000001,hash=C17UfhQAJ6kN/6SIWlO6PZAlHuI9aas227Tp/u7QuPU=),block_id=BlockIdExt(type=ton.blockIdExt,workchain=-1,shard=-9223372036854775808,seqno=1146167,root_hash=8L6D qqpFbf2j6kvl3P52SsPj82dl5X9zO+4UWUN314A=,file_hash=TawZEfHM+4E roaoGpwlfFHCVUzRGOO6l62YBSmHz/wk=),sync_utime=1656780177,account_state=AccountState(code=te6cckEBAQEAXwAAuv8AIN0gggFMl7ohggEznLqxnHGw7UTQ0x/XC//jBOCk8mCBAgDXGCDXCx/tRNDTH9P/0VESuvKhIvkBVBBE+RDyovgAAdMfMSDXSpbTB9QC+wDe0aTIyx/L/8ntVLW4bkI=, data=te6cckEBAQEAJgAASAAAAAGuqBbf9RjBhJbdGXyKcCc7giXayXZ++LJoZVYX7yhIdAapyws=, frozen_hash=))
+        FullAccountState(address=AccountAddressOnly(account_address=kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E),balance=4995640997,last_transaction_id=LastTransactionId(type=internal.transactionId,lt=491384000001,hash=C17UfhQAJ6kN/6SIWlO6PZAlHuI9aas227Tp/u7QuPU=),block_id=BlockIdExt(type=ton.blockIdExt,workchain=-1,shard=-9223372036854775808,seqno=1146167,root_hash=8L6DqqpFbf2j6kvl3P52SsPj82dl5X9zO+4UWUN314A=,file_hash=TawZEfHM+4EroaoGpwlfFHCVUzRGOO6l62YBSmHz/wk=),sync_utime=1656780177,account_state=AccountState(code=te6cckEBAQEAXwAAuv8AIN0gggFMl7ohggEznLqxnHGw7UTQ0x/XC//jBOCk8mCBAgDXGCDXCx/tRNDTH9P/0VESuvKhIvkBVBBE+RDyovgAAdMfMSDXSpbTB9QC+wDe0aTIyx/L/8ntVLW4bkI=, data=te6cckEBAQEAJgAASAAAAAGuqBbf9RjBhJbdGXyKcCc7giXayXZ++LJoZVYX7yhIdAapyws=, frozen_hash=))
         balance:4995640997
 ```
 
@@ -192,8 +188,7 @@ Tonlib tonlib=Tonlib.builder()
 
 ```java
 Tonlib tonlib=Tonlib.builder()
-        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
-        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
         .verbosityLevel(VerbosityLevel.FATAL)
         .testnet(true)
         .build();
@@ -215,8 +210,7 @@ Get seqno
 
 ```java
 Tonlib tonlib=Tonlib.builder()
-        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
-        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
         .verbosityLevel(VerbosityLevel.FATAL)
         .testnet(true)
         .build();
@@ -266,8 +260,7 @@ Use as array of strings:
 
 ```java
 Tonlib tonlib=Tonlib.builder()
-        .pathToTonlibSharedLib("/mnt/tonlibjson.so")
-        .pathToGlobalConfig("/mnt/testnet-global.config.json")
+        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
         .verbosityLevel(VerbosityLevel.FATAL)
         .testnet(true)
         .build();

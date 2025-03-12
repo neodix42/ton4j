@@ -8,15 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestFiftRunner {
 
-  /**
-   * Make sure you have fift and func installed in your system. See <a
-   * href="https://github.com/ton-blockchain/packages">packages</a> for instructions.
-   */
   @Test
   public void testFiftRunner() throws URISyntaxException {
 
@@ -24,9 +21,8 @@ public class TestFiftRunner {
     File fiftFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = fiftFile.getAbsolutePath();
 
-    String fiftPath = "https://github.com/neodix42/ton/releases/download/v2025.02/fift.exe";
-
-    FiftRunner fiftRunner = FiftRunner.builder().fiftExecutablePath(fiftPath).build();
+    FiftRunner fiftRunner =
+        FiftRunner.builder().fiftExecutablePath(Utils.getFiftGithubUrl()).build();
 
     String result = fiftRunner.run(fiftFile.getParent(), "-s", absolutePath);
     log.info("output: {}", result);
@@ -39,9 +35,8 @@ public class TestFiftRunner {
     File fiftFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = fiftFile.getAbsolutePath();
 
-    String fiftPath = "https://github.com/neodix42/ton/releases/download/v2025.02/fift.exe";
-
-    FiftRunner fiftRunner = FiftRunner.builder().fiftExecutablePath(fiftPath).build();
+    FiftRunner fiftRunner =
+        FiftRunner.builder().fiftExecutablePath(Utils.getFiftGithubUrl()).build();
 
     String result = fiftRunner.run(fiftFile.getParent(), "-s", absolutePath);
     log.info("output: {}", result);

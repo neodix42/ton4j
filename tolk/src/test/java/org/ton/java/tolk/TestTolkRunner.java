@@ -13,10 +13,7 @@ import org.ton.java.utils.Utils;
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestTolkRunner {
-  /**
-   * Make sure you have tolk and func installed in your system. See <a
-   * href="https://github.com/ton-blockchain/packages">packages</a> for instructions.
-   */
+
   @Test
   public void testTolkRunner() throws URISyntaxException {
 
@@ -24,8 +21,8 @@ public class TestTolkRunner {
     File tolkFile = Paths.get(resource.toURI()).toFile();
     String absolutePath = tolkFile.getAbsolutePath();
 
-    String tolkPath = Utils.getTolkGithubUrl();
-    TolkRunner tolkRunner = TolkRunner.builder().tolkExecutablePath(tolkPath).build();
+    TolkRunner tolkRunner =
+        TolkRunner.builder().tolkExecutablePath(Utils.getTolkGithubUrl()).build();
 
     String result = tolkRunner.run(tolkFile.getParent(), absolutePath);
     log.info("output: {}", result);

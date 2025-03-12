@@ -38,7 +38,10 @@ FuncRunner funcRunner=FuncRunner.builder().build();
         File funcFile=Paths.get(resource.toURI()).toFile();
         String absolutePath=funcFile.getAbsolutePath();
 
-        FuncRunner funcRunner=FuncRunner.builder().funcExecutablePath(resourcePath).build();
+        FuncRunner funcRunner=
+        FuncRunner.builder()
+        .funcExecutablePath(Utils.getFuncGithubUrl())
+        .build();
 
         String result=funcRunner.run(funcFile.getParent(),"-PA",absolutePath);
         log.info("output: {}",result);
