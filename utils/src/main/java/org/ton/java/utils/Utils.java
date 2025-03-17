@@ -940,10 +940,27 @@ public class Utils {
     }
   }
 
+  public static void sleepMs(long milliseconds) {
+    try {
+      TimeUnit.MILLISECONDS.sleep(milliseconds);
+    } catch (Throwable e) {
+      log.info(e.getMessage());
+    }
+  }
+
   public static void sleep(long seconds, String text) {
     try {
       log.info(String.format("pause %s seconds, %s", seconds, text));
       TimeUnit.SECONDS.sleep(seconds);
+    } catch (Throwable e) {
+      log.info(e.getMessage());
+    }
+  }
+
+  public static void sleepMs(long milliseconds, String text) {
+    try {
+      log.info(String.format("pause %s milliseconds, %s", milliseconds, text));
+      TimeUnit.MILLISECONDS.sleep(milliseconds);
     } catch (Throwable e) {
       log.info(e.getMessage());
     }

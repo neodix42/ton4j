@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -96,6 +96,9 @@ public class Tonlib {
 
   private static Pointer tonlib;
 
+  private Map<String, String> sent;
+  private Map<String, String> received;
+
   public static class TonlibBuilder {}
 
   public static TonlibBuilder builder() {
@@ -111,6 +114,9 @@ public class Tonlib {
         if (isNull(super.printInfo)) {
           super.printInfo = true;
         }
+
+        super.sent = new ConcurrentHashMap<>();
+        super.received = new ConcurrentHashMap<>();
 
         if (isNull(super.pathToTonlibSharedLib)) {
           if ((Utils.getOS() == Utils.OS.WINDOWS) || (Utils.getOS() == Utils.OS.WINDOWS_ARM)) {
@@ -228,9 +234,9 @@ public class Tonlib {
                   super.verbosityLevel.ordinal(),
                   super.keystoreInMemory,
                   super.keystorePath,
-                  super.pathToGlobalConfig,
+                  isNull(super.pathToGlobalConfig) ? "not specified" : super.pathToGlobalConfig,
                   (nonNull(super.globalConfigAsString) && super.globalConfigAsString.length() > 33)
-                      ? super.globalConfigAsString.substring(0, 33)
+                      ? "yes"
                       : "",
                   originalGlobalConfigInternal.getLiteservers().length,
                   globalConfigCurrent.getDht().getStatic_nodes().getNodes().length,
@@ -379,37 +385,63 @@ public class Tonlib {
     Utils.enableNativeOutput(verbosityLevel.ordinal());
   }
 
-  private String receive() {
-    String result = null;
-    int retry = 0;
-    while (isNull(result)) {
-      //      if (retry > 0) {
-      //        log.info("retry " + retry);
-      //      }
-      if (++retry > receiveRetryTimes) {
-        throw new Error(
-            "Error in tonlib.receive(), "
-                + receiveRetryTimes
-                + " times was not able retrieve result from lite-server.");
-      }
+  private String receive(String queryExtraId) {
+    String result;
+    do {
       result = tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
-    }
+      if (isNull(result)) {
+        return null;
+      }
+
+      String responseExtraId = extractExtra(result);
+      if (StringUtils.isNotEmpty(responseExtraId)) {
+        received.put(responseExtraId, "");
+      }
+
+      if (result.contains("updateSyncState")
+          || result.contains("syncStateDone")
+          || result.contains("syncStateInProgress")) {
+        return result;
+      }
+
+      if (received.containsKey(queryExtraId)) {
+        sent.remove(queryExtraId);
+        received.remove(queryExtraId);
+        return result;
+      }
+    } while (!received.containsKey(queryExtraId));
     return result;
   }
 
-  private String syncAndRead(String query) {
+  private String extractExtra(String query) {
+    if (StringUtils.countMatches(query, "@extra") > 1) {
+      String q = query.replaceFirst("@extra", "");
+      return StringUtils.substringBetween(q, "@extra\":\"", "\"}");
+    } else {
+      return StringUtils.substringBetween(query, "@extra\":\"", "\"}");
+    }
+  }
+
+  private synchronized String syncAndRead(String query) {
     String response = null;
     try {
       Utils.disableNativeOutput(verbosityLevel.ordinal());
+      String queryExtraId = extractExtra(query);
+      if (StringUtils.isNotEmpty(queryExtraId)) {
+        sent.put(queryExtraId, "");
+      }
       tonlibJson.tonlib_client_json_send(tonlib, query);
-      // {"@type":"blocks.lookupBlock","mode":1,"id":{"@type":"ton.blockId","workchain":-1,"shard":-9223372036854775808,"seqno":42555714},"lt":0,"utime":0,"@extra":"94e27988-cf7a-4205-9f89-35dab8037c16"}
-      TimeUnit.MILLISECONDS.sleep(200);
-      response = receive();
+      Utils.sleepMs(20);
+      response = receive(queryExtraId);
       Utils.enableNativeOutput(verbosityLevel.ordinal());
       int retry = 0;
       outterloop:
       do {
         do {
+
+          if (isNull(response)) {
+            break outterloop;
+          }
 
           if (response.contains("error")) {
             log.info(response);
@@ -453,8 +485,8 @@ public class Tonlib {
               }
             }
           } else if (response.contains("\"@type\":\"ok\"")) {
-            String queryExtraId = StringUtils.substringBetween(query, "@extra\":\"", "\"}");
-            String responseExtraId = StringUtils.substringBetween(response, "@extra\":\"", "\"}");
+            queryExtraId = extractExtra(query);
+            String responseExtraId = extractExtra(response);
             if (queryExtraId.equals(responseExtraId)) {
               break outterloop;
             }
@@ -466,13 +498,14 @@ public class Tonlib {
             break outterloop;
           }
           Utils.disableNativeOutput(verbosityLevel.ordinal());
-          TimeUnit.MILLISECONDS.sleep(200);
-          response = receive();
+          Utils.sleepMs(20);
+          response = receive(queryExtraId);
           Utils.enableNativeOutput(verbosityLevel.ordinal());
           UpdateSyncState sync = gson.fromJson(response, UpdateSyncState.class);
           if (nonNull(sync)
               && nonNull(sync.getSync_state())
               && sync.getType().equals("updateSyncState")
+              && nonNull(response)
               && !response.contains("syncStateDone")) {
             double pct = 0.0;
             if (sync.getSync_state().getTo_seqno() != 0) {
@@ -491,9 +524,9 @@ public class Tonlib {
         } while (response.contains("error") || response.contains("syncStateInProgress"));
 
         if (response.contains("syncStateDone")) {
-          response = receive();
+          response = receive(queryExtraId);
         }
-        if (response.contains("error")) {
+        if (nonNull(response) && response.contains("error")) {
           log.info(response);
 
           if (++retry > receiveRetryTimes) {
@@ -528,28 +561,27 @@ public class Tonlib {
    * @return BlockIdExt
    */
   public BlockIdExt lookupBlock(long seqno, long workchain, long shard, long lt, long utime) {
-    synchronized (gson) {
-      int mode = 0;
-      if (seqno != 0) {
-        mode += 1;
-      }
-      if (lt != 0) {
-        mode += 2;
-      }
-      if (utime != 0) {
-        mode += 4;
-      }
-      LookupBlockQuery lookupBlockQuery =
-          LookupBlockQuery.builder()
-              .mode(mode)
-              .id(BlockId.builder().seqno(seqno).workchain(workchain).shard(shard).build())
-              .lt(lt)
-              .utime(utime)
-              .build();
 
-      String result = syncAndRead(gson.toJson(lookupBlockQuery));
-      return gson.fromJson(result, BlockIdExt.class);
+    int mode = 0;
+    if (seqno != 0) {
+      mode += 1;
     }
+    if (lt != 0) {
+      mode += 2;
+    }
+    if (utime != 0) {
+      mode += 4;
+    }
+    LookupBlockQuery lookupBlockQuery =
+        LookupBlockQuery.builder()
+            .mode(mode)
+            .id(BlockId.builder().seqno(seqno).workchain(workchain).shard(shard).build())
+            .lt(lt)
+            .utime(utime)
+            .build();
+
+    String result = syncAndRead(gson.toJson(lookupBlockQuery));
+    return gson.fromJson(result, BlockIdExt.class);
   }
 
   public BlockIdExt lookupBlock(long seqno, long workchain, long shard, long lt) {
@@ -557,21 +589,19 @@ public class Tonlib {
   }
 
   public MasterChainInfo getLast() {
-    synchronized (gson) {
-      GetLastQuery getLastQuery = GetLastQuery.builder().build();
 
-      String result = syncAndRead(gson.toJson(getLastQuery));
-      return gson.fromJson(result, MasterChainInfo.class);
-    }
+    GetLastQuery getLastQuery = GetLastQuery.builder().build();
+
+    String result = syncAndRead(gson.toJson(getLastQuery));
+    return gson.fromJson(result, MasterChainInfo.class);
   }
 
   public LiteServerVersion getLiteServerVersion() {
-    synchronized (gson) {
-      GetLiteServerInfoQuery getLiteServerQuery = GetLiteServerInfoQuery.builder().build();
 
-      String result = syncAndRead(gson.toJson(getLiteServerQuery));
-      return gson.fromJson(result, LiteServerVersion.class);
-    }
+    GetLiteServerInfoQuery getLiteServerQuery = GetLiteServerInfoQuery.builder().build();
+
+    String result = syncAndRead(gson.toJson(getLiteServerQuery));
+    return gson.fromJson(result, LiteServerVersion.class);
   }
 
   public MasterChainInfo getMasterChainInfo() {
@@ -579,12 +609,11 @@ public class Tonlib {
   }
 
   public Shards getShards(BlockIdExt id) {
-    synchronized (gson) {
-      GetShardsQuery getShardsQuery = GetShardsQuery.builder().id(id).build();
 
-      String result = syncAndRead(gson.toJson(getShardsQuery));
-      return gson.fromJson(result, Shards.class);
-    }
+    GetShardsQuery getShardsQuery = GetShardsQuery.builder().id(id).build();
+
+    String result = syncAndRead(gson.toJson(getShardsQuery));
+    return gson.fromJson(result, Shards.class);
   }
 
   public Shards getShards(long seqno, long lt, long unixtime) {
@@ -597,50 +626,42 @@ public class Tonlib {
 
     BlockIdExt fullblock = lookupBlock(seqno, wc, shard, lt, unixtime);
 
-    synchronized (gson) {
-      GetShardsQuery getShardsQuery = GetShardsQuery.builder().id(fullblock).build();
+    GetShardsQuery getShardsQuery = GetShardsQuery.builder().id(fullblock).build();
 
-      String result = syncAndRead(gson.toJson(getShardsQuery));
-      return gson.fromJson(result, Shards.class);
-    }
+    String result = syncAndRead(gson.toJson(getShardsQuery));
+    return gson.fromJson(result, Shards.class);
   }
 
   public Key createNewKey() {
-    synchronized (gson) {
-      NewKeyQuery newKeyQuery = NewKeyQuery.builder().build();
 
-      String result = syncAndRead(gson.toJson(newKeyQuery));
-      return gson.fromJson(result, Key.class);
-    }
+    NewKeyQuery newKeyQuery = NewKeyQuery.builder().build();
+
+    String result = syncAndRead(gson.toJson(newKeyQuery));
+    return gson.fromJson(result, Key.class);
   }
 
   public Data encrypt(String data, String secret) {
-    synchronized (gson) {
-      EncryptQuery encryptQuery =
-          EncryptQuery.builder().decrypted_data(data).secret(secret).build();
 
-      String result = syncAndRead(gson.toJson(encryptQuery));
-      return gson.fromJson(result, Data.class);
-    }
+    EncryptQuery encryptQuery = EncryptQuery.builder().decrypted_data(data).secret(secret).build();
+
+    String result = syncAndRead(gson.toJson(encryptQuery));
+    return gson.fromJson(result, Data.class);
   }
 
   public Data decrypt(String data, String secret) {
-    synchronized (gson) {
-      DecryptQuery decryptQuery =
-          DecryptQuery.builder().encrypted_data(data).secret(secret).build();
 
-      String result = syncAndRead(gson.toJson(decryptQuery));
-      return gson.fromJson(result, Data.class);
-    }
+    DecryptQuery decryptQuery = DecryptQuery.builder().encrypted_data(data).secret(secret).build();
+
+    String result = syncAndRead(gson.toJson(decryptQuery));
+    return gson.fromJson(result, Data.class);
   }
 
   public BlockHeader getBlockHeader(BlockIdExt fullblock) {
-    synchronized (gson) {
-      BlockHeaderQuery blockHeaderQuery = BlockHeaderQuery.builder().id(fullblock).build();
 
-      String result = syncAndRead(gson.toJson(blockHeaderQuery));
-      return gson.fromJson(result, BlockHeader.class);
-    }
+    BlockHeaderQuery blockHeaderQuery = BlockHeaderQuery.builder().id(fullblock).build();
+
+    String result = syncAndRead(gson.toJson(blockHeaderQuery));
+    return gson.fromJson(result, BlockHeader.class);
   }
 
   // @formatter:off
@@ -661,17 +682,14 @@ public class Tonlib {
       fromTxHash = fullAccountState.getLast_transaction_id().getHash();
     }
 
-    synchronized (gson) {
-      GetRawTransactionsQuery getRawTransactionsQuery =
-          GetRawTransactionsQuery.builder()
-              .account_address(AccountAddressOnly.builder().account_address(address).build())
-              .from_transaction_id(
-                  LastTransactionId.builder().lt(fromTxLt).hash(fromTxHash).build())
-              .build();
+    GetRawTransactionsQuery getRawTransactionsQuery =
+        GetRawTransactionsQuery.builder()
+            .account_address(AccountAddressOnly.builder().account_address(address).build())
+            .from_transaction_id(LastTransactionId.builder().lt(fromTxLt).hash(fromTxHash).build())
+            .build();
 
-      String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
-      return gson.fromJson(result, RawTransactions.class);
-    }
+    String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
+    return gson.fromJson(result, RawTransactions.class);
   }
 
   /**
@@ -690,19 +708,16 @@ public class Tonlib {
       fromTxHash = fullAccountState.getLast_transaction_id().getHash();
     }
 
-    synchronized (gson) {
-      GetRawTransactionsV2Query getRawTransactionsQuery =
-          GetRawTransactionsV2Query.builder()
-              .account_address(AccountAddressOnly.builder().account_address(address).build())
-              .from_transaction_id(
-                  LastTransactionId.builder().lt(fromTxLt).hash(fromTxHash).build())
-              .count(count)
-              .try_decode_message(tryDecodeMessage)
-              .build();
+    GetRawTransactionsV2Query getRawTransactionsQuery =
+        GetRawTransactionsV2Query.builder()
+            .account_address(AccountAddressOnly.builder().account_address(address).build())
+            .from_transaction_id(LastTransactionId.builder().lt(fromTxLt).hash(fromTxHash).build())
+            .count(count)
+            .try_decode_message(tryDecodeMessage)
+            .build();
 
-      String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
-      return gson.fromJson(result, RawTransactions.class);
-    }
+    String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
+    return gson.fromJson(result, RawTransactions.class);
   }
 
   /**
@@ -723,31 +738,29 @@ public class Tonlib {
       fromTxLt = rawAccountState.getLast_transaction_id().getLt();
       fromTxHash = rawAccountState.getLast_transaction_id().getHash();
     }
-    synchronized (gson) {
-      GetRawTransactionsQuery getRawTransactionsQuery =
-          GetRawTransactionsQuery.builder()
-              .account_address(AccountAddressOnly.builder().account_address(address).build())
-              .from_transaction_id(
-                  LastTransactionId.builder().lt(fromTxLt).hash(fromTxHash).build())
-              .build();
 
-      String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
+    GetRawTransactionsQuery getRawTransactionsQuery =
+        GetRawTransactionsQuery.builder()
+            .account_address(AccountAddressOnly.builder().account_address(address).build())
+            .from_transaction_id(LastTransactionId.builder().lt(fromTxLt).hash(fromTxHash).build())
+            .build();
 
-      RawTransactions rawTransactions = gson.fromJson(result, RawTransactions.class);
+    String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
 
-      if (isNull(rawTransactions.getTransactions())) {
-        throw new Error("lite-server cannot return any transactions");
-      }
+    RawTransactions rawTransactions = gson.fromJson(result, RawTransactions.class);
 
-      if (limit > rawTransactions.getTransactions().size()) {
-        limit = rawTransactions.getTransactions().size();
-      }
-
-      return RawTransactions.builder()
-          .previous_transaction_id(rawTransactions.getPrevious_transaction_id())
-          .transactions(rawTransactions.getTransactions().subList(0, limit))
-          .build();
+    if (isNull(rawTransactions.getTransactions())) {
+      throw new Error("lite-server cannot return any transactions");
     }
+
+    if (limit > rawTransactions.getTransactions().size()) {
+      limit = rawTransactions.getTransactions().size();
+    }
+
+    return RawTransactions.builder()
+        .previous_transaction_id(rawTransactions.getPrevious_transaction_id())
+        .transactions(rawTransactions.getTransactions().subList(0, limit))
+        .build();
   }
 
   /**
@@ -805,32 +818,31 @@ public class Tonlib {
 
   public BlockTransactions getBlockTransactions(
       BlockIdExt fullblock, long count, AccountTransactionId afterTx) {
-    synchronized (gson) {
-      int mode = 7;
-      if (nonNull(afterTx)) {
-        mode = 7 + 128;
-      }
 
-      if (isNull(afterTx)) {
-        afterTx =
-            AccountTransactionId.builder()
-                .account("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-                .lt(0)
-                .build();
-      }
-
-      GetBlockTransactionsQuery getBlockTransactionsQuery =
-          GetBlockTransactionsQuery.builder()
-              .id(fullblock)
-              .mode(mode)
-              .count(count)
-              .after(afterTx)
-              .build();
-
-      String result = syncAndRead(gson.toJson(getBlockTransactionsQuery));
-
-      return gson.fromJson(result, BlockTransactions.class);
+    int mode = 7;
+    if (nonNull(afterTx)) {
+      mode = 7 + 128;
     }
+
+    if (isNull(afterTx)) {
+      afterTx =
+          AccountTransactionId.builder()
+              .account("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+              .lt(0)
+              .build();
+    }
+
+    GetBlockTransactionsQuery getBlockTransactionsQuery =
+        GetBlockTransactionsQuery.builder()
+            .id(fullblock)
+            .mode(mode)
+            .count(count)
+            .after(afterTx)
+            .build();
+
+    String result = syncAndRead(gson.toJson(getBlockTransactionsQuery));
+
+    return gson.fromJson(result, BlockTransactions.class);
   }
 
   /**
@@ -860,13 +872,12 @@ public class Tonlib {
    * @return RawAccountState
    */
   public RawAccountState getRawAccountState(AccountAddressOnly address) {
-    synchronized (gson) {
-      GetRawAccountStateQueryOnly getAccountStateQuery =
-          GetRawAccountStateQueryOnly.builder().account_address(address).build();
 
-      String result = syncAndRead(gson.toJson(getAccountStateQuery));
-      return gson.fromJson(result, RawAccountState.class);
-    }
+    GetRawAccountStateQueryOnly getAccountStateQuery =
+        GetRawAccountStateQueryOnly.builder().account_address(address).build();
+
+    String result = syncAndRead(gson.toJson(getAccountStateQuery));
+    return gson.fromJson(result, RawAccountState.class);
   }
 
   /**
@@ -876,49 +887,47 @@ public class Tonlib {
    * @return account state RawAccountState
    */
   public RawAccountState getRawAccountState(Address address) {
-    synchronized (gson) {
-      AccountAddressOnly accountAddressOnly =
-          AccountAddressOnly.builder().account_address(address.toString(false)).build();
 
-      GetRawAccountStateQueryOnly getAccountStateQuery =
-          GetRawAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+    AccountAddressOnly accountAddressOnly =
+        AccountAddressOnly.builder().account_address(address.toString(false)).build();
 
-      String result = syncAndRead(gson.toJson(getAccountStateQuery));
-      return gson.fromJson(result, RawAccountState.class);
-    }
+    GetRawAccountStateQueryOnly getAccountStateQuery =
+        GetRawAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+
+    String result = syncAndRead(gson.toJson(getAccountStateQuery));
+    return gson.fromJson(result, RawAccountState.class);
   }
 
   public RawAccountState getRawAccountState(Address address, BlockIdExt blockId) {
-    synchronized (gson) {
-      if (StringUtils.isEmpty(blockId.getRoot_hash())) { // retrieve hashes
-        blockId = lookupBlock(blockId.getSeqno(), blockId.getWorkchain(), blockId.getShard(), 0);
-        if (StringUtils.isEmpty(blockId.getRoot_hash())) {
-          throw new Error(
-              "Cannot lookup block for hashes by seqno. Probably block not in db. Try to specify block's root and file hashes manually in base64 format.");
-        }
-        log.info("got hashes " + blockId);
+
+    if (StringUtils.isEmpty(blockId.getRoot_hash())) { // retrieve hashes
+      blockId = lookupBlock(blockId.getSeqno(), blockId.getWorkchain(), blockId.getShard(), 0);
+      if (StringUtils.isEmpty(blockId.getRoot_hash())) {
+        throw new Error(
+            "Cannot lookup block for hashes by seqno. Probably block not in db. Try to specify block's root and file hashes manually in base64 format.");
       }
-
-      AccountAddressOnly accountAddressOnly =
-          AccountAddressOnly.builder().account_address(address.toString(false)).build();
-
-      GetRawAccountStateQueryOnly getAccountStateQuery =
-          GetRawAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
-
-      RawGetAccountStateOnlyWithBlockQuery rawGetAccountStateOnlyWithBlockQuery =
-          RawGetAccountStateOnlyWithBlockQuery.builder()
-              .id(blockId)
-              .function(getAccountStateQuery)
-              .build();
-
-      String result = syncAndRead(gson.toJson(rawGetAccountStateOnlyWithBlockQuery));
-
-      if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
-        throw new Error("Cannot getRawAccountState, error" + result);
-      }
-
-      return gson.fromJson(result, RawAccountState.class);
+      log.info("got hashes " + blockId);
     }
+
+    AccountAddressOnly accountAddressOnly =
+        AccountAddressOnly.builder().account_address(address.toString(false)).build();
+
+    GetRawAccountStateQueryOnly getAccountStateQuery =
+        GetRawAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+
+    RawGetAccountStateOnlyWithBlockQuery rawGetAccountStateOnlyWithBlockQuery =
+        RawGetAccountStateOnlyWithBlockQuery.builder()
+            .id(blockId)
+            .function(getAccountStateQuery)
+            .build();
+
+    String result = syncAndRead(gson.toJson(rawGetAccountStateOnlyWithBlockQuery));
+
+    if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
+      throw new Error("Cannot getRawAccountState, error" + result);
+    }
+
+    return gson.fromJson(result, RawAccountState.class);
   }
 
   /**
@@ -928,26 +937,25 @@ public class Tonlib {
    * @return String, uninitialized, frozen or active
    */
   public String getRawAccountStatus(Address address) {
-    synchronized (gson) {
-      AccountAddressOnly accountAddressOnly =
-          AccountAddressOnly.builder().account_address(address.toString(false)).build();
 
-      GetRawAccountStateQueryOnly getAccountStateQuery =
-          GetRawAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+    AccountAddressOnly accountAddressOnly =
+        AccountAddressOnly.builder().account_address(address.toString(false)).build();
 
-      String result = syncAndRead(gson.toJson(getAccountStateQuery));
+    GetRawAccountStateQueryOnly getAccountStateQuery =
+        GetRawAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
 
-      RawAccountState state = gson.fromJson(result, RawAccountState.class);
+    String result = syncAndRead(gson.toJson(getAccountStateQuery));
 
-      if (StringUtils.isEmpty(state.getCode())) {
-        if (StringUtils.isEmpty(state.getFrozen_hash())) {
-          return "uninitialized";
-        } else {
-          return "frozen";
-        }
+    RawAccountState state = gson.fromJson(result, RawAccountState.class);
+
+    if (StringUtils.isEmpty(state.getCode())) {
+      if (StringUtils.isEmpty(state.getFrozen_hash())) {
+        return "uninitialized";
       } else {
-        return "active";
+        return "frozen";
       }
+    } else {
+      return "active";
     }
   }
 
@@ -959,13 +967,12 @@ public class Tonlib {
    * @return FullAccountState
    */
   public FullAccountState getAccountState(AccountAddressOnly address) {
-    synchronized (gson) {
-      GetAccountStateQueryOnly getAccountStateQuery =
-          GetAccountStateQueryOnly.builder().account_address(address).build();
 
-      String result = syncAndRead(gson.toJson(getAccountStateQuery));
-      return gson.fromJson(result, FullAccountState.class);
-    }
+    GetAccountStateQueryOnly getAccountStateQuery =
+        GetAccountStateQueryOnly.builder().account_address(address).build();
+
+    String result = syncAndRead(gson.toJson(getAccountStateQuery));
+    return gson.fromJson(result, FullAccountState.class);
   }
 
   /**
@@ -976,49 +983,47 @@ public class Tonlib {
    * @return FullAccountState
    */
   public FullAccountState getAccountState(Address address) {
-    synchronized (gson) {
-      AccountAddressOnly accountAddressOnly =
-          AccountAddressOnly.builder().account_address(address.toString(false)).build();
 
-      GetAccountStateQueryOnly getAccountStateQuery =
-          GetAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+    AccountAddressOnly accountAddressOnly =
+        AccountAddressOnly.builder().account_address(address.toString(false)).build();
 
-      String result = syncAndRead(gson.toJson(getAccountStateQuery));
-      return gson.fromJson(result, FullAccountState.class);
-    }
+    GetAccountStateQueryOnly getAccountStateQuery =
+        GetAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+
+    String result = syncAndRead(gson.toJson(getAccountStateQuery));
+    return gson.fromJson(result, FullAccountState.class);
   }
 
   public FullAccountState getAccountState(Address address, BlockIdExt blockId) {
-    synchronized (gson) {
-      if (StringUtils.isEmpty(blockId.getRoot_hash())) { // retrieve hashes
-        blockId = lookupBlock(blockId.getSeqno(), blockId.getWorkchain(), blockId.getShard(), 0);
-        if (StringUtils.isEmpty(blockId.getRoot_hash())) {
-          throw new Error(
-              "Cannot lookup block for hashes by seqno. Probably block not in db. Try to specify block's root and file hashes manually in base64 format.");
-        }
-        log.info("got hashes " + blockId);
+
+    if (StringUtils.isEmpty(blockId.getRoot_hash())) { // retrieve hashes
+      blockId = lookupBlock(blockId.getSeqno(), blockId.getWorkchain(), blockId.getShard(), 0);
+      if (StringUtils.isEmpty(blockId.getRoot_hash())) {
+        throw new Error(
+            "Cannot lookup block for hashes by seqno. Probably block not in db. Try to specify block's root and file hashes manually in base64 format.");
       }
-
-      AccountAddressOnly accountAddressOnly =
-          AccountAddressOnly.builder().account_address(address.toString(false)).build();
-
-      GetAccountStateQueryOnly getAccountStateQuery =
-          GetAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
-
-      GetAccountStateOnlyWithBlockQuery getAccountStateOnlyWithBlockQuery =
-          GetAccountStateOnlyWithBlockQuery.builder()
-              .id(blockId)
-              .function(getAccountStateQuery)
-              .build();
-
-      String result = syncAndRead(gson.toJson(getAccountStateOnlyWithBlockQuery));
-
-      if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
-        throw new Error("Cannot getAccountState, error" + result);
-      }
-
-      return gson.fromJson(result, FullAccountState.class);
+      log.info("got hashes " + blockId);
     }
+
+    AccountAddressOnly accountAddressOnly =
+        AccountAddressOnly.builder().account_address(address.toString(false)).build();
+
+    GetAccountStateQueryOnly getAccountStateQuery =
+        GetAccountStateQueryOnly.builder().account_address(accountAddressOnly).build();
+
+    GetAccountStateOnlyWithBlockQuery getAccountStateOnlyWithBlockQuery =
+        GetAccountStateOnlyWithBlockQuery.builder()
+            .id(blockId)
+            .function(getAccountStateQuery)
+            .build();
+
+    String result = syncAndRead(gson.toJson(getAccountStateOnlyWithBlockQuery));
+
+    if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
+      throw new Error("Cannot getAccountState, error" + result);
+    }
+
+    return gson.fromJson(result, FullAccountState.class);
   }
 
   /**
@@ -1048,7 +1053,8 @@ public class Tonlib {
    */
   public BigInteger getAccountBalance(Address address) {
     String balance = getRawAccountState(address).getBalance();
-    if (balance.equals("-1")) {
+
+    if (isNull(balance) || balance.equals("-1")) {
       return BigInteger.ZERO;
     }
     return new BigInteger(balance);
@@ -1078,28 +1084,26 @@ public class Tonlib {
   }
 
   public Cell getConfigAll(int mode) {
-    synchronized (gson) {
-      GetConfigAllQuery configParamQuery = GetConfigAllQuery.builder().mode(mode).build();
 
-      String result = syncAndRead(gson.toJson(configParamQuery));
-      ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
-      return CellBuilder.beginCell()
-          .fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes()))
-          .endCell();
-    }
+    GetConfigAllQuery configParamQuery = GetConfigAllQuery.builder().mode(mode).build();
+
+    String result = syncAndRead(gson.toJson(configParamQuery));
+    ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
+    return CellBuilder.beginCell()
+        .fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes()))
+        .endCell();
   }
 
   public Cell getConfigParam(BlockIdExt id, long param) {
-    synchronized (gson) {
-      GetConfigParamQuery configParamQuery =
-          GetConfigParamQuery.builder().id(id).param(param).build();
 
-      String result = syncAndRead(gson.toJson(configParamQuery));
-      ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
-      return CellBuilder.beginCell()
-          .fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes()))
-          .endCell();
-    }
+    GetConfigParamQuery configParamQuery =
+        GetConfigParamQuery.builder().id(id).param(param).build();
+
+    String result = syncAndRead(gson.toJson(configParamQuery));
+    ConfigInfo ci = gson.fromJson(result, ConfigInfo.class);
+    return CellBuilder.beginCell()
+        .fromBoc(Utils.base64ToBytes(ci.getConfig().getBytes()))
+        .endCell();
   }
 
   public ConfigParams0 getConfigParam0() {
@@ -1135,36 +1139,34 @@ public class Tonlib {
   }
 
   public long loadContract(AccountAddressOnly address) {
-    synchronized (gson) {
-      LoadContractQuery loadContractQuery =
-          LoadContractQuery.builder().account_address(address).build();
 
-      String result = syncAndRead(gson.toJson(loadContractQuery));
+    LoadContractQuery loadContractQuery =
+        LoadContractQuery.builder().account_address(address).build();
 
-      return gson.fromJson(result, LoadContract.class).getId();
-    }
+    String result = syncAndRead(gson.toJson(loadContractQuery));
+
+    return gson.fromJson(result, LoadContract.class).getId();
   }
 
   /** loads contract by seqno within master chain and shard -9223372036854775808 */
   public long loadContract(AccountAddressOnly address, long seqno) {
-    synchronized (gson) {
-      BlockIdExt fullBlock;
-      if (seqno != 0) {
-        fullBlock = lookupBlock(seqno, -1, -9223372036854775808L, 0);
-      } else {
-        fullBlock = getMasterChainInfo().getLast();
-      }
 
-      LoadContractQuery loadContractQuery =
-          LoadContractQuery.builder().account_address(address).build();
-
-      LoadContractWithBlockQuery loadContractWithBlockQuery =
-          LoadContractWithBlockQuery.builder().id(fullBlock).function(loadContractQuery).build();
-
-      String result = syncAndRead(gson.toJson(loadContractWithBlockQuery));
-
-      return gson.fromJson(result, LoadContract.class).getId();
+    BlockIdExt fullBlock;
+    if (seqno != 0) {
+      fullBlock = lookupBlock(seqno, -1, -9223372036854775808L, 0);
+    } else {
+      fullBlock = getMasterChainInfo().getLast();
     }
+
+    LoadContractQuery loadContractQuery =
+        LoadContractQuery.builder().account_address(address).build();
+
+    LoadContractWithBlockQuery loadContractWithBlockQuery =
+        LoadContractWithBlockQuery.builder().id(fullBlock).function(loadContractQuery).build();
+
+    String result = syncAndRead(gson.toJson(loadContractWithBlockQuery));
+
+    return gson.fromJson(result, LoadContract.class).getId();
   }
 
   /**
@@ -1175,21 +1177,20 @@ public class Tonlib {
    * @return contract's id
    */
   public long loadContract(AccountAddressOnly address, BlockIdExt blockId) {
-    synchronized (gson) {
-      if (StringUtils.isEmpty(blockId.getRoot_hash())) {
-        blockId = lookupBlock(blockId.getSeqno(), blockId.getWorkchain(), blockId.getShard(), 0);
-      }
 
-      LoadContractQuery loadContractQuery =
-          LoadContractQuery.builder().account_address(address).build();
-
-      LoadContractWithBlockQuery loadContractWithBlockQuery =
-          LoadContractWithBlockQuery.builder().id(blockId).function(loadContractQuery).build();
-
-      String result = syncAndRead(gson.toJson(loadContractWithBlockQuery));
-
-      return gson.fromJson(result, LoadContract.class).getId();
+    if (StringUtils.isEmpty(blockId.getRoot_hash())) {
+      blockId = lookupBlock(blockId.getSeqno(), blockId.getWorkchain(), blockId.getShard(), 0);
     }
+
+    LoadContractQuery loadContractQuery =
+        LoadContractQuery.builder().account_address(address).build();
+
+    LoadContractWithBlockQuery loadContractWithBlockQuery =
+        LoadContractWithBlockQuery.builder().id(blockId).function(loadContractQuery).build();
+
+    String result = syncAndRead(gson.toJson(loadContractWithBlockQuery));
+
+    return gson.fromJson(result, LoadContract.class).getId();
   }
 
   public RunResult runMethod(Address contractAddress, String methodName) {
@@ -1239,20 +1240,17 @@ public class Tonlib {
   }
 
   public RunResult runMethod(Address contractAddress, String methodName, Deque<String> stackData) {
-    synchronized (gson) {
-      long contractId =
-          loadContract(
-              AccountAddressOnly.builder()
-                  .account_address(contractAddress.toString(false))
-                  .build());
-      if (contractId == -1) {
-        System.err.println(
-            "cannot load contract "
-                + AccountAddressOnly.builder().account_address(contractAddress.toString(false)));
-        return null;
-      } else {
-        return runMethod(contractId, methodName, stackData);
-      }
+
+    long contractId =
+        loadContract(
+            AccountAddressOnly.builder().account_address(contractAddress.toString(false)).build());
+    if (contractId == -1) {
+      System.err.println(
+          "cannot load contract "
+              + AccountAddressOnly.builder().account_address(contractAddress.toString(false)));
+      return null;
+    } else {
+      return runMethod(contractId, methodName, stackData);
     }
   }
 
@@ -1271,61 +1269,56 @@ public class Tonlib {
   }
 
   public RunResult runMethod(Address contractAddress, long methodId, Deque<String> stackData) {
-    synchronized (gson) {
-      long contractId =
-          loadContract(
-              AccountAddressOnly.builder()
-                  .account_address(contractAddress.toString(false))
-                  .build());
-      if (contractId == -1) {
-        System.err.println(
-            "cannot load contract "
-                + AccountAddressOnly.builder().account_address(contractAddress.toString(false)));
-        return null;
-      } else {
-        return runMethod(contractId, methodId, stackData);
-      }
+
+    long contractId =
+        loadContract(
+            AccountAddressOnly.builder().account_address(contractAddress.toString(false)).build());
+    if (contractId == -1) {
+      System.err.println(
+          "cannot load contract "
+              + AccountAddressOnly.builder().account_address(contractAddress.toString(false)));
+      return null;
+    } else {
+      return runMethod(contractId, methodId, stackData);
     }
   }
 
   public RunResult runMethod(long contractId, String methodName, Deque<String> stackData) {
-    synchronized (gson) {
-      Deque<TvmStackEntry> stack = null;
-      if (nonNull(stackData)) {
-        stack = ParseRunResult.renderTvmStack(stackData);
-      }
 
-      RunMethodStrQuery runMethodQuery =
-          RunMethodStrQuery.builder()
-              .id(contractId)
-              .method(MethodString.builder().name(methodName).build())
-              .stack(stack)
-              .build();
-
-      String result = syncAndRead(gson.toJson(runMethodQuery));
-
-      return new RunResultParser().parse(result);
+    Deque<TvmStackEntry> stack = null;
+    if (nonNull(stackData)) {
+      stack = ParseRunResult.renderTvmStack(stackData);
     }
+
+    RunMethodStrQuery runMethodQuery =
+        RunMethodStrQuery.builder()
+            .id(contractId)
+            .method(MethodString.builder().name(methodName).build())
+            .stack(stack)
+            .build();
+
+    String result = syncAndRead(gson.toJson(runMethodQuery));
+
+    return new RunResultParser().parse(result);
   }
 
   public RunResult runMethod(long contractId, long methodId, Deque<String> stackData) {
-    synchronized (gson) {
-      Deque<TvmStackEntry> stack = null;
-      if (nonNull(stackData)) {
-        stack = ParseRunResult.renderTvmStack(stackData);
-      }
 
-      RunMethodIntQuery runMethodQuery =
-          RunMethodIntQuery.builder()
-              .id(contractId)
-              .method(MethodNumber.builder().number(methodId).build())
-              .stack(stack)
-              .build();
-
-      String result = syncAndRead(gson.toJson(runMethodQuery));
-
-      return new RunResultParser().parse(result);
+    Deque<TvmStackEntry> stack = null;
+    if (nonNull(stackData)) {
+      stack = ParseRunResult.renderTvmStack(stackData);
     }
+
+    RunMethodIntQuery runMethodQuery =
+        RunMethodIntQuery.builder()
+            .id(contractId)
+            .method(MethodNumber.builder().number(methodId).build())
+            .stack(stack)
+            .build();
+
+    String result = syncAndRead(gson.toJson(runMethodQuery));
+
+    return new RunResultParser().parse(result);
   }
 
   /**
@@ -1384,21 +1377,39 @@ public class Tonlib {
    * @return ExtMessageInfo In case of error might contain error code and message inside
    */
   public ExtMessageInfo sendRawMessage(String serializedBoc) {
-    synchronized (gson) {
-      SendRawMessageQuery sendMessageQuery =
-          SendRawMessageQuery.builder().body(serializedBoc).build();
 
-      String result = syncAndRead(gson.toJson(sendMessageQuery));
+    SendRawMessageQuery sendMessageQuery =
+        SendRawMessageQuery.builder().body(serializedBoc).build();
 
-      if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
-        TonlibError error = gson.fromJson(result, TonlibError.class);
-        return ExtMessageInfo.builder().error(error).build();
-      } else {
-        ExtMessageInfo extMessageInfo = gson.fromJson(result, ExtMessageInfo.class);
-        extMessageInfo.setError(TonlibError.builder().code(0).build());
-        return extMessageInfo;
-      }
+    String result = syncAndRead(gson.toJson(sendMessageQuery));
+
+    if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
+      TonlibError error = gson.fromJson(result, TonlibError.class);
+      return ExtMessageInfo.builder().error(error).build();
+    } else {
+      ExtMessageInfo extMessageInfo = gson.fromJson(result, ExtMessageInfo.class);
+      extMessageInfo.setError(TonlibError.builder().code(0).build());
+      return extMessageInfo;
     }
+  }
+
+  /**
+   * Sends raw message (bag of cells encoded in base64) without waiting for response
+   *
+   * @param serializedBoc - base64 encoded BoC
+   */
+  public void sendRawMessageOnly(String serializedBoc) {
+
+    SendRawMessageQuery sendMessageQuery =
+        SendRawMessageQuery.builder().body(serializedBoc).build();
+
+    String query = gson.toJson(sendMessageQuery);
+    String queryExtraId = StringUtils.substringBetween(query, "@extra\":\"", "\"}");
+    if (StringUtils.isNotEmpty(queryExtraId)) {
+      sent.put(queryExtraId, "");
+    }
+
+    tonlibJson.tonlib_client_json_send(tonlib, query);
   }
 
   /**
@@ -1411,35 +1422,34 @@ public class Tonlib {
    *     throws Error in case of failure.
    */
   public RawTransaction sendRawMessageWithConfirmation(String serializedBoc, Address account) {
-    synchronized (gson) {
-      SendRawMessageQuery sendMessageQuery =
-          SendRawMessageQuery.builder().body(serializedBoc).build();
 
-      String result = syncAndRead(gson.toJson(sendMessageQuery));
+    SendRawMessageQuery sendMessageQuery =
+        SendRawMessageQuery.builder().body(serializedBoc).build();
 
-      if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
-        TonlibError error = gson.fromJson(result, TonlibError.class);
-        throw new Error("Cannot send message. Error " + error.toString());
-      } else {
-        ExtMessageInfo extMessageInfo = gson.fromJson(result, ExtMessageInfo.class);
-        extMessageInfo.setError(TonlibError.builder().code(0).build());
-        log.info(
-            "Message has been successfully sent. Waiting for delivery of message with hash {}",
-            extMessageInfo.getHash());
-        RawTransactions rawTransactions = null;
-        for (int i = 0; i < 12; i++) {
-          rawTransactions = getRawTransactions(account.toRaw(), null, null);
-          for (RawTransaction tx : rawTransactions.getTransactions()) {
-            if (nonNull(tx.getIn_msg())
-                && tx.getIn_msg().getHash().equals(extMessageInfo.getHash())) {
-              log.info("Message has been delivered.");
-              return tx;
-            }
+    String result = syncAndRead(gson.toJson(sendMessageQuery));
+
+    if ((isNull(result)) || (result.contains("@type") && result.contains("error"))) {
+      TonlibError error = gson.fromJson(result, TonlibError.class);
+      throw new Error("Cannot send message. Error " + error.toString());
+    } else {
+      ExtMessageInfo extMessageInfo = gson.fromJson(result, ExtMessageInfo.class);
+      extMessageInfo.setError(TonlibError.builder().code(0).build());
+      log.info(
+          "Message has been successfully sent. Waiting for delivery of message with hash {}",
+          extMessageInfo.getHash());
+      RawTransactions rawTransactions = null;
+      for (int i = 0; i < 12; i++) {
+        rawTransactions = getRawTransactions(account.toRaw(), null, null);
+        for (RawTransaction tx : rawTransactions.getTransactions()) {
+          if (nonNull(tx.getIn_msg())
+              && tx.getIn_msg().getHash().equals(extMessageInfo.getHash())) {
+            log.info("Message has been delivered.");
+            return tx;
           }
-          Utils.sleep(5);
         }
-        return null;
+        Utils.sleep(5);
       }
+      return null;
     }
   }
 
@@ -1451,17 +1461,12 @@ public class Tonlib {
       boolean ignoreChksig) {
     QueryInfo queryInfo = createQuery(destinationAddress, body, initCode, initData);
 
-    synchronized (gson) {
-      EstimateFeesQuery estimateFeesQuery =
-          EstimateFeesQuery.builder()
-              .queryId(queryInfo.getId())
-              .ignore_chksig(ignoreChksig)
-              .build();
+    EstimateFeesQuery estimateFeesQuery =
+        EstimateFeesQuery.builder().queryId(queryInfo.getId()).ignore_chksig(ignoreChksig).build();
 
-      String result = syncAndRead(gson.toJson(estimateFeesQuery));
+    String result = syncAndRead(gson.toJson(estimateFeesQuery));
 
-      return gson.fromJson(result, QueryFees.class);
-    }
+    return gson.fromJson(result, QueryFees.class);
   }
 
   public QueryFees estimateFees(String destinationAddress, String body) {
@@ -1479,22 +1484,21 @@ public class Tonlib {
    */
   public QueryInfo createQuery(
       String destinationAddress, String body, String initCode, String initData) {
-    synchronized (gson) {
-      CreateQuery createQuery =
-          CreateQuery.builder()
-              .init_code(initCode)
-              .init_data(initData)
-              .body(body)
-              .destination(Destination.builder().account_address(destinationAddress).build())
-              .build();
 
-      String result = syncAndRead(gson.toJson(createQuery));
+    CreateQuery createQuery =
+        CreateQuery.builder()
+            .init_code(initCode)
+            .init_data(initData)
+            .body(body)
+            .destination(Destination.builder().account_address(destinationAddress).build())
+            .build();
 
-      if (result.contains("@type") && result.contains("error")) {
-        return QueryInfo.builder().id(-1).build();
-      } else {
-        return gson.fromJson(result, QueryInfo.class);
-      }
+    String result = syncAndRead(gson.toJson(createQuery));
+
+    if (result.contains("@type") && result.contains("error")) {
+      return QueryInfo.builder().id(-1).build();
+    } else {
+      return gson.fromJson(result, QueryInfo.class);
     }
   }
 
@@ -1505,25 +1509,24 @@ public class Tonlib {
    * @return true if query was sent without errors
    */
   public boolean sendQuery(QueryInfo queryInfo) {
-    synchronized (gson) {
-      SendQuery createQuery = SendQuery.builder().id(queryInfo.getId()).build();
 
-      String result = syncAndRead(gson.toJson(createQuery));
+    SendQuery createQuery = SendQuery.builder().id(queryInfo.getId()).build();
 
-      if (isNull(result)) {
+    String result = syncAndRead(gson.toJson(createQuery));
+
+    if (isNull(result)) {
+      return false;
+    }
+
+    if (result.contains("@type") && result.contains("error")) {
+      return false;
+    } else {
+      try {
+        Ok ok = gson.fromJson(result, Ok.class);
+        log.info(ok.toString());
+        return true;
+      } catch (Exception e) {
         return false;
-      }
-
-      if (result.contains("@type") && result.contains("error")) {
-        return false;
-      } else {
-        try {
-          Ok ok = gson.fromJson(result, Ok.class);
-          log.info(ok.toString());
-          return true;
-        } catch (Exception e) {
-          return false;
-        }
       }
     }
   }
@@ -1544,29 +1547,28 @@ public class Tonlib {
    */
   public boolean createAndSendMessage(
       String destinationAddress, String body, String initialAccountState) {
-    synchronized (gson) {
-      CreateAndSendRawMessageQuery createAndSendRawMessageQuery =
-          CreateAndSendRawMessageQuery.builder()
-              .destination(AccountAddressOnly.builder().account_address(destinationAddress).build())
-              .initial_account_state(initialAccountState)
-              .data(body)
-              .build();
 
-      String result = syncAndRead(gson.toJson(createAndSendRawMessageQuery));
+    CreateAndSendRawMessageQuery createAndSendRawMessageQuery =
+        CreateAndSendRawMessageQuery.builder()
+            .destination(AccountAddressOnly.builder().account_address(destinationAddress).build())
+            .initial_account_state(initialAccountState)
+            .data(body)
+            .build();
 
-      if (isNull(result)) {
+    String result = syncAndRead(gson.toJson(createAndSendRawMessageQuery));
+
+    if (isNull(result)) {
+      return false;
+    }
+    if (result.contains("@type") && result.contains("error")) {
+      return false;
+    } else {
+      try {
+        Ok ok = gson.fromJson(result, Ok.class);
+        log.info(ok.toString());
+        return true;
+      } catch (Exception e) {
         return false;
-      }
-      if (result.contains("@type") && result.contains("error")) {
-        return false;
-      } else {
-        try {
-          Ok ok = gson.fromJson(result, Ok.class);
-          log.info(ok.toString());
-          return true;
-        } catch (Exception e) {
-          return false;
-        }
       }
     }
   }
@@ -1639,29 +1641,28 @@ public class Tonlib {
   public RawTransaction getRawTransaction(byte workchain, ShortTxId tx) {
     String addressHex = Utils.base64ToHexString(tx.getAccount());
     String address = Address.of(workchain + ":" + addressHex).toString(false);
-    synchronized (gson) {
-      GetRawTransactionsV2Query getRawTransactionsQuery =
-          GetRawTransactionsV2Query.builder()
-              .account_address(AccountAddressOnly.builder().account_address(address).build())
-              .from_transaction_id(
-                  LastTransactionId.builder()
-                      .lt(BigInteger.valueOf(tx.getLt()))
-                      .hash(tx.getHash())
-                      .build())
-              .count(1)
-              .try_decode_message(false)
-              .build();
 
-      Utils.disableNativeOutput(verbosityLevel.ordinal());
-      String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
-      Utils.enableNativeOutput(verbosityLevel.ordinal());
-      RawTransactions res = gson.fromJson(result, RawTransactions.class);
-      List<RawTransaction> t = res.getTransactions();
-      if (t.size() >= 1) {
-        return t.get(0);
-      } else {
-        return RawTransaction.builder().build();
-      }
+    GetRawTransactionsV2Query getRawTransactionsQuery =
+        GetRawTransactionsV2Query.builder()
+            .account_address(AccountAddressOnly.builder().account_address(address).build())
+            .from_transaction_id(
+                LastTransactionId.builder()
+                    .lt(BigInteger.valueOf(tx.getLt()))
+                    .hash(tx.getHash())
+                    .build())
+            .count(1)
+            .try_decode_message(false)
+            .build();
+
+    Utils.disableNativeOutput(verbosityLevel.ordinal());
+    String result = syncAndRead(gson.toJson(getRawTransactionsQuery));
+    Utils.enableNativeOutput(verbosityLevel.ordinal());
+    RawTransactions res = gson.fromJson(result, RawTransactions.class);
+    List<RawTransaction> t = res.getTransactions();
+    if (t.size() >= 1) {
+      return t.get(0);
+    } else {
+      return RawTransaction.builder().build();
     }
   }
 
@@ -1738,13 +1739,12 @@ public class Tonlib {
    * @return RunResult
    */
   public SmcLibraryResult getLibraries(List<String> librariesHashes) {
-    synchronized (gson) {
-      GetLibrariesQuery getLibrariesQuery =
-          GetLibrariesQuery.builder().library_list(librariesHashes).build();
 
-      String result = syncAndRead(gson.toJson(getLibrariesQuery));
-      return new LibraryResultParser().parse(result);
-    }
+    GetLibrariesQuery getLibrariesQuery =
+        GetLibrariesQuery.builder().library_list(librariesHashes).build();
+
+    String result = syncAndRead(gson.toJson(getLibrariesQuery));
+    return new LibraryResultParser().parse(result);
   }
 
   /**
@@ -1752,13 +1752,12 @@ public class Tonlib {
    * @return SmcLibraryResult
    */
   public SmcLibraryResult getLibrariesExt(List<SmcLibraryQueryExt> librariesHashes) {
-    synchronized (gson) {
-      GetLibrariesExtQuery getLibrariesQuery =
-          GetLibrariesExtQuery.builder().list(librariesHashes).build();
 
-      String result = syncAndRead(gson.toJson(getLibrariesQuery));
-      return new LibraryResultParser().parse(result);
-    }
+    GetLibrariesExtQuery getLibrariesQuery =
+        GetLibrariesExtQuery.builder().list(librariesHashes).build();
+
+    String result = syncAndRead(gson.toJson(getLibrariesQuery));
+    return new LibraryResultParser().parse(result);
   }
 
   public boolean isDeployed(Address address) {
@@ -1797,6 +1796,28 @@ public class Tonlib {
     } while (initialBalance.equals(getAccountBalance(address)));
   }
 
+  public void waitForBalanceChangeWithTolerance(
+      Address address, int timeoutSeconds, BigInteger tolerateNanoCoins) {
+
+    BigInteger initialBalance = getAccountBalance(address);
+    long diff;
+    int i = 0;
+    do {
+      if (++i * 2 >= timeoutSeconds) {
+        throw new Error(
+            "Balance was not changed by +/- "
+                + Utils.formatNanoValue(tolerateNanoCoins)
+                + " within specified timeout.");
+      }
+      Utils.sleep(2);
+      BigInteger currentBalance = getAccountBalance(address);
+
+      diff =
+          Math.max(currentBalance.longValue(), initialBalance.longValue())
+              - Math.min(currentBalance.longValue(), initialBalance.longValue());
+    } while (diff < tolerateNanoCoins.longValue());
+  }
+
   public boolean isTestnet() {
     return testnet;
   }
@@ -1814,11 +1835,6 @@ public class Tonlib {
 
         BlockIdExt blockIdExt =
             lookupBlock(blockHeader.getPrev_key_block_seqno(), -1, -9223372036854775808L, 0);
-        //        log.info(
-        //            "seqno {}, fileHash {}, rootHash {}",
-        //            blockIdExt.getSeqno(),
-        //            blockIdExt.getFile_hash(),
-        //            blockIdExt.getRoot_hash());
 
         String content =
             FileUtils.readFileToString(new File(pathToGlobalConfig), StandardCharsets.UTF_8);

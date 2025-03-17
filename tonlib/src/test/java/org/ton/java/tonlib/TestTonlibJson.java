@@ -146,7 +146,7 @@ public class TestTonlibJson {
 
     Tonlib tonlib1 =
         Tonlib.builder()
-            .pathToTonlibSharedLib("G:\\libs\\testnet-tonlibjson.dll")
+            .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
             .globalConfigAsString(gs.toJson(globalConfig))
             .build();
 
@@ -265,12 +265,7 @@ public class TestTonlibJson {
   @Test
   public void testTonlibBlockHeader() {
 
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .pathToGlobalConfig(Utils.getGlobalConfigUrlMainnet())
-            .ignoreCache(false)
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).build();
 
     BlockHeader header = tonlib.getBlockHeader(tonlib.getLast().getLast());
     log.info(header.toString());
@@ -330,7 +325,6 @@ public class TestTonlibJson {
     FullAccountState accountState = tonlib.getAccountState(accountAddressOnly);
     log.info(accountState.toString());
     log.info("balance: {}", accountState.getBalance());
-    tonlib.destroy();
     assertThat(accountState.getLast_transaction_id().getHash()).isNotBlank();
     log.info("last {}", tonlib.getLast());
   }
@@ -349,7 +343,6 @@ public class TestTonlibJson {
     RawAccountState accountState = tonlib.getRawAccountState(addr, blockId);
     log.info(accountState.toString());
     log.info("balance: {}", accountState.getBalance());
-    tonlib.destroy();
     assertThat(accountState.getLast_transaction_id().getHash()).isNotBlank();
     log.info("last {}", tonlib.getLast());
   }

@@ -470,7 +470,7 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibRunMethodActiveElectionId() {
 
-    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(false).build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
     Address address =
         Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");

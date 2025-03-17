@@ -125,7 +125,11 @@ public interface Contract {
     waitForBalanceChange(60);
   }
 
-  /** Checks every 2 seconds for timeoutSeconds if account balance was changed */
+  /**
+   * Checks every 2 seconds for timeoutSeconds if account balance was changed. Notice, storage fee
+   * changes often by 1 nanocoin with few seconds, if you need to tolerate that consider using
+   * waitForBalanceChangeWithTolerance().
+   */
   default void waitForBalanceChange(int timeoutSeconds) {
     System.out.println(
         "waiting for balance change (up to "
@@ -145,6 +149,31 @@ public interface Contract {
       }
       Utils.sleep(2);
     } while (initialBalance.equals(getBalance()));
+  }
+
+  /**
+   * returns if balance has changed by +/- tolerateNanoCoins within timeoutSeconds, otherwise throws
+   * an error.
+   *
+   * @param timeoutSeconds timeout in seconds
+   * @param tolerateNanoCoins tolerate value
+   */
+  default void waitForBalanceChangeWithTolerance(int timeoutSeconds, BigInteger tolerateNanoCoins) {
+
+    BigInteger initialBalance = getBalance();
+    long diff;
+    int i = 0;
+    do {
+      if (++i * 2 >= timeoutSeconds) {
+        throw new Error("Balance was not changed within specified timeout.");
+      }
+      Utils.sleep(2);
+      BigInteger currentBalance = getBalance();
+
+      diff =
+          Math.max(currentBalance.longValue(), initialBalance.longValue())
+              - Math.min(currentBalance.longValue(), initialBalance.longValue());
+    } while (diff < tolerateNanoCoins.longValue());
   }
 
   default BigInteger getBalance() {

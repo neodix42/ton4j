@@ -15,7 +15,6 @@ import org.ton.java.utils.Utils;
 public class TestConcurrentTonlibTestnet {
 
   String tonlibPath = Utils.getTonlibGithubUrl();
-  //  static String tonlibPath = "tonlibjson-prev.dll";
 
   private Tonlib tonlib = Tonlib.builder().testnet(false).pathToTonlibSharedLib(tonlibPath).build();
 
@@ -40,7 +39,7 @@ public class TestConcurrentTonlibTestnet {
         for (ShortTxId tx : txs.getTransactions()) {
           String addressHex = Utils.base64ToHexString(tx.getAccount());
           log.info("addressHex {}", addressHex);
-          RawTransaction extendedTransaction = tonlib.getRawTransaction((byte) 0, tx); // FAIL here
+          RawTransaction extendedTransaction = tonlib.getRawTransaction((byte) 0, tx);
           log.info("tx is {}", extendedTransaction);
         }
       }
