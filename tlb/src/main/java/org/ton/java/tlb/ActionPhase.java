@@ -66,7 +66,7 @@ public class ActionPhase {
         .storeUint(skippedActions, 16)
         .storeUint(messagesCreated, 16)
         .storeUintMaybe(actionListHash, 256)
-        .storeSlice(CellSlice.beginParse(((StorageUsedShort) totalMsgSize).toCell()))
+        .storeSlice(CellSlice.beginParse(totalMsgSize.toCell()))
         .endCell();
   }
 

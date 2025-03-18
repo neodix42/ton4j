@@ -27,54 +27,36 @@ public class Message {
   StateInit init;
   Cell body;
 
-  Boolean forceStateInitRef;
-  Boolean forceBodyRef;
-
   public Cell toCell() {
-    boolean needRef;
     CellBuilder c = CellBuilder.beginCell();
     c.storeCell(info.toCell());
 
     if (isNull(init)) {
-      c.storeBit(false); // maybe false
+      c.storeBit(false);
     } else { // init:(Maybe (Either StateInit ^StateInit))
-      c.storeBit(true); // maybe true
+      c.storeBit(true);
       Cell initCell = init.toCell();
-      needRef = false;
-      if (nonNull(forceStateInitRef) && forceStateInitRef) {
-        needRef = true;
-      } else if (c.getFreeBits() - 2
-          < (initCell.getBits().getUsedBits()
-              + (isNull(body) ? 0 : body.getBits().getUsedBits()))) {
-        needRef = false;
-      }
-      if (needRef) {
-        c.storeBit(true);
-        c.storeRef(initCell);
-      } else {
+      if ((c.getFreeBits() - 2
+          >= (initCell.getBits().getUsedBits())
+              + (nonNull(body) ? body.getBits().getUsedBits() : 0))) {
         c.storeBit(false);
         c.storeCell(initCell);
+      } else {
+        c.storeBit(true);
+        c.storeRef(initCell);
       }
     }
 
     if (isNull(body)) {
       c.storeBit(false);
     } else {
-      needRef = false;
-
-      if (nonNull(forceBodyRef) && forceBodyRef) {
-        needRef = true;
-      } else if ((c.getFreeBits() - 1 < body.getBits().getUsedBits())
-          || (c.getFreeRefs() + body.getUsedRefs() > 4)) {
-        needRef = false;
-      }
-
-      if (needRef) {
-        c.storeBit(true);
-        c.storeRef(body);
-      } else {
+      if ((c.getFreeBits() >= body.getBits().getUsedBits())
+          && c.getFreeRefs() >= body.getUsedRefs()) {
         c.storeBit(false);
         c.storeCell(body);
+      } else {
+        c.storeBit(true);
+        c.storeRef(body);
       }
     }
     return c.endCell();
@@ -87,10 +69,8 @@ public class Message {
     if (cs.loadBit()) {
       if (cs.loadBit()) { // load from ref
         stateInit = StateInit.deserialize(CellSlice.beginParse(cs.loadRef()));
-        message.setForceStateInitRef(true); // remember, so we could serialize back the same way
       } else { // load from slice
         stateInit = StateInit.deserialize(cs);
-        message.setForceStateInitRef(false);
       }
     }
     message.setInit(stateInit);
@@ -98,11 +78,9 @@ public class Message {
     Cell body;
     if (cs.loadBit()) {
       body = cs.loadRef();
-      message.setForceBodyRef(true);
     } else {
       body = cs.sliceToCell();
       cs.loadBits(cs.getRestBits());
-      message.setForceBodyRef(false);
     }
 
     message.setBody(body);
