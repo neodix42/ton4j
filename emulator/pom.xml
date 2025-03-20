@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.9.4</version>
+        <version>0.9.5</version>
     </parent>
 
     <artifactId>emulator</artifactId>
@@ -92,19 +92,19 @@
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>tonlib</artifactId>
-            <version>0.9.4</version>
+            <version>0.9.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>liteclient</artifactId>
-            <version>0.9.4</version>
+            <version>0.9.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>smartcontract</artifactId>
-            <version>0.9.4</version>
+            <version>0.9.5</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
