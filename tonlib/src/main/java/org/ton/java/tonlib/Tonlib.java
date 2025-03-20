@@ -8,7 +8,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.sun.jna.*;
 import java.io.File;
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -843,6 +845,35 @@ public class Tonlib {
     String result = syncAndRead(gson.toJson(getBlockTransactionsQuery));
 
     return gson.fromJson(result, BlockTransactions.class);
+  }
+
+  public BlockTransactionsExt getBlockTransactionsExt(
+      BlockIdExt fullblock, long count, AccountTransactionId afterTx) {
+
+    int mode = 7;
+    if (nonNull(afterTx)) {
+      mode = 7 + 128;
+    }
+
+    if (isNull(afterTx)) {
+      afterTx =
+          AccountTransactionId.builder()
+              .account("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+              .lt(0)
+              .build();
+    }
+
+    GetBlockTransactionsExtQuery getBlockTransactionsExtQuery =
+        GetBlockTransactionsExtQuery.builder()
+            .id(fullblock)
+            .mode(mode)
+            .count(count)
+            .after(afterTx)
+            .build();
+
+    String result = syncAndRead(gson.toJson(getBlockTransactionsExtQuery));
+
+    return gson.fromJson(result, BlockTransactionsExt.class);
   }
 
   /**
@@ -1854,5 +1885,34 @@ public class Tonlib {
     } catch (Exception e) {
       log.error("cannot update init-block in " + pathToGlobalConfig);
     }
+  }
+
+  public long getTps(long periodInMinutes) {
+    log.info("calculating tps...");
+    LinkedList<Long> totalInRange = new LinkedList<>();
+    MasterChainInfo masterChainInfo = getLast();
+    BlockIdExt last0 = masterChainInfo.getLast();
+    long delta;
+    long i = 0;
+    do {
+      BlockIdExt last =
+          lookupBlock(last0.getSeqno() - i++, last0.getWorkchain(), last0.getShard(), 0, 0);
+      Shards shards = getShards(last.getSeqno(), 0, 0);
+      shards.getShards().add(last);
+      for (BlockIdExt shard : shards.getShards()) {
+        BlockTransactionsExt txs = getBlockTransactionsExt(shard, 10000, null);
+        for (RawTransaction tx : txs.getTransactions()) {
+          Transaction txi =
+              Transaction.deserialize(CellSlice.beginParse(Cell.fromBocBase64(tx.getData())));
+          totalInRange.add(txi.getNow());
+        }
+      }
+      Collections.sort(totalInRange);
+      delta = totalInRange.getLast() - totalInRange.getFirst();
+      delta = (delta == 0) ? 1 : delta;
+
+    } while (delta < periodInMinutes * 60);
+    double tps = (double) totalInRange.size() / delta;
+    return new BigDecimal(tps).setScale(0, RoundingMode.HALF_UP).toBigInteger().longValue();
   }
 }

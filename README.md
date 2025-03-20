@@ -87,7 +87,7 @@ You can use each submodule individually. Click the module below to get more deta
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=neodiX42/ton4j&type=Date)](https://star-history.com/#neodiX42/ton4j&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=neodiX42/ton4j&type=Date)](https://www.star-history.com/#neodiX42/ton4j&Date)
 
 <!-- Badges -->
 

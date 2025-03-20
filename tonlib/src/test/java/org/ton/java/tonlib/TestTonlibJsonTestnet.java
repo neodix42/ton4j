@@ -6,7 +6,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iwebpp.crypto.TweetNaclFast;
-import com.sun.jna.*;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -19,9 +18,10 @@ import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
+import org.ton.java.cell.CellSlice;
 import org.ton.java.mnemonic.Mnemonic;
+import org.ton.java.tlb.Transaction;
 import org.ton.java.tonlib.types.*;
-import org.ton.java.tonlib.types.globalconfig.*;
 import org.ton.java.utils.Utils;
 
 @Slf4j
@@ -144,6 +144,30 @@ public class TestTonlibJsonTestnet {
             }
           }
         }
+      }
+      Utils.sleep(10, "wait for next block");
+    }
+    tonlib.destroy();
+  }
+
+  @Test
+  public void testTonlibGetBlockTransactionsExt() {
+
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
+
+    for (int i = 0; i < 2; i++) {
+
+      MasterChainInfo lastBlock = tonlib.getLast();
+
+      BlockTransactionsExt blockTransactions =
+          tonlib.getBlockTransactionsExt(lastBlock.getLast(), 1000, null);
+      log.info("size {}", blockTransactions.getTransactions().size());
+
+      for (RawTransaction txi : blockTransactions.getTransactions()) {
+        Transaction tx =
+            Transaction.deserialize(CellSlice.beginParse(Cell.fromBocBase64(txi.getData())));
+        log.info(
+            "tx {} {}", Utils.toUTC(tx.getNow()), Long.toHexString(lastBlock.getLast().getShard()));
       }
       Utils.sleep(10, "wait for next block");
     }
@@ -591,6 +615,14 @@ public class TestTonlibJsonTestnet {
     } catch (Throwable e) {
       e.printStackTrace();
     }
+  }
+
+  @Test
+  public void testTonlibTonTps() {
+
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
+
+    log.info("tps {}", tonlib.getTps(1));
   }
 
   @Test
