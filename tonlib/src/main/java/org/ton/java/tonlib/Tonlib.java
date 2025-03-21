@@ -1887,6 +1887,11 @@ public class Tonlib {
     }
   }
 
+  /**
+   * returns TPS (transactions per second) all of shardchains within specified time frame
+   *
+   * @return TPS
+   */
   public long getTps(long periodInMinutes) {
     log.info("calculating tps...");
     LinkedList<Long> totalInRange = new LinkedList<>();
@@ -1912,6 +1917,37 @@ public class Tonlib {
       delta = (delta == 0) ? 1 : delta;
 
     } while (delta < periodInMinutes * 60);
+    double tps = (double) totalInRange.size() / delta;
+    return new BigDecimal(tps).setScale(0, RoundingMode.HALF_UP).toBigInteger().longValue();
+  }
+
+  /**
+   * quickly gets TPS using latest block data
+   *
+   * @return TPS
+   */
+  public long getTpsOneBlock() {
+    log.info("calculating tps...");
+    LinkedList<Long> totalInRange = new LinkedList<>();
+    MasterChainInfo masterChainInfo = getLast();
+    BlockIdExt last0 = masterChainInfo.getLast();
+    long delta;
+
+    BlockIdExt last = lookupBlock(last0.getSeqno(), last0.getWorkchain(), last0.getShard(), 0, 0);
+    Shards shards = getShards(last.getSeqno(), 0, 0);
+    shards.getShards().add(last);
+    for (BlockIdExt shard : shards.getShards()) {
+      BlockTransactionsExt txs = getBlockTransactionsExt(shard, 10000, null);
+      for (RawTransaction tx : txs.getTransactions()) {
+        Transaction txi =
+            Transaction.deserialize(CellSlice.beginParse(Cell.fromBocBase64(tx.getData())));
+        totalInRange.add(txi.getNow());
+      }
+    }
+    Collections.sort(totalInRange);
+    delta = totalInRange.getLast() - totalInRange.getFirst();
+    delta = (delta == 0) ? 1 : delta;
+
     double tps = (double) totalInRange.size() / delta;
     return new BigDecimal(tps).setScale(0, RoundingMode.HALF_UP).toBigInteger().longValue();
   }

@@ -620,9 +620,17 @@ public class TestTonlibJsonTestnet {
   @Test
   public void testTonlibTonTps() {
 
-    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(false).build();
 
     log.info("tps {}", tonlib.getTps(1));
+  }
+
+  @Test
+  public void testTonlibTonTpsOneBlock() {
+
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(false).build();
+
+    log.info("tps {}", tonlib.getTpsOneBlock());
   }
 
   @Test
