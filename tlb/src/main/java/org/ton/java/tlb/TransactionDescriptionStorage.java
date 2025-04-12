@@ -40,4 +40,9 @@ public class TransactionDescriptionStorage implements TransactionDescription {
         .storagePhase(StoragePhase.deserialize(cs))
         .build();
   }
+
+  @Override
+  public String getType() {
+    return "storage";
+  }
 }

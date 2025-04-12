@@ -1,5 +1,7 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
+import java.util.HashMap;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 
@@ -48,4 +50,14 @@ public interface CommonMsgInfo {
       }
     }
   }
+
+  String getType();
+
+  String getSourceAddress();
+
+  String getDestinationAddress();
+
+  BigInteger getValueCoins();
+
+  HashMap getExtraCurrencies();
 }

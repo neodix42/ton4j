@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.9.5</version>
+        <version>0.9.6</version>
     </parent>
 
     <artifactId>emulator</artifactId>
@@ -37,8 +37,8 @@
     </scm>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -92,19 +92,19 @@
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>tonlib</artifactId>
-            <version>0.9.5</version>
+            <version>0.9.6</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>liteclient</artifactId>
-            <version>0.9.5</version>
+            <version>0.9.6</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>smartcontract</artifactId>
-            <version>0.9.5</version>
+            <version>0.9.6</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

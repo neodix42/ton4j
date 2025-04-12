@@ -50,4 +50,9 @@ public class TransactionDescriptionSplitInstall implements TransactionDescriptio
         .installed(cs.loadBit())
         .build();
   }
+
+  @Override
+  public String getType() {
+    return "split-install";
+  }
 }

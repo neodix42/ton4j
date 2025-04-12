@@ -62,4 +62,9 @@ public class TransactionDescriptionSplitPrepare implements TransactionDescriptio
         .destroyed(cs.loadBit())
         .build();
   }
+
+  @Override
+  public String getType() {
+    return "split-prepare";
+  }
 }

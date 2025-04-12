@@ -106,4 +106,6 @@ public interface TransactionDescription {
         "unknown transaction description type (must be in range [0..3], found 0x"
             + Integer.toBinaryString(pfx));
   }
+
+  String getType();
 }

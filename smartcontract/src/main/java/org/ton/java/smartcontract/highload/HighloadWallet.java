@@ -126,6 +126,22 @@ public class HighloadWallet implements Contract {
     return body.endCell();
   }
 
+  public Message prepareDeployMsg() {
+
+    Cell body = createDeployMessage();
+
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(
+            CellBuilder.beginCell()
+                .storeBytes(
+                    Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                .storeCell(body)
+                .endCell())
+        .build();
+  }
+
   //    public Cell createSigningMessageInternal(HighloadConfig highloadConfig) {
   //        CellBuilder message = CellBuilder.beginCell();
   //        message.storeUint(BigInteger.valueOf(getOptions().walletId), 32);

@@ -49,4 +49,9 @@ public class TransactionDescriptionMergePrepare implements TransactionDescriptio
         .aborted(cs.loadBit())
         .build();
   }
+
+  @Override
+  public String getType() {
+    return "merge-prepare";
+  }
 }

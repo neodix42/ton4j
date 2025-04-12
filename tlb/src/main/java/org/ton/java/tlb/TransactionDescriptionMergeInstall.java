@@ -71,4 +71,9 @@ public class TransactionDescriptionMergeInstall implements TransactionDescriptio
         .destroyed(cs.loadBit())
         .build();
   }
+
+  @Override
+  public String getType() {
+    return "merge-install";
+  }
 }

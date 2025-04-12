@@ -52,8 +52,6 @@ public class Transaction {
   HashUpdate stateUpdate;
   TransactionDescription description;
 
-  String hash; // not used
-
   private String getMagic() {
     return Long.toBinaryString(magic);
   }
@@ -75,11 +73,11 @@ public class Transaction {
     }
   }
 
-  private String getPrevTxHash() {
+  public String getPrevTxHash() {
     if (nonNull(accountAddr)) {
-      return prevTxHash.toString(16);
+      return StringUtils.leftPad(prevTxHash.toString(16), 64, "0").toUpperCase();
     } else {
-      return "null";
+      return "";
     }
   }
 

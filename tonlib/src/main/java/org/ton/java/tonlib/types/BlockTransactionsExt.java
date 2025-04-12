@@ -12,7 +12,7 @@ import lombok.ToString;
  *
  *
  * <pre>
- *     blocks.transactionsExt id:ton.blockIdExt req_count:int32 incomplete:Bool transactions:vector<raw.transaction> = blocks.TransactionsExt;
+ *     blocks.transactionsExt id:ton.blockIdExt req_count:int32 incomplete:Bool transactions:vector[raw.transaction] = blocks.TransactionsExt;
  * </pre>
  */
 @Builder

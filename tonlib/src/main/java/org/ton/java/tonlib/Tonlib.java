@@ -1915,4 +1915,22 @@ public class Tonlib {
     double tps = (double) totalInRange.size() / delta;
     return new BigDecimal(tps).setScale(0, RoundingMode.HALF_UP).toBigInteger().longValue();
   }
+
+  public List<Participant> getElectionParticipants() {
+    List<Participant> participants = new ArrayList<>();
+    RunResult result =
+        runMethod(
+            Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"),
+            "participant_list");
+    TvmStackEntryList listResult = (TvmStackEntryList) result.getStack().get(0);
+    for (Object o : listResult.getList().getElements()) {
+      TvmStackEntryTuple t = (TvmStackEntryTuple) o;
+      TvmTuple tuple = t.getTuple();
+      TvmStackEntryNumber addr = (TvmStackEntryNumber) tuple.getElements().get(0);
+      TvmStackEntryNumber stake = (TvmStackEntryNumber) tuple.getElements().get(1);
+      participants.add(
+          Participant.builder().address(addr.getNumber()).stake(stake.getNumber()).build());
+    }
+    return participants;
+  }
 }

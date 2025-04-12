@@ -3,6 +3,7 @@ package org.ton.java.tlb;
 import static java.util.Objects.isNull;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -57,5 +58,30 @@ public class ExternalMessageOutInfo implements CommonMsgInfo {
         .createdLt(cs.loadUint(64))
         .createdAt(cs.loadUint(32).longValue())
         .build();
+  }
+
+  @Override
+  public String getType() {
+    return "ext_out_msg_info";
+  }
+
+  @Override
+  public String getSourceAddress() {
+    return srcAddr.toAddress().toRaw();
+  }
+
+  @Override
+  public String getDestinationAddress() {
+    return dstAddr.toString();
+  }
+
+  @Override
+  public BigInteger getValueCoins() {
+    return BigInteger.ZERO;
+  }
+
+  @Override
+  public HashMap getExtraCurrencies() {
+    return new HashMap<>();
   }
 }

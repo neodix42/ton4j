@@ -74,4 +74,9 @@ public class TransactionDescriptionOrdinary implements TransactionDescription {
         .destroyed(cs.loadBit())
         .build();
   }
+
+  @Override
+  public String getType() {
+    return "ordinary";
+  }
 }

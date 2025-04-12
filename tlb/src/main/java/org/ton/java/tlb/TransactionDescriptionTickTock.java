@@ -63,4 +63,13 @@ public class TransactionDescriptionTickTock implements TransactionDescription {
         .destroyed(cs.loadBit())
         .build();
   }
+
+  @Override
+  public String getType() {
+    if (isTock) {
+      return "tock";
+    } else {
+      return "tick";
+    }
+  }
 }
