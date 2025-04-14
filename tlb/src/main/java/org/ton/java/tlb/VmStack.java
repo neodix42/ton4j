@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -9,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 /** vm_stack#_ depth:(## 24) stack:(VmStackList depth) = VmStack; */
 @Builder
 @Data
-public class VmStack {
+public class VmStack implements Serializable {
   int depth;
   VmStackList stack;
 

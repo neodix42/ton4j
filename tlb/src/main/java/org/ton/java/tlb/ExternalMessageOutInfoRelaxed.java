@@ -6,6 +6,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 import static java.util.Objects.isNull;
@@ -24,7 +25,7 @@ import static java.util.Objects.isNull;
  */
 @Builder
 @Data
-public class ExternalMessageOutInfoRelaxed implements CommonMsgInfoRelaxed {
+public class ExternalMessageOutInfoRelaxed implements CommonMsgInfoRelaxed, Serializable {
   long magic;
   MsgAddress srcAddr;
   MsgAddressExt dstAddr;

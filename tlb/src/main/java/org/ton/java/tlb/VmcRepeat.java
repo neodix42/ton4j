@@ -1,17 +1,17 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-import java.math.BigInteger;
-
 /** vmc_repeat$10100 count:uint63 body:^VmCont after:^VmCont = VmCont; */
 @Builder
 @Data
-public class VmcRepeat implements VmCont {
+public class VmcRepeat implements VmCont, Serializable {
   long magic;
   BigInteger count;
   VmCont body;

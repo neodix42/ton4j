@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -7,10 +8,10 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/** _ elector_addr:bits256 = ConfigParam 1; */
 @Builder
 @Data
-/** _ elector_addr:bits256 = ConfigParam 1; */
-public class ConfigParams1 {
+public class ConfigParams1 implements Serializable {
   BigInteger electorAddr;
 
   public Cell toCell() {

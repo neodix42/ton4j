@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -16,7 +17,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class OutMsgExt implements OutMsg {
+public class OutMsgExt implements OutMsg, Serializable {
   int magic;
   Message msg;
   Transaction transaction;

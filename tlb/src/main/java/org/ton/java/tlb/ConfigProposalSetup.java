@@ -6,9 +6,24 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
+/**
+ *
+ *
+ * <pre>
+ * cfg_vote_cfg#36
+ * min_tot_rounds:uint8
+ * max_tot_rounds:uint8
+ * min_wins:uint8
+ * max_losses:uint8 min_store_sec:uint32 max_store_sec:uint32
+ * bit_price:uint32 cell_price:uint32 = ConfigProposalSetup;
+ *
+ * </pre>
+ */
 @Builder
 @Data
-public class ConfigProposalSetup {
+public class ConfigProposalSetup implements Serializable {
   int cfgVoteCfg;
   int minTotRounds;
   int maxTotRounds;

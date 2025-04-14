@@ -68,6 +68,11 @@ public class MsgUtils {
         .info(
             InternalMessageInfo.builder()
                 .bounce(bounce)
+                .srcAddr(
+                    MsgAddressIntStd.builder()
+                        .workchainId((byte) 0)
+                        .address(BigInteger.ZERO)
+                        .build())
                 .dstAddr(
                     MsgAddressIntStd.builder()
                         .workchainId(destination.wc)
@@ -91,6 +96,11 @@ public class MsgUtils {
         .info(
             InternalMessageInfo.builder()
                 .bounce(bounce)
+                .srcAddr(
+                    MsgAddressIntStd.builder()
+                        .workchainId((byte) 0)
+                        .address(BigInteger.ZERO)
+                        .build())
                 .dstAddr(
                     MsgAddressIntStd.builder()
                         .workchainId(destination.wc)

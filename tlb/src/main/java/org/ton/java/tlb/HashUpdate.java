@@ -6,6 +6,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 /**
@@ -17,7 +18,7 @@ import java.math.BigInteger;
  */
 @Builder
 @Data
-public class HashUpdate {
+public class HashUpdate implements Serializable {
   int magic;
   BigInteger oldHash;
   BigInteger newHash;

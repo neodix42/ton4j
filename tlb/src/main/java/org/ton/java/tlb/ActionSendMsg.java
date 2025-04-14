@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -9,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 /** action_send_msg#0ec3c86d mode:(## 8) out_msg:^(MessageRelaxed Any) = OutAction; */
 @Builder
 @Data
-public class ActionSendMsg implements OutAction {
+public class ActionSendMsg implements OutAction, Serializable {
   long magic;
   int mode;
   MessageRelaxed outMsg;

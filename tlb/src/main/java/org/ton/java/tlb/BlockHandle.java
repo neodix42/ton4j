@@ -4,11 +4,12 @@ import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 @Builder
 @Data
-public class BlockHandle {
+public class BlockHandle implements Serializable {
   BigInteger offset; // The offset of the block in the file. uint64_t
   BigInteger size; // The size of the stored block. uint64_t
 

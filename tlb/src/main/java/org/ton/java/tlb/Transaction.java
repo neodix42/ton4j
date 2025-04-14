@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.nonNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -37,7 +38,7 @@ import org.ton.java.cell.TonHashMapE;
 @Builder
 @Data
 @Slf4j
-public class Transaction {
+public class Transaction implements Serializable {
   int magic;
   BigInteger accountAddr;
   BigInteger lt;

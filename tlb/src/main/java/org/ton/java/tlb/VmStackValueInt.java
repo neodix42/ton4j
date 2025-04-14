@@ -1,17 +1,17 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-import java.math.BigInteger;
-
 /** vm_stk_int#0201_ value:int257 = VmStackValue; */
 @Builder
 @Data
-public class VmStackValueInt implements VmStackValue {
+public class VmStackValueInt implements VmStackValue, Serializable {
   long magic;
   BigInteger value;
 

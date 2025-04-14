@@ -6,9 +6,21 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
+/**
+ *
+ *
+ * <pre>
+ *   validators_elected_for:uint32
+ *   elections_start_before:uint32
+ *   elections_end_before:uint32
+ *   stake_held_for:uint32 = ConfigParam 15;
+ *   </pre>
+ */
 @Builder
 @Data
-public class ConfigParams15 {
+public class ConfigParams15 implements Serializable {
   long validatorsElectedFor;
   long electionsStartBefore;
   long electionsEndBefore;

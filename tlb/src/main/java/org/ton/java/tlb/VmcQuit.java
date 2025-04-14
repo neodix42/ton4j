@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -9,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 /** vmc_quit$1000 exit_code:int32 = VmCont; */
 @Builder
 @Data
-public class VmcQuit implements VmCont {
+public class VmcQuit implements VmCont, Serializable {
   long magic;
   long exitCode;
 

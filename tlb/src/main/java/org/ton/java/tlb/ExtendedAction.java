@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.address.Address;
@@ -9,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
-public class ExtendedAction {
+public class ExtendedAction implements Serializable {
   ExtendedActionType actionType;
   Address address;
   Boolean isSignatureAllowed;

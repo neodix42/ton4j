@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +17,7 @@ import org.ton.java.cell.*;
  */
 @Builder
 @Data
-public class OutMsgQueueInfo {
+public class OutMsgQueueInfo implements Serializable {
   TonHashMapAugE outMsgQueue;
   TonHashMapE processedInfo;
   TonHashMapE ihrPendingInfo;

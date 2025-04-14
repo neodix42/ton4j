@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -8,7 +9,7 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
-public class SizeLimitsConfigV2 implements SizeLimitsConfig {
+public class SizeLimitsConfigV2 implements SizeLimitsConfig, Serializable {
   int magic;
   long maxMsgBits;
   long maxMsgCells;

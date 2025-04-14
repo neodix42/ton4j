@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.nonNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +21,7 @@ import org.ton.java.cell.TonHashMapE;
  */
 @Builder
 @Data
-public class CurrencyCollection {
+public class CurrencyCollection implements Serializable {
   BigInteger coins;
   TonHashMapE extraCurrencies;
 

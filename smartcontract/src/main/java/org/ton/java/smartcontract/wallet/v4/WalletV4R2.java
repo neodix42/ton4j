@@ -114,6 +114,7 @@ public class WalletV4R2 implements Contract {
               .info(
                   InternalMessageInfo.builder()
                       .bounce(config.isBounce())
+                      .srcAddr(getAddressIntStd())
                       .dstAddr(
                           MsgAddressIntStd.builder()
                               .workchainId(config.getDestination().wc)

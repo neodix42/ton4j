@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -14,7 +15,7 @@ import org.ton.java.cell.CellBuilder;
  */
 @Builder
 @Data
-public class IntermediateAddressRegular implements IntermediateAddress {
+public class IntermediateAddressRegular implements IntermediateAddress, Serializable {
   int use_dest_bits; // 7 bits
 
   public Cell toCell() {

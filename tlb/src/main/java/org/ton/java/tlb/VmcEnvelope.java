@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -9,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 /** vmc_envelope$01 cdata:VmControlData next:^VmCont = VmCont; */
 @Builder
 @Data
-public class VmcEnvelope implements VmCont {
+public class VmcEnvelope implements VmCont, Serializable {
   long magic;
   VmControlData cdata;
   Cell next;

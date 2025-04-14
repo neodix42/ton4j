@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +9,8 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 /**
+ *
+ *
  * <pre>
  * msg_import_tr$101
  *  in_msg:^MsgEnvelope
@@ -17,26 +20,26 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class InMsgImportTr implements InMsg {
-    MsgEnvelope inMsg;
-    MsgEnvelope outMsg;
-    BigInteger transitFee;
+public class InMsgImportTr implements InMsg, Serializable {
+  MsgEnvelope inMsg;
+  MsgEnvelope outMsg;
+  BigInteger transitFee;
 
-    @Override
-    public Cell toCell() {
-        return CellBuilder.beginCell()
-                .storeUint(0b101, 3)
-                .storeRef(inMsg.toCell())
-                .storeRef(outMsg.toCell())
-                .storeCoins(transitFee)
-                .endCell();
-    }
+  @Override
+  public Cell toCell() {
+    return CellBuilder.beginCell()
+        .storeUint(0b101, 3)
+        .storeRef(inMsg.toCell())
+        .storeRef(outMsg.toCell())
+        .storeCoins(transitFee)
+        .endCell();
+  }
 
-    public static InMsgImportTr deserialize(CellSlice cs) {
-        return InMsgImportTr.builder()
-                .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .transitFee(cs.loadCoins())
-                .build();
-    }
+  public static InMsgImportTr deserialize(CellSlice cs) {
+    return InMsgImportTr.builder()
+        .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+        .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+        .transitFee(cs.loadCoins())
+        .build();
+  }
 }

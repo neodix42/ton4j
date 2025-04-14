@@ -1,13 +1,13 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 
-import java.math.BigInteger;
-
 @Builder
 @Data
-public class TransactionShortInfo {
+public class TransactionShortInfo implements Serializable {
   BigInteger lt;
   BigInteger hash;
   BigInteger accountId;

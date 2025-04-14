@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.isNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +24,7 @@ import org.ton.java.cell.TonHashMapAugE;
  */
 @Builder
 @Data
-public class OldMcBlocksInfo {
+public class OldMcBlocksInfo implements Serializable {
   TonHashMapAugE list;
 
   public Cell toCell() {

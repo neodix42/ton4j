@@ -6,18 +6,32 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 @Builder
 @Data
 /**
- * misbehaviour_punishment_config_v1#01 default_flat_fine:Grams default_proportional_fine:uint32
- * severity_flat_mult:uint16 severity_proportional_mult:uint16 unpunishable_interval:uint16
- * long_interval:uint16 long_flat_mult:uint16 long_proportional_mult:uint16 medium_interval:uint16
- * medium_flat_mult:uint16 medium_proportional_mult:uint16 = MisbehaviourPunishmentConfig; _
- * MisbehaviourPunishmentConfig = ConfigParam 40;
+ *
+ *
+ * <pre>
+ * misbehaviour_punishment_config_v1#01
+ *   default_flat_fine:Grams
+ *   default_proportional_fine:uint32
+ *   severity_flat_mult:uint16
+ *   severity_proportional_mult:uint16
+ *   unpunishable_interval:uint16
+ *   long_interval:uint16
+ *   long_flat_mult:uint16
+ *   long_proportional_mult:uint16
+ *   medium_interval:uint16
+ *   medium_flat_mult:uint16
+ *   medium_proportional_mult:uint16
+ *    = MisbehaviourPunishmentConfig;
+ * _ MisbehaviourPunishmentConfig = ConfigParam 40;
+ * </pre>
  */
-public class ConfigParams40 {
+public class ConfigParams40 implements Serializable {
   long magic;
   BigInteger defaultFlatFine;
   long defaultProportionalFine;

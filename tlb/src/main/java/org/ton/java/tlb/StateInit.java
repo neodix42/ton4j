@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.nonNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +25,7 @@ import org.ton.java.utils.Utils;
  */
 @Builder
 @Data
-public class StateInit {
+public class StateInit implements Serializable {
   BigInteger depth;
   TickTock tickTock;
   Cell code;

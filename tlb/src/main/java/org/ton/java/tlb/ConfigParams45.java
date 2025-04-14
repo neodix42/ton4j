@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -8,9 +9,18 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
+/**
+ *
+ *
+ * <pre>
+ * precompiled_smc#b0 gas_usage:uint64 = PrecompiledSmc;
+ * precompiled_contracts_config#c0 list:(HashmapE 256 PrecompiledSmc) = PrecompiledContractsConfig;
+ * _ PrecompiledContractsConfig = ConfigParam 45;
+ * </pre>
+ */
 @Builder
 @Data
-public class ConfigParams45 {
+public class ConfigParams45 implements Serializable {
   int magic;
   TonHashMapE precompiledContractsList;
   long suspendedUntil;

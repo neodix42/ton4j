@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +15,7 @@ import org.ton.java.cell.*;
  */
 @Builder
 @Data
-public class ShardHashes {
+public class ShardHashes implements Serializable {
 
   TonHashMapE shardHashes;
 

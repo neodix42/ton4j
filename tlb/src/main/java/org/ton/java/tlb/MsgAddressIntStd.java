@@ -3,6 +3,7 @@ package org.ton.java.tlb;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -23,7 +24,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class MsgAddressIntStd implements MsgAddressInt {
+public class MsgAddressIntStd implements MsgAddressInt, Serializable {
   int magic;
   Anycast anycast;
   byte workchainId;

@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,7 @@ import org.ton.java.cell.TonHashMapE;
  */
 @Builder
 @Data
-public class BlockSignaturesPure {
+public class BlockSignaturesPure implements Serializable {
   long sigCount;
   BigInteger sigWeight;
   TonHashMapE signatures;

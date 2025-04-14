@@ -633,10 +633,64 @@ public class TestTonlibJsonTestnet {
     log.info("config0 {}", tonlib.getConfigParam0());
     log.info("config1 {}", tonlib.getConfigParam1());
     log.info("config2 {}", tonlib.getConfigParam2());
+    log.info("config3 {}", tonlib.getConfigParam3());
     log.info("config4 {}", tonlib.getConfigParam4());
     log.info("config5 {}", tonlib.getConfigParam5());
+    log.info("config6 {}", tonlib.getConfigParam6());
     log.info("config8 {}", tonlib.getConfigParam8());
-    log.info("config28 {}", tonlib.getConfigParam(tonlib.getLast().getLast(), 28));
+    log.info("config9 {}", tonlib.getConfigParam9());
+
+    log.info("config10 {}", tonlib.getConfigParam10());
+    log.info("config11 {}", tonlib.getConfigParam11());
+    log.info("config12 {}", tonlib.getConfigParam12());
+    log.info("config13 {}", tonlib.getConfigParam13());
+    log.info("config14 {}", tonlib.getConfigParam14());
+    log.info("config15 {}", tonlib.getConfigParam15());
+    log.info("config16 {}", tonlib.getConfigParam16());
+    log.info("config17 {}", tonlib.getConfigParam17());
+    log.info("config18 {}", tonlib.getConfigParam18());
+    //    log.info("config19 {}", tonlib.getConfigParam19()); // weird
+
+    log.info("config20 {}", tonlib.getConfigParam20());
+    log.info("config21 {}", tonlib.getConfigParam21());
+    log.info("config22 {}", tonlib.getConfigParam22());
+    log.info("config23 {}", tonlib.getConfigParam23());
+    log.info("config24 {}", tonlib.getConfigParam24());
+    log.info("config25 {}", tonlib.getConfigParam25());
+    log.info("config28 {}", tonlib.getConfigParam28());
+    log.info("config29 {}", tonlib.getConfigParam29());
+    log.info("config31 {}", tonlib.getConfigParam31());
+    log.info("config32 {}", tonlib.getConfigParam32());
+
+    log.info("config33 {}", tonlib.getConfigParam33());
+    log.info("config34 {}", tonlib.getConfigParam34());
+    log.info("config35 {}", tonlib.getConfigParam35());
+    log.info("config36 {}", tonlib.getConfigParam36());
+    log.info("config37 {}", tonlib.getConfigParam37());
+    log.info("config39 {}", tonlib.getConfigParam39());
+    log.info("config40 {}", tonlib.getConfigParam40()); // misbehaviour_punishment_config_v1
+
+    log.info("config44 {}", tonlib.getConfigParam44());
+    log.info("config45 {}", tonlib.getConfigParam45());
+    log.info("config71 {}", tonlib.getConfigParam71());
+    log.info("config72 {}", tonlib.getConfigParam72());
+    log.info("config73 {}", tonlib.getConfigParam73());
+    log.info("config79 {}", tonlib.getConfigParam79());
+    log.info("config81 {}", tonlib.getConfigParam81());
+    log.info("config82 {}", tonlib.getConfigParam82());
+
     tonlib.destroy();
+  }
+
+  @Test
+  public void testTonlibElections() {
+
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
+
+    log.info("electionId {}", tonlib.getElectionId());
+    log.info(
+        "stake {}",
+        tonlib.getReturnedStake(
+            "76163360e355006dc4f0a82c8a88a93221b9ac669899498e3b58df4ee16bd1b2"));
   }
 }

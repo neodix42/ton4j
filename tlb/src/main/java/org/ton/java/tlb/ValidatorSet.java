@@ -20,9 +20,9 @@ public interface ValidatorSet {
 
   static ValidatorSet deserialize(CellSlice cs) {
     int magic = cs.preloadUint(8).intValue();
-    if (magic == 0x53) {
+    if (magic == 0x11) {
       return Validators.deserialize(cs);
-    } else if (magic == 0x73) {
+    } else if (magic == 0x12) {
       return ValidatorsExt.deserialize(cs);
     } else {
       throw new Error("Cannot deserialize ValidatorSet, magic: " + magic);

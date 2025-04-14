@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -15,7 +16,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class ActionSetCode implements OutAction {
+public class ActionSetCode implements OutAction, Serializable {
   long magic;
   Cell newCode;
 

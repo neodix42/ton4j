@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -9,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 /** vm_stk_tuple#07 len:(## 16) data:(VmTuple len) = VmStackValue; */
 @Builder
 @Data
-public class VmStackValueTuple implements VmStackValue {
+public class VmStackValueTuple implements VmStackValue, Serializable {
   int magic;
   int len;
   VmTuple data;

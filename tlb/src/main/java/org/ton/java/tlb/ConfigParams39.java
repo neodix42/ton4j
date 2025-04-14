@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -8,17 +9,24 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
+/**
+ *
+ *
+ * <pre>
+ * validator_temp_key#3
+ * adnl_addr:bits256
+ * temp_public_key:SigPubKey
+ * seqno:# valid_until:uint32 =
+ * ValidatorTempKey;
+ * signed_temp_key#4
+ * key:^ValidatorTempKey
+ * signature:CryptoSignature = ValidatorSignedTempKey;
+ * _ (HashmapE 256 ValidatorSignedTempKey) = ConfigParam 39;
+ * </pre>
+ */
 @Builder
 @Data
-/**
- * validator_temp_key#3 adnl_addr:bits256 temp_public_key:SigPubKey seqno:# valid_until:uint32 =
- * ValidatorTempKey;
- *
- * <p>signed_temp_key#4 key:^ValidatorTempKey signature:CryptoSignature = ValidatorSignedTempKey;
- *
- * <p>_ (HashmapE 256 ValidatorSignedTempKey) = ConfigParam 39;
- */
-public class ConfigParams39 {
+public class ConfigParams39 implements Serializable {
   TonHashMapE validatorSignedTemp;
 
   public Cell toCell() {

@@ -853,6 +853,11 @@ public class TestTvmEmulator {
               .info(
                   InternalMessageInfo.builder()
                       .bounce(config.isBounce())
+                      .srcAddr(
+                          MsgAddressIntStd.builder()
+                              .workchainId((byte) 0)
+                              .address(BigInteger.ZERO)
+                              .build())
                       .dstAddr(
                           MsgAddressIntStd.builder()
                               .workchainId(config.getDestination().wc)

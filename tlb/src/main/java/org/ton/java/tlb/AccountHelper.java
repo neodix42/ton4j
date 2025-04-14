@@ -7,6 +7,7 @@ import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMap;
 import org.ton.java.utils.Utils;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -15,7 +16,7 @@ import static java.util.Objects.isNull;
 
 @Builder
 @Data
-public class AccountHelper {
+public class AccountHelper implements Serializable {
   boolean isActive;
   Account state;
   Cell data;

@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.isNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.HashMap;
 import lombok.Builder;
@@ -24,7 +25,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class ExternalMessageOutInfo implements CommonMsgInfo {
+public class ExternalMessageOutInfo implements CommonMsgInfo, Serializable {
   long magic;
   MsgAddressInt srcAddr;
   MsgAddressExt dstAddr;

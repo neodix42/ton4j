@@ -1,14 +1,27 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ *
+ *
+ * <pre>
+ *   consensus_config_v3#d8 flags:(## 7) { flags = 0 } new_catchain_ids:Bool
+ *   round_candidates:(## 8) { round_candidates >= 1 }
+ *   next_candidate_delay_ms:uint32 consensus_timeout_ms:uint32
+ *   fast_attempts:uint32 attempt_duration:uint32 catchain_max_deps:uint32
+ *   max_block_bytes:uint32 max_collated_bytes:uint32
+ *   proto_version:uint16 = ConsensusConfig;
+ * </pre>
+ */
 @Builder
 @Data
-public class ConsensusConfigV3 implements ConsensusConfig {
+public class ConsensusConfigV3 implements ConsensusConfig, Serializable {
   int magic;
   int flags;
   boolean newCatchainIds;

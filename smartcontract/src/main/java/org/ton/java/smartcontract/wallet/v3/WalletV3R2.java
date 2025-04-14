@@ -105,6 +105,7 @@ public class WalletV3R2 implements Contract {
             .info(
                 InternalMessageInfo.builder()
                     .bounce(config.isBounce())
+                    .srcAddr(getAddressIntStd())
                     .dstAddr(
                         MsgAddressIntStd.builder()
                             .workchainId(config.getDestination().wc)

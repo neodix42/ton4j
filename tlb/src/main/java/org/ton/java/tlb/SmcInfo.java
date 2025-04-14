@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.isNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +28,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class SmcInfo {
+public class SmcInfo implements Serializable {
   int magic;
   long actions;
   long msgsSent;

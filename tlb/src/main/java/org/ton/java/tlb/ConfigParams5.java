@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -7,20 +8,20 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-@Builder
-@Data
 /**
  *
  *
- * <pre>{@code
- *     burning_config#01
+ * <pre>
+ *   burning_config#01
  *   blackhole_addr:(Maybe bits256)
  *   fee_burn_num:#
  *   fee_burn_denom:# { fee_burn_num <= fee_burn_denom } { fee_burn_denom >= 1 } = BurningConfig;
  * _ BurningConfig = ConfigParam 5;
- * }</pre>
+ * </pre>
  */
-public class ConfigParams5 {
+@Builder
+@Data
+public class ConfigParams5 implements Serializable {
   long magic;
   BigInteger blackholeAddr;
   long feeBurnNum;

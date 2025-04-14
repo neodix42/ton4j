@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -21,7 +22,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class TransactionDescriptionSplitPrepare implements TransactionDescription {
+public class TransactionDescriptionSplitPrepare implements TransactionDescription, Serializable {
   int magic;
   SplitMergeInfo splitInfo;
   StoragePhase storagePhase;

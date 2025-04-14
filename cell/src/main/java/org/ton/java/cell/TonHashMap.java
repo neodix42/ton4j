@@ -1,5 +1,6 @@
 package org.ton.java.cell;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
@@ -7,7 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.ton.java.bitstring.BitString;
 
 /** Ordinary Hashmap (Patricia Tree), with fixed length keys. */
-public class TonHashMap {
+public class TonHashMap implements Serializable {
 
   public HashMap<Object, Object> elements;
   int keySize;

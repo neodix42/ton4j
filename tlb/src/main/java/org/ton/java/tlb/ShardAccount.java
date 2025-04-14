@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -17,28 +18,28 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class ShardAccount {
-    Account account;
-    BigInteger lastTransHash;
-    BigInteger lastTransLt;
+public class ShardAccount implements Serializable {
+  Account account;
+  BigInteger lastTransHash;
+  BigInteger lastTransLt;
 
-    public Cell toCell() {
-        return CellBuilder.beginCell()
-                .storeRef(account.toCell())
-                .storeUint(lastTransHash, 256)
-                .storeUint(lastTransLt, 64)
-                .endCell();
-    }
+  public Cell toCell() {
+    return CellBuilder.beginCell()
+        .storeRef(account.toCell())
+        .storeUint(lastTransHash, 256)
+        .storeUint(lastTransLt, 64)
+        .endCell();
+  }
 
-    public static ShardAccount deserialize(CellSlice cs) {
-        return ShardAccount.builder()
-                .account(Account.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .lastTransHash(cs.loadUint(256))
-                .lastTransLt(cs.loadUint(64))
-                .build();
-    }
+  public static ShardAccount deserialize(CellSlice cs) {
+    return ShardAccount.builder()
+        .account(Account.deserialize(CellSlice.beginParse(cs.loadRef())))
+        .lastTransHash(cs.loadUint(256))
+        .lastTransLt(cs.loadUint(64))
+        .build();
+  }
 
-    public BigInteger getBalance() {
-        return account.getAccountStorage().getBalance().getCoins();
-    }
+  public BigInteger getBalance() {
+    return account.getAccountStorage().getBalance().getCoins();
+  }
 }

@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -9,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 /** vm_stk_null#00 = VmStackValue; */
 @Builder
 @Data
-public class VmStackValueNull implements VmStackValue {
+public class VmStackValueNull implements VmStackValue, Serializable {
   int value;
 
   @Override

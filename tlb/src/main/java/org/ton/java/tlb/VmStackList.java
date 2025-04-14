@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +16,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class VmStackList {
+public class VmStackList implements Serializable {
   List<VmStackValue> tos;
 
   /**

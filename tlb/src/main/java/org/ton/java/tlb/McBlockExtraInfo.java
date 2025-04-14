@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.isNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +22,7 @@ import org.ton.java.cell.TonHashMapE;
  */
 @Builder
 @Data
-public class McBlockExtraInfo {
+public class McBlockExtraInfo implements Serializable {
   TonHashMapE prevBlkSignatures;
   InMsg recoverCreateMsg;
   InMsg mintMsg;

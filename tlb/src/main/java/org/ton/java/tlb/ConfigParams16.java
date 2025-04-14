@@ -6,9 +6,24 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
+/**
+ *
+ *
+ * <pre>
+ *   max_validators:(## 16)
+ *   max_main_validators:(## 16)
+ *   min_validators:(## 16)
+ *   { max_validators >= max_main_validators }
+ *   { max_main_validators >= min_validators }
+ *   { min_validators >= 1 }
+ *   = ConfigParam 16;
+ *   </pre>
+ */
 @Builder
 @Data
-public class ConfigParams16 {
+public class ConfigParams16 implements Serializable {
   long maxValidators;
   long maxMainValidators;
   long minValidators;

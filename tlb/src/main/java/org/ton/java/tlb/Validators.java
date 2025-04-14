@@ -1,5 +1,10 @@
 package org.ton.java.tlb;
 
+import static java.util.Objects.isNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -52,13 +57,35 @@ public class Validators implements ValidatorSet {
   public static Validators deserialize(CellSlice cs) {
     return Validators.builder()
         .magic(cs.loadUint(8).intValue())
-        .uTimeSince(cs.loadUint(8).longValue())
-        .uTimeUntil(cs.loadUint(8).longValue())
+        .uTimeSince(cs.loadUint(32).longValue())
+        .uTimeUntil(cs.loadUint(32).longValue())
         .total(cs.loadUint(16).intValue())
         .main(cs.loadUint(16).intValue())
         .list(
             cs.loadDict(
-                16, k -> k.readInt(16), v -> ValidatorDescr.deserialize(CellSlice.beginParse(v))))
+                16, k -> k.readUint(16), v -> ValidatorDescr.deserialize(CellSlice.beginParse(v))))
         .build();
+  }
+
+  public List<Validator> getValidatorsAsList() {
+    List<Validator> validators = new ArrayList<>();
+    if (isNull(list)) {
+      return validators;
+    }
+    for (Map.Entry<Object, Object> entry : list.elements.entrySet()) {
+      validators.add((Validator) entry.getValue());
+    }
+    return validators;
+  }
+
+  public List<ValidatorAddr> getValidatorsAddrAsList() {
+    List<ValidatorAddr> validatorAddrs = new ArrayList<>();
+    if (isNull(list)) {
+      return validatorAddrs;
+    }
+    for (Map.Entry<Object, Object> entry : list.elements.entrySet()) {
+      validatorAddrs.add((ValidatorAddr) entry.getValue());
+    }
+    return validatorAddrs;
   }
 }

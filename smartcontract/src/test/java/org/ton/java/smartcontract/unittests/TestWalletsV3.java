@@ -143,6 +143,11 @@ public class TestWalletsV3 {
             .info(
                 InternalMessageInfo.builder()
                     .bounce(true)
+                    .srcAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId(addr.wc)
+                            .address(addr.toBigInteger())
+                            .build())
                     .dstAddr(
                         MsgAddressIntStd.builder()
                             .workchainId(addr.wc)

@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +12,7 @@ import org.ton.java.cell.TonHashMapE;
 /** _ cregs:(HashmapE 4 VmStackValue) = VmSaveList; */
 @Builder
 @Data
-public class VmSaveList {
+public class VmSaveList implements Serializable {
   TonHashMapE cregs;
 
   public Cell toCell() {

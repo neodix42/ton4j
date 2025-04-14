@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.isNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.HashMap;
 import lombok.Builder;
@@ -30,7 +31,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class InternalMessageInfo implements CommonMsgInfo {
+public class InternalMessageInfo implements CommonMsgInfo, Serializable {
   int magic;
   Boolean iHRDisabled;
   Boolean bounce;
@@ -51,11 +52,10 @@ public class InternalMessageInfo implements CommonMsgInfo {
     CellBuilder result =
         CellBuilder.beginCell()
             .storeUint(0, 1)
-            .storeBit(isNull(iHRDisabled) ? true : iHRDisabled)
-            .storeBit(isNull(bounce) ? true : bounce)
-            .storeBit(isNull(bounced) ? false : bounced)
-            .storeCell(
-                isNull(srcAddr) ? MsgAddressExtNone.builder().build().toCell() : srcAddr.toCell())
+            .storeBit(isNull(iHRDisabled) || iHRDisabled)
+            .storeBit(isNull(bounce) || bounce)
+            .storeBit(!isNull(bounced) && bounced)
+            .storeCell(srcAddr.toCell())
             .storeCell(dstAddr.toCell())
             .storeCell(
                 isNull(value)
