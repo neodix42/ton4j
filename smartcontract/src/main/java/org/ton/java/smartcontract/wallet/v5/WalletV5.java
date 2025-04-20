@@ -201,6 +201,24 @@ public class WalletV5 implements Contract {
         .build();
   }
 
+  public MessageRelaxed prepareInternalMsgRelaxed(WalletV5Config config) {
+    Cell body = createInternalSignedBody(config);
+
+    return MessageRelaxed.builder()
+        .info(
+            InternalMessageInfoRelaxed.builder()
+                .dstAddr(getAddressIntStd())
+                .value(
+                    CurrencyCollection.builder()
+                        .coins(config.getAmount())
+                        .extraCurrencies(
+                            convertExtraCurrenciesToHashMap(config.getExtraCurrencies()))
+                        .build())
+                .build())
+        .body(body)
+        .build();
+  }
+
   /**
    *
    *
@@ -327,7 +345,7 @@ public class WalletV5 implements Contract {
       messages.add(convertDestinationToOutAction(recipient));
     }
 
-    if (actionList.getActions().size() == 0) {
+    if (actionList.getActions().isEmpty()) {
 
       return WalletV5InnerRequest.builder()
           .outActions(OutList.builder().actions(messages).build())

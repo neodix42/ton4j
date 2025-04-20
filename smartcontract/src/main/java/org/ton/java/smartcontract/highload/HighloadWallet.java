@@ -197,6 +197,7 @@ public class HighloadWallet implements Contract {
         if (isNull(destination.getBody()) && nonNull(destination.getComment())) {
           order =
               MsgUtils.createInternalMessage(
+                      getAddress(),
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
                       destination.getExtraCurrencies(),
@@ -210,6 +211,7 @@ public class HighloadWallet implements Contract {
         } else if (nonNull(destination.getBody())) {
           order =
               MsgUtils.createInternalMessage(
+                      getAddress(),
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
                       destination.getExtraCurrencies(),
@@ -220,6 +222,7 @@ public class HighloadWallet implements Contract {
         } else {
           order =
               MsgUtils.createInternalMessage(
+                      getAddress(),
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
                       destination.getExtraCurrencies(),
@@ -232,6 +235,7 @@ public class HighloadWallet implements Contract {
         if (isNull(destination.getBody()) && nonNull(destination.getComment())) {
           order =
               MsgUtils.createInternalMessage(
+                      getAddress(),
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
                       destination.getExtraCurrencies(),
@@ -245,6 +249,7 @@ public class HighloadWallet implements Contract {
         } else if (nonNull(destination.getBody())) {
           order =
               MsgUtils.createInternalMessage(
+                      getAddress(),
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
                       destination.getExtraCurrencies(),
@@ -255,6 +260,7 @@ public class HighloadWallet implements Contract {
         } else {
           order =
               MsgUtils.createInternalMessage(
+                      getAddress(),
                       Address.of(destination.getAddress()),
                       destination.getAmount(),
                       destination.getExtraCurrencies(),

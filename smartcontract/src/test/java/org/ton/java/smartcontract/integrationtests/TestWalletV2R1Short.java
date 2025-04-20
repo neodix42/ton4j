@@ -54,10 +54,7 @@ public class TestWalletV2R1Short extends CommonTest {
     RawTransaction rawTransaction = contract.sendWithConfirmation(config);
     assertThat(rawTransaction).isNotNull();
 
-    log.info("sending to one destination");
-    contract.waitForBalanceChange();
-
-    // multi send
+    log.info("sending to 4 destinations...");
     config =
         WalletV2R1Config.builder()
             .seqno(contract.getSeqno())
@@ -71,13 +68,12 @@ public class TestWalletV2R1Short extends CommonTest {
             .amount4(Utils.toNano(0.15))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    rawTransaction = contract.sendWithConfirmation(config);
+    assertThat(rawTransaction).isNotNull();
 
-    log.info("sending to four destinations");
-    contract.waitForBalanceChange(90);
+    Utils.sleep(30);
 
-    balance = new BigInteger(tonlib.getRawAccountState(Address.of(bounceableAddress)).getBalance());
+    balance = contract.getBalance();
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
     assertThat(balance.longValue()).isLessThan(Utils.toNano(0.3).longValue());
 

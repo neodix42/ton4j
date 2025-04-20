@@ -112,13 +112,13 @@ public class TestWalletMultiSigV2 extends CommonTest {
             Arrays.asList(
                 MultiSigWalletV2.createSendMessageAction(
                     1,
-                    MsgUtils.createInternalMessage(
-                            dummyRecipient1, Utils.toNano(0.025), null, null, false)
+                    MsgUtils.createInternalMessageRelaxed(
+                            dummyRecipient1, Utils.toNano(0.025), null, null, null, false)
                         .toCell()),
                 MultiSigWalletV2.createSendMessageAction(
                     1,
-                    MsgUtils.createInternalMessage(
-                            dummyRecipient2, Utils.toNano(0.026), null, null, false)
+                    MsgUtils.createInternalMessageRelaxed(
+                            dummyRecipient2, Utils.toNano(0.026), null, null, null, false)
                         .toCell())));
     config =
         WalletV3Config.builder()
@@ -169,13 +169,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
     assertThat(balanceRecipient2).isGreaterThan(BigInteger.ZERO);
   }
 
-  /**
-   *
-   *
-   * <pre>
-   * - same as above, but requires 3 out 3 approvals
-   * </pre>
-   */
+  /** same as above, but requires 3 out 3 approvals */
   @Test
   public void testMultiSigV2DeploymentAnd3out3Approvals() throws InterruptedException {
 
@@ -262,20 +256,30 @@ public class TestWalletMultiSigV2 extends CommonTest {
                         Arrays.asList(
                             MultiSigWalletV2.createSendMessageAction(
                                 1,
-                                MsgUtils.createInternalMessage(
-                                        dummyRecipient1, Utils.toNano(0.025), null, null, false)
+                                MsgUtils.createInternalMessageRelaxed(
+                                        dummyRecipient1,
+                                        Utils.toNano(0.025),
+                                        null,
+                                        null,
+                                        null,
+                                        false)
                                     .toCell()),
                             MultiSigWalletV2.createSendMessageAction(
                                 1,
-                                MsgUtils.createInternalMessage(
-                                        dummyRecipient2, Utils.toNano(0.026), null, null, false)
+                                MsgUtils.createInternalMessageRelaxed(
+                                        dummyRecipient2,
+                                        Utils.toNano(0.026),
+                                        null,
+                                        null,
+                                        null,
+                                        false)
                                     .toCell())))))
             .build();
 
     deployer.send(config);
     deployer.waitForBalanceChange();
 
-    Utils.sleep(10);
+    Utils.sleep(15);
 
     Address orderAddress = multiSigWalletV2.getOrderAddress(BigInteger.ZERO);
     log.info("orderAddress {}", orderAddress);
@@ -292,7 +296,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
     signer2.send(config);
     signer2.waitForBalanceChange();
 
-    Utils.sleep(15);
+    Utils.sleep(45);
 
     BigInteger balanceRecipient1 = tonlib.getAccountBalance(dummyRecipient1);
     BigInteger balanceRecipient2 = tonlib.getAccountBalance(dummyRecipient2);
@@ -313,7 +317,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
     signer3.send(config);
     signer3.waitForBalanceChange();
 
-    Utils.sleep(15);
+    Utils.sleep(60);
 
     balanceRecipient1 = tonlib.getAccountBalance(dummyRecipient1);
     balanceRecipient2 = tonlib.getAccountBalance(dummyRecipient2);
@@ -420,8 +424,8 @@ public class TestWalletMultiSigV2 extends CommonTest {
             Collections.singletonList(
                 MultiSigWalletV2.createSendMessageAction(
                     1,
-                    MsgUtils.createInternalMessage(
-                            dummyRecipient1, Utils.toNano(0.025), null, null, false)
+                    MsgUtils.createInternalMessageRelaxed(
+                            dummyRecipient1, Utils.toNano(0.025), null, null, null, false)
                         .toCell())));
     config =
         WalletV3Config.builder()
@@ -486,7 +490,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
     signer3.send(config);
     signer3.waitForBalanceChange();
 
-    Utils.sleep(20);
+    Utils.sleep(60);
 
     log.info(
         "orderData when twice approved {}", multiSigWalletV2.getOrderData(BigInteger.valueOf(0)));

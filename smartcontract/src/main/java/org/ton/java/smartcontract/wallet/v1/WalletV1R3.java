@@ -14,13 +14,13 @@ import org.ton.java.smartcontract.types.WalletCodes;
 import org.ton.java.smartcontract.types.WalletV1R3Config;
 import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
+import org.ton.java.tlb.*;
 import org.ton.java.tonlib.Tonlib;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.tonlib.types.RawTransaction;
 import org.ton.java.tonlib.types.RunResult;
 import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.utils.Utils;
-import org.ton.java.tlb.*;
 
 @Builder
 @Getter
@@ -100,11 +100,10 @@ public class WalletV1R3 implements Contract {
 
   public Cell createTransferBody(WalletV1R3Config config) {
     Cell order =
-        Message.builder()
+        MessageRelaxed.builder()
             .info(
-                InternalMessageInfo.builder()
+                InternalMessageInfoRelaxed.builder()
                     .bounce(config.getBounce())
-                    .srcAddr(getAddressIntStd())
                     .dstAddr(
                         MsgAddressIntStd.builder()
                             .workchainId(config.getDestination().wc)
@@ -190,6 +189,24 @@ public class WalletV1R3 implements Contract {
         .info(
             InternalMessageInfo.builder()
                 .srcAddr(getAddressIntStd())
+                .dstAddr(getAddressIntStd())
+                .value(
+                    CurrencyCollection.builder()
+                        .coins(config.getAmount())
+                        .extraCurrencies(
+                            convertExtraCurrenciesToHashMap(config.getExtraCurrencies()))
+                        .build())
+                .build())
+        .body(body)
+        .build();
+  }
+
+  public MessageRelaxed prepareInternalMsgRelaxed(WalletV1R3Config config) {
+    Cell body = createInternalSignedBody(config);
+
+    return MessageRelaxed.builder()
+        .info(
+            InternalMessageInfoRelaxed.builder()
                 .dstAddr(getAddressIntStd())
                 .value(
                     CurrencyCollection.builder()

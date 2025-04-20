@@ -426,7 +426,7 @@ public class Tonlib {
   }
 
   private synchronized String syncAndRead(String query) {
-    String response;
+    String response = "";
 
     // Utils.disableNativeOutput(verbosityLevel.ordinal());
     String queryExtraId = extractExtra(query);
@@ -437,8 +437,12 @@ public class Tonlib {
     int retry = 0;
     do {
 
-      tonlibJson.tonlib_client_json_send(tonlib, query);
-      response = receive(queryExtraId);
+      if (response.contains("syncStateInProgress") || response.contains("syncStateDone")) {
+        response = receive(queryExtraId);
+      } else {
+        tonlibJson.tonlib_client_json_send(tonlib, query);
+        response = receive(queryExtraId);
+      }
 
       if (response.contains(" : duplicate message\"")
           || response.contains(": not in db\"")

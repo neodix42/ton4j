@@ -1,12 +1,11 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import java.io.Serializable;
 
 /**
  *
@@ -39,7 +38,7 @@ public class ConfigParams15 implements Serializable {
     return ConfigParams15.builder()
         .validatorsElectedFor(cs.loadUint(32).longValue())
         .electionsStartBefore(cs.loadUint(32).longValue())
-        .validatorsElectedFor(cs.loadUint(32).longValue())
+        .electionsEndBefore(cs.loadUint(32).longValue())
         .stakeHeldFor(cs.loadUint(32).longValue())
         .build();
   }
