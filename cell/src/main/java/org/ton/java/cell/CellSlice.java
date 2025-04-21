@@ -2,6 +2,7 @@ package org.ton.java.cell;
 
 import static java.util.Objects.nonNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -10,7 +11,7 @@ import java.util.function.Function;
 import org.ton.java.address.Address;
 import org.ton.java.bitstring.BitString;
 
-public class CellSlice {
+public class CellSlice implements Serializable {
 
   BitString bits;
   List<Cell> refs;
