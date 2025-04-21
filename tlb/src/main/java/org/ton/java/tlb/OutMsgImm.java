@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -9,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 /** msg_export_imm$010 out_msg:^MsgEnvelope transaction:^Transaction reimport:^InMsg = OutMsg; */
 @Builder
 @Data
-public class OutMsgImm implements OutMsg {
+public class OutMsgImm implements OutMsg, Serializable {
   int magic;
   MsgEnvelope msg;
   Transaction transaction;

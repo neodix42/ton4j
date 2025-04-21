@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -9,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
-public class AccountStateFrozen implements AccountState {
+public class AccountStateFrozen implements AccountState, Serializable {
   int magic;
   BigInteger stateHash;
 

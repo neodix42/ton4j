@@ -6,9 +6,11 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
 @Builder
 @Data
-public class ValidatorSignedTempKey {
+public class ValidatorSignedTempKey implements Serializable {
   int magic;
   ValidatorTempKey key;
   CryptoSignature signature;

@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.nonNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +21,7 @@ import org.ton.java.cell.TonHashMapE;
  */
 @Builder
 @Data
-public class CurrencyCollection {
+public class CurrencyCollection implements Serializable {
   BigInteger coins;
   TonHashMapE extraCurrencies;
 
@@ -31,7 +32,7 @@ public class CurrencyCollection {
     if (nonNull(extraCurrencies)) {
       dict =
           extraCurrencies.serialize(
-              k -> CellBuilder.beginCell().storeUint((BigInteger) k, 32).endCell().getBits(),
+              k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
               v -> CellBuilder.beginCell().storeVarUint((BigInteger) v, 5).endCell());
     }
     return CellBuilder.beginCell().storeCoins(coins).storeDict(dict).endCell();
@@ -43,7 +44,7 @@ public class CurrencyCollection {
         .extraCurrencies(
             cs.loadDictE(
                 32,
-                k -> k.readUint(32),
+                k -> k.readUint(32).longValue(),
                 v -> CellSlice.beginParse(v).loadVarUInteger(BigInteger.valueOf(5))))
         .build();
   }

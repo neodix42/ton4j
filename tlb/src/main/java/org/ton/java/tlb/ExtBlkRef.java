@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +9,8 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 /**
+ *
+ *
  * <pre>
  * ext_blk_ref$_
  * end_lt:uint64
@@ -18,36 +21,35 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
+public class ExtBlkRef implements Serializable {
+  BigInteger endLt;
+  int seqno;
+  BigInteger rootHash;
+  BigInteger fileHash;
 
-public class ExtBlkRef {
-    BigInteger endLt;
-    int seqno;
-    BigInteger rootHash;
-    BigInteger fileHash;
+  public String getRootHash() {
+    return rootHash.toString(16);
+  }
 
-    public String getRootHash() {
-        return rootHash.toString(16);
-    }
+  public String getFileHash() {
+    return fileHash.toString(16);
+  }
 
-    public String getFileHash() {
-        return fileHash.toString(16);
-    }
+  public Cell toCell() {
+    return CellBuilder.beginCell()
+        .storeUint(endLt, 64)
+        .storeUint(seqno, 32)
+        .storeUint(rootHash, 256)
+        .storeUint(fileHash, 256)
+        .endCell();
+  }
 
-    public Cell toCell() {
-        return CellBuilder.beginCell()
-                .storeUint(endLt, 64)
-                .storeUint(seqno, 32)
-                .storeUint(rootHash, 256)
-                .storeUint(fileHash, 256)
-                .endCell();
-    }
-
-    public static ExtBlkRef deserialize(CellSlice cs) {
-        return ExtBlkRef.builder()
-                .endLt(cs.loadUint(64))
-                .seqno(cs.loadUint(32).intValue())
-                .rootHash(cs.loadUint(256))
-                .fileHash(cs.loadUint(256))
-                .build();
-    }
+  public static ExtBlkRef deserialize(CellSlice cs) {
+    return ExtBlkRef.builder()
+        .endLt(cs.loadUint(64))
+        .seqno(cs.loadUint(32).intValue())
+        .rootHash(cs.loadUint(256))
+        .fileHash(cs.loadUint(256))
+        .build();
+  }
 }

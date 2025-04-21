@@ -1,17 +1,17 @@
 package org.ton.java.address;
 
-import org.ton.java.utils.Utils;
+import static java.util.Objects.isNull;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import org.ton.java.utils.Utils;
 
-import static java.util.Objects.isNull;
-
-public class Address {
+public class Address  implements Serializable {
 
     private static final byte bounceable_tag = 0x11;
     private static final byte non_bounceable_tag = 0x51;

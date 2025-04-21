@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.nonNull;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -26,7 +27,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class TransactionDescriptionOrdinary implements TransactionDescription {
+public class TransactionDescriptionOrdinary implements TransactionDescription, Serializable {
   int magic;
   boolean creditFirst;
   StoragePhase storagePhase;
@@ -73,5 +74,10 @@ public class TransactionDescriptionOrdinary implements TransactionDescription {
         .bouncePhase(cs.loadBit() ? BouncePhase.deserialize(cs) : null)
         .destroyed(cs.loadBit())
         .build();
+  }
+
+  @Override
+  public String getType() {
+    return "ordinary";
   }
 }

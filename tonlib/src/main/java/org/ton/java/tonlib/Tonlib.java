@@ -23,9 +23,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.java.address.Address;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.cell.CellSlice;
+import org.ton.java.cell.*;
 import org.ton.java.tlb.*;
 import org.ton.java.tonlib.queries.*;
 import org.ton.java.tonlib.types.*;
@@ -36,6 +34,9 @@ import org.ton.java.utils.Utils;
 @Slf4j
 @Builder
 public class Tonlib {
+
+  public static final Address ELECTION_ADDRESS =
+      Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
 
   /**
    * If not specified then tries to find tonlib in system folder, more info <a
@@ -392,7 +393,7 @@ public class Tonlib {
     do {
       result = tonlibJson.tonlib_client_json_receive(tonlib, receiveTimeout);
       if (isNull(result)) {
-        return null;
+        return "";
       }
 
       String responseExtraId = extractExtra(result);
@@ -425,131 +426,97 @@ public class Tonlib {
   }
 
   private synchronized String syncAndRead(String query) {
-    String response = null;
-    try {
-      Utils.disableNativeOutput(verbosityLevel.ordinal());
-      String queryExtraId = extractExtra(query);
-      if (StringUtils.isNotEmpty(queryExtraId)) {
-        sent.put(queryExtraId, "");
-      }
-      tonlibJson.tonlib_client_json_send(tonlib, query);
-      Utils.sleepMs(20);
-      response = receive(queryExtraId);
-      Utils.enableNativeOutput(verbosityLevel.ordinal());
-      int retry = 0;
-      outterloop:
-      do {
-        do {
+    String response = "";
 
-          if (isNull(response)) {
-            break outterloop;
-          }
-
-          if (response.contains("error")) {
-            log.info(response);
-
-            if (++retry > receiveRetryTimes) {
-              throw new Error(
-                  "Error in tonlib.receive(), "
-                      + receiveRetryTimes
-                      + " times was not able retrieve result from lite-server.");
-            }
-
-            if (response.contains("Failed to unpack account state")) {
-              log.info(
-                  "You are trying to deploy a contract on address that does not have toncoins.");
-              break outterloop;
-            }
-
-            if (usingAllLiteServers) {
-              if (retry < originalGlobalConfigInternal.getLiteservers().length) {
-                // try next lite-server from the list
-                TonGlobalConfig globalConfigCurrent =
-                    gson.fromJson(originalGlobalConfigStr, TonGlobalConfig.class);
-                LiteServers[] liteServers = originalGlobalConfigInternal.getLiteservers();
-                LiteServers[] newLiteServers = new LiteServers[1];
-                newLiteServers[0] =
-                    liteServers[retry % originalGlobalConfigInternal.getLiteservers().length];
-                globalConfigCurrent.setLiteservers(newLiteServers);
-
-                log.info(
-                    "Trying next lite-server at index: "
-                        + (retry % originalGlobalConfigInternal.getLiteservers().length)
-                        + " ("
-                        + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
-                        + ")");
-
-                reinitTonlibConfig(globalConfigCurrent);
-                // repeat request
-                Utils.disableNativeOutput(verbosityLevel.ordinal());
-                tonlibJson.tonlib_client_json_send(tonlib, query);
-                Utils.enableNativeOutput(verbosityLevel.ordinal());
-              }
-            }
-          } else if (response.contains("\"@type\":\"ok\"")) {
-            queryExtraId = extractExtra(query);
-            String responseExtraId = extractExtra(response);
-            if (queryExtraId.equals(responseExtraId)) {
-              break outterloop;
-            }
-          } else if (response.contains("\"@extra\"")) {
-            break outterloop;
-          }
-
-          if (response.contains(" : duplicate message\"")) {
-            break outterloop;
-          }
-          Utils.disableNativeOutput(verbosityLevel.ordinal());
-          Utils.sleepMs(20);
-          response = receive(queryExtraId);
-          Utils.enableNativeOutput(verbosityLevel.ordinal());
-          UpdateSyncState sync = gson.fromJson(response, UpdateSyncState.class);
-          if (nonNull(sync)
-              && nonNull(sync.getSync_state())
-              && sync.getType().equals("updateSyncState")
-              && nonNull(response)
-              && !response.contains("syncStateDone")) {
-            double pct = 0.0;
-            if (sync.getSync_state().getTo_seqno() != 0) {
-              pct =
-                  (sync.getSync_state().getCurrent_seqno() * 100)
-                      / (double) sync.getSync_state().getTo_seqno();
-            }
-            if (pct < 99.5) {
-              log.info("Synchronized: " + String.format("%.2f%%", pct));
-            }
-          }
-          if (isNull(response)) {
-            throw new RuntimeException("Error in waitForSyncDone(), response is null.");
-          }
-
-        } while (response.contains("error") || response.contains("syncStateInProgress"));
-
-        if (response.contains("syncStateDone")) {
-          response = receive(queryExtraId);
-        }
-        if (nonNull(response) && response.contains("error")) {
-          log.info(response);
-
-          if (++retry > receiveRetryTimes) {
-            throw new Error(
-                "Error in tonlib.receive(), "
-                    + receiveRetryTimes
-                    + " times was not able retrieve result from lite-server.");
-          }
-
-          Utils.disableNativeOutput(verbosityLevel.ordinal());
-          tonlibJson.tonlib_client_json_send(tonlib, query);
-          Utils.enableNativeOutput(verbosityLevel.ordinal());
-        }
-      } while (response.contains("error") || response.contains("syncStateInProgress"));
-
-      return response;
-
-    } catch (Exception e) {
-      log.info(e.getMessage());
-      return response;
+    // Utils.disableNativeOutput(verbosityLevel.ordinal());
+    String queryExtraId = extractExtra(query);
+    if (StringUtils.isNotEmpty(queryExtraId)) {
+      sent.put(queryExtraId, "");
     }
+    // Utils.enableNativeOutput(verbosityLevel.ordinal());
+    int retry = 0;
+    do {
+
+      if (response.contains("syncStateInProgress") || response.contains("syncStateDone")) {
+        response = receive(queryExtraId);
+      } else {
+        tonlibJson.tonlib_client_json_send(tonlib, query);
+        response = receive(queryExtraId);
+      }
+
+      if (response.contains(" : duplicate message\"")
+          || response.contains(": not in db\"")
+          || response.contains("Failed to unpack account state")) {
+        return response;
+      }
+
+      if (StringUtils.isEmpty(response) || response.contains("error")) {
+        if (!StringUtils.isEmpty(response)) {
+          log.info(response);
+        }
+
+        if (++retry > receiveRetryTimes) {
+          throw new Error(
+              "Error in tonlib.receive(), "
+                  + receiveRetryTimes
+                  + " times was not able retrieve result from lite-server.");
+        }
+
+        if (usingAllLiteServers) {
+          if (retry < originalGlobalConfigInternal.getLiteservers().length) {
+            // try next lite-server from the list
+            TonGlobalConfig globalConfigCurrent =
+                gson.fromJson(originalGlobalConfigStr, TonGlobalConfig.class);
+            LiteServers[] liteServers = originalGlobalConfigInternal.getLiteservers();
+            LiteServers[] newLiteServers = new LiteServers[1];
+            newLiteServers[0] =
+                liteServers[retry % originalGlobalConfigInternal.getLiteservers().length];
+            globalConfigCurrent.setLiteservers(newLiteServers);
+
+            log.info(
+                "Trying next lite-server at index: "
+                    + (retry % originalGlobalConfigInternal.getLiteservers().length)
+                    + " ("
+                    + Utils.int2ip(globalConfigCurrent.getLiteservers()[0].getIp())
+                    + ")");
+
+            reinitTonlibConfig(globalConfigCurrent);
+          }
+        }
+      } else if (response.contains("\"@type\":\"ok\"")) {
+        queryExtraId = extractExtra(query);
+        String responseExtraId = extractExtra(response);
+        if (queryExtraId.equals(responseExtraId)) {
+          return response;
+        }
+      } else if (!response.contains("syncStateDone") && !response.contains("syncStateInProgress")) {
+        return response;
+      }
+      UpdateSyncState sync = gson.fromJson(response, UpdateSyncState.class);
+
+      if (nonNull(sync)
+          && nonNull(sync.getSync_state())
+          && sync.getType().equals("updateSyncState")
+          && !response.contains("syncStateDone")) {
+        double pct = 0.0;
+        if (sync.getSync_state().getTo_seqno() != 0) {
+          pct =
+              (sync.getSync_state().getCurrent_seqno() * 100)
+                  / (double) sync.getSync_state().getTo_seqno();
+          if (pct < 99.5) {
+            log.info("Synchronizing: " + String.format("%.2f%%", pct));
+          }
+        }
+      }
+
+      Utils.sleepMs(20);
+
+    } while (StringUtils.isEmpty(response)
+        || response.contains("error")
+        || response.contains("syncStateInProgress")
+        || response.contains("syncStateDone"));
+
+    return response;
   }
 
   /**
@@ -1137,36 +1104,314 @@ public class Tonlib {
         .endCell();
   }
 
+  /** config address */
   public ConfigParams0 getConfigParam0() {
     return ConfigParams0.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 0)));
   }
 
+  /** elector address */
   public ConfigParams1 getConfigParam1() {
     return ConfigParams1.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 1)));
   }
 
+  /** minter address */
   public ConfigParams2 getConfigParam2() {
     return ConfigParams2.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 2)));
   }
 
+  /** fee collector address */
   public ConfigParams3 getConfigParam3() {
-    return ConfigParams3.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 3)));
+    try {
+      return ConfigParams3.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 3)));
+    } catch (Error e) {
+      log.error("Error getting config params 3, use config 1");
+      return ConfigParams3.builder().feeCollectorAddr(BigInteger.ONE.negate()).build();
+    }
   }
 
+  /** dns root address */
   public ConfigParams4 getConfigParam4() {
     return ConfigParams4.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 4)));
   }
 
+  /** burning_config */
   public ConfigParams5 getConfigParam5() {
     return ConfigParams5.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 5)));
   }
 
+  /** mint_new_price:Grams mint_add_price:Grams */
   public ConfigParams6 getConfigParam6() {
     return ConfigParams6.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 6)));
   }
 
+  /**
+   * capabilities#c4 version:uint32 capabilities:uint64 = GlobalVersion; _ GlobalVersion =
+   * ConfigParam 8;
+   */
   public ConfigParams8 getConfigParam8() {
     return ConfigParams8.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 8)));
+  }
+
+  /** mandatory_params */
+  public ConfigParams9 getConfigParam9() {
+    return ConfigParams9.deserialize(CellSlice.beginParse(getConfigParam(getLast().getLast(), 9)));
+  }
+
+  /** critical_params */
+  public ConfigParams10 getConfigParam10() {
+    return ConfigParams10.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 10)));
+  }
+
+  /**
+   * cfg_vote_setup#91 normal_params:^ConfigProposalSetup critical_params:^ConfigProposalSetup =
+   * ConfigVotingSetup; _ ConfigVotingSetup = ConfigParam 11;
+   */
+  public ConfigParams11 getConfigParam11() {
+    return ConfigParams11.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 11)));
+  }
+
+  /** workchains */
+  public ConfigParams12 getConfigParam12() {
+    return ConfigParams12.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 12)));
+  }
+
+  /** ComplaintPricing */
+  public ConfigParams13 getConfigParam13() {
+    return ConfigParams13.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 13)));
+  }
+
+  /** BlockCreateFees */
+  public ConfigParams14 getConfigParam14() {
+    return ConfigParams14.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 14)));
+  }
+
+  /** election timing */
+  public ConfigParams15 getConfigParam15() {
+    return ConfigParams15.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 15)));
+  }
+
+  /** max min validators */
+  public ConfigParams16 getConfigParam16() {
+    return ConfigParams16.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 16)));
+  }
+
+  /** max min stake */
+  public ConfigParams17 getConfigParam17() {
+    return ConfigParams17.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 17)));
+  }
+
+  /** storage prices */
+  public ConfigParams18 getConfigParam18() {
+    return ConfigParams18.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 18)));
+  }
+
+  /** global id */
+  public ConfigParams19 getConfigParam19() {
+    return ConfigParams19.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 19)));
+  }
+
+  /** GasLimitsPrices masterchain */
+  public ConfigParams20 getConfigParam20() {
+    return ConfigParams20.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 20)));
+  }
+
+  /** GasLimitsPrices workchains */
+  public ConfigParams21 getConfigParam21() {
+    return ConfigParams21.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 21)));
+  }
+
+  /** BlockLimits masterchain */
+  public ConfigParams22 getConfigParam22() {
+    return ConfigParams22.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 22)));
+  }
+
+  /** BlockLimits workchains */
+  public ConfigParams23 getConfigParam23() {
+    return ConfigParams23.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 23)));
+  }
+
+  /** MsgForwardPrices masterchain */
+  public ConfigParams24 getConfigParam24() {
+    return ConfigParams24.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 24)));
+  }
+
+  /** MsgForwardPrices */
+  public ConfigParams25 getConfigParam25() {
+    return ConfigParams25.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 25)));
+  }
+
+  /** CatchainConfig */
+  public ConfigParams28 getConfigParam28() {
+    return ConfigParams28.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 28)));
+  }
+
+  /** ConsensusConfig */
+  public ConfigParams29 getConfigParam29() {
+    return ConfigParams29.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 29)));
+  }
+
+  /** fundamental_smc_addr */
+  public ConfigParams31 getConfigParam31() {
+    return ConfigParams31.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 31)));
+  }
+
+  /** prev_validators */
+  public ConfigParams32 getConfigParam32() {
+    try {
+      return ConfigParams32.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 32)));
+    } catch (Error e) {
+      return ConfigParams32.builder().prevValidatorSet(Validators.builder().build()).build();
+    }
+  }
+
+  /** prev_temp_validators */
+  public ConfigParams33 getConfigParam33() {
+    try {
+      return ConfigParams33.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 33)));
+    } catch (Error e) {
+      return ConfigParams33.builder().prevTempValidatorSet(Validators.builder().build()).build();
+    }
+  }
+
+  /** cur_validators */
+  public ConfigParams34 getConfigParam34() {
+    try {
+      return ConfigParams34.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 34)));
+    } catch (Error e) {
+      return ConfigParams34.builder().currValidatorSet(Validators.builder().build()).build();
+    }
+  }
+
+  /** cur_temp_validators */
+  public ConfigParams35 getConfigParam35() {
+    try {
+      return ConfigParams35.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 35)));
+    } catch (Error e) {
+      return ConfigParams35.builder().currTempValidatorSet(Validators.builder().build()).build();
+    }
+  }
+
+  /** next_validators */
+  public ConfigParams36 getConfigParam36() {
+    try {
+      return ConfigParams36.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 36)));
+    } catch (Error e) {
+      return ConfigParams36.builder().nextValidatorSet(Validators.builder().build()).build();
+    }
+  }
+
+  /** next_temp_validators */
+  public ConfigParams37 getConfigParam37() {
+    try {
+      return ConfigParams37.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 37)));
+    } catch (Error e) {
+      return ConfigParams37.builder().nextTempValidatorSet(Validators.builder().build()).build();
+    }
+  }
+
+  /** ValidatorSignedTempKey */
+  public ConfigParams39 getConfigParam39() {
+    try {
+      return ConfigParams39.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 39)));
+    } catch (Error e) {
+      return ConfigParams39.builder().validatorSignedTemp(new TonHashMapE(0)).build();
+    }
+  }
+
+  /** MisbehaviourPunishmentConfig */
+  public ConfigParams40 getConfigParam40() {
+    try {
+      return ConfigParams40.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 40)));
+    } catch (Error e) {
+      log.error("Error getting config params 40");
+      return ConfigParams40.builder().build();
+    }
+  }
+
+  /** SuspendedAddressList */
+  public ConfigParams44 getConfigParam44() {
+    return ConfigParams44.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 44)));
+  }
+
+  /** PrecompiledContractsConfig */
+  public ConfigParams45 getConfigParam45() {
+    return ConfigParams45.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 45)));
+  }
+
+  /** Ethereum bridges */
+  public ConfigParams71 getConfigParam71() {
+    return ConfigParams71.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 71)));
+  }
+
+  /** Binance Smart Chain bridges */
+  public ConfigParams72 getConfigParam72() {
+    return ConfigParams72.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 72)));
+  }
+
+  /** Polygon bridges */
+  public ConfigParams73 getConfigParam73() {
+    try {
+      return ConfigParams73.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 73)));
+    } catch (Error e) {
+      return ConfigParams73.builder().polygonBridge(OracleBridgeParams.builder().build()).build();
+    }
+  }
+
+  /** ETH->TON token bridges */
+  public ConfigParams79 getConfigParam79() {
+    return ConfigParams79.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 79)));
+  }
+
+  /** BNB->TON token bridges */
+  public ConfigParams81 getConfigParam81() {
+    return ConfigParams81.deserialize(
+        CellSlice.beginParse(getConfigParam(getLast().getLast(), 81)));
+  }
+
+  /** Polygon->TON token bridges */
+  public ConfigParams82 getConfigParam82() {
+    try {
+      return ConfigParams82.deserialize(
+          CellSlice.beginParse(getConfigParam(getLast().getLast(), 82)));
+    } catch (Error e) {
+      return ConfigParams82.builder()
+          .polygonTonTokenBridge(JettonBridgeParamsV1.builder().build())
+          .build();
+    }
   }
 
   public long loadContract(AccountAddressOnly address) {
@@ -1950,5 +2195,34 @@ public class Tonlib {
 
     double tps = (double) totalInRange.size() / delta;
     return new BigDecimal(tps).setScale(0, RoundingMode.HALF_UP).toBigInteger().longValue();
+  }
+
+  public List<Participant> getElectionParticipants() {
+    List<Participant> participants = new ArrayList<>();
+    RunResult result = runMethod(ELECTION_ADDRESS, "participant_list");
+    TvmStackEntryList listResult = (TvmStackEntryList) result.getStack().get(0);
+    for (Object o : listResult.getList().getElements()) {
+      TvmStackEntryTuple t = (TvmStackEntryTuple) o;
+      TvmTuple tuple = t.getTuple();
+      TvmStackEntryNumber addr = (TvmStackEntryNumber) tuple.getElements().get(0);
+      TvmStackEntryNumber stake = (TvmStackEntryNumber) tuple.getElements().get(1);
+      participants.add(
+          Participant.builder().address(addr.getNumber()).stake(stake.getNumber()).build());
+    }
+    return participants;
+  }
+
+  public BigInteger getElectionId() {
+    RunResult result = runMethod(ELECTION_ADDRESS, "active_election_id");
+    TvmStackEntryNumber electionId = (TvmStackEntryNumber) result.getStack().get(0);
+    return electionId.getNumber();
+  }
+
+  public BigInteger getReturnedStake(String validatorWalletHex) {
+    Deque<String> params = new ArrayDeque<>();
+    params.offer("[num," + new BigInteger(validatorWalletHex.toLowerCase(), 16) + "]");
+    RunResult result = runMethod(ELECTION_ADDRESS, "compute_returned_stake", params);
+    TvmStackEntryNumber stake = (TvmStackEntryNumber) result.getStack().get(0);
+    return stake.getNumber();
   }
 }

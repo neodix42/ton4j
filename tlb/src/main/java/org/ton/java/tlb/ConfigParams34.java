@@ -6,9 +6,12 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
+/** _ cur_validators:ValidatorSet = ConfigParam 34; */
 @Builder
 @Data
-public class ConfigParams34 {
+public class ConfigParams34 implements Serializable {
   ValidatorSet currValidatorSet;
 
   public Cell toCell() {

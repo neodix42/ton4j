@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -9,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 /** action_reserve_currency#36e6b809 mode:(## 8) currency:CurrencyCollection = OutAction; */
 @Builder
 @Data
-public class ActionReserveCurrency implements OutAction {
+public class ActionReserveCurrency implements OutAction, Serializable {
   long magic;
   int mode;
   CurrencyCollection currency;

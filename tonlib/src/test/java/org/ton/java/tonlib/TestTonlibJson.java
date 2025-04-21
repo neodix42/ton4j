@@ -583,16 +583,15 @@ public class TestTonlibJson {
   }
 
   @Test
-  @Ignore
   public void testTonlibGetLibraries() {
-    Tonlib tonlib =
-        Tonlib.builder()
-            .pathToTonlibSharedLib(tonlibPath)
-            .pathToGlobalConfig("g:/libs/global-config-archive.json")
-            .build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(false).build();
     SmcLibraryResult result =
         tonlib.getLibraries(
             Collections.singletonList("wkUmK4wrzl6fzSPKM04dVfqW1M5pqigX3tcXzvy6P3M="));
+    //            Collections.singletonList(
+    //                Utils.hexStringToBase64(
+    //                    "C245262B8C2BCE5E9FCD23CA334E1D55FA96D4CE69AA2817DED717CEFCBA3F73"))
+
     log.info("result: {}", result);
     tonlib.destroy();
     assertThat(result.getResult().get(0).getHash())

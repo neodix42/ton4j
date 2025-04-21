@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
@@ -7,7 +8,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-public class BinTree {
+public class BinTree implements Serializable {
   ShardDescr value;
   BinTree left;
   BinTree right;

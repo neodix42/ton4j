@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +12,7 @@ import org.ton.java.cell.TonHashMap;
 
 @Builder
 @Data
-public class ConfigParams {
+public class ConfigParams implements Serializable {
   Address configAddr;
   TonHashMap config;
 

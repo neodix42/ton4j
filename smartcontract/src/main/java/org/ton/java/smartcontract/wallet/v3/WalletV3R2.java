@@ -101,9 +101,9 @@ public class WalletV3R2 implements Contract {
   public Cell createTransferBody(WalletV3Config config) {
 
     Cell order =
-        Message.builder()
+        MessageRelaxed.builder()
             .info(
-                InternalMessageInfo.builder()
+                InternalMessageInfoRelaxed.builder()
                     .bounce(config.isBounce())
                     .dstAddr(
                         MsgAddressIntStd.builder()
@@ -201,6 +201,19 @@ public class WalletV3R2 implements Contract {
         .info(
             InternalMessageInfo.builder()
                 .srcAddr(getAddressIntStd())
+                .dstAddr(getAddressIntStd())
+                .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                .build())
+        .body(body)
+        .build();
+  }
+
+  public MessageRelaxed prepareInternalMsgRelaxed(WalletV3Config config) {
+    Cell body = createInternalSignedBody(config);
+
+    return MessageRelaxed.builder()
+        .info(
+            InternalMessageInfoRelaxed.builder()
                 .dstAddr(getAddressIntStd())
                 .value(CurrencyCollection.builder().coins(config.getAmount()).build())
                 .build())

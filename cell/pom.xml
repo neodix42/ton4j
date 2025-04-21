@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.9.5</version>
+        <version>0.9.6</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -40,12 +40,6 @@
         <url>https://github.com/neodiX42/ton4j/tree/main</url>
     </scm>
 
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.github.neodix42</groupId>
@@ -76,8 +70,8 @@
         <!--  recompiled from source with Java 8 -->
         <dependency>
             <groupId>io.github.neodix42</groupId>
-            <artifactId>tweetnacl-java-8</artifactId>
-            <version>0.4.7</version>
+            <artifactId>tweetnacljava</artifactId>
+            <version>0.9.6</version>
             <scope>compile</scope>
         </dependency>
         <!-- test -->

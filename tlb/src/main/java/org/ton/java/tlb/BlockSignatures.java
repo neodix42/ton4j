@@ -6,6 +6,8 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
 /**
  *
  *
@@ -18,7 +20,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class BlockSignatures {
+public class BlockSignatures implements Serializable {
   int magic;
   ValidatorBaseInfo validatorBaseInfo;
   BlockSignaturesPure pureSignatures;

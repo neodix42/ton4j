@@ -1,5 +1,7 @@
 package org.ton.java.tlb;
 
+import java.awt.*;
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -8,7 +10,7 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
-public class AccountStateUninit implements AccountState {
+public class AccountStateUninit implements AccountState, Serializable {
   int magic;
 
   @Override

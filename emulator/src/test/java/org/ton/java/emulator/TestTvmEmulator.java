@@ -352,14 +352,16 @@ public class TestTvmEmulator {
 
     String address = walletV4R2.getAddress().toBounceable();
     String randSeedHex = Utils.sha256("ABC");
-    //        Cell configAll = tonlib.getConfigAll(128);
+    Cell configAll = tonlib.getConfigAll(128);
 
     // optionally set C7
     assertTrue(
         tvmEmulator.setC7(
-            address, Instant.now().getEpochSecond(), Utils.toNano(1).longValue(), randSeedHex, null
-            //                , configAll.toBase64()
-            ));
+            address,
+            Instant.now().getEpochSecond(),
+            Utils.toNano(1).longValue(),
+            randSeedHex,
+            configAll.toBase64()));
 
     WalletV4R2Config config =
         WalletV4R2Config.builder()
@@ -371,7 +373,7 @@ public class TestTvmEmulator {
             .amount(Utils.toNano(0.124))
             .build();
 
-    //        assertTrue(tvmEmulator.setLibs(getLibs().toBase64()));
+    assertTrue(tvmEmulator.setLibs(getLibs().toBase64()));
 
     Message msg = walletV4R2.prepareExternalMsg(config);
     SendExternalMessageResult result = tvmEmulator.sendExternalMessage(msg.getBody().toBase64());
@@ -851,6 +853,11 @@ public class TestTvmEmulator {
               .info(
                   InternalMessageInfo.builder()
                       .bounce(config.isBounce())
+                      .srcAddr(
+                          MsgAddressIntStd.builder()
+                              .workchainId((byte) 0)
+                              .address(BigInteger.ZERO)
+                              .build())
                       .dstAddr(
                           MsgAddressIntStd.builder()
                               .workchainId(config.getDestination().wc)

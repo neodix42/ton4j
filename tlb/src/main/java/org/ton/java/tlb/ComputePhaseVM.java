@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -30,7 +31,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class ComputePhaseVM implements ComputePhase {
+public class ComputePhaseVM implements ComputePhase, Serializable {
   int magic;
   boolean success;
   boolean msgStateUsed;

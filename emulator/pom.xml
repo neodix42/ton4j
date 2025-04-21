@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.9.5</version>
+        <version>0.9.6</version>
     </parent>
 
     <artifactId>emulator</artifactId>
@@ -35,12 +35,6 @@
         <developerConnection>scm:git:ssh://github.com/neodiX42/ton4j.git</developerConnection>
         <url>https://github.com/neodiX42/ton4j/tree/main</url>
     </scm>
-
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -92,19 +86,19 @@
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>tonlib</artifactId>
-            <version>0.9.5</version>
+            <version>0.9.6</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>liteclient</artifactId>
-            <version>0.9.5</version>
+            <version>0.9.6</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>smartcontract</artifactId>
-            <version>0.9.5</version>
+            <version>0.9.6</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

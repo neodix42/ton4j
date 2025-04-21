@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
 /**
  *
  *
@@ -13,7 +15,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class SigPubKeyED25519 {
+public class SigPubKeyED25519 implements Serializable {
   long magic;
   byte[] key;
 

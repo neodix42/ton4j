@@ -4,9 +4,9 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.9.5</version>
+        <version>0.9.6</version>
     </parent>
 
-    <artifactId>tweetnacl-java-8</artifactId>
+    <artifactId>tweetnacljava</artifactId>
     <name>TON Java TweetNacl</name>
 </project>

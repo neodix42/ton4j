@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static org.ton.java.cell.CellType.ORDINARY;
 import static org.ton.java.cell.CellType.UNKNOWN;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,7 +18,7 @@ import org.ton.java.utils.Utils;
 
 /** Implements Cell class, where BitString having elements of Boolean type. */
 @Slf4j
-public class Cell {
+public class Cell implements Serializable {
 
   BitString bits;
   List<Cell> refs = new ArrayList<>();

@@ -2,7 +2,9 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.isNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
+import java.util.HashMap;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -24,7 +26,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class ExternalMessageInInfo implements CommonMsgInfo {
+public class ExternalMessageInInfo implements CommonMsgInfo, Serializable {
   long magic;
   MsgAddressExt srcAddr;
   MsgAddressInt dstAddr;
@@ -55,5 +57,30 @@ public class ExternalMessageInInfo implements CommonMsgInfo {
         .dstAddr(MsgAddressInt.deserialize(cs))
         .importFee(cs.loadCoins())
         .build();
+  }
+
+  @Override
+  public String getType() {
+    return "ext_in_msg_info";
+  }
+
+  @Override
+  public String getSourceAddress() {
+    return srcAddr.toString();
+  }
+
+  @Override
+  public String getDestinationAddress() {
+    return dstAddr.toAddress().toRaw();
+  }
+
+  @Override
+  public BigInteger getValueCoins() {
+    return BigInteger.ZERO;
+  }
+
+  @Override
+  public HashMap getExtraCurrencies() {
+    return new HashMap();
   }
 }

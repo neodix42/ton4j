@@ -7,11 +7,12 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 @Builder
 @Data
-public class Text {
+public class Text implements Serializable {
 
   private static final int MaxTextChunkSize = 127 - 2;
 

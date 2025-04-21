@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.math.BigInteger;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 
@@ -25,4 +26,10 @@ public interface ValidatorDescr {
       throw new Error("Cannot deserialize ValidatorDescr, magic: " + magic);
     }
   }
+
+  String getPublicKeyHex();
+
+  String getAdnlAddressHex();
+
+  BigInteger getWeight();
 }

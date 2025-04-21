@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -41,7 +42,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class BlockInfo {
+public class BlockInfo implements Serializable {
   long magic;
   long version;
   boolean notMaster;

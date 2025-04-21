@@ -47,11 +47,6 @@ jobs:
           cd tolk
           mvn test
 
-      - name: Run LiteClient tests
-        run: |
-          cd liteclient
-          mvn test -Dtest=LiteClientTest#testLastExecuted
-
       - name: Run Address tests
         run: |
           cd address

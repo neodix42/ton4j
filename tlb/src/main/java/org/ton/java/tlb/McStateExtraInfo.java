@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,7 @@ import org.ton.java.cell.TonHashMapAugE;
  */
 @Builder
 @Data
-public class McStateExtraInfo {
+public class McStateExtraInfo implements Serializable {
   BigInteger flags;
   ValidatorInfo validatorInfo;
   //    OldMcBlocksInfo prevBlocks;

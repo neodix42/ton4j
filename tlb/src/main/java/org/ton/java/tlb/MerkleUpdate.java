@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +20,7 @@ import org.ton.java.cell.CellType;
  */
 @Builder
 @Data
-public class MerkleUpdate {
+public class MerkleUpdate implements Serializable {
   BigInteger oldHash;
   BigInteger newHash;
   BigInteger oldDepth;

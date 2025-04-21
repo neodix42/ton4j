@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -16,7 +17,7 @@ import org.ton.java.utils.Utils;
  */
 @Builder
 @Data
-public class DepthBalanceInfo {
+public class DepthBalanceInfo implements Serializable {
   int depth;
   CurrencyCollection currencies;
 

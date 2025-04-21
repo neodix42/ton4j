@@ -6,9 +6,22 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
+/**
+ *
+ *
+ * <pre>
+ *   msg_forward_prices#ea lump_price:uint64 bit_price:uint64 cell_price:uint64
+ *   ihr_price_factor:uint32 first_frac:uint16 next_frac:uint16 = MsgForwardPrices;
+ *
+ * // used for all other messages
+ * config_fwd_prices#_ MsgForwardPrices = ConfigParam 25;
+ * </pre>
+ */
 @Builder
 @Data
-public class ConfigParams25 {
+public class ConfigParams25 implements Serializable {
   MsgForwardPrices configFwdPrices;
 
   public Cell toCell() {

@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.nonNull;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
@@ -21,7 +22,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class ActionList {
+public class ActionList implements Serializable {
   List<ExtendedAction> actions;
 
   public Cell toCell() {

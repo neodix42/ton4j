@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -8,7 +9,7 @@ import org.ton.java.cell.CellSlice;
 
 @Builder
 @Data
-public class TickTock {
+public class TickTock implements Serializable {
   boolean tick;
   boolean tock;
 

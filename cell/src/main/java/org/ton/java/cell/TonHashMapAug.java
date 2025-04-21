@@ -1,15 +1,15 @@
 package org.ton.java.cell;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.ton.java.bitstring.BitString;
-import org.ton.java.utils.Utils;
-
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import org.apache.commons.lang3.tuple.Pair;
+import org.ton.java.bitstring.BitString;
+import org.ton.java.utils.Utils;
 
-public class TonHashMapAug {
+public class TonHashMapAug  implements Serializable {
 
     public HashMap<Object, Pair<Object, Object>> elements; // Pair<Value,Extra>
     int keySize;

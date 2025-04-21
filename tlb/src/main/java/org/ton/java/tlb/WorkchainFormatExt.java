@@ -6,9 +6,11 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
 @Builder
 @Data
-public class WorkchainFormatExt implements WorkchainFormat {
+public class WorkchainFormatExt implements WorkchainFormat, Serializable {
   int wfmtExt;
   int minAddrLen;
   int maxAddrLen;

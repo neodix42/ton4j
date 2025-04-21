@@ -1,17 +1,17 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-import java.math.BigInteger;
-
 /** vmc_envelope$01 cdata:VmControlData next:^VmCont = VmCont; */
 @Builder
 @Data
-public class VmcPushInt implements VmCont {
+public class VmcPushInt implements VmCont, Serializable {
   long magic;
   BigInteger value;
   VmCont next;

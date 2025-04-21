@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.isNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -10,9 +11,10 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMapE;
 
+/** _ to_mint:ExtraCurrencyCollection = ConfigParam 7; */
 @Builder
 @Data
-public class ConfigParams7 {
+public class ConfigParams7 implements Serializable {
   TonHashMapE extraCurrencies;
 
   public Cell toCell() {

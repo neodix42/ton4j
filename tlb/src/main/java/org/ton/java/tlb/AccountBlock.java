@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +22,7 @@ import org.ton.java.cell.TonHashMapAug;
  */
 @Builder
 @Data
-public class AccountBlock {
+public class AccountBlock implements Serializable {
   long magic;
   BigInteger addr;
   TonHashMapAug transactions;

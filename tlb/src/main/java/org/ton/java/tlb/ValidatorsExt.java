@@ -1,6 +1,11 @@
 package org.ton.java.tlb;
 
+import static java.util.Objects.isNull;
+
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -52,14 +57,25 @@ public class ValidatorsExt implements ValidatorSet {
   public static Validators deserialize(CellSlice cs) {
     return Validators.builder()
         .magic(cs.loadUint(8).intValue())
-        .uTimeSince(cs.loadUint(8).longValue())
-        .uTimeUntil(cs.loadUint(8).longValue())
+        .uTimeSince(cs.loadUint(32).longValue())
+        .uTimeUntil(cs.loadUint(32).longValue())
         .total(cs.loadUint(16).intValue())
         .main(cs.loadUint(16).intValue())
         .total(cs.loadUint(64).intValue())
         .list(
             cs.loadDictE(
-                16, k -> k.readInt(16), v -> ValidatorDescr.deserialize(CellSlice.beginParse(v))))
+                16, k -> k.readUint(16), v -> ValidatorDescr.deserialize(CellSlice.beginParse(v))))
         .build();
+  }
+
+  public List<ValidatorDescr> getValidatorsAsList() {
+    List<ValidatorDescr> validatorDescrs = new ArrayList<>();
+    if (isNull(list)) {
+      return validatorDescrs;
+    }
+    for (Map.Entry<Object, Object> entry : list.elements.entrySet()) {
+      validatorDescrs.add((ValidatorDescr) entry.getValue());
+    }
+    return validatorDescrs;
   }
 }

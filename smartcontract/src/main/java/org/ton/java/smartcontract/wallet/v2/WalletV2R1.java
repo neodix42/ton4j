@@ -96,8 +96,8 @@ public class WalletV2R1 implements Contract {
         32);
 
     if (nonNull(config.getDestination1())) {
-      Message order =
-          MsgUtils.createInternalMessage(
+      MessageRelaxed order =
+          MsgUtils.createInternalMessageRelaxed(
               config.getDestination1(),
               config.getAmount1(),
               config.getExtraCurrencies1(),
@@ -108,8 +108,8 @@ public class WalletV2R1 implements Contract {
       message.storeRef(order.toCell());
     }
     if (nonNull(config.getDestination2())) {
-      Message order =
-          MsgUtils.createInternalMessage(
+      MessageRelaxed order =
+          MsgUtils.createInternalMessageRelaxed(
               config.getDestination2(),
               config.getAmount2(),
               config.getExtraCurrencies2(),
@@ -120,8 +120,8 @@ public class WalletV2R1 implements Contract {
       message.storeRef(order.toCell());
     }
     if (nonNull(config.getDestination3())) {
-      Message order =
-          MsgUtils.createInternalMessage(
+      MessageRelaxed order =
+          MsgUtils.createInternalMessageRelaxed(
               config.getDestination3(),
               config.getAmount3(),
               config.getExtraCurrencies3(),
@@ -132,8 +132,8 @@ public class WalletV2R1 implements Contract {
       message.storeRef(order.toCell());
     }
     if (nonNull(config.getDestination4())) {
-      Message order =
-          MsgUtils.createInternalMessage(
+      MessageRelaxed order =
+          MsgUtils.createInternalMessageRelaxed(
               config.getDestination4(),
               config.getAmount3(),
               config.getExtraCurrencies4(),
@@ -199,6 +199,19 @@ public class WalletV2R1 implements Contract {
         .info(
             InternalMessageInfo.builder()
                 .srcAddr(getAddressIntStd())
+                .dstAddr(getAddressIntStd())
+                .value(CurrencyCollection.builder().coins(config.getAmount()).build())
+                .build())
+        .body(body)
+        .build();
+  }
+
+  public MessageRelaxed prepareInternalMsgRelaxed(WalletV2R1Config config) {
+    Cell body = createInternalSignedBody(config);
+
+    return MessageRelaxed.builder()
+        .info(
+            InternalMessageInfoRelaxed.builder()
                 .dstAddr(getAddressIntStd())
                 .value(CurrencyCollection.builder().coins(config.getAmount()).build())
                 .build())

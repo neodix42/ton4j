@@ -1,14 +1,25 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ *
+ *
+ * <pre>
+ *   consensus_config#d6 round_candidates:# { round_candidates >= 1 }
+ *   next_candidate_delay_ms:uint32 consensus_timeout_ms:uint32
+ *   fast_attempts:uint32 attempt_duration:uint32 catchain_max_deps:uint32
+ *   max_block_bytes:uint32 max_collated_bytes:uint32 = ConsensusConfig;
+ *
+ */
 @Builder
 @Data
-public class ConsensusConfigV1 implements ConsensusConfig {
+public class ConsensusConfigV1 implements ConsensusConfig, Serializable {
   int magic;
   int roundCandidates;
   long nextCandidateDelayMs;

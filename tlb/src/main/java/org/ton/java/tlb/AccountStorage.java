@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +21,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class AccountStorage {
+public class AccountStorage implements Serializable {
   String accountStatus;
   BigInteger lastTransactionLt;
   CurrencyCollection balance;

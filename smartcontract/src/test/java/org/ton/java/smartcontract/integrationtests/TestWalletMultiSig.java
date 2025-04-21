@@ -795,7 +795,7 @@ public class TestWalletMultiSig extends CommonTest {
     BigInteger queryId2 =
         BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 10 * 60L, 32) - 5);
 
-    Long walletId = new Random().nextLong() & 0xffffffffL;
+    long walletId = new Random().nextLong() & 0xffffffffL;
     log.info("queryId-1 {}, walletId {}", queryId1.toString(10), walletId);
 
     int k = 2;

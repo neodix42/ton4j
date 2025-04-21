@@ -1,12 +1,12 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import java.math.BigInteger;
 
 /**
  *
@@ -21,7 +21,7 @@ import java.math.BigInteger;
  */
 @Builder
 @Data
-public class OutMsgDeqShort implements OutMsg {
+public class OutMsgDeqShort implements OutMsg, Serializable {
   int magic;
   BigInteger msgEnvHash;
   long nextWorkchain;

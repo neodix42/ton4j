@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -8,9 +9,22 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.cell.TonHashMap;
 
+/**
+ *
+ *
+ * <pre>
+ * _#cc utime_since:uint32
+ * bit_price_ps:uint64
+ * cell_price_ps:uint64
+ * mc_bit_price_ps:uint64
+ * mc_cell_price_ps:uint64 = StoragePrices;
+ *
+ * _ (Hashmap 32 StoragePrices) = ConfigParam 18;
+ * </pre>
+ */
 @Builder
 @Data
-public class ConfigParams18 {
+public class ConfigParams18 implements Serializable {
   TonHashMap storagePrices;
 
   public Cell toCell() {

@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +20,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class StorageUsed {
+public class StorageUsed implements Serializable {
   BigInteger bitsUsed;
   BigInteger cellsUsed;
   BigInteger publicCellsUsed;

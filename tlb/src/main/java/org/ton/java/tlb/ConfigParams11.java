@@ -5,9 +5,21 @@ import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
+/**
+ *
+ *
+ * <pre>
+ * cfg_vote_setup#91
+ * normal_params:^ConfigProposalSetup
+ * critical_params:^ConfigProposalSetup = ConfigVotingSetup;
+ * _ ConfigVotingSetup = ConfigParam 11;
+ * </pre>
+ */
 @Builder
 @Data
-public class ConfigParams11 {
+public class ConfigParams11 implements Serializable {
   ConfigVotingSetup configVotingSetup;
 
   public Cell toCell() {

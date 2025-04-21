@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -7,10 +8,10 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/** _ dns_root_addr:bits256 = ConfigParam 4; */
 @Builder
 @Data
-/** _ dns_root_addr:bits256 = ConfigParam 4; // root TON DNS resolver */
-public class ConfigParams4 {
+public class ConfigParams4 implements Serializable {
   BigInteger dnsRootAddr;
 
   public Cell toCell() {

@@ -1,5 +1,6 @@
 package org.ton.java.smartcontract.types;
 
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -7,11 +8,17 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.*;
 
-import java.math.BigInteger;
-
+/**
+ *
+ *
+ * <pre>
+ *     internal_transfer#ae42e5a4
+ *     {n:#} query_id:uint64
+ *     actions:^(OutList n) = InternalMsgBody n;
+ * </pre>
+ */
 @Builder
 @Data
-/** internal_transfer#ae42e5a4 {n:#} query_id:uint64 actions:^(OutList n) = InternalMsgBody n; */
 public class HighloadV3InternalMessageBody {
 
   long magic;

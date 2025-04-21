@@ -3,6 +3,7 @@ package org.ton.java.tlb;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -16,13 +17,13 @@ import org.ton.java.cell.CellSlice;
  * message$_ {X:Type}
  *   info:CommonMsgInfo
  *   init:(Maybe (Either StateInit ^StateInit)) - default storeBit(false)
- *   body:(Either X ^X)  - default storeBit(false)
+ *   body:(Either X ^X) - default storeBit(false)
  *   = Message X;
- *   </pre>
+ * </pre>
  */
 @Builder
 @Data
-public class Message {
+public class Message implements Serializable {
   CommonMsgInfo info;
   StateInit init;
   Cell body;

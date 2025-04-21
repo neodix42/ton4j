@@ -62,34 +62,17 @@ public class MsgUtils {
     return externalMessage;
   }
 
-  public static Message createInternalMessage(
-      Address destination, BigInteger amount, StateInit stateInit, Cell body, Boolean bounce) {
-    return Message.builder()
-        .info(
-            InternalMessageInfo.builder()
-                .bounce(bounce)
-                .dstAddr(
-                    MsgAddressIntStd.builder()
-                        .workchainId(destination.wc)
-                        .address(destination.toBigInteger())
-                        .build())
-                .value(CurrencyCollection.builder().coins(amount).build())
-                .build())
-        .init(nonNull(stateInit) ? stateInit : null)
-        .body(nonNull(body) ? body : null)
-        .build();
-  }
-
-  public static Message createInternalMessage(
+  /** without source address */
+  public static MessageRelaxed createInternalMessageRelaxed(
       Address destination,
       BigInteger amount,
       List<ExtraCurrency> extraCurrencies,
       StateInit stateInit,
       Cell body,
       Boolean bounce) {
-    return Message.builder()
+    return MessageRelaxed.builder()
         .info(
-            InternalMessageInfo.builder()
+            InternalMessageInfoRelaxed.builder()
                 .bounce(bounce)
                 .dstAddr(
                     MsgAddressIntStd.builder()
@@ -107,35 +90,7 @@ public class MsgUtils {
         .build();
   }
 
-  public static Message createInternalMessageWithSourceAddress(
-      Address source,
-      Address destination,
-      BigInteger amount,
-      StateInit stateInit,
-      Cell body,
-      Boolean bounce) {
-    return Message.builder()
-        .info(
-            InternalMessageInfo.builder()
-                .bounce(bounce)
-                .srcAddr(
-                    MsgAddressIntStd.builder()
-                        .workchainId(source.wc)
-                        .address(source.toBigInteger())
-                        .build())
-                .dstAddr(
-                    MsgAddressIntStd.builder()
-                        .workchainId(destination.wc)
-                        .address(destination.toBigInteger())
-                        .build())
-                .value(CurrencyCollection.builder().coins(amount).build())
-                .build())
-        .init(nonNull(stateInit) ? stateInit : null)
-        .body(nonNull(body) ? body : null)
-        .build();
-  }
-
-  public static Message createInternalMessageWithSourceAddress(
+  public static Message createInternalMessage(
       Address source,
       Address destination,
       BigInteger amount,

@@ -7,9 +7,11 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
 @Builder
 @Data
-public class AnyMessage {
+public class AnyMessage implements Serializable {
   Cell payload; // *cell.Cell
   Address senderAddr; // address.Address
   Address destAddr; // address.Address

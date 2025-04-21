@@ -1,12 +1,14 @@
 package org.ton.java.tlb;
 
+import static java.util.Objects.nonNull;
+
+import java.io.Serializable;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import java.math.BigInteger;
 
 /**
  *
@@ -17,19 +19,11 @@ import java.math.BigInteger;
  */
 @Builder
 @Data
-public class ValidatorAddr implements ValidatorDescr {
+public class ValidatorAddr implements ValidatorDescr, Serializable {
   int magic;
   SigPubKey publicKey;
   BigInteger weight;
   BigInteger adnlAddr;
-
-  private String getMagic() {
-    return Long.toHexString(magic);
-  }
-
-  private String getAdnlAddr() {
-    return adnlAddr.toString(16);
-  }
 
   @Override
   public Cell toCell() {
@@ -48,5 +42,15 @@ public class ValidatorAddr implements ValidatorDescr {
         .weight(cs.loadUint(64))
         .adnlAddr(cs.loadUint(256))
         .build();
+  }
+
+  @Override
+  public String getPublicKeyHex() {
+    return publicKey.getPubkey().toString(16);
+  }
+
+  @Override
+  public String getAdnlAddressHex() {
+    return nonNull(adnlAddr) ? adnlAddr.toString(16) : "";
   }
 }

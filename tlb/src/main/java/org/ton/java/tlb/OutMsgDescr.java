@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,7 @@ import org.ton.java.cell.TonHashMapAugE;
  */
 @Builder
 @Data
-public class OutMsgDescr {
+public class OutMsgDescr implements Serializable {
   TonHashMapAugE outMsg;
 
   public Cell toCell() {

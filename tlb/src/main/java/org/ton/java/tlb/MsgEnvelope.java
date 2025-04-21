@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -20,13 +21,12 @@ import org.ton.java.cell.CellSlice;
  *   next_addr:IntermediateAddress
  *   fwd_fee_remaining:Grams
  *   msg:^(Message Any) = MsgEnvelope;
- *   }
  *
- * </pre>
+ * }</pre>
  */
 @Builder
 @Data
-public class MsgEnvelope {
+public class MsgEnvelope implements Serializable {
   int magic;
   IntermediateAddress currAddr;
   IntermediateAddress nextAddr;

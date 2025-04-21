@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +9,8 @@ import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
 /**
+ *
+ *
  * <pre>
  * shard_state#9023afe2
  *   global_id:int32
@@ -32,72 +35,77 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class ShardStateUnsplit {
-    long magic;
-    int globalId;
-    ShardIdent shardIdent;
-    long seqno;
-    long vertSeqno;
-    long genUTime;
-    BigInteger genLt;
-    long minRefMCSeqno;
-    Cell outMsgQueueInfo;
-    //    OutMsgQueueInfo outMsgQueueInfo;
-    boolean beforeSplit;
-    //    ShardAccounts shardAccounts;
-    Cell shardAccounts;
-    ShardStateInfo shardStateInfo;
-    McStateExtra custom;
+public class ShardStateUnsplit implements Serializable {
+  long magic;
+  int globalId;
+  ShardIdent shardIdent;
+  long seqno;
+  long vertSeqno;
+  long genUTime;
+  BigInteger genLt;
+  long minRefMCSeqno;
+  Cell outMsgQueueInfo;
+  //    OutMsgQueueInfo outMsgQueueInfo;
+  boolean beforeSplit;
+  //    ShardAccounts shardAccounts;
+  Cell shardAccounts;
+  ShardStateInfo shardStateInfo;
+  McStateExtra custom;
 
-    private String getMagic() {
-        return Long.toHexString(magic);
+  private String getMagic() {
+    return Long.toHexString(magic);
+  }
+
+  public Cell toCell() {
+    return CellBuilder.beginCell()
+        .storeUint(0x9023afe2, 32)
+        .storeUint(globalId, 32)
+        .storeCell(shardIdent.toCell())
+        .storeUint(seqno, 32)
+        .storeUint(vertSeqno, 32)
+        .storeUint(genUTime, 32)
+        .storeUint(genLt, 64)
+        .storeUint(minRefMCSeqno, 32)
+        .storeRef(outMsgQueueInfo) // todo
+        .storeBit(beforeSplit)
+        .storeRef(shardAccounts) // todo
+        .storeRef(shardStateInfo.toCell())
+        .storeRefMaybe(custom.toCell())
+        .endCell();
+  }
+
+  public static ShardStateUnsplit deserialize(CellSlice cs) {
+    if (cs.isExotic()) {
+      return ShardStateUnsplit.builder().build();
     }
+    long magic = cs.loadUint(32).longValue();
+    assert (magic == 0x9023afe2L)
+        : "ShardStateUnsplit magic not equal to 0x9023afe2L, found 0x" + Long.toHexString(magic);
 
-    public Cell toCell() {
-        return CellBuilder.beginCell()
-                .storeUint(0x9023afe2, 32)
-                .storeUint(globalId, 32)
-                .storeCell(shardIdent.toCell())
-                .storeUint(seqno, 32)
-                .storeUint(vertSeqno, 32)
-                .storeUint(genUTime, 32)
-                .storeUint(genLt, 64)
-                .storeUint(minRefMCSeqno, 32)
-                .storeRef(outMsgQueueInfo) // todo
-                .storeBit(beforeSplit)
-                .storeRef(shardAccounts) // todo
-                .storeRef(shardStateInfo.toCell())
-                .storeRefMaybe(custom.toCell())
-                .endCell();
-    }
+    ShardStateUnsplit shardStateUnsplit =
+        ShardStateUnsplit.builder()
+            .magic(magic)
+            .globalId(cs.loadInt(32).intValue())
+            .shardIdent(ShardIdent.deserialize(cs))
+            .seqno(cs.loadUint(32).longValue())
+            .vertSeqno(cs.loadUint(32).longValue())
+            .genUTime(cs.loadUint(32).longValue())
+            .genLt(cs.loadUint(64))
+            .minRefMCSeqno(cs.loadUint(32).longValue())
+            //
+            // .outMsgQueueInfo(OutMsgQueueInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
+            .outMsgQueueInfo(cs.loadRef())
+            .build();
+    shardStateUnsplit.setBeforeSplit(cs.loadBit());
+    //
+    // shardStateUnsplit.setShardAccounts(ShardAccounts.deserialize(CellSlice.beginParse(cs.loadRef())));
+    shardStateUnsplit.setShardAccounts(cs.loadRef());
 
-    public static ShardStateUnsplit deserialize(CellSlice cs) {
-        if (cs.isExotic()) {
-            return ShardStateUnsplit.builder().build();
-        }
-        long magic = cs.loadUint(32).longValue();
-        assert (magic == 0x9023afe2L) : "ShardStateUnsplit magic not equal to 0x9023afe2L, found 0x" + Long.toHexString(magic);
+    shardStateUnsplit.setShardStateInfo(
+        ShardStateInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
 
-        ShardStateUnsplit shardStateUnsplit = ShardStateUnsplit.builder()
-                .magic(magic)
-                .globalId(cs.loadInt(32).intValue())
-                .shardIdent(ShardIdent.deserialize(cs))
-                .seqno(cs.loadUint(32).longValue())
-                .vertSeqno(cs.loadUint(32).longValue())
-                .genUTime(cs.loadUint(32).longValue())
-                .genLt(cs.loadUint(64))
-                .minRefMCSeqno(cs.loadUint(32).longValue())
-//                .outMsgQueueInfo(OutMsgQueueInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .outMsgQueueInfo(cs.loadRef())
-                .build();
-        shardStateUnsplit.setBeforeSplit(cs.loadBit());
-//        shardStateUnsplit.setShardAccounts(ShardAccounts.deserialize(CellSlice.beginParse(cs.loadRef())));
-        shardStateUnsplit.setShardAccounts(cs.loadRef());
-
-
-        shardStateUnsplit.setShardStateInfo(ShardStateInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
-
-        shardStateUnsplit.setCustom(cs.loadBit() ? McStateExtra.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
-        return shardStateUnsplit;
-    }
+    shardStateUnsplit.setCustom(
+        cs.loadBit() ? McStateExtra.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
+    return shardStateUnsplit;
+  }
 }

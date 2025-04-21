@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +28,7 @@ import org.ton.java.cell.TonHashMapAugE;
  */
 @Builder
 @Data
-public class McBlockExtra {
+public class McBlockExtra implements Serializable {
   long magic;
   boolean keyBlock;
   ShardHashes shardHashes;

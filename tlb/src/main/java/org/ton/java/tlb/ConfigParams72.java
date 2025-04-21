@@ -1,14 +1,27 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+/**
+ *
+ *
+ * <pre>
+ * oracle_bridge_params#_
+ * bridge_address:bits256
+ * oracle_mutlisig_address:bits256
+ * oracles:(HashmapE 256 uint256)
+ * external_chain_address:bits256 = OracleBridgeParams;
+ * _ OracleBridgeParams = ConfigParam 72; // Binance Smart Chain bridge
+ * </pre>
+ */
 @Builder
 @Data
-public class ConfigParams72 {
+public class ConfigParams72 implements Serializable {
   OracleBridgeParams binanceSmartChainBridge;
 
   public Cell toCell() {

@@ -6,11 +6,12 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 @Builder
 @Data
-public class MsgForwardPrices {
+public class MsgForwardPrices implements Serializable {
   int magic;
   BigInteger lumpPrice;
   BigInteger bitPrice;

@@ -1,11 +1,5 @@
 package org.ton.java.mnemonic;
 
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
-import org.bouncycastle.crypto.params.KeyParameter;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -13,6 +7,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 public class Mnemonic {
 
@@ -94,6 +93,11 @@ public class Mnemonic {
 
     public static Pair toKeyPair(List<String> mnemonic) throws NoSuchAlgorithmException, InvalidKeyException {
         return toKeyPair(mnemonic, "");
+    }
+
+    public static Pair toKeyPair(String mnemonic) throws NoSuchAlgorithmException, InvalidKeyException {
+        List<String> mnemonicWords = Arrays.asList(mnemonic.split(" "));
+        return toKeyPair(mnemonicWords, "");
     }
 
     public static Pair toKeyPair(List<String> mnemonic, String password) throws NoSuchAlgorithmException, InvalidKeyException {

@@ -6,6 +6,8 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
 /**
  *
  *
@@ -17,7 +19,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class TransactionDescriptionMergePrepare implements TransactionDescription {
+public class TransactionDescriptionMergePrepare implements TransactionDescription, Serializable {
   int magic;
   SplitMergeInfo splitInfo;
   StoragePhase storagePhase;
@@ -48,5 +50,10 @@ public class TransactionDescriptionMergePrepare implements TransactionDescriptio
         .storagePhase(StoragePhase.deserialize(cs))
         .aborted(cs.loadBit())
         .build();
+  }
+
+  @Override
+  public String getType() {
+    return "merge-prepare";
   }
 }

@@ -1,17 +1,27 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-import java.math.BigInteger;
-
+/**
+ *
+ *
+ * <pre>
+ * counters#_
+ * last_updated:uint32
+ * total:uint64
+ * cnt2048:uint64
+ * cnt65536:uint64 = Counters;
+ * </pre>
+ */
 @Builder
 @Data
-/** counters#_ last_updated:uint32 total:uint64 cnt2048:uint64 cnt65536:uint64 = Counters; */
-public class Counters {
+public class Counters implements Serializable {
 
   long lastUpdated;
   BigInteger total;

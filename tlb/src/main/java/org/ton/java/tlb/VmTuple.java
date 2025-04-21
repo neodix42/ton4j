@@ -1,14 +1,14 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  *
@@ -20,7 +20,7 @@ import java.util.List;
  */
 @Builder
 @Data
-public class VmTuple implements VmStackValue {
+public class VmTuple implements VmStackValue, Serializable {
   List<VmStackValue> values;
 
   public Cell toCell() {

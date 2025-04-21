@@ -6,13 +6,15 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
+
 @Builder
 @Data
-public class BlkPrevInfo {
+public class BlkPrevInfo implements Serializable {
   ExtBlkRef prev1;
-  ExtBlkRef
-      prev2; // pointer
-             // https://github.com/xssnick/tonutils-go/blob/46dbf5f820af066ab10c5639a508b4295e5aa0fb/tlb/block.go#L136
+  ExtBlkRef prev2; // pointer
+
+  // https://github.com/xssnick/tonutils-go/blob/46dbf5f820af066ab10c5639a508b4295e5aa0fb/tlb/block.go#L136
 
   public Cell toCell(boolean afterMerge) {
     if (!afterMerge) {

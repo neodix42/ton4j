@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -7,8 +8,6 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
-@Builder
-@Data
 /**
  *
  *
@@ -16,7 +15,9 @@ import org.ton.java.cell.CellSlice;
  * _ fee_collector_addr:bits256 = ConfigParam 3; // ConfigParam 1 is used if absent
  * </pre>
  */
-public class ConfigParams3 {
+@Builder
+@Data
+public class ConfigParams3 implements Serializable {
   BigInteger feeCollectorAddr;
 
   public Cell toCell() {

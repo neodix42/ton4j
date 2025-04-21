@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.nonNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -37,7 +38,7 @@ import org.ton.java.cell.TonHashMapE;
 @Builder
 @Data
 @Slf4j
-public class Transaction {
+public class Transaction implements Serializable {
   int magic;
   BigInteger accountAddr;
   BigInteger lt;
@@ -51,8 +52,6 @@ public class Transaction {
   CurrencyCollection totalFees;
   HashUpdate stateUpdate;
   TransactionDescription description;
-
-  String hash; // not used
 
   private String getMagic() {
     return Long.toBinaryString(magic);
@@ -75,11 +74,11 @@ public class Transaction {
     }
   }
 
-  private String getPrevTxHash() {
+  public String getPrevTxHash() {
     if (nonNull(accountAddr)) {
-      return prevTxHash.toString(16);
+      return StringUtils.leftPad(prevTxHash.toString(16), 64, "0").toUpperCase();
     } else {
-      return "null";
+      return "";
     }
   }
 

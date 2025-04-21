@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,7 @@ import org.ton.java.cell.TonHashMapAugE;
  */
 @Builder
 @Data
-public class BlockExtra {
+public class BlockExtra implements Serializable {
   InMsgDescr inMsgDesc;
   OutMsgDescr outMsgDesc;
   TonHashMapAugE shardAccountBlocks;

@@ -6,6 +6,7 @@ import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 /**
@@ -21,7 +22,7 @@ import java.math.BigInteger;
  */
 @Builder
 @Data
-public class BlockIdExtShardIdent {
+public class BlockIdExtShardIdent implements Serializable {
   ShardIdent shardId;
   long seqno;
   public BigInteger rootHash;

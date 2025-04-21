@@ -1,5 +1,6 @@
 package org.ton.java.tlb;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -22,7 +23,7 @@ import org.ton.java.cell.TonHashMapE;
  */
 @Builder
 @Data
-public class ShardStateInfo {
+public class ShardStateInfo implements Serializable {
 
   BigInteger overloadHistory;
   BigInteger underloadHistory;

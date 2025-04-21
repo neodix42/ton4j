@@ -139,9 +139,9 @@ public class TestWalletsV3 {
 
     Address addr = Address.of("0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d");
     Cell order =
-        Message.builder()
+        MessageRelaxed.builder()
             .info(
-                InternalMessageInfo.builder()
+                InternalMessageInfoRelaxed.builder()
                     .bounce(true)
                     .dstAddr(
                         MsgAddressIntStd.builder()

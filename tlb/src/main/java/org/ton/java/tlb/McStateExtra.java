@@ -2,6 +2,7 @@ package org.ton.java.tlb;
 
 import static java.util.Objects.isNull;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.java.cell.Cell;
@@ -27,7 +28,7 @@ import org.ton.java.cell.CellSlice;
  */
 @Builder
 @Data
-public class McStateExtra {
+public class McStateExtra implements Serializable {
   long magic;
   ShardHashes shardHashes;
   ConfigParams configParams;

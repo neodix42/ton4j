@@ -87,6 +87,7 @@ public class ExampleContract implements Contract {
         Message.builder()
             .info(
                 InternalMessageInfo.builder()
+                    .srcAddr(getAddressIntStd())
                     .dstAddr(
                         MsgAddressIntStd.builder()
                             .workchainId(config.getDestination().wc)

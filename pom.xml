@@ -7,7 +7,7 @@
     <groupId>io.github.neodix42</groupId>
     <artifactId>top</artifactId>
     <packaging>pom</packaging>
-    <version>0.9.5</version>
+    <version>0.9.6</version>
 
     <modules>
         <module>bitstring</module>
@@ -20,7 +20,7 @@
         <module>tl</module>
         <module>emulator</module>
         <module>liteclient</module>
-        <module>tweetnacl-java-8</module>
+        <module>tweetnacljava8</module>
         <module>tonconnect</module>
         <module>fift</module>
         <module>func</module>

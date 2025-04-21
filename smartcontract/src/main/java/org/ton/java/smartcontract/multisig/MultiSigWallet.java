@@ -387,10 +387,10 @@ public class MultiSigWallet implements Contract {
    * @return Cell
    */
   public static Cell createOneInternalMsg(Address destination, BigInteger amount, int mode) {
-    Message internalMessage =
-        Message.builder()
+    MessageRelaxed internalMessage =
+        MessageRelaxed.builder()
             .info(
-                InternalMessageInfo.builder()
+                InternalMessageInfoRelaxed.builder()
                     .dstAddr(
                         MsgAddressIntStd.builder()
                             .workchainId(destination.wc)
@@ -416,10 +416,10 @@ public class MultiSigWallet implements Contract {
    */
   public static Cell createOneInternalMsg(
       Address destination, BigInteger amount, List<ExtraCurrency> extraCurrencies, int mode) {
-    Message internalMessage =
-        Message.builder()
+    MessageRelaxed internalMessage =
+        MessageRelaxed.builder()
             .info(
-                InternalMessageInfo.builder()
+                InternalMessageInfoRelaxed.builder()
                     .dstAddr(
                         MsgAddressIntStd.builder()
                             .workchainId(destination.wc)

@@ -14,10 +14,10 @@ import org.ton.java.cell.CellSlice;
  *
  * <pre>
  * message$_ {X:Type}
- * info:CommonMsgInfoRelaxed
- * init:(Maybe (Either StateInit ^StateInit)) - default storeBit(false)
- * body:(Either X ^X) - default storeBit(false)
- * = MessageRelaxed X;
+ *   info:CommonMsgInfoRelaxed
+ *   init:(Maybe (Either StateInit ^StateInit)) - default storeBit(false)
+ *   body:(Either X ^X) - default storeBit(false)
+ *   = MessageRelaxed X;
  * </pre>
  */
 @Builder

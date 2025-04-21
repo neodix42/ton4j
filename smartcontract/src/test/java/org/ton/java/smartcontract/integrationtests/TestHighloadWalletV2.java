@@ -10,8 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.smartcontract.faucet.TestnetFaucet;
@@ -23,7 +21,6 @@ import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 @Slf4j
-@RunWith(JUnit4.class)
 public class TestHighloadWalletV2 extends CommonTest {
 
   @Test
