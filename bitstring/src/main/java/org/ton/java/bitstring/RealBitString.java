@@ -1,20 +1,20 @@
 package org.ton.java.bitstring;
 
-import org.ton.java.address.Address;
-import org.ton.java.utils.Utils;
+import static java.util.Objects.isNull;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.logging.Logger;
-
-import static java.util.Objects.isNull;
+import org.ton.java.address.Address;
+import org.ton.java.utils.Utils;
 
 /**
  * Each element is one bit in memory.
  * Interestingly, but this solution loses to Deque<Boolean> array solution from memory footprint allocation.
  */
-public class RealBitString {
+public class RealBitString implements Serializable {
     private static final Logger log = Logger.getLogger(RealBitString.class.getName());
     byte[] array;
     public int writeCursor;

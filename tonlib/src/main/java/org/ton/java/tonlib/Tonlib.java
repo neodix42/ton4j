@@ -497,7 +497,6 @@ public class Tonlib {
       if (nonNull(sync)
           && nonNull(sync.getSync_state())
           && sync.getType().equals("updateSyncState")
-          //              && nonNull(response)
           && !response.contains("syncStateDone")) {
         double pct = 0.0;
         if (sync.getSync_state().getTo_seqno() != 0) {
