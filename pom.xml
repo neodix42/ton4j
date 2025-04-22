@@ -52,6 +52,7 @@
         <commons-io.version>2.18.0</commons-io.version>
         <log4j.version>2.17.1</log4j.version>
         <zip4j.version>2.11.3</zip4j.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
     </properties>
 
     <name>ton4j parent module</name>
@@ -143,7 +144,13 @@
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
         </dependencies>
+
     </dependencyManagement>
 
     <distributionManagement>

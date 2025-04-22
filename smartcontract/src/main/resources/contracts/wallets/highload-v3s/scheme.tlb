@@ -1,0 +1,16 @@
+storage$_ key_parity:bits1 public_key:bits256 subwallet_id:uint32 old_queries:(HashmapE 14 ^Cell)
+          queries:(HashmapE 14 ^Cell) last_clean_time:uint64 timeout:uint22
+          = Storage;
+
+_ shift:uint13 bit_number:(## 10) { bit_number >= 0 } { bit_number < 1023 } = QueryId;
+
+// highload v3
+
+// crc32('internal_transfer n:# query_id:uint64 actions:^OutList n = InternalMsgBody n') = ae42e5a4
+
+internal_transfer#ae42e5a4 {n:#} query_id:uint64 actions:^(OutList n) = InternalMsgBody n;
+
+_ {n:#}  subwallet_id:uint32 message_to_send:^Cell send_mode:uint8 query_id:QueryId created_at:uint64 timeout:uint22 = MsgInner;
+
+msg_body$_ {n:#} recovery:uint1 signatureR:uint256 signatureS:uint256 ^(MsgInner) = ExternalInMsgBody;
+

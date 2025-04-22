@@ -6,9 +6,11 @@ import static org.ton.java.utils.Utils.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.security.*;
 import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
+import org.bouncycastle.util.BigIntegers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -563,5 +565,48 @@ public class TestUtils {
           .isEqualTo(
               "https://github.com/ton-blockchain/ton/releases/latest/download/tonlibjson-mac-arm64.dylib");
     }
+  }
+
+  @Test
+  public void testSecp256k1_utils() {
+
+    Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
+    log.info("prv-key {} ", Utils.bytesToHex(keyPair.getPrivateKey()));
+    log.info("pub-key {} ", Utils.bytesToHex(keyPair.getPublicKey()));
+
+    String data = "ABC";
+    SignatureWithRecovery signature =
+        Utils.signDataSecp256k1(data.getBytes(), keyPair.getPrivateKey(), keyPair.getPublicKey());
+    log.info("r {}", Utils.bytesToHex(signature.getR()));
+    log.info("s {}", Utils.bytesToHex(signature.getS()));
+    log.info("v {}", signature.getV());
+    log.info("signature {}", Utils.bytesToHex(signature.getSignature()));
+
+    log.info(
+        "recovered pub key {}",
+        Utils.bytesToHex(
+            Utils.recoverPublicKey(
+                signature.getR(), signature.getS(), signature.getV(), data.getBytes())));
+
+    BigInteger s = BigIntegers.fromUnsignedByteArray(signature.getS());
+    BigInteger highS = BigIntegers.fromUnsignedByteArray(HIGH_S);
+    // second time
+    if (s.compareTo(highS) >= 0) {
+      System.out.println("NOT OK HIGH_S");
+    }
+
+    // second time
+    signature =
+        Utils.signDataSecp256k1(data.getBytes(), keyPair.getPrivateKey(), keyPair.getPublicKey());
+    log.info("r {}", Utils.bytesToHex(signature.getR()));
+    log.info("s {}", Utils.bytesToHex(signature.getS()));
+    log.info("v {}", signature.getV());
+    log.info("signature {}", Utils.bytesToHex(signature.getSignature()));
+
+    log.info(
+        "recovered pub key {}",
+        Utils.bytesToHex(
+            Utils.recoverPublicKey(
+                signature.getR(), signature.getS(), signature.getV(), data.getBytes())));
   }
 }

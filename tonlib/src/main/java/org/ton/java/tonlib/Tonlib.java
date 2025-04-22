@@ -446,7 +446,8 @@ public class Tonlib {
 
       if (response.contains(" : duplicate message\"")
           || response.contains(": not in db\"")
-          || response.contains("Failed to unpack account state")) {
+          || response.contains("Failed to unpack account state")
+          || response.contains(": cannot apply external message to current state")) {
         return response;
       }
 

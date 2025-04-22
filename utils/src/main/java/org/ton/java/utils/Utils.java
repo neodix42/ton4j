@@ -15,8 +15,7 @@ import java.math.RoundingMode;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -32,6 +31,17 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.asn1.x9.X9IntegerConverter;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.math.ec.ECAlgorithms;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.BigIntegers;
 
 @Slf4j
 public class Utils {
@@ -54,6 +64,15 @@ public class Utils {
   public static final String ANSI_PURPLE_BACKGROUND = "\u001B[45m";
   public static final String ANSI_CYAN_BACKGROUND = "\u001B[46m";
   public static final String ANSI_WHITE_BACKGROUND = "\u001B[47m";
+
+  private static final String RANDOM_NUMBER_ALGORITHM = "SHA1PRNG";
+  private static final String RANDOM_NUMBER_ALGORITHM_PROVIDER = "SUN";
+  private static final String SECP256K1 = "secp256k1";
+  public static final BigInteger MAXPRIVATEKEY =
+      new BigInteger("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140", 16);
+
+  public static final byte[] HIGH_S =
+      Utils.hexToSignedBytes("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0");
 
   private static final String HEXES = "0123456789ABCDEF";
   private static final long BLN1 = 1000000000L;
@@ -676,7 +695,7 @@ public class Utils {
   }
 
   /**
-   * Signs data
+   * Signs data using TweetNaclFast algorithm
    *
    * @param pubKey 32 bytes pubKey
    * @param prvKey 32 or 64 bytes prvKey
@@ -684,14 +703,208 @@ public class Utils {
    * @return byte[] signature
    */
   public static byte[] signData(byte[] pubKey, byte[] prvKey, byte[] data) {
-    TweetNaclFast.Signature signature;
-    if (prvKey.length == 64) {
-      signature = new TweetNaclFast.Signature(pubKey, prvKey);
-    } else {
-      TweetNaclFast.Signature.KeyPair keyPair = generateSignatureKeyPairFromSeed(prvKey);
-      signature = new TweetNaclFast.Signature(pubKey, keyPair.getSecretKey());
+    return getSignature(pubKey, prvKey).detached(data);
+  }
+
+  // secp256k1
+  public static Secp256k1KeyPair generateSecp256k1SignatureKeyPair() {
+
+    byte[] privateKey = generatePrivateKey();
+    return Secp256k1KeyPair.builder()
+        .privateKey(privateKey)
+        .publicKey(getPublicKey(privateKey))
+        .build();
+  }
+
+  /** Generate a random private key that can be used with Secp256k1. */
+  public static byte[] generatePrivateKey() {
+    try {
+      SecureRandom secureRandom =
+          SecureRandom.getInstance(RANDOM_NUMBER_ALGORITHM, RANDOM_NUMBER_ALGORITHM_PROVIDER);
+
+      // Generate the key, skipping as many as desired.
+      byte[] privateKeyAttempt = new byte[32];
+      secureRandom.nextBytes(privateKeyAttempt);
+      BigInteger privateKeyCheck = new BigInteger(1, privateKeyAttempt);
+      while (privateKeyCheck.compareTo(BigInteger.ZERO) == 0
+          || privateKeyCheck.compareTo(MAXPRIVATEKEY) == 1) {
+        secureRandom.nextBytes(privateKeyAttempt);
+        privateKeyCheck = new BigInteger(1, privateKeyAttempt);
+      }
+
+      return privateKeyAttempt;
+    } catch (Throwable e) {
+      throw new RuntimeException(e);
     }
-    return signature.detached(data);
+  }
+
+  /** Converts a private key into its corresponding public key. */
+  public static byte[] getPublicKey(byte[] privateKey) {
+    try {
+      ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(SECP256K1);
+      ECPoint pointQ = spec.getG().multiply(new BigInteger(1, privateKey));
+
+      return pointQ.getEncoded(true);
+    } catch (Exception e) {
+      log.error("getPublicKey", e);
+      return new byte[0];
+    }
+  }
+
+  public static SignatureWithRecovery signDataSecp256k1(
+      byte[] data, byte[] privateKey, byte[] publicKey) {
+    SignatureWithRecovery signature = signDataSecp256k1Once(data, privateKey, publicKey);
+    BigInteger s = BigIntegers.fromUnsignedByteArray(signature.getS());
+    BigInteger highS = BigIntegers.fromUnsignedByteArray(HIGH_S);
+    while (s.compareTo(highS) >= 0) {
+//      System.out.println("S greater than HIGH_S - regenerate");
+      signature = signDataSecp256k1Once(data, privateKey, publicKey);
+      s = BigIntegers.fromUnsignedByteArray(signature.getS());
+      highS = BigIntegers.fromUnsignedByteArray(HIGH_S);
+    }
+    return signature;
+  }
+
+  private static SignatureWithRecovery signDataSecp256k1Once(
+      byte[] data, byte[] privateKey, byte[] publicKey) {
+    try {
+      Security.addProvider(new BouncyCastleProvider());
+      ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(SECP256K1);
+
+      ECDSASigner ecdsaSigner = new ECDSASigner();
+      ECDomainParameters domain = new ECDomainParameters(spec.getCurve(), spec.getG(), spec.getN());
+      ECPrivateKeyParameters privateKeyParms =
+          new ECPrivateKeyParameters(new BigInteger(1, privateKey), domain);
+      ParametersWithRandom params = new ParametersWithRandom(privateKeyParms);
+
+      ecdsaSigner.init(true, params);
+
+      BigInteger[] sig = ecdsaSigner.generateSignature(data);
+      // Ensure r and s are 32 bytes
+      byte[] rBytes = to32ByteArray(sig[0]);
+      byte[] sBytes = to32ByteArray(sig[1]);
+
+      LinkedList<byte[]> sigData = new LinkedList<>();
+      //      byte[] publicKey = getPublicKey(privateKey);
+      byte recoveryId = getRecoveryId(rBytes, sBytes, data, publicKey);
+      for (BigInteger sigChunk : sig) {
+        sigData.add(to32ByteArray(sigChunk));
+      }
+      sigData.add(new byte[] {recoveryId});
+      return SignatureWithRecovery.builder()
+          .r(sigData.get(0))
+          .s(sigData.get(1))
+          .v(sigData.get(2))
+          .build();
+
+    } catch (Exception e) {
+      throw new Error("cannot sign, error " + e.getMessage());
+    }
+  }
+
+  private static byte[] to32ByteArray(BigInteger value) {
+    byte[] rawBytes = value.toByteArray();
+
+    if (rawBytes.length == 33 && rawBytes[0] == 0x00) {
+      // Strip leading zero caused by sign bit
+      byte[] trimmed = new byte[32];
+      System.arraycopy(rawBytes, 1, trimmed, 0, 32);
+      return trimmed;
+    }
+
+    if (rawBytes.length > 32) {
+      throw new IllegalArgumentException(
+          "Value too large to fit in 32 bytes: " + value.toString(16));
+    }
+
+    if (rawBytes.length < 32) {
+      // Pad with leading zeros
+      byte[] padded = new byte[32];
+      System.arraycopy(rawBytes, 0, padded, 32 - rawBytes.length, rawBytes.length);
+      return padded;
+    }
+
+    return rawBytes; // Already 32 bytes
+  }
+
+  /**
+   * Determine the recovery ID for the given signature and public key.
+   *
+   * <p>Any signed message can resolve to one of two public keys due to the nature ECDSA. The
+   * recovery ID provides information about which one it is, allowing confirmation that the message
+   * was signed by a specific key.
+   */
+  public static byte getRecoveryId(byte[] sigR, byte[] sigS, byte[] message, byte[] publicKey) {
+    ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(SECP256K1);
+    BigInteger pointN = spec.getN();
+    for (int recoveryId = 0; recoveryId < 2; recoveryId++) {
+      try {
+        BigInteger pointX = new BigInteger(1, sigR);
+
+        X9IntegerConverter x9 = new X9IntegerConverter();
+        byte[] compEnc = x9.integerToBytes(pointX, 1 + x9.getByteLength(spec.getCurve()));
+        compEnc[0] = (byte) ((recoveryId & 1) == 1 ? 0x03 : 0x02);
+        ECPoint pointR = spec.getCurve().decodePoint(compEnc);
+        if (!pointR.multiply(pointN).isInfinity()) {
+          continue;
+        }
+
+        BigInteger pointE = new BigInteger(1, message);
+        BigInteger pointEInv = BigInteger.ZERO.subtract(pointE).mod(pointN);
+        BigInteger pointRInv = new BigInteger(1, sigR).modInverse(pointN);
+        BigInteger srInv = pointRInv.multiply(new BigInteger(1, sigS)).mod(pointN);
+        BigInteger pointEInvRInv = pointRInv.multiply(pointEInv).mod(pointN);
+        ECPoint pointQ = ECAlgorithms.sumOfTwoMultiplies(spec.getG(), pointEInvRInv, pointR, srInv);
+        byte[] pointQBytes = pointQ.getEncoded(true);
+        boolean matchedKeys = true;
+        for (int j = 0; j < publicKey.length; j++) {
+          if (pointQBytes[j] != publicKey[j]) {
+            matchedKeys = false;
+            break;
+          }
+        }
+        if (!matchedKeys) {
+          continue;
+        }
+        return (byte) (0xFF & recoveryId);
+      } catch (Exception e) {
+        throw new Error("getRecoveryId unexpected exception", e);
+      }
+    }
+
+    return (byte) 0xFF;
+  }
+
+  /** Recover the public key that corresponds to the private key, which signed this message. */
+  public static byte[] recoverPublicKey(byte[] sigR, byte[] sigS, byte[] sigV, byte[] message) {
+    ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(SECP256K1);
+    BigInteger pointN = spec.getN();
+
+    try {
+      BigInteger pointX = new BigInteger(1, sigR);
+
+      X9IntegerConverter x9 = new X9IntegerConverter();
+      byte[] compEnc = x9.integerToBytes(pointX, 1 + x9.getByteLength(spec.getCurve()));
+      compEnc[0] = (byte) ((sigV[0] & 1) == 1 ? 0x03 : 0x02); // Compressed format
+      ECPoint pointR = spec.getCurve().decodePoint(compEnc);
+      if (pointR.isInfinity()) {
+        return new byte[0]; // Invalid point, unable to recover
+      }
+
+      BigInteger pointE = new BigInteger(1, message);
+      BigInteger pointEInv = BigInteger.ZERO.subtract(pointE).mod(pointN);
+      BigInteger pointRInv = new BigInteger(1, sigR).modInverse(pointN);
+      BigInteger srInv = pointRInv.multiply(new BigInteger(1, sigS)).mod(pointN);
+      BigInteger pointEInvRInv = pointRInv.multiply(pointEInv).mod(pointN);
+      ECPoint pointQ = ECAlgorithms.sumOfTwoMultiplies(spec.getG(), pointEInvRInv, pointR, srInv);
+
+      // Use compressed format for recovery
+      return pointQ.getEncoded(true); // Compressed public key
+    } catch (Exception e) {
+      log.error("Error recovering public key from message", e);
+    }
+
+    return new byte[0]; // Return empty array on failure
   }
 
   public static String toUTC(long timestamp) {
@@ -1447,5 +1660,19 @@ public class Utils {
     } catch (Throwable e) {
       throw new Error("cannot generate random address. Error " + e.getMessage());
     }
+  }
+
+  public static BigInteger signedBytesArrayToBigInteger(int[] intArray) {
+    // Convert int[] to byte[]
+    byte[] byteArray = new byte[intArray.length * 4]; // Each int is 4 bytes
+    for (int i = 0; i < intArray.length; i++) {
+      byteArray[i * 4] = (byte) (intArray[i] >>> 24); // First byte (most significant byte)
+      byteArray[i * 4 + 1] = (byte) (intArray[i] >>> 16); // Second byte
+      byteArray[i * 4 + 2] = (byte) (intArray[i] >>> 8); // Third byte
+      byteArray[i * 4 + 3] = (byte) (intArray[i]); // Fourth byte (least significant byte)
+    }
+
+    // Create and return BigInteger from byte array
+    return new BigInteger(1, byteArray); // 1 for positive sign
   }
 }

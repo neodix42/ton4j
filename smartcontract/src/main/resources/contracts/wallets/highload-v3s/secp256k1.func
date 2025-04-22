@@ -1,0 +1,21 @@
+(int, int, int, int) ecrecover (int hash, int v, int r, int s) asm "ECRECOVER NULLSWAPIFNOT2 NULLSWAPIFNOT";
+
+;; Higher part of N
+const int HIGH_S = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
+
+int check_secp256k1_signature(int test_hash, slice data, int public_key, int parity) inline {
+
+	int v = data~load_uint(1);
+	int r = data~load_uint(256);
+	int s = data~load_uint(256);
+	if(s >= HIGH_S) {
+		return false;
+	}
+
+	var (rId, x, y, status) = ecrecover(test_hash, v, r, s);
+
+	if(status) {
+		return (parity == (y & 1)) & (x == public_key);
+	}
+	return status;
+}

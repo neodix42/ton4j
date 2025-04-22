@@ -81,7 +81,8 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ Send external message
 * ✅ Get block transactions
 * ✅ Deploy contracts and send external messages using Tonlib
-* ✅ Wallets - Simple (V1), V2, V3, V4 (plugins), V5, Lockup, ~~Highload~~/Highload-V3, DNS, Jetton, StableCoin, NFT,
+* ✅ Wallets - Simple (V1), V2, V3, V4 (plugins), V5, Lockup, ~~Highload~~/Highload-V3, Highload-V3S (Secp256k1), DNS,
+  Jetton, StableCoin, NFT,
   Payment-channels, ~~Multisig V1~~, Multisig V2
 * ✅ HashMap, HashMapE, PfxHashMap, PfxHashMapE, HashMapAug, HashMapAugE serialization / deserialization
 
