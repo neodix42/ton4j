@@ -33,7 +33,7 @@ import org.ton.java.utils.Utils;
 public class TestHighloadWalletV3S extends CommonTest {
 
   @Test
-  public void testBulkTransferSimplified_2() throws InterruptedException {
+  public void testBulkTransferSimplified_TwoDestinations() throws InterruptedException {
 
     Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
 

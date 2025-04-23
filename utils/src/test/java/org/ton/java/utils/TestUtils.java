@@ -569,44 +569,44 @@ public class TestUtils {
 
   @Test
   public void testSecp256k1_utils() {
+    for (int i = 0; i < 100; i++) {
 
-    Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
-    log.info("prv-key {} ", Utils.bytesToHex(keyPair.getPrivateKey()));
-    log.info("pub-key {} ", Utils.bytesToHex(keyPair.getPublicKey()));
+      Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
+      log.info("prv-key {} ", Utils.bytesToHex(keyPair.getPrivateKey()));
+      log.info("pub-key {} ", Utils.bytesToHex(keyPair.getPublicKey()));
 
-    String data = "ABC";
-    SignatureWithRecovery signature =
-        Utils.signDataSecp256k1(data.getBytes(), keyPair.getPrivateKey(), keyPair.getPublicKey());
-    log.info("r {}", Utils.bytesToHex(signature.getR()));
-    log.info("s {}", Utils.bytesToHex(signature.getS()));
-    log.info("v {}", signature.getV());
-    log.info("signature {}", Utils.bytesToHex(signature.getSignature()));
+      String data = "ABC";
+      SignatureWithRecovery signature =
+          Utils.signDataSecp256k1(data.getBytes(), keyPair.getPrivateKey(), keyPair.getPublicKey());
+      log.info("r {}", Utils.bytesToHex(signature.getR()));
+      log.info("s {}", Utils.bytesToHex(signature.getS()));
+      log.info("v {}", signature.getV());
+      log.info("signature {}", Utils.bytesToHex(signature.getSignature()));
 
-    log.info(
-        "recovered pub key {}",
-        Utils.bytesToHex(
-            Utils.recoverPublicKey(
-                signature.getR(), signature.getS(), signature.getV(), data.getBytes())));
+      log.info(
+          "recovered pub key {}",
+          Utils.bytesToHex(
+              Utils.recoverPublicKey(
+                  signature.getR(), signature.getS(), signature.getV(), data.getBytes())));
 
-    BigInteger s = BigIntegers.fromUnsignedByteArray(signature.getS());
-    BigInteger highS = BigIntegers.fromUnsignedByteArray(HIGH_S);
-    // second time
-    if (s.compareTo(highS) >= 0) {
-      System.out.println("NOT OK HIGH_S");
+      BigInteger s = BigIntegers.fromUnsignedByteArray(signature.getS());
+      BigInteger highS = BigIntegers.fromUnsignedByteArray(HIGH_S);
+      // second time
+      assertThat(s.compareTo(highS)).isLessThan(0);
+
+      // second time
+      signature =
+          Utils.signDataSecp256k1(data.getBytes(), keyPair.getPrivateKey(), keyPair.getPublicKey());
+      log.info("r {}", Utils.bytesToHex(signature.getR()));
+      log.info("s {}", Utils.bytesToHex(signature.getS()));
+      log.info("v {}", signature.getV());
+      log.info("signature {}", Utils.bytesToHex(signature.getSignature()));
+
+      log.info(
+          "recovered pub key {}",
+          Utils.bytesToHex(
+              Utils.recoverPublicKey(
+                  signature.getR(), signature.getS(), signature.getV(), data.getBytes())));
     }
-
-    // second time
-    signature =
-        Utils.signDataSecp256k1(data.getBytes(), keyPair.getPrivateKey(), keyPair.getPublicKey());
-    log.info("r {}", Utils.bytesToHex(signature.getR()));
-    log.info("s {}", Utils.bytesToHex(signature.getS()));
-    log.info("v {}", signature.getV());
-    log.info("signature {}", Utils.bytesToHex(signature.getSignature()));
-
-    log.info(
-        "recovered pub key {}",
-        Utils.bytesToHex(
-            Utils.recoverPublicKey(
-                signature.getR(), signature.getS(), signature.getV(), data.getBytes())));
   }
 }

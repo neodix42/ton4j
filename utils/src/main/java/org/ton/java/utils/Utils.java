@@ -765,16 +765,7 @@ public class Utils {
 
   public static SignatureWithRecovery signDataSecp256k1(
       byte[] data, byte[] privateKey, byte[] publicKey) {
-    SignatureWithRecovery signature = signDataSecp256k1Once(data, privateKey, publicKey);
-    BigInteger s = BigIntegers.fromUnsignedByteArray(signature.getS());
-    BigInteger highS = BigIntegers.fromUnsignedByteArray(HIGH_S);
-    while (s.compareTo(highS) >= 0) {
-      //      System.out.println("S greater than HIGH_S - regenerate");
-      signature = signDataSecp256k1Once(data, privateKey, publicKey);
-      s = BigIntegers.fromUnsignedByteArray(signature.getS());
-      highS = BigIntegers.fromUnsignedByteArray(HIGH_S);
-    }
-    return signature;
+    return signDataSecp256k1Once(data, privateKey, publicKey);
   }
 
   private static SignatureWithRecovery signDataSecp256k1Once(
@@ -794,10 +785,15 @@ public class Utils {
       BigInteger[] sig = ecdsaSigner.generateSignature(data);
       // Ensure r and s are 32 bytes
       byte[] rBytes = to32ByteArray(sig[0]);
+
+      BigInteger highS = BigIntegers.fromUnsignedByteArray(HIGH_S);
+      if (sig[1].compareTo(highS) >= 0) {
+        sig[1] = domain.getN().subtract(sig[1]);
+      }
+
       byte[] sBytes = to32ByteArray(sig[1]);
 
       LinkedList<byte[]> sigData = new LinkedList<>();
-      //      byte[] publicKey = getPublicKey(privateKey);
       byte recoveryId = getRecoveryId(rBytes, sBytes, data, publicKey);
       for (BigInteger sigChunk : sig) {
         sigData.add(to32ByteArray(sigChunk));
