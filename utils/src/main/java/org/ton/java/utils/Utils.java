@@ -706,7 +706,19 @@ public class Utils {
     return getSignature(pubKey, prvKey).detached(data);
   }
 
-  // secp256k1
+  /**
+   * @param privateKeyHex 32 bytes private key in hex
+   * @return Secp256k1KeyPair
+   */
+  public static Secp256k1KeyPair getSecp256k1FromPrivateKey(String privateKeyHex) {
+
+    byte[] privateKey = Utils.hexStringToByteArray(privateKeyHex);
+    return Secp256k1KeyPair.builder()
+        .privateKey(privateKey)
+        .publicKey(getPublicKey(privateKey))
+        .build();
+  }
+
   public static Secp256k1KeyPair generateSecp256k1SignatureKeyPair() {
 
     byte[] privateKey = generatePrivateKey();
@@ -757,7 +769,7 @@ public class Utils {
     BigInteger s = BigIntegers.fromUnsignedByteArray(signature.getS());
     BigInteger highS = BigIntegers.fromUnsignedByteArray(HIGH_S);
     while (s.compareTo(highS) >= 0) {
-//      System.out.println("S greater than HIGH_S - regenerate");
+      //      System.out.println("S greater than HIGH_S - regenerate");
       signature = signDataSecp256k1Once(data, privateKey, publicKey);
       s = BigIntegers.fromUnsignedByteArray(signature.getS());
       highS = BigIntegers.fromUnsignedByteArray(HIGH_S);

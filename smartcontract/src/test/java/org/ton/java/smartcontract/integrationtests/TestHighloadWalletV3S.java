@@ -71,10 +71,11 @@ public class TestHighloadWalletV3S extends CommonTest {
     contract.waitForDeployment(45);
     log.info("deployed");
 
+    int queryId = HighloadQueryId.fromSeqno(1).getQueryId();
     config =
         HighloadV3Config.builder()
             .walletId(42)
-            .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+            .queryId(queryId)
             .body(
                 contract.createBulkTransfer(
                     Arrays.asList(
@@ -99,6 +100,24 @@ public class TestHighloadWalletV3S extends CommonTest {
     log.info("extMessageInfo {}", extMessageInfo);
     assertThat(extMessageInfo.getError().getCode()).isZero();
     log.info("sent 2 messages");
+
+    String publicKey = contract.getPublicKey();
+    log.info("public key {}", publicKey);
+
+    long subWalletId = contract.getSubWalletId();
+    log.info("subWalletId key {}", subWalletId);
+
+    long lastCleanTime = contract.getLastCleanTime();
+    log.info("lastCleanTime {}", lastCleanTime);
+
+    long timeout = contract.getTimeout();
+    log.info("timeout {}", timeout);
+
+    boolean isProcessed = contract.isProcessed(queryId, true);
+    log.info("isProcessed with clean {}", isProcessed);
+
+    isProcessed = contract.isProcessed(queryId, false);
+    log.info("isProcessed without clean {}", isProcessed);
   }
 
   /** Sends 1000 messages with values without comment/memo field */
@@ -205,6 +224,67 @@ public class TestHighloadWalletV3S extends CommonTest {
   }
 
   @Test
+  public void testSinglePayloadTransferWithCustomPrivateKeyOnExistingContract() {
+
+    Secp256k1KeyPair keyPair =
+        Utils.getSecp256k1FromPrivateKey(
+            "dc49ff027f024955f3d2a4cd7d1e0ff9cfbc2fff57a2a3f69c2144478756e6d3");
+
+    HighloadWalletV3S contract =
+        HighloadWalletV3S.builder().tonlib(tonlib).keyPair(keyPair).walletId(42).build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+    String rawAddress = contract.getAddress().toRaw();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getPrivateKey()));
+
+    String publicKey = contract.getPublicKey();
+    log.info("public key {}", publicKey);
+
+    long subWalletId = contract.getSubWalletId();
+    log.info("subWalletId key {}", subWalletId);
+
+    int queryId1 = HighloadQueryId.fromSeqno(1).getQueryId();
+    boolean isProcessed = contract.isProcessed(queryId1, false);
+    log.info("isProcessed1 {}", isProcessed);
+
+    int queryId2 = HighloadQueryId.fromSeqno(2).getQueryId();
+    isProcessed = contract.isProcessed(queryId2, false);
+    log.info("isProcessed2 {}", isProcessed);
+
+    Address destAddress = Address.of("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G");
+
+    HighloadV3Config config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(queryId2)
+            .body(
+                contract.createSingleTransfer(
+                    destAddress,
+                    Utils.toNano(0.02),
+                    true,
+                    null,
+                    MsgUtils.createTextMessageBody("ton4j test")))
+            .build();
+
+    ExtMessageInfo extMessageInfo = contract.send(config);
+    log.info("extMessageInfo {}", extMessageInfo);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+    log.info("sent single message");
+
+    publicKey = contract.getPublicKey();
+    log.info("public key {}", publicKey);
+
+    subWalletId = contract.getSubWalletId();
+    log.info("subWalletId key {}", subWalletId);
+  }
+
+  @Test
   public void testSinglePayloadTransfer() throws InterruptedException {
 
     Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
@@ -251,15 +331,9 @@ public class TestHighloadWalletV3S extends CommonTest {
                 contract.createSingleTransfer(
                     destAddress,
                     Utils.toNano(0.02),
-                    // Collections.singletonList(
-                    //     ExtraCurrency.builder()
-                    //         .id(100)
-                    //         .amount(BigInteger.valueOf(600000000))
-                    //         .build()),
                     true,
                     null,
-                    // MsgUtils.createTextMessageBody("ton4j")
-                    CellBuilder.beginCell().endCell()))
+                    MsgUtils.createTextMessageBody("ton4j test")))
             .build();
 
     extMessageInfo = contract.send(config);

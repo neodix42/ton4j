@@ -5,7 +5,9 @@ import static java.util.Objects.isNull;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -107,7 +109,7 @@ public class HighloadWalletV3 implements Contract {
     return CellBuilder.beginCell().fromBoc(WalletCodes.highloadV3.getValue()).endCell();
   }
 
-  public String getPublicKey(Tonlib tonlib) {
+  public String getPublicKey() {
 
     Address myAddress = this.getAddress();
     RunResult result = tonlib.runMethod(myAddress, "get_public_key");
@@ -491,5 +493,58 @@ public class HighloadWalletV3 implements Contract {
                   .build())
           .build();
     }
+  }
+
+  /** Calls get_subwallet_id method of a contract. */
+  public long getSubWalletId() {
+    Address myAddress = this.getAddress();
+    RunResult result = tonlib.runMethod(myAddress, "get_subwallet_id");
+    if (result.getExit_code() != 0) {
+      throw new Error("method get_subwallet_id returned an exit code " + result.getExit_code());
+    }
+
+    TvmStackEntryNumber walletId = (TvmStackEntryNumber) result.getStack().get(0);
+    return walletId.getNumber().longValue();
+  }
+
+  /** Calls get_last_clean_time method of a contract. */
+  public long getLastCleanTime() {
+    Address myAddress = this.getAddress();
+    RunResult result = tonlib.runMethod(myAddress, "get_last_clean_time");
+    if (result.getExit_code() != 0) {
+      throw new Error("method get_last_clean_time returned an exit code " + result.getExit_code());
+    }
+
+    TvmStackEntryNumber lastCleanTime = (TvmStackEntryNumber) result.getStack().get(0);
+    return lastCleanTime.getNumber().longValue();
+  }
+
+  /** Calls get_timeout method of a contract. */
+  public long getTimeout() {
+    Address myAddress = this.getAddress();
+    RunResult result = tonlib.runMethod(myAddress, "get_timeout");
+    if (result.getExit_code() != 0) {
+      throw new Error("method get_timeout returned an exit code " + result.getExit_code());
+    }
+
+    TvmStackEntryNumber timeout = (TvmStackEntryNumber) result.getStack().get(0);
+    return timeout.getNumber().longValue();
+  }
+
+  /** Calls get_timeout method of a contract. */
+  public boolean isProcessed(long queryId, boolean needClean) {
+    Address myAddress = this.getAddress();
+    Deque<String> stack = new ArrayDeque<>();
+
+    int needCleanInt = needClean ? -1 : 0;
+    stack.offer("[num, " + queryId + "]");
+    stack.offer("[num, " + needCleanInt + "]");
+    RunResult result = tonlib.runMethod(myAddress, "processed?", stack);
+    if (result.getExit_code() != 0) {
+      throw new Error("method processed? returned an exit code " + result.getExit_code());
+    }
+
+    TvmStackEntryNumber timeout = (TvmStackEntryNumber) result.getStack().get(0);
+    return timeout.getNumber().longValue() == -1;
   }
 }
