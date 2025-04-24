@@ -20,6 +20,7 @@ import org.ton.java.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
+@Deprecated
 @Slf4j
 public class TestHighloadWalletV2 extends CommonTest {
 

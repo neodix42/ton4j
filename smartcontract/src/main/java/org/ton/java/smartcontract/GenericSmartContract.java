@@ -18,6 +18,8 @@ import org.ton.java.utils.Utils;
 public class GenericSmartContract implements Contract {
 
   TweetNaclFast.Signature.KeyPair keyPair;
+  byte[] publicKey;
+
   String code;
   String data;
   private Tonlib tonlib;
@@ -62,8 +64,10 @@ public class GenericSmartContract implements Contract {
   private static class CustomGenericSmartContractBuilder extends GenericSmartContractBuilder {
     @Override
     public GenericSmartContract build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
+      if (isNull(super.publicKey)) {
+        if (isNull(super.keyPair)) {
+          super.keyPair = Utils.generateSignatureKeyPair();
+        }
       }
       return super.build();
     }
@@ -99,10 +103,28 @@ public class GenericSmartContract implements Contract {
     return tonlib.sendRawMessage(prepareDeployMsgWithoutBody().toCell().toBase64());
   }
 
+  public ExtMessageInfo deploy(Cell deployMessageBody, byte[] signedBody) {
+    return tonlib.sendRawMessage(
+        prepareDeployMsg(deployMessageBody, signedBody).toCell().toBase64());
+  }
+
   public Message prepareDeployMsgWithoutBody() {
     return Message.builder()
         .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
         .init(getStateInit())
+        .build();
+  }
+
+  public Message prepareDeployMsg(Cell deployMessageBody, byte[] signedBodyHash) {
+
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(
+            CellBuilder.beginCell()
+                .storeBytes(signedBodyHash)
+                .storeCell(deployMessageBody)
+                .endCell())
         .build();
   }
 

@@ -3,7 +3,6 @@ package org.ton.java.smartcontract.token.ft;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -29,7 +28,7 @@ import org.ton.java.utils.Utils;
 @Getter
 @Slf4j
 public class JettonMinterStableCoin implements Contract {
-  TweetNaclFast.Signature.KeyPair keyPair;
+
   Address adminAddress;
   Address nextAdminAddress;
   Cell content;
@@ -46,10 +45,6 @@ public class JettonMinterStableCoin implements Contract {
   private static class CustomJettonMinterStableCoinBuilder extends JettonMinterStableCoinBuilder {
     @Override
     public JettonMinterStableCoin build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
-      }
-
       return super.build();
     }
   }

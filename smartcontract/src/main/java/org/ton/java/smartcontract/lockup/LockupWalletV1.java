@@ -19,6 +19,7 @@ import org.ton.java.cell.TonPfxHashMapE;
 import org.ton.java.smartcontract.types.LockupConfig;
 import org.ton.java.smartcontract.types.LockupWalletV1Config;
 import org.ton.java.smartcontract.types.WalletCodes;
+import org.ton.java.smartcontract.utils.MsgUtils;
 import org.ton.java.smartcontract.wallet.Contract;
 import org.ton.java.tlb.*;
 import org.ton.java.tonlib.Tonlib;
@@ -43,6 +44,7 @@ public class LockupWalletV1 implements Contract {
   TweetNaclFast.Signature.KeyPair keyPair;
   long walletId;
   long initialSeqno;
+  byte[] publicKey;
 
   LockupConfig lockupConfig;
 
@@ -67,8 +69,10 @@ public class LockupWalletV1 implements Contract {
   private static class CustomLockupWalletV1Builder extends LockupWalletV1Builder {
     @Override
     public LockupWalletV1 build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
+      if (isNull(super.publicKey)) {
+        if (isNull(super.keyPair)) {
+          super.keyPair = Utils.generateSignatureKeyPair();
+        }
       }
       return super.build();
     }
@@ -163,7 +167,7 @@ public class LockupWalletV1 implements Contract {
     CellBuilder cell = CellBuilder.beginCell();
     cell.storeUint(0, 32); // seqno
     cell.storeUint(walletId, 32);
-    cell.storeBytes(keyPair.getPublicKey()); // 256
+    cell.storeBytes(isNull(keyPair) ? publicKey : keyPair.getPublicKey());
     cell.storeBytes(Utils.hexToSignedBytes(lockupConfig.getConfigPublicKey())); // 256
 
     int dictKeySize = 267;
@@ -294,6 +298,28 @@ public class LockupWalletV1 implements Contract {
             .build();
 
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+  }
+
+  public ExtMessageInfo deploy(byte[] signedBody) {
+    return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
+  }
+
+  public Message prepareDeployMsg(byte[] signedBodyHash) {
+    Cell body = createDeployMessage();
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(CellBuilder.beginCell().storeBytes(signedBodyHash).storeCell(body).endCell())
+        .build();
+  }
+
+  public ExtMessageInfo send(LockupWalletV1Config config, byte[] signedBodyHash) {
+    return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
+  }
+
+  public Message prepareExternalMsg(LockupWalletV1Config config, byte[] signedBodyHash) {
+    Cell body = createTransferBody(config);
+    return MsgUtils.createExternalMessageWithSignedBody(signedBodyHash, getAddress(), null, body);
   }
 
   public ExtMessageInfo send(LockupWalletV1Config config) {

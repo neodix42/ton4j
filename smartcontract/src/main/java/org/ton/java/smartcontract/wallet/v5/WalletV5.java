@@ -36,7 +36,7 @@ public class WalletV5 implements Contract {
   TweetNaclFast.Signature.KeyPair keyPair;
   long initialSeqno;
   long walletId;
-
+  byte[] publicKey;
   long validUntil;
   TonHashMapE extensions;
   boolean isSigAuthAllowed;
@@ -55,8 +55,10 @@ public class WalletV5 implements Contract {
   private static class CustomWalletV5Builder extends WalletV5Builder {
     @Override
     public WalletV5 build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
+      if (isNull(super.publicKey)) {
+        if (isNull(super.keyPair)) {
+          super.keyPair = Utils.generateSignatureKeyPair();
+        }
       }
       return super.build();
     }
@@ -109,7 +111,7 @@ public class WalletV5 implements Contract {
           .storeBit(isSigAuthAllowed)
           .storeUint(initialSeqno, 32)
           .storeUint(walletId, 32)
-          .storeBytes(keyPair.getPublicKey())
+          .storeBytes(isNull(keyPair) ? publicKey : keyPair.getPublicKey())
           .storeDict(
               extensions.serialize(
                   k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
@@ -158,6 +160,33 @@ public class WalletV5 implements Contract {
   /** Deploy wallet without any extensions. One can be installed later into the wallet. */
   public ExtMessageInfo deploy() {
     return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+  }
+
+  public ExtMessageInfo deploy(byte[] signedBody) {
+    return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
+  }
+
+  public Message prepareDeployMsg(byte[] signedBodyHash) {
+    Cell body = createDeployMsg();
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(CellBuilder.beginCell().storeCell(body).storeBytes(signedBodyHash).endCell())
+        .build();
+  }
+
+  public ExtMessageInfo send(WalletV5Config config, byte[] signedBodyHash) {
+    return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
+  }
+
+  public Message prepareExternalMsg(WalletV5Config config, byte[] signedBodyHash) {
+    Cell body = createExternalTransferBody(config);
+
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(CellBuilder.beginCell().storeCell(body).storeBytes(signedBodyHash).endCell())
+        .build();
   }
 
   public Message prepareDeployMsg() {
@@ -232,7 +261,7 @@ public class WalletV5 implements Contract {
    *   = SignedRequest;
    * </pre>
    */
-  private Cell createDeployMsg() {
+  public Cell createDeployMsg() {
     if (isNull(extensions)) {
       return CellBuilder.beginCell()
           .storeUint(PREFIX_SIGNED_EXTERNAL, 32)

@@ -1210,6 +1210,69 @@ public class TestWalletV5 extends CommonTest {
         myJettonWallet.getBalance());
   }
 
+  @Test
+  public void testWalletV5SimpleTransfer_ExternallySigned() throws InterruptedException {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    byte[] pubKey = keyPair.getPublicKey();
+    WalletV5 contract =
+        WalletV5.builder()
+            .tonlib(tonlib)
+            .walletId(42)
+            .keyPair(keyPair)
+            .isSigAuthAllowed(true)
+            .build();
+
+    Address walletAddress = contract.getAddress();
+
+    String nonBounceableAddress = walletAddress.toNonBounceable();
+    String bounceableAddress = walletAddress.toBounceable();
+    log.info("bounceableAddress: {}", bounceableAddress);
+    log.info("rawAddress: {}", walletAddress.toRaw());
+    log.info("pub-key {}", Utils.bytesToHex(pubKey));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    // deploy wallet-v5
+    Cell deployBody = contract.createDeployMsg();
+    byte[] signedDeployBodyHash = Utils.signData(pubKey, keyPair.getSecretKey(), deployBody.hash());
+
+    ExtMessageInfo extMessageInfo = contract.deploy(signedDeployBodyHash);
+    log.info("extMessageInfo: {}", extMessageInfo);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForDeployment(60);
+
+    long newSeq = contract.getSeqno();
+    assertThat(newSeq).isEqualTo(1);
+
+    WalletV5Config walletV5Config =
+        WalletV5Config.builder()
+            .seqno(newSeq)
+            .walletId(42)
+            .body(
+                contract
+                    .createBulkTransfer(
+                        Collections.singletonList(
+                            Destination.builder()
+                                .bounce(true)
+                                .address(
+                                    "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d")
+                                .mode(3)
+                                .amount(Utils.toNano(0.05))
+                                .comment("ton4j-v5-externally-signed")
+                                .build()))
+                    .toCell())
+            .build();
+
+    Cell transferBody = contract.createExternalTransferBody(walletV5Config);
+    byte[] signedTransferBodyHash =
+        Utils.signData(pubKey, keyPair.getSecretKey(), transferBody.hash());
+    extMessageInfo = contract.send(walletV5Config, signedTransferBodyHash);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+  }
+
   List<Destination> createDummyDestinations(int count) throws NoSuchAlgorithmException {
     List<Destination> result = new ArrayList<>();
     for (int i = 0; i < count; i++) {

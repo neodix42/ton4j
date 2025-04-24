@@ -1,7 +1,6 @@
 package org.ton.java.smartcontract.highload;
 
 import static java.util.Objects.isNull;
-import static org.ton.java.utils.Utils.HIGH_S;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -12,7 +11,6 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.bouncycastle.util.BigIntegers;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
@@ -37,6 +35,7 @@ public class HighloadWalletV3S implements Contract {
   Secp256k1KeyPair keyPair;
   long walletId;
   long timeout;
+  byte[] publicKey;
 
   /**
    * interface to <a
@@ -54,8 +53,11 @@ public class HighloadWalletV3S implements Contract {
   private static class CustomHighloadWalletV3SBuilder extends HighloadWalletV3SBuilder {
     @Override
     public HighloadWalletV3S build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSecp256k1SignatureKeyPair();
+
+      if (isNull(super.publicKey)) {
+        if (isNull(super.keyPair)) {
+          super.keyPair = Utils.generateSecp256k1SignatureKeyPair();
+        }
       }
       return super.build();
     }
@@ -169,9 +171,11 @@ public class HighloadWalletV3S implements Contract {
    */
   @Override
   public Cell createDataCell() {
+    byte[] pubKey = isNull(keyPair) ? publicKey : keyPair.getPublicKey();
+
     return CellBuilder.beginCell()
-        .storeUint(keyPair.getPublicKey()[0] % 2, 1)
-        .storeBytes(Utils.slice(keyPair.getPublicKey(), 1, 32))
+        .storeUint(pubKey[0] % 2, 1)
+        .storeBytes(Utils.slice(pubKey, 1, 32))
         .storeUint(walletId, 32)
         .storeBit(false) // old queries
         .storeBit(false) // queries
@@ -218,46 +222,28 @@ public class HighloadWalletV3S implements Contract {
    * @param highloadConfig HighloadV3Config
    */
   public ExtMessageInfo send(HighloadV3Config highloadConfig) {
-    Address ownAddress = getAddress();
-
     Cell body = createTransferMessage(highloadConfig);
 
     SignatureWithRecovery signature =
         Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
-    System.out.println(
-        "recovered pub key send "
-            + Utils.bytesToHex(
-                Utils.recoverPublicKey(
-                    signature.getR(), signature.getS(), signature.getV(), body.hash())));
+    return tonlib.sendRawMessage(
+        prepareExternalMsg(body, signature.getV()[0], signature.getSignature())
+            .toCell()
+            .toBase64());
+  }
 
-    BigInteger s = BigIntegers.fromUnsignedByteArray(signature.getS());
-    BigInteger highS = BigIntegers.fromUnsignedByteArray(HIGH_S);
-    // second time
-    if (s.compareTo(highS) >= 0) {
-      System.out.println("NOT OK HIGH_S");
-    }
+  /**
+   * @param highloadConfig HighloadV3Config
+   */
+  public ExtMessageInfo send(HighloadV3Config highloadConfig, byte[] signedBody) {
+    Cell body = createTransferMessage(highloadConfig);
+    byte[] r = Utils.slice(signedBody, 0, 32);
+    byte[] s = Utils.slice(signedBody, 32, 32);
 
-    Message externalMessage =
-        Message.builder()
-            .info(
-                ExternalMessageInInfo.builder()
-                    .dstAddr(
-                        MsgAddressIntStd.builder()
-                            .workchainId(ownAddress.wc)
-                            .address(ownAddress.toBigInteger())
-                            .build())
-                    .build())
-            .body(
-                CellBuilder.beginCell()
-                    .storeBit((signature.getV()[0] & 1) == 1)
-                    .storeBytes(signature.getR())
-                    .storeBytes(signature.getS())
-                    .storeRef(body)
-                    .endCell())
-            .build();
+    byte v = Utils.getRecoveryId(r, s, body.hash(), publicKey);
 
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return tonlib.sendRawMessage(prepareExternalMsg(body, v, signedBody).toCell().toBase64());
   }
 
   /**
@@ -265,56 +251,56 @@ public class HighloadWalletV3S implements Contract {
    * account's transactions
    */
   public RawTransaction sendWithConfirmation(HighloadV3Config highloadConfig) {
-    Address ownAddress = getAddress();
 
     Cell body = createTransferMessage(highloadConfig);
 
     SignatureWithRecovery signature =
         Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
-    Message externalMessage =
-        Message.builder()
-            .info(
-                ExternalMessageInInfo.builder()
-                    .dstAddr(
-                        MsgAddressIntStd.builder()
-                            .workchainId(ownAddress.wc)
-                            .address(ownAddress.toBigInteger())
-                            .build())
-                    .build())
-            .body(
-                CellBuilder.beginCell()
-                    .storeBit((signature.getV()[0] & 1) == 1)
-                    .storeBytes(signature.getR())
-                    .storeBytes(signature.getS())
-                    .storeRef(body)
-                    .storeRef(body)
-                    .endCell())
-            .build();
-    return tonlib.sendRawMessageWithConfirmation(externalMessage.toCell().toBase64(), getAddress());
+    return tonlib.sendRawMessageWithConfirmation(
+        prepareExternalMsg(body, signature.getV()[0], signature.getSignature()).toCell().toBase64(),
+        getAddress());
+  }
+
+  public Message prepareExternalMsg(Cell body, byte v, byte[] signedBodyHash) {
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .body(
+            CellBuilder.beginCell()
+                .storeBit((v & 1) == 1)
+                .storeBytes(signedBodyHash)
+                .storeRef(body)
+                .endCell())
+        .build();
+  }
+
+  private Cell createDeployMessageTemp(HighloadV3Config highloadConfig) {
+    return MessageRelaxed.builder()
+        .info(
+            InternalMessageInfoRelaxed.builder()
+                .dstAddr(getAddressIntStd())
+                .createdAt(
+                    (highloadConfig.getCreatedAt() == 0)
+                        ? Instant.now().getEpochSecond() - 60
+                        : highloadConfig.getCreatedAt())
+                .build())
+        .build()
+        .toCell();
+  }
+
+  public Cell createDeployMessage(HighloadV3Config highloadConfig) {
+    if (isNull(highloadConfig.getBody())) {
+      // dummy deploy msg
+      highloadConfig.setBody(createDeployMessageTemp(highloadConfig));
+    }
+
+    return createTransferMessage(highloadConfig);
   }
 
   public ExtMessageInfo deploy(HighloadV3Config highloadConfig) {
-    Address ownAddress = getAddress();
-
     if (isNull(highloadConfig.getBody())) {
       // dummy deploy msg
-      highloadConfig.setBody(
-          MessageRelaxed.builder()
-              .info(
-                  InternalMessageInfoRelaxed.builder()
-                      .dstAddr(
-                          MsgAddressIntStd.builder()
-                              .workchainId(ownAddress.wc)
-                              .address(ownAddress.toBigInteger())
-                              .build())
-                      .createdAt(
-                          (highloadConfig.getCreatedAt() == 0)
-                              ? Instant.now().getEpochSecond() - 60
-                              : highloadConfig.getCreatedAt())
-                      .build())
-              .build()
-              .toCell());
+      highloadConfig.setBody(createDeployMessageTemp(highloadConfig));
     }
 
     Cell innerMsg = createTransferMessage(highloadConfig);
@@ -324,20 +310,40 @@ public class HighloadWalletV3S implements Contract {
 
     Message externalMessage =
         Message.builder()
-            .info(
-                ExternalMessageInInfo.builder()
-                    .dstAddr(
-                        MsgAddressIntStd.builder()
-                            .workchainId(ownAddress.wc)
-                            .address(ownAddress.toBigInteger())
-                            .build())
-                    .build())
+            .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
             .init(getStateInit())
             .body(
                 CellBuilder.beginCell()
                     .storeBit((signature.getV()[0] & 1) == 1)
                     .storeBytes(signature.getR())
                     .storeBytes(signature.getS())
+                    .storeRef(innerMsg)
+                    .endCell())
+            .build();
+    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+  }
+
+  public ExtMessageInfo deploy(HighloadV3Config highloadConfig, byte[] signedBody) {
+    if (isNull(highloadConfig.getBody())) {
+      // dummy deploy msg
+      highloadConfig.setBody(createDeployMessageTemp(highloadConfig));
+    }
+
+    Cell innerMsg = createTransferMessage(highloadConfig);
+
+    byte[] r = Utils.slice(signedBody, 0, 32);
+    byte[] s = Utils.slice(signedBody, 32, 32);
+
+    byte v = Utils.getRecoveryId(r, s, innerMsg.hash(), publicKey);
+
+    Message externalMessage =
+        Message.builder()
+            .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+            .init(getStateInit())
+            .body(
+                CellBuilder.beginCell()
+                    .storeBit((v & 1) == 1)
+                    .storeBytes(signedBody)
                     .storeRef(innerMsg)
                     .endCell())
             .build();

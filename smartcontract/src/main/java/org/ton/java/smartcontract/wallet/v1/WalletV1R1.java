@@ -25,6 +25,7 @@ public class WalletV1R1 implements Contract {
 
   TweetNaclFast.Signature.KeyPair keyPair;
   long initialSeqno;
+  byte[] publicKey;
 
   public static class WalletV1R1Builder {}
 
@@ -35,8 +36,10 @@ public class WalletV1R1 implements Contract {
   private static class CustomWalletV1R1Builder extends WalletV1R1Builder {
     @Override
     public WalletV1R1 build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
+      if (isNull(super.publicKey)) {
+        if (isNull(super.keyPair)) {
+          super.keyPair = Utils.generateSignatureKeyPair();
+        }
       }
       return super.build();
     }
@@ -69,7 +72,7 @@ public class WalletV1R1 implements Contract {
   public Cell createDataCell() {
     return CellBuilder.beginCell()
         .storeUint(initialSeqno, 32) // seqno
-        .storeBytes(keyPair.getPublicKey())
+        .storeBytes(isNull(keyPair) ? publicKey : keyPair.getPublicKey())
         .endCell();
   }
 
@@ -78,11 +81,11 @@ public class WalletV1R1 implements Contract {
     return CellBuilder.beginCell().fromBoc(WalletCodes.V1R1.getValue()).endCell();
   }
 
-  Cell createDeployMessage() {
+  public Cell createDeployMessage() {
     return CellBuilder.beginCell().storeUint(initialSeqno, 32).endCell();
   }
 
-  Cell createTransferBody(WalletV1R1Config config) {
+  public Cell createTransferBody(WalletV1R1Config config) {
     Cell order =
         MessageRelaxed.builder()
             .info(
@@ -143,6 +146,28 @@ public class WalletV1R1 implements Contract {
 
   public ExtMessageInfo deploy() {
     return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+  }
+
+  public ExtMessageInfo deploy(byte[] signedBody) {
+    return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
+  }
+
+  public Message prepareDeployMsg(byte[] signedBodyHash) {
+    Cell body = createDeployMessage();
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(CellBuilder.beginCell().storeBytes(signedBodyHash).storeCell(body).endCell())
+        .build();
+  }
+
+  public ExtMessageInfo send(WalletV1R1Config config, byte[] signedBodyHash) {
+    return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
+  }
+
+  public Message prepareExternalMsg(WalletV1R1Config config, byte[] signedBodyHash) {
+    Cell body = createTransferBody(config);
+    return MsgUtils.createExternalMessageWithSignedBody(signedBodyHash, getAddress(), null, body);
   }
 
   public Message prepareDeployMsg() {

@@ -406,4 +406,50 @@ public class TestWalletV3R2Short extends CommonTest {
     assertThat(contract.getAddress().toRaw())
         .isEqualTo("-1:0755526dfc926d1b6d468801099cad2d588f40a6a6088bcd3e059566c0ef907c");
   }
+
+  @Test
+  public void testWalletSignedExternally() throws InterruptedException {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    byte[] publicKey = keyPair.getPublicKey();
+
+    WalletV3R2 contract =
+        WalletV3R2.builder().tonlib(tonlib).publicKey(publicKey).walletId(42).build();
+    log.info("pub key: {}", Utils.bytesToHex(publicKey));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonlib, contract.getAddress(), Utils.toNano(0.1));
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract.getWalletId(),
+        contract.getName(),
+        Utils.formatNanoValue(balance));
+
+    // deploy using externally signed body
+    Cell deployBody = contract.createDeployMessage();
+
+    byte[] signedDeployBodyHash =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
+
+    contract.deploy(signedDeployBodyHash);
+    contract.waitForDeployment(60);
+
+    // send toncoins
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(contract.getSeqno())
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.08))
+            .comment("testWalletV3R2-signed-externally")
+            .build();
+
+    // transfer coins from new wallet (back to faucet) using externally signed body
+    Cell transferBody = contract.createTransferBody(config);
+    byte[] signedTransferBodyHash =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
+    ExtMessageInfo extMessageInfo = contract.send(config, signedTransferBodyHash);
+    log.info("extMessageInfo: {}", extMessageInfo);
+    contract.waitForBalanceChange();
+    assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
+  }
 }

@@ -2,7 +2,6 @@ package org.ton.java.smartcontract.dns;
 
 import static java.util.Objects.isNull;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -23,12 +22,14 @@ import org.ton.java.tonlib.types.TvmStackEntryNumber;
 import org.ton.java.tonlib.types.TvmStackEntrySlice;
 import org.ton.java.utils.Utils;
 
+/**
+ * <a
+ * href="https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-collection.fc">nft-collection</a>
+ */
 @Builder
 @Getter
 public class DnsCollection implements Contract {
 
-  // https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-collection.fc
-  TweetNaclFast.Signature.KeyPair keyPair;
   String dnsItemCodeHex;
   Cell collectionContent;
   Cell code;
@@ -61,9 +62,6 @@ public class DnsCollection implements Contract {
   private static class CustomDnsCollectionBuilder extends DnsCollectionBuilder {
     @Override
     public DnsCollection build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
-      }
       if (isNull(super.collectionContent)) {
         throw new Error("Required collectionContent cell");
       }

@@ -121,7 +121,6 @@ public class TestDns extends CommonTest {
     DnsCollection dnsCollection =
         DnsCollection.builder()
             .tonlib(tonlib)
-            .keyPair(adminWallet.getKeyPair())
             .collectionContent(
                 NftUtils.createOffChainUriCell(
                     UUID.randomUUID()

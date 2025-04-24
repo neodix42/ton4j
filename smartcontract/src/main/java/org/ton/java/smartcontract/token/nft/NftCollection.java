@@ -2,7 +2,6 @@ package org.ton.java.smartcontract.token.nft;
 
 import static java.util.Objects.isNull;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
@@ -24,8 +23,6 @@ import org.ton.java.utils.Utils;
 public class NftCollection implements Contract {
   // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-collection.fc
   // not editable
-  TweetNaclFast.Signature.KeyPair keyPair;
-
   long royaltyBase; // default 1000
   double royaltyFactor;
   Address adminAddress;
@@ -60,9 +57,6 @@ public class NftCollection implements Contract {
   private static class CustomNftCollectionBuilder extends NftCollectionBuilder {
     @Override
     public NftCollection build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
-      }
       super.royaltyBase = 1000;
       return super.build();
     }

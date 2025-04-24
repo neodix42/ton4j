@@ -28,6 +28,7 @@ public class WalletV1R3 implements Contract {
 
   TweetNaclFast.Signature.KeyPair keyPair;
   long initialSeqno;
+  byte[] publicKey;
 
   public static class WalletV1R3Builder {}
 
@@ -38,8 +39,10 @@ public class WalletV1R3 implements Contract {
   private static class CustomWalletV1R3Builder extends WalletV1R3Builder {
     @Override
     public WalletV1R3 build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
+      if (isNull(super.publicKey)) {
+        if (isNull(super.keyPair)) {
+          super.keyPair = Utils.generateSignatureKeyPair();
+        }
       }
       return super.build();
     }
@@ -85,7 +88,7 @@ public class WalletV1R3 implements Contract {
   public Cell createDataCell() {
     return CellBuilder.beginCell()
         .storeUint(initialSeqno, 32) // seqno
-        .storeBytes(keyPair.getPublicKey())
+        .storeBytes(isNull(keyPair) ? publicKey : keyPair.getPublicKey())
         .endCell();
   }
 
@@ -158,6 +161,28 @@ public class WalletV1R3 implements Contract {
 
   public ExtMessageInfo deploy() {
     return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+  }
+
+  public ExtMessageInfo deploy(byte[] signedBody) {
+    return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
+  }
+
+  public Message prepareDeployMsg(byte[] signedBodyHash) {
+    Cell body = createDeployMessage();
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(CellBuilder.beginCell().storeBytes(signedBodyHash).storeCell(body).endCell())
+        .build();
+  }
+
+  public ExtMessageInfo send(WalletV1R3Config config, byte[] signedBodyHash) {
+    return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
+  }
+
+  public Message prepareExternalMsg(WalletV1R3Config config, byte[] signedBodyHash) {
+    Cell body = createTransferBody(config);
+    return MsgUtils.createExternalMessageWithSignedBody(signedBodyHash, getAddress(), null, body);
   }
 
   public Message prepareDeployMsg() {

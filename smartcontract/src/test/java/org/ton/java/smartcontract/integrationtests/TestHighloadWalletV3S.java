@@ -120,6 +120,111 @@ public class TestHighloadWalletV3S extends CommonTest {
     log.info("isProcessed without clean {}", isProcessed);
   }
 
+  @Test
+  public void testBulkTransferSimplified_TwoDestinations_ExternalSigning()
+      throws InterruptedException {
+
+    Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
+    byte[] pubKey = keyPair.getPublicKey();
+
+    HighloadWalletV3S contract =
+        HighloadWalletV3S.builder()
+            .tonlib(tonlib)
+            .publicKey(pubKey) // no private key is used
+            .walletId(42)
+            .build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+    String rawAddress = contract.getAddress().toRaw();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(pubKey));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+    Utils.sleep(30, "topping up...");
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    HighloadV3Config config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            .build();
+
+    Cell deployBody = contract.createDeployMessage(config);
+
+    // sign deployBody without exposing private key and come back with a signature
+    byte[] signedDeployBody =
+        Utils.signDataSecp256k1(deployBody.hash(), keyPair.getPrivateKey(), pubKey).getSignature();
+
+    ExtMessageInfo extMessageInfo = contract.deploy(config, signedDeployBody);
+    log.info("extMessageInfo {}", extMessageInfo);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForDeployment(45);
+    log.info("deployed");
+
+    int queryId = HighloadQueryId.fromSeqno(1).getQueryId();
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(queryId)
+            .body(
+                contract.createBulkTransfer(
+                    Arrays.asList(
+                        Destination.builder()
+                            .address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO")
+                            .amount(Utils.toNano(0.12))
+                            .body(
+                                CellBuilder.beginCell()
+                                    .storeUint(0, 32)
+                                    .storeString("test-comment-1")
+                                    .endCell())
+                            .build(),
+                        Destination.builder()
+                            .address("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G")
+                            .amount(Utils.toNano(0.11))
+                            .comment("test-comment-2")
+                            .build()),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+            .build();
+
+    Cell transferBody = contract.createTransferMessage(config);
+
+    // sign transferBody without exposing private key and come back with a signature
+    byte[] signedTransferBody =
+        Utils.signDataSecp256k1(
+                transferBody.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey())
+            .getSignature();
+
+    extMessageInfo = contract.send(config, signedTransferBody);
+    log.info("extMessageInfo {}", extMessageInfo);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+    log.info("sent 2 messages");
+
+    String publicKey = contract.getPublicKey();
+    log.info("public key {}", publicKey);
+
+    long subWalletId = contract.getSubWalletId();
+    log.info("subWalletId key {}", subWalletId);
+
+    long lastCleanTime = contract.getLastCleanTime();
+    log.info("lastCleanTime {}", lastCleanTime);
+
+    long timeout = contract.getTimeout();
+    log.info("timeout {}", timeout);
+
+    boolean isProcessed = contract.isProcessed(queryId, true);
+    log.info("isProcessed with clean {}", isProcessed);
+
+    isProcessed = contract.isProcessed(queryId, false);
+    log.info("isProcessed without clean {}", isProcessed);
+  }
+
   /** Sends 1000 messages with values without comment/memo field */
   @Test
   public void testBulkTransferSimplified_1000() throws InterruptedException {

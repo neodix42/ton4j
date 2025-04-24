@@ -31,6 +31,7 @@ public class WalletV4R2 implements Contract {
   TweetNaclFast.Signature.KeyPair keyPair;
   long walletId;
   long initialSeqno;
+  byte[] publicKey;
 
   public static class WalletV4R2Builder {}
 
@@ -41,8 +42,10 @@ public class WalletV4R2 implements Contract {
   private static class CustomWalletV4R2Builder extends WalletV4R2Builder {
     @Override
     public WalletV4R2 build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
+      if (isNull(super.publicKey)) {
+        if (isNull(super.keyPair)) {
+          super.keyPair = Utils.generateSignatureKeyPair();
+        }
       }
       return super.build();
     }
@@ -76,7 +79,7 @@ public class WalletV4R2 implements Contract {
     return CellBuilder.beginCell()
         .storeUint(initialSeqno, 32)
         .storeUint(walletId, 32)
-        .storeBytes(keyPair.getPublicKey())
+        .storeBytes(isNull(keyPair) ? publicKey : keyPair.getPublicKey())
         .storeUint(0, 1) // plugins dict empty
         .endCell();
   }
@@ -174,6 +177,43 @@ public class WalletV4R2 implements Contract {
    */
   public ExtMessageInfo deploy() {
     return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+  }
+
+  public ExtMessageInfo deploy(byte[] signedBody) {
+    return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
+  }
+
+  public Message prepareDeployMsg(byte[] signedBodyHash) {
+    Cell body = createDeployMessage();
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(CellBuilder.beginCell().storeBytes(signedBodyHash).storeCell(body).endCell())
+        .build();
+  }
+
+  public ExtMessageInfo send(WalletV4R2Config config, byte[] signedBodyHash) {
+    return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
+  }
+
+  public Message prepareExternalMsg(WalletV4R2Config config, byte[] signedBodyHash) {
+    Cell body = createTransferBody(config);
+    return MsgUtils.createExternalMessageWithSignedBody(signedBodyHash, getAddress(), null, body);
+  }
+
+  /**
+   * Sends amount of nano toncoins to destination address using auto-fetched seqno without the body
+   * and default send-mode 3
+   *
+   * @param config WalletV4R2Config
+   */
+  public ExtMessageInfo send(WalletV4R2Config config) {
+    return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
+  }
+
+  public Message prepareExternalMsg(WalletV4R2Config config) {
+    Cell body = createTransferBody(config);
+    return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
   }
 
   /**
@@ -396,27 +436,12 @@ public class WalletV4R2 implements Contract {
   }
 
   /**
-   * Sends amount of nano toncoins to destination address using auto-fetched seqno without the body
-   * and default send-mode 3
-   *
-   * @param config WalletV4R2Config
-   */
-  public ExtMessageInfo send(WalletV4R2Config config) {
-    return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
-  }
-
-  /**
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
   public RawTransaction sendWithConfirmation(WalletV4R2Config config) {
     return tonlib.sendRawMessageWithConfirmation(
         prepareExternalMsg(config).toCell().toBase64(), getAddress());
-  }
-
-  public Message prepareExternalMsg(WalletV4R2Config config) {
-    Cell body = createTransferBody(config);
-    return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
   }
 
   public Cell createInternalSignedBody(WalletV4R2Config config) {

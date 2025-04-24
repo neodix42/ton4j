@@ -1,9 +1,7 @@
 package org.ton.java.smartcontract.dns;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,8 +26,6 @@ public class DnsItem implements Contract {
 
   // should be this https://github.com/ton-blockchain/dns-contract/blob/main/func/nft-item.fc
   // https://github.com/ton-blockchain/token-contract/blob/1ad314a98d20b41241d5329e1786fc894ad811de/nft/nft-item.fc
-  TweetNaclFast.Signature.KeyPair keyPair;
-
   BigInteger index;
   Address collectionAddress;
 
@@ -60,9 +56,6 @@ public class DnsItem implements Contract {
   private static class CustomDnsItemBuilder extends DnsItemBuilder {
     @Override
     public DnsItem build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
-      }
       return super.build();
     }
   }

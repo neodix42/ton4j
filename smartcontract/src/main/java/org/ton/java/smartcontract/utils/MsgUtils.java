@@ -62,6 +62,39 @@ public class MsgUtils {
     return externalMessage;
   }
 
+  /**
+   * creates external message where body hash signed externally
+   *
+   * @param signedBodyHash signed body hash
+   * @param destination destination address
+   * @param stateInit state init
+   * @param body message body
+   * @return Message
+   */
+  public static Message createExternalMessageWithSignedBody(
+      byte[] signedBodyHash, Address destination, StateInit stateInit, Cell body) {
+    Message externalMessage =
+        Message.builder()
+            .info(
+                ExternalMessageInInfo.builder()
+                    .dstAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId(destination.wc)
+                            .address(destination.toBigInteger())
+                            .build())
+                    .build())
+            .init(nonNull(stateInit) ? stateInit : null)
+            .build();
+
+    if (isNull(body)) {
+      body = CellBuilder.beginCell().endCell();
+    }
+    externalMessage.setBody(
+        CellBuilder.beginCell().storeBytes(signedBodyHash).storeCell(body).endCell());
+
+    return externalMessage;
+  }
+
   /** without source address */
   public static MessageRelaxed createInternalMessageRelaxed(
       Address destination,
