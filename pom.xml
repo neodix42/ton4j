@@ -27,6 +27,7 @@
         <module>tolk</module>
         <module>disassembler</module>
         <module>tlb</module>
+        <module>adnl</module>
     </modules>
 
     <properties>
