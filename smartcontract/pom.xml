@@ -97,10 +97,8 @@
         </dependency>
         <!--  recompiled from source with Java 8 -->
         <dependency>
-            <groupId>io.github.neodix42</groupId>
-            <artifactId>tweetnacljava</artifactId>
-            <version>0.9.7</version>
-            <scope>compile</scope>
+            <groupId>org.purejava</groupId>
+            <artifactId>tweetnacl-java</artifactId>
         </dependency>
         <!-- test -->
         <dependency>
