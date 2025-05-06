@@ -15,9 +15,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.ton.java.bitstring.BitString;
-import org.ton.java.cell.Cell;
-import org.ton.java.cell.CellBuilder;
 import org.ton.java.liteclient.api.ResultLastBlock;
 import org.ton.java.liteclient.api.ResultListBlockTransactions;
 import org.ton.java.liteclient.api.block.Block;
@@ -412,28 +409,5 @@ public class LiteClientTest {
       tx.printAllMessages(false);
     }
     MessageFees.printMessageFeesFooter();
-  }
-
-  @Test
-  public void testRunMethodTest1() throws Exception {
-    LiteClient liteClient = LiteClient.builder().testnet(false).build();
-    final String result =
-        liteClient.executeRunMethod(
-            "EQD-BJSVUJviud_Qv7Ymfd3qzXdrmV525e3YDzWQoHIAiInL",
-            "get_source_item_address",
-            "48254587912360971182213375080930396471362566750482580908974048855188723745203 103493475297594561220733205176087411411758133058754107407060723644815771644946");
-    log.info("result {}", result);
-
-    byte[] b =
-        Utils.hexToSignedBytes(
-            "801482bf04d1769cf0b59f5ffd4cbf659b5e1d9ddd2eccc47901ec29242b3fd76fb0");
-    BitString bs = new BitString();
-    bs.writeBytes(b);
-    Cell c = CellBuilder.beginCell().storeBitString(bs, 267).endCell();
-
-    log.info(" boc {}", c.toHex(true, false));
-    log.info(" boc {}", c.toBase64(true));
-    // te6cckEBAQEAJAAAQ4AUgr8E0Xac8LWfX/1Mv2WbXh2d3S7MxHkB7CkkKz/Xb7BxEejY
-    // te6cckEBAQEAJAAAQ4AUgr8E0Xac8LWfX/1Mv2WbXh2d3S7MxHkB7CkkKz/Xb7BxEejY
   }
 }

@@ -634,6 +634,14 @@ public class TestTonlibJsonTestnet {
   }
 
   @Test
+  public void testTonlibGetConfig1s() {
+
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(false).build();
+
+    log.info("config0 {}", tonlib.getConfigParam25());
+  }
+
+  @Test
   public void testTonlibGetConfigs() {
 
     Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
