@@ -10,11 +10,11 @@ import org.ton.java.address.Address;
 import org.ton.java.utils.Utils;
 
 /**
- * Implements BitString where each bit is actually a Boolean variable in memory. Not efficient, but
- * perfect for educational purposes. See RealBitString implementation where each element of
- * BitString stored as real bit in a memory.
+ * Implements BitString1 where each bit is actually a Boolean variable in memory. Not efficient, but
+ * perfect for educational purposes. See RealBitString1 implementation where each element of
+ * BitString1 stored as real bit in a memory.
  */
-public class BitString implements Bits<Boolean>, Serializable {
+public class BitString1 implements Bits<Boolean>, Serializable {
 
   Deque<Boolean> array;
 
@@ -22,7 +22,7 @@ public class BitString implements Bits<Boolean>, Serializable {
 
   private final int initialLength;
 
-  public BitString(BitString bs) {
+  public BitString1(BitString1 bs) {
     array = new ArrayDeque<>(bs.array.size());
     for (Boolean b : bs.array) {
       writeBit(b);
@@ -30,11 +30,11 @@ public class BitString implements Bits<Boolean>, Serializable {
     initialLength = bs.array.isEmpty() ? MAX_LENGTH : bs.array.size();
   }
 
-  public BitString(byte[] bytes) {
+  public BitString1(byte[] bytes) {
     this(Utils.signedBytesToUnsigned(bytes));
   }
 
-  public BitString(int[] bytes) {
+  public BitString1(int[] bytes) {
     if (bytes.length == 0) {
       array = new ArrayDeque<>(0);
       initialLength = 0;
@@ -59,11 +59,11 @@ public class BitString implements Bits<Boolean>, Serializable {
     }
   }
 
-  //    public BitString(byte[] bytes, int size) {
+  //    public BitString1(byte[] bytes, int size) {
   //        this(Utils.signedBytesToUnsigned(bytes), size); // todo redo below
   //    }
 
-  public BitString(byte[] bytes, int size) {
+  public BitString1(byte[] bytes, int size) {
     if (bytes.length == 0) {
       array = new ArrayDeque<>(0);
       initialLength = 0;
@@ -88,16 +88,16 @@ public class BitString implements Bits<Boolean>, Serializable {
   }
 
   /**
-   * Create BitString limited by length
+   * Create BitString1 limited by length
    *
-   * @param length int length of BitString in bits
+   * @param length int length of BitString1 in bits
    */
-  public BitString(int length) {
+  public BitString1(int length) {
     array = new ArrayDeque<>(length);
     initialLength = length;
   }
 
-  public BitString() {
+  public BitString1() {
     array = new ArrayDeque<>(MAX_LENGTH);
     initialLength = MAX_LENGTH;
   }
@@ -143,7 +143,7 @@ public class BitString implements Bits<Boolean>, Serializable {
    */
   private void checkRange(int n) {
     if (n > getLength()) {
-      throw new Error("BitString overflow");
+      throw new Error("BitString1 overflow");
     }
   }
 
@@ -332,7 +332,7 @@ public class BitString implements Bits<Boolean>, Serializable {
   }
 
   /**
-   * Appends BitString with Address addr_none$00 = MsgAddressExt; addr_std$10 anycast:(Maybe
+   * Appends BitString1 with Address addr_none$00 = MsgAddressExt; addr_std$10 anycast:(Maybe
    * Anycast) workchain_id:int8 address:uint256 = MsgAddressInt;
    *
    * @param address Address
@@ -349,12 +349,12 @@ public class BitString implements Bits<Boolean>, Serializable {
   }
 
   /**
-   * Write another BitString to this BitString
+   * Write another BitString1 to this BitString1
    *
-   * @param anotherBitString BitString
+   * @param anotherBitString1 BitString1
    */
-  public void writeBitString(BitString anotherBitString) {
-    Deque<Boolean> bits = anotherBitString.array;
+  public void writeBitString1(BitString1 anotherBitString1) {
+    Deque<Boolean> bits = anotherBitString1.array;
     for (boolean bit : bits) {
       writeBit(bit);
     }
@@ -379,13 +379,13 @@ public class BitString implements Bits<Boolean>, Serializable {
   }
 
   /**
-   * Read n bits from the BitString
+   * Read n bits from the BitString1
    *
    * @param n integer
-   * @return BitString with length n read from original Bitstring
+   * @return BitString1 with length n read from original BitString1
    */
-  public BitString readBits(int n) {
-    BitString result = new BitString(n);
+  public BitString1 readBits(int n) {
+    BitString1 result = new BitString1(n);
     for (int i = 0; i < n; i++) {
       result.writeBit(readBit());
     }
@@ -393,13 +393,13 @@ public class BitString implements Bits<Boolean>, Serializable {
   }
 
   /**
-   * Read rest of bits from the BitString
+   * Read rest of bits from the BitString1
    *
-   * @return BitString with length of read bits from original Bitstring
+   * @return BitString1 with length of read bits from original BitString1
    */
-  public BitString readBits() {
+  public BitString1 readBits() {
     int sz = array.size();
-    BitString result = new BitString(sz);
+    BitString1 result = new BitString1(sz);
 
     for (int i = 0; i < sz; i++) {
       result.writeBit(readBit());
@@ -409,7 +409,7 @@ public class BitString implements Bits<Boolean>, Serializable {
   }
 
   /**
-   * Read bits of bitLength without moving readCursor, i.e. modifying BitString
+   * Read bits of bitLength without moving readCursor, i.e. modifying BitString1
    *
    * @param bitLength length in bits
    * @return BigInteger
@@ -419,7 +419,7 @@ public class BitString implements Bits<Boolean>, Serializable {
       throw new Error("Incorrect bitLength");
     }
 
-    BitString cloned = clone();
+    BitString1 cloned = clone();
     int bytesNeeded = (bitLength + 7) / 8;
     byte[] bytes = new byte[bytesNeeded];
 
@@ -561,8 +561,8 @@ public class BitString implements Bits<Boolean>, Serializable {
   }
 
   public String readString(int length) {
-    BitString bitString = readBits(length);
-    return new String(bitString.toByteArray());
+    BitString1 BitString1 = readBits(length);
+    return new String(BitString1.toByteArray());
   }
 
   /**
@@ -570,22 +570,22 @@ public class BitString implements Bits<Boolean>, Serializable {
    * @return byte array
    */
   public byte[] readBytes(int length) {
-    BitString bitString = readBits(length);
-    return bitString.toByteArray();
+    BitString1 BitString1 = readBits(length);
+    return BitString1.toByteArray();
   }
 
   /**
    * @return hex string
    */
   public String toString() {
-    return toBitString();
+    return toBitString1();
   }
 
   /**
-   * @return BitString from 0 to writeCursor
+   * @return BitString1 from 0 to writeCursor
    */
-  public String toBitString() {
-    BitString cloned = clone();
+  public String toBitString1() {
+    BitString1 cloned = clone();
     Deque<Boolean> deque = cloned.array;
     char[] chars = new char[deque.size()];
 
@@ -602,9 +602,9 @@ public class BitString implements Bits<Boolean>, Serializable {
   }
 
   /**
-   * @return BitString from current position to writeCursor
+   * @return BitString1 from current position to writeCursor
    */
-  public String getBitString() {
+  public String getBitString1() {
     char[] chars = new char[array.size()];
 
     int i = 0;
@@ -620,7 +620,7 @@ public class BitString implements Bits<Boolean>, Serializable {
       return new int[0];
     }
 
-    String bin = getBitString();
+    String bin = getBitString1();
     int sz = bin.length();
     int[] result = new int[(sz + 7) / 8];
 
@@ -637,7 +637,7 @@ public class BitString implements Bits<Boolean>, Serializable {
       return new byte[0];
     }
 
-    String bin = getBitString();
+    String bin = getBitString1();
     int sz = bin.length();
     byte[] result = new byte[(sz + 7) / 8];
 
@@ -654,7 +654,7 @@ public class BitString implements Bits<Boolean>, Serializable {
       return new ArrayList<>();
     }
 
-    String bin = getBitString();
+    String bin = getBitString1();
     int sz = bin.length();
     List<BigInteger> result = new ArrayList<>((sz + 7) / 8);
 
@@ -671,7 +671,7 @@ public class BitString implements Bits<Boolean>, Serializable {
       return new byte[0];
     }
 
-    byte[] bin = getBitString().getBytes(StandardCharsets.UTF_8);
+    byte[] bin = getBitString1().getBytes(StandardCharsets.UTF_8);
     int sz = bin.length;
     byte[] result = new byte[(sz + 7) / 8];
 
@@ -691,7 +691,7 @@ public class BitString implements Bits<Boolean>, Serializable {
       return new int[0];
     }
 
-    byte[] bin = getBitString().getBytes(StandardCharsets.UTF_8);
+    byte[] bin = getBitString1().getBytes(StandardCharsets.UTF_8);
     int sz = bin.length;
     int[] result = new int[(sz + 7) / 8];
 
@@ -715,12 +715,12 @@ public class BitString implements Bits<Boolean>, Serializable {
     return result;
   }
 
-  public BitString clone() {
-    return new BitString(this);
+  public BitString1 clone() {
+    return new BitString1(this);
   }
 
-  public BitString cloneFrom(int from) {
-    BitString cloned = clone();
+  public BitString1 cloneFrom(int from) {
+    BitString1 cloned = clone();
     for (int i = 0; i < from; i++) {
       cloned.readBit();
     }
@@ -743,7 +743,7 @@ public class BitString implements Bits<Boolean>, Serializable {
         return s.substring(0, s.length() - 1);
       }
     } else {
-      BitString temp = clone();
+      BitString1 temp = clone();
       temp.writeBit(true);
       while (temp.array.size() % 4 != 0) {
         temp.writeBit(false);

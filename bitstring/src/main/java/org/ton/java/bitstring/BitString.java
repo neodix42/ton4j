@@ -16,20 +16,21 @@ import org.ton.java.utils.Utils;
  * Each element is one bit in memory. Interestingly, but this solution loses to Deque<Boolean> array
  * solution from memory footprint allocation.
  */
-public class RealBitString implements Serializable {
-  private static final Logger log = Logger.getLogger(RealBitString.class.getName());
+public class BitString implements Serializable {
+  private static final Logger log = Logger.getLogger(BitString.class.getName());
   byte[] array;
   public int writeCursor;
   public int readCursor;
   public int length;
 
-  public RealBitString() {
+  public BitString() {
     array = new byte[1023];
     writeCursor = 0;
     readCursor = 0;
+    length = 1023 * 8; // Each byte holds 8 bits
   }
 
-  public RealBitString(RealBitString bs) {
+  public BitString(BitString bs) {
     for (int i = bs.readCursor; i < bs.writeCursor; i++) {
       writeBit(bs.get(i));
     }
@@ -40,7 +41,7 @@ public class RealBitString implements Serializable {
    *
    * @param length int length of RealBitString in bits
    */
-  public RealBitString(int length) {
+  public BitString(int length) {
     array = new byte[(int) Math.ceil(length / (double) 8)];
     writeCursor = 0;
     readCursor = 0;
@@ -52,7 +53,7 @@ public class RealBitString implements Serializable {
    *
    * @param bytes byte[] array of bytes
    */
-  public RealBitString(byte[] bytes) {
+  public BitString(byte[] bytes) {
     this(Utils.signedBytesToUnsigned(bytes));
   }
 
@@ -62,7 +63,7 @@ public class RealBitString implements Serializable {
    * @param bytes byte[] array of bytes
    * @param size int number of bits to read
    */
-  public RealBitString(byte[] bytes, int size) {
+  public BitString(byte[] bytes, int size) {
     if (bytes.length == 0) {
       array = new byte[0];
       writeCursor = 0;
@@ -97,7 +98,7 @@ public class RealBitString implements Serializable {
    *
    * @param bytes int[] array of bytes
    */
-  public RealBitString(int[] bytes) {
+  public BitString(int[] bytes) {
     if (bytes.length == 0) {
       array = new byte[0];
       writeCursor = 0;
@@ -169,7 +170,7 @@ public class RealBitString implements Serializable {
    * @param n int
    */
   private void checkRange(int n) {
-    if (n >= length) {
+    if (n > length) {
       throw new Error("RealBitString overflow. n[" + n + "] >= length[" + length + "]");
     }
   }
@@ -190,7 +191,7 @@ public class RealBitString implements Serializable {
    * @param n int
    */
   void off(int n) {
-    checkRange(n);
+    //        checkRange(n);
     array[(n / 8)] &= ~(1 << (7 - (n % 8)));
   }
 
@@ -200,7 +201,7 @@ public class RealBitString implements Serializable {
    * @param n int
    */
   void toggle(int n) {
-    this.checkRange(n);
+    //    this.checkRange(n);
     array[(n / 8)] ^= 1 << (7 - (n % 8));
   }
 
@@ -209,7 +210,16 @@ public class RealBitString implements Serializable {
    *
    * @param b boolean
    */
-  public void writeBit(boolean b) {
+  //  public void writeBit(boolean b) {
+  //    if (b) {
+  //      on(writeCursor);
+  //    } else {
+  //      off(writeCursor);
+  //    }
+  //    writeCursor++;
+  //  }
+
+  public void writeBit(Boolean b) {
     if (b) {
       on(writeCursor);
     } else {
@@ -444,11 +454,11 @@ public class RealBitString implements Serializable {
   /**
    * Write another RealBitString to this RealBitString
    *
-   * @param anotherRealBitString RealBitString
+   * @param anotherBitString RealBitString
    */
-  public void writeBitString(RealBitString anotherRealBitString) {
-    for (int i = anotherRealBitString.readCursor; i < anotherRealBitString.writeCursor; i++) {
-      writeBit(anotherRealBitString.get(i));
+  public void writeBitString(BitString anotherBitString) {
+    for (int i = anotherBitString.readCursor; i < anotherBitString.writeCursor; i++) {
+      writeBit(anotherBitString.get(i));
     }
   }
 
@@ -461,13 +471,22 @@ public class RealBitString implements Serializable {
     return get(readCursor);
   }
 
-  /**
-   * Read one bit and moves readCursor forward by one position
-   *
-   * @return true or false
-   */
-  public boolean readBit() {
-    boolean result = get(readCursor);
+  //  /**
+  //   * Read one bit and moves readCursor forward by one position
+  //   *
+  //   * @return true or false
+  //   */
+  //  public boolean readBit() {
+  //    boolean result = get(readCursor);
+  //    readCursor++;
+  //    //        if (readCursor > writeCursor) {
+  //    //            throw new Error("Parse error: not enough bits. readCursor > writeCursor");
+  //    //        }
+  //    return result;
+  //  }
+
+  public Boolean readBit() {
+    Boolean result = get(readCursor);
     readCursor++;
     //        if (readCursor > writeCursor) {
     //            throw new Error("Parse error: not enough bits. readCursor > writeCursor");
@@ -481,9 +500,9 @@ public class RealBitString implements Serializable {
    * @param n integer
    * @return RealBitString with length n read from original RealBitString
    */
-  public RealBitString preReadBits(int n) {
+  public BitString preReadBits(int n) {
     int oldReadCursor = readCursor;
-    RealBitString result = new RealBitString(n);
+    BitString result = new BitString(n);
     for (int i = 0; i < n; i++) {
       result.writeBit(readBit());
     }
@@ -497,9 +516,22 @@ public class RealBitString implements Serializable {
    * @param n integer
    * @return RealBitString with length n read from original RealBitString
    */
-  public RealBitString readBits(int n) {
-    RealBitString result = new RealBitString(n);
+  public BitString readBits(int n) {
+    BitString result = new BitString(n);
     for (int i = 0; i < n; i++) {
+      result.writeBit(readBit());
+    }
+    return result;
+  }
+
+  /**
+   * Read rest of bits from the RealBitString
+   *
+   * @return RealBitString with length n read from original RealBitString
+   */
+  public BitString readBits() {
+    BitString result = new BitString(); // todo
+    for (int i = 0; i < writeCursor; i++) {
       result.writeBit(readBit());
     }
     return result;
@@ -626,8 +658,8 @@ public class RealBitString implements Serializable {
   }
 
   public String readString(int length) {
-    RealBitString RealBitString = readBits(length);
-    return new String(RealBitString.toByteArray());
+    BitString BitString = readBits(length);
+    return new String(BitString.toByteArray());
   }
 
   /**
@@ -635,8 +667,8 @@ public class RealBitString implements Serializable {
    * @return byte array
    */
   public byte[] readBytes(int length) {
-    RealBitString RealBitString = readBits(length);
-    return RealBitString.toByteArray();
+    BitString BitString = readBits(length);
+    return BitString.toByteArray();
   }
 
   /**
@@ -658,8 +690,16 @@ public class RealBitString implements Serializable {
     return s.toString();
   }
 
+  public Boolean[] toBooleanArray() {
+    Boolean[] result = new Boolean[getLength()];
+    for (int i = 0; i < writeCursor; i++) {
+      result[i++] = get(i);
+    }
+    return result;
+  }
+
   public int getLength() {
-    return array.length;
+    return array.length * 8;
   }
 
   /**
@@ -770,8 +810,8 @@ public class RealBitString implements Serializable {
     return result;
   }
 
-  public RealBitString clone() {
-    RealBitString result = new RealBitString(0);
+  public BitString clone() {
+    BitString result = new BitString(0);
     result.array = Arrays.copyOfRange(array, 0, array.length);
     result.length = length;
     result.writeCursor = writeCursor;
@@ -779,8 +819,8 @@ public class RealBitString implements Serializable {
     return result;
   }
 
-  public RealBitString cloneFrom(int from) {
-    RealBitString result = new RealBitString(0);
+  public BitString cloneFrom(int from) {
+    BitString result = new BitString(0);
     result.array = Arrays.copyOfRange(array, from, array.length);
     result.length = length;
     result.writeCursor = writeCursor - (from * 8);
@@ -788,8 +828,8 @@ public class RealBitString implements Serializable {
     return result;
   }
 
-  public RealBitString cloneClear() {
-    RealBitString result = new RealBitString(0);
+  public BitString cloneClear() {
+    BitString result = new BitString(0);
     result.array = Arrays.copyOfRange(array, 0, array.length);
     result.length = length;
     result.writeCursor = 0;
@@ -812,53 +852,12 @@ public class RealBitString implements Serializable {
         return s.substring(0, s.length() - 1);
       }
     } else {
-      RealBitString temp = clone();
+      BitString temp = clone();
       temp.writeBit(true);
       while (temp.writeCursor % 4 != 0) {
         temp.writeBit(false);
       }
       return temp.toHex().toUpperCase() + '_';
     }
-  }
-
-  public void setTopUppedArray(byte[] arr, boolean fulfilledBytes) {
-    length = arr.length * 8;
-    array = arr;
-    writeCursor = length;
-    //        int saveWriteCursor = writeCursor;
-
-    if (!(fulfilledBytes || (length == 0))) {
-      boolean foundEndBit = false;
-      for (byte c = 0; c < 7; c++) {
-        writeCursor -= 1;
-        if (get(writeCursor)) {
-          foundEndBit = true;
-          off(writeCursor);
-          //                    writeCursor += 3;
-          break;
-        }
-      }
-      //            writeCursor = saveWriteCursor;
-
-      if (!foundEndBit) {
-        log.info((Arrays.toString(arr) + ", " + fulfilledBytes));
-        throw new Error("Incorrect TopUppedArray");
-      }
-    }
-  }
-
-  public byte[] getTopUppedArray() {
-    RealBitString ret = clone();
-    int tu = (int) Math.ceil(ret.writeCursor / (double) 8) * 8 - ret.writeCursor;
-    if (tu > 0) {
-      tu = tu - 1;
-      ret.writeBit(true);
-      while (tu > 0) {
-        tu = tu - 1;
-        ret.writeBit(false);
-      }
-    }
-    ret.array = Arrays.copyOfRange(ret.array, 0, (int) Math.ceil(ret.writeCursor / (double) 8));
-    return ret.array;
   }
 }

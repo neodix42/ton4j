@@ -17,7 +17,7 @@ import org.ton.java.address.Address;
 public class TestRealBitString {
   @Test
   public void testRealBitStringUsedFree() {
-    RealBitString bitString = new RealBitString(10);
+    BitString bitString = new BitString(10);
     bitString.writeBit(true);
     assertThat(bitString.getFreeBits()).isEqualTo(9);
     assertThat(bitString.getUsedBits()).isEqualTo(1);
@@ -26,33 +26,33 @@ public class TestRealBitString {
 
   @Test
   public void testRealBitStringCell() {
-    RealBitString bitString = new RealBitString(1023);
+    BitString bitString = new BitString(1023);
     bitString.writeUint(2, 32);
-    assertThat(bitString.toRealBitString()).isEqualTo("00000000000000000000000000000010");
+    assertThat(bitString.toBitString()).isEqualTo("00000000000000000000000000000010");
     assertThat(bitString.toHex()).isEqualTo("00000002");
   }
 
   @Test
   public void testRealBitStringOutput() {
-    RealBitString bitString = new RealBitString(8);
+    BitString bitString = new BitString(8);
     bitString.writeUint(7, 3);
-    assertThat(bitString.toRealBitString()).isEqualTo("111");
+    assertThat(bitString.toBitString()).isEqualTo("111");
     assertThat(bitString.toHex()).isEqualTo("F_");
 
-    bitString = new RealBitString(16);
+    bitString = new BitString(16);
     bitString.writeUint(255, 8);
-    assertThat(bitString.toRealBitString()).isEqualTo("11111111");
+    assertThat(bitString.toBitString()).isEqualTo("11111111");
     assertThat(bitString.toHex()).isEqualTo("FF");
 
-    bitString = new RealBitString(32);
+    bitString = new BitString(32);
     bitString.writeInt(BigInteger.valueOf(20), 6);
-    assertThat(bitString.toRealBitString()).isEqualTo("010100");
+    assertThat(bitString.toBitString()).isEqualTo("010100");
     assertThat(bitString.toHex()).isEqualTo("52_");
   }
 
   @Test
   public void testRealBitStringReadUints() {
-    RealBitString bitString = new RealBitString(128);
+    BitString bitString = new BitString(128);
     bitString.writeUint(BigInteger.valueOf(200), 8);
     bitString.writeUint(BigInteger.valueOf(400), 16);
     bitString.writeUint(BigInteger.valueOf(600000), 32);
@@ -65,7 +65,7 @@ public class TestRealBitString {
 
   @Test
   public void testRealBitStringReadInts() {
-    RealBitString bitString = new RealBitString(128);
+    BitString bitString = new BitString(128);
     bitString.writeInt(BigInteger.valueOf(20), 8);
     bitString.writeInt(BigInteger.valueOf(400), 16);
     bitString.writeInt(BigInteger.valueOf(600000), 32);
@@ -82,32 +82,32 @@ public class TestRealBitString {
 
   @Test
   public void testRealBitStringWriteInt() {
-    RealBitString bitString = new RealBitString(32);
+    BitString bitString = new BitString(32);
     bitString.writeInt(BigInteger.valueOf(200), 9);
-    assertThat(bitString.toRealBitString()).isEqualTo("011001000");
+    assertThat(bitString.toBitString()).isEqualTo("011001000");
     assertThat(bitString.toHex()).isEqualTo("644_");
 
-    RealBitString bitStringMax64 = new RealBitString(64); // Long.MAX_VALUE, 8 bytes
+    BitString bitStringMax64 = new BitString(64); // Long.MAX_VALUE, 8 bytes
     bitStringMax64.writeInt(new BigInteger("9223372036854775807"), 64);
-    assertThat(bitStringMax64.toRealBitString())
+    assertThat(bitStringMax64.toBitString())
         .isEqualTo("0111111111111111111111111111111111111111111111111111111111111111");
 
-    RealBitString bitStringMax128 = new RealBitString(128);
+    BitString bitStringMax128 = new BitString(128);
     bitStringMax128.writeInt(new BigInteger("92233720368547758070"), 128);
-    assertThat(bitStringMax128.toRealBitString())
+    assertThat(bitStringMax128.toBitString())
         .isEqualTo(
             "00000000000000000000000000000000000000000000000000000000000001001111111111111111111111111111111111111111111111111111111111110110");
 
-    RealBitString bitStringMaxA = new RealBitString(128);
+    BitString bitStringMaxA = new BitString(128);
     bitStringMaxA.writeInt(new BigInteger("99999999999999999999999999999999999999"), 128);
-    assertThat(bitStringMaxA.toRealBitString())
+    assertThat(bitStringMaxA.toBitString())
         .isEqualTo(
             "01001011001110110100110010101000010110101000011011000100011110100000100110001010001000100011111111111111111111111111111111111111");
 
     BigInteger i = bitStringMaxA.readInt(128);
     assertThat(i.toString(16).toUpperCase()).isEqualTo("4B3B4CA85A86C47A098A223FFFFFFFFF");
 
-    RealBitString bitStringMaxB = new RealBitString(256);
+    BitString bitStringMaxB = new BitString(256);
     bitStringMaxB.writeInt(
         new BigInteger("9999999999999999999999999999999999999999999999999999999999"), 256);
     assertThat(bitStringMaxB.toHex())
@@ -116,12 +116,12 @@ public class TestRealBitString {
 
   @Test
   public void testRealBitStringWriteIntNegative() {
-    RealBitString bitString = new RealBitString(32);
+    BitString bitString = new BitString(32);
     bitString.writeInt(new BigInteger("-20"), 8);
     BigInteger r = bitString.readInt(8);
     assertThat(r.longValue()).isEqualTo(-20);
 
-    RealBitString bitStringMaxC = new RealBitString(256);
+    BitString bitStringMaxC = new BitString(256);
     bitStringMaxC.writeInt(
         new BigInteger("-9999999999999999999999999999999999999999999999999999999999"), 256);
     assertThat(bitStringMaxC.toHex())
@@ -130,18 +130,18 @@ public class TestRealBitString {
 
   @Test
   public void testRealBitStringWriteUints() {
-    RealBitString bitString = new RealBitString(16);
+    BitString bitString = new BitString(16);
     bitString.writeUint(BigInteger.valueOf(255), 8);
-    assertThat(bitString.toRealBitString()).isEqualTo("11111111");
+    assertThat(bitString.toBitString()).isEqualTo("11111111");
     assertThat(bitString.toHex()).isEqualTo("FF");
 
-    bitString = new RealBitString(64);
+    bitString = new BitString(64);
     bitString.writeUint(BigInteger.valueOf(Long.MAX_VALUE), 64);
-    assertThat(bitString.toRealBitString())
+    assertThat(bitString.toBitString())
         .isEqualTo("0111111111111111111111111111111111111111111111111111111111111111");
     assertThat(bitString.toHex()).isEqualTo("7FFFFFFFFFFFFFFF");
 
-    bitString = new RealBitString(128);
+    bitString = new BitString(128);
     bitString.writeUint(15, 4);
   }
 
@@ -150,8 +150,8 @@ public class TestRealBitString {
     Address address01 = Address.of("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
     assertThat(address01.toString(true, true, false))
         .isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
-    RealBitString bitString =
-        new RealBitString(34 * 8); // whole address is 36 bytes. tag[1]+wc[1]+addr[32]+crc[2]
+    BitString bitString =
+        new BitString(34 * 8); // whole address is 36 bytes. tag[1]+wc[1]+addr[32]+crc[2]
     bitString.writeAddress(address01);
     assertThat(bitString.toHex())
         .isEqualTo("80059EAB2A7D25DF7D5B56F74E4B87F2741647F0859774E5AF71CDEA214E1C845C7_");
@@ -159,39 +159,39 @@ public class TestRealBitString {
 
   @Test
   public void testRealBitString8() {
-    RealBitString bitString = new RealBitString(8);
+    BitString bitString = new BitString(8);
     bitString.writeUint8((byte) 7);
     assertThat(bitString.toHex()).isEqualTo("07");
   }
 
   @Test
   public void testRealBitStringStr() {
-    RealBitString bitString = new RealBitString(8);
+    BitString bitString = new BitString(8);
     bitString.writeString("A");
     assertThat(bitString.toHex()).isEqualTo("41");
 
-    bitString = new RealBitString(16);
+    bitString = new BitString(16);
     bitString.writeString("A");
     assertThat(bitString.toHex()).isEqualTo("41");
   }
 
   @Test
   public void testRealBitStringCoins() {
-    RealBitString bitString = new RealBitString(16);
+    BitString bitString = new BitString(16);
     bitString.writeCoins(BigInteger.TEN);
     assertThat(bitString.toHex()).isEqualTo("10A");
 
-    bitString = new RealBitString(32);
+    bitString = new BitString(32);
     bitString.writeCoins(BigInteger.TEN);
     assertThat(bitString.toHex()).isEqualTo("10A");
 
     assertThrows(
         Error.class,
         () -> {
-          RealBitString bitStringA = new RealBitString(32);
+          BitString bitStringA = new BitString(32);
           bitStringA.writeCoins(BigInteger.TEN.negate());
 
-          RealBitString bitString128 = new RealBitString(128);
+          BitString bitString128 = new BitString(128);
           BigInteger coins =
               BigInteger.valueOf(2)
                   .pow(121)
@@ -199,7 +199,7 @@ public class TestRealBitString {
           bitString128.writeCoins(coins);
         });
 
-    RealBitString bitString128 = new RealBitString(129);
+    BitString bitString128 = new BitString(129);
     BigInteger coins = BigInteger.valueOf(2).pow(120).subtract(BigInteger.ONE);
     bitString128.writeCoins(coins);
   }
@@ -222,7 +222,7 @@ public class TestRealBitString {
       @Test
       public void testRealBitStringByteArrayPositive() {
           RealBitString bitString9 = new RealBitString(new byte[]{7, 7, 7, 7});
-          assertThat(bitString9.toRealBitString()).isEqualTo("00000111000001110000011100000111");
+          assertThat(bitString9.toBitString()).isEqualTo("00000111000001110000011100000111");
           assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("07070707");
           assertThat(bitString9.toHex()).isEqualTo("07070707");
       }
@@ -230,7 +230,7 @@ public class TestRealBitString {
       @Test
       public void testRealBitStringByteArrayPositiveUnsigned() {
           RealBitString bitString9 = new RealBitString(new byte[]{-126, 7, 7, 7}); // -126 = 130 unsigned
-          assertThat(bitString9.toRealBitString()).isEqualTo("10000010000001110000011100000111");
+          assertThat(bitString9.toBitString()).isEqualTo("10000010000001110000011100000111");
           assertThat(Utils.bytesToHex(bitString9.toUnsignedByteArray())).isEqualTo("82070707");
           assertThat(bitString9.toHex()).isEqualTo("82070707");
       }
@@ -238,7 +238,7 @@ public class TestRealBitString {
       @Test
       public void testRealBitStringByteArray2() {
           RealBitString bitString9 = new RealBitString(new byte[]{-128, 0, 0, 0});
-          assertThat(bitString9.toRealBitString()).isEqualTo("10000000000000000000000000000000");
+          assertThat(bitString9.toBitString()).isEqualTo("10000000000000000000000000000000");
           assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("80000000");
           assertThat(bitString9.toHex()).isEqualTo("80000000");
       }
@@ -246,14 +246,14 @@ public class TestRealBitString {
       @Test
       public void testRealBitStringByteArray3() {
           RealBitString bitString9 = new RealBitString(new byte[]{-128, 0, 0, 32});
-          assertThat(bitString9.toRealBitString()).isEqualTo("10000000000000000000000000100000");
+          assertThat(bitString9.toBitString()).isEqualTo("10000000000000000000000000100000");
           assertThat(Utils.bytesToHex(bitString9.toByteArray())).isEqualTo("80000020");
           assertThat(bitString9.toHex()).isEqualTo("80000020");
       }
   */
   @Test
   public void testRealBitStringAll() {
-    RealBitString bitString = new RealBitString(1023);
+    BitString bitString = new BitString(1023);
     bitString.writeInt(BigInteger.valueOf(-200), 16);
     bitString.writeUint(BigInteger.valueOf(200), 9);
     bitString.writeCoins(BigInteger.TEN);

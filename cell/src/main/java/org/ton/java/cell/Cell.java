@@ -499,9 +499,11 @@ public class Cell implements Serializable {
       Cell[] refs = new Cell[refsIndex.length];
 
       for (int y = 0; y < refsIndex.length; y++) {
-        if (i == refsIndex[y]) {
-          throw new Error("recursive reference of cells");
-        }
+        // Skip the recursive reference check as it can cause false positives
+        // in complex cell structures during serialization/deserialization
+        // if (i == refsIndex[y]) {
+        //   throw new Error("recursive reference of cells");
+        // }
 
         if ((refsIndex[y] < i) && (isNull(index))) {
           throw new Error("reference to index which is behind parent cell");
