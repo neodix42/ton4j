@@ -143,7 +143,7 @@ public class BitString implements Serializable {
    * @return int
    */
   public int getUsedBits() {
-    return writeCursor;
+    return writeCursor - readCursor;
   }
 
   /**
@@ -159,7 +159,7 @@ public class BitString implements Serializable {
    * @param n int
    * @return boolean bit value at position `n`
    */
-  public boolean get(int n) {
+  public Boolean get(int n) {
     checkRange(n);
     return (array[(n / 8)] & (1 << (7 - (n % 8)))) > 0;
   }
@@ -692,14 +692,16 @@ public class BitString implements Serializable {
 
   public Boolean[] toBooleanArray() {
     Boolean[] result = new Boolean[getLength()];
+    int j = 0;
     for (int i = 0; i < writeCursor; i++) {
-      result[i++] = get(i);
+      result[j++] = get(i);
     }
     return result;
   }
 
   public int getLength() {
     return array.length * 8;
+    // return getUsedBits();
   }
 
   /**
@@ -715,7 +717,24 @@ public class BitString implements Serializable {
   }
 
   public byte[] toByteArray() {
-    return array.clone();
+    if (writeCursor == 0) {
+      return new byte[0];
+    }
+
+    int sz = writeCursor;
+    byte[] result = new byte[(sz + 7) / 8];
+
+    for (int i = 0; i < sz; i += 8) {
+      int value = 0;
+      for (int j = 0; j < 8 && i + j < sz; j++) {
+        if (get(i + j)) {
+          value |= (1 << (7 - j));
+        }
+      }
+      result[i / 8] = (byte) (value & 0xFF);
+    }
+
+    return result;
   }
 
   /**

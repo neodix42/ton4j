@@ -346,8 +346,7 @@ public class Cell implements Serializable {
       hexBitString = hexBitString.replaceAll("_", "");
       int[] b = Utils.hexToInts(hexBitString);
 
-      BitString bs = new BitString(hexBitString.length() * 8);
-      bs.writeBytes(b);
+      BitString bs = new BitString(b);
 
       Boolean[] ba = bs.toBooleanArray();
       int i = ba.length - 1;
@@ -699,7 +698,7 @@ public class Cell implements Serializable {
   }
 
   public byte[] getBitsDescriptor() {
-    int bitsLength = bits.getLength();
+    int bitsLength = bits.getUsedBits();
     byte d3 = (byte) ((bitsLength / 8) * 2);
     if ((bitsLength % 8) != 0) {
       d3++;
@@ -918,10 +917,8 @@ public class Cell implements Serializable {
   }
 
   private byte[] serialize(int refIndexSzBytes, Map<String, IdxItem> index, boolean hasHash) {
-    byte[] body =
-        Utils.unsignedBytesToSigned(CellSlice.beginParse(this).loadSlice(this.bits.getLength()));
-
-    int unusedBits = 8 - (bits.getLength() % 8);
+    byte[] body = this.getBits().toByteArray();
+    int unusedBits = 8 - (bits.getUsedBits() % 8);
 
     if (unusedBits != 8) {
       body[body.length - 1] += 1 << (unusedBits - 1);
@@ -963,7 +960,7 @@ public class Cell implements Serializable {
   }
 
   private byte[] getDataBytes() {
-    if ((bits.getLength() % 8) > 0) {
+    if ((bits.getUsedBits() % 8) > 0) {
       byte[] a = bits.toBitString().getBytes(StandardCharsets.UTF_8);
       int sz = a.length;
       byte[] b = new byte[sz + 1];
@@ -991,7 +988,7 @@ public class Cell implements Serializable {
       return ORDINARY;
     }
 
-    if (bits.getLength() < 8) {
+    if (bits.getUsedBits() < 8) {
       return UNKNOWN;
     }
 
@@ -1000,31 +997,32 @@ public class Cell implements Serializable {
     switch (cellType) {
       case PRUNED_BRANCH:
         {
-          if (bits.getLength() >= 288) {
+          if (bits.getUsedBits() >= 288) {
             LevelMask msk = new LevelMask(clonedBits.readUint(8).intValue());
             int lvl = msk.getLevel();
             if ((lvl > 0)
                 && (lvl <= 3)
-                && (bits.getLength() >= 16 + (256 + 16) * msk.apply(lvl - 1).getHashIndex() + 1)) {
+                && (bits.getUsedBits()
+                    >= 16 + (256 + 16) * msk.apply(lvl - 1).getHashIndex() + 1)) {
               return CellType.PRUNED_BRANCH;
             }
           }
         }
       case MERKLE_PROOF:
         {
-          if ((refs.size() == 1) && (bits.getLength() == 280)) {
+          if ((refs.size() == 1) && (bits.getUsedBits() == 280)) {
             return CellType.MERKLE_PROOF;
           }
         }
       case MERKLE_UPDATE:
         {
-          if ((refs.size() == 2) && (bits.getLength() == 552)) {
+          if ((refs.size() == 2) && (bits.getUsedBits() == 552)) {
             return CellType.MERKLE_UPDATE;
           }
         }
       case LIBRARY:
         {
-          if (bits.getLength() == (8 + 256)) {
+          if (bits.getUsedBits() == (8 + 256)) {
             return CellType.LIBRARY;
           }
         }

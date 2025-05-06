@@ -13,7 +13,7 @@ import org.ton.java.cell.CellSlice;
  *
  * <pre>
  * tr_phase_bounce_ok$1
- *   msg_size:StorageUsedShort
+ *   msg_size:StorageUsed
  *   msg_fees:Grams
  *   fwd_fees:Grams = TrBouncePhase;
  *   </pre>
@@ -22,7 +22,7 @@ import org.ton.java.cell.CellSlice;
 @Data
 public class BouncePhaseOk implements BouncePhase, Serializable {
   int magic;
-  StorageUsedShort msgSize;
+  StorageUsed msgSize;
   BigInteger msgFees;
   BigInteger fwdFees;
 
@@ -47,7 +47,7 @@ public class BouncePhaseOk implements BouncePhase, Serializable {
 
     return BouncePhaseOk.builder()
         .magic(0b1)
-        .msgSize(StorageUsedShort.deserialize(cs))
+        .msgSize(StorageUsed.deserialize(cs))
         .msgFees(cs.loadCoins())
         .fwdFees(cs.loadCoins())
         .build();

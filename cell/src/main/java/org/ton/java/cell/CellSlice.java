@@ -27,6 +27,8 @@ public class CellSlice implements Serializable {
 
   private CellSlice(BitString bits, List<Cell> refs, CellType cellType) {
     this.bits = bits.clone();
+    //    this.bits.writeCursor = 0;
+    //    this.bits.readCursor = 0;
     this.refs = new ArrayList<>(refs);
     this.type = cellType;
   }
@@ -364,7 +366,7 @@ public class CellSlice implements Serializable {
     int unusedBits = 0;
     int l = bits.getFreeBits() % 8;
 
-    if (l > 0 && bits.getLength() > 0) {
+    if (l > 0 && bits.getUsedBits() > 0) {
       unusedBits = 8 - (l % 8);
     }
 
@@ -443,12 +445,12 @@ public class CellSlice implements Serializable {
    */
   public String loadSnakeString() {
     StringBuilder s = new StringBuilder();
-    checkBitsOverflow(bits.getLength()); // bitsLeft
+    //    checkBitsOverflow(bits.getLength()); // bitsLeft
     CellSlice ref = this.clone();
 
     while (nonNull(ref)) {
       try {
-        BitString bitString = ref.loadBits(ref.bits.getLength());
+        BitString bitString = ref.loadBits(ref.bits.getUsedBits());
 
         byte[] uintArray = bitString.toByteArray();
         s.append(new String(uintArray, StandardCharsets.UTF_8));
@@ -592,11 +594,10 @@ public class CellSlice implements Serializable {
   }
 
   void checkBitsOverflow(int length) {
-    //    if (length > bits.getUsedBits()) {
-    //      throw new Error(
-    //          "Bits overflow. Can't load " + length + " bits. " + bits.getUsedBits() + " bits
-    // left.");
-    //    }
+    if (length > bits.getUsedBits()) {
+      throw new Error(
+          "Bits overflow. Can't load " + length + " bits. " + bits.getUsedBits() + " bits left.");
+    }
   }
 
   void checkRefsOverflow() {
