@@ -502,7 +502,8 @@ public class TestBitStringPerformanceCpu {
         // Warm-up
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
             performComplexOperations(new BitString(MEDIUM_SIZE * 8), 100);
-            performComplexOperations(new RealBitString(MEDIUM_SIZE * 8), 100);
+            // Increase the size here as well to match the test section
+            performComplexOperations(new RealBitString(MEDIUM_SIZE * 200), 100);
         }
         
         // Test BitString
@@ -520,7 +521,11 @@ public class TestBitStringPerformanceCpu {
         // Test RealBitString
         long[] realBitStringTimes = new long[TEST_ITERATIONS];
         for (int i = 0; i < TEST_ITERATIONS; i++) {
-            RealBitString rbs = new RealBitString(MEDIUM_SIZE * 8);
+            // Increase the size to accommodate all the data
+            // Each iteration writes at least 32 + (4*8) + 64 = 128 bits
+            // Plus additional bits for the string representation of i
+            // Using a multiplier of 200 to ensure enough space
+            RealBitString rbs = new RealBitString(MEDIUM_SIZE * 200);
             
             long startTime = System.nanoTime();
             performComplexOperations(rbs, MEDIUM_SIZE);

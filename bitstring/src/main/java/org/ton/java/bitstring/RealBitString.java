@@ -81,8 +81,8 @@ public class RealBitString implements Serializable {
      * @param n int
      */
     private void checkRange(int n) {
-        if (n > length) {
-            throw new Error("RealBitString overflow. n[" + n + "] > length[" + length + "]");
+        if (n >= length) {
+            throw new Error("RealBitString overflow. n[" + n + "] >= length[" + length + "]");
         }
     }
 
@@ -647,4 +647,3 @@ public class RealBitString implements Serializable {
         return ret.array;
     }
 }
-
