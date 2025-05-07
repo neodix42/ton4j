@@ -38,13 +38,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.github.neodix42</groupId>
-            <artifactId>utils</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>

@@ -1,12 +1,12 @@
 package org.ton.java.liteclient.api.block;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.ToString;
-import org.ton.java.utils.Utils;
+import static java.util.Objects.isNull;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
 
 /**
  * Block header. Another non-split component of a shardchain block is the block header, which
@@ -23,36 +23,50 @@ import java.math.BigInteger;
 @ToString
 @Getter
 public class Info implements Serializable {
-    Long wc;
-    BigInteger seqNo;
-    BigInteger prevKeyBlockSeqno;
-    BigInteger version;
-    Byte notMaster;
-    BigInteger keyBlock;
-    BigInteger vertSeqnoIncr;
-    BigInteger vertSeqno;
-    BigInteger getValidatorListHashShort;
-    BigInteger getCatchainSeqno;
-    BigInteger minRefMcSeqno;
-    Byte wantSplit;
-    Byte wantMerge;
-    Byte afterMerge;
-    Byte afterSplit;
-    Byte beforeSplit;
-    Long genUtime;
-    Integer flags;
-    BigInteger startLt;
-    BigInteger endLt;
-    Long prevBlockSeqno;
-    BigInteger prevEndLt;
-    String prevRootHash;
-    String prevFileHash;
-    BigInteger shardPrefix;
-    Integer shardPrefixBits;
-    Long shardWorkchain;
+  Long wc;
+  BigInteger seqNo;
+  BigInteger prevKeyBlockSeqno;
+  BigInteger version;
+  Byte notMaster;
+  BigInteger keyBlock;
+  BigInteger vertSeqnoIncr;
+  BigInteger vertSeqno;
+  BigInteger getValidatorListHashShort;
+  BigInteger getCatchainSeqno;
+  BigInteger minRefMcSeqno;
+  Byte wantSplit;
+  Byte wantMerge;
+  Byte afterMerge;
+  Byte afterSplit;
+  Byte beforeSplit;
+  Long genUtime;
+  Integer flags;
+  BigInteger startLt;
+  BigInteger endLt;
+  Long prevBlockSeqno;
+  BigInteger prevEndLt;
+  String prevRootHash;
+  String prevFileHash;
+  BigInteger shardPrefix;
+  Integer shardPrefixBits;
+  Long shardWorkchain;
 
-    public String getShortBlockSeqno() {
-        return String.format(
-                "(%d,%s,%d)", wc, Utils.convertShardIdentToShard(shardPrefix, shardPrefixBits), seqNo);
+  public String getShortBlockSeqno() {
+    return String.format(
+        "(%d,%s,%d)", wc, convertShardIdentToShard(shardPrefix, shardPrefixBits), seqNo);
+  }
+
+  public String convertShardIdentToShard(BigInteger shardPrefix, int prefixBits) {
+    if (isNull(shardPrefix)) {
+      throw new Error("Shard prefix is null, should be in range 0..60");
     }
+    if (shardPrefix.compareTo(BigInteger.valueOf(60)) > 0) {
+      return shardPrefix.toString(16);
+    }
+    return BigInteger.valueOf(2)
+        .multiply(shardPrefix)
+        .add(BigInteger.ONE)
+        .shiftLeft(63 - prefixBits)
+        .toString(16);
+  }
 }

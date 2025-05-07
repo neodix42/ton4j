@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatObject;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertNotNull;
+import static org.ton.java.liteclient.LiteClient.getGlobalConfigUrlMainnet;
+import static org.ton.java.liteclient.LiteClient.getOS;
 
 import java.io.File;
 import java.io.InputStream;
@@ -20,7 +22,6 @@ import org.ton.java.liteclient.api.ResultListBlockTransactions;
 import org.ton.java.liteclient.api.block.Block;
 import org.ton.java.liteclient.api.block.MessageFees;
 import org.ton.java.liteclient.api.block.Transaction;
-import org.ton.java.utils.Utils;
 
 /** Integration Tests that run against live testnet */
 @Slf4j
@@ -29,14 +30,87 @@ public class LiteClientTest {
 
   private static LiteClient liteClient;
 
+  public static String getArtifactGithubUrl(
+      String artifactName, String release, String githubUsername, String githubRepository) {
+    String baseUrl;
+    if (org.apache.commons.lang3.StringUtils.isNotEmpty(release) && !release.contains("latest")) {
+      baseUrl =
+          "https://github.com/"
+              + githubUsername
+              + "/"
+              + githubRepository
+              + "/releases/download/"
+              + release
+              + "/";
+    } else {
+      baseUrl =
+          "https://github.com/"
+              + githubUsername
+              + "/"
+              + githubRepository
+              + "/releases/latest/download/";
+    }
+
+    LiteClient.OS os = getOS();
+    if (os == LiteClient.OS.WINDOWS || os == LiteClient.OS.WINDOWS_ARM) {
+      return baseUrl + artifactName + getArtifactExtension(artifactName);
+    } else if (os == LiteClient.OS.MAC) {
+      return baseUrl + artifactName + "-mac-x86-64" + getArtifactExtension(artifactName);
+    } else if (os == LiteClient.OS.MAC_ARM64) {
+      return baseUrl + artifactName + "-mac-arm64" + getArtifactExtension(artifactName);
+    } else if (os == LiteClient.OS.LINUX) {
+      return baseUrl + artifactName + "-linux-x86_64" + getArtifactExtension(artifactName);
+    } else if (os == LiteClient.OS.LINUX_ARM) {
+      return baseUrl + artifactName + "-linux-arm64" + getArtifactExtension(artifactName);
+    } else {
+      throw new Error("unknown requested OS");
+    }
+  }
+
+  public static String getArtifactExtension(String artifactName) {
+    LiteClient.OS os = getOS();
+    if (artifactName.contains("emulator") || artifactName.contains("tonlib")) {
+      if (os == LiteClient.OS.WINDOWS || os == LiteClient.OS.WINDOWS_ARM) {
+        return ".dll";
+      } else if (os == LiteClient.OS.MAC || os == LiteClient.OS.MAC_ARM64) {
+        return ".dylib";
+      } else {
+        return ".so";
+      }
+    } else {
+      if (os == LiteClient.OS.WINDOWS || os == LiteClient.OS.WINDOWS_ARM) {
+        return ".exe";
+      } else {
+        return "";
+      }
+    }
+  }
+
+  /**
+   * Get the URL for an artifact
+   *
+   * @param artifactName The artifact name
+   * @param release The release
+   * @return The URL
+   */
+  public static String getArtifactGithubUrl(String artifactName, String release) {
+    return getArtifactGithubUrl(artifactName, release, "ton-blockchain", "ton");
+  }
+
+  /**
+   * Get the URL for the lite client
+   *
+   * @return The URL
+   */
+  public static String getLiteClientGithubUrl() {
+    return getArtifactGithubUrl("lite-client", "");
+  }
+
   @BeforeClass
   public static void executedBeforeEach() {
 
     liteClient =
-        LiteClient.builder()
-            .testnet(true)
-            .pathToLiteClientBinary(Utils.getLiteClientGithubUrl())
-            .build();
+        LiteClient.builder().testnet(true).pathToLiteClientBinary(getLiteClientGithubUrl()).build();
   }
 
   @Test
@@ -51,8 +125,8 @@ public class LiteClientTest {
   public void testLastExecutedDownloadBoth() {
     LiteClient liteClient =
         LiteClient.builder()
-            .pathToLiteClientBinary(Utils.getLiteClientGithubUrl())
-            .pathToGlobalConfig(Utils.getGlobalConfigUrlMainnet())
+            .pathToLiteClientBinary(getLiteClientGithubUrl())
+            .pathToGlobalConfig(getGlobalConfigUrlMainnet())
             .build();
     assertThat(liteClient.executeLast())
         .isNotNull()

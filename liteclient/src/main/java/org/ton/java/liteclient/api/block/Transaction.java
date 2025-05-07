@@ -4,14 +4,18 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.ton.java.utils.Utils;
 
 @Builder
 @Data
@@ -370,23 +374,42 @@ public class Transaction implements Serializable {
         String.format(
             "| %-8s | %-8s | %-9s| %-13s| %-15s| %-15s| %-20s| %-13s| %-14s| %-11s| %-8s| %-20s| %-8s| %-9s| %-11s| %-13s | %-31s |",
             txFees.getHash().substring(0, 5),
-            Utils.toUTCTimeOnly(txFees.getNow()),
+            toUTCTimeOnly(txFees.getNow()),
             txFees.getOp(),
             txFees.getType(),
-            Utils.formatNanoValueZero(txFees.getValueIn()),
-            Utils.formatNanoValueZero(txFees.getValueOut()),
-            Utils.formatNanoValueZero(txFees.getTotalFees()),
-            Utils.formatNanoValueZero(txFees.getInForwardFee()),
-            Utils.formatNanoValueZero(txFees.getOutForwardFee()),
+            formatNanoValueZero(txFees.getValueIn()),
+            formatNanoValueZero(txFees.getValueOut()),
+            formatNanoValueZero(txFees.getTotalFees()),
+            formatNanoValueZero(txFees.getInForwardFee()),
+            formatNanoValueZero(txFees.getOutForwardFee()),
             txFees.getTotalActions(),
             txFees.getOutMsgs(),
-            Utils.formatNanoValueZero(txFees.getComputeFee()),
+            formatNanoValueZero(txFees.getComputeFee()),
             txFees.isAborted(),
             txFees.getExitCode(),
             txFees.getActionCode(),
             txFees.getAccount(),
             txFees.getBlock());
     log.info(str);
+  }
+
+  public static String toUTCTimeOnly(long timestamp) {
+    return DateTimeFormatter.ofPattern("HH:mm:ss")
+        .format(LocalDateTime.ofEpochSecond(timestamp, 0, ZoneOffset.UTC));
+  }
+
+  public static String formatNanoValueZero(BigInteger nanoCoins) {
+    if (isNull(nanoCoins)) {
+      return "N/A";
+    }
+    if (nanoCoins.compareTo(BigInteger.ZERO) == 0) {
+      return "0";
+    } else {
+      return String.format(
+          "%,.9f",
+          new BigDecimal(nanoCoins)
+              .divide(BigDecimal.valueOf(1_000_000_000), 9, RoundingMode.HALF_UP));
+    }
   }
 
   private String formatMsgType(String fullMsgType) {

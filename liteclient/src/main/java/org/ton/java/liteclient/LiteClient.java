@@ -3,9 +3,12 @@ package org.ton.java.liteclient;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -14,8 +17,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,7 +29,6 @@ import org.ton.java.liteclient.api.ResultLastBlock;
 import org.ton.java.liteclient.api.ResultListBlockTransactions;
 import org.ton.java.liteclient.api.block.Block;
 import org.ton.java.liteclient.api.block.Transaction;
-import org.ton.java.utils.Utils;
 
 @Slf4j
 @Builder
@@ -78,7 +82,7 @@ public class LiteClient {
             //            if (p.exitValue() != 2) {
             //              throw new Error("Cannot execute lite-client command.\n" + errorMsg);
             //            }
-            super.pathToLiteClientBinary = Utils.detectAbsolutePath("lite-client", false);
+            super.pathToLiteClientBinary = detectAbsolutePath("lite-client", false);
             if (super.printInfo) {
               log.info("lite-client found at " + super.pathToLiteClientBinary);
             }
@@ -87,7 +91,7 @@ public class LiteClient {
             throw new Error("Cannot execute simple lite-client command.\n" + errorMsg);
           }
         } else {
-          super.pathToLiteClientBinary = Utils.getLocalOrDownload(super.pathToLiteClientBinary);
+          super.pathToLiteClientBinary = getLocalOrDownload(super.pathToLiteClientBinary);
         }
 
         if (super.timeout == 0) {
@@ -117,19 +121,19 @@ public class LiteClient {
       if (isNull(super.pathToGlobalConfig)) {
         if (super.testnet) {
           try {
-            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlTestnet());
+            globalConfigPath = getLocalOrDownload(getGlobalConfigUrlTestnet());
           } catch (Error e) {
-            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlTestnetGithub());
+            globalConfigPath = getLocalOrDownload(getGlobalConfigUrlTestnetGithub());
           }
         } else {
           try {
-            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlMainnet());
+            globalConfigPath = getLocalOrDownload(getGlobalConfigUrlMainnet());
           } catch (Error e) {
-            globalConfigPath = Utils.getLocalOrDownload(Utils.getGlobalConfigUrlMainnetGithub());
+            globalConfigPath = getLocalOrDownload(getGlobalConfigUrlMainnetGithub());
           }
         }
       } else {
-        globalConfigPath = Utils.getLocalOrDownload(super.pathToGlobalConfig);
+        globalConfigPath = getLocalOrDownload(super.pathToGlobalConfig);
       }
 
       if (!Files.exists(Paths.get(globalConfigPath))) {
@@ -137,6 +141,154 @@ public class LiteClient {
             "Global config is not found in path: " + super.pathToGlobalConfig);
       }
       return globalConfigPath;
+    }
+  }
+
+  /**
+   * Detect the absolute path of an executable
+   *
+   * @param appName The application name
+   * @param library Whether it's a library
+   * @return The absolute path
+   */
+  public static String detectAbsolutePath(String appName, boolean library) {
+    try {
+      if (library) {
+        appName = appName + "." + getLibraryExtension();
+      }
+      ProcessBuilder pb;
+      OS os = getOS();
+      if (os == OS.WINDOWS || os == OS.WINDOWS_ARM) {
+        pb = new ProcessBuilder("where", appName).redirectErrorStream(true);
+      } else {
+        pb = new ProcessBuilder("which", appName).redirectErrorStream(true);
+      }
+      Process p = pb.start();
+      p.waitFor(1, java.util.concurrent.TimeUnit.SECONDS);
+      String output =
+          new BufferedReader(
+                  new InputStreamReader(
+                      p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))
+              .lines()
+              .collect(Collectors.joining("\n"));
+      String[] paths = output.split("\n");
+      if (paths.length == 1) {
+        return paths[0];
+      } else {
+        for (String path : paths) {
+          if (path.contains("ton")) {
+            return org.apache.commons.lang3.StringUtils.trim(path);
+          }
+        }
+      }
+      return null;
+    } catch (Exception e) {
+      throw new Error(
+          "Cannot detect absolute path to executable " + appName + ", " + e.getMessage());
+    }
+  }
+
+  /** Enum for operating system types */
+  public enum OS {
+    WINDOWS,
+    WINDOWS_ARM,
+    LINUX,
+    LINUX_ARM,
+    MAC,
+    MAC_ARM64,
+    UNKNOWN
+  }
+
+  public static String getLibraryExtension() {
+    OS os = getOS();
+    if (os == OS.WINDOWS || os == OS.WINDOWS_ARM) {
+      return "dll";
+    } else if (os == OS.MAC || os == OS.MAC_ARM64) {
+      return "dylib";
+    } else {
+      return "so";
+    }
+  }
+
+  /**
+   * Detect the operating system
+   *
+   * @return The detected operating system
+   */
+  public static OS getOS() {
+    String os = System.getProperty("os.name").toLowerCase();
+    String arch = System.getProperty("os.arch").toLowerCase();
+
+    if (os.contains("win")) {
+      return arch.contains("aarch64") ? OS.WINDOWS_ARM : OS.WINDOWS;
+    } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+      return arch.contains("aarch64") || arch.contains("arm") ? OS.LINUX_ARM : OS.LINUX;
+    } else if (os.contains("mac")) {
+      return arch.contains("aarch64") || arch.contains("arm") ? OS.MAC_ARM64 : OS.MAC;
+    }
+    return OS.UNKNOWN;
+  }
+
+  /**
+   * Get the URL for the mainnet global config
+   *
+   * @return The URL
+   */
+  public static String getGlobalConfigUrlMainnet() {
+    return "https://ton.org/global-config.json";
+  }
+
+  /**
+   * Get the URL for the testnet global config
+   *
+   * @return The URL
+   */
+  public static String getGlobalConfigUrlTestnet() {
+    return "https://ton.org/testnet-global.config.json";
+  }
+
+  /**
+   * Get the URL for the mainnet global config from GitHub
+   *
+   * @return The URL
+   */
+  public static String getGlobalConfigUrlMainnetGithub() {
+    return "https://raw.githubusercontent.com/ton-blockchain/ton-blockchain.github.io/main/global.config.json";
+  }
+
+  /**
+   * Get the URL for the testnet global config from GitHub
+   *
+   * @return The URL
+   */
+  public static String getGlobalConfigUrlTestnetGithub() {
+    return "https://raw.githubusercontent.com/ton-blockchain/ton-blockchain.github.io/main/testnet-global.config.json";
+  }
+
+  /**
+   * Download a file or return the local path
+   *
+   * @param linkToFile The link to the file
+   * @return The local path
+   */
+  private static String getLocalOrDownload(String linkToFile) {
+    if (linkToFile.contains("http") && linkToFile.contains("://")) {
+      try {
+        URL url = new URL(linkToFile);
+        String filename = FilenameUtils.getName(url.getPath());
+        File tmpFile = new File(filename);
+        if (!tmpFile.exists()) {
+          log.info("downloading {}", linkToFile);
+          org.apache.commons.io.FileUtils.copyURLToFile(url, tmpFile);
+          tmpFile.setExecutable(true);
+        }
+        return tmpFile.getAbsolutePath();
+      } catch (Exception e) {
+        log.error("Error downloading file", e);
+        throw new Error("Cannot download file. Error " + e.getMessage());
+      }
+    } else {
+      return linkToFile;
     }
   }
 
@@ -660,6 +812,6 @@ public class LiteClient {
   }
 
   public String getLiteClientPath() {
-    return Utils.detectAbsolutePath("lite-client", false);
+    return detectAbsolutePath("lite-client", false);
   }
 }
