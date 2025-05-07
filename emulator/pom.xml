@@ -79,11 +79,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.vmlens</groupId>
-            <artifactId>concurrent-junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.github.neodix42</groupId>
             <artifactId>tonlib</artifactId>
             <version>0.9.7</version>

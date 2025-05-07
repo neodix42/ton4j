@@ -83,10 +83,5 @@
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.vmlens</groupId>
-            <artifactId>concurrent-junit</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 </project>
