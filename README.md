@@ -4,9 +4,9 @@
 [![Based on TON][ton-svg]][ton]
 ![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton4j)
 
-Java libraries for interacting with TON blockchain.
-Do not forget to place tonlibjson library to your project. Latest Tonlib libraries can be
-found [here](https://github.com/ton-blockchain/ton/actions).
+Java libraries and wrapper for interacting with TON blockchain.
+
+ton4j requires minimum Java 11.
 
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
