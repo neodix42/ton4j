@@ -109,4 +109,20 @@ public class TestTlbDeserialization {
     assertThat(addr2.toString())
         .isEqualTo("0:000212646ce2585c73ad02a115cd6e5c8485dda6cccd62e1b05385ff121e5a7c");
   }
+
+  @Test
+  public void testNormalizedHash() {
+    Cell c =
+        CellBuilder.beginCell()
+            .fromBocBase64(
+                "te6ccgEBAgEAqgAB4YgA2ZpktQsYby0n9cV5VWOFINBjScIU2HdondFsK3lDpEAFG8W4Jpf7AeOqfzL9vZ79mX3eM6UEBxZvN6+QmpYwXBq32QOBIrP4lF5ijGgQmZbC6KDeiiptxmTNwl5f59OAGU1NGLsixYlYAAAA2AAcAQBoYgBZQOG7qXmeA/2Tw1pLX2IkcQ5h5fxWzzcBskMJbVVRsKNaTpAAAAAAAAAAAAAAAAAAAA==")
+            .endCell();
+
+    Message message = Message.deserialize(CellSlice.beginParse(c));
+    log.info(message.toString());
+
+    String hash = Utils.bytesToHex(message.getNormalizedHash());
+    log.info("hash {}", hash);
+    assertThat(hash).isEqualTo("23ff6f150d573f64d5599a57813f991882b7b4d5ae0550ebd08ea658431e62f6");
+  }
 }
