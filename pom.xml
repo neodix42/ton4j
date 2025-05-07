@@ -52,6 +52,7 @@
         <zip4j.version>2.11.3</zip4j.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
         <tweetnacl.version>1.1.2</tweetnacl.version>
+        <maven.clean.plugin.version>3.4.1</maven.clean.plugin.version>
     </properties>
 
     <name>ton4j parent module</name>
@@ -147,6 +148,12 @@
                 <artifactId>tweetnacl-java</artifactId>
                 <version>${tweetnacl.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>${maven.clean.plugin.version}</version>
+                <type>maven-plugin</type>
+            </dependency>
         </dependencies>
 
     </dependencyManagement>
@@ -239,6 +246,65 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>${maven.clean.plugin.version}</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${basedir}/{tolk}/smartcont</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}/tolk/lib</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}/smartcontract/smartcont</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}/smartcontract/lib</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}/emulator/smartcont</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}/emulator/lib</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}/disassembler/smartcont</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}/disassembler/lib</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}/fift/smartcont</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}/fift/lib</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}</directory>
+                            <includes>
+                                <include>tolk.exe</include>
+                                <include>fift.exe</include>
+                                <include>func.exe</include>
+                                <include>lite-client.exe</include>
+                                <include>tonlibjson.*</include>
+                                <include>libemulator.*</include>
+                                <include>global.config.*</include>
+                                <include>localhost.global.config.*</include>
+                                <include>global-config.*</include>
+                                <include>testnet-global.config.*</include>
+                                <include>tonlib.libcache</include>
+                                <include>order.boc</include>
+                                <include>signedOrder.boc</include>
+                                <include>*.blkstate</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
             </plugin>
         </plugins>
     </build>
