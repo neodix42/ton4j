@@ -2,16 +2,13 @@ package org.ton.java.tonlib.queries;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
 @Builder
-@Setter
-@Getter
-@ToString
+@Data
 public class GetConfigAllQuery extends ExtraQuery {
-    @SerializedName(value = "@type")
-    final String type = "getConfigAll";
-    int mode;
+  @SerializedName(value = "@type")
+  final String type = "getConfigAll";
+
+  int mode;
 }

@@ -4,9 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import java.io.Serializable;
 import java.util.List;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
 /**
  *
@@ -16,9 +14,7 @@ import lombok.ToString;
  * </pre>
  */
 @Builder
-@Setter
-@Getter
-@ToString
+@Data
 public class BlockTransactionsExt implements Serializable {
   @SerializedName("@type")
   final String type = "blocks.transactionsExt";

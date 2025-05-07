@@ -6,8 +6,6 @@ import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.smartcontract.faucet.TestnetFaucet;
@@ -17,7 +15,6 @@ import org.ton.java.tonlib.types.ExtMessageInfo;
 import org.ton.java.utils.Utils;
 
 @Slf4j
-@RunWith(JUnit4.class)
 public class TestWalletV3R1Short extends CommonTest {
 
   /*
@@ -32,15 +29,27 @@ public class TestWalletV3R1Short extends CommonTest {
     log.info("prv key: {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
 
     BigInteger balance =
-        TestnetFaucet.topUpContract(tonlib, contract.getAddress(), Utils.toNano(1));
+        TestnetFaucet.topUpContract(tonlib, contract.getAddress(), Utils.toNano(0.1));
     log.info(
         "walletId {} new wallet {} balance: {}",
         contract.getWalletId(),
         contract.getName(),
         Utils.formatNanoValue(balance));
 
-    contract.deploy();
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    log.info(extMessageInfo.toString());
     contract.waitForDeployment(60);
+    // send toncoins
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(contract.getSeqno())
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.08))
+            .comment("testWalletV3R1")
+            .build();
+    extMessageInfo = contract.send(config);
+    log.info(extMessageInfo.toString());
   }
 
   @Test

@@ -2,20 +2,16 @@ package org.ton.java.tonlib.types;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
 import java.io.Serializable;
 
 @Builder
-@Setter
-@Getter
-@ToString
+@Data
 public class SmcLibraryEntry implements Serializable {
-    @SerializedName("@type")
-    final String type = "smc.libraryEntry";
-    String hash;
-    String data;
-}
+  @SerializedName("@type")
+  final String type = "smc.libraryEntry";
 
+  String hash;
+  String data;
+}

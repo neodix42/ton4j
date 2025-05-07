@@ -5,17 +5,13 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.List;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
 import org.ton.java.tlb.Transaction;
 
 @Builder
-@Setter
-@Getter
-@ToString
+@Data
 public class RawTransaction implements Serializable {
   @SerializedName("@type")
   final String type = "raw.transaction";

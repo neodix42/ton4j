@@ -1,21 +1,16 @@
 package org.ton.java.tonlib.types;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.List;
 
 @Builder
-@Setter
-@Getter
-@ToString
+@Data
 public class RunResult implements Serializable {
-    List<Object> stack;
-    BigInteger gas_used;
-    long exit_code;
+  List<Object> stack;
+  BigInteger gas_used;
+  long exit_code;
 }
-

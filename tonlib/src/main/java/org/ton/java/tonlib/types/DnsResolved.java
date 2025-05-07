@@ -1,19 +1,15 @@
 package org.ton.java.tonlib.types;
 
 import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
 import java.util.List;
+import lombok.Builder;
+import lombok.Data;
 
 @Builder
-@Setter
-@Getter
-@ToString
+@Data
 public class DnsResolved {
-    @SerializedName("@type")
-    final String type = "dns.resolved";
-    List<DnsEntry> entries;
+  @SerializedName("@type")
+  final String type = "dns.resolved";
+
+  List<DnsEntry> entries;
 }
