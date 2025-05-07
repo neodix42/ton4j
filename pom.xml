@@ -301,6 +301,7 @@
                                 <include>order.boc</include>
                                 <include>signedOrder.boc</include>
                                 <include>*.blkstate</include>
+                                <include>*.addr</include>
                             </includes>
                         </fileset>
                     </filesets>
