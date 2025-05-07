@@ -61,13 +61,6 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
-        <!--  recompiled from source with Java 8 -->
-        <dependency>
-            <groupId>io.github.neodix42</groupId>
-            <artifactId>tweetnacljava</artifactId>
-            <version>0.9.8</version>
-            <scope>compile</scope>
-        </dependency>
         <!-- test -->
         <dependency>
             <groupId>junit</groupId>
