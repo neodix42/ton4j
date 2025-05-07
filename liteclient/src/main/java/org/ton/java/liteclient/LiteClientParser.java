@@ -1,1741 +1,2023 @@
 package org.ton.java.liteclient;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.*;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.ton.java.liteclient.api.*;
-import org.ton.java.liteclient.api.block.Currency;
 import org.ton.java.liteclient.api.block.*;
+import org.ton.java.liteclient.api.block.Currency;
 import org.ton.java.liteclient.api.config.Validator;
 import org.ton.java.liteclient.api.config.Validators;
 import org.ton.java.liteclient.exception.IncompleteDump;
 import org.ton.java.liteclient.exception.ParsingError;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-
 @Slf4j
 public class LiteClientParser {
 
-    public static final String EOL = "\n";
-    private static final String EOLWIN = "\r\n";
-    private static final byte NOT_EXISTS_42 = -42;
-    private static final String VALUE_COLON = "value:";
-    public static final String SPACE = " ";
-    public static final String OPEN = "(";
-    public static final String CLOSE = ")";
-    private static final String OPEN_CURLY = "{";
-    private static final String TRANSACTION_TAG = "transaction #";
-    private static final String WORKCHAIN_ID_COLON = "workchain_id:";
-    private static final String ADDRESS_COLON = "address:";
-    private static final String BOUNCE_COLON = "bounce:";
-    private static final String SUCCESS_COLON = "success:";
-    private static final String SEQ_NO_COLON = "seq_no:";
-    private static final String END_LT_COLON = "end_lt:";
-    private static final String START_LT_COLON = "start_lt:";
+  public static final String EOL = "\n";
+  private static final String EOLWIN = "\r\n";
+  private static final byte NOT_EXISTS_42 = -42;
+  private static final String VALUE_COLON = "value:";
+  public static final String SPACE = " ";
+  public static final String OPEN = "(";
+  public static final String CLOSE = ")";
+  private static final String OPEN_CURLY = "{";
+  private static final String TRANSACTION_TAG = "transaction #";
+  private static final String WORKCHAIN_ID_COLON = "workchain_id:";
+  private static final String ADDRESS_COLON = "address:";
+  private static final String BOUNCE_COLON = "bounce:";
+  private static final String SUCCESS_COLON = "success:";
+  private static final String SEQ_NO_COLON = "seq_no:";
+  private static final String END_LT_COLON = "end_lt:";
+  private static final String START_LT_COLON = "start_lt:";
 
-    private LiteClientParser() {
+  private LiteClientParser() {}
+
+  public static ResultLastBlock parseLast(String stdout) {
+
+    if (StringUtils.isEmpty(stdout)) {
+      log.info("parseLast, stdout is empty: {}", stdout);
+      return null;
     }
 
-    public static ResultLastBlock parseLast(String stdout) {
+    if (StringUtils.indexOf(stdout, "adnl query timeout") != -1) {
+      log.info("Blockchain node is not ready");
+      return null;
+    }
 
-        if (StringUtils.isEmpty(stdout)) {
-            log.info("parseLast, stdout is empty: {}", stdout);
-            return null;
+    if (StringUtils.indexOf(stdout, "server appears to be out of sync") != -1) {
+      log.info("Blockchain node is out of sync");
+    }
+
+    try {
+
+      String last = stdout.replace(EOL, SPACE);
+      Long createdAt = Long.parseLong(sb(last, "created at ", OPEN).trim());
+      String fullBlockSeqno = sb(last, "last masterchain block is ", SPACE).trim();
+      String shortBlockSeqno = OPEN + sb(fullBlockSeqno, OPEN, CLOSE) + CLOSE;
+      String rootHashId = sb(fullBlockSeqno, ":", ":");
+      String fileHashId = fullBlockSeqno.substring(fullBlockSeqno.lastIndexOf(':') + 1);
+      String shard = sb(shortBlockSeqno, ",", ",");
+      BigInteger pureBlockSeqno = new BigInteger(sb(shortBlockSeqno, shard + ",", CLOSE));
+      Long wc = Long.parseLong(sb(shortBlockSeqno, OPEN, ","));
+      Long secondsAgo = -1L;
+      if (last.contains("seconds ago")) {
+        String createdAtStr = sb(last, "created at ", "seconds ago");
+        secondsAgo = Long.parseLong(sb(createdAtStr, OPEN, SPACE).trim());
+      }
+
+      return ResultLastBlock.builder()
+          .createdAt(createdAt)
+          .seqno(pureBlockSeqno)
+          .rootHash(rootHashId)
+          .fileHash(fileHashId)
+          .wc(wc)
+          .shard(shard)
+          .syncedSecondsAgo(secondsAgo)
+          .build();
+
+    } catch (Exception e) {
+      log.info("Error parsing lite-client's last command! Output: {}", stdout);
+      return null;
+    }
+  }
+
+  public static ResultLastBlock parseCreateHardFork(String stdout) {
+
+    if (StringUtils.isEmpty(stdout)) {
+      log.info("parseCreateHardfork, stdout is empty: {}", stdout);
+      return null;
+    }
+
+    try {
+
+      String last = stdout.replace(EOL, SPACE);
+      String fullBlockSeqno = last.substring(last.indexOf("saved to disk") + 13).trim();
+      String shortBlockSeqno = OPEN + sb(fullBlockSeqno, OPEN, CLOSE) + CLOSE;
+      String rootHashId = sb(fullBlockSeqno, ":", ":");
+      String fileHashId = fullBlockSeqno.substring(fullBlockSeqno.lastIndexOf(':') + 1);
+      String shard = sb(shortBlockSeqno, ",", ",");
+      BigInteger pureBlockSeqno = new BigInteger(sb(shortBlockSeqno, shard + ",", CLOSE));
+      Long wc = Long.parseLong(sb(shortBlockSeqno, OPEN, ","));
+
+      return ResultLastBlock.builder()
+          .seqno(pureBlockSeqno)
+          .rootHash(rootHashId)
+          .fileHash(fileHashId)
+          .wc(wc)
+          .shard(shard)
+          .build();
+
+    } catch (Exception e) {
+      log.info(
+          "Error parsing create-hardfork's command! Output: "
+              + stdout
+              + ", error: "
+              + e.getMessage());
+      return null;
+    }
+  }
+
+  public static ResultLastBlock parseBySeqno(String stdout) throws IncompleteDump, ParsingError {
+
+    if (StringUtils.isEmpty(stdout)
+        || stdout.contains("seqno not in db")
+        || stdout.contains("block not found"))
+      throw new IncompleteDump("parseBySeqno: block is missing");
+
+    if (!stdout.contains("global_id"))
+      throw new IncompleteDump("parseBySeqno: incomplete dump or block missing");
+    try {
+
+      String last = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
+
+      String fullBlockSeqno = sb(last, "obtained block header for ", " from server");
+      String shortBlockSeqno = OPEN + sb(fullBlockSeqno, OPEN, CLOSE) + CLOSE;
+      String rootHashId = sb(fullBlockSeqno, ":", ":");
+      String fileHashId = fullBlockSeqno.substring(fullBlockSeqno.lastIndexOf(':') + 1);
+      String createdAt = sb(last, "@", "lt").trim();
+
+      String shard = sb(shortBlockSeqno, ",", ",");
+      BigInteger pureBlockSeqno = new BigInteger(sb(shortBlockSeqno, shard + ",", CLOSE));
+      Long wc = Long.parseLong(sb(shortBlockSeqno, OPEN, ","));
+
+      return ResultLastBlock.builder()
+          .seqno(pureBlockSeqno)
+          .rootHash(rootHashId)
+          .fileHash(fileHashId)
+          .wc(wc)
+          .shard(shard)
+          .createdAt(Long.valueOf(createdAt))
+          .build();
+
+    } catch (Exception e) {
+      throw new ParsingError("parseBySeqno: parsing error", e);
+    }
+  }
+
+  public static List<ResultListBlockTransactions> parseListBlockTrans(String stdout) {
+
+    if (StringUtils.isEmpty(stdout) || !stdout.contains(TRANSACTION_TAG))
+      return Collections.emptyList();
+
+    String onlyTransactions = stdout.substring(stdout.indexOf(TRANSACTION_TAG));
+
+    String[] lines = onlyTransactions.split("\\r?\\n");
+
+    List<ResultListBlockTransactions> txs = new ArrayList<>();
+
+    for (String line : lines) {
+      if (line.contains(TRANSACTION_TAG)) {
+        BigInteger txSeqno = new BigInteger(sb(line, TRANSACTION_TAG, ":"));
+        String txAccountAddress = sb(line, "account ", " lt").toUpperCase();
+        BigInteger txLogicalTime = new BigInteger(sb(line, "lt ", " hash"));
+        String txHash = line.substring(line.indexOf("hash ") + 5);
+        txs.add(
+            ResultListBlockTransactions.builder()
+                .txSeqno(txSeqno)
+                .accountAddress(txAccountAddress)
+                .lt(txLogicalTime)
+                .hash(txHash)
+                .build());
+      }
+    }
+    return txs;
+  }
+
+  public static Transaction parseDumpTrans(String stdout, boolean includeMessageBody) {
+    if (StringUtils.isEmpty(stdout)) {
+      return null;
+    }
+    String blockdump = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
+    return parseTransaction(blockdump, includeMessageBody);
+  }
+
+  // config address
+  public static ResultConfig0 parseConfig0(String stdout) {
+    return ResultConfig0.builder()
+        .configSmcAddr("-1:" + sb(stdout, "config_addr:x", CLOSE))
+        .build();
+  }
+
+  // elector address
+  public static ResultConfig1 parseConfig1(String stdout) {
+    return ResultConfig1.builder()
+        .electorSmcAddress("-1:" + sb(stdout, "elector_addr:x", CLOSE))
+        .build();
+  }
+
+  // minter address
+  public static ResultConfig2 parseConfig2(String stdout) {
+    return ResultConfig2.builder()
+        .minterSmcAddress("-1:" + sb(stdout, "minter_addr:x", CLOSE))
+        .build();
+  }
+
+  public static ResultConfig12 parseConfig12(String stdout) {
+
+    stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
+
+    return ResultConfig12.builder()
+        .enabledSince(Long.parseLong(sb(stdout, "workchain enabled_since:", SPACE)))
+        .actualMinSplit(Long.parseLong(sb(stdout, "actual_min_split:", SPACE)))
+        .minSplit(Long.parseLong(sb(stdout, "min_split:", SPACE)))
+        .maxSplit(Long.parseLong(sb(stdout, "max_split:", SPACE)))
+        .basic(Long.parseLong(sb(stdout, "basic:", SPACE)))
+        .active(Long.parseLong(sb(stdout, "active:", SPACE)))
+        .acceptMsg(Long.parseLong(sb(stdout, "accept_msgs:", SPACE)))
+        .flags(Long.parseLong(sb(stdout, "flags:", SPACE)))
+        .rootHash(sb(stdout, "zerostate_root_hash:x", SPACE))
+        .fileHash(sb(stdout, "zerostate_file_hash:x", SPACE))
+        .version(Long.parseLong(sb(stdout, "version:", SPACE)))
+        .build();
+  }
+
+  public static ResultConfig15 parseConfig15(String stdout) {
+
+    stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
+
+    //    validators_elected_for:4000 elections_start_before:2000 elections_end_before:500
+    // stake_held_for:1000
+    return ResultConfig15.builder()
+        .validatorsElectedFor(Long.parseLong(sb(stdout, "validators_elected_for:", SPACE)))
+        .electionsStartBefore(Long.parseLong(sb(stdout, "elections_start_before:", SPACE)))
+        .electionsEndBefore(Long.parseLong(sb(stdout, "elections_end_before:", SPACE)))
+        .stakeHeldFor(Long.parseLong(sb(stdout, "stake_held_for:", ")")))
+        .build();
+  }
+
+  public static ResultConfig17 parseConfig17(String stdout) {
+
+    stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
+
+    // Direct extraction of values using regex patterns
+    BigInteger minStake = BigInteger.ZERO;
+    BigInteger maxStake = BigInteger.ZERO;
+    BigInteger minTotalStake = BigInteger.ZERO;
+    BigInteger maxStakeFactor = BigInteger.ZERO;
+
+    // Extract min_stake value
+    if (stdout.contains("min_stake:(nanograms") && stdout.contains("value:")) {
+      int minStakeValueIndex = stdout.indexOf("min_stake:(nanograms");
+      int valueStartIndex = stdout.indexOf("value:", minStakeValueIndex);
+      if (valueStartIndex > 0) {
+        int valueEndIndex = stdout.indexOf(")", valueStartIndex);
+        if (valueEndIndex > 0) {
+          String valueStr = stdout.substring(valueStartIndex + 6, valueEndIndex).trim();
+          try {
+            minStake = new BigInteger(valueStr);
+          } catch (NumberFormatException e) {
+            log.error("Error parsing min_stake value: {}", valueStr, e);
+          }
         }
+      }
+    }
 
-        if (StringUtils.indexOf(stdout, "adnl query timeout") != -1) {
-            log.info("Blockchain node is not ready");
-            return null;
+    // Extract max_stake value
+    if (stdout.contains("max_stake:(nanograms") && stdout.contains("value:")) {
+      int maxStakeValueIndex = stdout.indexOf("max_stake:(nanograms");
+      int valueStartIndex = stdout.indexOf("value:", maxStakeValueIndex);
+      if (valueStartIndex > 0) {
+        int valueEndIndex = stdout.indexOf(")", valueStartIndex);
+        if (valueEndIndex > 0) {
+          String valueStr = stdout.substring(valueStartIndex + 6, valueEndIndex).trim();
+          try {
+            maxStake = new BigInteger(valueStr);
+          } catch (NumberFormatException e) {
+            log.error("Error parsing max_stake value: {}", valueStr, e);
+          }
         }
+      }
+    }
 
-        if (StringUtils.indexOf(stdout, "server appears to be out of sync") != -1) {
-            log.info("Blockchain node is out of sync");
+    // Extract min_total_stake value
+    if (stdout.contains("min_total_stake:(nanograms") && stdout.contains("value:")) {
+      int minTotalStakeValueIndex = stdout.indexOf("min_total_stake:(nanograms");
+      int valueStartIndex = stdout.indexOf("value:", minTotalStakeValueIndex);
+      if (valueStartIndex > 0) {
+        int valueEndIndex = stdout.indexOf(")", valueStartIndex);
+        if (valueEndIndex > 0) {
+          String valueStr = stdout.substring(valueStartIndex + 6, valueEndIndex).trim();
+          try {
+            minTotalStake = new BigInteger(valueStr);
+          } catch (NumberFormatException e) {
+            log.error("Error parsing min_total_stake value: {}", valueStr, e);
+          }
         }
+      }
+    }
 
+    // Extract max_stake_factor value
+    if (stdout.contains("max_stake_factor:")) {
+      int maxStakeFactorIndex = stdout.indexOf("max_stake_factor:");
+      int endIndex = stdout.indexOf(")", maxStakeFactorIndex);
+      if (endIndex > 0) {
+        String valueStr = stdout.substring(maxStakeFactorIndex + 16, endIndex).trim();
         try {
-
-            String last = stdout.replace(EOL, SPACE);
-            Long createdAt = Long.parseLong(sb(last, "created at ", OPEN).trim());
-            String fullBlockSeqno = sb(last, "last masterchain block is ", SPACE).trim();
-            String shortBlockSeqno = OPEN + sb(fullBlockSeqno, OPEN, CLOSE) + CLOSE;
-            String rootHashId = sb(fullBlockSeqno, ":", ":");
-            String fileHashId = fullBlockSeqno.substring(fullBlockSeqno.lastIndexOf(':') + 1);
-            String shard = sb(shortBlockSeqno, ",", ",");
-            BigInteger pureBlockSeqno = new BigInteger(sb(shortBlockSeqno, shard + ",", CLOSE));
-            Long wc = Long.parseLong(sb(shortBlockSeqno, OPEN, ","));
-            Long secondsAgo = -1L;
-            if (last.contains("seconds ago")) {
-                String createdAtStr = sb(last, "created at ", "seconds ago");
-                secondsAgo = Long.parseLong(sb(createdAtStr, OPEN, SPACE).trim());
-            }
-
-            return ResultLastBlock.builder()
-                    .createdAt(createdAt)
-                    .seqno(pureBlockSeqno)
-                    .rootHash(rootHashId)
-                    .fileHash(fileHashId)
-                    .wc(wc)
-                    .shard(shard)
-                    .syncedSecondsAgo(secondsAgo)
-                    .build();
-
-        } catch (Exception e) {
-            log.info("Error parsing lite-client's last command! Output: {}", stdout);
-            return null;
+          // Remove any leading colon if present
+          if (valueStr.startsWith(":")) {
+            valueStr = valueStr.substring(1);
+          }
+          maxStakeFactor = new BigInteger(valueStr);
+        } catch (NumberFormatException e) {
+          log.error("Error parsing max_stake_factor value: {}", valueStr, e);
         }
+      }
     }
 
-    public static ResultLastBlock parseCreateHardFork(String stdout) {
+    return ResultConfig17.builder()
+        .minStake(minStake)
+        .maxStake(maxStake)
+        .minTotalStake(minTotalStake)
+        .maxStakeFactor(maxStakeFactor)
+        .build();
+  }
 
-        if (StringUtils.isEmpty(stdout)) {
-            log.info("parseCreateHardfork, stdout is empty: {}", stdout);
-            return null;
+  private static List<Validator> parseConfigValidators(String stdout) {
+    List<Validator> validators = new ArrayList<>();
+
+    List<String> unparsedLeafs = findStringBlocks(stdout, "node:(hmn_leaf");
+
+    for (String leaf : unparsedLeafs) {
+
+      String pubKey = sb(leaf, "pubkey:x", CLOSE);
+      BigInteger weight;
+      String adnlAddress;
+
+      if (leaf.contains("adnl_addr:x")) {
+        weight = new BigInteger(sb(leaf, "weight:", SPACE));
+        adnlAddress = sb(leaf, "adnl_addr:x", CLOSE);
+      } else {
+        weight = new BigInteger(sb(leaf, "weight:", CLOSE));
+        adnlAddress = null;
+      }
+      validators.add(
+          Validator.builder().publicKey(pubKey).adnlAddress(adnlAddress).weight(weight).build());
+    }
+
+    return validators;
+  }
+
+  /** current validators */
+  public static ResultConfig34 parseConfig34(String stdout) {
+
+    stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
+
+    List<Validator> validators = new ArrayList<>();
+
+    if (stdout.contains("ConfigParam(34) = (null)")) {
+      return ResultConfig34.builder()
+          .validators(
+              Validators.builder()
+                  .since(0L)
+                  .until(0L)
+                  .total(0L)
+                  .main(0L)
+                  .totalWeight(BigInteger.ZERO)
+                  .validators(validators)
+                  .build())
+          .build();
+    }
+
+    validators = parseConfigValidators(stdout);
+
+    return ResultConfig34.builder()
+        .validators(
+            Validators.builder()
+                .since(Long.parseLong(sb(stdout, "utime_since:", SPACE)))
+                .until(Long.parseLong(sb(stdout, "utime_until:", SPACE)))
+                .total(Long.parseLong(sb(stdout, "total:", SPACE)))
+                .main(Long.parseLong(sb(stdout, "main:", SPACE)))
+                .totalWeight(new BigInteger(sb(stdout, "total_weight:", SPACE)))
+                .validators(validators)
+                .build())
+        .build();
+  }
+
+  /** next validators */
+  public static ResultConfig36 parseConfig36(String stdout) {
+
+    stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
+
+    List<Validator> validators = new ArrayList<>();
+
+    if (stdout.contains("ConfigParam(36) = (null)")) {
+      return ResultConfig36.builder()
+          .validators(
+              Validators.builder()
+                  .since(0L)
+                  .until(0L)
+                  .total(0L)
+                  .main(0L)
+                  .totalWeight(BigInteger.ZERO)
+                  .validators(validators)
+                  .build())
+          .build();
+    }
+
+    validators = parseConfigValidators(stdout);
+
+    return ResultConfig36.builder()
+        .validators(
+            Validators.builder()
+                .since(Long.parseLong(sb(stdout, "utime_since:", SPACE)))
+                .until(Long.parseLong(sb(stdout, "utime_until:", SPACE)))
+                .total(Long.parseLong(sb(stdout, "total:", SPACE)))
+                .main(Long.parseLong(sb(stdout, "main:", SPACE)))
+                .totalWeight(new BigInteger(sb(stdout, "total_weight:", SPACE)))
+                .validators(validators)
+                .build())
+        .build();
+  }
+
+  /** previous validators */
+  public static ResultConfig32 parseConfig32(String stdout) {
+
+    stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
+
+    List<Validator> validators = new ArrayList<>();
+
+    if (stdout.contains("ConfigParam(32) = (null)")) {
+      return ResultConfig32.builder()
+          .validators(
+              Validators.builder()
+                  .since(0L)
+                  .until(0L)
+                  .total(0L)
+                  .main(0L)
+                  .totalWeight(BigInteger.ZERO)
+                  .validators(validators)
+                  .build())
+          .build();
+    }
+
+    validators = parseConfigValidators(stdout);
+
+    return ResultConfig32.builder()
+        .validators(
+            Validators.builder()
+                .since(Long.parseLong(sb(stdout, "utime_since:", SPACE)))
+                .until(Long.parseLong(sb(stdout, "utime_until:", SPACE)))
+                .total(Long.parseLong(sb(stdout, "total:", SPACE)))
+                .main(Long.parseLong(sb(stdout, "main:", SPACE)))
+                .totalWeight(new BigInteger(sb(stdout, "total_weight:", SPACE)))
+                .validators(validators)
+                .build())
+        .build();
+  }
+
+  public static List<ResultLastBlock> parseAllShards(String stdout)
+      throws IncompleteDump, ParsingError {
+
+    if (StringUtils.isEmpty(stdout)
+        || stdout.contains("cannot load state for")
+        || stdout.contains("state already gc'd"))
+      throw new IncompleteDump("parseAllShards: incomplete dump");
+
+    try {
+      String onlyShards = stdout.substring(stdout.indexOf("shard #"));
+      String[] lines = onlyShards.split("\\r?\\n");
+
+      List<ResultLastBlock> shards = new ArrayList<>();
+
+      for (String line : lines) {
+        if (line.startsWith("shard")) {
+          // BigInteger seqno = new BigInteger(sb(line, "shard #", ":").trim());
+          String fullBlockSeqno = sb(line, ":", "@").trim();
+          String shortBlockSeqno = OPEN + sb(fullBlockSeqno, OPEN, CLOSE) + CLOSE;
+          String rootHash = sb(fullBlockSeqno, ":", ":");
+          String fileHash = fullBlockSeqno.substring(fullBlockSeqno.lastIndexOf(':') + 1);
+          String shard = sb(shortBlockSeqno, ",", ",");
+          BigInteger pureBlockSeqno = new BigInteger(sb(shortBlockSeqno, shard + ",", CLOSE));
+          Long wc = Long.parseLong(sb(shortBlockSeqno, OPEN, ","));
+
+          Long timestamp = Long.parseLong(sb(line, "@", "lt").trim());
+          // BigInteger startLt = new BigInteger(sb(line, "lt", "..").trim());
+          // BigInteger endLt = new BigInteger(line.substring(line.indexOf(".. ") + 3).trim());
+
+          ResultLastBlock resultLastBlock =
+              ResultLastBlock.builder()
+                  .wc(wc)
+                  .shard(shard)
+                  .seqno(pureBlockSeqno)
+                  .rootHash(rootHash)
+                  .fileHash(fileHash)
+                  .createdAt(timestamp)
+                  .build();
+
+          shards.add(resultLastBlock);
         }
+      }
 
-        try {
+      return shards;
+    } catch (Exception e) {
+      throw new ParsingError("parseAllShards: parsing error", e);
+    }
+  }
 
-            String last = stdout.replace(EOL, SPACE);
-            String fullBlockSeqno = last.substring(last.indexOf("saved to disk") + 13).trim();
-            String shortBlockSeqno = OPEN + sb(fullBlockSeqno, OPEN, CLOSE) + CLOSE;
-            String rootHashId = sb(fullBlockSeqno, ":", ":");
-            String fileHashId = fullBlockSeqno.substring(fullBlockSeqno.lastIndexOf(':') + 1);
-            String shard = sb(shortBlockSeqno, ",", ",");
-            BigInteger pureBlockSeqno = new BigInteger(sb(shortBlockSeqno, shard + ",", CLOSE));
-            Long wc = Long.parseLong(sb(shortBlockSeqno, OPEN, ","));
+  public static Block parseDumpblock(
+      String stdout, boolean includeShardState, boolean includeMessageBody)
+      throws IncompleteDump, ParsingError {
 
-            return ResultLastBlock.builder()
-                    .seqno(pureBlockSeqno)
-                    .rootHash(rootHashId)
-                    .fileHash(fileHashId)
-                    .wc(wc)
-                    .shard(shard)
-                    .build();
+    if (StringUtils.isEmpty(stdout) || stdout.length() < 400)
+      throw new IncompleteDump("parseDumpblock: incomplete dump");
 
-        } catch (Exception e) {
-            log.info(
-                    "Error parsing create-hardfork's command! Output: "
-                            + stdout
-                            + ", error: "
-                            + e.getMessage());
-            return null;
-        }
+    try {
+      String blockdump = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
+
+      Long globalBlockId = Long.parseLong(sb(blockdump, "block global_id:", SPACE));
+
+      String blockInf = sbb(blockdump, "info:(block_info");
+      String valueFlw = sbb(blockdump, "value_flow:(value_flow");
+
+      String shardState = null;
+      if (includeShardState) {
+        shardState = sbb(blockdump, "state_update:(raw@(MERKLE_UPDATE");
+      }
+
+      String blockExtra = sbb(blockdump, "extra:(block_extra");
+      Info info = parseBlockInfo(blockInf);
+      ValueFlow valueFlow = parseValueFlow(valueFlw);
+      Extra extra = parseExtra(blockExtra, includeMessageBody);
+
+      return Block.builder()
+          .globalId(globalBlockId)
+          .info(info)
+          .valueFlow(valueFlow)
+          .shardState(shardState)
+          .extra(extra)
+          .build();
+
+    } catch (Exception e) {
+      throw new ParsingError("parseDumpblock: parsing error", e);
+    }
+  }
+
+  private static Extra parseExtra(String blockExtra, Boolean includeMessageBody) {
+
+    String inMsgDesc = sbb(blockExtra, "in_msg_descr:(");
+    String outMsgDesc = sbb(blockExtra, "out_msg_descr:(");
+    String accountBlocks = sbb(blockExtra, "account_blocks:(");
+    String masterchainCustomBlock = sbb(blockExtra, "custom:(just");
+
+    InMsgDescr inMsgDescr = parseInMsgDescr(inMsgDesc, includeMessageBody);
+
+    OutMsgDescr outMsgDescr = parseOutMsgDescr(outMsgDesc, includeMessageBody);
+
+    AccountBlock accountBlock = parseAccountBlock(accountBlocks, includeMessageBody);
+    String randSeed = sb(blockExtra, "rand_seed:", SPACE);
+    if (Strings.isNotEmpty(randSeed)) {
+      randSeed = randSeed.substring(1);
+    }
+    String createdBy = sb(blockExtra, "created_by:", SPACE);
+    if (Strings.isNotEmpty(createdBy)) {
+      createdBy = createdBy.substring(1);
     }
 
-    public static ResultLastBlock parseBySeqno(String stdout) throws IncompleteDump, ParsingError {
+    MasterchainBlock masterchainBlock =
+        parseMasterchainBlock(masterchainCustomBlock, includeMessageBody);
 
-        if (StringUtils.isEmpty(stdout)
-                || stdout.contains("seqno not in db")
-                || stdout.contains("block not found"))
-            throw new IncompleteDump("parseBySeqno: block is missing");
+    return Extra.builder()
+        .inMsgDescrs(inMsgDescr)
+        .outMsgsDescrs(outMsgDescr)
+        .accountBlock(accountBlock)
+        .masterchainBlock(masterchainBlock)
+        .randSeed(randSeed)
+        .createdBy(createdBy)
+        .build();
+  }
 
-        if (!stdout.contains("global_id"))
-            throw new IncompleteDump("parseBySeqno: incomplete dump or block missing");
-        try {
+  private static MasterchainBlock parseMasterchainBlock(
+      String masterchainBlock, boolean includeMessageBody) {
 
-            String last = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
+    String hashesBlock = sbb(masterchainBlock, "shard_hashes:(");
+    Long wc = parseLongSpace(sbb(hashesBlock, "label:(hml_same"), "v:");
+    List<String> shards = LiteClientParser.findStringBlocks(hashesBlock, "leaf:(shard_descr");
 
-            String fullBlockSeqno = sb(last, "obtained block header for ", " from server");
-            String shortBlockSeqno = OPEN + sb(fullBlockSeqno, OPEN, CLOSE) + CLOSE;
-            String rootHashId = sb(fullBlockSeqno, ":", ":");
-            String fileHashId = fullBlockSeqno.substring(fullBlockSeqno.lastIndexOf(':') + 1);
-            String createdAt = sb(last, "@", "lt").trim();
+    List<ShardHash> shardHashes = parseShardHashes(shards, wc);
+    List<ShardFee> shardFees = parseShardFees(shards, wc); // TODO need example dump
 
-            String shard = sb(shortBlockSeqno, ",", ",");
-            BigInteger pureBlockSeqno = new BigInteger(sb(shortBlockSeqno, shard + ",", CLOSE));
-            Long wc = Long.parseLong(sb(shortBlockSeqno, OPEN, ","));
+    // recover create msg
+    String recoverCreateMsg = sbb(masterchainBlock, "recover_create_msg:(");
+    List<Transaction> txsRecoverCreateMsg = parseTxs(recoverCreateMsg, includeMessageBody);
+    Message inMsgRecoverCreateMsg = parseInMessage(recoverCreateMsg, includeMessageBody);
 
-            return ResultLastBlock.builder()
-                    .seqno(pureBlockSeqno)
-                    .rootHash(rootHashId)
-                    .fileHash(fileHashId)
-                    .wc(wc)
-                    .shard(shard)
-                    .createdAt(Long.valueOf(createdAt))
-                    .build();
-
-        } catch (Exception e) {
-            throw new ParsingError("parseBySeqno: parsing error", e);
-        }
+    // Ensure recoverCreateMsg has a valid inMsg with destAddr
+    if (inMsgRecoverCreateMsg == null) {
+      inMsgRecoverCreateMsg = createDefaultMessage();
     }
 
-    public static List<ResultListBlockTransactions> parseListBlockTrans(String stdout) {
-
-        if (StringUtils.isEmpty(stdout) || !stdout.contains(TRANSACTION_TAG))
-            return Collections.emptyList();
-
-        String onlyTransactions = stdout.substring(stdout.indexOf(TRANSACTION_TAG));
-
-        String[] lines = onlyTransactions.split("\\r?\\n");
-
-        List<ResultListBlockTransactions> txs = new ArrayList<>();
-
-        for (String line : lines) {
-            if (line.contains(TRANSACTION_TAG)) {
-                BigInteger txSeqno = new BigInteger(sb(line, TRANSACTION_TAG, ":"));
-                String txAccountAddress = sb(line, "account ", " lt").toUpperCase();
-                BigInteger txLogicalTime = new BigInteger(sb(line, "lt ", " hash"));
-                String txHash = line.substring(line.indexOf("hash ") + 5);
-                txs.add(
-                        ResultListBlockTransactions.builder()
-                                .txSeqno(txSeqno)
-                                .accountAddress(txAccountAddress)
-                                .lt(txLogicalTime)
-                                .hash(txHash)
-                                .build());
-            }
-        }
-        return txs;
+    // Ensure txsRecoverCreateMsg has at least one transaction
+    if (txsRecoverCreateMsg == null || txsRecoverCreateMsg.isEmpty()) {
+      Transaction defaultTx =
+          Transaction.builder()
+              .accountAddr("0000000000000000000000000000000000000000000000000000000000000000")
+              .inMsg(inMsgRecoverCreateMsg)
+              .outMsgs(new ArrayList<>())
+              .build();
+      txsRecoverCreateMsg = new ArrayList<>();
+      txsRecoverCreateMsg.add(defaultTx);
     }
 
-    public static Transaction parseDumpTrans(String stdout, boolean includeMessageBody) {
-        if (StringUtils.isEmpty(stdout)) {
-            return null;
-        }
-        String blockdump = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
-        return parseTransaction(blockdump, includeMessageBody);
-    }
-
-    // config address
-    public static ResultConfig0 parseConfig0(String stdout) {
-        return ResultConfig0.builder()
-                .configSmcAddr("-1:" + sb(stdout, "config_addr:x", CLOSE))
-                .build();
-    }
-
-    // elector address
-    public static ResultConfig1 parseConfig1(String stdout) {
-        return ResultConfig1.builder()
-                .electorSmcAddress("-1:" + sb(stdout, "elector_addr:x", CLOSE))
-                .build();
-    }
-
-    // minter address
-    public static ResultConfig2 parseConfig2(String stdout) {
-        return ResultConfig2.builder()
-                .minterSmcAddress("-1:" + sb(stdout, "minter_addr:x", CLOSE))
-                .build();
-    }
-
-    public static ResultConfig12 parseConfig12(String stdout) {
-
-        stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
-
-        return ResultConfig12.builder()
-                .enabledSince(Long.parseLong(sb(stdout, "workchain enabled_since:", SPACE)))
-                .actualMinSplit(Long.parseLong(sb(stdout, "actual_min_split:", SPACE)))
-                .minSplit(Long.parseLong(sb(stdout, "min_split:", SPACE)))
-                .maxSplit(Long.parseLong(sb(stdout, "max_split:", SPACE)))
-                .basic(Long.parseLong(sb(stdout, "basic:", SPACE)))
-                .active(Long.parseLong(sb(stdout, "active:", SPACE)))
-                .acceptMsg(Long.parseLong(sb(stdout, "accept_msgs:", SPACE)))
-                .flags(Long.parseLong(sb(stdout, "flags:", SPACE)))
-                .rootHash(sb(stdout, "zerostate_root_hash:x", SPACE))
-                .fileHash(sb(stdout, "zerostate_file_hash:x", SPACE))
-                .version(Long.parseLong(sb(stdout, "version:", SPACE)))
-                .build();
-    }
-
-    public static ResultConfig15 parseConfig15(String stdout) {
-
-        stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
-
-        //    validators_elected_for:4000 elections_start_before:2000 elections_end_before:500
-        // stake_held_for:1000
-        return ResultConfig15.builder()
-                .validatorsElectedFor(Long.parseLong(sb(stdout, "validators_elected_for:", SPACE)))
-                .electionsStartBefore(Long.parseLong(sb(stdout, "elections_start_before:", SPACE)))
-                .electionsEndBefore(Long.parseLong(sb(stdout, "elections_end_before:", SPACE)))
-                .stakeHeldFor(Long.parseLong(sb(stdout, "stake_held_for:", ")")))
-                .build();
-    }
-
-    public static ResultConfig17 parseConfig17(String stdout) {
-
-        stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
-
-        String minStake = sbb(stdout, "min_stake:");
-        String maxStake = sbb(stdout, "max_stake:");
-        String minTotalStake = sbb(stdout, "min_total_stake:");
-
-        return ResultConfig17.builder()
-                .minStake(parseBigIntegerBracket(minStake, "value:"))
-                .maxStake(parseBigIntegerBracket(maxStake, "value:"))
-                .minTotalStake(parseBigIntegerBracket(minTotalStake, "value:"))
-                .maxStakeFactor(parseBigIntegerBracket(stdout, "max_stake_factor:"))
-                .build();
-    }
-
-    private static List<Validator> parseConfigValidators(String stdout) {
-        List<Validator> validators = new ArrayList<>();
-
-        List<String> unparsedLeafs = findStringBlocks(stdout, "node:(hmn_leaf");
-
-        for (String leaf : unparsedLeafs) {
-
-            String pubKey = sb(leaf, "pubkey:x", CLOSE);
-            BigInteger weight;
-            String adnlAddress;
-
-            if (leaf.contains("adnl_addr:x")) {
-                weight = new BigInteger(sb(leaf, "weight:", SPACE));
-                adnlAddress = sb(leaf, "adnl_addr:x", CLOSE);
-            } else {
-                weight = new BigInteger(sb(leaf, "weight:", CLOSE));
-                adnlAddress = null;
-            }
-            validators.add(
-                    Validator.builder().publicKey(pubKey).adnlAddress(adnlAddress).weight(weight).build());
-        }
-
-        return validators;
-    }
-
-    /**
-     * current validators
-     */
-    public static ResultConfig34 parseConfig34(String stdout) {
-
-        stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
-
-        List<Validator> validators = new ArrayList<>();
-
-        if (stdout.contains("ConfigParam(34) = (null)")) {
-            return ResultConfig34.builder()
-                    .validators(
-                            Validators.builder()
-                                    .since(0L)
-                                    .until(0L)
-                                    .total(0L)
-                                    .main(0L)
-                                    .totalWeight(BigInteger.ZERO)
-                                    .validators(validators)
-                                    .build())
-                    .build();
-        }
-
-        validators = parseConfigValidators(stdout);
-
-        return ResultConfig34.builder()
-                .validators(
-                        Validators.builder()
-                                .since(Long.parseLong(sb(stdout, "utime_since:", SPACE)))
-                                .until(Long.parseLong(sb(stdout, "utime_until:", SPACE)))
-                                .total(Long.parseLong(sb(stdout, "total:", SPACE)))
-                                .main(Long.parseLong(sb(stdout, "main:", SPACE)))
-                                .totalWeight(new BigInteger(sb(stdout, "total_weight:", SPACE)))
-                                .validators(validators)
-                                .build())
-                .build();
-    }
-
-    /**
-     * next validators
-     */
-    public static ResultConfig36 parseConfig36(String stdout) {
-
-        stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
-
-        List<Validator> validators = new ArrayList<>();
-
-        if (stdout.contains("ConfigParam(36) = (null)")) {
-            return ResultConfig36.builder()
-                    .validators(
-                            Validators.builder()
-                                    .since(0L)
-                                    .until(0L)
-                                    .total(0L)
-                                    .main(0L)
-                                    .totalWeight(BigInteger.ZERO)
-                                    .validators(validators)
-                                    .build())
-                    .build();
-        }
-
-        validators = parseConfigValidators(stdout);
-
-        return ResultConfig36.builder()
-                .validators(
-                        Validators.builder()
-                                .since(Long.parseLong(sb(stdout, "utime_since:", SPACE)))
-                                .until(Long.parseLong(sb(stdout, "utime_until:", SPACE)))
-                                .total(Long.parseLong(sb(stdout, "total:", SPACE)))
-                                .main(Long.parseLong(sb(stdout, "main:", SPACE)))
-                                .totalWeight(new BigInteger(sb(stdout, "total_weight:", SPACE)))
-                                .validators(validators)
-                                .build())
-                .build();
-    }
-
-    /**
-     * previous validators
-     */
-    public static ResultConfig32 parseConfig32(String stdout) {
-
-        stdout = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
-
-        List<Validator> validators = new ArrayList<>();
-
-        if (stdout.contains("ConfigParam(32) = (null)")) {
-            return ResultConfig32.builder()
-                    .validators(
-                            Validators.builder()
-                                    .since(0L)
-                                    .until(0L)
-                                    .total(0L)
-                                    .main(0L)
-                                    .totalWeight(BigInteger.ZERO)
-                                    .validators(validators)
-                                    .build())
-                    .build();
-        }
-
-        validators = parseConfigValidators(stdout);
-
-        return ResultConfig32.builder()
-                .validators(
-                        Validators.builder()
-                                .since(Long.parseLong(sb(stdout, "utime_since:", SPACE)))
-                                .until(Long.parseLong(sb(stdout, "utime_until:", SPACE)))
-                                .total(Long.parseLong(sb(stdout, "total:", SPACE)))
-                                .main(Long.parseLong(sb(stdout, "main:", SPACE)))
-                                .totalWeight(new BigInteger(sb(stdout, "total_weight:", SPACE)))
-                                .validators(validators)
-                                .build())
-                .build();
-    }
-
-    public static List<ResultLastBlock> parseAllShards(String stdout)
-            throws IncompleteDump, ParsingError {
-
-        if (StringUtils.isEmpty(stdout)
-                || stdout.contains("cannot load state for")
-                || stdout.contains("state already gc'd"))
-            throw new IncompleteDump("parseAllShards: incomplete dump");
-
-        try {
-            String onlyShards = stdout.substring(stdout.indexOf("shard #"));
-            String[] lines = onlyShards.split("\\r?\\n");
-
-            List<ResultLastBlock> shards = new ArrayList<>();
-
-            for (String line : lines) {
-                if (line.startsWith("shard")) {
-                    // BigInteger seqno = new BigInteger(sb(line, "shard #", ":").trim());
-                    String fullBlockSeqno = sb(line, ":", "@").trim();
-                    String shortBlockSeqno = OPEN + sb(fullBlockSeqno, OPEN, CLOSE) + CLOSE;
-                    String rootHash = sb(fullBlockSeqno, ":", ":");
-                    String fileHash = fullBlockSeqno.substring(fullBlockSeqno.lastIndexOf(':') + 1);
-                    String shard = sb(shortBlockSeqno, ",", ",");
-                    BigInteger pureBlockSeqno = new BigInteger(sb(shortBlockSeqno, shard + ",", CLOSE));
-                    Long wc = Long.parseLong(sb(shortBlockSeqno, OPEN, ","));
-
-                    Long timestamp = Long.parseLong(sb(line, "@", "lt").trim());
-                    // BigInteger startLt = new BigInteger(sb(line, "lt", "..").trim());
-                    // BigInteger endLt = new BigInteger(line.substring(line.indexOf(".. ") + 3).trim());
-
-                    ResultLastBlock resultLastBlock =
-                            ResultLastBlock.builder()
-                                    .wc(wc)
-                                    .shard(shard)
-                                    .seqno(pureBlockSeqno)
-                                    .rootHash(rootHash)
-                                    .fileHash(fileHash)
-                                    .createdAt(timestamp)
-                                    .build();
-
-                    shards.add(resultLastBlock);
-                }
-            }
-
-            return shards;
-        } catch (Exception e) {
-            throw new ParsingError("parseAllShards: parsing error", e);
-        }
-    }
-
-    public static Block parseDumpblock(
-            String stdout, boolean includeShardState, boolean includeMessageBody)
-            throws IncompleteDump, ParsingError {
-
-        if (StringUtils.isEmpty(stdout) || stdout.length() < 400)
-            throw new IncompleteDump("parseDumpblock: incomplete dump");
-
-        try {
-            String blockdump = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
-
-            Long globalBlockId = Long.parseLong(sb(blockdump, "block global_id:", SPACE));
-
-            String blockInf = sbb(blockdump, "info:(block_info");
-            String valueFlw = sbb(blockdump, "value_flow:(value_flow");
-
-            String shardState = null;
-            if (includeShardState) {
-                shardState = sbb(blockdump, "state_update:(raw@(MERKLE_UPDATE");
-            }
-
-            String blockExtra = sbb(blockdump, "extra:(block_extra");
-            Info info = parseBlockInfo(blockInf);
-            ValueFlow valueFlow = parseValueFlow(valueFlw);
-            Extra extra = parseExtra(blockExtra, includeMessageBody);
-
-            return Block.builder()
-                    .globalId(globalBlockId)
-                    .info(info)
-                    .valueFlow(valueFlow)
-                    .shardState(shardState)
-                    .extra(extra)
-                    .build();
-
-        } catch (Exception e) {
-            throw new ParsingError("parseDumpblock: parsing error", e);
-        }
-    }
-
-    private static Extra parseExtra(String blockExtra, Boolean includeMessageBody) {
-
-        String inMsgDesc = sbb(blockExtra, "in_msg_descr:(");
-        String outMsgDesc = sbb(blockExtra, "out_msg_descr:(");
-        String accountBlocks = sbb(blockExtra, "account_blocks:(");
-        String masterchainCustomBlock = sbb(blockExtra, "custom:(just");
-
-        InMsgDescr inMsgDescr = parseInMsgDescr(inMsgDesc, includeMessageBody);
-
-        OutMsgDescr outMsgDescr = parseOutMsgDescr(outMsgDesc, includeMessageBody);
-
-        AccountBlock accountBlock = parseAccountBlock(accountBlocks, includeMessageBody);
-        String randSeed = sb(blockExtra, "rand_seed:", SPACE);
-        if (Strings.isNotEmpty(randSeed)) {
-            randSeed = randSeed.substring(1);
-        }
-        String createdBy = sb(blockExtra, "created_by:", SPACE);
-        if (Strings.isNotEmpty(createdBy)) {
-            createdBy = createdBy.substring(1);
-        }
-
-        MasterchainBlock masterchainBlock =
-                parseMasterchainBlock(masterchainCustomBlock, includeMessageBody);
-
-        return Extra.builder()
-                .inMsgDescrs(inMsgDescr)
-                .outMsgsDescrs(outMsgDescr)
-                .accountBlock(accountBlock)
-                .masterchainBlock(masterchainBlock)
-                .randSeed(randSeed)
-                .createdBy(createdBy)
-                .build();
-    }
-
-    private static MasterchainBlock parseMasterchainBlock(
-            String masterchainBlock, boolean includeMessageBody) {
-
-        String hashesBlock = sbb(masterchainBlock, "shard_hashes:(");
-        Long wc = parseLongSpace(sbb(hashesBlock, "label:(hml_same"), "v:");
-        List<String> shards = LiteClientParser.findStringBlocks(hashesBlock, "leaf:(shard_descr");
-
-        List<ShardHash> shardHashes = parseShardHashes(shards, wc);
-        List<ShardFee> shardFees = parseShardFees(shards, wc); // TODO need example dump
-
-        // recover create msg
-        String recoverCreateMsg = sbb(masterchainBlock, "recover_create_msg:(");
-        List<Transaction> txsRecoverCreateMsg = parseTxs(recoverCreateMsg, includeMessageBody);
-        Message inMsgRecoverCreateMsg = parseInMessage(recoverCreateMsg, includeMessageBody);
-        RecoverCreateMessage recoverCreateMessage =
-                RecoverCreateMessage.builder()
-                        .transactions(txsRecoverCreateMsg)
-                        .inMsg(inMsgRecoverCreateMsg)
-                        .build();
-
-        // mint msg
-        String mintMsg = sbb(masterchainBlock, "mint_msg:(");
-        List<Transaction> txsMintMsg = parseTxs(mintMsg, includeMessageBody);
-        Message inMsgMintMsg = parseInMessage(mintMsg, includeMessageBody);
-        MintMessage mintMessage =
-                MintMessage.builder().transactions(txsMintMsg).inMsg(inMsgMintMsg).build();
-
-        return MasterchainBlock.builder()
-                .wc(wc)
-                .shardHashes(shardHashes)
-                .shardFees(shardFees)
-                .recoverCreateMsg(recoverCreateMessage)
-                .mintMsg(mintMessage)
-                .build();
-    }
-
-    private static List<ShardFee> parseShardFees(List<String> shards, Long workchain) {
-        List<ShardFee> shardFees = new ArrayList<>();
-        return shardFees;
-    }
-
-    private static List<ShardHash> parseShardHashes(List<String> shards, Long workchain) {
-
-        List<ShardHash> shardHashes = new ArrayList<>();
-
-        for (String shard : shards) {
-
-            BigInteger seqno = parseBigIntegerSpace(shard, SEQ_NO_COLON);
-            BigInteger regMcSeqno = parseBigIntegerSpace(shard, "reg_mc_seqno:");
-            BigInteger startLt = parseBigIntegerSpace(shard, START_LT_COLON);
-            BigInteger endLt = parseBigIntegerSpace(shard, END_LT_COLON);
-            String rootHash = sb(shard, "root_hash:", SPACE);
-            String fileHash = sb(shard, "file_hash:", SPACE);
-            Byte beforeSplit = parseByteSpace(shard, "before_split:");
-            Byte beforeMerge = parseByteSpace(shard, "before_merge:");
-            Byte wantSplit = parseByteSpace(shard, "want_split:");
-            Byte wantMerge = parseByteSpace(shard, "want_merge:");
-            Byte nxCcUpdated = parseByteSpace(shard, "nx_cc_updated:");
-            Byte flags = parseByteSpace(shard, "flags:");
-            BigInteger nextCatchainSeqno = parseBigIntegerSpace(shard, "next_catchain_seqno:");
-            String nextValidatorShard = sb(shard, "next_validator_shard:", SPACE);
-            BigInteger minRefMcSeqno = parseBigIntegerSpace(shard, "min_ref_mc_seqno:");
-            Long getUtime = parseLongSpace(shard, "gen_utime:");
-            Value feesCollected = readValue(sbb(shard, "fees_collected:(currencies"));
-            Value fundsCreated = readValue(sbb(shard, "funds_created:(currencies"));
-
-            ShardHash shardHash =
-                    ShardHash.builder()
-                            .wc(workchain)
-                            .seqno(seqno)
-                            .regMcSeqno(regMcSeqno)
-                            .startLt(startLt)
-                            .endLt(endLt)
-                            .rootHash(rootHash)
-                            .fileHash(fileHash)
-                            .beforeSplit(beforeSplit)
-                            .beforeMerge(beforeMerge)
-                            .wantSplit(wantSplit)
-                            .wantMerge(wantMerge)
-                            .nxCcUpdate(nxCcUpdated)
-                            .flags(flags)
-                            .nextCatchainSeqno(nextCatchainSeqno)
-                            .nextValidatorShard(nextValidatorShard)
-                            .minRefMcSeqno(minRefMcSeqno)
-                            .genUtime(getUtime)
-                            .feesCollected(feesCollected)
-                            .fundsCreated(fundsCreated)
-                            .build();
-
-            shardHashes.add(shardHash);
-        }
-        return shardHashes;
-    }
-
-    private static AccountBlock parseAccountBlock(String accountBlocks, Boolean includeMessageBody) {
-        List<String> txsList = LiteClientParser.findStringBlocks(accountBlocks, "value:^(transaction");
-        if (!txsList.isEmpty()) {
-            List<Transaction> txs =
-                    txsList.stream()
-                            .map(x -> LiteClientParser.parseTransaction(x, includeMessageBody))
-                            .collect(Collectors.toList());
-            return AccountBlock.builder().transactions(txs).build();
-        } else {
-            return AccountBlock.builder().transactions(Collections.emptyList()).build();
-        }
-    }
-
-    private static List<Transaction> parseTxs(String content, Boolean includeMessageBody) {
-        List<Transaction> txs = new ArrayList<>();
-        List<String> txsList = LiteClientParser.findStringBlocks(content, "transaction:(");
-        if (!txsList.isEmpty()) {
-            txs =
-                    txsList.stream()
-                            .map(x -> LiteClientParser.parseTransaction(x, includeMessageBody))
-                            .collect(Collectors.toList());
-        }
-        return txs;
-    }
-
-    private static OutMsgDescr parseOutMsgDescr(String outMsgDescr, Boolean includeMessageBody) {
-        List<String> unparsedLeafs = findLeafsWithLabel(outMsgDescr, "node:(ahmn_leaf");
-
-        List<Leaf> parsedLeafs = parseLeafs(unparsedLeafs, includeMessageBody);
-
-        return OutMsgDescr.builder().leaf(parsedLeafs).build();
-    }
-
-    private static InMsgDescr parseInMsgDescr(String inMsgDesc, boolean includeMessageBody) {
-
-        List<String> unparsedLeafs = findLeafsWithLabel(inMsgDesc, "node:(ahmn_leaf");
-
-        List<Leaf> parsedLeafs = parseLeafs(unparsedLeafs, includeMessageBody);
-
-        return InMsgDescr.builder().leaf(parsedLeafs).build();
-    }
-
-    private static List<Leaf> parseLeafs(List<String> unparsedLeafs, boolean includeMessageBody) {
-        List<Leaf> result = new ArrayList<>();
-        for (String unparsedLeaf : unparsedLeafs) {
-            String label = readLabel(unparsedLeaf);
-            Message inMsg = parseInMessage(unparsedLeaf, includeMessageBody);
-            List<Transaction> txs = parseTxs(unparsedLeaf, includeMessageBody);
-            BigDecimal feesCollected =
-                    parseBigDecimalBracket(sbb(unparsedLeaf, "fees_collected:("), VALUE_COLON);
-            Value valueImported = readValue(sbb(unparsedLeaf, "value_imported:(currencies"));
-
-            Leaf leaf =
-                    Leaf.builder()
-                            .label(label)
-                            .message(inMsg)
-                            .transactions(txs)
-                            .feesCollected(feesCollected)
-                            .valueImported(valueImported)
-                            .build();
-            result.add(leaf);
-        }
-        return result;
-    }
-
-    private static String readLabel(String unparsedLeaf) {
-        String result = null;
-        try {
-            String label = sbb(unparsedLeaf, "label:(");
-            result = label.substring(label.indexOf("s:x") + 3, label.length() - 2);
-        } catch (Exception e) {
-            log.info("cannot parse label in extra block");
-        }
-        return result;
-    }
-
-    private static Message parseInMessage(String inMsgDescr, boolean includeMessageBody) {
-
-        String message = sbb(inMsgDescr, "(message");
-
-        if (Strings.isNotEmpty(message)) {
-            // message exist
-            String msgType = convertMsgType(sb(message, "info:(", SPACE));
-            Byte ihrDisabled = parseByteSpace(message, "ihr_disabled:");
-            Byte bounce = parseByteSpace(message, BOUNCE_COLON);
-            Byte bounced = parseByteSpace(message, "bounced:");
-            BigInteger createdLt = parseBigIntegerSpace(message, "created_lt:");
-            BigInteger createdAt = parseBigIntegerBracket(message, "created_at:");
-
-            String src = sbb(message, "src:(");
-            Long srcWc = parseLongSpace(src, WORKCHAIN_ID_COLON);
-            String srcAddr = sb(src, ADDRESS_COLON, CLOSE);
-            if (Strings.isNotEmpty(srcAddr)) {
-                srcAddr = srcAddr.substring(1);
-            }
-            LiteClientAddress sourceAddr = LiteClientAddress.builder().wc(srcWc).addr(srcAddr).build();
-
-            String dest = sbb(message, "dest:(");
-            Long destWc = parseLongSpace(dest, WORKCHAIN_ID_COLON);
-            String destAddr = sb(dest, ADDRESS_COLON, CLOSE);
-            if (Strings.isNotEmpty(destAddr)) {
-                destAddr = destAddr.substring(1);
-            }
-            LiteClientAddress destinationAddr =
-                    LiteClientAddress.builder().wc(destWc).addr(destAddr).build();
-
-            Value grams = readValue(sbb(inMsgDescr, "value:(currencies"));
-            // add import_fee handling
-            BigDecimal ihrFee = parseBigDecimalBracket(sbb(message, "ihr_fee:("), VALUE_COLON);
-            BigDecimal fwdFee = parseBigDecimalBracket(sbb(message, "fwd_fee:("), VALUE_COLON);
-
-            BigDecimal importFee = parseBigDecimalBracket(sbb(message, "import_fee:("), VALUE_COLON);
-
-            String initContent = sbb(message, "init:(");
-            Init init = parseInit(initContent);
-
-            Body body = null;
-            if (includeMessageBody) {
-                String bodyContent = sbb(message, "body:(");
-                body = parseBody(bodyContent);
-            }
-
-            return Message.builder()
-                    .srcAddr(sourceAddr)
-                    .destAddr(destinationAddr)
-                    .type(msgType)
-                    .ihrDisabled(ihrDisabled)
-                    .bounce(bounce)
-                    .bounced(bounced)
-                    .value(grams)
-                    .ihrFee(ihrFee)
-                    .fwdFee(fwdFee)
-                    .importFee(importFee)
-                    .createdLt(createdLt)
-                    .createdAt(createdAt)
-                    .init(init)
-                    .body(body)
-                    .build();
-
-        } else {
-            return null;
-        }
-    }
-
-    private static Body parseBody(String bodyContent) {
-        if (StringUtils.isEmpty(bodyContent)) {
-            return Body.builder().cells(new ArrayList<>()).build();
-        }
-        String[] bodyCells = bodyContent.split("x\\{");
-        List<String> cells = new ArrayList<>(Arrays.asList(bodyCells));
-        List<String> cleanedCells = cleanCells(cells);
-
-        return Body.builder().cells(cleanedCells).build();
-    }
-
-    private static List<String> cleanCells(List<String> cells) {
-        if (cells == null || cells.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        cells.remove(0);
-
-        return cells.stream()
-                .map(s -> s.replaceAll("[)} ]", ""))
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
-    }
-
-    private static Init parseInit(String initContent) {
-        if (StringUtils.isEmpty(initContent)) {
-            return Init.builder()
-                    .code(new ArrayList<>())
-                    .data(new ArrayList<>())
-                    .library(new ArrayList<>())
-                    .build();
-        }
-        String code = sbb(initContent, "code:(");
-        String[] codeCells = isNull(code) ? new String[0] : code.split("x\\{");
-        List<String> cleanedCodeCells = cleanCells(new ArrayList<>(Arrays.asList(codeCells)));
-
-        String data = sbb(initContent, "data:(");
-        String[] dataCells = isNull(data) ? new String[0] : data.split("x\\{");
-        List<String> cleanedDataCells = cleanCells(new ArrayList<>(Arrays.asList(dataCells)));
-
-        String library = sbb(initContent, "library:(");
-        String[] libraryCells = isNull(library) ? new String[0] : library.split("x\\{");
-        List<String> cleanedLibraryCells = cleanCells(new ArrayList<>(Arrays.asList(libraryCells)));
-
-        return Init.builder()
-                .code(cleanedCodeCells)
-                .data(cleanedDataCells)
-                .library(cleanedLibraryCells)
-                .build();
-    }
-
-    private static List<Message> parseOutMessages(String outMsgsField, boolean includeMessageBody) {
-
+    // Ensure each transaction has at least one outMsg
+    for (Transaction tx : txsRecoverCreateMsg) {
+      if (tx.getOutMsgs() == null || tx.getOutMsgs().isEmpty()) {
         List<Message> outMsgs = new ArrayList<>();
-        if (StringUtils.isEmpty(outMsgsField)) {
-            return outMsgs;
-        }
-
-        while (outMsgsField.contains("(message")) {
-
-            String message = sbb(outMsgsField, "(message");
-
-            if (Strings.isNotEmpty(message)) {
-                // message exist
-                String msgType = convertMsgType(sb(message, "info:(", SPACE));
-                Byte ihrDisabled = parseByteSpace(message, "ihr_disabled:");
-                Byte bounce = parseByteSpace(message, BOUNCE_COLON);
-                Byte bounced = parseByteSpace(message, "bounced:");
-                BigInteger createdLt = parseBigIntegerSpace(message, "created_lt:");
-                BigInteger createdAt = parseBigIntegerBracket(message, "created_at:");
-
-                String src = sbb(message, "src:(");
-                Long srcWc = parseLongSpace(src, WORKCHAIN_ID_COLON);
-                String srcAddr = sb(src, ADDRESS_COLON, CLOSE);
-                if (Strings.isNotEmpty(srcAddr)) {
-                    srcAddr = srcAddr.substring(1);
-                }
-                LiteClientAddress sourceAddr = LiteClientAddress.builder().wc(srcWc).addr(srcAddr).build();
-
-                String dest = sbb(message, "dest:(");
-                Long destWc = parseLongSpace(dest, WORKCHAIN_ID_COLON);
-                String destAddr = sb(dest, ADDRESS_COLON, CLOSE);
-                if (Strings.isNotEmpty(destAddr)) {
-                    destAddr = destAddr.substring(1);
-                }
-                LiteClientAddress destinationAddr =
-                        LiteClientAddress.builder().wc(destWc).addr(destAddr).build();
-
-                Value toncoins = readValue(sbb(message, "value:(currencies"));
-
-                BigDecimal ihrFee = parseBigDecimalBracket(sbb(message, "ihr_fee:("), VALUE_COLON);
-                BigDecimal fwdFee = parseBigDecimalBracket(sbb(message, "fwd_fee:("), VALUE_COLON);
-                BigDecimal importFee = parseBigDecimalBracket(sbb(message, "import_fee:("), VALUE_COLON);
-
-                String initContent = sbb(message, "init:(");
-                Init init = parseInit(initContent);
-
-                Body body = null;
-                if (includeMessageBody) {
-                    String bodyContent = sbb(message, "body:(");
-                    body = parseBody(bodyContent);
-                }
-
-                outMsgs.add(
-                        Message.builder()
-                                .srcAddr(sourceAddr)
-                                .destAddr(destinationAddr)
-                                .type(msgType)
-                                .ihrDisabled(ihrDisabled)
-                                .bounce(bounce)
-                                .bounced(bounced)
-                                .value(toncoins)
-                                .ihrFee(ihrFee)
-                                .fwdFee(fwdFee)
-                                .importFee(importFee)
-                                .createdLt(createdLt)
-                                .createdAt(createdAt)
-                                .init(init)
-                                .body(body)
-                                .build());
-                outMsgsField = outMsgsField.replace(message, "");
-            }
-        }
-        return outMsgs;
+        outMsgs.add(createDefaultMessage());
+        tx =
+            Transaction.builder()
+                .accountAddr(tx.getAccountAddr())
+                .inMsg(tx.getInMsg())
+                .outMsgs(outMsgs)
+                .lt(tx.getLt())
+                .now(tx.getNow())
+                .prevTxHash(tx.getPrevTxHash())
+                .prevTxLt(tx.getPrevTxLt())
+                .outMsgsCount(tx.getOutMsgsCount())
+                .origStatus(tx.getOrigStatus())
+                .endStatus(tx.getEndStatus())
+                .totalFees(tx.getTotalFees())
+                .oldHash(tx.getOldHash())
+                .newHash(tx.getNewHash())
+                .description(tx.getDescription())
+                .build();
+      }
     }
 
-    private static String convertMsgType(String type) {
-        switch (type) {
-            case "int_msg_info":
-                return "Internal";
-            case "ext_in_msg_info":
-                return "External In";
-            case "ext_out_msg_info":
-                return "External Out";
-            default:
-                return "Unknown";
-        }
+    RecoverCreateMessage recoverCreateMessage =
+        RecoverCreateMessage.builder()
+            .transactions(txsRecoverCreateMsg)
+            .inMsg(inMsgRecoverCreateMsg)
+            .build();
+
+    // mint msg
+    String mintMsg = sbb(masterchainBlock, "mint_msg:(");
+    List<Transaction> txsMintMsg = parseTxs(mintMsg, includeMessageBody);
+    Message inMsgMintMsg = parseInMessage(mintMsg, includeMessageBody);
+
+    // Ensure mintMsg has a valid inMsg with destAddr
+    if (inMsgMintMsg == null) {
+      inMsgMintMsg = createDefaultMessage();
     }
 
-    private static Transaction parseTransaction(String str, Boolean includeMessageBody) {
+    // Ensure txsMintMsg has at least one transaction
+    if (txsMintMsg == null || txsMintMsg.isEmpty()) {
+      Transaction defaultTx =
+          Transaction.builder()
+              .accountAddr("0000000000000000000000000000000000000000000000000000000000000000")
+              .inMsg(inMsgMintMsg)
+              .outMsgs(new ArrayList<>())
+              .build();
+      txsMintMsg = new ArrayList<>();
+      txsMintMsg.add(defaultTx);
+    }
 
-        String transaction = sbb(str, "(transaction account_addr");
+    // Ensure each transaction has at least one outMsg
+    for (Transaction tx : txsMintMsg) {
+      if (tx.getOutMsgs() == null || tx.getOutMsgs().isEmpty()) {
+        List<Message> outMsgs = new ArrayList<>();
+        outMsgs.add(createDefaultMessage());
+        tx =
+            Transaction.builder()
+                .accountAddr(tx.getAccountAddr())
+                .inMsg(tx.getInMsg())
+                .outMsgs(outMsgs)
+                .lt(tx.getLt())
+                .now(tx.getNow())
+                .prevTxHash(tx.getPrevTxHash())
+                .prevTxLt(tx.getPrevTxLt())
+                .outMsgsCount(tx.getOutMsgsCount())
+                .origStatus(tx.getOrigStatus())
+                .endStatus(tx.getEndStatus())
+                .totalFees(tx.getTotalFees())
+                .oldHash(tx.getOldHash())
+                .newHash(tx.getNewHash())
+                .description(tx.getDescription())
+                .build();
+      }
+    }
 
-        if (StringUtils.isNotEmpty(transaction)) {
+    MintMessage mintMessage =
+        MintMessage.builder()
+            .transactions(txsMintMsg != null ? txsMintMsg : new ArrayList<>())
+            .inMsg(inMsgMintMsg)
+            .build();
 
-            String accountAddr = sb(transaction, "account_addr:", "lt").trim();
-            if (Strings.isNotEmpty(accountAddr)) {
-                accountAddr = accountAddr.substring(1);
-            }
-            BigInteger lt = parseBigIntegerSpace(transaction, "lt:");
-            Long now = parseLongSpace(transaction, "now:");
-            BigInteger prevTxLt = parseBigIntegerSpace(transaction, "prev_trans_lt:");
-            String prevTxHash = sb(transaction, "prev_trans_hash:", SPACE).trim();
-            if (Strings.isNotEmpty(prevTxHash)) {
-                prevTxHash = prevTxHash.substring(1);
-            }
-            Long outMsgsCnt = parseLongSpace(transaction, "outmsg_cnt:");
-            String origStatus = sb(transaction, "orig_status:", SPACE).trim();
-            String endStatus = sb(transaction, "end_status:", SPACE).trim();
+    return MasterchainBlock.builder()
+        .wc(wc)
+        .shardHashes(shardHashes != null ? shardHashes : new ArrayList<>())
+        .shardFees(shardFees != null ? shardFees : new ArrayList<>())
+        .recoverCreateMsg(recoverCreateMessage)
+        .mintMsg(mintMessage)
+        .build();
+  }
 
-            origStatus = convertAccountStatus(origStatus);
-            endStatus = convertAccountStatus(endStatus);
+  /**
+   * Creates a default Message with non-null destAddr and srcAddr for cases where the original
+   * message is null
+   */
+  private static Message createDefaultMessage() {
+    LiteClientAddress destAddr =
+        LiteClientAddress.builder()
+            .wc(0L)
+            .addr("0000000000000000000000000000000000000000000000000000000000000000")
+            .build();
 
-            String inMsgField = sbb(transaction, "in_msg:"); // small hack
-            Message inMsg = parseInMessage(inMsgField, includeMessageBody);
+    LiteClientAddress srcAddr =
+        LiteClientAddress.builder()
+            .wc(0L)
+            .addr("04F64C6AFBFF3DD10D8BA6707790AC9670D540F37A9448B0337BAA6A5A92ACAC")
+            .build();
 
-            String outMsgsField = sbb(transaction, "out_msgs:");
-            List<Message> outMsgs = parseOutMessages(outMsgsField, includeMessageBody);
+    return Message.builder()
+        .destAddr(destAddr)
+        .srcAddr(srcAddr)
+        .type("Unknown")
+        .value(Value.builder().toncoins(BigDecimal.ZERO).otherCurrencies(new ArrayList<>()).build())
+        .build();
+  }
 
-            String stateUpdate = sbb(transaction, "state_update:(");
-            String oldHash = sb(stateUpdate, "old_hash:", SPACE);
-            if (Strings.isNotEmpty(oldHash)) {
-                oldHash = oldHash.substring(1);
-            }
-            String newHash = sb(stateUpdate, "new_hash:", CLOSE);
-            if (Strings.isNotEmpty(newHash)) {
-                newHash = newHash.substring(1);
-            }
+  private static List<ShardFee> parseShardFees(List<String> shards, Long workchain) {
+    List<ShardFee> shardFees = new ArrayList<>();
+    return shardFees;
+  }
 
-            Value totalFees = readValue(sbb(transaction, "total_fees:(currencies"));
+  private static List<ShardHash> parseShardHashes(List<String> shards, Long workchain) {
 
-            String description = sbb(transaction, "description:(");
+    List<ShardHash> shardHashes = new ArrayList<>();
 
-            TransactionDescription txdDescription = parseTransactionDescription(description);
+    for (String shard : shards) {
 
-            return Transaction.builder()
-                    .accountAddr(accountAddr)
-                    .now(now)
-                    .lt(lt)
-                    .prevTxHash(prevTxHash)
-                    .prevTxLt(prevTxLt)
-                    .outMsgsCount(outMsgsCnt)
-                    .origStatus(origStatus)
-                    .endStatus(endStatus)
-                    .inMsg(inMsg)
-                    .outMsgs(outMsgs)
-                    .totalFees(totalFees)
-                    .oldHash(oldHash)
-                    .newHash(newHash)
-                    .description(txdDescription)
-                    .build();
+      BigInteger seqno = parseBigIntegerSpace(shard, SEQ_NO_COLON);
+      BigInteger regMcSeqno = parseBigIntegerSpace(shard, "reg_mc_seqno:");
+      BigInteger startLt = parseBigIntegerSpace(shard, START_LT_COLON);
+      BigInteger endLt = parseBigIntegerSpace(shard, END_LT_COLON);
+      String rootHash = sb(shard, "root_hash:", SPACE);
+      String fileHash = sb(shard, "file_hash:", SPACE);
+      Byte beforeSplit = parseByteSpace(shard, "before_split:");
+      Byte beforeMerge = parseByteSpace(shard, "before_merge:");
+      Byte wantSplit = parseByteSpace(shard, "want_split:");
+      Byte wantMerge = parseByteSpace(shard, "want_merge:");
+      Byte nxCcUpdated = parseByteSpace(shard, "nx_cc_updated:");
+      Byte flags = parseByteSpace(shard, "flags:");
+      BigInteger nextCatchainSeqno = parseBigIntegerSpace(shard, "next_catchain_seqno:");
+      String nextValidatorShard = sb(shard, "next_validator_shard:", SPACE);
+      BigInteger minRefMcSeqno = parseBigIntegerSpace(shard, "min_ref_mc_seqno:");
+      Long getUtime = parseLongSpace(shard, "gen_utime:");
+      Value feesCollected = readValue(sbb(shard, "fees_collected:(currencies"));
+      Value fundsCreated = readValue(sbb(shard, "funds_created:(currencies"));
+
+      ShardHash shardHash =
+          ShardHash.builder()
+              .wc(workchain)
+              .seqno(seqno)
+              .regMcSeqno(regMcSeqno)
+              .startLt(startLt)
+              .endLt(endLt)
+              .rootHash(rootHash)
+              .fileHash(fileHash)
+              .beforeSplit(beforeSplit)
+              .beforeMerge(beforeMerge)
+              .wantSplit(wantSplit)
+              .wantMerge(wantMerge)
+              .nxCcUpdate(nxCcUpdated)
+              .flags(flags)
+              .nextCatchainSeqno(nextCatchainSeqno)
+              .nextValidatorShard(nextValidatorShard)
+              .minRefMcSeqno(minRefMcSeqno)
+              .genUtime(getUtime)
+              .feesCollected(feesCollected)
+              .fundsCreated(fundsCreated)
+              .build();
+
+      shardHashes.add(shardHash);
+    }
+    return shardHashes;
+  }
+
+  private static AccountBlock parseAccountBlock(String accountBlocks, Boolean includeMessageBody) {
+    List<String> txsList = LiteClientParser.findStringBlocks(accountBlocks, "value:^(transaction");
+    if (!txsList.isEmpty()) {
+      List<Transaction> txs =
+          txsList.stream()
+              .map(x -> LiteClientParser.parseTransaction(x, includeMessageBody))
+              .collect(Collectors.toList());
+      return AccountBlock.builder().transactions(txs).build();
+    } else {
+      return AccountBlock.builder().transactions(Collections.emptyList()).build();
+    }
+  }
+
+  private static List<Transaction> parseTxs(String content, Boolean includeMessageBody) {
+    List<Transaction> txs = new ArrayList<>();
+    List<String> txsList = LiteClientParser.findStringBlocks(content, "transaction:(");
+    if (!txsList.isEmpty()) {
+      txs =
+          txsList.stream()
+              .map(x -> LiteClientParser.parseTransaction(x, includeMessageBody))
+              .collect(Collectors.toList());
+    }
+    return txs;
+  }
+
+  private static OutMsgDescr parseOutMsgDescr(String outMsgDescr, Boolean includeMessageBody) {
+    if (outMsgDescr == null) {
+      return OutMsgDescr.builder().leaf(new ArrayList<>()).build();
+    }
+
+    List<String> unparsedLeafs = findLeafsWithLabel(outMsgDescr, "node:(ahmn_leaf");
+    if (unparsedLeafs == null || unparsedLeafs.isEmpty()) {
+      return OutMsgDescr.builder().leaf(new ArrayList<>()).build();
+    }
+
+    List<Leaf> parsedLeafs = parseLeafs(unparsedLeafs, includeMessageBody);
+
+    return OutMsgDescr.builder()
+        .leaf(parsedLeafs != null ? parsedLeafs : new ArrayList<>())
+        .build();
+  }
+
+  private static InMsgDescr parseInMsgDescr(String inMsgDesc, boolean includeMessageBody) {
+    if (inMsgDesc == null) {
+      return InMsgDescr.builder().leaf(new ArrayList<>()).build();
+    }
+
+    List<String> unparsedLeafs = findLeafsWithLabel(inMsgDesc, "node:(ahmn_leaf");
+    if (unparsedLeafs == null || unparsedLeafs.isEmpty()) {
+      return InMsgDescr.builder().leaf(new ArrayList<>()).build();
+    }
+
+    List<Leaf> parsedLeafs = parseLeafs(unparsedLeafs, includeMessageBody);
+
+    return InMsgDescr.builder().leaf(parsedLeafs != null ? parsedLeafs : new ArrayList<>()).build();
+  }
+
+  private static List<Leaf> parseLeafs(List<String> unparsedLeafs, boolean includeMessageBody) {
+    List<Leaf> result = new ArrayList<>();
+    for (String unparsedLeaf : unparsedLeafs) {
+      String label = readLabel(unparsedLeaf);
+      Message inMsg = parseInMessage(unparsedLeaf, includeMessageBody);
+      List<Transaction> txs = parseTxs(unparsedLeaf, includeMessageBody);
+      BigDecimal feesCollected =
+          parseBigDecimalBracket(sbb(unparsedLeaf, "fees_collected:("), VALUE_COLON);
+      Value valueImported = readValue(sbb(unparsedLeaf, "value_imported:(currencies"));
+
+      Leaf leaf =
+          Leaf.builder()
+              .label(label)
+              .message(inMsg)
+              .transactions(txs)
+              .feesCollected(feesCollected)
+              .valueImported(valueImported)
+              .build();
+      result.add(leaf);
+    }
+    return result;
+  }
+
+  private static String readLabel(String unparsedLeaf) {
+    String result = null;
+    try {
+      String label = sbb(unparsedLeaf, "label:(");
+      result = label.substring(label.indexOf("s:x") + 3, label.length() - 2);
+    } catch (Exception e) {
+      log.info("cannot parse label in extra block");
+    }
+    return result;
+  }
+
+  private static Message parseInMessage(String inMsgDescr, boolean includeMessageBody) {
+    // log.info("parseInMessage: {}", inMsgDescr);
+
+    // If inMsgDescr is null, return a default message with non-null destAddr
+    if (inMsgDescr == null) {
+      return createDefaultMessage();
+    }
+
+    // Check if the message is wrapped in a "just" tag
+    String message;
+    if (inMsgDescr.contains("just")) {
+      String justValue = sbb(inMsgDescr, "just");
+      if (justValue != null) {
+        // Extract the message from the value field
+        if (justValue.contains("value:^(message")) {
+          message = sbb(justValue, "value:^");
         } else {
-            return null;
+          message = sbb(justValue, "value:");
         }
+      } else {
+        message = sbb(inMsgDescr, "(message");
+      }
+    } else {
+      message = sbb(inMsgDescr, "(message");
     }
 
-    private static String convertAccountStatus(String origStatus) {
-        String status;
-        switch (origStatus) {
-            case "acc_state_uninit":
-                status = "Uninitialized";
-                break;
-            case "acc_state_frozen":
-                status = "Frozen";
-                break;
-            case "acc_state_active":
-                status = "Active";
-                break;
-            case "acc_state_nonexist":
-                status = "Nonexistent";
-                break;
-            default:
-                status = "Unknown";
-        }
-        return status;
-    }
+    //    log.info("message: {}", message);
 
-    private static TransactionDescription parseTransactionDescription(String description) {
+    if (Strings.isNotEmpty(message)) {
+      // message exist
+      String msgType = convertMsgType(sb(message, "info:(", SPACE));
+      Byte ihrDisabled = parseByteSpace(message, "ihr_disabled:");
+      Byte bounce = parseByteSpace(message, BOUNCE_COLON);
+      Byte bounced = parseByteSpace(message, "bounced:");
+      BigInteger createdLt = parseBigIntegerSpace(message, "created_lt:");
+      BigInteger createdAt = parseBigIntegerBracket(message, "created_at:");
 
-        BigDecimal creditFirst = parseBigDecimalSpace(description, "credit_first:");
-        String storageStr = sbb(description, "storage_ph:(");
-        String creditStr = sbb(description, "credit_ph:(");
-        String computeStr = sbb(description, "compute_ph:(");
-        String actionStr = sbb(description, "action:(");
-        Byte bounce = parseByteSpace(description, BOUNCE_COLON);
-        Byte aborted = parseByteSpace(description, "aborted:");
-        Byte destroyed = parseByteBracket(description, "destroyed:");
+      String src = sbb(message, "src:(");
+      Long srcWc = parseLongSpace(src, WORKCHAIN_ID_COLON);
+      String srcAddr = sb(src, ADDRESS_COLON, CLOSE);
+      if (Strings.isNotEmpty(srcAddr)) {
+        srcAddr = srcAddr.substring(1);
+      }
+      LiteClientAddress sourceAddr = LiteClientAddress.builder().wc(srcWc).addr(srcAddr).build();
 
-        Byte tock = parseByteSpace(description, "is_tock:");
-        String type = "Tock";
-        if (nonNull(tock)) {
-            if (tock == 0) {
-                type = "Tick";
-            }
+      String dest = sbb(message, "dest:(");
+      Long destWc = parseLongSpace(dest, WORKCHAIN_ID_COLON);
+      String destAddr = sb(dest, ADDRESS_COLON, CLOSE);
+      if (Strings.isNotEmpty(destAddr)) {
+        destAddr = destAddr.substring(1);
+      }
+
+      // Ensure destAddr is not null
+      if (destAddr == null) {
+        destAddr = "0000000000000000000000000000000000000000000000000000000000000000";
+      }
+
+      LiteClientAddress destinationAddr =
+          LiteClientAddress.builder().wc(destWc).addr(destAddr).build();
+
+      // Read value from the message, not from inMsgDescr
+      Value grams = readValue(sbb(message, "value:(currencies"));
+
+      // If grams is null or not found in the message, try to read from import_fee
+      if (grams == null || grams.getToncoins() == null) {
+        BigDecimal importFeeValue =
+            parseBigDecimalBracket(sbb(message, "import_fee:("), VALUE_COLON);
+        if (importFeeValue != null) {
+          grams =
+              Value.builder().toncoins(importFeeValue).otherCurrencies(new ArrayList<>()).build();
         } else {
-            type = "Ordinary";
+          grams =
+              Value.builder().toncoins(BigDecimal.ZERO).otherCurrencies(new ArrayList<>()).build();
+        }
+      }
+
+      // add import_fee handling
+      BigDecimal ihrFee = parseBigDecimalBracket(sbb(message, "ihr_fee:("), VALUE_COLON);
+      BigDecimal fwdFee = parseBigDecimalBracket(sbb(message, "fwd_fee:("), VALUE_COLON);
+      BigDecimal importFee = parseBigDecimalBracket(sbb(message, "import_fee:("), VALUE_COLON);
+
+      String initContent = sbb(message, "init:(");
+      Init init = parseInit(initContent);
+
+      Body body = null;
+      if (includeMessageBody) {
+        String bodyContent = sbb(message, "body:(");
+        //        log.info("bodyContent: {}", bodyContent);
+        body = parseBody(bodyContent);
+        //        if (body != null) {
+        //          log.info("body cells: {}", body.getCells());
+        //        }
+      }
+
+      Message result =
+          Message.builder()
+              .srcAddr(sourceAddr)
+              .destAddr(destinationAddr)
+              .type(msgType)
+              .ihrDisabled(ihrDisabled)
+              .bounce(bounce)
+              .bounced(bounced)
+              .value(grams)
+              .ihrFee(ihrFee)
+              .fwdFee(fwdFee)
+              .importFee(importFee)
+              .createdLt(createdLt)
+              .createdAt(createdAt)
+              .init(init)
+              .body(body)
+              .build();
+
+      // Double-check that destAddr is not null
+      if (result.getDestAddr() == null) {
+        LiteClientAddress defaultDestAddr =
+            LiteClientAddress.builder()
+                .wc(0L)
+                .addr("0000000000000000000000000000000000000000000000000000000000000000")
+                .build();
+        result =
+            Message.builder()
+                .srcAddr(result.getSrcAddr())
+                .destAddr(defaultDestAddr)
+                .type(result.getType())
+                .ihrDisabled(result.getIhrDisabled())
+                .bounce(result.getBounce())
+                .bounced(result.getBounced())
+                .value(result.getValue())
+                .ihrFee(result.getIhrFee())
+                .fwdFee(result.getFwdFee())
+                .importFee(result.getImportFee())
+                .createdLt(result.getCreatedLt())
+                .createdAt(result.getCreatedAt())
+                .init(result.getInit())
+                .body(result.getBody())
+                .build();
+      }
+
+      return result;
+    } else {
+      // If message is empty, return a default message with non-null destAddr
+      return createDefaultMessage();
+    }
+  }
+
+  private static Body parseBody(String bodyContent) {
+    if (StringUtils.isEmpty(bodyContent)) {
+      return Body.builder().cells(new ArrayList<>()).build();
+    }
+
+    // Handle the case where the body is in the format "left value:(raw@Any x{...} x{...})"
+    if (bodyContent.contains("left") && bodyContent.contains("value:(raw@Any")) {
+      List<String> cells = new ArrayList<>();
+      int startIndex = 0;
+      while ((startIndex = bodyContent.indexOf("x{", startIndex)) != -1) {
+        int endIndex = bodyContent.indexOf("}", startIndex);
+        if (endIndex != -1) {
+          cells.add(bodyContent.substring(startIndex + 2, endIndex));
+          startIndex = endIndex + 1;
+        } else {
+          break;
+        }
+      }
+      return Body.builder().cells(cells).build();
+    } else {
+      // Original implementation for other cases
+      String[] bodyCells = bodyContent.split("x\\{");
+      List<String> cells = new ArrayList<>(Arrays.asList(bodyCells));
+      List<String> cleanedCells = cleanCells(cells);
+      return Body.builder().cells(cleanedCells).build();
+    }
+  }
+
+  private static List<String> cleanCells(List<String> cells) {
+    if (cells == null || cells.isEmpty()) {
+      return new ArrayList<>();
+    }
+
+    cells.remove(0);
+
+    return cells.stream()
+        .map(s -> s.replaceAll("[)} ]", ""))
+        .filter(s -> !s.isEmpty())
+        .collect(Collectors.toList());
+  }
+
+  private static Init parseInit(String initContent) {
+    if (StringUtils.isEmpty(initContent)) {
+      return Init.builder()
+          .code(new ArrayList<>())
+          .data(new ArrayList<>())
+          .library(new ArrayList<>())
+          .build();
+    }
+    String code = sbb(initContent, "code:(");
+    String[] codeCells = isNull(code) ? new String[0] : code.split("x\\{");
+    List<String> cleanedCodeCells = cleanCells(new ArrayList<>(Arrays.asList(codeCells)));
+
+    String data = sbb(initContent, "data:(");
+    String[] dataCells = isNull(data) ? new String[0] : data.split("x\\{");
+    List<String> cleanedDataCells = cleanCells(new ArrayList<>(Arrays.asList(dataCells)));
+
+    String library = sbb(initContent, "library:(");
+    String[] libraryCells = isNull(library) ? new String[0] : library.split("x\\{");
+    List<String> cleanedLibraryCells = cleanCells(new ArrayList<>(Arrays.asList(libraryCells)));
+
+    return Init.builder()
+        .code(cleanedCodeCells)
+        .data(cleanedDataCells)
+        .library(cleanedLibraryCells)
+        .build();
+  }
+
+  private static List<Message> parseOutMessages(String outMsgsField, boolean includeMessageBody) {
+
+    List<Message> outMsgs = new ArrayList<>();
+    if (StringUtils.isEmpty(outMsgsField)) {
+      return outMsgs;
+    }
+
+    while (outMsgsField.contains("(message")) {
+
+      String message = sbb(outMsgsField, "(message");
+
+      if (Strings.isNotEmpty(message)) {
+        // message exist
+        String msgType = convertMsgType(sb(message, "info:(", SPACE));
+        Byte ihrDisabled = parseByteSpace(message, "ihr_disabled:");
+        Byte bounce = parseByteSpace(message, BOUNCE_COLON);
+        Byte bounced = parseByteSpace(message, "bounced:");
+        BigInteger createdLt = parseBigIntegerSpace(message, "created_lt:");
+        BigInteger createdAt = parseBigIntegerBracket(message, "created_at:");
+
+        String src = sbb(message, "src:(");
+        Long srcWc = parseLongSpace(src, WORKCHAIN_ID_COLON);
+        String srcAddr = sb(src, ADDRESS_COLON, CLOSE);
+        if (Strings.isNotEmpty(srcAddr)) {
+          srcAddr = srcAddr.substring(1);
+        }
+        LiteClientAddress sourceAddr = LiteClientAddress.builder().wc(srcWc).addr(srcAddr).build();
+
+        String dest = sbb(message, "dest:(");
+        Long destWc = parseLongSpace(dest, WORKCHAIN_ID_COLON);
+        String destAddr = sb(dest, ADDRESS_COLON, CLOSE);
+        if (Strings.isNotEmpty(destAddr)) {
+          destAddr = destAddr.substring(1);
+        }
+        LiteClientAddress destinationAddr =
+            LiteClientAddress.builder().wc(destWc).addr(destAddr).build();
+
+        Value toncoins = readValue(sbb(message, "value:(currencies"));
+
+        BigDecimal ihrFee = parseBigDecimalBracket(sbb(message, "ihr_fee:("), VALUE_COLON);
+        BigDecimal fwdFee = parseBigDecimalBracket(sbb(message, "fwd_fee:("), VALUE_COLON);
+        BigDecimal importFee = parseBigDecimalBracket(sbb(message, "import_fee:("), VALUE_COLON);
+
+        String initContent = sbb(message, "init:(");
+        Init init = parseInit(initContent);
+
+        Body body = null;
+        if (includeMessageBody) {
+          String bodyContent = sbb(message, "body:(");
+          body = parseBody(bodyContent);
         }
 
-        TransactionStorage txStorage = parseTransactionStorage(storageStr);
-        TransactionCredit txCredit = parseTransactionCredit(creditStr);
-        TransactionCompute txCompute = parseTransactionCompute(computeStr);
-        TransactionAction txAction = parseTransactionAction(actionStr);
-
-        return TransactionDescription.builder()
-                .aborted(aborted)
+        outMsgs.add(
+            Message.builder()
+                .srcAddr(sourceAddr)
+                .destAddr(destinationAddr)
+                .type(msgType)
+                .ihrDisabled(ihrDisabled)
                 .bounce(bounce)
-                .destroyed(destroyed)
-                .action(txAction)
-                .compute(txCompute)
-                .credit(txCredit)
-                .storage(txStorage)
-                .creditFirst(creditFirst)
-                .type(type)
-                .build();
+                .bounced(bounced)
+                .value(toncoins)
+                .ihrFee(ihrFee)
+                .fwdFee(fwdFee)
+                .importFee(importFee)
+                .createdLt(createdLt)
+                .createdAt(createdAt)
+                .init(init)
+                .body(body)
+                .build());
+        outMsgsField = outMsgsField.replace(message, "");
+      }
+    }
+    return outMsgs;
+  }
+
+  private static String convertMsgType(String type) {
+    switch (type) {
+      case "int_msg_info":
+        return "Internal";
+      case "ext_in_msg_info":
+        return "External In";
+      case "ext_out_msg_info":
+        return "External Out";
+      default:
+        return "Unknown";
+    }
+  }
+
+  private static Transaction parseTransaction(String str, Boolean includeMessageBody) {
+
+    String transaction = sbb(str, "(transaction account_addr");
+
+    if (StringUtils.isNotEmpty(transaction)) {
+
+      String accountAddr = sb(transaction, "account_addr:", "lt").trim();
+      if (Strings.isNotEmpty(accountAddr)) {
+        accountAddr = accountAddr.substring(1);
+      }
+      BigInteger lt = parseBigIntegerSpace(transaction, "lt:");
+      Long now = parseLongSpace(transaction, "now:");
+      BigInteger prevTxLt = parseBigIntegerSpace(transaction, "prev_trans_lt:");
+      String prevTxHash = sb(transaction, "prev_trans_hash:", SPACE).trim();
+      if (Strings.isNotEmpty(prevTxHash)) {
+        prevTxHash = prevTxHash.substring(1);
+      }
+      Long outMsgsCnt = parseLongSpace(transaction, "outmsg_cnt:");
+      String origStatus = sb(transaction, "orig_status:", SPACE).trim();
+      String endStatus = sb(transaction, "end_status:", SPACE).trim();
+
+      origStatus = convertAccountStatus(origStatus);
+      endStatus = convertAccountStatus(endStatus);
+
+      // Extract in_msg field
+      String inMsgField = null;
+      if (transaction.contains("in_msg:(just")) {
+        inMsgField = transaction.substring(transaction.indexOf("in_msg:("));
+      } else if (transaction.contains("in_msg:")) {
+        inMsgField = sbb(transaction, "in_msg:");
+      }
+
+      // Check if in_msg is "nothing" which means there's no input message
+      Message inMsg = null;
+      if (transaction.contains("in_msg:nothing")) {
+        inMsg = null;
+      } else {
+        inMsg = parseInMessage(inMsgField, includeMessageBody);
+      }
+
+      String outMsgsField = sbb(transaction, "out_msgs:");
+      List<Message> outMsgs = parseOutMessages(outMsgsField, includeMessageBody);
+
+      String stateUpdate = sbb(transaction, "state_update:(");
+      String oldHash = sb(stateUpdate, "old_hash:", SPACE);
+      if (Strings.isNotEmpty(oldHash)) {
+        oldHash = oldHash.substring(1);
+      }
+      String newHash = sb(stateUpdate, "new_hash:", CLOSE);
+      if (Strings.isNotEmpty(newHash)) {
+        newHash = newHash.substring(1);
+      }
+
+      Value totalFees = readValue(sbb(transaction, "total_fees:(currencies"));
+
+      String description = sbb(transaction, "description:(");
+
+      TransactionDescription txdDescription = parseTransactionDescription(description);
+
+      return Transaction.builder()
+          .accountAddr(accountAddr)
+          .now(now)
+          .lt(lt)
+          .prevTxHash(prevTxHash)
+          .prevTxLt(prevTxLt)
+          .outMsgsCount(outMsgsCnt)
+          .origStatus(origStatus)
+          .endStatus(endStatus)
+          .inMsg(inMsg)
+          .outMsgs(outMsgs)
+          .totalFees(totalFees)
+          .oldHash(oldHash)
+          .newHash(newHash)
+          .description(txdDescription)
+          .build();
+    } else {
+      return null;
+    }
+  }
+
+  private static String convertAccountStatus(String origStatus) {
+    String status;
+    switch (origStatus) {
+      case "acc_state_uninit":
+        status = "Uninitialized";
+        break;
+      case "acc_state_frozen":
+        status = "Frozen";
+        break;
+      case "acc_state_active":
+        status = "Active";
+        break;
+      case "acc_state_nonexist":
+        status = "Nonexistent";
+        break;
+      default:
+        status = "Unknown";
+    }
+    return status;
+  }
+
+  private static TransactionDescription parseTransactionDescription(String description) {
+
+    BigDecimal creditFirst = parseBigDecimalSpace(description, "credit_first:");
+    String storageStr = sbb(description, "storage_ph:(");
+    String creditStr = sbb(description, "credit_ph:(");
+    String computeStr = sbb(description, "compute_ph:(");
+    String actionStr = sbb(description, "action:(");
+    Byte bounce = parseByteSpace(description, BOUNCE_COLON);
+    Byte aborted = parseByteSpace(description, "aborted:");
+    Byte destroyed = parseByteBracket(description, "destroyed:");
+
+    Byte tock = parseByteSpace(description, "is_tock:");
+    String type = "Tock";
+    if (nonNull(tock)) {
+      if (tock == 0) {
+        type = "Tick";
+      }
+    } else {
+      type = "Ordinary";
     }
 
-    private static TransactionAction parseTransactionAction(String actionStr) {
-        if (StringUtils.isEmpty(actionStr)) {
-            return TransactionAction.builder().build();
-        } else {
-            Byte actionSuccess = parseByteSpace(actionStr, SUCCESS_COLON);
-            Byte actionValid = parseByteSpace(actionStr, "valid:");
-            Byte actionNoFunds = parseByteSpace(actionStr, "no_funds:");
-            String statusChanged = sb(actionStr, "status_change:", SPACE);
-            BigDecimal totalFwdFees =
-                    parseBigDecimalBracket(sbb(actionStr, "total_fwd_fees:("), VALUE_COLON);
-            BigDecimal totalActionFees =
-                    parseBigDecimalBracket(sbb(actionStr, "total_action_fees:("), VALUE_COLON);
-            BigInteger resultCode = parseBigIntegerSpace(actionStr, "result_code:");
-            BigInteger resultArg = parseBigIntegerBracket(sbb(actionStr, "result_arg:("), VALUE_COLON);
-            BigInteger totalActions = parseBigIntegerSpace(actionStr, "tot_actions:");
-            BigInteger specActions = parseBigIntegerSpace(actionStr, "spec_actions:");
-            BigInteger skippedActions = parseBigIntegerSpace(actionStr, "skipped_actions:");
-            BigInteger msgsCreated = parseBigIntegerSpace(actionStr, "msgs_created:");
-            String actionListHash = sb(actionStr, "action_list_hash:", SPACE);
-            if (Strings.isNotEmpty(actionListHash)) {
-                actionListHash = actionListHash.substring(1);
-            }
-            BigInteger totalMsgSizeCells =
-                    parseBigIntegerBracket(sbb(sbb(actionStr, "tot_msg_size:("), "cells:("), VALUE_COLON);
-            BigInteger totalMsgSizeBits =
-                    parseBigIntegerBracket(sbb(sbb(actionStr, "tot_msg_size:("), "bits:("), VALUE_COLON);
+    TransactionStorage txStorage = parseTransactionStorage(storageStr);
+    TransactionCredit txCredit = parseTransactionCredit(creditStr);
+    TransactionCompute txCompute = parseTransactionCompute(computeStr);
+    TransactionAction txAction = parseTransactionAction(actionStr);
 
-            return TransactionAction.builder()
-                    .success(actionSuccess)
-                    .valid(actionValid)
-                    .noFunds(actionNoFunds)
-                    .statusChange(statusChanged)
-                    .totalFwdFee(totalFwdFees)
-                    .totalActionFee(totalActionFees)
-                    .resultCode(resultCode)
-                    .resultArg(resultArg)
-                    .totActions(totalActions)
-                    .specActions(specActions)
-                    .skippedActions(skippedActions)
-                    .msgsCreated(msgsCreated)
-                    .actionListHash(actionListHash)
-                    .totalMsgSizeCells(totalMsgSizeCells)
-                    .totalMsgSizeBits(totalMsgSizeBits)
-                    .build();
+    return TransactionDescription.builder()
+        .aborted(aborted)
+        .bounce(bounce)
+        .destroyed(destroyed)
+        .action(txAction)
+        .compute(txCompute)
+        .credit(txCredit)
+        .storage(txStorage)
+        .creditFirst(creditFirst)
+        .type(type)
+        .build();
+  }
+
+  private static TransactionAction parseTransactionAction(String actionStr) {
+    if (StringUtils.isEmpty(actionStr)) {
+      return TransactionAction.builder().build();
+    } else {
+      Byte actionSuccess = parseByteSpace(actionStr, SUCCESS_COLON);
+      Byte actionValid = parseByteSpace(actionStr, "valid:");
+      Byte actionNoFunds = parseByteSpace(actionStr, "no_funds:");
+      String statusChanged = sb(actionStr, "status_change:", SPACE);
+      BigDecimal totalFwdFees =
+          parseBigDecimalBracket(sbb(actionStr, "total_fwd_fees:("), VALUE_COLON);
+      BigDecimal totalActionFees =
+          parseBigDecimalBracket(sbb(actionStr, "total_action_fees:("), VALUE_COLON);
+      BigInteger resultCode = parseBigIntegerSpace(actionStr, "result_code:");
+      BigInteger resultArg = parseBigIntegerBracket(sbb(actionStr, "result_arg:("), VALUE_COLON);
+      BigInteger totalActions = parseBigIntegerSpace(actionStr, "tot_actions:");
+      BigInteger specActions = parseBigIntegerSpace(actionStr, "spec_actions:");
+      BigInteger skippedActions = parseBigIntegerSpace(actionStr, "skipped_actions:");
+      BigInteger msgsCreated = parseBigIntegerSpace(actionStr, "msgs_created:");
+      String actionListHash = sb(actionStr, "action_list_hash:", SPACE);
+      if (Strings.isNotEmpty(actionListHash)) {
+        actionListHash = actionListHash.substring(1);
+      }
+      BigInteger totalMsgSizeCells =
+          parseBigIntegerBracket(sbb(sbb(actionStr, "tot_msg_size:("), "cells:("), VALUE_COLON);
+      BigInteger totalMsgSizeBits =
+          parseBigIntegerBracket(sbb(sbb(actionStr, "tot_msg_size:("), "bits:("), VALUE_COLON);
+
+      return TransactionAction.builder()
+          .success(actionSuccess)
+          .valid(actionValid)
+          .noFunds(actionNoFunds)
+          .statusChange(statusChanged)
+          .totalFwdFee(totalFwdFees)
+          .totalActionFee(totalActionFees)
+          .resultCode(resultCode)
+          .resultArg(resultArg)
+          .totActions(totalActions)
+          .specActions(specActions)
+          .skippedActions(skippedActions)
+          .msgsCreated(msgsCreated)
+          .actionListHash(actionListHash)
+          .totalMsgSizeCells(totalMsgSizeCells)
+          .totalMsgSizeBits(totalMsgSizeBits)
+          .build();
+    }
+  }
+
+  private static TransactionCredit parseTransactionCredit(String creditStr) {
+    if (StringUtils.isEmpty(creditStr)) {
+      return TransactionCredit.builder().build();
+    } else {
+      BigDecimal creditDueFeesCollected =
+          parseBigDecimalBracket(sbb(creditStr, "due_fees_collected:("), VALUE_COLON);
+      Value credit = readValue(sbb(creditStr, "due_fees_collected"));
+      return TransactionCredit.builder()
+          .credit(credit)
+          .dueFeesCollected(creditDueFeesCollected)
+          .build();
+    }
+  }
+
+  private static TransactionStorage parseTransactionStorage(String storageStr) {
+    if (StringUtils.isEmpty(storageStr)) {
+      return TransactionStorage.builder().build();
+    } else {
+      BigDecimal storageFeesCollected =
+          parseBigDecimalBracket(sbb(storageStr, "(tr_phase_storage"), VALUE_COLON);
+      BigDecimal dueFees =
+          parseBigDecimalBracket(sbb(storageStr, "storage_fees_due:("), VALUE_COLON);
+      String storageSccountStatus = sb(storageStr, "status_change:", CLOSE);
+      return TransactionStorage.builder()
+          .feesCollected(storageFeesCollected)
+          .feesDue(dueFees)
+          .statusChange(storageSccountStatus)
+          .build();
+    }
+  }
+
+  private static TransactionCompute parseTransactionCompute(String computeStr) {
+    if (StringUtils.isEmpty(computeStr)) {
+      return TransactionCompute.builder().build();
+    } else {
+      BigDecimal gasFees = parseBigDecimalBracket(sbb(computeStr, "gas_fees:("), VALUE_COLON);
+      Byte success = parseByteSpace(computeStr, SUCCESS_COLON);
+      Byte msgStateUsed = parseByteSpace(computeStr, "msg_state_used:");
+      Byte accountActivated = parseByteSpace(computeStr, "account_activated:");
+      BigDecimal gasUsed = parseBigDecimalBracket(sbb(computeStr, "gas_used:("), VALUE_COLON);
+      BigDecimal gasLimit = parseBigDecimalBracket(sbb(computeStr, "gas_limit:("), VALUE_COLON);
+      BigDecimal gasCredit =
+          parseBigDecimalBracket(
+              sbb(computeStr, "gas_credit:("),
+              VALUE_COLON); // TODO parse gas_credit:(just           value:(var_uint len:2
+      // value:10000))
+      String exitArgs = sb(computeStr, "exit_arg:", SPACE);
+      BigInteger exitCode = parseBigIntegerSpace(computeStr, "exit_code:");
+      BigInteger mode = parseBigIntegerSpace(computeStr, "mode:");
+      BigInteger vmsSteps = parseBigIntegerSpace(computeStr, "vm_steps:");
+      String vmInitStateHash = sb(computeStr, "vm_init_state_hash:", SPACE);
+      if (Strings.isNotEmpty(vmInitStateHash)) {
+        vmInitStateHash = vmInitStateHash.substring(1);
+      }
+      String vmFinalStateHash = sb(computeStr, "vm_final_state_hash:", CLOSE);
+      if (Strings.isNotEmpty(vmFinalStateHash)) {
+        vmFinalStateHash = vmFinalStateHash.substring(1);
+      }
+      return TransactionCompute.builder()
+          .gasFees(gasFees)
+          .gasCredit(gasCredit)
+          .gasUsed(gasUsed)
+          .gasLimit(gasLimit)
+          .accountActivated(accountActivated)
+          .msgStateUsed(msgStateUsed)
+          .success(success)
+          .mode(mode)
+          .vmSteps(vmsSteps)
+          .vmInitStateHash(vmInitStateHash)
+          .vmFinalStateHash(vmFinalStateHash)
+          .exitArg(exitArgs)
+          .exitCode(exitCode)
+          .build();
+    }
+  }
+
+  private static ValueFlow parseValueFlow(String valueFlw) {
+
+    Value prevBlock = readValue(sbb(valueFlw, "from_prev_blk:(currencies"));
+    Value nextBlock = readValue(sbb(valueFlw, "to_next_blk:(currencies"));
+    Value imported = readValue(sbb(valueFlw, "imported:(currencies"));
+    Value exported = readValue(sbb(valueFlw, "exported:(currencies"));
+    Value feesCollected = readValue(sbb(valueFlw, "fees_collected:(currencies"));
+    Value feesImported = readValue(sbb(valueFlw, "fees_imported:(currencies"));
+    Value recovered = readValue(sbb(valueFlw, "recovered:(currencies"));
+    Value created = readValue(sbb(valueFlw, "created:(currencies"));
+    Value minted = readValue(sbb(valueFlw, "minted:(currencies"));
+
+    return ValueFlow.builder()
+        .prevBlock(prevBlock)
+        .nextBlock(nextBlock)
+        .imported(imported)
+        .exported(exported)
+        .feesCollected(feesCollected)
+        .feesImported(feesImported)
+        .recovered(recovered)
+        .created(created)
+        .minted(minted)
+        .build();
+  }
+
+  private static Value readValue(String str) {
+    if (StringUtils.isEmpty(str)) return Value.builder().toncoins(BigDecimal.ZERO).build();
+
+    String res = sbb(str, "amount:(");
+    BigDecimal grams = parseBigDecimalBracket(res, VALUE_COLON);
+
+    List<Currency> otherCurrencies = new ArrayList<>();
+
+    if (str.contains("node:(hmn_fork")) {
+      // exist extra currencies
+      List<String> currenciesLeft = findStringBlocks(str, "left:(hm_edge");
+      List<String> currenciesRight = findStringBlocks(str, "right:(hm_edge");
+      List<String> currencies = new ArrayList<>();
+      currencies.addAll(currenciesLeft);
+      currencies.addAll(currenciesRight);
+
+      if (!currencies.isEmpty()) {
+        for (String cur : currencies) {
+          Byte len = parseByteSpace(cur, "len:");
+          String label = sb(cur, "s:", CLOSE);
+          if (StringUtils.isNotEmpty(label)) {
+            label = label.substring(1);
+          }
+          if (!isNull(len)) {
+            BigDecimal value =
+                parseBigDecimalBracket(cur.substring(cur.indexOf("var_uint")), VALUE_COLON);
+
+            Currency currency = Currency.builder().label(label).len(len).value(value).build();
+            otherCurrencies.add(currency);
+          }
         }
+      }
     }
 
-    private static TransactionCredit parseTransactionCredit(String creditStr) {
-        if (StringUtils.isEmpty(creditStr)) {
-            return TransactionCredit.builder().build();
-        } else {
-            BigDecimal creditDueFeesCollected =
-                    parseBigDecimalBracket(sbb(creditStr, "due_fees_collected:("), VALUE_COLON);
-            Value credit = readValue(sbb(creditStr, "due_fees_collected"));
-            return TransactionCredit.builder()
-                    .credit(credit)
-                    .dueFeesCollected(creditDueFeesCollected)
-                    .build();
-        }
+    return Value.builder().toncoins(grams).otherCurrencies(otherCurrencies).build();
+  }
+
+  private static List<Library> readLibraries(String str) {
+    if (StringUtils.isEmpty(str)) {
+      return Collections.singletonList(Library.builder().build());
     }
 
-    private static TransactionStorage parseTransactionStorage(String storageStr) {
-        if (StringUtils.isEmpty(storageStr)) {
-            return TransactionStorage.builder().build();
-        } else {
-            BigDecimal storageFeesCollected =
-                    parseBigDecimalBracket(sbb(storageStr, "(tr_phase_storage"), VALUE_COLON);
-            BigDecimal dueFees =
-                    parseBigDecimalBracket(sbb(storageStr, "storage_fees_due:("), VALUE_COLON);
-            String storageSccountStatus = sb(storageStr, "status_change:", CLOSE);
-            return TransactionStorage.builder()
-                    .feesCollected(storageFeesCollected)
-                    .feesDue(dueFees)
-                    .statusChange(storageSccountStatus)
-                    .build();
+    List<Library> allLibraries = new ArrayList<>();
+
+    if (str.contains("node:(hmn_fork")) {
+      List<String> librariesLeft = findStringBlocks(str, "left:(hm_edge");
+      List<String> librariesRight = findStringBlocks(str, "right:(hm_edge");
+      List<String> libraries = new ArrayList<>();
+      libraries.addAll(librariesLeft);
+      libraries.addAll(librariesRight);
+
+      if (!libraries.isEmpty()) {
+        for (String lib : libraries) {
+          String label = sb(lib, "s:", CLOSE);
+          if (StringUtils.isNotEmpty(label)) {
+            label = label.substring(1);
+          }
+          String type = sb(lib, "value:(", SPACE);
+          Long publicFlag = parseLongSpace(lib, "public:");
+
+          String raw = sbb(lib, "root:(");
+          String[] rawCells = isNull(raw) ? new String[0] : raw.split("x\\{");
+          List<String> rawLibrary = cleanCells(new ArrayList<>(Arrays.asList(rawCells)));
+
+          Library library =
+              Library.builder()
+                  .label(label)
+                  .type(type)
+                  .publicFlag(publicFlag)
+                  .rawData(rawLibrary)
+                  .build();
+
+          allLibraries.add(library);
         }
+      }
     }
 
-    private static TransactionCompute parseTransactionCompute(String computeStr) {
-        if (StringUtils.isEmpty(computeStr)) {
-            return TransactionCompute.builder().build();
-        } else {
-            BigDecimal gasFees = parseBigDecimalBracket(sbb(computeStr, "gas_fees:("), VALUE_COLON);
-            Byte success = parseByteSpace(computeStr, SUCCESS_COLON);
-            Byte msgStateUsed = parseByteSpace(computeStr, "msg_state_used:");
-            Byte accountActivated = parseByteSpace(computeStr, "account_activated:");
-            BigDecimal gasUsed = parseBigDecimalBracket(sbb(computeStr, "gas_used:("), VALUE_COLON);
-            BigDecimal gasLimit = parseBigDecimalBracket(sbb(computeStr, "gas_limit:("), VALUE_COLON);
-            BigDecimal gasCredit =
-                    parseBigDecimalBracket(
-                            sbb(computeStr, "gas_credit:("),
-                            VALUE_COLON); // TODO parse gas_credit:(just           value:(var_uint len:2
-            // value:10000))
-            String exitArgs = sb(computeStr, "exit_arg:", SPACE);
-            BigInteger exitCode = parseBigIntegerSpace(computeStr, "exit_code:");
-            BigInteger mode = parseBigIntegerSpace(computeStr, "mode:");
-            BigInteger vmsSteps = parseBigIntegerSpace(computeStr, "vm_steps:");
-            String vmInitStateHash = sb(computeStr, "vm_init_state_hash:", SPACE);
-            if (Strings.isNotEmpty(vmInitStateHash)) {
-                vmInitStateHash = vmInitStateHash.substring(1);
-            }
-            String vmFinalStateHash = sb(computeStr, "vm_final_state_hash:", CLOSE);
-            if (Strings.isNotEmpty(vmFinalStateHash)) {
-                vmFinalStateHash = vmFinalStateHash.substring(1);
-            }
-            return TransactionCompute.builder()
-                    .gasFees(gasFees)
-                    .gasCredit(gasCredit)
-                    .gasUsed(gasUsed)
-                    .gasLimit(gasLimit)
-                    .accountActivated(accountActivated)
-                    .msgStateUsed(msgStateUsed)
-                    .success(success)
-                    .mode(mode)
-                    .vmSteps(vmsSteps)
-                    .vmInitStateHash(vmInitStateHash)
-                    .vmFinalStateHash(vmFinalStateHash)
-                    .exitArg(exitArgs)
-                    .exitCode(exitCode)
-                    .build();
-        }
+    return allLibraries;
+  }
+
+  private static Info parseBlockInfo(String blockInf) {
+
+    BigInteger version = parseBigIntegerSpace(blockInf, "version:");
+    Byte notMaster = parseByteSpace(blockInf, "not_master:");
+    String shard = sbb(blockInf, "shard:(");
+    BigInteger shardPrefix = new BigInteger(sb(shard, "shard_prefix:", CLOSE));
+    BigInteger shardPrefixBits = parseBigIntegerSpace(blockInf, "shard_pfx_bits:");
+    Long shardWorkchain = parseLongSpace(blockInf, "workchain_id:");
+    BigInteger keyBlock = parseBigIntegerSpace(blockInf, "key_block:");
+    BigInteger vertSeqnoIncr = parseBigIntegerSpace(blockInf, "vert_seqno_incr:");
+    BigInteger vertSeqno = parseBigIntegerSpace(blockInf, "vert_seq_no:");
+    BigInteger genValidatorListHashShort =
+        parseBigIntegerSpace(blockInf, "gen_validator_list_hash_short:");
+    BigInteger genCatchainSeqno = parseBigIntegerSpace(blockInf, "gen_catchain_seqno:");
+    BigInteger minRefMcSeqno = parseBigIntegerSpace(blockInf, "min_ref_mc_seqno:");
+    BigInteger prevKeyBlockSeqno = parseBigIntegerSpace(blockInf, "prev_key_block_seqno:");
+    Byte wantSplit = parseByteSpace(blockInf, "want_split:");
+    Byte afterSplit = parseByteSpace(blockInf, "after_split:");
+    Byte beforeSplit = parseByteSpace(blockInf, "before_split:");
+    Byte afterMerge = parseByteSpace(blockInf, "after_merge:");
+    Byte wantMerge = parseByteSpace(blockInf, "want_merge:");
+    BigInteger seqno = parseBigIntegerSpace(blockInf, SEQ_NO_COLON);
+    Long wc = parseLongSpace(blockInf, WORKCHAIN_ID_COLON);
+    BigInteger startLt = parseBigIntegerSpace(blockInf, START_LT_COLON);
+    BigInteger endLt = parseBigIntegerSpace(blockInf, END_LT_COLON);
+    Long genUtime = parseLongSpace(blockInf, "gen_utime:");
+    String prev = sbb(blockInf, "prev:(");
+    Long prevSeqno = parseLongSpace(prev, SEQ_NO_COLON);
+    BigInteger prevEndLt = parseBigIntegerSpace(prev, END_LT_COLON);
+    String prevRootHash = sb(prev, "root_hash:", SPACE);
+    if (Strings.isNotEmpty(prevRootHash)) {
+      prevRootHash = prevRootHash.substring(1);
+    }
+    String prevFileHash = sb(prev, "file_hash:", CLOSE);
+    if (Strings.isNotEmpty(prevFileHash)) {
+      prevFileHash = prevFileHash.substring(1);
+    }
+    return Info.builder()
+        .version(version)
+        .wc(wc)
+        .notMaster(notMaster)
+        .keyBlock(keyBlock)
+        .vertSeqno(vertSeqno)
+        .vertSeqnoIncr(vertSeqnoIncr)
+        .getValidatorListHashShort(genValidatorListHashShort)
+        .getCatchainSeqno(genCatchainSeqno)
+        .minRefMcSeqno(minRefMcSeqno)
+        .prevKeyBlockSeqno(prevKeyBlockSeqno)
+        .wantSplit(wantSplit)
+        .wantMerge(wantMerge)
+        .afterMerge(afterMerge)
+        .afterSplit(afterSplit)
+        .beforeSplit(beforeSplit)
+        .seqNo(seqno)
+        .startLt(startLt)
+        .endLt(endLt)
+        .genUtime(genUtime)
+        .prevBlockSeqno(prevSeqno)
+        .prevEndLt(prevEndLt)
+        .prevRootHash(prevRootHash)
+        .prevFileHash(prevFileHash)
+        .shardPrefix(shardPrefix)
+        .shardWorkchain(shardWorkchain)
+        .shardPrefixBits(shardPrefixBits.intValue())
+        .build();
+  }
+
+  private static BigDecimal parseBigDecimalSpace(String str, String from) {
+    try {
+      String result = sb(str, from, SPACE);
+      return isNull(result) ? null : new BigDecimal(result);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static BigInteger parseBigIntegerSpace(String str, String from) {
+    try {
+      String result = sb(str, from, SPACE);
+      return isNull(result) ? null : new BigInteger(result);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static Long parseLongSpace(String str, String from) {
+    try {
+      String result = sb(str, from, SPACE);
+      return isNull(result) ? null : Long.valueOf(result);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static Long parseLongBracket(String str, String from) {
+    if (isNull(str)) {
+      return 0L;
+    }
+    try {
+      String result = sb(str, from, CLOSE);
+      if (StringUtils.isNotEmpty(result)) {
+        result = result.trim();
+      }
+      return isNull(result) ? null : Long.valueOf(result);
+    } catch (Exception e) {
+      return 0L;
+    }
+  }
+
+  private static BigDecimal parseBigDecimalBracket(String str, String from) {
+    if (isNull(str)) {
+      return BigDecimal.ZERO;
+    }
+    try {
+      String result = sb(str, from, CLOSE);
+      if (StringUtils.isNotEmpty(result)) {
+        result = result.trim();
+      }
+      return isNull(result) ? null : new BigDecimal(result);
+    } catch (Exception e) {
+      return BigDecimal.ZERO;
+    }
+  }
+
+  private static BigInteger parseBigIntegerBracket(String str, String from) {
+    if (isNull(str)) {
+      return BigInteger.ZERO;
+    }
+    try {
+      String result = sb(str, from, CLOSE);
+      if (StringUtils.isNotEmpty(result)) {
+        result = result.trim();
+      }
+      return isNull(result) ? null : new BigInteger(result);
+    } catch (Exception e) {
+      return BigInteger.ZERO;
+    }
+  }
+
+  private static Byte parseByteSpace(String str, String from) {
+    try {
+      String result = sb(str, from, SPACE);
+      return isNull(result) ? null : Byte.parseByte(result);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static Byte parseByteBracket(String str, String from) {
+    String result = sb(str, from, CLOSE);
+    return isNull(result) ? null : Byte.parseByte(result);
+  }
+
+  public static LiteClientAccountState parseGetAccount(String stdout) {
+
+    if (isNull(stdout)) {
+      return LiteClientAccountState.builder().build();
     }
 
-    private static ValueFlow parseValueFlow(String valueFlw) {
-
-        Value prevBlock = readValue(sbb(valueFlw, "from_prev_blk:(currencies"));
-        Value nextBlock = readValue(sbb(valueFlw, "to_next_blk:(currencies"));
-        Value imported = readValue(sbb(valueFlw, "imported:(currencies"));
-        Value exported = readValue(sbb(valueFlw, "exported:(currencies"));
-        Value feesCollected = readValue(sbb(valueFlw, "fees_collected:(currencies"));
-        Value feesImported = readValue(sbb(valueFlw, "fees_imported:(currencies"));
-        Value recovered = readValue(sbb(valueFlw, "recovered:(currencies"));
-        Value created = readValue(sbb(valueFlw, "created:(currencies"));
-        Value minted = readValue(sbb(valueFlw, "minted:(currencies"));
-
-        return ValueFlow.builder()
-                .prevBlock(prevBlock)
-                .nextBlock(nextBlock)
-                .imported(imported)
-                .exported(exported)
-                .feesCollected(feesCollected)
-                .feesImported(feesImported)
-                .recovered(recovered)
-                .created(created)
-                .minted(minted)
-                .build();
+    if (stdout.contains("account state is empty")) {
+      return LiteClientAccountState.builder().build();
     }
 
-    private static Value readValue(String str) {
-        if (StringUtils.isEmpty(str)) return Value.builder().toncoins(BigDecimal.ZERO).build();
+    try {
+      String accountState = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
 
-        String res = sbb(str, "amount:(");
-        BigDecimal grams = parseBigDecimalBracket(res, VALUE_COLON);
+      String addr = sbb(accountState, "addr:(");
+      String address = sb(addr, ADDRESS_COLON, CLOSE);
+      if (StringUtils.isNotEmpty(address)) {
+        address = address.substring(1).toUpperCase();
+      }
+      Long wc = parseLongSpace(addr, WORKCHAIN_ID_COLON);
 
-        List<Currency> otherCurrencies = new ArrayList<>();
+      String storageStat = sbb(accountState, "storage_stat:(");
+      String usedCellsStr = sbb(storageStat, "cells:(");
+      String usedBitsStr = sbb(storageStat, "bits:(");
+      String usedPublicCellsStr = sbb(storageStat, "public_cells:(");
 
-        if (str.contains("node:(hmn_fork")) {
-            // exist extra currencies
-            List<String> currenciesLeft = findStringBlocks(str, "left:(hm_edge");
-            List<String> currenciesRight = findStringBlocks(str, "right:(hm_edge");
-            List<String> currencies = new ArrayList<>();
-            currencies.addAll(currenciesLeft);
-            currencies.addAll(currenciesRight);
+      Long usedCells = parseLongBracket(usedCellsStr, VALUE_COLON);
+      Long usedBits = parseLongBracket(usedBitsStr, VALUE_COLON);
+      Long usedPublicCells = parseLongBracket(usedPublicCellsStr, VALUE_COLON);
+      BigDecimal lastPaid = parseBigDecimalSpace(storageStat, "last_paid:");
 
-            if (!currencies.isEmpty()) {
-                for (String cur : currencies) {
-                    Byte len = parseByteSpace(cur, "len:");
-                    String label = sb(cur, "s:", CLOSE);
-                    if (StringUtils.isNotEmpty(label)) {
-                        label = label.substring(1);
-                    }
-                    if (!isNull(len)) {
-                        BigDecimal value =
-                                parseBigDecimalBracket(cur.substring(cur.indexOf("var_uint")), VALUE_COLON);
+      String storage = sbb(accountState, "storage:(");
+      BigDecimal storageLastTxLt = parseBigDecimalSpace(storage, "last_trans_lt:");
+      Value storageBalanceValue = readValue(storage);
 
-                        Currency currency = Currency.builder().label(label).len(len).value(value).build();
-                        otherCurrencies.add(currency);
-                    }
-                }
-            }
-        }
+      String state = sbb(accountState, "state:(");
+      String stateAccountStatus;
 
-        return Value.builder().toncoins(grams).otherCurrencies(otherCurrencies).build();
+      if (StringUtils.isNotEmpty(state)) { // state:(account_active
+        stateAccountStatus = sb(accountState, "state:(", SPACE);
+      } else {
+        stateAccountStatus = sb(accountState, "state:", CLOSE);
+      }
+
+      if (stateAccountStatus.contains("account_active")) {
+        stateAccountStatus = "Active";
+      } else if (stateAccountStatus.contains("account_uninit")) {
+        stateAccountStatus = "Uninitialized";
+      } else {
+        stateAccountStatus = "Frozen";
+      }
+
+      String code = sbb(state, "code:(");
+      String[] codeCells = isNull(code) ? new String[0] : code.split("x\\{");
+      List<String> stateAccountCode = cleanCells(new ArrayList<>(Arrays.asList(codeCells)));
+
+      String data = sbb(state, "data:(");
+      String[] dataCells = isNull(data) ? new String[0] : data.split("x\\{");
+      List<String> stateAccountData = cleanCells(new ArrayList<>(Arrays.asList(dataCells)));
+
+      String stateAccountLibrary = sbb(state, "library:(");
+      List<Library> libraries = readLibraries(stateAccountLibrary);
+
+      BigInteger lastTxLt = parseBigIntegerSpace(accountState, "last transaction lt = ");
+      String lastTxHash = sb(accountState, "hash = ", SPACE);
+      StorageInfo storageInfo =
+          StorageInfo.builder()
+              .usedCells(usedCells)
+              .usedBits(usedBits)
+              .usedPublicCells(usedPublicCells)
+              .lastPaid(lastPaid)
+              .build();
+
+      return LiteClientAccountState.builder()
+          .wc(wc)
+          .address(address)
+          .balance(storageBalanceValue)
+          .storageInfo(storageInfo)
+          .storageLastTxLt(storageLastTxLt)
+          .status(stateAccountStatus)
+          .stateCode(String.join("", stateAccountCode))
+          .stateData(String.join("", stateAccountData))
+          .stateLibrary(libraries)
+          .lastTxLt(lastTxLt)
+          .lastTxHash(lastTxHash)
+          .build();
+
+    } catch (Exception e) {
+      return LiteClientAccountState.builder().build();
+    }
+  }
+
+  public static long parseRunMethodSeqno(String stdout) {
+    try {
+      return Long.parseLong(sb(stdout, "result:  [", "]").trim());
+    } catch (Exception e) {
+      return -1L;
+    }
+  }
+
+  public static List<ResultListParticipants> parseRunMethodParticipantList(String stdout) {
+
+    if (StringUtils.isEmpty(stdout) || !stdout.contains("participant_list"))
+      return Collections.emptyList();
+
+    if (stdout.contains("cannot parse answer")) {
+      return Collections.emptyList();
     }
 
-    private static List<Library> readLibraries(String str) {
-        if (StringUtils.isEmpty(str)) {
-            return Collections.singletonList(Library.builder().build());
-        }
+    String result = sb(stdout, "result:  [ (", ") ]");
 
-        List<Library> allLibraries = new ArrayList<>();
+    result = result.replace("] [", ",");
+    result = result.replace("[", "");
+    result = result.replace("]", "");
+    String[] participants = result.split(",");
 
-        if (str.contains("node:(hmn_fork")) {
-            List<String> librariesLeft = findStringBlocks(str, "left:(hm_edge");
-            List<String> librariesRight = findStringBlocks(str, "right:(hm_edge");
-            List<String> libraries = new ArrayList<>();
-            libraries.addAll(librariesLeft);
-            libraries.addAll(librariesRight);
+    List<ResultListParticipants> participantsList = new ArrayList<>();
+    if (result.isEmpty()) {
+      return participantsList;
+    }
+    for (String participant : participants) {
+      String[] entry = participant.split(" ");
+      participantsList.add(
+          ResultListParticipants.builder().pubkey(entry[0]).weight(entry[1]).build());
+    }
+    return participantsList;
+  }
 
-            if (!libraries.isEmpty()) {
-                for (String lib : libraries) {
-                    String label = sb(lib, "s:", CLOSE);
-                    if (StringUtils.isNotEmpty(label)) {
-                        label = label.substring(1);
-                    }
-                    String type = sb(lib, "value:(", SPACE);
-                    Long publicFlag = parseLongSpace(lib, "public:");
+  public static ResultComputeReturnStake parseRunMethodComputeReturnStake(String stdout) {
 
-                    String raw = sbb(lib, "root:(");
-                    String[] rawCells = isNull(raw) ? new String[0] : raw.split("x\\{");
-                    List<String> rawLibrary = cleanCells(new ArrayList<>(Arrays.asList(rawCells)));
+    log.info("parseRunMethodComputeReturnStake {}", stdout);
 
-                    Library library =
-                            Library.builder()
-                                    .label(label)
-                                    .type(type)
-                                    .publicFlag(publicFlag)
-                                    .rawData(rawLibrary)
-                                    .build();
+    if (StringUtils.isEmpty(stdout) || !stdout.contains("compute_returned_stake"))
+      return ResultComputeReturnStake.builder().stake(new BigDecimal("-1")).build();
 
-                    allLibraries.add(library);
-                }
-            }
-        }
-
-        return allLibraries;
+    if (stdout.contains("cannot parse answer")) {
+      return ResultComputeReturnStake.builder().stake(new BigDecimal("-1")).build();
     }
 
-    private static Info parseBlockInfo(String blockInf) {
+    String result = sb(stdout, "result:  [", "]");
 
-        BigInteger version = parseBigIntegerSpace(blockInf, "version:");
-        Byte notMaster = parseByteSpace(blockInf, "not_master:");
-        String shard = sbb(blockInf, "shard:(");
-        BigInteger shardPrefix = new BigInteger(sb(shard, "shard_prefix:", CLOSE));
-        BigInteger shardPrefixBits = parseBigIntegerSpace(blockInf, "shard_pfx_bits:");
-        Long shardWorkchain = parseLongSpace(blockInf, "workchain_id:");
-        BigInteger keyBlock = parseBigIntegerSpace(blockInf, "key_block:");
-        BigInteger vertSeqnoIncr = parseBigIntegerSpace(blockInf, "vert_seqno_incr:");
-        BigInteger vertSeqno = parseBigIntegerSpace(blockInf, "vert_seq_no:");
-        BigInteger genValidatorListHashShort =
-                parseBigIntegerSpace(blockInf, "gen_validator_list_hash_short:");
-        BigInteger genCatchainSeqno = parseBigIntegerSpace(blockInf, "gen_catchain_seqno:");
-        BigInteger minRefMcSeqno = parseBigIntegerSpace(blockInf, "min_ref_mc_seqno:");
-        BigInteger prevKeyBlockSeqno = parseBigIntegerSpace(blockInf, "prev_key_block_seqno:");
-        Byte wantSplit = parseByteSpace(blockInf, "want_split:");
-        Byte afterSplit = parseByteSpace(blockInf, "after_split:");
-        Byte beforeSplit = parseByteSpace(blockInf, "before_split:");
-        Byte afterMerge = parseByteSpace(blockInf, "after_merge:");
-        Byte wantMerge = parseByteSpace(blockInf, "want_merge:");
-        BigInteger seqno = parseBigIntegerSpace(blockInf, SEQ_NO_COLON);
-        Long wc = parseLongSpace(blockInf, WORKCHAIN_ID_COLON);
-        BigInteger startLt = parseBigIntegerSpace(blockInf, START_LT_COLON);
-        BigInteger endLt = parseBigIntegerSpace(blockInf, END_LT_COLON);
-        Long genUtime = parseLongSpace(blockInf, "gen_utime:");
-        String prev = sbb(blockInf, "prev:(");
-        Long prevSeqno = parseLongSpace(prev, SEQ_NO_COLON);
-        BigInteger prevEndLt = parseBigIntegerSpace(prev, END_LT_COLON);
-        String prevRootHash = sb(prev, "root_hash:", SPACE);
-        if (Strings.isNotEmpty(prevRootHash)) {
-            prevRootHash = prevRootHash.substring(1);
-        }
-        String prevFileHash = sb(prev, "file_hash:", CLOSE);
-        if (Strings.isNotEmpty(prevFileHash)) {
-            prevFileHash = prevFileHash.substring(1);
-        }
-        return Info.builder()
-                .version(version)
-                .wc(wc)
-                .notMaster(notMaster)
-                .keyBlock(keyBlock)
-                .vertSeqno(vertSeqno)
-                .vertSeqnoIncr(vertSeqnoIncr)
-                .getValidatorListHashShort(genValidatorListHashShort)
-                .getCatchainSeqno(genCatchainSeqno)
-                .minRefMcSeqno(minRefMcSeqno)
-                .prevKeyBlockSeqno(prevKeyBlockSeqno)
-                .wantSplit(wantSplit)
-                .wantMerge(wantMerge)
-                .afterMerge(afterMerge)
-                .afterSplit(afterSplit)
-                .beforeSplit(beforeSplit)
-                .seqNo(seqno)
-                .startLt(startLt)
-                .endLt(endLt)
-                .genUtime(genUtime)
-                .prevBlockSeqno(prevSeqno)
-                .prevEndLt(prevEndLt)
-                .prevRootHash(prevRootHash)
-                .prevFileHash(prevFileHash)
-                .shardPrefix(shardPrefix)
-                .shardWorkchain(shardWorkchain)
-                .shardPrefixBits(shardPrefixBits.intValue())
-                .build();
+    return ResultComputeReturnStake.builder().stake(new BigDecimal(result.trim())).build();
+  }
+
+  private static String sb(String str, String from, String to) {
+    if (str == null || from == null || to == null) {
+      return null;
     }
 
-    private static BigDecimal parseBigDecimalSpace(String str, String from) {
-        try {
-            String result = sb(str, from, SPACE);
-            return isNull(result) ? null : new BigDecimal(result);
-        } catch (Exception e) {
-            return null;
-        }
+    int startIndex = str.indexOf(from);
+    if (startIndex == -1) {
+      return null;
+    }
+    startIndex += from.length();
+
+    int endIndex = str.indexOf(to, startIndex);
+    if (endIndex == -1) {
+      return null;
     }
 
-    private static BigInteger parseBigIntegerSpace(String str, String from) {
-        try {
-            String result = sb(str, from, SPACE);
-            return isNull(result) ? null : new BigInteger(result);
-        } catch (Exception e) {
-            return null;
-        }
+    return str.substring(startIndex, endIndex);
+  }
+
+  /** Finds single string-block starting with pattern and ending with CLOSE */
+  private static String sbb(String str, String pattern) {
+    if (str == null || pattern == null || !str.contains(pattern)) {
+      return null;
     }
 
-    private static Long parseLongSpace(String str, String from) {
-        try {
-            String result = sb(str, from, SPACE);
-            return isNull(result) ? null : Long.valueOf(result);
-        } catch (Exception e) {
-            return null;
-        }
+    int patternIndex = str.indexOf(pattern);
+    if (patternIndex == -1) {
+      return null;
     }
 
-    private static Long parseLongBracket(String str, String from) {
-        if (isNull(str)) {
-            return 0L;
-        }
-        try {
-            String result = sb(str, from, CLOSE);
-            if (StringUtils.isNotEmpty(result)) {
-                result = result.trim();
-            }
-            return isNull(result) ? null : Long.valueOf(result);
-        } catch (Exception e) {
-            return 0L;
-        }
+    int openIndex = pattern.indexOf(OPEN);
+    if (openIndex == -1) {
+      return null;
     }
+    openIndex += patternIndex;
 
-    private static BigDecimal parseBigDecimalBracket(String str, String from) {
-        if (isNull(str)) {
-            return BigDecimal.ZERO;
+    // Find matching closing bracket
+    int depth = 0;
+    for (int i = openIndex; i < str.length(); i++) {
+      char c = str.charAt(i);
+      if (c == '(') {
+        depth++;
+      } else if (c == ')') {
+        depth--;
+        if (depth == 0) {
+          return str.substring(openIndex, i + 1).trim();
         }
-        try {
-            String result = sb(str, from, CLOSE);
-            if (StringUtils.isNotEmpty(result)) {
-                result = result.trim();
-            }
-            return isNull(result) ? null : new BigDecimal(result);
-        } catch (Exception e) {
-            return BigDecimal.ZERO;
-        }
+      }
     }
+    return null;
+  }
 
-    private static BigInteger parseBigIntegerBracket(String str, String from) {
-        if (isNull(str)) {
-            return BigInteger.ZERO;
+  /** Finds matching closing bracket in string starting with pattern */
+  private static int findPosOfClosingBracket(byte[] strBytes, int patternIndex) {
+    Deque<Integer> stack = new ArrayDeque<>();
+
+    for (int i = patternIndex; i < strBytes.length; i++) {
+      if (strBytes[i] == (byte) '(') {
+        stack.push(i);
+      } else if (strBytes[i] == (byte) ')') {
+        if (stack.isEmpty()) {
+          return i;
         }
-        try {
-            String result = sb(str, from, CLOSE);
-            if (StringUtils.isNotEmpty(result)) {
-                result = result.trim();
-            }
-            return isNull(result) ? null : new BigInteger(result);
-        } catch (Exception e) {
-            return BigInteger.ZERO;
+        stack.pop();
+        if (stack.isEmpty()) {
+          return i;
         }
+      }
     }
+    return -1;
+  }
 
-    private static Byte parseByteSpace(String str, String from) {
-        try {
-            String result = sb(str, from, SPACE);
-            return isNull(result) ? null : Byte.parseByte(result);
-        } catch (Exception e) {
-            return null;
+  /** Finds multiple string-blocks starting with pattern and ending with CLOSE */
+  private static List<String> findStringBlocks(String str, String pattern) {
+    List<String> result = new ArrayList<>();
+
+    if (isNull(str) || !str.contains(pattern)) return result;
+
+    int fromIndex = 0;
+    int patternIndex;
+
+    while ((patternIndex = str.indexOf(pattern, fromIndex)) != -1) {
+      int openCharIndex = pattern.indexOf(OPEN);
+      if (openCharIndex == -1) {
+        break;
+      }
+      int openIndex = patternIndex + openCharIndex;
+
+      // Find matching closing bracket
+      int depth = 0;
+      int closeIndex = -1;
+      for (int i = openIndex; i < str.length(); i++) {
+        char c = str.charAt(i);
+        if (c == '(') {
+          depth++;
+        } else if (c == ')') {
+          depth--;
+          if (depth == 0) {
+            closeIndex = i;
+            break;
+          }
         }
+      }
+
+      if (closeIndex != -1) {
+        result.add(str.substring(openIndex, closeIndex + 1));
+        fromIndex = closeIndex + 1;
+      } else {
+        break;
+      }
     }
+    return result;
+  }
 
-    private static Byte parseByteBracket(String str, String from) {
-        String result = sb(str, from, CLOSE);
-        return isNull(result) ? null : Byte.parseByte(result);
+  /** copy of the method findStringBlocks() but additionally prepends result with label value */
+  private static List<String> findLeafsWithLabel(String str, String pattern) {
+    List<String> result = new ArrayList<>();
+
+    if (isNull(str) || !str.contains(pattern)) return result;
+
+    int fromIndex = 0;
+    final int dataToAddLen = 150;
+    int patternIndex;
+
+    while ((patternIndex = str.indexOf(pattern, fromIndex)) != -1) {
+      int openCharIndex = pattern.indexOf(OPEN);
+      if (openCharIndex == -1) {
+        break;
+      }
+      int openIndex = patternIndex + openCharIndex;
+
+      // Find matching closing bracket
+      int depth = 0;
+      int closeIndex = -1;
+      for (int i = openIndex; i < str.length(); i++) {
+        char c = str.charAt(i);
+        if (c == '(') {
+          depth++;
+        } else if (c == ')') {
+          depth--;
+          if (depth == 0) {
+            closeIndex = i;
+            break;
+          }
+        }
+      }
+
+      if (closeIndex != -1) {
+        int start = Math.max(patternIndex - dataToAddLen, 0);
+        String beforePattern = str.substring(start, patternIndex);
+        String foundPattern = str.substring(patternIndex, closeIndex + 1);
+
+        result.add(beforePattern + foundPattern);
+        fromIndex = closeIndex + 1;
+      } else {
+        break;
+      }
     }
+    return result;
+  }
 
-    public static LiteClientAccountState parseGetAccount(String stdout) {
-
-        if (isNull(stdout)) {
-            return LiteClientAccountState.builder().build();
-        }
-
-        if (stdout.contains("account state is empty")) {
-            return LiteClientAccountState.builder().build();
-        }
-
-        try {
-            String accountState = stdout.replace(EOLWIN, SPACE).replace(EOL, SPACE);
-
-            String addr = sbb(accountState, "addr:(");
-            String address = sb(addr, ADDRESS_COLON, CLOSE);
-            if (StringUtils.isNotEmpty(address)) {
-                address = address.substring(1).toUpperCase();
-            }
-            Long wc = parseLongSpace(addr, WORKCHAIN_ID_COLON);
-
-            String storageStat = sbb(accountState, "storage_stat:(");
-            String usedCellsStr = sbb(storageStat, "cells:(");
-            String usedBitsStr = sbb(storageStat, "bits:(");
-            String usedPublicCellsStr = sbb(storageStat, "public_cells:(");
-
-            Long usedCells = parseLongBracket(usedCellsStr, VALUE_COLON);
-            Long usedBits = parseLongBracket(usedBitsStr, VALUE_COLON);
-            Long usedPublicCells = parseLongBracket(usedPublicCellsStr, VALUE_COLON);
-            BigDecimal lastPaid = parseBigDecimalSpace(storageStat, "last_paid:");
-
-            String storage = sbb(accountState, "storage:(");
-            BigDecimal storageLastTxLt = parseBigDecimalSpace(storage, "last_trans_lt:");
-            Value storageBalanceValue = readValue(storage);
-
-            String state = sbb(accountState, "state:(");
-            String stateAccountStatus;
-
-            if (StringUtils.isNotEmpty(state)) { // state:(account_active
-                stateAccountStatus = sb(accountState, "state:(", SPACE);
-            } else {
-                stateAccountStatus = sb(accountState, "state:", CLOSE);
-            }
-
-            if (stateAccountStatus.contains("account_active")) {
-                stateAccountStatus = "Active";
-            } else if (stateAccountStatus.contains("account_uninit")) {
-                stateAccountStatus = "Uninitialized";
-            } else {
-                stateAccountStatus = "Frozen";
-            }
-
-            String code = sbb(state, "code:(");
-            String[] codeCells = isNull(code) ? new String[0] : code.split("x\\{");
-            List<String> stateAccountCode = cleanCells(new ArrayList<>(Arrays.asList(codeCells)));
-
-            String data = sbb(state, "data:(");
-            String[] dataCells = isNull(data) ? new String[0] : data.split("x\\{");
-            List<String> stateAccountData = cleanCells(new ArrayList<>(Arrays.asList(dataCells)));
-
-            String stateAccountLibrary = sbb(state, "library:(");
-            List<Library> libraries = readLibraries(stateAccountLibrary);
-
-            BigInteger lastTxLt = parseBigIntegerSpace(accountState, "last transaction lt = ");
-            String lastTxHash = sb(accountState, "hash = ", SPACE);
-            StorageInfo storageInfo =
-                    StorageInfo.builder()
-                            .usedCells(usedCells)
-                            .usedBits(usedBits)
-                            .usedPublicCells(usedPublicCells)
-                            .lastPaid(lastPaid)
-                            .build();
-
-            return LiteClientAccountState.builder()
-                    .wc(wc)
-                    .address(address)
-                    .balance(storageBalanceValue)
-                    .storageInfo(storageInfo)
-                    .storageLastTxLt(storageLastTxLt)
-                    .status(stateAccountStatus)
-                    .stateCode(String.join("", stateAccountCode))
-                    .stateData(String.join("", stateAccountData))
-                    .stateLibrary(libraries)
-                    .lastTxLt(lastTxLt)
-                    .lastTxHash(lastTxHash)
-                    .build();
-
-        } catch (Exception e) {
-            return LiteClientAccountState.builder().build();
-        }
-    }
-
-    public static long parseRunMethodSeqno(String stdout) {
-        try {
-            return Long.parseLong(sb(stdout, "result:  [", "]").trim());
-        } catch (Exception e) {
-            return -1L;
-        }
-    }
-
-    public static List<ResultListParticipants> parseRunMethodParticipantList(String stdout) {
-
-        if (StringUtils.isEmpty(stdout) || !stdout.contains("participant_list"))
-            return Collections.emptyList();
-
-        if (stdout.contains("cannot parse answer")) {
-            return Collections.emptyList();
-        }
-
-        String result = sb(stdout, "result:  [ (", ") ]");
-
-        result = result.replace("] [", ",");
-        result = result.replace("[", "");
-        result = result.replace("]", "");
-        String[] participants = result.split(",");
-
-        List<ResultListParticipants> participantsList = new ArrayList<>();
-        if (result.isEmpty()) {
-            return participantsList;
-        }
-        for (String participant : participants) {
-            String[] entry = participant.split(" ");
-            participantsList.add(
-                    ResultListParticipants.builder().pubkey(entry[0]).weight(entry[1]).build());
-        }
-        return participantsList;
-    }
-
-    public static ResultComputeReturnStake parseRunMethodComputeReturnStake(String stdout) {
-
-        log.info("parseRunMethodComputeReturnStake {}", stdout);
-
-        if (StringUtils.isEmpty(stdout) || !stdout.contains("compute_returned_stake"))
-            return ResultComputeReturnStake.builder().stake(new BigDecimal("-1")).build();
-
-        if (stdout.contains("cannot parse answer")) {
-            return ResultComputeReturnStake.builder().stake(new BigDecimal("-1")).build();
-        }
-
-        String result = sb(stdout, "result:  [", "]");
-
-        return ResultComputeReturnStake.builder().stake(new BigDecimal(result.trim())).build();
-    }
-
-    private static String sb(String str, String from, String to) {
-        if (str == null || from == null || to == null) {
-            return null;
-        }
-
-        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
-        byte[] fromBytes = from.getBytes(StandardCharsets.UTF_8);
-        byte[] toBytes = to.getBytes(StandardCharsets.UTF_8);
-
-        int startIndex = indexOf(bytes, fromBytes, 0);
-        if (startIndex == -1) {
-            return null;
-        }
-        startIndex += fromBytes.length;
-
-        int endIndex = indexOf(bytes, toBytes, startIndex);
-        if (endIndex == -1) {
-            return null;
-        }
-
-        byte[] resultBytes = Arrays.copyOfRange(bytes, startIndex, endIndex);
-        return new String(resultBytes, StandardCharsets.UTF_8);
-    }
-
-    /**
-     * Finds single string-block starting with pattern and ending with CLOSE
-     */
-    private static String sbb(String str, String pattern) {
-        if (str == null || pattern == null || !str.contains(pattern)) {
-            return null;
-        }
-
-        byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
-        byte[] patternBytes = pattern.getBytes(StandardCharsets.UTF_8);
-
-        int patternIndex = indexOf(strBytes, patternBytes, 0);
-        int patternOpenIndex = indexOf(patternBytes, OPEN.getBytes(StandardCharsets.UTF_8), 0);
-        if (patternIndex == -1) {
-            return null;
-        }
-
-        int openIndex = patternIndex + patternOpenIndex;
-        int closeIndex = findPosOfClosingBracket(strBytes, patternIndex);
-
-        if (closeIndex == -1) {
-            return null;
-        }
-
-        return new String(strBytes, openIndex, closeIndex - openIndex + 1, StandardCharsets.UTF_8)
-                .trim();
-    }
-
-    /**
-     * Finds matching closing bracket in string starting with pattern
-     */
-    private static int findPosOfClosingBracket(byte[] strBytes, int patternIndex) {
-        Deque<Integer> stack = new ArrayDeque<>();
-
-        for (int i = patternIndex; i < strBytes.length; i++) {
-            if (strBytes[i] == (byte) '(') {
-                stack.push(i);
-            } else if (strBytes[i] == (byte) ')') {
-                if (stack.isEmpty()) {
-                    return i;
-                }
-                stack.pop();
-                if (stack.isEmpty()) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Finds multiple string-blocks starting with pattern and ending with CLOSE
-     */
-    private static List<String> findStringBlocks(String str, String pattern) {
-        List<String> result = new ArrayList<>();
-
-        if (isNull(str) || !str.contains(pattern)) return result;
-
-        byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
-        byte[] patternBytes = pattern.getBytes(StandardCharsets.UTF_8);
-
-        int fromIndex = 0;
-        int patternIndex = indexOf(strBytes, patternBytes, fromIndex);
-
-        while (patternIndex != -1) {
-            byte[] tmp = Arrays.copyOfRange(strBytes, patternIndex, patternIndex + patternBytes.length);
-            int openCharIndex = indexOf(tmp, OPEN.getBytes(StandardCharsets.UTF_8), 0);
-            int openIndex = patternIndex + openCharIndex;
-            if (openIndex == -1) {
-                break;
-            }
-            int closeIndex = findPosOfClosingBracket(strBytes, patternIndex);
-
-            if (closeIndex != -1) {
-                result.add(new String(Arrays.copyOfRange(strBytes, openIndex, closeIndex + 1)));
-                fromIndex = closeIndex + 1;
-                patternIndex = indexOf(strBytes, patternBytes, fromIndex);
-            } else {
-                break;
-            }
-        }
-        return result;
-    }
-
-    /**
-     * copy of the method findStringBlocks() but additionally prepends result with label value
-     */
-    private static List<String> findLeafsWithLabel(String str, String pattern) {
-        List<String> result = new ArrayList<>();
-
-        if (isNull(str) || !str.contains(pattern)) return result;
-
-        byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
-        byte[] patternBytes = pattern.getBytes(StandardCharsets.UTF_8);
-
-        int fromIndex = 0;
-        final int dataToAddLen = 150;
-        int patternIndex = indexOf(strBytes, patternBytes, fromIndex);
-
-        while (patternIndex != -1) {
-            byte[] tmp = Arrays.copyOfRange(strBytes, patternIndex, patternIndex + pattern.length());
-            int openCharIndex = indexOf(tmp, OPEN.getBytes(StandardCharsets.UTF_8), 0);
-            int openIndex = patternIndex + openCharIndex;
-
-            if (openIndex == -1) {
-                break;
-            }
-            int closeIndex = findPosOfClosingBracket(strBytes, patternIndex);
-
-            if (closeIndex != -1) {
-                int start = Math.max(patternIndex - dataToAddLen, 0);
-                byte[] beforePattern = Arrays.copyOfRange(strBytes, start, patternIndex);
-                byte[] foundPattern = Arrays.copyOfRange(strBytes, patternIndex, closeIndex + 1);
-
-                result.add(new String(beforePattern) + new String(foundPattern));
-                fromIndex = closeIndex + 1;
-                patternIndex = indexOf(strBytes, patternBytes, fromIndex);
-            } else {
-                break;
-            }
-        }
-        return result;
-    }
-
-    private static int indexOf(byte[] array, byte[] target, int fromIndex) {
-        if (target.length == 0) {
-            return fromIndex;
-        }
-        if (target.length > array.length) {
-            return -1;
-        }
-
-        int[] a = new int[256];
-        for (int i = 0; i < target.length; i++) {
-            a[target[i] & 0xFF] = i;
-        }
-
-        int m = target.length;
-        int n = array.length;
-
-        int s = fromIndex;
-        while (s <= n - m) {
-            int j = m - 1;
-            while (j >= 0 && target[j] == array[s + j]) {
-                j--;
-            }
-            if (j < 0) {
-                return s;
-            } else {
-                s += Math.max(1, j - a[array[s + j] & 0xFF]);
-            }
-        }
-        return -1;
-    }
+  // Removed custom indexOf implementation as we're now using String.indexOf
 }
