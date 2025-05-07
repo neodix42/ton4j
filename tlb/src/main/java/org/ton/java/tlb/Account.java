@@ -33,15 +33,12 @@ public class Account implements Serializable {
     if (!isAccount) {
       return Account.builder().isNone(true).build();
     }
-    MsgAddressInt address = MsgAddressInt.deserialize(cs);
-    StorageInfo info = StorageInfo.deserialize(cs);
-    AccountStorage storage = AccountStorage.deserialize(cs);
 
     return Account.builder()
         .isNone(false)
-        .address(address)
-        .storageInfo(info)
-        .accountStorage(storage)
+        .address(MsgAddressInt.deserialize(cs))
+        .storageInfo(StorageInfo.deserialize(cs))
+        .accountStorage(AccountStorage.deserialize(cs))
         .build();
   }
 }

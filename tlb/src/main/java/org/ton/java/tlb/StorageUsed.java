@@ -20,23 +20,17 @@ import org.ton.java.cell.CellSlice;
 @Builder
 @Data
 public class StorageUsed implements Serializable {
-  BigInteger bitsUsed;
   BigInteger cellsUsed;
-  BigInteger publicCellsUsed;
+  BigInteger bitsUsed;
 
   public Cell toCell() {
-    return CellBuilder.beginCell()
-        .storeVarUint(cellsUsed, 3)
-        .storeVarUint(bitsUsed, 3)
-        .storeVarUint(publicCellsUsed, 3)
-        .endCell();
+    return CellBuilder.beginCell().storeVarUint(cellsUsed, 3).storeVarUint(bitsUsed, 3).endCell();
   }
 
   public static StorageUsed deserialize(CellSlice cs) {
     return StorageUsed.builder()
         .cellsUsed(cs.loadVarUInteger(BigInteger.valueOf(3)))
         .bitsUsed(cs.loadVarUInteger(BigInteger.valueOf(3)))
-        .publicCellsUsed(cs.loadVarUInteger(BigInteger.valueOf(3)))
         .build();
   }
 }

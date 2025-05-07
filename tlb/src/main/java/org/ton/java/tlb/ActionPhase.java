@@ -26,7 +26,7 @@ import org.ton.java.cell.CellSlice;
  *   skipped_actions:uint16
  *   msgs_created:uint16
  *   action_list_hash:bits256
- *   tot_msg_size:StorageUsedShort
+ *   tot_msg_size:StorageUsed
  *   = TrActionPhase;
  *   </pre>
  */
