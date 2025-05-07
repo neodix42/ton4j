@@ -27,7 +27,7 @@ public class TonHashMap implements Serializable {
   public TonHashMap(int keySize, int maxMembers) {
     // Initialize with expected capacity to avoid resizing
     // Use initial capacity slightly larger than maxMembers to avoid rehashing
-    int initialCapacity = Math.max(16, (int)(maxMembers * 1.25));
+    int initialCapacity = Math.max(16, (int) (maxMembers * 1.25));
     elements = new LinkedHashMap<>(initialCapacity, 0.75f);
     this.keySize = keySize;
     this.maxMembers = maxMembers;
@@ -321,10 +321,9 @@ public class TonHashMap implements Serializable {
 
   // Cache log(2) value to avoid recalculating it
   private static final double LOG_2 = Math.log(2);
-  
+
   /**
-   * Optimized log2 calculation
-   * This is used frequently in dictionary operations
+   * Optimized log2 calculation This is used frequently in dictionary operations
    *
    * @param n The input value
    * @return log base 2 of n
@@ -353,8 +352,7 @@ public class TonHashMap implements Serializable {
   }
 
   /**
-   * Get a key by its index in the map
-   * Optimized version that uses an array for faster access
+   * Get a key by its index in the map Optimized version that uses an array for faster access
    *
    * @param index The index of the key to retrieve
    * @return The key at the specified index
@@ -363,19 +361,18 @@ public class TonHashMap implements Serializable {
     if (index < 0 || index >= elements.size()) {
       throw new Error("key not found at index " + index);
     }
-    
+
     // Convert to array for faster indexed access
     Object[] keys = elements.keySet().toArray();
     if (index < keys.length) {
-      return keys[(int)index];
+      return keys[(int) index];
     }
-    
+
     throw new Error("key not found at index " + index);
   }
 
   /**
-   * Get a value by its index in the map
-   * Optimized version that uses an array for faster access
+   * Get a value by its index in the map Optimized version that uses an array for faster access
    *
    * @param index The index of the value to retrieve
    * @return The value at the specified index
@@ -384,13 +381,13 @@ public class TonHashMap implements Serializable {
     if (index < 0 || index >= elements.size()) {
       throw new Error("value not found at index " + index);
     }
-    
+
     // Convert to array for faster indexed access
     Object[] values = elements.values().toArray();
     if (index < values.length) {
-      return values[(int)index];
+      return values[(int) index];
     }
-    
+
     throw new Error("value not found at index " + index);
   }
 
