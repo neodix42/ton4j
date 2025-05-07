@@ -24,7 +24,7 @@ public class TestBitStringPerformanceMemory {
   /** Tests the memory footprint of empty instances of both BitString and RealBitString. */
   @Test
   public void testEmptyInstanceMemoryFootprint() {
-    BitString bitString = new BitString(0);
+    BitString1 bitString = new BitString1(0);
     BitString realBitString = new BitString(0);
 
     long bitStringMemory = GraphLayout.parseInstance(bitString).totalSize();
@@ -77,7 +77,7 @@ public class TestBitStringPerformanceMemory {
   /** Tests memory consumption when performing typical operations on both implementations. */
   @Test
   public void testMemoryConsumptionWithTypicalOperations() {
-    BitString bitString = new BitString(1024);
+    BitString1 bitString = new BitString1(1024);
     BitString realBitString = new BitString(1024);
 
     log.info("Memory consumption with typical operations:");
@@ -194,7 +194,7 @@ public class TestBitStringPerformanceMemory {
   }
 
   /** Helper method to measure and log memory usage for both implementations. */
-  private void measureAndLog(String operation, BitString bitString, BitString realBitString) {
+  private void measureAndLog(String operation, BitString1 bitString, BitString realBitString) {
     long bitStringMemory = GraphLayout.parseInstance(bitString).totalSize();
     long realBitStringMemory = GraphLayout.parseInstance(realBitString).totalSize();
     double ratio = (double) bitStringMemory / realBitStringMemory;
