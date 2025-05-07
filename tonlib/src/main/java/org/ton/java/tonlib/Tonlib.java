@@ -1391,19 +1391,19 @@ public class Tonlib {
     }
   }
 
-  /** ETH->TON token bridges */
+  /** ETH-&gt;TON token bridges */
   public ConfigParams79 getConfigParam79() {
     return ConfigParams79.deserialize(
         CellSlice.beginParse(getConfigParam(getLast().getLast(), 79)));
   }
 
-  /** BNB->TON token bridges */
+  /** BNB-&gt;TON token bridges */
   public ConfigParams81 getConfigParam81() {
     return ConfigParams81.deserialize(
         CellSlice.beginParse(getConfigParam(getLast().getLast(), 81)));
   }
 
-  /** Polygon->TON token bridges */
+  /** Polygon-&gt;TON token bridges */
   public ConfigParams82 getConfigParam82() {
     try {
       return ConfigParams82.deserialize(

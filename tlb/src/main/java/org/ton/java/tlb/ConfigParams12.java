@@ -14,14 +14,14 @@ import org.ton.java.cell.TonHashMapE;
  *
  * <pre>
  * workchain#a6 enabled_since:uint32 actual_min_split:(## 8)
- *   min_split:(## 8) max_split:(## 8) { actual_min_split <= min_split }
+ *   min_split:(## 8) max_split:(## 8) { actual_min_split &lt;= min_split }
  *   basic:(## 1) active:Bool accept_msgs:Bool flags:(## 13) { flags = 0 }
  *   zerostate_root_hash:bits256 zerostate_file_hash:bits256
  *   version:uint32 format:(WorkchainFormat basic)
  *   = WorkchainDescr;
  *
  * workchain_v2#a7 enabled_since:uint32 actual_min_split:(## 8)
- *   min_split:(## 8) max_split:(## 8) { actual_min_split <= min_split }
+ *   min_split:(## 8) max_split:(## 8) { actual_min_split &lt;= min_split }
  *   basic:(## 1) active:Bool accept_msgs:Bool flags:(## 13) { flags = 0 }
  *   zerostate_root_hash:bits256 zerostate_file_hash:bits256
  *   version:uint32 format:(WorkchainFormat basic)

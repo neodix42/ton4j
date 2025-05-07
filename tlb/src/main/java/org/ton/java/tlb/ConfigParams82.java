@@ -20,7 +20,7 @@ import org.ton.java.cell.CellSlice;
  * jetton_bridge_params_v0#00 bridge_address:bits256 oracles_address:bits256 oracles:(HashmapE 256 uint256) state_flags:uint8 burn_bridge_fee:Coins = JettonBridgeParams;
  * jetton_bridge_params_v1#01 bridge_address:bits256 oracles_address:bits256 oracles:(HashmapE 256 uint256) state_flags:uint8 prices:^JettonBridgePrices external_chain_address:bits256 = JettonBridgeParams;
  *
- * _ JettonBridgeParams = ConfigParam 82; // Polygon->TON token bridge
+ * _ JettonBridgeParams = ConfigParam 82; // Polygon-&gt;TON token bridge
  * </pre>
  */
 @Builder

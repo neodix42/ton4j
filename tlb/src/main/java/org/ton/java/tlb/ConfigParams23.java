@@ -11,8 +11,8 @@ import org.ton.java.cell.CellSlice;
  *
  *
  * <pre>
- * param_limits#c3 underload:# soft_limit:# { underload <= soft_limit }
- *   hard_limit:# { soft_limit <= hard_limit } = ParamLimits;
+ * param_limits#c3 underload:# soft_limit:# { underload &lt;= soft_limit }
+ *   hard_limit:# { soft_limit &lt;= hard_limit } = ParamLimits;
  *
  * block_limits#5d bytes:ParamLimits gas:ParamLimits lt_delta:ParamLimits
  *   = BlockLimits;
