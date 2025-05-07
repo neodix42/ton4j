@@ -1,6 +1,7 @@
 package org.ton.java.utils;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.ton.java.utils.CryptoUtils.HIGH_S;
 import static org.ton.java.utils.Utils.*;
 
 import java.math.BigDecimal;

@@ -32,28 +32,28 @@ public class TestAddress {
     Address address04 = Address.of(TEST_ADDRESS_0);
     assertThat(address04.toString(true, true, false))
         .isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
-    assertThat(address04.isBounceable).isFalse();
+    assertThat(address04.isBounceable()).isFalse();
 
     Address address05 = Address.of(TEST_ADDRESS_0);
     assertThat(address05.toString(true, true, true)).isEqualTo(TEST_ADDRESS_1);
-    assertThat(address05.isBounceable).isFalse();
+    assertThat(address05.isBounceable()).isFalse();
 
     Address address06 = Address.of(TEST_ADDRESS_0);
     assertThat(address06.toString(false)).isEqualTo(TEST_ADDRESS_3);
-    assertThat(address06.isBounceable).isFalse();
+    assertThat(address06.isBounceable()).isFalse();
 
     Address address07 = Address.of(TEST_ADDRESS_1);
     assertThat(address07.toString(true, true, false))
         .isEqualTo("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO");
-    assertThat(address07.isBounceable).isTrue();
+    assertThat(address07.isBounceable()).isTrue();
 
     Address address08 = Address.of(TEST_ADDRESS_1);
     assertThat(address08.toString(true, true, true)).isEqualTo(TEST_ADDRESS_1);
-    assertThat(address08.isBounceable).isTrue();
+    assertThat(address08.isBounceable()).isTrue();
 
     Address address09 = Address.of(TEST_ADDRESS_1);
     assertThat(address09.toString(false)).isEqualTo(TEST_ADDRESS_3);
-    assertThat(address09.isBounceable).isTrue();
+    assertThat(address09.isBounceable()).isTrue();
 
     Address address10 = Address.of(TEST_ADDRESS_3);
     assertThat(address10.toString(true, true, false, true))
@@ -77,7 +77,7 @@ public class TestAddress {
     assertThat(address13.wc).isEqualTo((byte) -1);
 
     Address address14 = Address.of(TEST_ADDRESS_4);
-    assertThat(address14.isTestOnly).isTrue();
+    assertThat(address14.isTestOnly()).isTrue();
 
     assertThat(Address.isValid(TEST_ADDRESS_0)).isTrue();
     assertThat(Address.isValid(TEST_ADDRESS_1)).isTrue();
@@ -106,7 +106,7 @@ public class TestAddress {
     assertThat(a).isNotEqualTo(b);
 
     b = Address.of(TEST_ADDRESS_1);
-    assertThat(a).isNotEqualTo(b);
+    assertThat(a).isEqualTo(b); // same wc and hashes
   }
 
   /** Save address to file in 36-byte format */
@@ -132,10 +132,10 @@ public class TestAddress {
   @Test
   public void testIsWallet() {
 
-    assertThat(Address.of(TEST_ADDRESS_0).isWallet).isTrue();
+    assertThat(Address.of(TEST_ADDRESS_0).isWallet()).isTrue();
     //        assertThat(Address.of(TEST_ADDRESS_1).isWallet).isTrue();
-    assertThat(Address.of(TEST_ADDRESS_3).isWallet).isTrue();
+    assertThat(Address.of(TEST_ADDRESS_3).isWallet()).isTrue();
     //        assertThat(Address.of(TEST_ADDRESS_4).isWallet).isTrue();
-    assertThat(Address.of(TEST_ADDRESS_5).isWallet).isTrue();
+    assertThat(Address.of(TEST_ADDRESS_5).isWallet()).isTrue();
   }
 }

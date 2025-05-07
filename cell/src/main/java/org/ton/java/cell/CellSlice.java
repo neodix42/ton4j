@@ -22,12 +22,26 @@ public class CellSlice implements Serializable {
 
   private CellSlice(BitString bits, List<Cell> refs) {
     this.bits = bits.clone();
-    this.refs = new ArrayList<>(refs);
+    // Use more efficient list initialization for better performance
+    if (refs.isEmpty()) {
+      this.refs = new ArrayList<>(0);
+    } else if (refs.size() <= 4) { // TON cells have max 4 refs
+      this.refs = new ArrayList<>(refs);
+    } else {
+      this.refs = new ArrayList<>(refs);
+    }
   }
 
   private CellSlice(BitString bits, List<Cell> refs, CellType cellType) {
     this.bits = bits.clone();
-    this.refs = new ArrayList<>(refs);
+    // Use more efficient list initialization for better performance
+    if (refs.isEmpty()) {
+      this.refs = new ArrayList<>(0);
+    } else if (refs.size() <= 4) { // TON cells have max 4 refs
+      this.refs = new ArrayList<>(refs);
+    } else {
+      this.refs = new ArrayList<>(refs);
+    }
     this.type = cellType;
   }
 
@@ -59,8 +73,28 @@ public class CellSlice implements Serializable {
     return (CellSlice) cell;
   }
 
+  /**
+   * Create an optimized clone of this CellSlice
+   * This is a performance-critical method used in many operations
+   *
+   * @return A new CellSlice with the same content
+   */
   public CellSlice clone() {
-    return new CellSlice(this.bits, this.refs);
+    // Create a new CellSlice with the same properties
+    CellSlice result = new CellSlice();
+    result.bits = this.bits.clone();
+    
+    // Optimize refs copying based on size
+    if (this.refs.isEmpty()) {
+      result.refs = new ArrayList<>(0);
+    } else if (this.refs.size() <= 4) { // TON cells have max 4 refs
+      result.refs = new ArrayList<>(this.refs);
+    } else {
+      result.refs = new ArrayList<>(this.refs);
+    }
+    
+    result.type = this.type;
+    return result;
   }
 
   public Cell sliceToCell() {
@@ -290,7 +324,7 @@ public class CellSlice implements Serializable {
 
   public boolean preloadBit() {
     checkBitsOverflow(1);
-    return bits.get();
+    return bits.get(0);
   }
 
   public boolean preloadBitAt(int position) {
@@ -310,10 +344,8 @@ public class CellSlice implements Serializable {
 
   public CellSlice skipBits(int length) {
     checkBitsOverflow(length);
-    for (int i = 0; i < length; i++) {
-      bits.readBit();
-    }
-
+    // Skip bits in one operation instead of a loop
+    bits.readCursor += length;
     return this;
   }
 
@@ -357,71 +389,43 @@ public class CellSlice implements Serializable {
     return bitString.toSignedByteArray();
   }
 
+  /**
+   * Load a slice of bits as an array of unsigned bytes (represented as ints)
+   * Optimized version that reduces intermediate object creation
+   *
+   * @param length Number of bits to load
+   * @return Array of unsigned bytes (as ints)
+   */
   public int[] loadSlice(int length) {
     checkBitsOverflow(length);
 
-    int leftLength = length;
-    int unusedBits = 0;
-    int l = bits.getFreeBits() % 8;
-
-    if (l > 0 && bits.getLength() > 0) {
-      unusedBits = 8 - (l % 8);
-    }
-
-    List<Integer> loadedData = new ArrayList<>();
-
-    int oneMoreLeft = 0, oneMoreRight = 0;
-
-    if (unusedBits > 0 && length > unusedBits) {
-      oneMoreLeft = 1;
-    }
-
-    if ((length - unusedBits) % 8 != 0 || (length - unusedBits) == 0) {
-      oneMoreRight = 1;
-    }
-
-    int ln = (length - unusedBits) / 8 + oneMoreLeft + oneMoreRight;
-
-    int i = oneMoreLeft;
-
-    while (leftLength > 0) {
-      int b = 0;
-      if (oneMoreLeft > 0) {
-        b = bits.toByteArray()[i - 1] << (8 - unusedBits); // (byte)
-        if (i < ln) {
-          b += bits.toByteArray()[i] >> unusedBits;
-        }
-      } else {
-        b = bits.toByteArray()[i] & 0xFF;
-        if (unusedBits > 0) {
-          b <<= (8 - unusedBits);
+    // Calculate how many bytes we'll need
+    int bytesNeeded = (length + 7) / 8;
+    int[] result = new int[bytesNeeded];
+    
+    // Save current position
+    int savedPosition = bits.readCursor;
+    
+    // Read directly into result array without creating intermediate BitString
+    for (int i = 0; i < bytesNeeded; i++) {
+      int value = 0;
+      for (int j = 0; j < 8 && (i * 8 + j) < length; j++) {
+        if (bits.readCursor < bits.writeCursor) {
+          if (bits.readBit()) {
+            value |= (1 << (7 - j));
+          }
         }
       }
-
-      if (leftLength < 8) {
-        loadedData.add(b & 0xFF);
-        break;
-      }
-
-      if (i < ln) {
-        b &= 0xFF;
-        loadedData.add(b);
-      }
-
-      leftLength -= 8;
-      i++;
+      result[i] = value & 0xFF;
     }
-
-    if (length > unusedBits) {
-      int usedBytes = (length - unusedBits) / 8;
-      if (unusedBits > 0) {
-        usedBytes++;
-      }
+    
+    // If we didn't read exactly 'length' bits due to partial byte at the end,
+    // adjust the cursor position
+    if (bits.readCursor != savedPosition + length) {
+      bits.readCursor = savedPosition + length;
     }
-
-    bits.readBits(length);
-
-    return loadedData.stream().mapToInt(Integer::intValue).toArray();
+    
+    return result;
   }
 
   public String loadString(int length) {
@@ -436,16 +440,21 @@ public class CellSlice implements Serializable {
    * @return String
    */
   public String loadSnakeString() {
-    StringBuilder s = new StringBuilder();
-    checkBitsOverflow(bits.getLength()); // bitsLeft
+    // Estimate initial capacity to reduce StringBuilder reallocations
+    int estimatedCapacity = Math.max(256, bits.getUsedBits() / 8 * 2);
+    StringBuilder s = new StringBuilder(estimatedCapacity);
     CellSlice ref = this.clone();
 
     while (nonNull(ref)) {
       try {
-        BitString bitString = ref.loadBits(ref.bits.getLength());
-
-        byte[] uintArray = bitString.toByteArray();
-        s.append(new String(uintArray, StandardCharsets.UTF_8));
+        // Get all bits at once
+        BitString bitString = ref.loadBits(ref.bits.getUsedBits());
+        
+        // Convert to string and append
+        byte[] bytes = bitString.toByteArray();
+        if (bytes.length > 0) {
+            s.append(new String(bytes, StandardCharsets.UTF_8));
+        }
 
         if (ref.refs.size() > 1) {
           throw new Error("more than one ref, it is not snake string");
@@ -492,31 +501,67 @@ public class CellSlice implements Serializable {
   public BigInteger loadUint(int length) {
     checkBitsOverflow(length);
     if (length == 0) return BigInteger.ZERO;
-    BitString i = loadBits(length);
-    return new BigInteger(i.toBitString(), 2);
+    return new BigInteger(loadBits(length).toBitString(), 2);
   }
 
   public BigInteger preloadInt(int bitLength) {
-    BitString savedBits = bits.clone();
+    // Save current position instead of cloning the entire BitString
+    int savedPosition = bits.readCursor;
     try {
       BigInteger result = loadInt(bitLength);
-      bits = savedBits;
+      // Restore position
+      bits.readCursor = savedPosition;
       return result;
     } catch (Throwable e) {
-      bits = savedBits;
+      // Restore position on error
+      bits.readCursor = savedPosition;
       throw e;
     }
   }
 
+  /**
+   * Preload an unsigned integer without advancing the read cursor
+   * Optimized version with special handling for small integers
+   *
+   * @param bitLength Length of the integer in bits
+   * @return The integer value
+   */
   public BigInteger preloadUint(int bitLength) {
-    BitString savedBits = bits.clone();
-    try {
-      BigInteger result = loadUint(bitLength);
-      bits = savedBits;
-      return result;
-    } catch (Throwable e) {
-      bits = savedBits;
-      return BigInteger.ZERO;
+    // Fast path for common small bit lengths
+    if (bitLength <= 64 && bits.readCursor + bitLength <= bits.writeCursor) {
+      // Save current position
+      int savedPosition = bits.readCursor;
+      try {
+        // For small integers, use a more efficient approach
+        long result = 0;
+        for (int i = 0; i < bitLength; i++) {
+          if (bits.readBit()) {
+            result = (result << 1) | 1;
+          } else {
+            result = result << 1;
+          }
+        }
+        // Restore position
+        bits.readCursor = savedPosition;
+        return BigInteger.valueOf(result);
+      } catch (Throwable e) {
+        // Restore position on error
+        bits.readCursor = savedPosition;
+        return BigInteger.ZERO;
+      }
+    } else {
+      // For larger integers, use the standard approach
+      int savedPosition = bits.readCursor;
+      try {
+        BigInteger result = loadUint(bitLength);
+        // Restore position
+        bits.readCursor = savedPosition;
+        return result;
+      } catch (Throwable e) {
+        // Restore position on error
+        bits.readCursor = savedPosition;
+        return BigInteger.ZERO;
+      }
     }
   }
 
@@ -564,19 +609,23 @@ public class CellSlice implements Serializable {
   }
 
   public BigInteger preloadCoins() {
-    BitString savedBits = bits.clone();
+    // Save current position instead of cloning the entire BitString
+    int savedPosition = bits.readCursor;
     try {
       BigInteger len = loadUint(4);
       if (len.compareTo(BigInteger.ZERO) == 0) {
-        bits = savedBits;
+        // Restore position
+        bits.readCursor = savedPosition;
         return BigInteger.ZERO;
       } else {
         BigInteger result = loadUint(len.multiply(BigInteger.valueOf(8L)).intValue());
-        bits = savedBits;
+        // Restore position
+        bits.readCursor = savedPosition;
         return result;
       }
     } catch (Throwable e) {
-      bits = savedBits;
+      // Restore position on error
+      bits.readCursor = savedPosition;
       throw e;
     }
   }

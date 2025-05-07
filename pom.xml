@@ -20,7 +20,6 @@
         <module>tl</module>
         <module>emulator</module>
         <module>liteclient</module>
-        <module>tweetnacljava</module>
         <module>tonconnect</module>
         <module>fift</module>
         <module>func</module>
@@ -54,6 +53,7 @@
         <log4j.version>2.17.1</log4j.version>
         <zip4j.version>2.11.3</zip4j.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
+        <tweetnacl.version>1.1.2</tweetnacl.version>
     </properties>
 
     <name>ton4j parent module</name>
@@ -149,6 +149,11 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.purejava</groupId>
+                <artifactId>tweetnacl-java</artifactId>
+                <version>${tweetnacl.version}</version>
             </dependency>
         </dependencies>
 

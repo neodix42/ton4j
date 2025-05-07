@@ -160,6 +160,22 @@ public class WalletV3R2 implements Contract {
     return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
   }
 
+  public Message prepareDeployMsg() {
+
+    Cell body = createDeployMessage();
+
+    return Message.builder()
+        .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
+        .init(getStateInit())
+        .body(
+            CellBuilder.beginCell()
+                .storeBytes(
+                    Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
+                .storeCell(body)
+                .endCell())
+        .build();
+  }
+
   public Message prepareDeployMsg(byte[] signedBodyHash) {
     Cell body = createDeployMessage();
     return Message.builder()

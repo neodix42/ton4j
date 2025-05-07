@@ -38,6 +38,7 @@ public class TestCellSerialization {
   public void testCellSerialization0() {
 
     Cell c1 = CellBuilder.beginCell().storeUint(42, 7).endCell();
+    log.info("c1 {}", c1.toString());
     Cell c2 = CellBuilder.beginCell().storeUint(12, 8).storeRef(c1).endCell();
     Cell c3 = CellBuilder.beginCell().storeUint(13, 8).storeRef(c1).storeRef(c2).endCell();
     log.info("c1-hash: {}", Utils.bytesToHex(c1.hash()));

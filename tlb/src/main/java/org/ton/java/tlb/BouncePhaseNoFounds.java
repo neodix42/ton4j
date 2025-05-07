@@ -13,7 +13,7 @@ import org.ton.java.cell.CellSlice;
  *
  * <pre>
  * tr_phase_bounce_nofunds$01
- *   msg_size:StorageUsedShort
+ *   msg_size:StorageUsed
  *   req_fwd_fees:Grams = TrBouncePhase;
  *   </pre>
  */
@@ -21,7 +21,7 @@ import org.ton.java.cell.CellSlice;
 @Data
 public class BouncePhaseNoFounds implements BouncePhase, Serializable {
   int magic;
-  StorageUsedShort msgSize;
+  StorageUsed msgSize;
   BigInteger reqFwdFees;
 
   private String getMagic() {
@@ -43,7 +43,7 @@ public class BouncePhaseNoFounds implements BouncePhase, Serializable {
         : "BouncePhaseNoFounds: magic not equal to 0b01, found 0x" + Long.toHexString(magic);
 
     return BouncePhaseNoFounds.builder()
-        .msgSize(StorageUsedShort.deserialize(cs))
+        .msgSize(StorageUsed.deserialize(cs))
         .reqFwdFees(cs.loadCoins())
         .build();
   }

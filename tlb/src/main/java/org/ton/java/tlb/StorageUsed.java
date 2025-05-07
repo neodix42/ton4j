@@ -14,8 +14,7 @@ import org.ton.java.cell.CellSlice;
  * <pre>
  * storage_used$_
  *   cells:(VarUInteger 7)
- *   bits:(VarUInteger 7)
- *   public_cells:(VarUInteger 7) = StorageUsed;
+ *   bits:(VarUInteger 7) = StorageUsed;
  *   </pre>
  */
 @Builder

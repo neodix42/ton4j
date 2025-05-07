@@ -46,7 +46,7 @@ public class ActionPhase implements Serializable {
   long skippedActions;
   long messagesCreated;
   BigInteger actionListHash;
-  StorageUsedShort totalMsgSize;
+  StorageUsed totalMsgSize;
 
   private String getActionListHash() {
     return actionListHash.toString(16);
@@ -86,7 +86,7 @@ public class ActionPhase implements Serializable {
         .skippedActions(cs.loadUint(16).longValue())
         .messagesCreated(cs.loadUint(16).longValue())
         .actionListHash(cs.loadUint(256))
-        .totalMsgSize(StorageUsedShort.deserialize(cs))
+        .totalMsgSize(StorageUsed.deserialize(cs))
         .build();
   }
 }

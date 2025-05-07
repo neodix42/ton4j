@@ -2,8 +2,10 @@ package org.ton.java.utils;
 
 import java.util.zip.Checksum;
 
-// poly 0x1EDC6F41
-
+/**
+ * CRC32C implementation with polynomial 0x1EDC6F41
+ * Optimized for performance with direct table lookup and loop unrolling
+ */
 public final class CRC32C implements Checksum {
 
     // Full provided lookup table
@@ -51,16 +53,37 @@ public final class CRC32C implements Checksum {
 
     @Override
     public void update(byte[] b, int off, int len) {
-        for (int i = off; i < off + len; i++) {
+        // Optimization: Process bytes in chunks of 8 when possible
+        int crc = this.crc;
+        int i = off;
+        
+        // Process bytes in chunks of 8 for better performance
+        final int unrollLimit = off + len - 7;
+        while (i < unrollLimit) {
             crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b[i]) & 0xff];
+            crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b[i+1]) & 0xff];
+            crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b[i+2]) & 0xff];
+            crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b[i+3]) & 0xff];
+            crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b[i+4]) & 0xff];
+            crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b[i+5]) & 0xff];
+            crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b[i+6]) & 0xff];
+            crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b[i+7]) & 0xff];
+            i += 8;
         }
+        
+        // Process remaining bytes
+        while (i < off + len) {
+            crc = (crc >>> 8) ^ LOOKUP_TABLE[(crc ^ b[i]) & 0xff];
+            i++;
+        }
+        
+        this.crc = crc;
     }
 
     @Override
     public long getValue() {
         return crc ^ 0xffffffff;
     }
-
 
     @Override
     public void reset() {
