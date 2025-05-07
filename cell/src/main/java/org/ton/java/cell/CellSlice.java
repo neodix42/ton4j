@@ -445,15 +445,13 @@ public class CellSlice implements Serializable {
    */
   public String loadSnakeString() {
     StringBuilder s = new StringBuilder();
-    //    checkBitsOverflow(bits.getLength()); // bitsLeft
     CellSlice ref = this.clone();
 
     while (nonNull(ref)) {
       try {
         BitString bitString = ref.loadBits(ref.bits.getUsedBits());
 
-        byte[] uintArray = bitString.toByteArray();
-        s.append(new String(uintArray, StandardCharsets.UTF_8));
+        s.append(new String(bitString.toByteArray(), StandardCharsets.UTF_8));
 
         if (ref.refs.size() > 1) {
           throw new Error("more than one ref, it is not snake string");
@@ -500,8 +498,7 @@ public class CellSlice implements Serializable {
   public BigInteger loadUint(int length) {
     checkBitsOverflow(length);
     if (length == 0) return BigInteger.ZERO;
-    BitString i = loadBits(length);
-    return new BigInteger(i.toBitString(), 2);
+    return new BigInteger(loadBits(length).toBitString(), 2);
   }
 
   public BigInteger preloadInt(int bitLength) {

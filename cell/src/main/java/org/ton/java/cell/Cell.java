@@ -78,7 +78,7 @@ public class Cell implements Serializable {
   }
 
   public Cell(BitString bits, List<Cell> refs) {
-    this.bits = new BitString(bits.getLength());
+    this.bits = new BitString(bits.getUsedBits());
     this.bits.writeBitString(bits.clone());
     this.refs = new ArrayList<>(refs);
     this.exotic = false;
@@ -87,7 +87,7 @@ public class Cell implements Serializable {
   }
 
   public Cell(BitString bits, List<Cell> refs, int cellType) {
-    this.bits = new BitString(bits.getLength());
+    this.bits = new BitString(bits.getUsedBits());
     this.bits.writeBitString(bits.clone());
     this.refs = new ArrayList<>(refs);
     this.exotic = false;
