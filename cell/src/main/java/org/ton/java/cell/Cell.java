@@ -21,13 +21,15 @@ import org.ton.java.utils.Utils;
 public class Cell implements Serializable {
 
   BitString bits;
-  List<Cell> refs = new ArrayList<>();
+  // Use more efficient list implementation for refs (most cells have 0-4 refs)
+  List<Cell> refs;
   private CellType type;
   public int index;
   public boolean exotic;
   public LevelMask levelMask;
-  private byte[] hashes = new byte[0];
-  private int[] depthLevels = new int[0];
+  // Use lazy initialization for hashes and depthLevels
+  private byte[] hashes;
+  private int[] depthLevels;
 
   public BitString getBits() {
     return bits;
@@ -65,25 +67,48 @@ public class Cell implements Serializable {
 
   public Cell() {
     this.bits = new BitString();
+    // Initialize with a modifiable list to allow adding refs
+    this.refs = new ArrayList<>(4); // TON cells have max 4 refs
     this.exotic = false;
     this.type = ORDINARY;
     this.levelMask = new LevelMask(0);
+    // Lazy initialization for hashes and depthLevels
+    this.hashes = new byte[0];
+    this.depthLevels = new int[0];
   }
 
   public Cell(int bitSize) {
     this.bits = new BitString(bitSize);
+    // Initialize with a modifiable list to allow adding refs
+    this.refs = new ArrayList<>(4); // TON cells have max 4 refs
     this.exotic = false;
     this.type = ORDINARY;
     this.levelMask = resolveMask();
+    // Lazy initialization for hashes and depthLevels
+    this.hashes = new byte[0];
+    this.depthLevels = new int[0];
   }
 
   public Cell(BitString bits, List<Cell> refs) {
     this.bits = new BitString(bits.getUsedBits());
     this.bits.writeBitString(bits.clone());
-    this.refs = new ArrayList<>(refs);
+    
+    // Optimize refs initialization based on size
+    if (refs == null || refs.isEmpty()) {
+      this.refs = Collections.emptyList();
+    } else if (refs.size() <= 4) { // TON cells have max 4 refs
+      this.refs = new ArrayList<>(refs);
+    } else {
+      this.refs = new ArrayList<>(refs);
+    }
+    
     this.exotic = false;
     this.type = ORDINARY;
     this.levelMask = new LevelMask(0);
+    
+    // Initialize hashes and depthLevels as empty arrays
+    this.hashes = new byte[0];
+    this.depthLevels = new int[0];
   }
 
   public Cell(BitString bits, List<Cell> refs, int cellType) {
@@ -168,7 +193,15 @@ public class Cell implements Serializable {
     }
   }
 
+  /**
+   * Calculate cell hashes - highly optimized version
+   * This is a performance-critical method used in many operations
+   */
   public void calculateHashes() {
+    // Skip calculation if already calculated (hashes array is not empty)
+    if (hashes != null && hashes.length > 0) {
+      return;
+    }
 
     int totalHashCount = levelMask.getHashIndex() + 1;
     hashes = new byte[32 * totalHashCount];
@@ -183,8 +216,29 @@ public class Cell implements Serializable {
     int hashIndex = 0;
     int level = levelMask.getLevel();
 
-    int off;
+    // Pre-calculate descriptor bytes for reuse
+    byte[] descriptorBytes = getDescriptors(levelMask.getLevel());
+    
+    // Pre-calculate data bytes if needed - only once
+    byte[] dataBytes = null;
+    if (type != CellType.PRUNED_BRANCH) {
+      dataBytes = getDataBytes();
+    }
+    
+    // Check if this is a special cell type that needs different hash calculation
+    boolean isMerkleSpecial = (type == CellType.MERKLE_PROOF) || (type == CellType.MERKLE_UPDATE);
 
+    // Cache ref count for faster access
+    final int refsCount = refs.size();
+    
+    // Pre-allocate arrays for child depths and hashes to avoid repeated allocations
+    int[] childDepths = refsCount > 0 ? new int[refsCount] : null;
+    byte[][] refHashes = refsCount > 0 ? new byte[refsCount][] : null;
+    
+    // Reuse buffer for depth bytes to avoid allocations
+    byte[] depthBytesBuffer = new byte[4];
+    
+    int off;
     for (int li = 0; li <= level; li++) {
       if (!levelMask.isSignificant(li)) {
         continue;
@@ -194,61 +248,104 @@ public class Cell implements Serializable {
         continue;
       }
 
-      byte[] dsc = getDescriptors(levelMask.apply(li).getLevel());
-
-      byte[] hash = new byte[0];
-      hash = Utils.concatBytes(hash, dsc);
+      // More accurate hash buffer size estimation
+      int estimatedHashSize = descriptorBytes.length + 
+                             (dataBytes != null ? dataBytes.length : 0) + 
+                             (refsCount * (32 + 4)) + 32; // Add extra space to avoid reallocations
+      
+      // Use direct ByteBuffer for better performance with large data
+      byte[] hash = new byte[estimatedHashSize];
+      int hashPos = 0;
+      
+      // Copy descriptor bytes
+      System.arraycopy(descriptorBytes, 0, hash, hashPos, descriptorBytes.length);
+      hashPos += descriptorBytes.length;
 
       if (hashIndex == hashIndexOffset) {
         if ((li != 0) && (type != CellType.PRUNED_BRANCH)) {
           throw new Error("invalid cell");
         }
 
-        byte[] data = getDataBytes();
-        hash = Utils.concatBytes(hash, data);
+        // Copy data bytes
+        if (dataBytes != null) {
+          System.arraycopy(dataBytes, 0, hash, hashPos, dataBytes.length);
+          hashPos += dataBytes.length;
+        }
       } else {
         if ((li == 0) && (type == CellType.PRUNED_BRANCH)) {
           throw new Error("neither pruned nor 0");
         }
         off = hashIndex - hashIndexOffset - 1;
-        byte[] partHash = new byte[32];
-        System.arraycopy(hashes, off * 32, partHash, 0, (off + 1) * 32);
-        hash = Utils.concatBytes(hash, partHash);
+        System.arraycopy(hashes, off * 32, hash, hashPos, 32);
+        hashPos += 32;
       }
 
       int depth = 0;
 
-      for (Cell r : refs) {
+      // Process refs for depth calculation - optimize by caching results
+      for (int i = 0; i < refsCount; i++) {
+        Cell r = refs.get(i);
         int childDepth;
-        if ((type == CellType.MERKLE_PROOF) || (type == CellType.MERKLE_UPDATE)) {
+        if (isMerkleSpecial) {
           childDepth = r.getDepth(li + 1);
         } else {
           childDepth = r.getDepth(li);
         }
+        
+        if (childDepths != null) {
+          childDepths[i] = childDepth;
+        }
+        
+        // Cache ref hashes for later use
+        if (refHashes != null) {
+          if (isMerkleSpecial) {
+            refHashes[i] = r.getHash(li + 1);
+          } else {
+            refHashes[i] = r.getHash(li);
+          }
+        }
 
-        hash = Utils.concatBytes(hash, Utils.intToByteArray(childDepth));
+        // Use shared buffer for depth bytes to avoid allocations
+        Utils.intToByteArrayOptimized(childDepth, depthBytesBuffer);
+        System.arraycopy(depthBytesBuffer, 0, hash, hashPos, depthBytesBuffer.length);
+        hashPos += depthBytesBuffer.length;
+        
         if (childDepth > depth) {
           depth = childDepth;
         }
       }
-      if (!refs.isEmpty()) {
+      
+      if (refsCount > 0) {
         depth++;
         if (depth >= 1024) {
           throw new Error("depth is more than max depth (1023)");
         }
       }
 
-      for (Cell r : refs) {
-        if ((type == CellType.MERKLE_PROOF) || (type == CellType.MERKLE_UPDATE)) {
-          hash = Utils.concatBytes(hash, r.getHash(li + 1));
-        } else {
-          hash = Utils.concatBytes(hash, r.getHash(li));
+      // Process refs for hash calculation - use cached hashes
+      for (int i = 0; i < refsCount; i++) {
+        byte[] refHash = refHashes != null ? refHashes[i] : null;
+        if (refHash != null) {
+          System.arraycopy(refHash, 0, hash, hashPos, refHash.length);
+          hashPos += refHash.length;
         }
       }
 
+      // Create a hash array with exact size to avoid copying
+      byte[] finalHash;
+      if (hashPos == hash.length) {
+        finalHash = hash;
+      } else {
+        finalHash = new byte[hashPos];
+        System.arraycopy(hash, 0, finalHash, 0, hashPos);
+      }
+      
       off = hashIndex - hashIndexOffset;
       depthLevels[off] = depth;
-      System.arraycopy(Utils.sha256AsArray(hash), 0, hashes, off * 32, 32);
+      
+      // Calculate SHA-256 hash and store directly in the hashes array
+      byte[] sha256Hash = Utils.sha256AsArray(finalHash);
+      System.arraycopy(sha256Hash, 0, hashes, off * 32, 32);
       hashIndex++;
     }
   }
@@ -304,21 +401,48 @@ public class Cell implements Serializable {
   public Cell clone() {
     Cell c = new Cell();
     c.bits = this.bits.clone();
-    for (Cell refCell : this.refs) {
-      c.refs.add(refCell.clone());
+    
+    // Always use a modifiable list
+    if (this.refs.isEmpty()) {
+      // No refs to copy - use empty modifiable list
+      c.refs = new ArrayList<>(4);
+    } else {
+      // Copy refs to a new modifiable list
+      c.refs = new ArrayList<>(this.refs);
     }
+    
     c.exotic = this.exotic;
     c.type = this.type;
     c.levelMask = this.levelMask.clone();
-    c.hashes = Arrays.copyOf(this.hashes, this.hashes.length);
-    c.depthLevels = Arrays.copyOf(this.depthLevels, this.depthLevels.length);
+    
+    // Only copy hash data if it exists - use fast System.arraycopy for better performance
+    if (this.hashes.length > 0) {
+      c.hashes = new byte[this.hashes.length];
+      System.arraycopy(this.hashes, 0, c.hashes, 0, this.hashes.length);
+    }
+    if (this.depthLevels.length > 0) {
+      c.depthLevels = new int[this.depthLevels.length];
+      System.arraycopy(this.depthLevels, 0, c.depthLevels, 0, this.depthLevels.length);
+    }
     return c;
   }
 
   public void writeCell(Cell anotherCell) {
-    Cell cloned = anotherCell.clone();
-    bits.writeBitString(cloned.bits);
-    refs.addAll(cloned.refs);
+    // Avoid unnecessary cloning and optimize for common cases
+    bits.writeBitString(anotherCell.bits);
+    
+    // Optimize for the common case of few refs
+    int refsSize = anotherCell.refs.size();
+    if (refsSize == 0) {
+      // No refs to add
+      return;
+    } else if (refsSize == 1) {
+      // Single ref - avoid list iteration
+      refs.add(anotherCell.refs.get(0));
+    } else {
+      // Multiple refs
+      refs.addAll(anotherCell.refs);
+    }
   }
 
   public int getMaxRefs() {

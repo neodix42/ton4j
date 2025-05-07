@@ -99,6 +99,17 @@ public class Utils {
   public static byte[] intToByteArray(int value) {
     return ByteUtils.intToByteArray(value);
   }
+  
+  /**
+   * Optimized version of intToByteArray that writes directly to an existing buffer
+   * This avoids creating a new byte array for each conversion
+   * 
+   * @param value The integer value to convert
+   * @param buffer The buffer to write to
+   */
+  public static void intToByteArrayOptimized(int value, byte[] buffer) {
+    ByteUtils.intToByteArrayOptimized(value, buffer);
+  }
 
   public static byte[] concatBytes(byte[] a, byte[] b) {
     return ByteUtils.concatBytes(a, b);

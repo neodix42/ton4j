@@ -253,6 +253,23 @@ public final class ByteUtils {
     }
     
     /**
+     * Optimized version of intToByteArray that writes directly to an existing buffer
+     * This avoids creating a new byte array for each conversion
+     * 
+     * @param value The integer value to convert
+     * @param buffer The buffer to write to
+     */
+    public static void intToByteArrayOptimized(int value, byte[] buffer) {
+        if (buffer == null || buffer.length < 4) {
+            throw new IllegalArgumentException("Buffer must be at least 4 bytes long");
+        }
+        buffer[0] = (byte) (value >>> 24);
+        buffer[1] = (byte) (value >>> 16);
+        buffer[2] = (byte) (value >>> 8);
+        buffer[3] = (byte) value;
+    }
+    
+    /**
      * Convert an int array to a hex string
      * @param raw The int array to convert
      * @return Hex string representation

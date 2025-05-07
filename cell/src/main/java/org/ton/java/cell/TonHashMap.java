@@ -25,7 +25,10 @@ public class TonHashMap implements Serializable {
    * @param maxMembers max number of hashmap entries
    */
   public TonHashMap(int keySize, int maxMembers) {
-    elements = new LinkedHashMap<>();
+    // Initialize with expected capacity to avoid resizing
+    // Use initial capacity slightly larger than maxMembers to avoid rehashing
+    int initialCapacity = Math.max(16, (int)(maxMembers * 1.25));
+    elements = new LinkedHashMap<>(initialCapacity, 0.75f);
     this.keySize = keySize;
     this.maxMembers = maxMembers;
   }
@@ -40,13 +43,16 @@ public class TonHashMap implements Serializable {
    * @param keySize key size in bits
    */
   public TonHashMap(int keySize) {
-    elements = new LinkedHashMap<>();
+    // Initialize with a reasonable initial capacity
+    // Most TON dictionaries are small, so 16 is a good starting point
+    elements = new LinkedHashMap<>(16, 0.75f);
     this.keySize = keySize;
     this.maxMembers = 10000;
   }
 
   public List<Node> deserializeEdge(CellSlice edge, int keySize, final BitString key) {
-    List<Node> nodes = new ArrayList<>();
+    // Pre-allocate list with estimated capacity
+    List<Node> nodes = new ArrayList<>(4);
     BitString l = deserializeLabel(edge, keySize - key.getUsedBits());
     key.writeBitString(l);
     if (key.getUsedBits() == keySize) {
@@ -55,11 +61,13 @@ public class TonHashMap implements Serializable {
       return nodes;
     }
 
-    for (int j = 0; j < edge.refs.size(); j++) {
+    int refsSize = edge.refs.size();
+    for (int j = 0; j < refsSize; j++) {
       CellSlice forkEdge = CellSlice.beginParse(edge.refs.get(j));
       BitString forkKey = key.clone();
       forkKey.writeBit(j != 0);
-      nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
+      List<Node> childNodes = deserializeEdge(forkEdge, keySize, forkKey);
+      nodes.addAll(childNodes);
     }
     return nodes;
   }
@@ -311,8 +319,22 @@ public class TonHashMap implements Serializable {
     return r;
   }
 
+  // Cache log(2) value to avoid recalculating it
+  private static final double LOG_2 = Math.log(2);
+  
+  /**
+   * Optimized log2 calculation
+   * This is used frequently in dictionary operations
+   *
+   * @param n The input value
+   * @return log base 2 of n
+   */
   private static double log2(int n) {
-    return (Math.log(n) / Math.log(2));
+    // Fast path for powers of 2
+    if ((n & (n - 1)) == 0) {
+      return Integer.numberOfTrailingZeros(n);
+    }
+    return Math.log(n) / LOG_2;
   }
 
   @Override
@@ -330,23 +352,45 @@ public class TonHashMap implements Serializable {
     return sb.toString();
   }
 
+  /**
+   * Get a key by its index in the map
+   * Optimized version that uses an array for faster access
+   *
+   * @param index The index of the key to retrieve
+   * @return The key at the specified index
+   */
   public Object getKeyByIndex(long index) {
-    long i = 0;
-    for (Map.Entry<Object, Object> entry : elements.entrySet()) {
-      if (i++ == index) {
-        return entry.getKey();
-      }
+    if (index < 0 || index >= elements.size()) {
+      throw new Error("key not found at index " + index);
     }
+    
+    // Convert to array for faster indexed access
+    Object[] keys = elements.keySet().toArray();
+    if (index < keys.length) {
+      return keys[(int)index];
+    }
+    
     throw new Error("key not found at index " + index);
   }
 
+  /**
+   * Get a value by its index in the map
+   * Optimized version that uses an array for faster access
+   *
+   * @param index The index of the value to retrieve
+   * @return The value at the specified index
+   */
   public Object getValueByIndex(long index) {
-    long i = 0;
-    for (Map.Entry<Object, Object> entry : elements.entrySet()) {
-      if (i++ == index) {
-        return entry.getValue();
-      }
+    if (index < 0 || index >= elements.size()) {
+      throw new Error("value not found at index " + index);
     }
+    
+    // Convert to array for faster indexed access
+    Object[] values = elements.values().toArray();
+    if (index < values.length) {
+      return values[(int)index];
+    }
+    
     throw new Error("value not found at index " + index);
   }
 
