@@ -48,14 +48,6 @@ public class TonHashMap implements Serializable {
   public List<Node> deserializeEdge(CellSlice edge, int keySize, final BitString key) {
     List<Node> nodes = new ArrayList<>();
     BitString l = deserializeLabel(edge, keySize - key.getUsedBits());
-    System.out.println(
-        l.toBitString()
-            + ", keySize "
-            + (keySize - key.getUsedBits())
-            + " , len "
-            + l.getLength()
-            + ", used "
-            + l.getUsedBits());
     key.writeBitString(l);
     if (key.getUsedBits() == keySize) {
       Cell value = CellBuilder.beginCell().storeSlice(edge).endCell();

@@ -181,7 +181,11 @@ public class BitString implements Serializable {
    * @param n int
    */
   void on(int n) {
-    array[(n / 8)] |= 1 << (7 - (n % 8));
+    try {
+      array[(n / 8)] |= (byte) (1 << (7 - (n % 8)));
+    } catch (Exception e) {
+      // ignore
+    }
   }
 
   /**
@@ -190,7 +194,11 @@ public class BitString implements Serializable {
    * @param n int
    */
   void off(int n) {
-    array[(n / 8)] &= ~(1 << (7 - (n % 8)));
+    try {
+      array[(n / 8)] &= (byte) ~(1 << (7 - (n % 8)));
+    } catch (Exception e) {
+      // ignore
+    }
   }
 
   /**
@@ -199,22 +207,12 @@ public class BitString implements Serializable {
    * @param n int
    */
   void toggle(int n) {
-    array[(n / 8)] ^= 1 << (7 - (n % 8));
+    try {
+      array[(n / 8)] ^= (byte) (1 << (7 - (n % 8)));
+    } catch (Exception e) {
+      // ignore
+    }
   }
-
-  /**
-   * Write bit and increase cursor
-   *
-   * @param b boolean
-   */
-  //  public void writeBit(boolean b) {
-  //    if (b) {
-  //      on(writeCursor);
-  //    } else {
-  //      off(writeCursor);
-  //    }
-  //    writeCursor++;
-  //  }
 
   public void writeBit(Boolean b) {
     if (b) {
@@ -468,26 +466,14 @@ public class BitString implements Serializable {
     return get(readCursor);
   }
 
-  //  /**
-  //   * Read one bit and moves readCursor forward by one position
-  //   *
-  //   * @return true or false
-  //   */
-  //  public boolean readBit() {
-  //    boolean result = get(readCursor);
-  //    readCursor++;
-  //    //        if (readCursor > writeCursor) {
-  //    //            throw new Error("Parse error: not enough bits. readCursor > writeCursor");
-  //    //        }
-  //    return result;
-  //  }
-
+  /**
+   * Read one bit and moves readCursor forward by one position
+   *
+   * @return Boolean
+   */
   public Boolean readBit() {
     Boolean result = get(readCursor);
     readCursor++;
-    //        if (readCursor > writeCursor) {
-    //            throw new Error("Parse error: not enough bits. readCursor > writeCursor");
-    //        }
     return result;
   }
 
