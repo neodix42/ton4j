@@ -181,7 +181,6 @@ public class BitString implements Serializable {
    * @param n int
    */
   void on(int n) {
-    checkRange(n);
     array[(n / 8)] |= 1 << (7 - (n % 8));
   }
 
@@ -191,7 +190,6 @@ public class BitString implements Serializable {
    * @param n int
    */
   void off(int n) {
-    //        checkRange(n);
     array[(n / 8)] &= ~(1 << (7 - (n % 8)));
   }
 
@@ -201,7 +199,6 @@ public class BitString implements Serializable {
    * @param n int
    */
   void toggle(int n) {
-    //    this.checkRange(n);
     array[(n / 8)] ^= 1 << (7 - (n % 8));
   }
 
