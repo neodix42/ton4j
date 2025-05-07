@@ -1,16 +1,11 @@
 package org.ton.java.tonlib.types;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import java.io.Serializable;
+import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
-import java.io.Serializable;
-
 @SuperBuilder
-@Setter
-@Getter
-@ToString
+@Data
 public class AccountAddressOnly implements Serializable {
-    String account_address;
+  String account_address;
 }

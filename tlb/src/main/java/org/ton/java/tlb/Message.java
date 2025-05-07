@@ -4,8 +4,10 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
+import org.ton.java.address.Address;
 import org.ton.java.cell.Cell;
 import org.ton.java.cell.CellBuilder;
 import org.ton.java.cell.CellSlice;
@@ -86,5 +88,21 @@ public class Message implements Serializable {
 
     message.setBody(body);
     return message;
+  }
+
+  public byte[] getNormalizedHash() {
+    return CellBuilder.beginCell()
+        .storeUint(0b10, 2)
+        .storeAddress(null)
+        .storeAddress(Address.of(info.getDestinationAddress()))
+        .storeCoins(BigInteger.ZERO)
+        .storeBit(false) // no import fee
+        .storeBit(true) // no state init
+        .storeRef( // body always in ref
+            isNull(body)
+                ? CellBuilder.beginCell().endCell()
+                : CellBuilder.beginCell().storeCell(body).endCell())
+        .endCell()
+        .getHash();
   }
 }

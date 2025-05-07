@@ -15,7 +15,7 @@ import org.ton.java.cell.CellSlice;
  *   burning_config#01
  *   blackhole_addr:(Maybe bits256)
  *   fee_burn_num:#
- *   fee_burn_denom:# { fee_burn_num <= fee_burn_denom } { fee_burn_denom >= 1 } = BurningConfig;
+ *   fee_burn_denom:# { fee_burn_num &lt;= fee_burn_denom } { fee_burn_denom &gt;= 1 } = BurningConfig;
  * _ BurningConfig = ConfigParam 5;
  * </pre>
  */

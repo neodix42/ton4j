@@ -15,9 +15,9 @@ import java.io.Serializable;
  *   max_validators:(## 16)
  *   max_main_validators:(## 16)
  *   min_validators:(## 16)
- *   { max_validators >= max_main_validators }
- *   { max_main_validators >= min_validators }
- *   { min_validators >= 1 }
+ *   { max_validators &gt;= max_main_validators }
+ *   { max_main_validators &gt;= min_validators }
+ *   { min_validators &gt;= 1 }
  *   = ConfigParam 16;
  *   </pre>
  */

@@ -11,11 +11,14 @@ import static java.util.Objects.nonNull;
 
 public class RunResultParser {
 
-    Gson customGson;
-
-    RunResultParser() {
+    // Static and final Gson instance to avoid recreation for each parser instance
+    private static final Gson customGson;
+    
+    // Static initialization of deserializers and Gson
+    static {
         GsonBuilder gsonBuilder = new GsonBuilder();
 
+        // Optimized deserializers with direct access to JSON elements
         JsonDeserializer<TvmStackEntryNumber> deserializerStackEntryNumber = (json, typeOfT, context) -> {
             JsonElement i2 = json.getAsJsonObject().get("number").getAsJsonObject();
             String i3 = i2.getAsJsonObject().get("number").getAsString();
@@ -38,11 +41,12 @@ public class RunResultParser {
         };
 
         JsonDeserializer<TvmStackEntryList> deserializerStackEntryList = (json, typeOfT, context) -> {
-            TvmList list = TvmList.builder().build();
-            TvmStackEntryList entryList = TvmStackEntryList.builder().build();
-            List<Object> elements = new ArrayList<>();
             JsonElement l = json.getAsJsonObject().get("list");
             JsonArray elementsArray = l.getAsJsonObject().getAsJsonArray("elements");
+            
+            // Pre-allocate the list with the exact size needed
+            List<Object> elements = nonNull(elementsArray) ? new ArrayList<>(elementsArray.size()) : new ArrayList<>(0);
+            
             if (nonNull(elementsArray)) {
                 for (int j = 0; j < elementsArray.size(); j++) {
                     JsonElement element = elementsArray.get(j);
@@ -50,17 +54,18 @@ public class RunResultParser {
                     elements.add(deserializeByType(elementType, element, context));
                 }
             }
-            list.setElements(elements);
-            entryList.setList(list);
-            return entryList;
+            
+            TvmList list = TvmList.builder().elements(elements).build();
+            return TvmStackEntryList.builder().list(list).build();
         };
 
         JsonDeserializer<TvmStackEntryTuple> deserializerStackEntryTuple = (json, typeOfT, context) -> {
-            TvmTuple tuple = TvmTuple.builder().build();
-            TvmStackEntryTuple entryList = TvmStackEntryTuple.builder().build();
-            List<Object> elements = new ArrayList<>();
             JsonElement l = json.getAsJsonObject().get("tuple");
             JsonArray elementsArray = l.getAsJsonObject().getAsJsonArray("elements");
+            
+            // Pre-allocate the list with the exact size needed
+            List<Object> elements = nonNull(elementsArray) ? new ArrayList<>(elementsArray.size()) : new ArrayList<>(0);
+            
             if (nonNull(elementsArray)) {
                 for (int j = 0; j < elementsArray.size(); j++) {
                     JsonElement element = elementsArray.get(j);
@@ -68,31 +73,31 @@ public class RunResultParser {
                     elements.add(deserializeByType(elementType, element, context));
                 }
             }
-            tuple.setElements(elements);
-            entryList.setTuple(tuple);
-            return entryList;
+            
+            TvmTuple tuple = TvmTuple.builder().elements(elements).build();
+            return TvmStackEntryTuple.builder().tuple(tuple).build();
         };
 
-
         JsonDeserializer<RunResult> deserializer = (json, typeOfT, context) -> {
-
-            List<Object> stack = new ArrayList<>();
-
             JsonObject jsonObject = json.getAsJsonObject();
             String el = jsonObject.get("@type").toString();
             if (!el.contains("smc.runResult")) {
                 throw new Error("malformed response from run_method");
             }
-            JsonElement stackList = jsonObject.get("stack");
+            
+            JsonArray stackArray = jsonObject.get("stack").getAsJsonArray();
+            // Pre-allocate the list with the exact size needed
+            List<Object> stack = new ArrayList<>(stackArray.size());
 
             BigInteger gasUsed = jsonObject.get("gas_used").getAsBigInteger();
             long exitCode = jsonObject.get("exit_code").getAsLong();
 
-            for (int i = 0; i < stackList.getAsJsonArray().size(); i++) {
-                JsonElement element = stackList.getAsJsonArray().get(i);
+            for (int i = 0; i < stackArray.size(); i++) {
+                JsonElement element = stackArray.get(i);
                 String elementType = element.getAsJsonObject().get("@type").getAsString();
                 stack.add(deserializeByType(elementType, element, context));
             }
+            
             return RunResult.builder()
                     .stack(stack)
                     .exit_code(exitCode)
@@ -107,7 +112,15 @@ public class RunResultParser {
         gsonBuilder.registerTypeAdapter(TvmStackEntryList.class, deserializerStackEntryList);
         gsonBuilder.registerTypeAdapter(TvmStackEntryTuple.class, deserializerStackEntryTuple);
 
-        customGson = gsonBuilder.setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
+        customGson = gsonBuilder
+                .setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL)
+                .disableHtmlEscaping()
+                .create();
+    }
+    
+    // No-args constructor - nothing to initialize as Gson is static
+    RunResultParser() {
+        // Empty constructor as all initialization is done in static block
     }
 
     public RunResult parse(String runMethodResult) {
@@ -122,7 +135,7 @@ public class RunResultParser {
         return result;
     }
 
-    private Object deserializeByType(String type, JsonElement jsonElement, JsonDeserializationContext context) {
+    private static Object deserializeByType(String type, JsonElement jsonElement, JsonDeserializationContext context) {
         Class<?> clazz;
         switch (type) {
             case "tvm.stackEntryNumber":
