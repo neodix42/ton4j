@@ -766,12 +766,10 @@ public class LiteClient {
     withBinaryCommand =
         new String[] {binaryPath, "-t", String.valueOf(timeout), "-C", pathToGlobalConfig, "-c"};
 
-    // String[] withBinaryCommand = {binaryPath, "-C", forked ?
-    // node.getNodeForkedGlobalConfigLocation() : node.getNodeGlobalConfigLocation(), "-c"};
     withBinaryCommand = ArrayUtils.addAll(withBinaryCommand, command);
 
     try {
-      log.debug("execute: " + String.join(" ", withBinaryCommand));
+      //      log.debug("execute: " + String.join(" ", withBinaryCommand));
 
       ExecutorService executorService = Executors.newSingleThreadExecutor();
 
