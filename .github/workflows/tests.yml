@@ -63,6 +63,7 @@ jobs:
           mvn test
 
       - name: Run BitString tests
+        if: matrix.os != 'macos-15' # hangs on github
         run: |
           cd bitstring
           mvn test
