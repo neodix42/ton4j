@@ -30,21 +30,17 @@ Notice, if you installed TON binaries using [package managers](https://github.co
 apt or chocolatey you can omit specifying path to a func executable and simply use it as follows:
 
 ```java
-TolkRunner tolkRunner=TolkRunner.builder().build();
+URL resource = TestTolkRunner.class.getResource("/test.tolk");
+File tolkFile = Paths.get(resource.toURI()).toFile();
+String absolutePath = tolkFile.getAbsolutePath();
+
+TolkRunner tolkRunner = TolkRunner.builder().tolkExecutablePath(Utils.getTolkGithubUrl()).build();
+
+String result=tolkRunner.run(tolkFile.getParent(),absolutePath);
+log.info("output: {}",result);
 ```
 
-```java
-URL resource=TestTolkRunner.class.getResource("/test.tolk");
-        File tolkFile=Paths.get(resource.toURI()).toFile();
-        String absolutePath=tolkFile.getAbsolutePath();
-
-        TolkRunner tolkRunner=TolkRunner.builder().tolkExecutablePath(Utils.getTolkGithubUrl()).build();
-
-        String result=tolkRunner.run(tolkFile.getParent(),absolutePath);
-        log.info("output: {}",result);
-```
-
-More examples in [TestTolkRunner](../func/src/test/java/org/ton/java/tolk/TestTolkRunner.java) class.
+More examples in [TestTolkRunner](../func/src/test/java/org/ton/ton4j/tolk/TestTolkRunner.java) class.
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/tolk

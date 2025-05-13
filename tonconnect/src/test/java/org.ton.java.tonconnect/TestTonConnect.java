@@ -1,4 +1,4 @@
-package org.ton.java.tonconnect;
+package org.ton.ton4j.tonconnect;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,13 +11,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.address.Address;
-import org.ton.java.cell.CellBuilder;
-import org.ton.java.smartcontract.types.WalletCodes;
-import org.ton.java.tlb.StateInit;
-import org.ton.java.tonlib.Tonlib;
-import org.ton.java.tonlib.types.RawAccountState;
-import org.ton.java.utils.Utils;
+import org.ton.ton4j.address.Address;
+import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.types.WalletCodes;
+import org.ton.ton4j.tlb.StateInit;
+import org.ton.ton4j.tonlib.Tonlib;
+import org.ton.ton4j.tonlib.types.RawAccountState;
+import org.ton.ton4j.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
