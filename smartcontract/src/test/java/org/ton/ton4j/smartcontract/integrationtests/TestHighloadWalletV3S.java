@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.faucet.TestnetJettonFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWalletV3S;
@@ -643,7 +644,7 @@ public class TestHighloadWalletV3S extends CommonTest {
       log.info("dest {} is {}", i, destinationAddress.toBounceable());
       OutAction outAction =
           ActionSendMsg.builder()
-              .mode((byte) 3)
+              .mode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS.getValue())
               .outMsg(
                   MessageRelaxed.builder()
                       .info(
@@ -665,7 +666,7 @@ public class TestHighloadWalletV3S extends CommonTest {
         body)) { // one of those N messages can contain internal message with other X recipients
       OutAction outAction =
           ActionSendMsg.builder()
-              .mode(3)
+              .mode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS.getValue())
               .outMsg(
                   MessageRelaxed.builder()
                       .info(
@@ -771,7 +772,7 @@ public class TestHighloadWalletV3S extends CommonTest {
                                     ))
                             .build()),
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
-            .mode(3)
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
 
     extMessageInfo = myHighLoadWalletV3.send(config);

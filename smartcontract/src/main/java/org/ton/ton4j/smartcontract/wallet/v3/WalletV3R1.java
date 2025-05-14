@@ -128,7 +128,11 @@ public class WalletV3R1 implements Contract {
                 : config.getValidUntil(),
             32)
         .storeUint(config.getSeqno(), 32)
-        .storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8)
+        .storeUint(
+            isNull(config.getSendMode()) // for backward compatibility
+                ? ((config.getMode() == 0) ? 3 : config.getMode())
+                : config.getSendMode().getValue(),
+            8)
         .storeRef(order)
         .endCell();
   }

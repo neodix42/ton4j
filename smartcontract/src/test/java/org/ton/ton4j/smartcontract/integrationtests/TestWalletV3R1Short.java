@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
@@ -45,6 +46,7 @@ public class TestWalletV3R1Short extends CommonTest {
             .walletId(42)
             .seqno(contract.getSeqno())
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .amount(Utils.toNano(0.08))
             .comment("testWalletV3R1")
             .build();

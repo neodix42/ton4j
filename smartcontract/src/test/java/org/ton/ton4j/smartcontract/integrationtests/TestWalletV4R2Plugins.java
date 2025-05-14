@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.DeployedPlugin;
 import org.ton.ton4j.smartcontract.types.NewPlugin;
@@ -293,7 +294,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .walletId(contract.getWalletId())
             .seqno(contract.getSeqno())
             .destination(Address.of(FAUCET_ADDRESS_RAW))
-            .mode(3)
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .amount(Utils.toNano(0.331))
             .comment("ton4j-v4r2-simple-send")
             .build();
@@ -342,7 +343,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .walletId(contract.getWalletId())
             .seqno(contract.getSeqno())
             .destination(Address.of(FAUCET_ADDRESS_RAW))
-            .mode(3)
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .amount(Utils.toNano(0.331))
             .comment("ton4j-v4r2-simple-send-externally-signed")
             .build();

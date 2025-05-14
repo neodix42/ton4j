@@ -13,7 +13,7 @@ public interface BouncePhase {
     if (isOk) {
       return BouncePhaseOk.deserialize(cs);
     }
-    boolean isNoFunds = cs.preloadBit();
+    boolean isNoFunds = cs.preloadBitAt(2);
     if (isNoFunds) {
       return BouncePhaseNoFounds.deserialize(cs);
     }

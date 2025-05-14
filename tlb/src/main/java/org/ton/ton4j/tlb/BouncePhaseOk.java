@@ -34,7 +34,7 @@ public class BouncePhaseOk implements BouncePhase, Serializable {
   public Cell toCell() {
     return CellBuilder.beginCell()
         .storeBit(true)
-        .storeSlice(CellSlice.beginParse(msgSize.toCell()))
+        .storeCell(msgSize.toCell())
         .storeCoins(msgFees)
         .storeCoins(fwdFees)
         .endCell();

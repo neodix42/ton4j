@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.wallet.Contract;
@@ -140,7 +141,11 @@ public class HighloadWalletV3 implements Contract {
     return CellBuilder.beginCell()
         .storeUint(highloadConfig.getWalletId(), 32)
         .storeRef(highloadConfig.getBody())
-        .storeUint((highloadConfig.getMode() == 0) ? 3 : highloadConfig.getMode(), 8)
+        .storeUint(
+            isNull(highloadConfig.getSendMode()) // for backward compatibility
+                ? ((highloadConfig.getMode() == 0) ? 3 : highloadConfig.getMode())
+                : highloadConfig.getSendMode().getValue(),
+            8)
         .storeUint(highloadConfig.getQueryId(), 23)
         .storeUint(
             (highloadConfig.getCreatedAt() == 0)
@@ -449,7 +454,10 @@ public class HighloadWalletV3 implements Contract {
 
     if (isNull(enclosedMessages)) {
       return ActionSendMsg.builder()
-          .mode((destination.getMode() == 0) ? 3 : destination.getMode())
+          .mode(
+              isNull(destination.getSendMode())
+                  ? ((destination.getMode() == 0) ? 3 : destination.getMode())
+                  : destination.getSendMode().getValue())
           .outMsg(
               MessageRelaxed.builder()
                   .info(
@@ -481,7 +489,7 @@ public class HighloadWalletV3 implements Contract {
           .build();
     } else {
       return ActionSendMsg.builder()
-          .mode(3)
+          .mode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS.getValue())
           .outMsg(
               MessageRelaxed.builder()
                   .info(

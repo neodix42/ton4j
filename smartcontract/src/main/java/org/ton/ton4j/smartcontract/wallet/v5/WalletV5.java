@@ -11,13 +11,13 @@ import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.cell.*;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
-import org.ton.ton4j.cell.*;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
@@ -392,7 +392,10 @@ public class WalletV5 implements Contract {
   private OutAction convertDestinationToOutAction(Destination destination) {
     Address dstAddress = Address.of(destination.getAddress());
     return ActionSendMsg.builder()
-        .mode((destination.getMode() == 0) ? 3 : destination.getMode())
+        .mode(
+            isNull(destination.getSendMode())
+                ? ((destination.getMode() == 0) ? 3 : destination.getMode())
+                : destination.getSendMode().getValue())
         .outMsg(
             MessageRelaxed.builder()
                 .info(

@@ -32,7 +32,7 @@ public class BouncePhaseNoFounds implements BouncePhase, Serializable {
   public Cell toCell() {
     return CellBuilder.beginCell()
         .storeUint(1, 2)
-        .storeSlice(CellSlice.beginParse(msgSize.toCell()))
+        .storeCell(msgSize.toCell())
         .storeCoins(reqFwdFees)
         .endCell();
   }

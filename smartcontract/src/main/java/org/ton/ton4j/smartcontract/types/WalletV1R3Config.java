@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.types.ExtraCurrency;
 
@@ -14,7 +15,11 @@ import org.ton.ton4j.tonlib.types.ExtraCurrency;
 public class WalletV1R3Config implements WalletConfig {
   Boolean bounce;
   long seqno;
+
+  @Deprecated(since = "0.9.9", forRemoval = true)
   int mode;
+
+  SendMode sendMode;
   Address destination;
   BigInteger amount;
   List<ExtraCurrency> extraCurrencies;

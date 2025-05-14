@@ -132,8 +132,8 @@ public class JettonMinter implements Contract {
                 .storeAddress(fromAddress) // from_address
                 .storeAddress(responseAddress) // response_address
                 .storeCoins(forwardTonAmount) // forward_ton_amount
-                .storeBit(false) // store payload in the same cell
-                .storeCell(forwardPayload) // forward payload
+                //                .storeBit(true) // store payload in the same cell
+                .storeRef(forwardPayload) // forward payload
                 .endCell())
         .endCell();
   }

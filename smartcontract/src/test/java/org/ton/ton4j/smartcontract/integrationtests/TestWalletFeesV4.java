@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV4R2Config;
 import org.ton.ton4j.smartcontract.wallet.v4.WalletV4R2;
@@ -95,7 +96,7 @@ public class TestWalletFeesV4 extends CommonTest {
             .seqno(walletA.getSeqno())
             .destination(walletB.getAddress())
             //                .amount(Utils.toNano(0.1 + 0.000040000))
-            .mode(3)
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
 
     Message msg = walletA.prepareExternalMsg(configA);
@@ -174,7 +175,7 @@ public class TestWalletFeesV4 extends CommonTest {
             .seqno(walletA.getSeqno())
             .destination(walletB.getAddress())
             .amount(Utils.toNano(0.1))
-            .mode(3)
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
 
     Message msg = walletA.prepareExternalMsg(configA);
@@ -236,7 +237,7 @@ public class TestWalletFeesV4 extends CommonTest {
             .walletId(42)
             .seqno(walletA.getSeqno())
             .destination(walletB.getAddress())
-            .mode(3)
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
 
     Message msg = walletA.prepareExternalMsg(configA);

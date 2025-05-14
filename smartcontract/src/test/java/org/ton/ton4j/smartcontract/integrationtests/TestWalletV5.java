@@ -13,6 +13,7 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.cell.TonHashMapE;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.faucet.TestnetJettonFaucet;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinter;
@@ -130,7 +131,7 @@ public class TestWalletV5 extends CommonTest {
                                 .bounce(true)
                                 .address(
                                     "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d")
-                                .mode(3)
+                                .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
                                 .amount(Utils.toNano(0.05))
                                 .comment("gift")
                                 .build()))
@@ -1182,7 +1183,7 @@ public class TestWalletV5 extends CommonTest {
                             Destination.builder()
                                 .bounce(true)
                                 .address(myJettonWallet.getAddress().toBounceable())
-                                .mode(3)
+                                .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
                                 .amount(Utils.toNano(0.05))
                                 .body(
                                     JettonWallet.createTransferBody(
@@ -1259,7 +1260,7 @@ public class TestWalletV5 extends CommonTest {
                                 .bounce(true)
                                 .address(
                                     "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d")
-                                .mode(3)
+                                .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
                                 .amount(Utils.toNano(0.05))
                                 .comment("ton4j-v5-externally-signed")
                                 .build()))

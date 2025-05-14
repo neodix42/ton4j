@@ -273,7 +273,11 @@ public class HighloadWallet implements Contract {
 
       CellBuilder p =
           CellBuilder.beginCell()
-              .storeUint((destination.getMode() == 0) ? 3 : destination.getMode() & 0xff, 8)
+              .storeUint(
+                  isNull(destination.getSendMode())
+                      ? ((destination.getMode() == 0) ? 3 : destination.getMode())
+                      : destination.getSendMode().getValue(),
+                  8)
               .storeRef(order);
 
       dictDestinations.elements.put(i++, p.endCell());

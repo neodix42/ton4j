@@ -189,7 +189,7 @@ public class TestTonSdkTestCasesSmartContracts {
             .amount(Utils.toNano(amountTonCoins))
             .validUntil(validUntil)
             .bounce(bounceFlag)
-            .mode(sendMode.intValue())
+            .sendMode(SendMode.valueOfInt(Math.toIntExact(sendMode)))
             .build();
     Message sendMsg = contract.prepareExternalMsg(config);
     log.info("extmsg {}", sendMsg.toCell().print());
@@ -235,7 +235,7 @@ public class TestTonSdkTestCasesSmartContracts {
             .amount(Utils.toNano(amountTonCoins))
             .validUntil(validUntil)
             .bounce(bounceFlag)
-            .mode(sendMode.intValue())
+            .sendMode(SendMode.valueOfInt(Math.toIntExact(sendMode)))
             .build();
     Message sendMsg = contract.prepareExternalMsg(config);
     assertThat(sendMsg.toCell().toHex(true).toUpperCase()).isEqualTo(expectedBocAsHex);
@@ -281,7 +281,7 @@ public class TestTonSdkTestCasesSmartContracts {
             .amount(Utils.toNano(amountTonCoins))
             .validUntil(validUntil)
             .bounce(bounceFlag)
-            .mode(sendMode.intValue())
+            .sendMode(SendMode.valueOfInt(Math.toIntExact(sendMode)))
             .comment(comment)
             .build();
     Message sendMsg = contract.prepareExternalMsg(config);
@@ -418,7 +418,7 @@ public class TestTonSdkTestCasesSmartContracts {
             .amount(Utils.toNano(amountTonCoins))
             .validUntil(validUntil)
             .bounce(bounceFlag)
-            .mode(sendMode.intValue())
+            .sendMode(SendMode.valueOfInt(Math.toIntExact(sendMode)))
             .build();
     Message sendMsg = contract.prepareExternalMsg(config);
     assertThat(sendMsg.toCell().toHex(true).toUpperCase()).isEqualTo(expectedBocAsHex);
@@ -463,7 +463,7 @@ public class TestTonSdkTestCasesSmartContracts {
             .amount(Utils.toNano(amountTonCoins))
             .validUntil(validUntil)
             .bounce(bounceFlag)
-            .mode(sendMode.intValue())
+            .sendMode(SendMode.valueOfInt(Math.toIntExact(sendMode)))
             .build();
     Message sendMsg = contract.prepareExternalMsg(config);
     assertThat(sendMsg.toCell().toHex(true).toUpperCase()).isEqualTo(expectedBocAsHex);
@@ -509,7 +509,7 @@ public class TestTonSdkTestCasesSmartContracts {
             .amount(Utils.toNano(amountTonCoins))
             .validUntil(validUntil)
             .bounce(bounceFlag)
-            .mode(sendMode.intValue())
+            .sendMode(SendMode.valueOfInt(Math.toIntExact(sendMode)))
             .comment(comment)
             .build();
     Message sendMsg = contract.prepareExternalMsg(config);
@@ -556,7 +556,7 @@ public class TestTonSdkTestCasesSmartContracts {
             .amount(Utils.toNano(amountTonCoins))
             .validUntil(validUntil)
             .bounce(bounceFlag)
-            .mode(sendMode.intValue())
+            .sendMode(SendMode.valueOfInt(Math.toIntExact(sendMode)))
             .body(CellBuilder.beginCell().storeUint(8, 32).endCell())
             .build();
     Message sendMsg = contract.prepareExternalMsg(config);
@@ -876,7 +876,7 @@ public class TestTonSdkTestCasesSmartContracts {
                     bounceFlag,
                     null,
                     CellBuilder.beginCell().endCell()))
-            .mode(sendMode)
+            .sendMode(SendMode.valueOfInt(sendMode))
             .build();
 
     extMessageInfo = contract.send(config);
@@ -956,7 +956,7 @@ public class TestTonSdkTestCasesSmartContracts {
                 contract.createBulkTransfer(
                     dummyDestinations,
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
-            .mode(sendMode)
+            .sendMode(SendMode.valueOfInt(sendMode))
             .build();
 
     extMessageInfo = contract.send(config);
@@ -1087,7 +1087,7 @@ public class TestTonSdkTestCasesSmartContracts {
                                     ))
                             .build()),
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
-            .mode(sendMode)
+            .sendMode(SendMode.valueOfInt(sendMode))
             .build();
 
     extMessageInfo = highloadWalletV3.send(config);
@@ -1197,7 +1197,7 @@ public class TestTonSdkTestCasesSmartContracts {
                 highloadWalletV3.createBulkTransfer(
                     dummyDestinations,
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
-            .mode(sendMode)
+            .sendMode(SendMode.valueOfInt(sendMode))
             .build();
 
     extMessageInfo = highloadWalletV3.send(config);
@@ -1327,7 +1327,7 @@ public class TestTonSdkTestCasesSmartContracts {
                                 .address(destinationAddress)
                                 .amount(Utils.toNano(amountTonCoins))
                                 .comment(comment)
-                                .mode(sendMode.intValue())
+                                .sendMode(SendMode.valueOfInt(sendMode.intValue()))
                                 .build()))
                     .toCell())
             .validUntil(validUntil)
@@ -1346,7 +1346,7 @@ public class TestTonSdkTestCasesSmartContracts {
 
       result.add(
           Destination.builder()
-              .mode(sendMode)
+              .sendMode(SendMode.valueOfInt(sendMode))
               .bounce(bounceFlag)
               .address(dstDummyAddress)
               .amount(Utils.toNano(amount))
@@ -1373,7 +1373,7 @@ public class TestTonSdkTestCasesSmartContracts {
       globalDummyDestinations.add(addr);
       result.add(
           Destination.builder()
-              .mode(sendMode)
+              .sendMode(SendMode.valueOfInt(sendMode))
               .bounce(bounceFlag)
               .address(jettonWallet.toBounceable())
               .amount(Utils.toNano(amount))

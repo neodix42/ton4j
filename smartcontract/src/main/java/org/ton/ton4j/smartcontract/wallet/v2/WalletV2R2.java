@@ -123,7 +123,11 @@ public class WalletV2R2 implements Contract {
               config.getStateInit(),
               config.getBody(),
               config.getBounce());
-      message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
+      message.storeUint(
+          isNull(config.getSendMode()) // for backward compatibility
+              ? ((config.getMode() == 0) ? 3 : config.getMode())
+              : config.getSendMode().getValue(),
+          8);
       message.storeRef(order.toCell());
     }
     if (nonNull(config.getDestination2())) {
@@ -135,7 +139,11 @@ public class WalletV2R2 implements Contract {
               config.getStateInit(),
               config.getBody(),
               config.getBounce());
-      message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
+      message.storeUint(
+          isNull(config.getSendMode()) // for backward compatibility
+              ? ((config.getMode() == 0) ? 3 : config.getMode())
+              : config.getSendMode().getValue(),
+          8);
       message.storeRef(order.toCell());
     }
     if (nonNull(config.getDestination3())) {
@@ -147,7 +155,11 @@ public class WalletV2R2 implements Contract {
               config.getStateInit(),
               config.getBody(),
               config.getBounce());
-      message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
+      message.storeUint(
+          isNull(config.getSendMode()) // for backward compatibility
+              ? ((config.getMode() == 0) ? 3 : config.getMode())
+              : config.getSendMode().getValue(),
+          8);
       message.storeRef(order.toCell());
     }
     if (nonNull(config.getDestination4())) {
@@ -160,7 +172,11 @@ public class WalletV2R2 implements Contract {
               config.getStateInit(),
               config.getBody(),
               config.getBounce());
-      message.storeUint((config.getMode() == 0) ? 3 : config.getMode(), 8);
+      message.storeUint(
+          isNull(config.getSendMode()) // for backward compatibility
+              ? ((config.getMode() == 0) ? 3 : config.getMode())
+              : config.getSendMode().getValue(),
+          8);
       message.storeRef(order.toCell());
     }
 

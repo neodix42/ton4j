@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.multisig.MultiSigWalletV2;
 import org.ton.ton4j.smartcontract.types.*;
@@ -98,7 +99,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
             .destination(multiSigWalletV2.getAddress())
             .amount(Utils.toNano(0.2))
             .stateInit(multiSigWalletV2.getStateInit())
-            .mode(3)
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
     deployer.send(config);
     deployer.waitForDeployment(30);
@@ -231,7 +232,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
             .destination(multiSigWalletV2.getAddress())
             .amount(Utils.toNano(0.2))
             .stateInit(multiSigWalletV2.getStateInit())
-            .mode(3)
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
     deployer.send(config);
     deployer.waitForDeployment();
@@ -410,7 +411,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
             .destination(multiSigWalletV2.getAddress())
             .amount(Utils.toNano(0.2))
             .stateInit(multiSigWalletV2.getStateInit())
-            .mode(3)
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
     deployer.send(config);
     deployer.waitForDeployment(30);
@@ -590,7 +591,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
             .destination(multiSigWalletV2.getAddress())
             .amount(Utils.toNano(0.2))
             .stateInit(multiSigWalletV2.getStateInit())
-            .mode(3)
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
     deployer.send(config);
     deployer.waitForDeployment(30);

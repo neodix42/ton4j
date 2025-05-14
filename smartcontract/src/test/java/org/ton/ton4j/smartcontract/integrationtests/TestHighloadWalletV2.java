@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWallet;
 import org.ton.ton4j.smartcontract.types.Destination;
@@ -74,7 +75,7 @@ public class TestHighloadWalletV2 extends CommonTest {
                     Destination.builder()
                         .address("EQBrpstctZ5gF-VaaPswcWHe3JQijjNbtJVn5USXlZ-bAgO3")
                         .amount(Utils.toNano(0.1))
-                        .mode(3)
+                        .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
                         .body(
                             CellBuilder.beginCell()
                                 .storeUint(0, 32)

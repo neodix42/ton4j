@@ -25,9 +25,9 @@ public class BouncePhaseNegFounds implements BouncePhase, Serializable {
   }
 
   public static BouncePhaseNegFounds deserialize(CellSlice cs) {
-    long magic = cs.loadUint(1).intValue(); // review, should be 2
-    assert (magic == 0b0)
-        : "BouncePhaseNegFounds: magic not equal to 0b0, found 0x" + Long.toHexString(magic);
+    long magic = cs.loadUint(2).intValue(); // review, should be 2
+    assert (magic == 0b00)
+        : "BouncePhaseNegFounds: magic not equal to 0b00, found 0x" + Long.toHexString(magic);
 
     return BouncePhaseNegFounds.builder().build();
   }

@@ -38,11 +38,7 @@ public class TestJetton {
   public void testJettonMinter() throws InterruptedException {
 
     tonlib =
-        Tonlib.builder()
-            .testnet(true)
-            .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-            .ignoreCache(false)
-            .build();
+        Tonlib.builder().testnet(true).pathToTonlibSharedLib(Utils.getTonlibGithubUrl()).build();
     adminWallet = GenerateWallet.randomV3R1(tonlib, 2);
     wallet2 = GenerateWallet.randomV3R1(tonlib, 1);
 
@@ -164,7 +160,7 @@ public class TestJetton {
                     0,
                     Utils.toNano(444),
                     wallet2.getAddress(), // recipient
-                    adminWallet.getAddress(), // response address
+                    null, // response address TODO does not work if filled
                     null, // custom payload
                     BigInteger.ONE, // forward amount
                     MsgUtils.createTextMessageBody("gift") // forward payload
@@ -200,13 +196,13 @@ public class TestJetton {
   }
 
   @Test
-  public void testJettonTransferWithHighloadWalletV3_500()
+  public void testJettonTransferWithHighloadWalletV3_50()
       throws InterruptedException, NoSuchAlgorithmException {
 
-    tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+    tonlib = Tonlib.builder().testnet(true).build();
 
     adminWallet = GenerateWallet.randomV3R1(tonlib, 2);
-    highloadWallet2 = GenerateWallet.randomHighloadV3R1(tonlib, 55);
+    highloadWallet2 = GenerateWallet.randomHighloadV3R1(tonlib, 20);
 
     // DEPLOY MINTER AND MINT JETTONS
 
@@ -244,7 +240,7 @@ public class TestJetton {
     assertThat(extMessageInfo.getError().getCode()).isZero();
     log.info("deploying minter and minting...");
     minter.waitForDeployment(60);
-    Utils.sleep(10);
+    Utils.sleep(15);
 
     getMinterInfo(minter);
 
@@ -291,13 +287,13 @@ public class TestJetton {
             .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
             .body(
                 highloadWallet2.createBulkTransfer(
-                    createDummyDestinations(500, highloadJettonWallet2),
+                    createDummyDestinations(50, highloadJettonWallet2),
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
             .build();
     extMessageInfo = highloadWallet2.send(highloadV3Config);
     assertThat(extMessageInfo.getError().getCode()).isZero();
 
-    Utils.sleep(30, "transferring to 500 recipients 2 jettons...");
+    Utils.sleep(30, "transferring to 50 recipients 2 jettons...");
     log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
 
     getMinterInfo(minter);

@@ -74,8 +74,8 @@ public class CellSlice implements Serializable {
   }
 
   /**
-   * Create an optimized clone of this CellSlice
-   * This is a performance-critical method used in many operations
+   * Create an optimized clone of this CellSlice This is a performance-critical method used in many
+   * operations
    *
    * @return A new CellSlice with the same content
    */
@@ -83,7 +83,7 @@ public class CellSlice implements Serializable {
     // Create a new CellSlice with the same properties
     CellSlice result = new CellSlice();
     result.bits = this.bits.clone();
-    
+
     // Optimize refs copying based on size
     if (this.refs.isEmpty()) {
       result.refs = new ArrayList<>(0);
@@ -92,7 +92,7 @@ public class CellSlice implements Serializable {
     } else {
       result.refs = new ArrayList<>(this.refs);
     }
-    
+
     result.type = this.type;
     return result;
   }
@@ -324,14 +324,21 @@ public class CellSlice implements Serializable {
 
   public boolean preloadBit() {
     checkBitsOverflow(1);
-    return bits.get(0);
+    return bits.get(bits.readCursor);
   }
 
+  /**
+   * starts at position 1
+   *
+   * @param position int
+   * @return boolean
+   */
   public boolean preloadBitAt(int position) {
     checkBitsOverflow(position);
-    BitString cloned = clone().bits;
-    cloned.readBits(position - 1);
-    return cloned.readBit();
+    //    BitString cloned = clone().bits;
+    //    cloned.readBits(position - 1);
+    //    return cloned.readBit();
+    return bits.get(bits.readCursor - 1 + position);
   }
 
   public int getFreeBits() {
@@ -390,8 +397,8 @@ public class CellSlice implements Serializable {
   }
 
   /**
-   * Load a slice of bits as an array of unsigned bytes (represented as ints)
-   * Optimized version that reduces intermediate object creation
+   * Load a slice of bits as an array of unsigned bytes (represented as ints) Optimized version that
+   * reduces intermediate object creation
    *
    * @param length Number of bits to load
    * @return Array of unsigned bytes (as ints)
@@ -402,10 +409,10 @@ public class CellSlice implements Serializable {
     // Calculate how many bytes we'll need
     int bytesNeeded = (length + 7) / 8;
     int[] result = new int[bytesNeeded];
-    
+
     // Save current position
     int savedPosition = bits.readCursor;
-    
+
     // Read directly into result array without creating intermediate BitString
     for (int i = 0; i < bytesNeeded; i++) {
       int value = 0;
@@ -418,13 +425,13 @@ public class CellSlice implements Serializable {
       }
       result[i] = value & 0xFF;
     }
-    
+
     // If we didn't read exactly 'length' bits due to partial byte at the end,
     // adjust the cursor position
     if (bits.readCursor != savedPosition + length) {
       bits.readCursor = savedPosition + length;
     }
-    
+
     return result;
   }
 
@@ -449,11 +456,11 @@ public class CellSlice implements Serializable {
       try {
         // Get all bits at once
         BitString bitString = ref.loadBits(ref.bits.getUsedBits());
-        
+
         // Convert to string and append
         byte[] bytes = bitString.toByteArray();
         if (bytes.length > 0) {
-            s.append(new String(bytes, StandardCharsets.UTF_8));
+          s.append(new String(bytes, StandardCharsets.UTF_8));
         }
 
         if (ref.refs.size() > 1) {
@@ -520,8 +527,8 @@ public class CellSlice implements Serializable {
   }
 
   /**
-   * Preload an unsigned integer without advancing the read cursor
-   * Optimized version with special handling for small integers
+   * Preload an unsigned integer without advancing the read cursor Optimized version with special
+   * handling for small integers
    *
    * @param bitLength Length of the integer in bits
    * @return The integer value

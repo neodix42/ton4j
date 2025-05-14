@@ -109,7 +109,7 @@ public class ExampleContract implements Contract {
             : config.getValidUntil(),
         32);
     message.storeUint(BigInteger.valueOf(config.getExtraField()), 64); // extraField
-    message.storeUint((config.getMode() == 0) ? 3 : config.getMode() & 0xff, 8);
+    message.storeUint(isNull(config.getSendMode()) ? 3 : config.getSendMode().getValue(), 8);
     message.storeRef(order);
     return message.endCell();
   }

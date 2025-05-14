@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.ton4j.tlb.StateInit;
 
@@ -14,7 +15,11 @@ import org.ton.ton4j.tlb.StateInit;
 public class DnsRootConfig implements WalletConfig {
   int wc;
   long seqno;
+
+  @Deprecated(since = "0.9.9", forRemoval = true)
   int mode;
+
+  SendMode sendMode;
   long createdAt;
   Address destination;
   BigInteger amount;
