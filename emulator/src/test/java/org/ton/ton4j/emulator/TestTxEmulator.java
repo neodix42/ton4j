@@ -637,24 +637,27 @@ public class TestTxEmulator {
     String rawDummyDestinationAddress =
         "0:258e549638a6980ae5d3c76382afd3f4f32e34482dafc3751e3358589c8de00d";
 
+    Cell bulkTranferCell =
+        walletV5
+            .createBulkTransfer(
+                Collections.singletonList(
+                    Destination.builder()
+                        .bounce(false)
+                        .address(rawDummyDestinationAddress)
+                        .amount(Utils.toNano(1))
+                        .build()))
+            .toCell();
+    log.info("bulkTranferCell boc {}", bulkTranferCell.toHex());
     WalletV5Config walletV5Config =
         WalletV5Config.builder()
             .seqno(0)
             .walletId(42)
             .amount(Utils.toNano(0.1))
-            .body(
-                walletV5
-                    .createBulkTransfer(
-                        Collections.singletonList(
-                            Destination.builder()
-                                .bounce(false)
-                                .address(rawDummyDestinationAddress)
-                                .amount(Utils.toNano(1))
-                                .build()))
-                    .toCell())
+            .body(bulkTranferCell)
             .build();
 
     Message intMsg = walletV5.prepareInternalMsg(walletV5Config);
+    log.info("intMsg boc {}", intMsg.toCell().toHex());
 
     EmulateTransactionResult result =
         txEmulator.emulateTransaction(shardAccountBocBase64, intMsg.toCell().toBase64());
