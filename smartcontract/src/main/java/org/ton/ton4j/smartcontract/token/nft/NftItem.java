@@ -142,12 +142,11 @@ public class NftItem implements Contract {
     cell.storeAddress(newOwnerAddress);
     cell.storeAddress(responseAddress);
     cell.storeBit(false); // null custom_payload
-    cell.storeCoins(forwardAmount); //
+    cell.storeCoins(forwardAmount);
     cell.storeBit(false); // forward_payload in this slice, not separate cell
-    //
-    //    if (nonNull(forwardPayload)) {
-    //      cell.storeBytes(forwardPayload);
-    //    }
+    if (nonNull(forwardPayload)) {
+      cell.storeBytes(forwardPayload);
+    }
     return cell.endCell();
   }
 

@@ -142,9 +142,8 @@ public class JettonMinterStableCoin implements Contract {
                 .storeAddress(fromAddress) // from_address
                 .storeAddress(responseAddress) // response_address
                 .storeCoins(forwardAmount) // forward_amount
-                //                .storeBit(true) // forward payload
-                // forward_payload in this slice, not separate cell
-                .storeRefMaybe(forwardPayload)
+                .storeBit(false) // forward payload in this slice, not separate cell
+                .storeCell(forwardPayload)
                 .endCell())
         .endCell();
   }

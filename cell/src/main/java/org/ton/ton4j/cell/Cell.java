@@ -921,7 +921,7 @@ public class Cell implements Serializable {
 
     BigInteger idx = BigInteger.ZERO;
 
-    while (roots.size() > 0) {
+    while (!roots.isEmpty()) {
       List<Cell> next = new ArrayList<>(roots.size() * 4);
       for (Cell p : roots) {
         String hash = Utils.bytesToHex(p.getHash());

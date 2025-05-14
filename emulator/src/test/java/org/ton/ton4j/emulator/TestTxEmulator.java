@@ -85,6 +85,7 @@ public class TestTxEmulator {
                             .cellsUsed(BigInteger.ZERO)
                             .bitsUsed(BigInteger.ZERO)
                             .build())
+                    .storageExtraInfo(StorageExtraNone.builder().build())
                     .lastPaid(System.currentTimeMillis() / 1000)
                     .duePayment(Utils.toNano(2))
                     .build())

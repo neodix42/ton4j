@@ -98,7 +98,7 @@ public class WalletV3R2 implements Contract {
    * Creates message payload with subwallet-id, valid-until and seqno, equivalent to:
    *
    * <pre>
-   *     &lt;b subwallet-id 32 u, timestamp 32 i, seqno 32 u, b&gt;
+   *     &lt;b subwallet-id 32 u, timestamp 32 i, seqno 32 u, ref order b&gt;
    * </pre>
    */
   public Cell createTransferBody(WalletV3Config config) {
