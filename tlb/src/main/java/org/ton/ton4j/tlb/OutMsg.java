@@ -83,6 +83,21 @@ public interface OutMsg {
                 .build();
           }
         }
+      case 0b101:
+        {
+          int outMsgSubFlag = cs.loadUint(2).intValue();
+          if (outMsgSubFlag == 0) {
+            return OutMsgNewDefer.builder()
+                .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
+          } else {
+            return OutMsgDeferredTr.builder()
+                .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .imported(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
+          }
+        }
     }
     throw new Error("unknown out_msg flag, found 0x" + Long.toBinaryString(outMsgFlag));
   }

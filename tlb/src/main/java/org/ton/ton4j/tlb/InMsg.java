@@ -82,6 +82,22 @@ public interface InMsg {
               .proofDelivered(cs.loadRef())
               .build();
         }
+      case 0b001:
+        {
+          int inMsgSubFlag = cs.loadUint(2).intValue();
+          if (inMsgSubFlag == 0) {
+            return InMsgImportDeferredFin.builder()
+                .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .fwdFee(cs.loadCoins())
+                .build();
+          } else {
+            return InMsgImportDeferredTr.builder()
+                .inMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+                .build();
+          }
+        }
     }
     throw new Error("unknown in_msg flag, found 0x" + Long.toBinaryString(inMsgFlag));
   }

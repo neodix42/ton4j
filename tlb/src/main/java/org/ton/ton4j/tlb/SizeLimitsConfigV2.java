@@ -19,6 +19,10 @@ public class SizeLimitsConfigV2 implements SizeLimitsConfig, Serializable {
   int maxExtMsgDepth;
   long maxAccStateCells;
   long maxAccStateBits;
+  long maxAccPublicLibraries;
+  long deferOutQueueSizeLimit;
+  long maxMsgExtraCurrencies;
+  long maxAccFixedPrefixLength;
 
   public Cell toCell() {
     return CellBuilder.beginCell()
@@ -31,6 +35,10 @@ public class SizeLimitsConfigV2 implements SizeLimitsConfig, Serializable {
         .storeUint(maxExtMsgDepth, 16)
         .storeUint(maxAccStateCells, 32)
         .storeUint(maxAccStateBits, 32)
+        .storeUint(maxAccPublicLibraries, 32)
+        .storeUint(deferOutQueueSizeLimit, 32)
+        .storeUint(maxMsgExtraCurrencies, 32)
+        .storeUint(maxAccFixedPrefixLength, 8)
         .endCell();
   }
 
@@ -45,6 +53,10 @@ public class SizeLimitsConfigV2 implements SizeLimitsConfig, Serializable {
         .maxExtMsgDepth(cs.loadUint(32).intValue())
         .maxAccStateCells(cs.loadUint(32).longValue())
         .maxAccStateBits(cs.loadUint(32).longValue())
+        .maxAccPublicLibraries(cs.loadUint(32).longValue())
+        .deferOutQueueSizeLimit(cs.loadUint(32).longValue())
+        .maxMsgExtraCurrencies(cs.loadUint(32).longValue())
+        .maxAccFixedPrefixLength(cs.loadUint(8).longValue())
         .build();
   }
 }
