@@ -62,7 +62,7 @@ public class BitString implements Serializable {
   }
 
   /**
-   * Create BitString from byte array with specified size
+   * Create BitString from byte array with specified size using BitSet methods
    *
    * @param bytes byte[] array of bytes
    * @param size int number of bits to read
@@ -74,31 +74,37 @@ public class BitString implements Serializable {
       readCursor = 0;
       length = 0;
     } else {
-      byte[] bits =
-          Utils.leftPadBytes(
-              Utils.bytesToBitString(bytes).getBytes(StandardCharsets.UTF_8),
-              bytes.length * 8,
-              '0');
-
       length = size;
       bitSet = new BitSet(length);
       writeCursor = 0;
       readCursor = 0;
-
-      for (int i = 0; i < size && i < bits.length; i++) { // specified length
-        if (bits[i] == (byte) '1') {
-          writeBit(true);
-        } else if (bits[i] == (byte) '0') {
-          writeBit(false);
-        } else {
-          // else '-' sign - do nothing
+      
+      // Calculate how many complete bytes we can process
+      int bytesToProcess = Math.min(bytes.length, (size + 7) / 8);
+      
+      for (int i = 0; i < bytesToProcess; i++) {
+        int value = bytes[i] & 0xFF; // Ensure we treat the value as unsigned byte
+        for (int j = 0; j < 8; j++) {
+          // Check if we've reached the size limit
+          if (writeCursor >= size) {
+            break;
+          }
+          
+          // Check if the bit at position j (from MSB) is set
+          boolean bitValue = ((value >> (7 - j)) & 1) == 1;
+          if (bitValue) {
+            bitSet.set(writeCursor);
+          } else {
+            bitSet.clear(writeCursor);
+          }
+          writeCursor++;
         }
       }
     }
   }
 
   /**
-   * Create BitString from int array
+   * Create BitString from int array using BitSet methods
    *
    * @param bytes int[] array of bytes
    */
@@ -109,24 +115,22 @@ public class BitString implements Serializable {
       readCursor = 0;
       length = 0;
     } else {
-      byte[] bits =
-          Utils.leftPadBytes(
-              Utils.bytesToBitString(bytes).getBytes(StandardCharsets.UTF_8),
-              bytes.length * 8,
-              '0');
-
-      length = bits.length;
+      length = bytes.length * 8;
       bitSet = new BitSet(length);
       writeCursor = 0;
       readCursor = 0;
-
-      for (byte bit : bits) { // whole length
-        if (bit == (byte) '1') {
-          writeBit(true);
-        } else if (bit == (byte) '0') {
-          writeBit(false);
-        } else {
-          // else '-' sign - do nothing
+      
+      for (int i = 0; i < bytes.length; i++) {
+        int value = bytes[i] & 0xFF; // Ensure we treat the value as unsigned byte
+        for (int j = 0; j < 8; j++) {
+          // Check if the bit at position j (from MSB) is set
+          boolean bitValue = ((value >> (7 - j)) & 1) == 1;
+          if (bitValue) {
+            bitSet.set(writeCursor);
+          } else {
+            bitSet.clear(writeCursor);
+          }
+          writeCursor++;
         }
       }
     }
@@ -708,19 +712,29 @@ public class BitString implements Serializable {
       return new byte[0];
     }
 
-    int sz = writeCursor;
-    byte[] result = new byte[(sz + 7) / 8];
-
-    for (int i = 0; i < sz; i += 8) {
-      int value = 0;
-      for (int j = 0; j < 8 && i + j < sz; j++) {
-        if (get(i + j)) {
-          value |= (1 << (7 - j));
-        }
+    // Create a temporary BitSet with the same bits but in reverse order (MSB to LSB)
+    BitSet reversedBitSet = new BitSet(writeCursor);
+    for (int i = 0; i < writeCursor; i++) {
+      if (bitSet.get(i)) {
+        // For each byte, reverse the bit order
+        int byteIndex = i / 8;
+        int bitPosition = i % 8;
+        // Convert from MSB-first to LSB-first within each byte
+        int reversedBitPosition = 7 - bitPosition;
+        reversedBitSet.set(byteIndex * 8 + reversedBitPosition);
       }
-      result[i / 8] = (byte) (value & 0xFF);
     }
-
+    
+    // Calculate the number of bytes needed
+    int numBytes = (writeCursor + 7) / 8;
+    byte[] result = new byte[numBytes];
+    
+    // Convert the reversed BitSet to a byte array
+    byte[] tempBytes = reversedBitSet.toByteArray();
+    
+    // Copy bytes, ensuring we have the right number of bytes
+    System.arraycopy(tempBytes, 0, result, 0, Math.min(tempBytes.length, numBytes));
+    
     return result;
   }
 
@@ -734,19 +748,13 @@ public class BitString implements Serializable {
       return new int[0];
     }
 
-    int sz = writeCursor;
-    int[] result = new int[(sz + 7) / 8];
-
-    for (int i = 0; i < sz; i += 8) {
-      int value = 0;
-      for (int j = 0; j < 8 && i + j < sz; j++) {
-        if (get(i + j)) {
-          value |= (1 << (7 - j));
-        }
-      }
-      result[i / 8] = value;
+    byte[] bytes = toByteArray();
+    int[] result = new int[bytes.length];
+    
+    for (int i = 0; i < bytes.length; i++) {
+      result[i] = bytes[i] & 0xFF; // Convert signed byte to unsigned int
     }
-
+    
     return result;
   }
 
@@ -756,24 +764,8 @@ public class BitString implements Serializable {
    * @return byte[] array of signed bytes
    */
   public byte[] toSignedByteArray() {
-    if (writeCursor == 0) {
-      return new byte[0];
-    }
-
-    int sz = writeCursor;
-    byte[] result = new byte[(sz + 7) / 8];
-
-    for (int i = 0; i < sz; i += 8) {
-      int value = 0;
-      for (int j = 0; j < 8 && i + j < sz; j++) {
-        if (get(i + j)) {
-          value |= (1 << (7 - j));
-        }
-      }
-      result[i / 8] = (byte) (value & 0xFF);
-    }
-
-    return result;
+    // Since Java bytes are already signed, we can just use toByteArray
+    return toByteArray();
   }
 
   /**
