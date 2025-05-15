@@ -5,12 +5,14 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.GenerateWallet;
 import org.ton.ton4j.smartcontract.token.nft.NftCollection;
 import org.ton.ton4j.smartcontract.token.nft.NftItem;
 import org.ton.ton4j.smartcontract.token.nft.NftMarketplace;
@@ -36,11 +38,11 @@ public class TestNft extends CommonTest {
   private Address nftItem1Address;
   private Address nftItem2Address;
 
-  //  @BeforeClass
-  //  public static void setUpClass() throws InterruptedException {
-  //    adminWallet = GenerateWallet.randomV3R1(tonlib, 7);
-  //    nftItemBuyer = GenerateWallet.randomV3R1(tonlib, 3);
-  //  }
+  @BeforeClass
+  public static void setUpClass() throws InterruptedException {
+    adminWallet = GenerateWallet.randomV3R1(tonlib, 7);
+    nftItemBuyer = GenerateWallet.randomV3R1(tonlib, 3);
+  }
 
   @Test
   public void testNft() {
@@ -214,11 +216,7 @@ public class TestNft extends CommonTest {
     // sends from adminWallet to nftItem request for static data, response comes to adminWallet
     // https://github.com/ton-blockchain/token-contract/blob/main/nft/nft-item.fc#L131
 
-    //    getStaticData(adminWallet, Utils.toNano(0.088), nftItem1Address, BigInteger.valueOf(661));
-
-    // todo fails with
-    // INVALID_BAG_OF_CELLS: bodyinvalid bag-of-cells last cell #1: end offset 125 is different from
-    // total data size 253
+    getStaticData(adminWallet, Utils.toNano(0.088), nftItem1Address, BigInteger.valueOf(661));
 
     // transfer nft item to nft sale smart-contract (send amount > full_price+1ton)
     transferNftItem(
