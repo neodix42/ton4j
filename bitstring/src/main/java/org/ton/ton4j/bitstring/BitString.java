@@ -810,7 +810,7 @@ public class BitString implements Serializable {
   }
 
   public BitString clone() {
-    BitString result = new BitString(0);
+    BitString result = new BitString(bitSet.size());
     result.bitSet = (BitSet) bitSet.clone();
     result.length = length;
     result.writeCursor = writeCursor;
@@ -819,7 +819,7 @@ public class BitString implements Serializable {
   }
 
   public BitString cloneFrom(int from) {
-    BitString result = new BitString(0);
+    BitString result = new BitString(bitSet.size());
     result.bitSet = (BitSet) bitSet.clone();
     result.length = length;
     result.writeCursor = writeCursor - (from * 8);
@@ -828,7 +828,7 @@ public class BitString implements Serializable {
   }
 
   public BitString cloneClear() {
-    BitString result = new BitString(0);
+    BitString result = new BitString(bitSet.size());
     result.bitSet = (BitSet) bitSet.clone();
     result.length = length;
     result.writeCursor = 0;
