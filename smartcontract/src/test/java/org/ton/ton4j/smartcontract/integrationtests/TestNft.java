@@ -361,30 +361,6 @@ public class TestNft extends CommonTest {
     assertThat(extMessageInfo.getError().getCode()).isZero();
   }
 
-  private void transferNftItem(
-      WalletV3R1 wallet,
-      BigInteger msgValue,
-      Address nftItemAddress,
-      BigInteger queryId,
-      Address nftSaleAddress,
-      BigInteger forwardAmount,
-      byte[] forwardPayload,
-      Address responseAddress) {
-
-    WalletV3Config walletV3Config =
-        WalletV3Config.builder()
-            .walletId(42)
-            .seqno(1)
-            .destination(nftItemAddress)
-            .amount(msgValue)
-            .body(
-                NftItem.createTransferBody(
-                    queryId, nftSaleAddress, forwardAmount, forwardPayload, responseAddress))
-            .build();
-    ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
-  }
-
   private void getStaticData(
       WalletV3R1 wallet, BigInteger msgValue, Address nftItemAddress, BigInteger queryId) {
     WalletV3Config config =
@@ -396,6 +372,34 @@ public class TestNft extends CommonTest {
             .body(NftItem.createGetStaticDataBody(queryId))
             .build();
     ExtMessageInfo extMessageInfo = wallet.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+  }
+
+  private void transferNftItem(
+      WalletV3R1 wallet,
+      BigInteger msgValue,
+      Address nftItemAddress,
+      BigInteger queryId,
+      Address nftSaleAddress,
+      BigInteger forwardAmount,
+      byte[] forwardPayload,
+      Address responseAddress) {
+
+    Cell nftTransferBody =
+        NftItem.createTransferBody(
+            queryId, nftSaleAddress, forwardAmount, forwardPayload, responseAddress);
+    WalletV3Config walletV3Config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(1)
+            .destination(nftItemAddress)
+            .amount(msgValue)
+            .body(nftTransferBody)
+            .build();
+    Cell cell = wallet.prepareExternalMsg(walletV3Config).toCell();
+    log.info("cell {}", cell);
+    ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
+    log.info("extMsgInfo {}", extMessageInfo);
     assertThat(extMessageInfo.getError().getCode()).isZero();
   }
 
