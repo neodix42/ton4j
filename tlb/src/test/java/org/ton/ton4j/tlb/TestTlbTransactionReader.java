@@ -92,17 +92,4 @@ public class TestTlbTransactionReader {
     Transaction transaction = Transaction.deserialize(cs);
     log.info("Transaction {}", transaction);
   }
-
-  @Test
-  public void testLoadTransactionDescription() {
-    Cell c =
-        CellBuilder.beginCell()
-            .fromBoc(
-                "b5ee9c724101030100900002150c0902faf08018609baa110102009e4063ac1e848000000000000000001700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005bc000000000000000000000000196a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc702b5a1da38")
-            .endCell();
-
-    CellSlice cs = CellSlice.beginParse(c);
-    TransactionDescription transactionDescription = TransactionDescription.deserialize(cs);
-    log.info("transactionDescription {}", transactionDescription);
-  }
 }

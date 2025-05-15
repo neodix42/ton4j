@@ -5,14 +5,12 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.smartcontract.GenerateWallet;
 import org.ton.ton4j.smartcontract.token.nft.NftCollection;
 import org.ton.ton4j.smartcontract.token.nft.NftItem;
 import org.ton.ton4j.smartcontract.token.nft.NftMarketplace;
@@ -38,11 +36,11 @@ public class TestNft extends CommonTest {
   private Address nftItem1Address;
   private Address nftItem2Address;
 
-  @BeforeClass
-  public static void setUpClass() throws InterruptedException {
-    adminWallet = GenerateWallet.randomV3R1(tonlib, 7);
-    nftItemBuyer = GenerateWallet.randomV3R1(tonlib, 3);
-  }
+  //  @BeforeClass
+  //  public static void setUpClass() throws InterruptedException {
+  //    adminWallet = GenerateWallet.randomV3R1(tonlib, 7);
+  //    nftItemBuyer = GenerateWallet.randomV3R1(tonlib, 3);
+  //  }
 
   @Test
   public void testNft() {
@@ -376,7 +374,7 @@ public class TestNft extends CommonTest {
     WalletV3Config walletV3Config =
         WalletV3Config.builder()
             .walletId(42)
-            .seqno(wallet.getSeqno())
+            .seqno(1)
             .destination(nftItemAddress)
             .amount(msgValue)
             .body(
@@ -399,5 +397,24 @@ public class TestNft extends CommonTest {
             .build();
     ExtMessageInfo extMessageInfo = wallet.send(config);
     assertThat(extMessageInfo.getError().getCode()).isZero();
+  }
+
+  @Test
+  public void testNftQuick() {
+
+    WalletV3R1 adminWallet = WalletV3R1.builder().tonlib(tonlib).wc(0).walletId(42).build();
+    Address nftItem1Address = Address.of("EQBOR8LlQGD38A-VvTSLmXDulBx2bVzGPIX0I9G9un_v3a3B");
+    Address nftSale1Address = Address.of("EQCbTs8Leh60JMoVc4HftL6RWvzEcVoUm4ACArQFBt-M15Ue");
+
+    transferNftItem(
+        adminWallet,
+        Utils.toNano(1.4),
+        nftItem1Address,
+        BigInteger.ZERO,
+        nftSale1Address,
+        Utils.toNano(0.02),
+        // "gift1".getBytes(),
+        null,
+        adminWallet.getAddress());
   }
 }

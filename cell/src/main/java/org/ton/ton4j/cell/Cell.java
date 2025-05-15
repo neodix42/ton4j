@@ -16,7 +16,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.utils.Utils;
 
-/** Implements Cell class, where BitString having elements of Boolean type. */
 @Slf4j
 public class Cell implements Serializable {
 
@@ -973,7 +972,9 @@ public class Cell implements Serializable {
   }
 
   private byte[] serialize(int refIndexSzBytes, Map<String, IdxItem> index, boolean hasHash) {
-    byte[] body = this.getBits().toByteArray();
+    //    byte[] body = this.getBits().toByteArray();
+    byte[] body =
+        Utils.unsignedBytesToSigned(CellSlice.beginParse(this).loadSlice(this.bits.getUsedBits()));
     int unusedBits = 8 - (bits.getUsedBits() % 8);
 
     if (unusedBits != 8) {

@@ -164,7 +164,7 @@ public class TestCellSlice {
     Cell c1 = CellBuilder.beginCell().storeBits(Arrays.asList(false, false, true, true)).endCell();
     CellSlice cs = CellSlice.beginParse(c1);
     BitString bs = cs.skipBits(2).loadBits(2);
-    log.info(bs.toBitString());
+    log.info("bs {}", bs.toBitString());
     assertThat(bs.toBitString()).isEqualTo("11");
 
     assertThrows(Error.class, () -> cs.skipBits(6).loadBits(2));
@@ -195,6 +195,13 @@ public class TestCellSlice {
     log.info("s {}", s);
 
     assertThat(s).isEqualTo(result);
+  }
+
+  @Test
+  public void testCellSliceLoadSlice() {
+    Cell c1 = CellBuilder.beginCell().storeBits(Arrays.asList(false, false, true, true)).endCell();
+    int[] slice = CellSlice.beginParse(c1).loadSlice(c1.bits.getUsedBits());
+    log.info("slice {} hex {}", slice.length, Integer.toHexString(slice[0]));
   }
 
   @Test
