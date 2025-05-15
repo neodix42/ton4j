@@ -398,6 +398,7 @@ public class TestNft extends CommonTest {
             .build();
     Cell cell = wallet.prepareExternalMsg(walletV3Config).toCell();
     log.info("cell {}", cell);
+    log.info("cell boc {}", cell.toHex());
     ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
     log.info("extMsgInfo {}", extMessageInfo);
     assertThat(extMessageInfo.getError().getCode()).isZero();
@@ -406,7 +407,12 @@ public class TestNft extends CommonTest {
   @Test
   public void testNftQuick() {
 
-    WalletV3R1 adminWallet = WalletV3R1.builder().tonlib(tonlib).wc(0).walletId(42).build();
+    byte[] secretKey =
+        Utils.hexToSignedBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+    TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(secretKey);
+
+    WalletV3R1 adminWallet =
+        WalletV3R1.builder().tonlib(tonlib).keyPair(keyPair).wc(0).walletId(42).build();
     Address nftItem1Address = Address.of("EQBOR8LlQGD38A-VvTSLmXDulBx2bVzGPIX0I9G9un_v3a3B");
     Address nftSale1Address = Address.of("EQCbTs8Leh60JMoVc4HftL6RWvzEcVoUm4ACArQFBt-M15Ue");
 

@@ -818,6 +818,8 @@ public class Cell implements Serializable {
       sortedCell.dataIndex = payload.length;
     }
 
+    log.info("payload {}", Utils.bytesToHex(payload));
+
     // bytes needed to store len of payload
     int sizeBits = Utils.log2Ceil(payload.length + 1);
     byte sizeBytes = (byte) ((sizeBits + 7) / 8);
