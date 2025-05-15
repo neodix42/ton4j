@@ -481,7 +481,8 @@ public class Cell implements Serializable {
     }
 
     if (cellsNum > dataLen / 2) {
-      throw new Error("cells num looks malicious: data len " + data + ", cells " + cellsNum);
+      throw new Error(
+          "cells num looks malicious: data len " + Arrays.toString(data) + ", cells " + cellsNum);
     }
 
     byte[] payload = r.readBytes(dataLen);
@@ -824,7 +825,7 @@ public class Cell implements Serializable {
     // has_idx 1bit, hash_crc32 1bit,  has_cache_bits 1bit, flags 2bit, size_bytes 3 bit
     byte flagsByte = 0;
     if (hasIdx) {
-      flagsByte |= 0b1_0_0_00_000;
+      flagsByte |= (byte) 0b1_0_0_00_000;
     }
     if (hasCrc32c) {
       flagsByte |= 0b0_1_0_00_000;
@@ -833,7 +834,7 @@ public class Cell implements Serializable {
       flagsByte |= 0b0_0_1_00_000;
     }
 
-    flagsByte |= cellSizeBytes;
+    flagsByte |= (byte) cellSizeBytes;
 
     byte[] data = new byte[0];
 
@@ -972,9 +973,7 @@ public class Cell implements Serializable {
   }
 
   private byte[] serialize(int refIndexSzBytes, Map<String, IdxItem> index, boolean hasHash) {
-    //    byte[] body = this.getBits().toByteArray();
-    byte[] body =
-        Utils.unsignedBytesToSigned(CellSlice.beginParse(this).loadSlice(this.bits.getUsedBits()));
+    byte[] body = this.getBits().toByteArray();
     int unusedBits = 8 - (bits.getUsedBits() % 8);
 
     if (unusedBits != 8) {
@@ -991,8 +990,8 @@ public class Cell implements Serializable {
     data = Utils.concatBytes(descriptors, body);
 
     long refsOffset = bufLn - refsLn;
-    for (int i = 0; i < refs.size(); i++) {
-      String refIndex = Utils.bytesToHex(refs.get(i).getHash());
+    for (Cell ref : refs) {
+      String refIndex = Utils.bytesToHex(ref.getHash());
       byte[] src = Utils.dynamicIntBytes(index.get(refIndex).index, refIndexSzBytes);
       data = Utils.concatBytes(data, src);
     }
