@@ -7,49 +7,53 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import java.util.logging.Logger;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.utils.Utils;
 
 /**
- * Each element is one bit in memory. Interestingly, but this solution loses to Deque<Boolean> array
- * solution from memory footprint allocation.
+ * Each element is one bit in memory. Implementation uses Java's BitSet for efficient bit manipulation.
  */
 public class BitString implements Serializable {
   private static final Logger log = Logger.getLogger(BitString.class.getName());
-  byte[] array;
+  private BitSet bitSet;
   public int writeCursor;
   public int readCursor;
   public int length;
 
   public BitString() {
-    array = new byte[1023];
+    bitSet = new BitSet(1023 * 8);
     writeCursor = 0;
     readCursor = 0;
     length = 1023 * 8; // Each byte holds 8 bits
   }
 
   public BitString(BitString bs) {
+    bitSet = new BitSet();
+    writeCursor = 0;
+    readCursor = 0;
+    length = bs.length;
     for (int i = bs.readCursor; i < bs.writeCursor; i++) {
       writeBit(bs.get(i));
     }
   }
 
   /**
-   * Create RealBitString limited by length
+   * Create BitString limited by length
    *
-   * @param length int length of RealBitString in bits
+   * @param length int length of BitString in bits
    */
   public BitString(int length) {
-    array = new byte[(int) Math.ceil(length / (double) 8)];
+    bitSet = new BitSet(length);
     writeCursor = 0;
     readCursor = 0;
     this.length = length;
   }
 
   /**
-   * Create RealBitString from byte array
+   * Create BitString from byte array
    *
    * @param bytes byte[] array of bytes
    */
@@ -58,14 +62,14 @@ public class BitString implements Serializable {
   }
 
   /**
-   * Create RealBitString from byte array with specified size
+   * Create BitString from byte array with specified size
    *
    * @param bytes byte[] array of bytes
    * @param size int number of bits to read
    */
   public BitString(byte[] bytes, int size) {
     if (bytes.length == 0) {
-      array = new byte[0];
+      bitSet = new BitSet(0);
       writeCursor = 0;
       readCursor = 0;
       length = 0;
@@ -77,7 +81,7 @@ public class BitString implements Serializable {
               '0');
 
       length = size;
-      array = new byte[(int) Math.ceil(length / (double) 8)];
+      bitSet = new BitSet(length);
       writeCursor = 0;
       readCursor = 0;
 
@@ -94,13 +98,13 @@ public class BitString implements Serializable {
   }
 
   /**
-   * Create RealBitString from int array
+   * Create BitString from int array
    *
    * @param bytes int[] array of bytes
    */
   public BitString(int[] bytes) {
     if (bytes.length == 0) {
-      array = new byte[0];
+      bitSet = new BitSet(0);
       writeCursor = 0;
       readCursor = 0;
       length = 0;
@@ -112,7 +116,7 @@ public class BitString implements Serializable {
               '0');
 
       length = bits.length;
-      array = new byte[(int) Math.ceil(length / (double) 8)];
+      bitSet = new BitSet(length);
       writeCursor = 0;
       readCursor = 0;
 
@@ -161,7 +165,7 @@ public class BitString implements Serializable {
    */
   public Boolean get(int n) {
     checkRange(n);
-    return (array[(n / 8)] & (1 << (7 - (n % 8)))) > 0;
+    return bitSet.get(n);
   }
 
   /**
@@ -170,8 +174,8 @@ public class BitString implements Serializable {
    * @param n int
    */
   private void checkRange(int n) {
-    if (n > length) {
-      throw new Error("RealBitString overflow. n[" + n + "] >= length[" + length + "]");
+    if (n >= length) {
+      throw new Error("BitString overflow. n[" + n + "] >= length[" + length + "]");
     }
   }
 
@@ -182,7 +186,7 @@ public class BitString implements Serializable {
    */
   void on(int n) {
     try {
-      array[(n / 8)] |= (byte) (1 << (7 - (n % 8)));
+      bitSet.set(n);
     } catch (Exception e) {
       // ignore
     }
@@ -195,7 +199,7 @@ public class BitString implements Serializable {
    */
   void off(int n) {
     try {
-      array[(n / 8)] &= (byte) ~(1 << (7 - (n % 8)));
+      bitSet.clear(n);
     } catch (Exception e) {
       // ignore
     }
@@ -208,7 +212,7 @@ public class BitString implements Serializable {
    */
   void toggle(int n) {
     try {
-      array[(n / 8)] ^= (byte) (1 << (7 - (n % 8)));
+      bitSet.flip(n);
     } catch (Exception e) {
       // ignore
     }
@@ -430,7 +434,7 @@ public class BitString implements Serializable {
   }
 
   /**
-   * Appends RealBitString with Address addr_none$00 = MsgAddressExt; addr_std$10 anycast:(Maybe
+   * Appends BitString with Address addr_none$00 = MsgAddressExt; addr_std$10 anycast:(Maybe
    * Anycast) workchain_id:int8 address:uint256 = MsgAddressInt;
    *
    * @param address Address
@@ -447,9 +451,9 @@ public class BitString implements Serializable {
   }
 
   /**
-   * Write another RealBitString to this RealBitString
+   * Write another BitString to this BitString
    *
-   * @param anotherBitString RealBitString
+   * @param anotherBitString BitString
    */
   public void writeBitString(BitString anotherBitString) {
     for (int i = anotherBitString.readCursor; i < anotherBitString.writeCursor; i++) {
@@ -478,10 +482,10 @@ public class BitString implements Serializable {
   }
 
   /**
-   * Read n bits from the RealBitString
+   * Read n bits from the BitString
    *
    * @param n integer
-   * @return RealBitString with length n read from original RealBitString
+   * @return BitString with length n read from original BitString
    */
   public BitString preReadBits(int n) {
     int oldReadCursor = readCursor;
@@ -494,10 +498,10 @@ public class BitString implements Serializable {
   }
 
   /**
-   * Read n bits from the RealBitString
+   * Read n bits from the BitString
    *
    * @param n integer
-   * @return RealBitString with length n read from original RealBitString
+   * @return BitString with length n read from original BitString
    */
   public BitString readBits(int n) {
     BitString result = new BitString(n);
@@ -508,9 +512,9 @@ public class BitString implements Serializable {
   }
 
   /**
-   * Read rest of bits from the RealBitString
+   * Read rest of bits from the BitString
    *
-   * @return RealBitString with length n read from original RealBitString
+   * @return BitString with length n read from original BitString
    */
   public BitString readBits() {
     BitString result = new BitString(); // todo
@@ -521,7 +525,7 @@ public class BitString implements Serializable {
   }
 
   /**
-   * Read bits of bitLength without moving readCursor, i.e. modifying RealBitString
+   * Read bits of bitLength without moving readCursor, i.e. modifying BitString
    *
    * @param bitLength length in bits
    * @return BigInteger
@@ -662,7 +666,7 @@ public class BitString implements Serializable {
   }
 
   /**
-   * @return RealBitString from 0 to writeCursor
+   * @return BitString from 0 to writeCursor
    */
   public String toBitString() {
     StringBuilder s = new StringBuilder();
@@ -683,12 +687,12 @@ public class BitString implements Serializable {
   }
 
   public int getLength() {
-    return array.length * 8;
-    // return getUsedBits();
+    // Calculate length based on BitSet capacity
+    return Math.max(length, bitSet.length());
   }
 
   /**
-   * @return RealBitString from current position to writeCursor
+   * @return BitString from current position to writeCursor
    */
   public String getBitString() {
     StringBuilder s = new StringBuilder();
@@ -814,7 +818,7 @@ public class BitString implements Serializable {
 
   public BitString clone() {
     BitString result = new BitString(0);
-    result.array = Arrays.copyOfRange(array, 0, array.length);
+    result.bitSet = (BitSet) bitSet.clone();
     result.length = length;
     result.writeCursor = writeCursor;
     result.readCursor = readCursor;
@@ -823,7 +827,7 @@ public class BitString implements Serializable {
 
   public BitString cloneFrom(int from) {
     BitString result = new BitString(0);
-    result.array = Arrays.copyOfRange(array, from, array.length);
+    result.bitSet = (BitSet) bitSet.clone();
     result.length = length;
     result.writeCursor = writeCursor - (from * 8);
     result.readCursor = readCursor;
@@ -832,7 +836,7 @@ public class BitString implements Serializable {
 
   public BitString cloneClear() {
     BitString result = new BitString(0);
-    result.array = Arrays.copyOfRange(array, 0, array.length);
+    result.bitSet = (BitSet) bitSet.clone();
     result.length = length;
     result.writeCursor = 0;
     result.readCursor = 0;
@@ -845,8 +849,12 @@ public class BitString implements Serializable {
    * @return String
    */
   public String toHex() {
+    if (writeCursor == 0) {
+      return "";
+    }
+    
     if (writeCursor % 4 == 0) {
-      byte[] arr = Arrays.copyOfRange(array, 0, (int) Math.ceil(writeCursor / (double) 8));
+      byte[] arr = toByteArray();
       String s = Utils.bytesToHex(arr).toUpperCase();
       if (writeCursor % 8 == 0) {
         return s;
@@ -854,7 +862,12 @@ public class BitString implements Serializable {
         return s.substring(0, s.length() - 1);
       }
     } else {
-      BitString temp = clone();
+      // Create a temporary BitString with increased length to accommodate padding
+      BitString temp = new BitString(writeCursor + 4);
+      // Copy all bits from the original BitString
+      for (int i = 0; i < writeCursor; i++) {
+        temp.writeBit(get(i));
+      }
       temp.writeBit(true);
       while (temp.writeCursor % 4 != 0) {
         temp.writeBit(false);
