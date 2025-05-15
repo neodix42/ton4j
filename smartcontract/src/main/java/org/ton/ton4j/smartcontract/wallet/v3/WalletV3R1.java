@@ -120,6 +120,8 @@ public class WalletV3R1 implements Contract {
             .build()
             .toCell();
 
+    System.out.println("orderCell " + order.print());
+
     System.out.println("order " + order.toHex());
 
     return CellBuilder.beginCell()

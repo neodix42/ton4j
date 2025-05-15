@@ -392,6 +392,7 @@ public class TestNft extends CommonTest {
         WalletV3Config.builder()
             .walletId(42)
             .seqno(1)
+            .validUntil(3600)
             .destination(nftItemAddress)
             .amount(msgValue)
             .body(nftTransferBody)
@@ -413,6 +414,8 @@ public class TestNft extends CommonTest {
 
     WalletV3R1 adminWallet =
         WalletV3R1.builder().tonlib(tonlib).keyPair(keyPair).wc(0).walletId(42).build();
+    Address adminAddress = adminWallet.getAddress();
+    log.info("adminAddress {}", adminAddress.toRaw());
     Address nftItem1Address = Address.of("EQBOR8LlQGD38A-VvTSLmXDulBx2bVzGPIX0I9G9un_v3a3B");
     Address nftSale1Address = Address.of("EQCbTs8Leh60JMoVc4HftL6RWvzEcVoUm4ACArQFBt-M15Ue");
 
