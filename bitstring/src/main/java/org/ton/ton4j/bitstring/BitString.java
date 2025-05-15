@@ -25,10 +25,10 @@ public class BitString implements Serializable {
   public int length;
 
   public BitString() {
-    bitSet = new BitSet(1023 * 8);
+    bitSet = new BitSet(1023);
     writeCursor = 0;
     readCursor = 0;
-    length = 1023 * 8; // Each byte holds 8 bits
+    length = 1023;
   }
 
   public BitString(BitString bs) {
@@ -111,7 +111,7 @@ public class BitString implements Serializable {
    */
   public BitString(int[] bytes) {
     if (bytes.length == 0) {
-      bitSet = new BitSet(0);
+      bitSet = new BitSet();
       writeCursor = 0;
       readCursor = 0;
       length = 0;
