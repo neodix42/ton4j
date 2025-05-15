@@ -14,7 +14,8 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.utils.Utils;
 
 /**
- * Each element is one bit in memory. Implementation uses Java's BitSet for efficient bit manipulation.
+ * Each element is one bit in memory. Implementation uses Java's BitSet for efficient bit
+ * manipulation.
  */
 public class BitString implements Serializable {
   private static final Logger log = Logger.getLogger(BitString.class.getName());
@@ -78,10 +79,10 @@ public class BitString implements Serializable {
       bitSet = new BitSet(length);
       writeCursor = 0;
       readCursor = 0;
-      
+
       // Calculate how many complete bytes we can process
       int bytesToProcess = Math.min(bytes.length, (size + 7) / 8);
-      
+
       for (int i = 0; i < bytesToProcess; i++) {
         int value = bytes[i] & 0xFF; // Ensure we treat the value as unsigned byte
         for (int j = 0; j < 8; j++) {
@@ -89,7 +90,7 @@ public class BitString implements Serializable {
           if (writeCursor >= size) {
             break;
           }
-          
+
           // Check if the bit at position j (from MSB) is set
           boolean bitValue = ((value >> (7 - j)) & 1) == 1;
           if (bitValue) {
@@ -119,9 +120,9 @@ public class BitString implements Serializable {
       bitSet = new BitSet(length);
       writeCursor = 0;
       readCursor = 0;
-      
-      for (int i = 0; i < bytes.length; i++) {
-        int value = bytes[i] & 0xFF; // Ensure we treat the value as unsigned byte
+
+      for (int aByte : bytes) {
+        int value = aByte & 0xFF; // Ensure we treat the value as unsigned byte
         for (int j = 0; j < 8; j++) {
           // Check if the bit at position j (from MSB) is set
           boolean bitValue = ((value >> (7 - j)) & 1) == 1;
@@ -724,17 +725,17 @@ public class BitString implements Serializable {
         reversedBitSet.set(byteIndex * 8 + reversedBitPosition);
       }
     }
-    
+
     // Calculate the number of bytes needed
     int numBytes = (writeCursor + 7) / 8;
     byte[] result = new byte[numBytes];
-    
+
     // Convert the reversed BitSet to a byte array
     byte[] tempBytes = reversedBitSet.toByteArray();
-    
+
     // Copy bytes, ensuring we have the right number of bytes
     System.arraycopy(tempBytes, 0, result, 0, Math.min(tempBytes.length, numBytes));
-    
+
     return result;
   }
 
@@ -750,11 +751,11 @@ public class BitString implements Serializable {
 
     byte[] bytes = toByteArray();
     int[] result = new int[bytes.length];
-    
+
     for (int i = 0; i < bytes.length; i++) {
       result[i] = bytes[i] & 0xFF; // Convert signed byte to unsigned int
     }
-    
+
     return result;
   }
 
@@ -844,7 +845,7 @@ public class BitString implements Serializable {
     if (writeCursor == 0) {
       return "";
     }
-    
+
     if (writeCursor % 4 == 0) {
       byte[] arr = toByteArray();
       String s = Utils.bytesToHex(arr).toUpperCase();
