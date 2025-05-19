@@ -23,15 +23,15 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.queries.*;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.BlockIdExt;
 import org.ton.ton4j.tonlib.types.globalconfig.*;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -454,7 +454,7 @@ public class Tonlib {
         return response;
       }
 
-      if (StringUtils.isEmpty(response) || response.contains("error")) {
+      if (StringUtils.isEmpty(response) || response.contains("\"@type\":\"error\"")) {
         if (!StringUtils.isEmpty(response)) {
           log.info(response);
         }
@@ -516,7 +516,7 @@ public class Tonlib {
       Utils.sleepMs(20);
 
     } while (StringUtils.isEmpty(response)
-        || response.contains("error")
+        || response.contains("\"@type\":\"error\"")
         || response.contains("syncStateInProgress")
         || response.contains("syncStateDone"));
 
