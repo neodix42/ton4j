@@ -204,6 +204,9 @@ public class FiftRunner {
   }
 
   public String getFiftPath() {
+    if (StringUtils.isNotEmpty(fiftExecutablePath)) {
+      return fiftExecutablePath;
+    }
     return Utils.detectAbsolutePath("fift", false);
   }
 

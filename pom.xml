@@ -300,6 +300,12 @@
                                 <include>signedOrder.boc</include>
                                 <include>*.blkstate</include>
                                 <include>*.addr</include>
+                                <include>libemulator-*</include>
+                                <include>tolk-*</include>
+                                <include>fift-*</include>
+                                <include>func-*</include>
+                                <include>lite-client-*</include>
+                                <include>tonlibjson-*</include>
                             </includes>
                         </fileset>
                     </filesets>

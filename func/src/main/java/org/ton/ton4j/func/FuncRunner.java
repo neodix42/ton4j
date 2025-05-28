@@ -5,6 +5,7 @@ import static java.util.Objects.isNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -82,6 +83,9 @@ public class FuncRunner {
   }
 
   public String getFuncPath() {
+    if (StringUtils.isNotEmpty(funcExecutablePath)) {
+      return funcExecutablePath;
+    }
     return Utils.detectAbsolutePath("func", false);
   }
 
@@ -114,7 +118,7 @@ public class FuncRunner {
       } else {
         log.error("exit value {}", p.exitValue());
         log.error(resultInput);
-        throw new Exception("Error running " + withBinaryCommand);
+        throw new Exception("Error running " + Arrays.toString(withBinaryCommand));
       }
 
     } catch (final IOException e) {

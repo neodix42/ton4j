@@ -79,8 +79,6 @@ public class TvmEmulator {
           super.verbosityLevel = TvmVerbosityLevel.TRUNCATED;
         }
 
-        Utils.disableNativeOutput(super.verbosityLevel.ordinal());
-
         if (isNull(super.configType)) {
           super.configType = EmulatorConfig.MAINNET;
         }
@@ -156,8 +154,6 @@ public class TvmEmulator {
               super.tvmEmulator, super.extraCurrencies);
         }
 
-        Utils.enableNativeOutput(super.verbosityLevel.ordinal());
-
         if (super.tvmEmulator == 0) {
           throw new Error("Can't create emulator instance");
         }
@@ -176,9 +172,7 @@ public class TvmEmulator {
   }
 
   public void destroy() {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     tvmEmulatorI.tvm_emulator_destroy(tvmEmulator);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
   }
 
   /**
@@ -188,9 +182,7 @@ public class TvmEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setLibs(String libsBoc) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     boolean result = tvmEmulatorI.tvm_emulator_set_libraries(tvmEmulator, libsBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     return result;
   }
 
@@ -223,11 +215,9 @@ public class TvmEmulator {
    */
   public boolean setC7(
       String address, long unixTime, long balance, String randSeedHex, String config) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     boolean result =
         tvmEmulatorI.tvm_emulator_set_c7(
             tvmEmulator, address, unixTime, balance, randSeedHex, config);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     return result;
   }
 
@@ -238,9 +228,7 @@ public class TvmEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setPrevBlockInfo(String infoBoc) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     boolean result = tvmEmulatorI.tvm_emulator_set_prev_blocks_info(tvmEmulator, infoBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     return result;
   }
 
@@ -251,10 +239,7 @@ public class TvmEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setGasLimit(long gasLimit) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
-    boolean result = tvmEmulatorI.tvm_emulator_set_gas_limit(tvmEmulator, gasLimit);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
-    return result;
+    return tvmEmulatorI.tvm_emulator_set_gas_limit(tvmEmulator, gasLimit);
   }
 
   /**
@@ -264,9 +249,7 @@ public class TvmEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setDebugEnabled(boolean debugEnabled) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     boolean result = tvmEmulatorI.tvm_emulator_set_debug_enabled(tvmEmulator, debugEnabled);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     return result;
   }
 
@@ -280,9 +263,7 @@ public class TvmEmulator {
    *     serialized stack (VmStack)", "missing_library": null, "gas_used": 1212 }
    */
   public GetMethodResult runGetMethod(int methodId, String stackBoc) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     String result = tvmEmulatorI.tvm_emulator_run_get_method(tvmEmulator, methodId, stackBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, GetMethodResult.class);
   }
@@ -296,7 +277,6 @@ public class TvmEmulator {
    *     serialized stack (VmStack)", "missing_library": null, "gas_used": 1212 }
    */
   public GetMethodResult runGetMethod(int methodId) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     String result =
         tvmEmulatorI.tvm_emulator_run_get_method(
             tvmEmulator,
@@ -307,13 +287,11 @@ public class TvmEmulator {
                 .build()
                 .toCell()
                 .toBase64());
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, GetMethodResult.class);
   }
 
   public GetMethodResult runGetMethod(String methodName) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     String result =
         tvmEmulatorI.tvm_emulator_run_get_method(
             tvmEmulator,
@@ -324,7 +302,6 @@ public class TvmEmulator {
                 .build()
                 .toCell()
                 .toBase64());
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, GetMethodResult.class);
   }
@@ -339,11 +316,9 @@ public class TvmEmulator {
    *     serialized stack (VmStack)", "missing_library": null, "gas_used": 1212 }
    */
   public GetMethodResult runGetMethod(String methodName, String stackBoc) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     String result =
         tvmEmulatorI.tvm_emulator_run_get_method(
             tvmEmulator, Utils.calculateMethodId(methodName), stackBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, GetMethodResult.class);
   }
@@ -412,10 +387,7 @@ public class TvmEmulator {
    *     result$_ exit_code:(## 32) gas_used:(## 32) stack:^VmStack
    */
   public String emulateRunMethod(int len, String paramsBoc, long gasLimit) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
-    String result = tvmEmulatorI.tvm_emulator_emulate_run_method(len, paramsBoc, gasLimit);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
-    return result;
+    return tvmEmulatorI.tvm_emulator_emulate_run_method(len, paramsBoc, gasLimit);
   }
 
   /**
@@ -429,9 +401,7 @@ public class TvmEmulator {
    *     type (OutList n)" }
    */
   public SendExternalMessageResult sendExternalMessage(String messageBodyBoc) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     String result = tvmEmulatorI.tvm_emulator_send_external_message(tvmEmulator, messageBodyBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, SendExternalMessageResult.class);
   }
@@ -448,10 +418,8 @@ public class TvmEmulator {
    *     type (OutList n)" }
    */
   public SendInternalMessageResult sendInternalMessage(String messageBodyBoc, long amount) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     String result =
         tvmEmulatorI.tvm_emulator_send_internal_message(tvmEmulator, messageBodyBoc, amount);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, SendInternalMessageResult.class);
   }
@@ -461,10 +429,7 @@ public class TvmEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setExtraCurrencies(String extraCurrencies) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
-    boolean result = tvmEmulatorI.tvm_emulator_set_extra_currencies(tvmEmulator, extraCurrencies);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
-    return result;
+    return tvmEmulatorI.tvm_emulator_set_extra_currencies(tvmEmulator, extraCurrencies);
   }
 
   private static Cell convertLibsToHashMap(List<Cell> libs) {

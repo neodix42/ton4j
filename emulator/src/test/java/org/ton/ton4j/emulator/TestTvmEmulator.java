@@ -22,6 +22,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.emulator.tvm.*;
 import org.ton.ton4j.fift.FiftRunner;
 import org.ton.ton4j.func.FuncRunner;
@@ -36,10 +40,6 @@ import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.BlockIdExt;
 import org.ton.ton4j.tonlib.types.SmcLibraryEntry;
 import org.ton.ton4j.tonlib.types.SmcLibraryResult;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j

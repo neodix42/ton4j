@@ -99,11 +99,11 @@ public class Utils {
   public static byte[] intToByteArray(int value) {
     return ByteUtils.intToByteArray(value);
   }
-  
+
   /**
-   * Optimized version of intToByteArray that writes directly to an existing buffer
-   * This avoids creating a new byte array for each conversion
-   * 
+   * Optimized version of intToByteArray that writes directly to an existing buffer This avoids
+   * creating a new byte array for each conversion
+   *
    * @param value The integer value to convert
    * @param buffer The buffer to write to
    */
@@ -413,14 +413,6 @@ public class Utils {
 
   public static String int2ip(long ip) {
     return NetworkUtils.int2ip(ip);
-  }
-
-  public static void disableNativeOutput(int verbosityLevel) {
-    NetworkUtils.disableNativeOutput(verbosityLevel);
-  }
-
-  public static void enableNativeOutput(int verbosityLevel) {
-    NetworkUtils.enableNativeOutput(verbosityLevel);
   }
 
   // ===== FileUtils Delegations =====

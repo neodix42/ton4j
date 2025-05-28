@@ -493,16 +493,6 @@ public class TestUtils {
   }
 
   @Test
-  public void testDisableEnableSystemOutput() {
-    long l = System.currentTimeMillis();
-    for (int i = 0; i < 10000; i++) {
-      Utils.disableNativeOutput(1);
-      Utils.enableNativeOutput(1);
-    }
-    log.info("10k switches took {}ms", System.currentTimeMillis() - l);
-  }
-
-  @Test
   public void testGetArtifactUrl() {
 
     String operSys = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);

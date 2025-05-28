@@ -71,6 +71,7 @@ public class TestTxEmulator {
             .configType(EmulatorConfig.TESTNET)
             .verbosityLevel(TxVerbosityLevel.TRUNCATED)
             .build();
+    txEmulator.setVerbosityLevel(0);
 
     testAccount =
         Account.builder()

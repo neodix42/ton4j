@@ -104,24 +104,4 @@ public final class NetworkUtils {
     MAC_ARM64,
     UNKNOWN
   }
-
-  /**
-   * Disable native output
-   *
-   * @param verbosityLevel The verbosity level
-   */
-  public static void disableNativeOutput(int verbosityLevel) {
-    //    log.debug("Disabling native output with verbosity level {}", verbosityLevel);
-    // Implementation would depend on the native library integration
-  }
-
-  /**
-   * Enable native output
-   *
-   * @param verbosityLevel The verbosity level
-   */
-  public static void enableNativeOutput(int verbosityLevel) {
-    //    log.debug("Enabling native output with verbosity level {}", verbosityLevel);
-    // Implementation would depend on the native library integration
-  }
 }

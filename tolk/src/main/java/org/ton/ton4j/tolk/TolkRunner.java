@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
@@ -129,7 +130,10 @@ public class TolkRunner {
     return "";
   }
 
-  public String getTolkSystemPath() {
+  public String getTolkPath() {
+    if (StringUtils.isNotEmpty(tolkExecutablePath)) {
+      return tolkExecutablePath;
+    }
     return Utils.detectAbsolutePath("tolk", false);
   }
 
@@ -165,7 +169,7 @@ public class TolkRunner {
       } else {
         log.error("exit value {}", p.exitValue());
         log.error(resultInput);
-        throw new Exception("Error running " + withBinaryCommand);
+        throw new Exception("Error running " + Arrays.toString(withBinaryCommand));
       }
 
     } catch (final IOException e) {

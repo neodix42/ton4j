@@ -15,6 +15,7 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.fift.FiftRunner;
 import org.ton.ton4j.func.FuncRunner;
 import org.ton.ton4j.tolk.TolkRunner;
+import org.ton.ton4j.utils.Utils;
 
 /**
  * Make sure you have fift and func installed. See <a
@@ -51,13 +52,19 @@ public class SmartContractCompiler {
         super.printInfo = true;
       }
       if (isNull(super.funcRunner)) {
-        super.funcRunner = FuncRunner.builder().build();
+        super.funcRunner =
+            FuncRunner.builder().funcExecutablePath(Utils.getFuncGithubUrl()).build();
       }
       if (isNull(super.fiftRunner)) {
-        super.fiftRunner = FiftRunner.builder().build();
+        super.fiftRunner =
+            FiftRunner.builder()
+                .fiftExecutablePath(Utils.getFiftGithubUrl())
+                .printInfo(true)
+                .build();
       }
       if (isNull(super.tolkRunner)) {
-        super.tolkRunner = TolkRunner.builder().build();
+        super.tolkRunner =
+            TolkRunner.builder().tolkExecutablePath(Utils.getTolkGithubUrl()).build();
       }
       return super.build();
     }

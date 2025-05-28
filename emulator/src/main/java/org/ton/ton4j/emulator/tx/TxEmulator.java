@@ -103,8 +103,6 @@ public class TxEmulator {
             }
         }
 
-        Utils.disableNativeOutput(super.verbosityLevel.ordinal());
-
         super.txEmulator =
             super.txEmulatorI.transaction_emulator_create(
                 configBoc, super.verbosityLevel.ordinal());
@@ -120,8 +118,6 @@ public class TxEmulator {
           super.txEmulatorI.transaction_emulator_set_libs(
               super.txEmulator, convertLibsToHashMap(super.libraries).toBase64());
         }
-
-        Utils.enableNativeOutput(super.verbosityLevel.ordinal());
 
         if (super.txEmulator == 0) {
           throw new Error("Can't create tx emulator instance");
@@ -174,11 +170,9 @@ public class TxEmulator {
    *     actions boc (OutList n)", "elapsed_time": 0.02 }
    */
   public EmulateTransactionResult emulateTransaction(String shardAccountBoc, String messageBoc) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     String result =
         txEmulatorI.transaction_emulator_emulate_transaction(
             txEmulator, shardAccountBoc, messageBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, EmulateTransactionResult.class);
   }
@@ -232,11 +226,9 @@ public class TxEmulator {
 
     String shardAccountBocBase64 = shardAccount.toCell().toBase64();
 
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     String result =
         txEmulatorI.transaction_emulator_emulate_transaction(
             txEmulator, shardAccountBocBase64, messageBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
     return gson.fromJson(result, EmulateTransactionResult.class);
   }
@@ -248,9 +240,7 @@ public class TxEmulator {
    *     debug)
    */
   public void setVerbosityLevel(int verbosityLevel) {
-    Utils.disableNativeOutput(verbosityLevel);
     txEmulatorI.emulator_set_verbosity_level(txEmulator, verbosityLevel);
-    Utils.enableNativeOutput(verbosityLevel);
   }
 
   /**
@@ -260,9 +250,7 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setDebugEnabled(boolean debugEnabled) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     boolean result = txEmulatorI.transaction_emulator_set_debug_enabled(txEmulator, debugEnabled);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     return result;
   }
 
@@ -273,18 +261,13 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setLibs(String libsBoc) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
-    boolean result = txEmulatorI.transaction_emulator_set_libs(txEmulator, libsBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
-    return result;
+    return txEmulatorI.transaction_emulator_set_libs(txEmulator, libsBoc);
   }
 
   public boolean setLibs(List<Cell> libCells) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     boolean result =
         txEmulatorI.transaction_emulator_set_libs(
             txEmulator, convertLibsToHashMap(libCells).toBase64());
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     return result;
   }
 
@@ -295,9 +278,7 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setPrevBlockInfo(String infoBoc) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     boolean result = txEmulatorI.transaction_emulator_set_prev_blocks_info(txEmulator, infoBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
     return result;
   }
 
@@ -308,10 +289,7 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setRandSeed(String randSeedHex) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
-    boolean result = txEmulatorI.transaction_emulator_set_rand_seed(txEmulator, randSeedHex);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
-    return result;
+    return txEmulatorI.transaction_emulator_set_rand_seed(txEmulator, randSeedHex);
   }
 
   /**
@@ -321,7 +299,6 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setUnixTime(long utime) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     return txEmulatorI.transaction_emulator_set_unixtime(txEmulator, utime);
   }
 
@@ -332,10 +309,7 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setConfig(String configBoc) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
-    boolean result = txEmulatorI.transaction_emulator_set_config(txEmulator, configBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
-    return result;
+    return txEmulatorI.transaction_emulator_set_config(txEmulator, configBoc);
   }
 
   /**
@@ -345,10 +319,7 @@ public class TxEmulator {
    * @return Pointer to Config object or nullptr in case of error
    */
   public long createConfig(String configBoc) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
-    long result = txEmulatorI.emulator_config_create(configBoc);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
-    return result;
+    return txEmulatorI.emulator_config_create(configBoc);
   }
 
   /**
@@ -357,9 +328,7 @@ public class TxEmulator {
    * @param config Pointer to Config object
    */
   public void destroyConfig(long config) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     txEmulatorI.emulator_config_destroy(config);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
   }
 
   /**
@@ -375,7 +344,6 @@ public class TxEmulator {
    */
   public EmulateTransactionResult emulateTickTockTransaction(
       String shardAccountBoc, boolean isTock) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
     String result =
         txEmulatorI.transaction_emulator_emulate_tick_tock_transaction(
             txEmulator, shardAccountBoc, isTock);
@@ -390,10 +358,7 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setEmulatorLt(long lt) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
-    boolean result = txEmulatorI.transaction_emulator_set_lt(txEmulator, lt);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
-    return result;
+    return txEmulatorI.transaction_emulator_set_lt(txEmulator, lt);
   }
 
   /**
@@ -403,9 +368,6 @@ public class TxEmulator {
    * @return true in case of success, false in case of error
    */
   public boolean setIgnoreCheckSignature(boolean ignoreChksig) {
-    Utils.disableNativeOutput(verbosityLevel.ordinal());
-    boolean result = txEmulatorI.transaction_emulator_set_ignore_chksig(txEmulator, ignoreChksig);
-    Utils.enableNativeOutput(verbosityLevel.ordinal());
-    return result;
+    return txEmulatorI.transaction_emulator_set_ignore_chksig(txEmulator, ignoreChksig);
   }
 }
