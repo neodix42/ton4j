@@ -9,7 +9,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>func</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9</version>
 </dependency>
 ```
 
@@ -20,7 +20,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>func</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9</version>
 </dependency>
 ```
 
@@ -30,24 +30,19 @@ Notice, if you installed TON binaries using [package managers](https://github.co
 apt or chocolatey you can omit specifying path to a func executable and simply use it as follows:
 
 ```java
-FuncRunner funcRunner=FuncRunner.builder().build();
+URL resource = TestFuncRunner.class.getResource("/test.fc");
+File funcFile = Paths.get(resource.toURI()).toFile();
+String absolutePath = funcFile.getAbsolutePath();
+
+FuncRunner funcRunner = FuncRunner.builder()
+    .funcExecutablePath(Utils.getFuncGithubUrl())
+    .build();
+
+String result = funcRunner.run(funcFile.getParent(), "-PA", absolutePath);
+log.info("output: {}", result);
 ```
 
-```java
-        URL resource=TestFuncRunner.class.getResource("/test.fc");
-        File funcFile=Paths.get(resource.toURI()).toFile();
-        String absolutePath=funcFile.getAbsolutePath();
-
-        FuncRunner funcRunner=
-        FuncRunner.builder()
-        .funcExecutablePath(Utils.getFuncGithubUrl())
-        .build();
-
-        String result=funcRunner.run(funcFile.getParent(),"-PA",absolutePath);
-        log.info("output: {}",result);
-```
-
-More examples in [TestFuncRunner](../func/src/test/java/org/ton/java/func/TestFuncRunner.java) class.
+More examples in [TestFuncRunner](../func/src/test/java/org/ton/ton4j/func/TestFuncRunner.java) class.
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/func

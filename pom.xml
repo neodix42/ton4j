@@ -7,7 +7,7 @@
     <groupId>io.github.neodix42</groupId>
     <artifactId>top</artifactId>
     <packaging>pom</packaging>
-    <version>0.9.8</version>
+    <version>0.9.9</version>
 
     <modules>
         <module>bitstring</module>
@@ -191,9 +191,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.4.1</version>
                 <configuration>
-                    <!-- <sourcepath>${delombok.output}</sourcepath> -->
                     <doclint>none</doclint>
-                    <!--                    <excludePackageNames>org.ton.java.tonlib,org.ton.java.emulator</excludePackageNames>-->
                 </configuration>
                 <executions>
                     <execution>
@@ -303,6 +301,12 @@
                                 <include>signedOrder.boc</include>
                                 <include>*.blkstate</include>
                                 <include>*.addr</include>
+                                <include>libemulator-*</include>
+                                <include>tolk-*</include>
+                                <include>fift-*</include>
+                                <include>func-*</include>
+                                <include>lite-client-*</include>
+                                <include>tonlibjson-*</include>
                             </includes>
                         </fileset>
                     </filesets>

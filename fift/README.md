@@ -9,7 +9,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>fift</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9</version>
 </dependency>
 ```
 
@@ -20,7 +20,7 @@ Java Lite-client wrapper uses JNA to access methods in native lite-client binary
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>fift</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9</version>
 </dependency>
 ```
 
@@ -30,21 +30,17 @@ Notice, if you installed TON binaries using [package managers](https://github.co
 apt or chocolatey you can omit specifying path to a fift executable and simply use it as follows:
 
 ```java
-FiftRunner fiftRunne=FiftRunner.builder().build();
+URL resource = TestFiftRunner.class.getResource("/test.fift");
+File fiftFile = Paths.get(resource.toURI()).toFile();
+String absolutePath = fiftFile.getAbsolutePath();
+
+FiftRunner fiftRunner = FiftRunner.builder().fiftExecutablePath(Utils.getFiftGithubUrl()).build();
+
+String result=fiftRunner.run(fiftFile.getParent(), "-s", absolutePath);
+log.info("output: {}", result);
 ```
 
-```java
-URL resource=TestFiftRunner.class.getResource("/test.fift");
-        File fiftFile=Paths.get(resource.toURI()).toFile();
-        String absolutePath=fiftFile.getAbsolutePath();
-
-        FiftRunner fiftRunner=FiftRunner.builder().fiftExecutablePath(Utils.getFiftGithubUrl()).build();
-
-        String result=fiftRunner.run(fiftFile.getParent(),"-s",absolutePath);
-        log.info("output: {}",result);
-```
-
-More examples in [TestFiftRunner](../fift/src/test/java/org/ton/java/fift/TestFiftRunner.java) class.
+More examples in [TestFiftRunner](../fift/src/test/java/org/ton/ton4j/fift/TestFiftRunner.java) class.
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/fift

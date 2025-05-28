@@ -6,7 +6,7 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>mnemonic</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9</version>
 </dependency>
 ```
 
@@ -16,7 +16,7 @@
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>mnemonic</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9</version>
 </dependency>
 ```
 
@@ -24,14 +24,14 @@
 
 ```java
 List<String> mnemonic=Mnemonic.generate(24,pwd);
-        String mnemonicPhrase=String.join(" ",mnemonic);
+String mnemonicPhrase=String.join(" ",mnemonic);
 
 //result
-        <<mnemonicPhrase containing 24random words>>
+<<mnemonicPhrase containing 24 random words>>
 ```
 
-More examples on how to construct [Mnemonic](../mnemonic/src/main/java/org/ton/java/mnemonic/Mnemonic.java) can be
-found in [TestMnemonic](../mnemonic/src/test/java/org/ton/java/mnemonic/TestMnemonic.java) class.
+More examples on how to construct [Mnemonic](../mnemonic/src/main/java/org/ton/ton4j/mnemonic/Mnemonic.java) can be
+found in [TestMnemonic](../mnemonic/src/test/java/org/ton/ton4j/mnemonic/TestMnemonic.java) class.
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/mnemonic
 

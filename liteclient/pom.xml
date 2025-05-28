@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.neodix42</groupId>
         <artifactId>top</artifactId>
-        <version>0.9.8</version>
+        <version>0.9.9</version>
     </parent>
 
     <artifactId>liteclient</artifactId>
@@ -37,13 +37,6 @@
     </scm>
 
     <dependencies>
-        <dependency>
-            <groupId>io.github.neodix42</groupId>
-            <artifactId>utils</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>compile</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>

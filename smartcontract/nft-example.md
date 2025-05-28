@@ -137,5 +137,5 @@ ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
 assertThat(extMessageInfo.getError().getCode()).isZero();
 ```
 
-More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/java/smartcontract) can be
-found [here](../smartcontract/src/test/java/org/ton/java/smartcontract).
+More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/ton4j/smartcontract) can be
+found [here](../smartcontract/src/test/java/org/ton/ton4j/smartcontract).

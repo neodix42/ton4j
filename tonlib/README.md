@@ -17,7 +17,7 @@ You can get the latest tonlib library by:
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>tonlib</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9</version>
 </dependency>
 ```
 
@@ -28,7 +28,7 @@ You can get the latest tonlib library by:
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>tonlib</artifactId>
-    <version>0.9.8</version>
+    <version>0.9.9</version>
 </dependency>
 ```
 
@@ -38,42 +38,34 @@ Notice, if you installed TON binaries using [package managers](https://github.co
 apt or chocolatey you can omit specifying path to a tonlib library and simply use it as follows:
 
 ```java
-Tonlib tonlib=Tonlib.builder()
-        .testnet(true)
-        .build();
+Tonlib tonlib = Tonlib.builder()
+    .testnet(true)
+    .build();
 ```
 
 ```java
 // builder
 Tonlib tonlib = Tonlib.builder()
-                .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-                .verbosityLevel(VerbosityLevel.FATAL)
-                .testnet(true)
-                .build();
+    .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
+    .verbosityLevel(VerbosityLevel.FATAL)
+    .testnet(true)
+    .build();
 
 // lookupBlock
 BlockIdExt fullblock = tonlib.lookupBlock(304479, -1, -9223372036854775808L, 0, 0);
-        log.
-
-info(fullblock.toString());
+log.info(fullblock.toString());
 
 // getLast
 MasterChainInfo masterChainInfo = tonlib.getLast();
-        log.
-
-info(masterChainInfo.toString());
+log.info(masterChainInfo.toString());
 
 // getBlockHeader
 BlockHeader header = tonlib.getBlockHeader(masterChainInfo.getLast());
-        log.
-
-info(header.toString());
+log.info(header.toString());
 
 // getShards
 Shards shards = tonlib.getShards(masterChainInfo.getLast());
-        log.
-
-info(shards.toString());
+log.info(shards.toString());
 
 // result
 BlockIdExt(type=ton.blockIdExt, workchain=-1, shard=-9223372036854775808, seqno=304479, root_hash=tjYB35S3feJoHhMC4szfQcabzalwv80bMtyMv8S7tdE=, file_hash=5IQbqTASw+TLGC8BB0xZrB08tgnEyk+gUaYZr1Nd3q4=)
@@ -93,79 +85,28 @@ Shards(type=blocks.shards, shards=[BlockIdExt(type=ton.blockIdExt, workchain=0, 
 
 ```java
 Tonlib tonlib = Tonlib.builder()
-        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-        .verbosityLevel(VerbosityLevel.FATAL)
-        .testnet(true)
-        .build();
+    .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
+    .verbosityLevel(VerbosityLevel.FATAL)
+    .testnet(true)
+    .build();
 
 //lookupBlock
 BlockIdExt fullblock = tonlib.lookupBlock(444699, -1, -9223372036854775808L, 0, 0);
-        log.
-
-info(fullblock.toString());
+log.info(fullblock.toString());
 
 Map<String, RawTransactions> txs = tonlib.getAllBlockTransactions(fullblock, 100, null);
-        for(
-Map.Entry<String, RawTransactions> entry:txs.
-
-entrySet()){
-        for(
-RawTransaction tx:((RawTransactions)entry.
-
-getValue()).
-
-getTransactions()){
-        if((
-
-nonNull(tx.getIn_msg())&&(!tx.
-
-getIn_msg().
-
-getSource().
-
-getAccount_address().
-
-equals(""))){
-        log.
-
-info("{} <<<<< {} : {} ",tx.getIn_msg().
-
-getSource().
-
-getAccount_address(),tx.
-
-getIn_msg().
-
-getDestination().
-
-getAccount_address(),tx.
-
-getIn_msg().
-
-getValueToncoins(9));
+for(Map.Entry<String, RawTransactions> entry:txs.entrySet()) {
+    for(RawTransaction tx: ((RawTransactions) entry.getValue()).getTransactions()) {
+      if((nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+        log.info("{} <<<<< {} : {} ", tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(), tx.getIn_msg().getValueToncoins(9));
+      }
+      if(nonNull(tx.getOut_msgs()) {       
+        for(RawMessage msg:tx.getOut_msgs()) {        
+            log.info("{} >>>>> {} : {} ", msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(), msg.getValue());
         }
-        if(
-
-nonNull(tx.getOut_msgs()){
-        for(
-RawMessage msg:tx.
-
-getOut_msgs()){
-        log.
-
-info("{} >>>>> {} : {} ",msg.getSource().
-
-getAccount_address(),msg.
-
-getDestination().
-
-getAccount_address(),msg.
-
-getValue());
-        }
-        }
-        }
-        }
+      }
+   }
+}
 
 // result
 BlockIdExt(type=ton.blockIdExt, workchain=-1, shard=-9223372036854775808, seqno=444699, root_hash=BQJzJNbbL4S2O4NhxHug65/hH3BjkKrVXJxVVFegSkc=, file_hash=nifDUPpDWiSBer9h8pnEgfIRbvXFwEfmgtQIwDu5xU8=)
@@ -189,79 +130,27 @@ Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM0vF<<<<<Ef99gz58SExDexFVJteOSZcPDxF
 
 ```java
 Tonlib tonlib = Tonlib.builder()
-        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-        .verbosityLevel(VerbosityLevel.FATAL)
-        .testnet(true)
-        .build();
+    .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
+    .verbosityLevel(VerbosityLevel.FATAL)
+    .testnet(true)
+    .build();
 
 Address address = Address.of(MY_TESTNET_VALIDATOR_ADDR);
-        log.
+log.info("address: "+address.toString(true));
 
-info("address: "+address.toString(true));
 RawTransactions rawTransactions = tonlib.getRawTransactions(address.toString(false), null, null);
-        log.
+log.info("total txs: {}", rawTransactions.getTransactions().size());
 
-info("total txs: {}",rawTransactions.getTransactions().
-
-size());
-
-        for(
-RawTransaction tx:rawTransactions.
-
-getTransactions()){
-        if((
-
-nonNull(tx.getIn_msg())&&(!tx.
-
-getIn_msg().
-
-getSource().
-
-getAccount_address().
-
-equals(""))){
-        log.
-
-info("{}, {} <<<<< {} : {} ",Utils.toUTC(tx.getUtime()),tx.
-
-getIn_msg().
-
-getSource().
-
-getAccount_address(),tx.
-
-getIn_msg().
-
-getDestination().
-
-getAccount_address(),tx.
-
-getIn_msg().
-
-getValueToncoins(9));
+for(RawTransaction tx:rawTransactions.getTransactions()) {
+    if((nonNull(tx.getIn_msg()) && (!tx.getIn_msg().getSource().getAccount_address().equals(""))) {
+        log.info("{}, {} <<<<< {} : {} ", Utils.toUTC(tx.getUtime()), tx.getIn_msg().getSource().getAccount_address(), tx.getIn_msg().getDestination().getAccount_address(),tx.getIn_msg().getValueToncoins(9));
+    }
+    if(nonNull(tx.getOut_msgs())) {
+        for (RawMessage msg:tx.getOut_msgs()) {
+            log.info("{}, {} >>>>> {} : {} ", Utils.toUTC(tx.getUtime()), msg.getSource().getAccount_address(), msg.getDestination().getAccount_address(),msg.getValue());
         }
-        if(
-
-nonNull(tx.getOut_msgs())){
-        for(
-RawMessage msg:tx.
-
-getOut_msgs()){
-        log.
-
-info("{}, {} >>>>> {} : {} ",Utils.toUTC(tx.getUtime()),msg.
-
-getSource().
-
-getAccount_address(),msg.
-
-getDestination().
-
-getAccount_address(),msg.
-
-getValue());
-        }
-
+    }
+}
 
 // result
 address:Uf/TIxBFB8kHCUppnaWpc1/C5c0tLDa5tb1zL9ysBgWzgg9E
@@ -282,32 +171,23 @@ total txs:10
 
 ```java
 Tonlib tonlib = Tonlib.builder()
-        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-        .verbosityLevel(VerbosityLevel.FATAL)
-        .testnet(true)
-        .build();
+    .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
+    .verbosityLevel(VerbosityLevel.FATAL)
+    .testnet(true)
+    .build();
 
 Address addr = Address.of("kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E");
-        log.
-
-info("address: "+addr.toString(true));
+log.info("address: "+addr.toString(true));
 
 AccountAddressOnly accountAddressOnly = AccountAddressOnly.builder()
-        .account_address(addr.toString(true))
-        .build();
+    .account_address(addr.toString(true))
+    .build();
 FullAccountState account = tonlib.getAccountState(accountAddressOnly);
-
-        log.
-
-info(account.toString());
-        log.
-
-info("balance: {}",account.getBalance());
+log.info(account.toString());
+log.info("balance: {}",account.getBalance());
 
 // result
-address:
-
-kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E
+address: kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E
 FullAccountState(address=AccountAddressOnly(account_address=kQBeuMOZrZyCrtvZ1dMaMKmlxpulQFCOYCLI8EYcqMvI6v6E),balance=4995640997,last_transaction_id=
 
 LastTransactionId(type=internal.transactionId, lt=491384000001, hash=C17UfhQAJ6kN/6SIWlO6PZAlHuI9aas227Tp/u7QuPU=),block_id=
@@ -322,18 +202,16 @@ AccountState(code=te6cckEBAQEAXwAAuv8AIN0gggFMl7ohggEznLqxnHGw7UTQ0x/XC//jBOCk8m
 
 ```java
 Tonlib tonlib = Tonlib.builder()
-        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-        .verbosityLevel(VerbosityLevel.FATAL)
-        .testnet(true)
-        .build();
+    .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
+    .verbosityLevel(VerbosityLevel.FATAL)
+    .testnet(true)
+    .build();
 
 String base64mnemonic = Utils.stringToBase64("centring moist twopenny bursary could carbarn abide flirt ground shoelace songster isomeric pis strake jittery penguin gab guileful lierne salivary songbird shore verbal measures");
 
 String dataToEncrypt = Utils.stringToBase64("ABC");
 Data encrypted = tonlib.encrypt(dataToEncrypt, base64mnemonic);
-        log.
-
-info("encrypted {}",encrypted.getBytes());
+log.info("encrypted {}",encrypted.getBytes());
 
 Data decrypted = tonlib.decrypt(encrypted.getBytes(), base64mnemonic);
 String dataDecrypted = Utils.base64ToString(decrypted.getBytes());
@@ -348,39 +226,23 @@ isEqualTo(dataDecrypted);
 Get seqno
 
 ```java
-Tonlib tonlib=Tonlib.builder()
-        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-        .verbosityLevel(VerbosityLevel.FATAL)
-        .testnet(true)
-        .build();
-        Address address=Address.of("kQB7wRCSr02IwL1nOxkEipop3goYb4oN6ZehZMS2jImwyS1t");
-        RunResult result=tonlib.runMethod(address,"seqno");
+Tonlib tonlib = Tonlib.builder()
+    .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
+    .verbosityLevel(VerbosityLevel.FATAL)
+    .testnet(true)
+    .build();
+Address address = Address.of("kQB7wRCSr02IwL1nOxkEipop3goYb4oN6ZehZMS2jImwyS1t");
+RunResult result = tonlib.runMethod(address, "seqno");
+log.info("gas_used {}, exit_code {} ",result.getGas_used(),result.
 
-        log.info("gas_used {}, exit_code {} ",result.getGas_used(),result.getExit_code());
+getExit_code());
 
-        TvmStackEntryNumber seqno=(TvmStackEntryNumber)result.getStack().get(0);
-        log.info("seqno: {}",eqno.getNumber());
+TvmStackEntryNumber seqno = (TvmStackEntryNumber) result.getStack().get(0);
+log.info("seqno: {}",eqno.getNumber());
 
 // result 
-        gas_used 505,exit_code 0
-        seqno:2
-```
-
-Retrieve past_election_ids
-
-```java
-Address address=Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
-        RunResult result=tonlib.runMethod(address,"past_election_ids");
-        TvmStackEntryList listResult=(TvmStackEntryList)result.getStack().get(0);
-
-        for(Object o:listResult.getList().getElements()){
-        TvmStackEntryNumber electionId=(TvmStackEntryNumber);
-        log.info(electionId.getNumber().toString());
-        }
-
-// result
-        1656773162
-        1656780362
+gas_used 505,exit_code 0
+seqno:2
 ```
 
 Execute compute_returned_stake with parameter. Supported parameters types:
@@ -398,27 +260,30 @@ Use as array of strings:
 * [slice, 0x80C11AAFA0014 ] // BoC in hex
 
 ```java
-Tonlib tonlib=Tonlib.builder()
-        .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-        .verbosityLevel(VerbosityLevel.FATAL)
-        .testnet(true)
-        .build();
+Tonlib tonlib = Tonlib.builder()
+    .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
+    .verbosityLevel(VerbosityLevel.FATAL)
+    .testnet(true)
+    .build();
 
-        Address address=Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
-        RunResult result=tonlib.runMethod(address,"compute_returned_stake",null);
-        log.info("result: {}",result);
-        assertThat(result.getExit_code()).isEqualTo(2); // error since compute_returned_stake requires an argument
+Address address = Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
+RunResult result = tonlib.runMethod(address, "compute_returned_stake", null);
+log.info("result: {}",result);
 
-        Deque<String> stack=new ArrayDeque<>();
-        address=Address.of(TESTNET_VALIDATOR_ADDR);
-        stack.offer("[num, "+address.toDecimal()+"]");
+assertThat(result.getExit_code()).
 
-        result=tonlib.runMethod(address,"compute_returned_stake",stack);
-        log.info("result: {} ",result);
+isEqualTo(2); // error since compute_returned_stake requires an argument
+
+Deque<String> stack = new ArrayDeque<>();
+address=Address.of(TESTNET_VALIDATOR_ADDR);
+stack.offer("[num, "+address.toDecimal()+"]");
+
+result=tonlib.runMethod(address,"compute_returned_stake",stack);
+log.info("result: {} ",result);
 ```
 
-More examples in [TestTonlibJson](../tonlib/src/test/java/org/ton/java/tonlib/TestTonlibJson.java) and
-[TestParseRunMethodResults](../tonlib/src/test/java/org/ton/java/tonlib/TestParseRunMethodResults.java) class.
+More examples in [TestTonlibJson](../tonlib/src/test/java/org/ton/ton4j/tonlib/TestTonlibJson.java) and
+[TestParseRunMethodResults](../tonlib/src/test/java/org/ton/ton4j/tonlib/TestParseRunMethodResults.java) class.
 
 You can find more examples in `TestTonlibJson` and `TestParseRunMethodResults` classes.
 
