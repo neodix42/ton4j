@@ -1,15 +1,15 @@
 package org.ton.java.adnl;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class AdnlTest {
 
@@ -22,7 +22,7 @@ public class AdnlTest {
     private static final String SERVER_HOST = "127.0.0.1";
     private static final int TIMEOUT = 10;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // Create server
         serverClient = Client.generate();
@@ -36,7 +36,7 @@ public class AdnlTest {
         clientTransport.start(CLIENT_PORT);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (clientTransport != null) {
             clientTransport.close();

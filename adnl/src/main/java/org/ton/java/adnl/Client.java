@@ -31,8 +31,8 @@ public class Client {
         System.arraycopy(ed25519Private, 0, privateKeySeed, 0, 32);
     }
     
-    this.x25519Private = TweetNaclFast.convertEd25519PrivateToX25519(privateKeySeed);
-    this.x25519Public = TweetNaclFast.convertEd25519PublicToX25519(ed25519Public);
+    this.x25519Private = CryptoUtils.convertEd25519ToX25519Private(privateKeySeed);
+    this.x25519Public = CryptoUtils.convertEd25519ToX25519Public(ed25519Public);
 
     // Calculate key ID
     this.keyId = getKeyId(ed25519Public);

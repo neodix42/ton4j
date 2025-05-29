@@ -45,7 +45,7 @@ public class Node {
         
         // Convert Ed25519 public key to X25519 public key
         try {
-            this.x25519Public = TweetNaclFast.convertEd25519PublicToX25519(ed25519Public);
+            this.x25519Public = CryptoUtils.convertEd25519ToX25519Public(ed25519Public);
         } catch (Exception e) {
             throw new RuntimeException("Error converting Ed25519 public key to X25519", e);
         }
