@@ -22,7 +22,7 @@ import java.util.zip.CRC32;
 
 /**
  * TLGenerator for ADNL protocol message serialization/deserialization
- * Based on the Python implementation
+ * Java implementation for TON ADNL protocol
  */
 public class TLGenerator {
     private static final Logger logger = Logger.getLogger(TLGenerator.class.getName());

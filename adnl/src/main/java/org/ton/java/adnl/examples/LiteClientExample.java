@@ -1,7 +1,6 @@
 package org.ton.java.adnl.examples;
 
-import org.ton.java.adnl.liteclient.AdnlLiteClient;
-import org.ton.java.adnl.liteclient.MasterchainInfo;
+import org.ton.java.adnl.AdnlLiteClient;
 
 /**
  * Example demonstrating ADNL Lite Client usage
@@ -12,30 +11,28 @@ public class LiteClientExample {
         System.out.println("=== ADNL Lite Client Example ===");
         
         try {
-            // Create lite client for testnet
+            // Create lite client with testnet config
             System.out.println("Creating lite client for testnet...");
-            AdnlLiteClient client = AdnlLiteClient.forTestnet();
+            AdnlLiteClient client = new AdnlLiteClient();
             
-            // Connect to liteserver
+            // Connect to liteserver (using testnet config)
             System.out.println("Connecting to liteserver...");
-            client.connect();
+            // You need to provide actual testnet liteserver details
+            String host = "135.181.140.212"; // Example testnet liteserver
+            int port = 13206;
+            String serverPublicKey = "K0t3+IWLOXHYMvMcrGZDPs+pn58a17LFbnXoQkKc2xw="; // Example key
+            client.connect(host, port, serverPublicKey);
             
             if (client.isConnected()) {
                 System.out.println("✓ Connected successfully!");
                 
-                // Test ping
-                System.out.println("\nTesting connection with ping...");
-                long rtt = client.ping();
-                System.out.println("✓ Ping RTT: " + (rtt / 1_000_000.0) + " ms");
-                
                 // Get masterchain info
                 System.out.println("\nGetting masterchain info...");
-                MasterchainInfo info = client.getMasterchainInfo();
+                AdnlLiteClient.MasterchainInfo info = client.getMasterchainInfo();
                 System.out.println("✓ Masterchain info received:");
-                System.out.println("  - Workchain: " + info.getWorkchain());
-                System.out.println("  - Shard: " + info.getShard());
-                System.out.println("  - Seqno: " + info.getSeqno());
-                System.out.println("  - Unix time: " + info.getUnixTime());
+                System.out.println("  - Last block seqno: " + info.getLast().getSeqno());
+                System.out.println("  - Last block workchain: " + info.getLast().getWorkchain());
+                System.out.println("  - Last block shard: " + info.getLast().getShard());
                 
                 System.out.println("\n✓ All operations completed successfully!");
                 
