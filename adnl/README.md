@@ -2,6 +2,16 @@
 
 This module provides a complete implementation of the ADNL (Abstract Datagram Network Layer) protocol for TON blockchain, including a lite client that can communicate directly with TON liteservers.
 
+## ⚠️ Important: Transport Selection
+
+**For liteclient connections to TON liteservers, use:**
+- `AdnlTcpTransport` + `AdnlLiteClient` (TCP-based, follows ADNL-TCP specification)
+
+**Deprecated for liteclient use:**
+- `AdnlTransport` (UDP-based with channel creation, incompatible with liteservers)
+
+The UDP-based transport uses `createChannel`/`confirmChannel` messages which are not supported by liteservers. Always use the TCP implementation for liteserver communication.
+
 ## Features
 
 - **Complete ADNL Protocol Implementation**: Full support for ADNL over TCP as specified in the TON documentation

@@ -20,6 +20,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.crypto.Cipher;
 
+/**
+ * @deprecated This is the UDP-based ADNL transport implementation.
+ * For liteclient connections, use {@link AdnlTcpTransport} and {@link AdnlLiteClient} instead.
+ * This class uses UDP channel creation (createChannel/confirmChannel) which is not compatible
+ * with the ADNL-TCP protocol used by liteservers.
+ * 
+ * @see AdnlTcpTransport
+ * @see AdnlLiteClient
+ */
+@Deprecated
 public class AdnlTransport {
 
   private final Logger logger = Logger.getLogger(AdnlTransport.class.getName());

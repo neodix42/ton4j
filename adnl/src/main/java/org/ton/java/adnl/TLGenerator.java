@@ -54,15 +54,11 @@ public class TLGenerator {
     public static TLSchemas withDefaultSchemas() {
         List<TLSchema> schemas = new ArrayList<>();
         
-        // Register ADNL message schemas
+        // Register ADNL message schemas (TCP-compatible only)
         schemas.add(new TLSchema(intToBytes(0x7af98bb4), "adnl.message.query", "adnl.Message", 
                 mapOf("query_id", "bytes", "query", "bytes")));
         schemas.add(new TLSchema(intToBytes(0x4c2d4977), "adnl.message.answer", "adnl.Message", 
                 mapOf("query_id", "bytes", "answer", "bytes")));
-        schemas.add(new TLSchema(intToBytes(0x6bb8dbe8), "adnl.message.createChannel", "adnl.Message", 
-                mapOf("key", "bytes", "date", "int")));
-        schemas.add(new TLSchema(intToBytes(0x5d2db2d8), "adnl.message.confirmChannel", "adnl.Message", 
-                mapOf("key", "bytes", "peer_key", "bytes", "date", "int")));
         schemas.add(new TLSchema(intToBytes(0x7e5e5fce), "adnl.message.custom", "adnl.Message", 
                 mapOf("data", "bytes")));
         schemas.add(new TLSchema(intToBytes(0x4c1c2a16), "adnl.message.part", "adnl.Message", 
