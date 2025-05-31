@@ -42,6 +42,8 @@ public class AdnlTcpTransport {
   private Thread listenerThread;
   private boolean authenticated = false;
   private byte[] ourNonce;
+  private byte[] authKey;
+  private CompletableFuture<Void> authFuture;
 
   public AdnlTcpTransport() {
     this.client = Client.generate();
@@ -75,65 +77,70 @@ public class AdnlTcpTransport {
     connected = true;
     logger.info("Connected successfully");
 
+    // Authentication is optional for liteservers
     if (authKey != null) {
       authenticate(authKey);
     }
+    // Note: Most liteservers don't require authentication for basic queries
   }
 
   private void performHandshake(byte[] serverPublicKey) throws Exception {
     logger.fine("Performing ADNL handshake");
 
+    // Generate 160 random bytes for encryption keys (matching Go implementation)
     byte[] randomData = new byte[160];
     new SecureRandom().nextBytes(randomData);
 
-    readCipher =
-        CryptoUtils.createAESCtrCipher(
-            Arrays.copyOfRange(randomData, 0, 32),
-            Arrays.copyOfRange(randomData, 64, 80),
-            Cipher.DECRYPT_MODE);
+    // Build ciphers for incoming and outgoing packets (matching Go implementation)
+    readCipher = CryptoUtils.createAESCtrCipher(
+        Arrays.copyOfRange(randomData, 0, 32),    // rnd[:32]
+        Arrays.copyOfRange(randomData, 64, 80),   // rnd[64:80]
+        Cipher.DECRYPT_MODE);
 
-    writeCipher =
-        CryptoUtils.createAESCtrCipher(
-            Arrays.copyOfRange(randomData, 32, 64),
-            Arrays.copyOfRange(randomData, 80, 96),
-            Cipher.ENCRYPT_MODE);
+    writeCipher = CryptoUtils.createAESCtrCipher(
+        Arrays.copyOfRange(randomData, 32, 64),   // rnd[32:64]
+        Arrays.copyOfRange(randomData, 80, 96),   // rnd[80:96]
+        Cipher.ENCRYPT_MODE);
 
+    // Calculate server key ID using TL hash (matching Go implementation)
     byte[] serverKeyId = calculateKeyId(serverPublicKey);
     byte[] clientPublicKey = client.getEd25519Public();
 
+    // Calculate checksum of random data
     MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
     byte[] checksum = sha256.digest(randomData);
 
-    byte[] sharedKey =
-        CryptoUtils.getSharedKey(
-            client.getX25519Private(), CryptoUtils.convertEd25519ToX25519Public(serverPublicKey));
+    // Calculate shared key using proper Ed25519 to X25519 conversion
+    byte[] sharedKey = CryptoUtils.sharedKey(client.getEd25519Private(), serverPublicKey);
 
-    // Derive encryption key using SHA256(sharedKey + checksum)
-    byte[] keyMaterial = new byte[sharedKey.length + checksum.length];
-    System.arraycopy(sharedKey, 0, keyMaterial, 0, sharedKey.length);
-    System.arraycopy(checksum, 0, keyMaterial, sharedKey.length, checksum.length);
-    byte[] keyDigest = MessageDigest.getInstance("SHA-256").digest(keyMaterial);
-
-    byte[] encKey = new byte[32];
-    System.arraycopy(keyDigest, 0, encKey, 0, 16);
-    System.arraycopy(checksum, 16, encKey, 16, 16);
+    // Build handshake encryption key and IV (matching Go implementation exactly)
+    // k := key[0:16] + checksum[16:32]
+    // iv := checksum[0:4] + key[20:32]
+    byte[] k = new byte[32];
+    System.arraycopy(sharedKey, 0, k, 0, 16);        // key[0:16]
+    System.arraycopy(checksum, 16, k, 16, 16);       // checksum[16:32]
 
     byte[] iv = new byte[16];
-    System.arraycopy(checksum, 0, iv, 0, 4);
-    System.arraycopy(sharedKey, 20, iv, 4, 12);
+    System.arraycopy(checksum, 0, iv, 0, 4);         // checksum[0:4]
+    System.arraycopy(sharedKey, 20, iv, 4, 12);      // key[20:32]
 
-    Cipher handshakeCipher = CryptoUtils.createAESCtrCipher(encKey, iv, Cipher.ENCRYPT_MODE);
-    byte[] encrypted = CryptoUtils.aesCtrTransform(handshakeCipher, randomData);
+    // Create handshake cipher and encrypt the random data
+    Cipher handshakeCipher = CryptoUtils.createAESCtrCipher(k, iv, Cipher.ENCRYPT_MODE);
+    byte[] encryptedData = CryptoUtils.aesCtrTransform(handshakeCipher, randomData);
 
     logger.info("Server key ID: " + CryptoUtils.hex(serverKeyId));
     logger.info("Client public key: " + CryptoUtils.hex(clientPublicKey));
 
+    // Build handshake packet: serverKeyId(32) + clientPublicKey(32) + checksum(32) + encryptedData(160)
+    // Total: 256 bytes (matching Go implementation)
     ByteBuffer handshakePacket = ByteBuffer.allocate(256);
-    handshakePacket.put(serverKeyId);
-    handshakePacket.put(clientPublicKey);
-    handshakePacket.put(checksum);
-    handshakePacket.put(encrypted);
+    handshakePacket.put(serverKeyId);        // 32 bytes
+    handshakePacket.put(clientPublicKey);    // 32 bytes
+    handshakePacket.put(checksum);           // 32 bytes
+    handshakePacket.put(encryptedData);      // 160 bytes
 
+    // Send handshake packet directly (no encryption, no framing)
+    // This is the raw 256-byte handshake packet as per ADNL specification
     output.write(handshakePacket.array());
     output.flush();
 
@@ -141,8 +148,16 @@ public class AdnlTcpTransport {
   }
 
   private byte[] calculateKeyId(byte[] publicKey) throws Exception {
+    // Calculate TL constructor ID for pub.ed25519 schema
+    String tlSchema = "pub.ed25519 key:int256 = PublicKey";
+    java.util.zip.CRC32 crc32 = new java.util.zip.CRC32();
+    crc32.update(tlSchema.getBytes("UTF-8"));
+    long constructorId = crc32.getValue();
+    
+    // Build TL-serialized structure: constructor_id + key
     ByteBuffer buffer = ByteBuffer.allocate(4 + publicKey.length);
-    buffer.put(new byte[] {(byte) 0xC6, (byte) 0xB4, (byte) 0x13, (byte) 0x48});
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
+    buffer.putInt((int) constructorId);
     buffer.put(publicKey);
 
     MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
@@ -180,31 +195,34 @@ public class AdnlTcpTransport {
         byte[] sizeBytes = new byte[4];
         input.readFully(sizeBytes);
 
-        // Decrypt size into a new array to avoid overwriting
-        byte[] decryptedSizeBytes = readCipher.update(sizeBytes);
+        // Decrypt size in-place to maintain cipher state
+        CryptoUtils.aesCtrTransformInPlace(readCipher, sizeBytes);
 
-        // Read as unsigned integer (Java doesn't have unsigned int, so use long)
-        long packetSizeLong =
-            ByteBuffer.wrap(decryptedSizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt()
-                & 0xFFFFFFFFL;
+        // Read as signed integer and handle properly
+        int packetSize = ByteBuffer.wrap(sizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
 
-        logger.info("Decrypted packet size: " + packetSizeLong);
+        logger.info("Decrypted packet size: " + packetSize);
 
-        if (packetSizeLong > 16 * 1024 * 1024) { // 16MB limit
-          throw new IOException("Packet too large: " + packetSizeLong);
+        // Validate packet size
+        if (packetSize < 0) {
+          throw new IOException("Invalid packet size (negative): " + packetSize);
         }
-
-        int packetSize = (int) packetSizeLong;
+        if (packetSize > 16 * 1024 * 1024) { // 16MB limit
+          throw new IOException("Packet too large: " + packetSize);
+        }
+        if (packetSize < 32) { // Must have at least nonce
+          throw new IOException("Packet too small: " + packetSize);
+        }
 
         // Read packet data
         byte[] packetData = new byte[packetSize];
         input.readFully(packetData);
 
-        // Decrypt packet data into a new array
-        byte[] decryptedPacketData = readCipher.update(packetData);
+        // Decrypt packet data in-place to maintain cipher state
+        CryptoUtils.aesCtrTransformInPlace(readCipher, packetData);
 
         // Process packet
-        processIncomingPacket(decryptedPacketData);
+        processIncomingPacket(packetData);
       }
     } catch (Exception e) {
       if (running) {
@@ -253,10 +271,10 @@ public class AdnlTcpTransport {
         return;
       }
 
-      // Handle handshake confirmation separately
+      // Handle handshake confirmation (empty payload)
       if (payload.length == 0) {
         connected = true;
-        logger.fine("Received handshake confirmation");
+        logger.info("Received handshake confirmation (empty packet)");
         return;
       }
 
@@ -301,7 +319,45 @@ public class AdnlTcpTransport {
   }
 
   private void handleAuthNonce(java.util.Map<String, Object> message) {
-    logger.fine("Received auth nonce");
+    try {
+      logger.info("Received authentication nonce from server");
+      
+      byte[] serverNonce = (byte[]) message.get("nonce");
+      logger.info("Server nonce: " + CryptoUtils.hex(serverNonce));
+      
+      // Concatenate our nonce with server nonce
+      byte[] combinedNonce = new byte[ourNonce.length + serverNonce.length];
+      System.arraycopy(ourNonce, 0, combinedNonce, 0, ourNonce.length);
+      System.arraycopy(serverNonce, 0, combinedNonce, ourNonce.length, serverNonce.length);
+      
+      // Sign the combined nonce with our authentication key
+      byte[] signature = CryptoUtils.sign(authKey, combinedNonce);
+      
+      // Get our public key for authentication
+      byte[] publicKey = CryptoUtils.getPublicKey(authKey);
+      
+      // Create authentication complete message
+      java.util.Map<String, Object> authComplete = new java.util.HashMap<>();
+      authComplete.put("@type", "tcp.authentificationComplete");
+      authComplete.put("key", publicKey);
+      authComplete.put("signature", signature);
+      
+      byte[] serialized = schemas.serialize("tcp.authentificationComplete", authComplete, true);
+      sendPacket(serialized);
+      
+      logger.info("Sent authentication complete");
+      
+      // Complete the authentication future
+      if (authFuture != null) {
+        authFuture.complete(null);
+      }
+      
+    } catch (Exception e) {
+      logger.log(Level.SEVERE, "Error handling auth nonce", e);
+      if (authFuture != null) {
+        authFuture.completeExceptionally(e);
+      }
+    }
   }
 
   private void handleAnswer(java.util.Map<String, Object> message) {
@@ -427,9 +483,14 @@ public class AdnlTcpTransport {
   }
 
   private void authenticate(byte[] authKey) throws Exception {
+    this.authKey = authKey;
+    this.authFuture = new CompletableFuture<>();
+    
     // Generate our nonce
     ourNonce = new byte[32];
     new SecureRandom().nextBytes(ourNonce);
+
+    logger.info("Starting authentication with nonce: " + CryptoUtils.hex(ourNonce));
 
     // Send authentication request
     java.util.Map<String, Object> authRequest = new java.util.HashMap<>();
@@ -439,8 +500,10 @@ public class AdnlTcpTransport {
     byte[] serialized = schemas.serialize("tcp.authentificate", authRequest, true);
     sendPacket(serialized);
 
-    // Wait for server nonce and complete authentication
-    // This would be handled in handleAuthNonce method
+    // Wait for authentication to complete
+    authFuture.get(10, TimeUnit.SECONDS);
+    authenticated = true;
+    logger.info("Authentication completed successfully");
   }
 
   public void close() {

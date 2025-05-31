@@ -69,6 +69,20 @@ public class CryptoUtils {
     }
     
     /**
+     * Transform data using AES-CTR in-place (like Go's XORKeyStream)
+     * This maintains the cipher state properly for streaming operations
+     * @param cipher Cipher
+     * @param data Data to transform in-place
+     */
+    public static void aesCtrTransformInPlace(Cipher cipher, byte[] data) {
+        try {
+            cipher.update(data, 0, data.length, data, 0);
+        } catch (Exception e) {
+            throw new RuntimeException("Error transforming data with AES-CTR in-place", e);
+        }
+    }
+    
+    /**
      * Get random bytes
      * @param length Length
      * @return Random bytes
