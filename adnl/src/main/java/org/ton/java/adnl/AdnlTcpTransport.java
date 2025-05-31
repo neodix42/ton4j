@@ -178,6 +178,10 @@ public class AdnlTcpTransport {
 
     while (System.currentTimeMillis() < timeout && !connected) {
       Thread.sleep(100);
+      // Check if listener thread is still running
+      if (listenerThread != null && !listenerThread.isAlive()) {
+        throw new Exception("Packet listener thread died during handshake");
+      }
     }
 
     if (!connected) {
@@ -191,32 +195,35 @@ public class AdnlTcpTransport {
 
     try {
       while (running && !socket.isClosed()) {
-        // Read packet size (4 bytes, little endian)
-        byte[] sizeBytes = new byte[4];
-        input.readFully(sizeBytes);
+        // Read packet size (4 bytes, little endian) with proper partial read handling
+        byte[] sizeBytes = readExactBytes(4);
+        if (sizeBytes == null) {
+          break; // Connection closed
+        }
 
         // Decrypt size in-place to maintain cipher state
         CryptoUtils.aesCtrTransformInPlace(readCipher, sizeBytes);
 
-        // Read as signed integer and handle properly
-        int packetSize = ByteBuffer.wrap(sizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
-
-        logger.info("Decrypted packet size: " + packetSize);
+        // Read as unsigned integer and handle properly
+        long packetSizeLong = ByteBuffer.wrap(sizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xFFFFFFFFL;
+        
+        logger.info("Decrypted packet size: " + packetSizeLong);
 
         // Validate packet size
-        if (packetSize < 0) {
-          throw new IOException("Invalid packet size (negative): " + packetSize);
+        if (packetSizeLong > 16 * 1024 * 1024) { // 16MB limit
+          throw new IOException("Packet too large: " + packetSizeLong);
         }
-        if (packetSize > 16 * 1024 * 1024) { // 16MB limit
-          throw new IOException("Packet too large: " + packetSize);
-        }
-        if (packetSize < 32) { // Must have at least nonce
-          throw new IOException("Packet too small: " + packetSize);
+        if (packetSizeLong < 0) { // Negative size is invalid
+          throw new IOException("Invalid packet size: " + packetSizeLong);
         }
 
-        // Read packet data
-        byte[] packetData = new byte[packetSize];
-        input.readFully(packetData);
+        int packetSize = (int) packetSizeLong;
+
+        // Read packet data with proper partial read handling
+        byte[] packetData = readExactBytes(packetSize);
+        if (packetData == null) {
+          break; // Connection closed
+        }
 
         // Decrypt packet data in-place to maintain cipher state
         CryptoUtils.aesCtrTransformInPlace(readCipher, packetData);
@@ -238,6 +245,26 @@ public class AdnlTcpTransport {
         logger.log(Level.WARNING, "Error closing socket", e);
       }
     }
+  }
+
+  /**
+   * Read exact number of bytes from socket, handling partial reads
+   * Similar to Go's readData function
+   */
+  private byte[] readExactBytes(int count) throws IOException {
+    byte[] result = new byte[count];
+    int totalRead = 0;
+    
+    while (totalRead < count) {
+      int bytesRead = input.read(result, totalRead, count - totalRead);
+      if (bytesRead == -1) {
+        // Connection closed
+        return null;
+      }
+      totalRead += bytesRead;
+    }
+    
+    return result;
   }
 
   private void processIncomingPacket(byte[] packetData) {
@@ -279,11 +306,16 @@ public class AdnlTcpTransport {
       }
 
       // Deserialize TL message
+      logger.info("Deserializing payload of size: " + payload.length);
       Object[] deserialized = schemas.deserialize(payload);
+      logger.info("Deserialized: " + java.util.Arrays.toString(deserialized));
       if (deserialized[0] instanceof java.util.Map) {
         @SuppressWarnings("unchecked")
         java.util.Map<String, Object> message = (java.util.Map<String, Object>) deserialized[0];
+        logger.info("Processing message: " + message);
         processMessage(message);
+      } else {
+        logger.warning("Unexpected deserialized type: " + deserialized[0].getClass());
       }
 
     } catch (Exception e) {
@@ -450,6 +482,12 @@ public class AdnlTcpTransport {
       // Generate query ID
       byte[] queryId = new byte[32];
       new SecureRandom().nextBytes(queryId);
+      
+      logger.info("Sending query with ID: " + CryptoUtils.hex(queryId));
+      logger.info("Query type: " + query.getClass().getName());
+      if (query instanceof byte[]) {
+        logger.info("Query size: " + ((byte[]) query).length + " bytes");
+      }
 
       // Wrap in ADNL query
       java.util.Map<String, Object> adnlQuery = new java.util.HashMap<>();
@@ -458,11 +496,13 @@ public class AdnlTcpTransport {
       adnlQuery.put("query", query);
 
       byte[] serialized = schemas.serialize("adnl.message.query", adnlQuery, true);
+      logger.info("Serialized ADNL query size: " + serialized.length + " bytes");
 
       CompletableFuture<Object> future = new CompletableFuture<>();
       activeQueries.put(CryptoUtils.hex(queryId), future);
 
       sendPacket(serialized);
+      logger.info("Query packet sent successfully");
 
       // Set timeout
       timeoutExecutor.schedule(
