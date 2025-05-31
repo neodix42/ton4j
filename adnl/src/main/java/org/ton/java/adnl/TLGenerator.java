@@ -428,30 +428,34 @@ public class TLGenerator {
                     }
                 } else {
                     if (type.equals("bytes")) {
-                        if (value instanceof Map && ((Map<?, ?>) value).containsKey("@type")) {
-                            @SuppressWarnings("unchecked")
-                            Map<String, Object> mapValue = (Map<String, Object>) value;
-                            value = serialize(getByName((String) mapValue.get("@type")), mapValue, true);
+                    if (value instanceof Map && ((Map<?, ?>) value).containsKey("@type")) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> mapValue = (Map<String, Object>) value;
+                        value = serialize(getByName((String) mapValue.get("@type")), mapValue, true);
+                    }
+                    
+                    if (value instanceof byte[]) {
+                        byte[] bytes = (byte[]) value;
+                        int bytesLen = bytes.length;
+                        
+                        // Store length using the same format as Go implementation
+                        if (bytesLen <= 253) {
+                            buffer.put((byte) bytesLen);
+                        } else {
+                            buffer.put((byte) 0xFE);
+                            buffer.put((byte) (bytesLen & 0xFF));
+                            buffer.put((byte) ((bytesLen >> 8) & 0xFF));
+                            buffer.put((byte) ((bytesLen >> 16) & 0xFF));
                         }
                         
-                        if (value instanceof byte[]) {
-                            byte[] bytes = (byte[]) value;
-                            int bytesLen = bytes.length;
-                            
-                            if (bytesLen <= 253) {
-                                buffer.put((byte) bytesLen);
-                            } else {
-                                buffer.put((byte) 0xFE);
-                                buffer.put((byte) (bytesLen & 0xFF));
-                                buffer.put((byte) ((bytesLen >> 8) & 0xFF));
-                                buffer.put((byte) ((bytesLen >> 16) & 0xFF));
-                            }
-                            
-                            buffer.put(bytes);
-                            
-                            int padding = (4 - ((bytesLen + (bytesLen <= 253 ? 1 : 4)) % 4)) % 4;
-                            buffer.put(new byte[padding]);
-                        }
+                        buffer.put(bytes);
+                        
+                        // Calculate padding to align to 4 bytes
+                        int headerSize = bytesLen <= 253 ? 1 : 4;
+                        int totalSize = headerSize + bytesLen;
+                        int padding = (4 - (totalSize % 4)) % 4;
+                        buffer.put(new byte[padding]);
+                    }
                     } else if (type.equals("string")) {
                         byte[] bytes = ((String) value).getBytes(StandardCharsets.UTF_8);
                         int bytesLen = bytes.length;
@@ -603,6 +607,10 @@ public class TLGenerator {
                             int attachLen;
                             
                             if (data[i] == (byte) 0xFE) {
+                                if (i + 4 > data.length) {
+                                    logger.warning("Not enough bytes to read length prefix for bytes/string field");
+                                    break;
+                                }
                                 byteLenVal = (data[i + 1] & 0xFF) | ((data[i + 2] & 0xFF) << 8) | ((data[i + 3] & 0xFF) << 16);
                                 attachLen = 4;
                                 i += 4;
@@ -613,6 +621,8 @@ public class TLGenerator {
                             }
                             
                             if (i + byteLenVal > data.length) {
+                                logger.warning("Not enough bytes to read content for bytes/string field: need " + 
+                                              byteLenVal + " but only have " + (data.length - i));
                                 break;
                             }
                             

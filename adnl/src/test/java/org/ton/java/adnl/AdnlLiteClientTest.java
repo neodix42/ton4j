@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
 import java.util.Random;
@@ -77,9 +78,15 @@ class ServerId {
 /** Test class for ADNL Lite Client Demonstrates usage and basic functionality */
 public class AdnlLiteClientTest {
 
-  private LiteServerConfig fetchLiteServerConfig(String url) throws IOException {
+  private LiteServerConfig fetchLiteServerConfig(String path) throws IOException {
     ObjectMapper mapper = new ObjectMapper();
-    return mapper.readValue(new URL(url), LiteServerConfig.class);
+    // Try to load from classpath first
+    InputStream is = getClass().getClassLoader().getResourceAsStream(path);
+    if (is != null) {
+      return mapper.readValue(is, LiteServerConfig.class);
+    }
+    // Fall back to URL if not found in classpath
+    return mapper.readValue(new URL(path), LiteServerConfig.class);
   }
 
   private static final Logger logger = Logger.getLogger(AdnlLiteClientTest.class.getName());
@@ -87,8 +94,8 @@ public class AdnlLiteClientTest {
   private AdnlLiteClient client;
   private LiteClientConnectionPool pool;
 
-  // Get current server configuration from URL
-  private static final String CONFIG_URL = "https://tonutils.com/global.config.json";
+  // Get test configuration from resources
+  private static final String CONFIG_PATH = "test-config.json";
 
   @BeforeEach
   void setUp() {
@@ -110,9 +117,9 @@ public class AdnlLiteClientTest {
   void testSingleConnection() throws Exception {
     logger.info("Testing single liteserver connection");
 
-    // Fetch current server configuration
-    LiteServerConfig config = fetchLiteServerConfig(CONFIG_URL);
-    LiteServer server = config.getLiteServerByIndex(1);
+    // Fetch test server configuration
+    LiteServerConfig config = fetchLiteServerConfig(CONFIG_PATH);
+    LiteServer server = config.getLiteServerByIndex(0);
 
     if (server == null) {
       fail("No liteservers found in configuration");
@@ -142,8 +149,8 @@ public class AdnlLiteClientTest {
   void testConnectionPool() throws Exception {
     logger.info("Testing connection pool");
 
-    // Fetch current server configuration
-    LiteServerConfig config = fetchLiteServerConfig(CONFIG_URL);
+    // Fetch test server configuration
+    LiteServerConfig config = fetchLiteServerConfig(CONFIG_PATH);
     LiteServer server = config.getRandomLiteServer();
 
     if (server == null) {
@@ -166,8 +173,8 @@ public class AdnlLiteClientTest {
   void testAccountStateQuery() throws Exception {
     logger.info("Testing account state query");
 
-    // Fetch current server configuration
-    LiteServerConfig config = fetchLiteServerConfig(CONFIG_URL);
+    // Fetch test server configuration
+    LiteServerConfig config = fetchLiteServerConfig(CONFIG_PATH);
     LiteServer server = config.getRandomLiteServer();
 
     if (server == null) {
@@ -199,8 +206,8 @@ public class AdnlLiteClientTest {
   void testSmcMethodCall() throws Exception {
     logger.info("Testing smart contract method call");
 
-    // Fetch current server configuration
-    LiteServerConfig config = fetchLiteServerConfig(CONFIG_URL);
+    // Fetch test server configuration
+    LiteServerConfig config = fetchLiteServerConfig(CONFIG_PATH);
     LiteServer server = config.getRandomLiteServer();
 
     if (server == null) {
@@ -239,8 +246,8 @@ public class AdnlLiteClientTest {
   void testMultipleQueries() throws Exception {
     logger.info("Testing multiple sequential queries");
 
-    // Fetch current server configuration
-    LiteServerConfig config = fetchLiteServerConfig(CONFIG_URL);
+    // Fetch test server configuration
+    LiteServerConfig config = fetchLiteServerConfig(CONFIG_PATH);
     LiteServer server = config.getRandomLiteServer();
 
     if (server == null) {
@@ -273,10 +280,10 @@ public class AdnlLiteClientTest {
       AdnlLiteClient client = new AdnlLiteClient();
       System.out.println("Connecting to liteserver...");
 
-      // Fetch current server configuration
+      // Fetch test server configuration
       AdnlLiteClientTest test = new AdnlLiteClientTest();
-      LiteServerConfig config = test.fetchLiteServerConfig(CONFIG_URL);
-      LiteServer server = config.getLiteServerByIndex(1);
+      LiteServerConfig config = test.fetchLiteServerConfig(CONFIG_PATH);
+      LiteServer server = config.getLiteServerByIndex(0);
 
       if (server == null) {
         System.err.println("No liteservers found in configuration");
