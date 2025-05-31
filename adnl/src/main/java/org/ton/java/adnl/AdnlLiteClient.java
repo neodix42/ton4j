@@ -91,7 +91,7 @@ public class AdnlLiteClient {
         liteQuery.put("data", schemas.serialize("liteServer.getMasterchainInfo", query, true));
         
         // Send query and wait for response
-        Object response = transport.query(schemas.serialize("liteServer.query", liteQuery, true)).get(30, TimeUnit.SECONDS);
+        Object response = transport.query(schemas.serialize("liteServer.query", liteQuery, true)).get(10, TimeUnit.SECONDS);
         
         // Parse response
         if (response instanceof byte[]) {

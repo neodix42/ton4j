@@ -31,7 +31,7 @@ class LiteServerConfig {
     return liteServers.get(new Random().nextInt(liteServers.size()));
   }
 
-  public LiteServer geLiteServerByIndex(int index) {
+  public LiteServer getLiteServerByIndex(int index) {
     if (liteServers == null || liteServers.isEmpty()) {
       return null;
     }
@@ -112,7 +112,7 @@ public class AdnlLiteClientTest {
 
     // Fetch current server configuration
     LiteServerConfig config = fetchLiteServerConfig(CONFIG_URL);
-    LiteServer server = config.getRandomLiteServer();
+    LiteServer server = config.getLiteServerByIndex(1);
 
     if (server == null) {
       fail("No liteservers found in configuration");
@@ -276,7 +276,7 @@ public class AdnlLiteClientTest {
       // Fetch current server configuration
       AdnlLiteClientTest test = new AdnlLiteClientTest();
       LiteServerConfig config = test.fetchLiteServerConfig(CONFIG_URL);
-      LiteServer server = config.geLiteServerByIndex(1);
+      LiteServer server = config.getLiteServerByIndex(1);
 
       if (server == null) {
         System.err.println("No liteservers found in configuration");
