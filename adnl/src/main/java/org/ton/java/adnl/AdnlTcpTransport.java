@@ -496,9 +496,9 @@ public class AdnlTcpTransport {
           CryptoUtils.hexToBytes(
               "7af98bb4"
                   + "77c1545b96fa136b8e01cc08338bec47e8a43215492dda6d4d7e286382bb00c4"
-                  //                  + Integer.toHexString(((byte[]) query).length) // works but
-                  // need 0
-                  + "0c"
+                  + "0"
+                  + Integer.toHexString(((byte[]) query).length) // works but need 0
+                  //                  + "0c"
                   + CryptoUtils.hex((byte[]) query)
                   + "000000");
       //      logger.info("Serialized ADNL query size: " + serialized.length + " bytes");

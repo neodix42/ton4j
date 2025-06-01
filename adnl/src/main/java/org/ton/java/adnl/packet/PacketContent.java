@@ -1,6 +1,7 @@
 package org.ton.java.adnl.packet;
 
 import java.util.List;
+import lombok.Getter;
 
 /**
  * ADNL packet content structure
@@ -12,7 +13,9 @@ import java.util.List;
  *     recv_priority_addr_list_version:flags.9?int reinit_date:flags.10?int 
  *     dst_reinit_date:flags.10?int signature:flags.11?bytes rand2:bytes = adnl.PacketContents
  */
+@Getter
 public class PacketContent {
+    // Getters and setters
     private byte[] rand1;
     private PublicKeyED25519 from;
     private byte[] fromIdShort;
@@ -29,116 +32,59 @@ public class PacketContent {
     private byte[] rand2;
     
     public PacketContent() {}
-    
-    // Getters and setters
-    public byte[] getRand1() {
-        return rand1;
-    }
-    
+
     public void setRand1(byte[] rand1) {
         this.rand1 = rand1;
     }
-    
-    public PublicKeyED25519 getFrom() {
-        return from;
-    }
-    
+
     public void setFrom(PublicKeyED25519 from) {
         this.from = from;
     }
-    
-    public byte[] getFromIdShort() {
-        return fromIdShort;
-    }
-    
+
     public void setFromIdShort(byte[] fromIdShort) {
         this.fromIdShort = fromIdShort;
     }
-    
-    public List<Object> getMessages() {
-        return messages;
-    }
-    
+
     public void setMessages(List<Object> messages) {
         this.messages = messages;
     }
-    
-    public Object getAddress() {
-        return address;
-    }
-    
+
     public void setAddress(Object address) {
         this.address = address;
     }
-    
-    public Object getPriorityAddress() {
-        return priorityAddress;
-    }
-    
+
     public void setPriorityAddress(Object priorityAddress) {
         this.priorityAddress = priorityAddress;
     }
-    
-    public Long getSeqno() {
-        return seqno;
-    }
-    
+
     public void setSeqno(Long seqno) {
         this.seqno = seqno;
     }
-    
-    public Long getConfirmSeqno() {
-        return confirmSeqno;
-    }
-    
+
     public void setConfirmSeqno(Long confirmSeqno) {
         this.confirmSeqno = confirmSeqno;
     }
-    
-    public Integer getRecvAddrListVersion() {
-        return recvAddrListVersion;
-    }
-    
+
     public void setRecvAddrListVersion(Integer recvAddrListVersion) {
         this.recvAddrListVersion = recvAddrListVersion;
     }
-    
-    public Integer getRecvPriorityAddrListVersion() {
-        return recvPriorityAddrListVersion;
-    }
-    
+
     public void setRecvPriorityAddrListVersion(Integer recvPriorityAddrListVersion) {
         this.recvPriorityAddrListVersion = recvPriorityAddrListVersion;
     }
-    
-    public Integer getReinitDate() {
-        return reinitDate;
-    }
-    
+
     public void setReinitDate(Integer reinitDate) {
         this.reinitDate = reinitDate;
     }
-    
-    public Integer getDstReinitDate() {
-        return dstReinitDate;
-    }
-    
+
     public void setDstReinitDate(Integer dstReinitDate) {
         this.dstReinitDate = dstReinitDate;
     }
-    
-    public byte[] getSignature() {
-        return signature;
-    }
-    
+
     public void setSignature(byte[] signature) {
         this.signature = signature;
     }
-    
-    public byte[] getRand2() {
-        return rand2;
-    }
-    
+
     public void setRand2(byte[] rand2) {
         this.rand2 = rand2;
     }

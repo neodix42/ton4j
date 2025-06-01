@@ -3,13 +3,20 @@ package org.ton.java.adnl;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import lombok.Getter;
 
 /** Client class for ADNL protocol */
+@Getter
 public class Client {
+
   private final byte[] ed25519Private;
+
   private final byte[] ed25519Public;
+
   private final byte[] x25519Private;
+
   private final byte[] x25519Public;
+
   private final byte[] keyId;
 
   /**
@@ -27,10 +34,10 @@ public class Client {
     // If the private key is 64 bytes, we need to extract the seed (first 32 bytes)
     byte[] privateKeySeed = ed25519Private;
     if (ed25519Private.length == 64) {
-        privateKeySeed = new byte[32];
-        System.arraycopy(ed25519Private, 0, privateKeySeed, 0, 32);
+      privateKeySeed = new byte[32];
+      System.arraycopy(ed25519Private, 0, privateKeySeed, 0, 32);
     }
-    
+
     this.x25519Private = CryptoUtils.convertEd25519ToX25519Private(privateKeySeed);
     this.x25519Public = CryptoUtils.convertEd25519ToX25519Public(ed25519Public);
 
@@ -51,51 +58,6 @@ public class Client {
     TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(seed);
 
     return new Client(keyPair.getSecretKey(), keyPair.getPublicKey());
-  }
-
-  /**
-   * Get Ed25519 private key
-   *
-   * @return Ed25519 private key
-   */
-  public byte[] getEd25519Private() {
-    return ed25519Private;
-  }
-
-  /**
-   * Get Ed25519 public key
-   *
-   * @return Ed25519 public key
-   */
-  public byte[] getEd25519Public() {
-    return ed25519Public;
-  }
-
-  /**
-   * Get X25519 private key
-   *
-   * @return X25519 private key
-   */
-  public byte[] getX25519Private() {
-    return x25519Private;
-  }
-
-  /**
-   * Get X25519 public key
-   *
-   * @return X25519 public key
-   */
-  public byte[] getX25519Public() {
-    return x25519Public;
-  }
-
-  /**
-   * Get key ID
-   *
-   * @return Key ID
-   */
-  public byte[] getKeyId() {
-    return keyId;
   }
 
   /**
