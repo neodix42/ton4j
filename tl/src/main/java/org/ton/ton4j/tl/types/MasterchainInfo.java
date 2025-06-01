@@ -1,11 +1,9 @@
 package org.ton.ton4j.tl.types;
 
-import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import lombok.Builder;
 import lombok.Data;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.utils.Utils;
 
 @Builder
 @Data
@@ -15,24 +13,29 @@ import org.ton.ton4j.cell.CellSlice;
  */
 public class MasterchainInfo {
   BlockIdExt last;
-  BigInteger state_root_hash;
+  byte[] state_root_hash;
   ZeroStateIdExt init;
 
-  public Cell toCell() {
-    return CellBuilder.beginCell()
-        .storeCell(last.toCell())
-        .storeUint(state_root_hash, 256)
-        .storeCell(init.toCell())
-        .endCell();
+  public static final String constructorId = "81288385";
+
+  public byte[] serialize() {
+    return ByteBuffer.allocate(BlockIdExt.getSize() + 32 + ZeroStateIdExt.getSize())
+        .put(last.serialize())
+        .put(state_root_hash)
+        .put(init.serialize())
+        .array();
   }
 
-  public static MasterchainInfo deserialize(CellSlice cs) {
-    MasterchainInfo blockIdExt =
-        MasterchainInfo.builder()
-            .last(BlockIdExt.deserialize(cs))
-            .state_root_hash(cs.loadUint(256))
-            .init(ZeroStateIdExt.deserialize(cs))
-            .build();
-    return blockIdExt;
+  public static MasterchainInfo deserialize(ByteBuffer byteBuffer) {
+    return MasterchainInfo.builder()
+        .last(BlockIdExt.deserialize(byteBuffer))
+        .state_root_hash(Utils.read(byteBuffer, 32))
+        .init(ZeroStateIdExt.deserialize(byteBuffer))
+        .build();
+  }
+
+  public static MasterchainInfo deserialize(byte[] byteBuffer) {
+    ByteBuffer bf = ByteBuffer.wrap(byteBuffer);
+    return deserialize(bf);
   }
 }

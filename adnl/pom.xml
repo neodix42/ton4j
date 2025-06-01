@@ -16,10 +16,15 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>io.github.neodix42</groupId>-->
+        <!--            <artifactId>tweetnacljava</artifactId>-->
+        <!--            <version>0.9.7</version>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>io.github.neodix42</groupId>
-            <artifactId>tweetnacljava</artifactId>
-            <version>0.9.7</version>
+            <artifactId>tl</artifactId>
+            <version>0.9.9</version>
         </dependency>
         <!-- JSON handling for lite client -->
         <dependency>

@@ -5,6 +5,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 
@@ -812,5 +813,11 @@ public class Utils {
 
   public static int[] hexToInts(String hex) {
     return EncodingUtils.hexToInts(hex);
+  }
+
+  public static byte[] read(ByteBuffer buffer, int lengthBytes) {
+    byte[] bytes = new byte[lengthBytes];
+    buffer.get(bytes);
+    return bytes;
   }
 }

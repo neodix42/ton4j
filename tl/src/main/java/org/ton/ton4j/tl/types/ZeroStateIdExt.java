@@ -1,10 +1,8 @@
 package org.ton.ton4j.tl.types;
 
+import java.nio.ByteBuffer;
 import lombok.Builder;
 import lombok.Data;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
@@ -13,7 +11,7 @@ import org.ton.ton4j.utils.Utils;
  * tonNode.zeroStateIdExt workchain:int root_hash:int256 file_hash:int256 = tonNode.ZeroStateIdExt;
  */
 public class ZeroStateIdExt {
-  long workchain;
+  int workchain;
   byte[] rootHash;
   byte[] fileHash;
 
@@ -25,21 +23,26 @@ public class ZeroStateIdExt {
     return Utils.bytesToHex(fileHash);
   }
 
-  public Cell toCell() {
-    return CellBuilder.beginCell()
-        .storeInt(workchain, 32)
-        .storeBytes(rootHash, 256)
-        .storeBytes(fileHash, 256)
-        .endCell();
+  public byte[] serialize() {
+    return ByteBuffer.allocate((32 + 256 + 256) / 8)
+        .putInt(workchain)
+        .put(rootHash)
+        .put(fileHash)
+        .array();
   }
 
-  public static ZeroStateIdExt deserialize(CellSlice cs) {
+  public static ZeroStateIdExt deserialize(ByteBuffer bf) {
+    // bf.order(ByteOrder.LITTLE_ENDIAN);
     ZeroStateIdExt blockIdExt =
         ZeroStateIdExt.builder()
-            .workchain(Utils.bytesToInt(Utils.reverseByteArray(cs.loadBytes(32))))
-            .rootHash(Utils.reverseByteArray(cs.loadBytes(256)))
-            .fileHash(Utils.reverseByteArray(cs.loadBytes(256)))
+            .workchain(bf.getInt())
+            .rootHash(Utils.read(bf, 32))
+            .fileHash(Utils.read(bf, 32))
             .build();
     return blockIdExt;
+  }
+
+  public static int getSize() {
+    return (32 + 256 + 256) / 8;
   }
 }
