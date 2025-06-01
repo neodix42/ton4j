@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -92,15 +93,17 @@ public class AdnlTcpTransport {
     new SecureRandom().nextBytes(randomData);
 
     // Build ciphers for incoming and outgoing packets (matching Go implementation)
-    readCipher = CryptoUtils.createAESCtrCipher(
-        Arrays.copyOfRange(randomData, 0, 32),    // rnd[:32]
-        Arrays.copyOfRange(randomData, 64, 80),   // rnd[64:80]
-        Cipher.DECRYPT_MODE);
+    readCipher =
+        CryptoUtils.createAESCtrCipher(
+            Arrays.copyOfRange(randomData, 0, 32), // rnd[:32]
+            Arrays.copyOfRange(randomData, 64, 80), // rnd[64:80]
+            Cipher.DECRYPT_MODE);
 
-    writeCipher = CryptoUtils.createAESCtrCipher(
-        Arrays.copyOfRange(randomData, 32, 64),   // rnd[32:64]
-        Arrays.copyOfRange(randomData, 80, 96),   // rnd[80:96]
-        Cipher.ENCRYPT_MODE);
+    writeCipher =
+        CryptoUtils.createAESCtrCipher(
+            Arrays.copyOfRange(randomData, 32, 64), // rnd[32:64]
+            Arrays.copyOfRange(randomData, 80, 96), // rnd[80:96]
+            Cipher.ENCRYPT_MODE);
 
     // Calculate server key ID using TL hash (matching Go implementation)
     byte[] serverKeyId = calculateKeyId(serverPublicKey);
@@ -117,12 +120,12 @@ public class AdnlTcpTransport {
     // k := key[0:16] + checksum[16:32]
     // iv := checksum[0:4] + key[20:32]
     byte[] k = new byte[32];
-    System.arraycopy(sharedKey, 0, k, 0, 16);        // key[0:16]
-    System.arraycopy(checksum, 16, k, 16, 16);       // checksum[16:32]
+    System.arraycopy(sharedKey, 0, k, 0, 16); // key[0:16]
+    System.arraycopy(checksum, 16, k, 16, 16); // checksum[16:32]
 
     byte[] iv = new byte[16];
-    System.arraycopy(checksum, 0, iv, 0, 4);         // checksum[0:4]
-    System.arraycopy(sharedKey, 20, iv, 4, 12);      // key[20:32]
+    System.arraycopy(checksum, 0, iv, 0, 4); // checksum[0:4]
+    System.arraycopy(sharedKey, 20, iv, 4, 12); // key[20:32]
 
     // Create handshake cipher and encrypt the random data
     Cipher handshakeCipher = CryptoUtils.createAESCtrCipher(k, iv, Cipher.ENCRYPT_MODE);
@@ -131,13 +134,14 @@ public class AdnlTcpTransport {
     logger.info("Server key ID: " + CryptoUtils.hex(serverKeyId));
     logger.info("Client public key: " + CryptoUtils.hex(clientPublicKey));
 
-    // Build handshake packet: serverKeyId(32) + clientPublicKey(32) + checksum(32) + encryptedData(160)
+    // Build handshake packet: serverKeyId(32) + clientPublicKey(32) + checksum(32) +
+    // encryptedData(160)
     // Total: 256 bytes (matching Go implementation)
     ByteBuffer handshakePacket = ByteBuffer.allocate(256);
-    handshakePacket.put(serverKeyId);        // 32 bytes
-    handshakePacket.put(clientPublicKey);    // 32 bytes
-    handshakePacket.put(checksum);           // 32 bytes
-    handshakePacket.put(encryptedData);      // 160 bytes
+    handshakePacket.put(serverKeyId); // 32 bytes
+    handshakePacket.put(clientPublicKey); // 32 bytes
+    handshakePacket.put(checksum); // 32 bytes
+    handshakePacket.put(encryptedData); // 160 bytes
 
     // Send handshake packet directly (no encryption, no framing)
     // This is the raw 256-byte handshake packet as per ADNL specification
@@ -153,7 +157,7 @@ public class AdnlTcpTransport {
     java.util.zip.CRC32 crc32 = new java.util.zip.CRC32();
     crc32.update(tlSchema.getBytes("UTF-8"));
     long constructorId = crc32.getValue();
-    
+
     // Build TL-serialized structure: constructor_id + key
     ByteBuffer buffer = ByteBuffer.allocate(4 + publicKey.length);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -205,8 +209,9 @@ public class AdnlTcpTransport {
         CryptoUtils.aesCtrTransformInPlace(readCipher, sizeBytes);
 
         // Read as unsigned integer and handle properly
-        long packetSizeLong = ByteBuffer.wrap(sizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xFFFFFFFFL;
-        
+        long packetSizeLong =
+            ByteBuffer.wrap(sizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xFFFFFFFFL;
+
         logger.info("Decrypted packet size: " + packetSizeLong);
 
         // Validate packet size
@@ -248,13 +253,13 @@ public class AdnlTcpTransport {
   }
 
   /**
-   * Read exact number of bytes from socket, handling partial reads
-   * Similar to Go's readData function
+   * Read exact number of bytes from socket, handling partial reads Similar to Go's readData
+   * function
    */
   private byte[] readExactBytes(int count) throws IOException {
     byte[] result = new byte[count];
     int totalRead = 0;
-    
+
     while (totalRead < count) {
       int bytesRead = input.read(result, totalRead, count - totalRead);
       if (bytesRead == -1) {
@@ -263,7 +268,7 @@ public class AdnlTcpTransport {
       }
       totalRead += bytesRead;
     }
-    
+
     return result;
   }
 
@@ -314,55 +319,67 @@ public class AdnlTcpTransport {
       // First try to parse as adnl.message.answer
       try {
         Object[] deserialized = schemas.deserialize(payload);
-        
-        logger.info("Deserialized result type: " + (deserialized[0] != null ? deserialized[0].getClass().getName() : "null"));
-        
+
+        logger.info(
+            "Deserialized result type: "
+                + (deserialized[0] != null ? deserialized[0].getClass().getName() : "null"));
+
         if (deserialized[0] instanceof java.util.Map) {
           @SuppressWarnings("unchecked")
           java.util.Map<String, Object> message = (java.util.Map<String, Object>) deserialized[0];
           logger.info("Deserialized message type: " + message.get("@type"));
-          
+
           if ("adnl.message.answer".equals(message.get("@type"))) {
             // Process ADNL answer message
             byte[] queryId = (byte[]) message.get("query_id");
             String queryIdHex = CryptoUtils.hex(queryId);
             Object answer = message.get("answer");
-            
+
             logger.info("Received answer for query ID: " + queryIdHex);
             logger.info("Answer type: " + (answer != null ? answer.getClass().getName() : "null"));
             if (answer instanceof byte[]) {
               logger.info("Answer size: " + ((byte[]) answer).length + " bytes");
               logger.info("Answer hex: " + CryptoUtils.hex((byte[]) answer));
-              
+
               // Try to deserialize the answer
               try {
                 Object[] answerDeserialized = schemas.deserialize((byte[]) answer);
-                logger.info("Answer deserialized type: " + (answerDeserialized[0] != null ? answerDeserialized[0].getClass().getName() : "null"));
+                logger.info(
+                    "Answer deserialized type: "
+                        + (answerDeserialized[0] != null
+                            ? answerDeserialized[0].getClass().getName()
+                            : "null"));
                 if (answerDeserialized[0] instanceof java.util.Map) {
                   @SuppressWarnings("unchecked")
-                  java.util.Map<String, Object> answerMap = (java.util.Map<String, Object>) answerDeserialized[0];
+                  java.util.Map<String, Object> answerMap =
+                      (java.util.Map<String, Object>) answerDeserialized[0];
                   logger.info("Answer message type: " + answerMap.get("@type"));
-                  
+
                   // Complete the future with the deserialized answer map
                   CompletableFuture<Object> future = activeQueries.remove(queryIdHex);
                   if (future != null) {
-                    logger.info("Completing future for query ID: " + queryIdHex + " with deserialized answer");
+                    logger.info(
+                        "Completing future for query ID: "
+                            + queryIdHex
+                            + " with deserialized answer");
                     future.complete(answerMap);
                     return;
                   }
                 }
               } catch (Exception e) {
                 logger.info("Could not deserialize answer: " + e.getMessage());
-                // Even if we can't deserialize, we should still complete the future with the raw bytes
+                // Even if we can't deserialize, we should still complete the future with the raw
+                // bytes
                 CompletableFuture<Object> future = activeQueries.remove(queryIdHex);
                 if (future != null) {
-                  logger.info("Completing future for query ID: " + queryIdHex + " with raw answer bytes");
+                  logger.info(
+                      "Completing future for query ID: " + queryIdHex + " with raw answer bytes");
                   future.complete(answer);
                   return;
                 }
               }
             }
-            
+
             CompletableFuture<Object> future = activeQueries.remove(queryIdHex);
             if (future != null) {
               logger.info("Completing future for query ID: " + queryIdHex);
@@ -380,7 +397,77 @@ public class AdnlTcpTransport {
       } catch (Exception e) {
         logger.log(Level.INFO, "Error parsing as ADNL message: " + e.getMessage(), e);
       }
-      
+
+      // Special handling for liteServer responses
+      // This is a direct response to our query
+      if (payload.length >= 4) {
+        try {
+          // Check for known constructor IDs
+          byte[] constructorId = Arrays.copyOfRange(payload, 0, 4);
+          logger.info("Checking constructor ID: " + CryptoUtils.hex(constructorId));
+
+          // Check for liteServer.masterchainInfo (constructor ID: 0x81288385)
+          if (Arrays.equals(
+              constructorId, new byte[] {(byte) 0x85, (byte) 0x83, (byte) 0x28, (byte) 0x81})) {
+            logger.info("Detected liteServer.masterchainInfo response by constructor ID");
+
+            // Find any active getMasterchainInfo query and complete it
+            if (!activeQueries.isEmpty()) {
+              String queryId = activeQueries.keySet().iterator().next();
+              CompletableFuture<Object> future = activeQueries.remove(queryId);
+              if (future != null) {
+                // Try to deserialize as liteServer.masterchainInfo
+                try {
+                  Map<String, Object> result = schemas.deserializeToMap(payload);
+                  logger.info("Successfully deserialized liteServer.masterchainInfo response");
+                  future.complete(result);
+                } catch (Exception e) {
+                  logger.info(
+                      "Could not deserialize as liteServer.masterchainInfo, completing with raw bytes: "
+                          + e.getMessage());
+                  future.complete(payload);
+                }
+                return;
+              }
+            }
+          }
+
+          // Try to find a schema for this constructor ID
+          TLGenerator.TLSchema schema = schemas.getById(constructorId, ByteOrder.LITTLE_ENDIAN);
+          if (schema != null) {
+            logger.info(
+                "Found schema for constructor ID: "
+                    + CryptoUtils.hex(constructorId)
+                    + " - "
+                    + schema.getName());
+
+            // Find any active query and complete it
+            if (!activeQueries.isEmpty()) {
+              String queryId = activeQueries.keySet().iterator().next();
+              CompletableFuture<Object> future = activeQueries.remove(queryId);
+              if (future != null) {
+                // Try to deserialize using the found schema
+                try {
+                  Map<String, Object> result = schemas.deserializeToMap(payload);
+                  logger.info("Successfully deserialized response as " + schema.getName());
+                  future.complete(result);
+                } catch (Exception e) {
+                  logger.info(
+                      "Could not deserialize as "
+                          + schema.getName()
+                          + ", completing with raw bytes: "
+                          + e.getMessage());
+                  future.complete(payload);
+                }
+                return;
+              }
+            }
+          }
+        } catch (Exception e) {
+          logger.log(Level.INFO, "Error checking for TL response: " + e.getMessage(), e);
+        }
+      }
+
       // If we get here, try to handle as a raw response to a query
       if (!activeQueries.isEmpty()) {
         // Find the first active query and complete it with the payload
@@ -388,7 +475,7 @@ public class AdnlTcpTransport {
         CompletableFuture<Object> future = activeQueries.remove(firstQueryId);
         if (future != null) {
           logger.info("Completing query ID: " + firstQueryId + " with raw payload");
-          
+
           // Try to deserialize the raw payload before completing the future
           try {
             Object[] deserialized = schemas.deserialize(payload);
@@ -406,7 +493,7 @@ public class AdnlTcpTransport {
           return;
         }
       }
-      
+
       logger.warning("Received unhandled payload: " + CryptoUtils.hex(payload));
 
     } catch (Exception e) {
@@ -445,37 +532,37 @@ public class AdnlTcpTransport {
   private void handleAuthNonce(java.util.Map<String, Object> message) {
     try {
       logger.info("Received authentication nonce from server");
-      
+
       byte[] serverNonce = (byte[]) message.get("nonce");
       logger.info("Server nonce: " + CryptoUtils.hex(serverNonce));
-      
+
       // Concatenate our nonce with server nonce
       byte[] combinedNonce = new byte[ourNonce.length + serverNonce.length];
       System.arraycopy(ourNonce, 0, combinedNonce, 0, ourNonce.length);
       System.arraycopy(serverNonce, 0, combinedNonce, ourNonce.length, serverNonce.length);
-      
+
       // Sign the combined nonce with our authentication key
       byte[] signature = CryptoUtils.sign(authKey, combinedNonce);
-      
+
       // Get our public key for authentication
       byte[] publicKey = CryptoUtils.getPublicKey(authKey);
-      
+
       // Create authentication complete message
       java.util.Map<String, Object> authComplete = new java.util.HashMap<>();
       authComplete.put("@type", "tcp.authentificationComplete");
       authComplete.put("key", publicKey);
       authComplete.put("signature", signature);
-      
+
       byte[] serialized = schemas.serialize("tcp.authentificationComplete", authComplete, true);
       sendPacket(serialized);
-      
+
       logger.info("Sent authentication complete");
-      
+
       // Complete the authentication future
       if (authFuture != null) {
         authFuture.complete(null);
       }
-      
+
     } catch (Exception e) {
       logger.log(Level.SEVERE, "Error handling auth nonce", e);
       if (authFuture != null) {
@@ -490,7 +577,7 @@ public class AdnlTcpTransport {
     Object answer = message.get("answer");
 
     logger.fine("Received answer for query ID: " + queryIdHex);
-    
+
     CompletableFuture<Object> future = activeQueries.remove(queryIdHex);
     if (future != null) {
       logger.fine("Completing future for query ID: " + queryIdHex);
@@ -507,38 +594,42 @@ public class AdnlTcpTransport {
 
     // Build packet following the Go implementation:
     // [size:4][nonce:32][payload:N][checksum:32]
-    
+
     // First allocate buffer with size + nonce, then we'll append payload and checksum
     int totalSize = 32 + payload.length + 32; // nonce + payload + checksum
     ByteBuffer packet = ByteBuffer.allocate(4 + totalSize);
     packet.order(ByteOrder.LITTLE_ENDIAN);
-    
+
     // Size (4 bytes LE) - this is the size of the data after the size field
     packet.putInt(totalSize);
-    
+    logger.info("packet size: " + totalSize);
+
     // Generate nonce (32 bytes)
-    byte[] nonce = new byte[32];
-    new SecureRandom().nextBytes(nonce);
+    byte[] nonce =
+        CryptoUtils.hexToBytes("5fb13e11977cb5cff0fbf7f23f674d734cb7c4bf01322c5e6b928c5d8ea09cfd");
+    //    byte[] nonce = new byte[32];
+    //    new SecureRandom().nextBytes(nonce);
     packet.put(nonce);
-    
+    logger.info("packet nonce: " + CryptoUtils.hex(nonce));
     // Payload
     packet.put(payload);
-    
+    logger.info("packet payload: " + CryptoUtils.hex(payload));
+
     // Calculate checksum from nonce + payload (matching Go implementation)
     MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
     sha256.update(nonce);
     sha256.update(payload);
     byte[] checksum = sha256.digest();
-    
+    logger.info("packet checksum: " + CryptoUtils.hex(checksum));
     // Add checksum
     packet.put(checksum);
-    
+
     // Encrypt and send
     byte[] packetData = packet.array();
-    
+
     // Encrypt in-place to maintain cipher state (matching Go implementation)
     CryptoUtils.aesCtrTransformInPlace(writeCipher, packetData);
-    
+
     synchronized (output) {
       output.write(packetData);
       output.flush();
@@ -580,15 +671,22 @@ public class AdnlTcpTransport {
 
   public CompletableFuture<Object> query(Object query) {
     try {
+      if (!connected || socket == null || socket.isClosed()) {
+        throw new IllegalStateException("Not connected or socket closed");
+      }
+
       // Generate query ID
-      byte[] queryId = new byte[32];
-      new SecureRandom().nextBytes(queryId);
-      
+      // byte[] queryId = new byte[32]; was random
+      byte[] queryId =
+          CryptoUtils.hexToBytes(
+              "77c1545b96fa136b8e01cc08338bec47e8a43215492dda6d4d7e286382bb00c4");
+      //      new SecureRandom().nextBytes(queryId);
+
       logger.info("Sending query with ID: " + CryptoUtils.hex(queryId));
-      logger.info("Query type: " + query.getClass().getName());
+      //      logger.info("Query type: " + query.getClass().getName());
       if (query instanceof byte[]) {
         logger.info("Query size: " + ((byte[]) query).length + " bytes");
-        
+
         // Log the hex representation of the query for debugging
         logger.info("Query hex: " + CryptoUtils.hex((byte[]) query));
       }
@@ -613,8 +711,15 @@ public class AdnlTcpTransport {
       logger.info("Added query to active queries with ID: " + queryIdHex);
 
       // Send the packet before setting up the timeout to ensure it's sent
-      sendPacket(serialized);
-      logger.info("Query packet sent successfully");
+      try {
+        sendPacket(serialized);
+        logger.info("Query packet sent successfully");
+      } catch (Exception e) {
+        // If sending fails, remove the query from active queries and complete the future
+        // exceptionally
+        activeQueries.remove(queryIdHex);
+        throw e;
+      }
 
       // Set timeout - increased to 60 seconds for liteserver queries
       timeoutExecutor.schedule(
@@ -622,6 +727,12 @@ public class AdnlTcpTransport {
             if (activeQueries.remove(queryIdHex) != null) {
               logger.warning("Query timed out: " + queryIdHex);
               future.completeExceptionally(new Exception("Query timeout"));
+
+              // Check if we need to reconnect
+              if (connected && (socket == null || socket.isClosed())) {
+                logger.warning("Socket closed during query, marking as disconnected");
+                connected = false;
+              }
             }
           },
           60,
@@ -639,7 +750,7 @@ public class AdnlTcpTransport {
   private void authenticate(byte[] authKey) throws Exception {
     this.authKey = authKey;
     this.authFuture = new CompletableFuture<>();
-    
+
     // Generate our nonce
     ourNonce = new byte[32];
     new SecureRandom().nextBytes(ourNonce);
@@ -723,14 +834,11 @@ public class AdnlTcpTransport {
             "adnl.message.answer",
             "adnl.Message",
             mapOf("query_id", "bytes", "answer", "bytes")));
-            
+
     // Liteserver schemas
     schemas.add(
         new TLGenerator.TLSchema(
-            intToBytes(0xdf068c79), 
-            "liteServer.query", 
-            "Object", 
-            mapOf("data", "bytes")));
+            intToBytes(0xdf068c79), "liteServer.query", "Object", mapOf("data", "bytes")));
     schemas.add(
         new TLGenerator.TLSchema(
             intToBytes(0x2ee6b589),

@@ -342,7 +342,11 @@ public class TLGenerator {
                 }
                 id = reversed;
             }
-            return idMap.get(new ByteArrayWrapper(id));
+            TLSchema schema = idMap.get(new ByteArrayWrapper(id));
+            if (schema == null) {
+                logger.info("Unknown constructor ID: " + TLGenerator.bytesToHex(id));
+            }
+            return schema;
         }
         
         public TLSchema getById(int id, ByteOrder byteOrder) {
@@ -428,34 +432,34 @@ public class TLGenerator {
                     }
                 } else {
                     if (type.equals("bytes")) {
-                    if (value instanceof Map && ((Map<?, ?>) value).containsKey("@type")) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> mapValue = (Map<String, Object>) value;
-                        value = serialize(getByName((String) mapValue.get("@type")), mapValue, true);
-                    }
-                    
-                    if (value instanceof byte[]) {
-                        byte[] bytes = (byte[]) value;
-                        int bytesLen = bytes.length;
-                        
-                        // Store length using the same format as Go implementation
-                        if (bytesLen <= 253) {
-                            buffer.put((byte) bytesLen);
-                        } else {
-                            buffer.put((byte) 0xFE);
-                            buffer.put((byte) (bytesLen & 0xFF));
-                            buffer.put((byte) ((bytesLen >> 8) & 0xFF));
-                            buffer.put((byte) ((bytesLen >> 16) & 0xFF));
+                        if (value instanceof Map && ((Map<?, ?>) value).containsKey("@type")) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> mapValue = (Map<String, Object>) value;
+                            value = serialize(getByName((String) mapValue.get("@type")), mapValue, true);
                         }
                         
-                        buffer.put(bytes);
-                        
-                        // Calculate padding to align to 4 bytes
-                        int headerSize = bytesLen <= 253 ? 1 : 4;
-                        int totalSize = headerSize + bytesLen;
-                        int padding = (4 - (totalSize % 4)) % 4;
-                        buffer.put(new byte[padding]);
-                    }
+                        if (value instanceof byte[]) {
+                            byte[] bytes = (byte[]) value;
+                            int bytesLen = bytes.length;
+                            
+                            // Store length using the same format as Go implementation
+                            if (bytesLen <= 253) {
+                                buffer.put((byte) bytesLen);
+                            } else {
+                                buffer.put((byte) 0xFE);
+                                buffer.put((byte) (bytesLen & 0xFF));
+                                buffer.put((byte) ((bytesLen >> 8) & 0xFF));
+                                buffer.put((byte) ((bytesLen >> 16) & 0xFF));
+                            }
+                            
+                            buffer.put(bytes);
+                            
+                            // Calculate padding to align to 4 bytes
+                            int headerSize = bytesLen <= 253 ? 1 : 4;
+                            int totalSize = headerSize + bytesLen;
+                            int padding = (4 - (totalSize % 4)) % 4;
+                            buffer.put(new byte[padding]);
+                        }
                     } else if (type.equals("string")) {
                         byte[] bytes = ((String) value).getBytes(StandardCharsets.UTF_8);
                         int bytesLen = bytes.length;
@@ -525,6 +529,16 @@ public class TLGenerator {
             return deserialize(data, true, null);
         }
         
+        public Map<String, Object> deserializeToMap(byte[] data) {
+            Object[] result = deserialize(data);
+            if (result[0] instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) result[0];
+                return map;
+            }
+            throw new TLError("Deserialized result is not a map");
+        }
+        
         public Object[] deserialize(byte[] data, boolean boxed, Map<String, String> args) {
             int i = 0;
             Map<String, Object> result = new HashMap<>();
@@ -589,7 +603,7 @@ public class TLGenerator {
                                 result.put(field, false);
                             }
                         } else if (type.equals("int128") || type.equals("int256")) {
-                            result.put(field, TLGenerator.bytesToHex(Arrays.copyOfRange(data, i, i + byteLen)));
+                            result.put(field, Arrays.copyOfRange(data, i, i + byteLen));
                         } else if (type.equals("int")) {
                             result.put(field, ByteBuffer.wrap(data, i, 4).order(ByteOrder.LITTLE_ENDIAN).getInt());
                         } else if (type.equals("long")) {
@@ -633,33 +647,83 @@ public class TLGenerator {
                                 result.put(field, Arrays.copyOfRange(data, i, i + byteLenVal));
                             } else {
                                 try {
-                                    Object[] temp = deserialize(Arrays.copyOfRange(data, i, i + byteLenVal));
-                                    int j = (int) temp[1];
+                                    byte[] fieldData = Arrays.copyOfRange(data, i, i + byteLenVal);
                                     
-                                    if (j < byteLenVal) {
-                                        List<Object> parts = new ArrayList<>();
-                                        parts.add(temp[0]);
+                                    // First check if this is a boxed TL object by looking at the first 4 bytes
+                                    if (byteLenVal >= 4) {
+                                        byte[] constructorId = Arrays.copyOfRange(fieldData, 0, 4);
+                                        TLSchema fieldSchema = getById(constructorId, ByteOrder.LITTLE_ENDIAN);
                                         
-                                        while (j < byteLenVal) {
-                                            temp = deserialize(Arrays.copyOfRange(data, i + j, i + byteLenVal));
-                                            int jj = (int) temp[1];
-                                            j += jj;
+                                        if (fieldSchema != null) {
+                                            // This is a boxed TL object
+                                            logger.info("Found boxed TL object with constructor ID: " + 
+                                                       TLGenerator.bytesToHex(constructorId) + 
+                                                       " (" + fieldSchema.getName() + ")");
                                             
-                                            if (jj == 0) {
-                                                result.put(field, Arrays.copyOfRange(data, i, i + byteLenVal));
-                                                break;
+                                            Object[] temp = deserialize(fieldData, true, null);
+                                            result.put(field, temp[0]);
+                                            continue;
+                                        }
+                                        
+                                        // Check if this is a boxed TL object with a constructor ID in big endian
+                                        fieldSchema = getById(constructorId, ByteOrder.BIG_ENDIAN);
+                                        if (fieldSchema != null) {
+                                            logger.info("Found boxed TL object with big endian constructor ID: " + 
+                                                       TLGenerator.bytesToHex(constructorId) + 
+                                                       " (" + fieldSchema.getName() + ")");
+                                            
+                                            Object[] temp = deserialize(fieldData, true, null);
+                                            result.put(field, temp[0]);
+                                            continue;
+                                        }
+                                    }
+                                    
+                                    // If not a boxed object, try to deserialize as a regular TL object
+                                    try {
+                                        Object[] temp = deserialize(fieldData);
+                                        int j = (int) temp[1];
+                                        
+                                        if (j == byteLenVal) {
+                                            // Successfully parsed the entire data as one TL object
+                                            result.put(field, temp[0]);
+                                        } else if (j < byteLenVal) {
+                                            // Only part of the data was parsed, try to parse the rest
+                                            List<Object> parts = new ArrayList<>();
+                                            parts.add(temp[0]);
+                                            
+                                            int offset = j;
+                                            while (offset < byteLenVal) {
+                                                try {
+                                                    temp = deserialize(Arrays.copyOfRange(fieldData, offset, fieldData.length));
+                                                    int consumed = (int) temp[1];
+                                                    
+                                                    if (consumed == 0) {
+                                                        // Could not parse any more data
+                                                        result.put(field, fieldData);
+                                                        break;
+                                                    }
+                                                    
+                                                    parts.add(temp[0]);
+                                                    offset += consumed;
+                                                } catch (Exception e) {
+                                                    // Error parsing, use raw bytes
+                                                    result.put(field, fieldData);
+                                                    break;
+                                                }
                                             }
                                             
-                                            parts.add(temp[0]);
+                                            if (offset >= byteLenVal) {
+                                                // Successfully parsed all data as multiple TL objects
+                                                if (parts.size() == 1) {
+                                                    result.put(field, parts.get(0));
+                                                } else {
+                                                    result.put(field, parts);
+                                                }
+                                            }
                                         }
-                                        
-                                        if (parts.size() > 1) {
-                                            result.put(field, parts);
-                                        } else {
-                                            result.put(field, parts.get(0));
-                                        }
-                                    } else {
-                                        result.put(field, temp[0]);
+                                    } catch (Exception e) {
+                                        // Not a valid TL object, use raw bytes
+                                        result.put(field, fieldData);
                                     }
                                 } catch (Exception e) {
                                     result.put(field, Arrays.copyOfRange(data, i, i + byteLenVal));

@@ -10,13 +10,10 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 /**
- * ton_api.tl tonNode.blockIdExt workchain:int shard:long seqno:int root_hash:int256
- * file_hash:int256 = tonNode.BlockIdExt;
+ * tonNode.zeroStateIdExt workchain:int root_hash:int256 file_hash:int256 = tonNode.ZeroStateIdExt;
  */
-public class BlockIdExt {
+public class ZeroStateIdExt {
   long workchain;
-  long shard;
-  long seqno;
   byte[] rootHash;
   byte[] fileHash;
 
@@ -28,26 +25,18 @@ public class BlockIdExt {
     return Utils.bytesToHex(fileHash);
   }
 
-  public String getShard() {
-    return Long.toHexString(shard);
-  }
-
   public Cell toCell() {
     return CellBuilder.beginCell()
         .storeInt(workchain, 32)
-        .storeUint(shard, 64)
-        .storeUint(seqno, 32)
         .storeBytes(rootHash, 256)
         .storeBytes(fileHash, 256)
         .endCell();
   }
 
-  public static BlockIdExt deserialize(CellSlice cs) {
-    BlockIdExt blockIdExt =
-        BlockIdExt.builder()
+  public static ZeroStateIdExt deserialize(CellSlice cs) {
+    ZeroStateIdExt blockIdExt =
+        ZeroStateIdExt.builder()
             .workchain(Utils.bytesToInt(Utils.reverseByteArray(cs.loadBytes(32))))
-            .shard(Long.reverseBytes(cs.loadUint(64).longValue()))
-            .seqno(Utils.bytesToInt(Utils.reverseByteArray(cs.loadBytes(32))))
             .rootHash(Utils.reverseByteArray(cs.loadBytes(256)))
             .fileHash(Utils.reverseByteArray(cs.loadBytes(256)))
             .build();

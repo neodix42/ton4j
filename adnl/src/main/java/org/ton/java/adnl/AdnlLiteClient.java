@@ -1,5 +1,6 @@
 package org.ton.java.adnl;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -80,93 +81,143 @@ public class AdnlLiteClient {
    * @throws Exception if query fails
    */
   public MasterchainInfo getMasterchainInfo() throws Exception {
-    if (!connected) {
+    if (!connected || !transport.isConnected()) {
       throw new IllegalStateException("Not connected to liteserver");
     }
 
-    // Create getMasterchainInfo query using TL serialization instead of hardcoded bytes
-    Map<String, Object> getMasterchainInfoData = new HashMap<>();
-    getMasterchainInfoData.put("@type", "liteServer.getMasterchainInfo");
-    
-    // Wrap in liteServer.query
-    Map<String, Object> liteQuery = new HashMap<>();
-    liteQuery.put("@type", "liteServer.query");
-    liteQuery.put("data", schemas.serialize("liteServer.getMasterchainInfo", getMasterchainInfoData, true));
-    
-    byte[] queryBytes = schemas.serialize("liteServer.query", liteQuery, true);
+    // Create a direct binary representation of the getMasterchainInfo query
+    // This matches exactly what the Go implementation sends
+    // The TL-B schema for liteServer.getMasterchainInfo is:
+    // liteServer.getMasterchainInfo = liteServer.MasterchainInfo;
+    // Constructor ID: 0x2ee6b589 (little endian: 89 b5 e6 2e)
+    byte[] queryBytes = new byte[] {
+        (byte) 0xdf, (byte) 0x06, (byte) 0x8c, (byte) 0x79, // liteServer.query constructor
+        (byte) 0x04, // bytes length (4 bytes)
+        (byte) 0x2e, (byte) 0xe6, (byte) 0xb5, (byte) 0x89, // liteServer.getMasterchainInfo constructor
+        (byte) 0x00, (byte) 0x00, (byte) 0x00 // padding to align to 4 bytes
+    };
 
     // Log the query details for debugging
     logger.info("Sending getMasterchainInfo query, size: " + queryBytes.length + " bytes");
     logger.info("Query hex: " + bytesToHex(queryBytes));
 
-    // Send query and wait for response with increased timeout
-    Object response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-    
-    logger.info("Received response of type: " + (response != null ? response.getClass().getName() : "null"));
+    // Try alternative approach - create the query using the TL serializer
+    Object response = null;
+    try {
+      // Create getMasterchainInfo query
+      Map<String, Object> getMasterchainInfoQuery = new HashMap<>();
+      getMasterchainInfoQuery.put("@type", "liteServer.getMasterchainInfo");
+      
+      // Wrap in liteServer.query
+      Map<String, Object> liteQuery = new HashMap<>();
+      liteQuery.put("@type", "liteServer.query");
+      liteQuery.put("data", schemas.serialize("liteServer.getMasterchainInfo", getMasterchainInfoQuery, true));
 
-    // Parse response
-    if (response instanceof byte[]) {
-      byte[] responseBytes = (byte[]) response;
-      logger.info("Received response, size: " + responseBytes.length + " bytes");
-      logger.info("Response hex: " + bytesToHex(responseBytes));
+      byte[] serializedQuery = schemas.serialize("liteServer.query", liteQuery, true);
+      logger.info("Serialized query size: " + serializedQuery.length + " bytes");
+      logger.info("Serialized query hex: " + bytesToHex(serializedQuery));
       
       try {
-        // Try to parse as liteServer.masterchainInfo
-        Object[] deserialized = schemas.deserialize(responseBytes);
-        if (deserialized[0] instanceof Map) {
-          @SuppressWarnings("unchecked")
-          Map<String, Object> responseMap = (Map<String, Object>) deserialized[0];
-          logger.info("Deserialized response type: " + responseMap.get("@type"));
-          if ("liteServer.masterchainInfo".equals(responseMap.get("@type"))) {
-            return parseMasterchainInfo(responseMap);
-          }
-        }
+        // Send query and wait for response with increased timeout
+        response = transport.query(serializedQuery).get(60, TimeUnit.SECONDS);
+        logger.info("Received response of type: " + (response != null ? response.getClass().getName() : "null"));
       } catch (Exception e) {
-        logger.log(Level.WARNING, "Error parsing response: " + e.getMessage(), e);
-        // Don't throw here, try other parsing methods
+        logger.log(Level.WARNING, "Error with serialized query: " + e.getMessage(), e);
+        
+        // Check if we're still connected
+        if (!transport.isConnected()) {
+          logger.warning("Connection lost during query, reconnecting is required");
+          connected = false;
+          throw new IOException("Connection lost during query", e);
+        }
+        
+        throw e;
       }
-    } else if (response instanceof Map) {
-      @SuppressWarnings("unchecked")
-      Map<String, Object> responseMap = (Map<String, Object>) response;
-      logger.info("Received map response with type: " + responseMap.get("@type"));
-      if ("liteServer.masterchainInfo".equals(responseMap.get("@type"))) {
-        return parseMasterchainInfo(responseMap);
+    } catch (Exception e) {
+      logger.log(Level.WARNING, "Error with serialized query approach: " + e.getMessage(), e);
+      
+      // Check if we're still connected before trying the direct binary approach
+      if (!transport.isConnected()) {
+        logger.warning("Connection lost, reconnecting is required");
+        connected = false;
+        throw new IOException("Connection lost, reconnecting is required", e);
+      }
+      
+      // Fall back to the direct binary approach
+      try {
+        response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+        logger.info("Received response using direct binary approach: " + (response != null ? response.getClass().getName() : "null"));
+      } catch (Exception ex) {
+        // Check connection state again
+        if (!transport.isConnected()) {
+          connected = false;
+        }
+        throw ex;
       }
     }
 
-    // If we get here, we couldn't parse the response in the expected format
-    // Let's try a more flexible approach for handling different response formats
+    // Parse response
     try {
-      if (response instanceof Map) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> responseMap = (Map<String, Object>) response;
+      if (response instanceof byte[]) {
+        byte[] responseBytes = (byte[]) response;
+        logger.info("Received response, size: " + responseBytes.length + " bytes");
+        logger.info("Response hex: " + bytesToHex(responseBytes));
         
-        // Check if this is an ADNL answer that contains our actual response
-        if ("adnl.message.answer".equals(responseMap.get("@type"))) {
-          Object answer = responseMap.get("answer");
-          if (answer instanceof byte[]) {
-            byte[] answerBytes = (byte[]) answer;
-            logger.info("Trying to parse ADNL answer content, size: " + answerBytes.length);
-            
-            Object[] deserialized = schemas.deserialize(answerBytes);
-            if (deserialized[0] instanceof Map) {
-              @SuppressWarnings("unchecked")
-              Map<String, Object> answerMap = (Map<String, Object>) deserialized[0];
+        // First, check if this is an ADNL answer message
+        try {
+          Map<String, Object> responseMap = schemas.deserializeToMap(responseBytes);
+          logger.info("Deserialized response type: " + responseMap.get("@type"));
+          
+          if ("adnl.message.answer".equals(responseMap.get("@type"))) {
+            // Extract the answer field which contains the actual response
+            Object answer = responseMap.get("answer");
+            if (answer instanceof byte[]) {
+              byte[] answerBytes = (byte[]) answer;
+              logger.info("Extracted answer from ADNL message, size: " + answerBytes.length + " bytes");
+              
+              // Try to deserialize the answer content
+              Map<String, Object> answerMap = schemas.deserializeToMap(answerBytes);
               if ("liteServer.masterchainInfo".equals(answerMap.get("@type"))) {
                 return parseMasterchainInfo(answerMap);
               }
             }
+          } else if ("liteServer.masterchainInfo".equals(responseMap.get("@type"))) {
+            // Direct masterchain info response
+            return parseMasterchainInfo(responseMap);
+          }
+        } catch (Exception e) {
+          logger.log(Level.INFO, "Could not parse response as TL object: " + e.getMessage());
+        }
+      } else if (response instanceof Map) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> responseMap = (Map<String, Object>) response;
+        logger.info("Received map response with type: " + responseMap.get("@type"));
+        
+        if ("liteServer.masterchainInfo".equals(responseMap.get("@type"))) {
+          return parseMasterchainInfo(responseMap);
+        } else if ("adnl.message.answer".equals(responseMap.get("@type"))) {
+          // Extract the answer field which contains the actual response
+          Object answer = responseMap.get("answer");
+          if (answer instanceof byte[]) {
+            try {
+              Map<String, Object> answerMap = schemas.deserializeToMap((byte[]) answer);
+              if ("liteServer.masterchainInfo".equals(answerMap.get("@type"))) {
+                return parseMasterchainInfo(answerMap);
+              }
+            } catch (Exception e) {
+              logger.log(Level.INFO, "Could not parse answer as TL object: " + e.getMessage());
+            }
           }
         }
         
-        // Try to find the required fields directly in the map
+        // Try to find the required fields directly in the map as a fallback
         if (responseMap.containsKey("last") && responseMap.containsKey("state_root_hash") && responseMap.containsKey("init")) {
           logger.info("Found masterchain info fields directly in response map");
           return parseMasterchainInfo(responseMap);
         }
       }
     } catch (Exception e) {
-      logger.log(Level.WARNING, "Error in flexible response parsing: " + e.getMessage(), e);
+      logger.log(Level.WARNING, "Error parsing response: " + e.getMessage(), e);
     }
 
     throw new Exception("Invalid response format: " + (response != null ? response.getClass().getName() : "null"));
