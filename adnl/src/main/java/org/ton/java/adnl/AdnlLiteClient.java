@@ -15,14 +15,12 @@ public class AdnlLiteClient {
   private static final Logger logger = Logger.getLogger(AdnlLiteClient.class.getName());
 
   private final AdnlTcpTransport transport;
-  private final TLGenerator.TLSchemas schemas;
   private final ScheduledExecutorService pingScheduler;
   private volatile boolean connected = false;
 
   /** Create lite client with generated keys */
   public AdnlLiteClient() {
     this.transport = new AdnlTcpTransport();
-    this.schemas = createLiteserverSchemas();
     this.pingScheduler = Executors.newSingleThreadScheduledExecutor();
   }
 
@@ -33,7 +31,6 @@ public class AdnlLiteClient {
    */
   public AdnlLiteClient(Client client) {
     this.transport = new AdnlTcpTransport(client);
-    this.schemas = createLiteserverSchemas();
     this.pingScheduler = Executors.newSingleThreadScheduledExecutor();
   }
 
@@ -189,143 +186,6 @@ public class AdnlLiteClient {
    */
   public boolean isConnected() {
     return connected && transport.isConnected();
-  }
-
-  /** Create TL schemas for liteserver protocol */
-  private static TLGenerator.TLSchemas createLiteserverSchemas() {
-    List<TLGenerator.TLSchema> schemas = new ArrayList<>();
-
-    // Liteserver query wrapper
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0xdf068c79), "liteServer.query", "Object", mapOf("data", "bytes")));
-
-    // Core liteserver methods
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x2ee6b589),
-            "liteServer.getMasterchainInfo",
-            "liteServer.MasterchainInfo",
-            new HashMap<>()));
-
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x81288385),
-            "liteServer.masterchainInfo",
-            "liteServer.MasterchainInfo",
-            mapOf(
-                "last",
-                "tonNode.blockIdExt",
-                "state_root_hash",
-                "int256",
-                "init",
-                "tonNode.zeroStateIdExt")));
-
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x0a2e0100),
-            "liteServer.runSmcMethod",
-            "liteServer.RunMethodResult",
-            mapOf(
-                "mode",
-                "#",
-                "id",
-                "tonNode.blockIdExt",
-                "account",
-                "liteServer.accountId",
-                "method_id",
-                "long",
-                "params",
-                "bytes")));
-
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0xc7c72d20),
-            "liteServer.runMethodResult",
-            "liteServer.RunMethodResult",
-            mapOf(
-                "mode",
-                "#",
-                "id",
-                "tonNode.blockIdExt",
-                "shardblk",
-                "tonNode.blockIdExt",
-                "exit_code",
-                "int",
-                "result",
-                "mode.2?bytes")));
-
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x8d5a0100),
-            "liteServer.getAccountState",
-            "liteServer.AccountState",
-            mapOf("id", "tonNode.blockIdExt", "account", "liteServer.accountId")));
-
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x4e5a0100),
-            "liteServer.accountState",
-            "liteServer.AccountState",
-            mapOf(
-                "id",
-                "tonNode.blockIdExt",
-                "shardblk",
-                "tonNode.blockIdExt",
-                "shard_proof",
-                "bytes",
-                "proof",
-                "bytes",
-                "state",
-                "bytes")));
-
-    // Supporting types
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x9b895a00),
-            "tonNode.blockIdExt",
-            "tonNode.BlockIdExt",
-            mapOf(
-                "workchain",
-                "int",
-                "shard",
-                "long",
-                "seqno",
-                "int",
-                "root_hash",
-                "int256",
-                "file_hash",
-                "int256")));
-
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x8b895a00),
-            "tonNode.zeroStateIdExt",
-            "tonNode.ZeroStateIdExt",
-            mapOf("workchain", "int", "root_hash", "int256", "file_hash", "int256")));
-
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x8a895a00),
-            "liteServer.accountId",
-            "liteServer.AccountId",
-            mapOf("workchain", "int", "id", "int256")));
-
-    // ADNL message schemas
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x7af98bb4),
-            "adnl.message.query",
-            "adnl.Message",
-            mapOf("query_id", "bytes", "query", "bytes")));
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x4c2d4977),
-            "adnl.message.answer",
-            "adnl.Message",
-            mapOf("query_id", "bytes", "answer", "bytes")));
-
-    return new TLGenerator.TLSchemas(schemas);
   }
 
   /** Convert int to bytes (little endian) */

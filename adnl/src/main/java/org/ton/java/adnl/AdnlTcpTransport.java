@@ -34,7 +34,6 @@ public class AdnlTcpTransport {
   private volatile boolean running = false;
 
   private final Client client;
-  private final TLGenerator.TLSchemas schemas;
   private final ConcurrentHashMap<String, CompletableFuture<Object>> activeQueries =
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Long, CompletableFuture<TcpPong>> activePings =
@@ -49,12 +48,10 @@ public class AdnlTcpTransport {
 
   public AdnlTcpTransport() {
     this.client = Client.generate();
-    this.schemas = createTcpSchemas();
   }
 
   public AdnlTcpTransport(Client client) {
     this.client = client;
-    this.schemas = createTcpSchemas();
   }
 
   public void connect(String host, int port, byte[] serverPublicKey) throws Exception {
@@ -438,7 +435,8 @@ public class AdnlTcpTransport {
       pingData.put("@type", "tcp.ping");
       pingData.put("random_id", randomId);
 
-      byte[] serialized = schemas.serialize("tcp.ping", pingData, true);
+      //      byte[] serialized = schemas.serialize("tcp.ping", pingData, true); // todo replace
+      byte[] serialized = null; // todo replace
 
       CompletableFuture<TcpPong> future = new CompletableFuture<>();
       activePings.put(randomId, future);
@@ -565,7 +563,9 @@ public class AdnlTcpTransport {
     authRequest.put("@type", "tcp.authentificate");
     authRequest.put("nonce", ourNonce);
 
-    byte[] serialized = schemas.serialize("tcp.authentificate", authRequest, true);
+    // byte[] serialized = schemas.serialize("tcp.authentificate", authRequest, true); // replace
+    // todo
+    byte[] serialized = null;
     sendPacket(serialized);
 
     // Wait for authentication to complete
@@ -596,86 +596,6 @@ public class AdnlTcpTransport {
 
   public boolean isConnected() {
     return connected && socket != null && !socket.isClosed();
-  }
-
-  private static TLGenerator.TLSchemas createTcpSchemas() {
-    List<TLGenerator.TLSchema> schemas = new ArrayList<>();
-
-    // TCP protocol schemas
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x9a2b084d), "tcp.ping", "tcp.Pong", mapOf("random_id", "long")));
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x8b9c0a0e), "tcp.pong", "tcp.Ping", mapOf("random_id", "long")));
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x2d691b5f), "tcp.authentificate", "tcp.Message", mapOf("nonce", "bytes")));
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x5c6b1c0d),
-            "tcp.authentificationNonce",
-            "tcp.Message",
-            mapOf("nonce", "bytes")));
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x4a7b2e1f),
-            "tcp.authentificationComplete",
-            "tcp.Message",
-            mapOf("key", "bytes", "signature", "bytes")));
-
-    // ADNL message schemas
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x7af98bb4),
-            "adnl.message.query",
-            "adnl.Message",
-            mapOf("query_id", "bytes", "query", "bytes")));
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x4c2d4977),
-            "adnl.message.answer",
-            "adnl.Message",
-            mapOf("query_id", "bytes", "answer", "bytes")));
-
-    // Liteserver schemas
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0xdf068c79), "liteServer.query", "Object", mapOf("data", "bytes")));
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x2ee6b589),
-            "liteServer.getMasterchainInfo",
-            "liteServer.MasterchainInfo",
-            new HashMap<>()));
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x81288385),
-            "liteServer.masterchainInfo",
-            "liteServer.MasterchainInfo",
-            mapOf(
-                "last", "tonNode.blockIdExt",
-                "state_root_hash", "int256",
-                "init", "tonNode.zeroStateIdExt")));
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x9b895a00),
-            "tonNode.blockIdExt",
-            "tonNode.BlockIdExt",
-            mapOf(
-                "workchain", "int",
-                "shard", "long",
-                "seqno", "int",
-                "root_hash", "int256",
-                "file_hash", "int256")));
-    schemas.add(
-        new TLGenerator.TLSchema(
-            intToBytes(0x8b895a00),
-            "tonNode.zeroStateIdExt",
-            "tonNode.ZeroStateIdExt",
-            mapOf("workchain", "int", "root_hash", "int256", "file_hash", "int256")));
-
-    return new TLGenerator.TLSchemas(schemas);
   }
 
   private static byte[] intToBytes(int value) {
