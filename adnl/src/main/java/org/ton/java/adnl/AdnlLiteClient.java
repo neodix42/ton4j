@@ -90,12 +90,21 @@ public class AdnlLiteClient {
     // The TL-B schema for liteServer.getMasterchainInfo is:
     // liteServer.getMasterchainInfo = liteServer.MasterchainInfo;
     // Constructor ID: 0x2ee6b589 (little endian: 89 b5 e6 2e)
-    byte[] queryBytes = new byte[] {
-        (byte) 0xdf, (byte) 0x06, (byte) 0x8c, (byte) 0x79, // liteServer.query constructor
-        (byte) 0x04, // bytes length (4 bytes)
-        (byte) 0x2e, (byte) 0xe6, (byte) 0xb5, (byte) 0x89, // liteServer.getMasterchainInfo constructor
-        (byte) 0x00, (byte) 0x00, (byte) 0x00 // padding to align to 4 bytes
-    };
+    byte[] queryBytes =
+        new byte[] {
+          (byte) 0xdf,
+          (byte) 0x06,
+          (byte) 0x8c,
+          (byte) 0x79, // liteServer.query constructor
+          (byte) 0x04, // bytes length (4 bytes)
+          (byte) 0x2e,
+          (byte) 0xe6,
+          (byte) 0xb5,
+          (byte) 0x89, // liteServer.getMasterchainInfo constructor
+          (byte) 0x00,
+          (byte) 0x00,
+          (byte) 0x00 // padding to align to 4 bytes
+        };
 
     // Log the query details for debugging
     logger.info("Sending getMasterchainInfo query, size: " + queryBytes.length + " bytes");
@@ -107,46 +116,52 @@ public class AdnlLiteClient {
       // Create getMasterchainInfo query
       Map<String, Object> getMasterchainInfoQuery = new HashMap<>();
       getMasterchainInfoQuery.put("@type", "liteServer.getMasterchainInfo");
-      
+
       // Wrap in liteServer.query
       Map<String, Object> liteQuery = new HashMap<>();
       liteQuery.put("@type", "liteServer.query");
-      liteQuery.put("data", schemas.serialize("liteServer.getMasterchainInfo", getMasterchainInfoQuery, true));
+      liteQuery.put(
+          "data",
+          schemas.serialize("liteServer.getMasterchainInfo", getMasterchainInfoQuery, true));
 
       byte[] serializedQuery = schemas.serialize("liteServer.query", liteQuery, true);
       logger.info("Serialized query size: " + serializedQuery.length + " bytes");
       logger.info("Serialized query hex: " + bytesToHex(serializedQuery));
-      
+
       try {
         // Send query and wait for response with increased timeout
         response = transport.query(serializedQuery).get(60, TimeUnit.SECONDS);
-        logger.info("Received response of type: " + (response != null ? response.getClass().getName() : "null"));
+        logger.info(
+            "Received response of type: "
+                + (response != null ? response.getClass().getName() : "null"));
       } catch (Exception e) {
         logger.log(Level.WARNING, "Error with serialized query: " + e.getMessage(), e);
-        
+
         // Check if we're still connected
         if (!transport.isConnected()) {
           logger.warning("Connection lost during query, reconnecting is required");
           connected = false;
           throw new IOException("Connection lost during query", e);
         }
-        
+
         throw e;
       }
     } catch (Exception e) {
       logger.log(Level.WARNING, "Error with serialized query approach: " + e.getMessage(), e);
-      
+
       // Check if we're still connected before trying the direct binary approach
       if (!transport.isConnected()) {
         logger.warning("Connection lost, reconnecting is required");
         connected = false;
         throw new IOException("Connection lost, reconnecting is required", e);
       }
-      
+
       // Fall back to the direct binary approach
       try {
         response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-        logger.info("Received response using direct binary approach: " + (response != null ? response.getClass().getName() : "null"));
+        logger.info(
+            "Received response using direct binary approach: "
+                + (response != null ? response.getClass().getName() : "null"));
       } catch (Exception ex) {
         // Check connection state again
         if (!transport.isConnected()) {
@@ -162,19 +177,20 @@ public class AdnlLiteClient {
         byte[] responseBytes = (byte[]) response;
         logger.info("Received response, size: " + responseBytes.length + " bytes");
         logger.info("Response hex: " + bytesToHex(responseBytes));
-        
+
         // First, check if this is an ADNL answer message
         try {
           Map<String, Object> responseMap = schemas.deserializeToMap(responseBytes);
           logger.info("Deserialized response type: " + responseMap.get("@type"));
-          
+
           if ("adnl.message.answer".equals(responseMap.get("@type"))) {
             // Extract the answer field which contains the actual response
             Object answer = responseMap.get("answer");
             if (answer instanceof byte[]) {
               byte[] answerBytes = (byte[]) answer;
-              logger.info("Extracted answer from ADNL message, size: " + answerBytes.length + " bytes");
-              
+              logger.info(
+                  "Extracted answer from ADNL message, size: " + answerBytes.length + " bytes");
+
               // Try to deserialize the answer content
               Map<String, Object> answerMap = schemas.deserializeToMap(answerBytes);
               if ("liteServer.masterchainInfo".equals(answerMap.get("@type"))) {
@@ -192,7 +208,7 @@ public class AdnlLiteClient {
         @SuppressWarnings("unchecked")
         Map<String, Object> responseMap = (Map<String, Object>) response;
         logger.info("Received map response with type: " + responseMap.get("@type"));
-        
+
         if ("liteServer.masterchainInfo".equals(responseMap.get("@type"))) {
           return parseMasterchainInfo(responseMap);
         } else if ("adnl.message.answer".equals(responseMap.get("@type"))) {
@@ -209,9 +225,11 @@ public class AdnlLiteClient {
             }
           }
         }
-        
+
         // Try to find the required fields directly in the map as a fallback
-        if (responseMap.containsKey("last") && responseMap.containsKey("state_root_hash") && responseMap.containsKey("init")) {
+        if (responseMap.containsKey("last")
+            && responseMap.containsKey("state_root_hash")
+            && responseMap.containsKey("init")) {
           logger.info("Found masterchain info fields directly in response map");
           return parseMasterchainInfo(responseMap);
         }
@@ -220,12 +238,11 @@ public class AdnlLiteClient {
       logger.log(Level.WARNING, "Error parsing response: " + e.getMessage(), e);
     }
 
-    throw new Exception("Invalid response format: " + (response != null ? response.getClass().getName() : "null"));
+    throw new Exception(
+        "Invalid response format: " + (response != null ? response.getClass().getName() : "null"));
   }
-  
-  /**
-   * Convert bytes to hex string for debugging
-   */
+
+  /** Convert bytes to hex string for debugging */
   private String bytesToHex(byte[] bytes) {
     StringBuilder sb = new StringBuilder();
     for (byte b : bytes) {
