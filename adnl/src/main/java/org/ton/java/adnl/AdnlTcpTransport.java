@@ -19,7 +19,7 @@ import javax.crypto.Cipher;
 import org.ton.ton4j.tl.types.MasterchainInfo;
 
 /**
- * TCP-based ADNL transport implementation for liteserver communication Based on the ADNL-TCP
+ * TCP-based ADNL transport implementation for lite-server communication Based on the ADNL-TCP
  * specification and Go reference implementation
  */
 public class AdnlTcpTransport {

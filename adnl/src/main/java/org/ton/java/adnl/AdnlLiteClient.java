@@ -9,7 +9,7 @@ import org.ton.ton4j.tl.types.MasterchainInfo;
 
 /**
  * Native ADNL Lite Client implementation for TON blockchain Uses TCP transport to communicate with
- * liteservers
+ * lite-servers
  */
 public class AdnlLiteClient {
   private static final Logger logger = Logger.getLogger(AdnlLiteClient.class.getName());

@@ -8,8 +8,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Connection pool for managing multiple liteserver connections Provides load balancing and failover
- * capabilities
+ * Connection pool for managing multiple lite-server connections Provides load balancing and
+ * failover capabilities
  */
 public class LiteClientConnectionPool {
   private static final Logger logger = Logger.getLogger(LiteClientConnectionPool.class.getName());

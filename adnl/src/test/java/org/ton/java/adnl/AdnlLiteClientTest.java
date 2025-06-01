@@ -12,19 +12,17 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import lombok.Getter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.ton.ton4j.tl.types.MasterchainInfo;
 
+@Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
 class LiteServerConfig {
   @JsonProperty("liteservers")
   private List<LiteServer> liteServers;
-
-  public List<LiteServer> getLiteServers() {
-    return liteServers;
-  }
 
   public LiteServer getRandomLiteServer() {
     if (liteServers == null || liteServers.isEmpty()) {
@@ -45,6 +43,7 @@ class LiteServer {
   @JsonProperty("ip")
   private long ip;
 
+  @Getter
   @JsonProperty("port")
   private int port;
 
@@ -57,23 +56,16 @@ class LiteServer {
         "%d.%d.%d.%d", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF);
   }
 
-  public int getPort() {
-    return port;
-  }
-
   public String getKey() {
     return id.getKey();
   }
 }
 
+@Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
 class ServerId {
   @JsonProperty("key")
   private String key;
-
-  public String getKey() {
-    return key;
-  }
 }
 
 /** Test class for ADNL Lite Client Demonstrates usage and basic functionality */
