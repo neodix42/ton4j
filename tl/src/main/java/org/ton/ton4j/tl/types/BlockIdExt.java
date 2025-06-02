@@ -1,6 +1,7 @@
 package org.ton.ton4j.tl.types;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.utils.Utils;
@@ -40,28 +41,27 @@ public class BlockIdExt {
   }
 
   public byte[] serialize() {
-    return ByteBuffer.allocate((32 + 64 + 32 + 256 + 256) / 8)
-        .putInt(workchain) // 32
-        .putLong(shard) // 64
-        .putInt((int) (seqno)) // 32
+    return ByteBuffer.allocate(4 + 8 + 4 + 32 + 32)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .putInt(workchain)
+        .putLong(shard)
+        .putInt((int) seqno)
         .put(rootHash)
         .put(fileHash)
         .array();
   }
 
   public static BlockIdExt deserialize(ByteBuffer bf) {
-    BlockIdExt blockIdExt =
-        BlockIdExt.builder()
-            .workchain(bf.getInt())
-            .shard(bf.getLong())
-            .seqno(bf.getInt() & 0xFFFFFFFFL) // todo wrong
-            .rootHash(Utils.read(bf, 32))
-            .fileHash(Utils.read(bf, 32))
-            .build();
-    return blockIdExt;
+    return BlockIdExt.builder()
+        .workchain(bf.getInt())
+        .shard(bf.getLong())
+        .seqno(bf.getInt())
+        .rootHash(Utils.read(bf, 32))
+        .fileHash(Utils.read(bf, 32))
+        .build();
   }
 
   public static int getSize() {
-    return (32 + 64 + 32 + 256 + 256) / 8;
+    return 4 + 8 + 4 + 32 + 32;
   }
 }

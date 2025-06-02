@@ -5,18 +5,21 @@ import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.utils.Utils;
 
-@Builder
-@Data
 /**
  * liteServer.masterchainInfo last:tonNode.blockIdExt state_root_hash:int256
- * init:tonNode.zeroStateIdExt = liteServer.MasterchainInfo;
+ * init:tonNode.zeroStateIdExt = liteServer.MasterchainInfo, id 81288385
  */
+@Builder
+@Data
 public class MasterchainInfo {
   BlockIdExt last;
   byte[] state_root_hash;
   ZeroStateIdExt init;
 
-  public static final String constructorId = "81288385";
+  public static final int constructorId =
+      (int)
+          Utils.getQueryCrc32IEEEE(
+              "liteServer.masterchainInfo last:tonNode.blockIdExt state_root_hash:int256 init:tonNode.zeroStateIdExt = liteServer.MasterchainInfo");
 
   public byte[] serialize() {
     return ByteBuffer.allocate(BlockIdExt.getSize() + 32 + ZeroStateIdExt.getSize())

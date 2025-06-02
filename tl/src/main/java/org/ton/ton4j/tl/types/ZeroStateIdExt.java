@@ -1,6 +1,7 @@
 package org.ton.ton4j.tl.types;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.utils.Utils;
@@ -25,6 +26,7 @@ public class ZeroStateIdExt {
 
   public byte[] serialize() {
     return ByteBuffer.allocate((32 + 256 + 256) / 8)
+        .order(ByteOrder.LITTLE_ENDIAN)
         .putInt(workchain)
         .put(rootHash)
         .put(fileHash)
@@ -32,14 +34,11 @@ public class ZeroStateIdExt {
   }
 
   public static ZeroStateIdExt deserialize(ByteBuffer bf) {
-    // bf.order(ByteOrder.LITTLE_ENDIAN);
-    ZeroStateIdExt blockIdExt =
-        ZeroStateIdExt.builder()
-            .workchain(bf.getInt())
-            .rootHash(Utils.read(bf, 32))
-            .fileHash(Utils.read(bf, 32))
-            .build();
-    return blockIdExt;
+    return ZeroStateIdExt.builder()
+        .workchain(bf.getInt())
+        .rootHash(Utils.read(bf, 32))
+        .fileHash(Utils.read(bf, 32))
+        .build();
   }
 
   public static int getSize() {

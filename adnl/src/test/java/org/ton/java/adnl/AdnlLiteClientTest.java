@@ -38,7 +38,9 @@ public class AdnlLiteClientTest {
   void testSingleConnection() throws Exception {
     log.info("Testing single lite-server connection");
 
-    TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromPath(CONFIG_PATH);
+    // TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromPath(CONFIG_PATH);
+    TonGlobalConfig tonGlobalConfig =
+        TonGlobalConfig.loadFromUrl(Utils.getGlobalConfigUrlTestnetGithub());
 
     if (tonGlobalConfig.getLiteservers().length == 0) {
       fail("No lite-servers found in configuration");
@@ -57,6 +59,7 @@ public class AdnlLiteClientTest {
     }
 
     // Test ping by getting masterchain info
+    Utils.sleep(6);
     MasterchainInfo info = client.getMasterchainInfo();
     assertNotNull(info, "Masterchain info should not be null");
     assertNotNull(info.getLast(), "Last block should not be null");
@@ -64,6 +67,7 @@ public class AdnlLiteClientTest {
     log.info("Last block seqno: {} ", info.getLast().getSeqno());
     log.info("Workchain: {}", info.getLast().getWorkchain());
     log.info("Shard: {}", info.getLast().getShard());
+    log.info("init.wc: {}", info.getInit().getWorkchain());
 
     assertTrue(info.getLast().getSeqno() > 0, "Seqno should be positive");
   }

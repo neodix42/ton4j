@@ -6,7 +6,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.zip.CRC32;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -819,5 +821,11 @@ public class Utils {
     byte[] bytes = new byte[lengthBytes];
     buffer.get(bytes);
     return bytes;
+  }
+
+  public static long getQueryCrc32IEEEE(String query) {
+    CRC32 crc32 = new CRC32();
+    crc32.update(query.getBytes(StandardCharsets.UTF_8));
+    return crc32.getValue();
   }
 }

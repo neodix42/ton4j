@@ -7,15 +7,16 @@ import java.nio.ByteOrder;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.zip.CRC32;
 import javax.crypto.Cipher;
 import lombok.extern.slf4j.Slf4j;
+import org.ton.ton4j.tl.queries.AdnlMessageQuery;
+import org.ton.ton4j.tl.queries.PingQuery;
+import org.ton.ton4j.tl.types.AdnlMessageAnswer;
 import org.ton.ton4j.tl.types.MasterchainInfo;
+import org.ton.ton4j.tl.types.TcpPong;
+import org.ton.ton4j.utils.Utils;
 
 /**
  * TCP-based ADNL transport implementation for lite-server communication Based on the ADNL-TCP
@@ -33,7 +34,7 @@ public class AdnlTcpTransport {
   private volatile boolean running = false;
 
   private final Client client;
-  private final ConcurrentHashMap<String, CompletableFuture<Object>> activeQueries =
+  private final ConcurrentHashMap<String, CompletableFuture<byte[]>> activeQueries =
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Long, CompletableFuture<TcpPong>> activePings =
       new ConcurrentHashMap<>();
@@ -79,7 +80,7 @@ public class AdnlTcpTransport {
     if (authKey != null) {
       authenticate(authKey);
     }
-    // Note: Most liteservers don't require authentication for basic queries
+    // Note: Most lite-servers don't require authentication for basic queries
   }
 
   private void performHandshake(byte[] serverPublicKey) throws Exception {
@@ -319,56 +320,65 @@ public class AdnlTcpTransport {
         try {
           // Check for known constructor IDs
           byte[] constructorId = Arrays.copyOfRange(payload, 0, 4);
-          byte[] queryId = Arrays.copyOfRange(payload, 4, 36);
-          int querySize = Arrays.copyOfRange(payload, 36, 37)[0] & 0xFF;
-          byte[] queryBody = Arrays.copyOfRange(payload, 37, 37 + querySize);
-          byte[] queryBodyConstructorId = Arrays.copyOfRange(queryBody, 0, 4);
-          byte[] queryBodyPayload = Arrays.copyOfRange(queryBody, 4, queryBody.length);
-          log.info("Checking constructorId: {}", CryptoUtils.hex(constructorId));
-          log.info("Checking queryId: {}", CryptoUtils.hex(queryId));
-          log.info("Checking queryBody: {}", CryptoUtils.hex(queryBody));
-          log.info("Checking queryBodyConstructorId: {}", CryptoUtils.hex(queryBodyConstructorId));
-          log.info("Checking queryBodyPayload: {}", CryptoUtils.hex(queryBodyPayload));
+          int constructor = Utils.bytesToInt(constructorId);
+          log.info("received constructorId: {}", CryptoUtils.hex(constructorId));
+          log.info("received constructor: {}", constructor);
+          log.info("received reversed   : {}", Integer.reverseBytes(constructor));
 
-          // Check for liteServer.masterchainInfo (constructor ID: 0x81288385)
-          //          if (Arrays.equals(
-          //                  queryBodyConstructorId, new byte[] {(byte) 0x85, (byte) 0x83, (byte)
-          // 0x28, (byte) 0x81})) {
-          //            log.info("Detected liteServer.masterchainInfo response by constructor
-          // ID");
+          if (Integer.reverseBytes(constructor) == TcpPong.constructorId) {
+            log.info("TcpPong");
+            byte[] queryBody = Arrays.copyOfRange(payload, 4, 16);
+            TcpPong tcpPong = TcpPong.deserialize(queryBody);
+            log.info("received adnl tcp.pong {}", tcpPong.getRandomId());
+            CompletableFuture<TcpPong> future = activePings.remove(tcpPong.getRandomId());
+            future.complete(tcpPong);
+          }
 
-          // Find any active getMasterchainInfo query and complete it
-          if (!activeQueries.isEmpty()) {
-            String queryIdStr = activeQueries.keySet().iterator().next();
-            CompletableFuture<Object> future = activeQueries.remove(queryIdStr);
-            if (future != null) {
-              // Try to deserialize as liteServer.masterchainInfo
-              try {
-                byte[] result = new byte[0];
-                if (CryptoUtils.hex(queryBodyConstructorId).equals(MasterchainInfo.constructorId)) {
-                  result = MasterchainInfo.deserialize(queryBodyPayload).serialize();
+          if (Integer.reverseBytes(constructor) == AdnlMessageAnswer.constructorId) {
+            log.info("AdnlMessageAnswer");
+
+            byte[] queryId = Arrays.copyOfRange(payload, 4, 36);
+            int querySize = Arrays.copyOfRange(payload, 36, 37)[0] & 0xFF;
+            byte[] queryBody = Arrays.copyOfRange(payload, 37, 37 + querySize);
+            byte[] queryBodyConstructorId = Arrays.copyOfRange(queryBody, 0, 4);
+            int constructorBody = Utils.bytesToInt(queryBodyConstructorId);
+            byte[] queryBodyPayload = Arrays.copyOfRange(queryBody, 4, queryBody.length);
+
+            log.info("received queryId: {}", CryptoUtils.hex(queryId));
+            log.info("received queryBody: {}", CryptoUtils.hex(queryBody));
+            log.info(
+                "received queryBodyConstructorId: {}", CryptoUtils.hex(queryBodyConstructorId));
+            log.info("received queryBodyPayload: {}", CryptoUtils.hex(queryBodyPayload));
+
+            // Find any active getMasterchainInfo query and complete it
+            if (!activeQueries.isEmpty()) {
+
+              String queryIdStr = activeQueries.keySet().iterator().next();
+              CompletableFuture<byte[]> future = activeQueries.remove(queryIdStr);
+              if (future != null) {
+                // Try to deserialize as liteServer.masterchainInfo
+                try {
+                  byte[] result = new byte[0];
+                  if (Integer.reverseBytes(constructorBody) == MasterchainInfo.constructorId) {
+                    result = MasterchainInfo.deserialize(queryBodyPayload).serialize();
+                    log.info("Successfully deserialized liteServer.masterchainInfo response");
+                  }
+
+                  future.complete(result);
+                } catch (Exception e) {
+                  log.error(
+                      "Could not deserialize as liteServer.masterchainInfo, completing with raw bytes: ",
+                      e);
+                  future.complete(payload);
                 }
-                //                  Map<String, Object> result =
-                // schemas.deserializeToMap(payload);
-                log.info("Successfully deserialized liteServer.masterchainInfo response");
-                future.complete(result);
-              } catch (Exception e) {
-                log.error(
-                    "Could not deserialize as liteServer.masterchainInfo, completing with raw bytes: ",
-                    e);
-                future.complete(payload);
               }
-              return;
             }
           }
-          //          }
 
         } catch (Exception e) {
           log.error("Error checking for TL response:", e);
         }
       }
-
-      log.info("Received unhandled payload: " + CryptoUtils.hex(payload));
 
     } catch (Exception e) {
       log.error("Error processing incoming packet", e);
@@ -390,25 +400,23 @@ public class AdnlTcpTransport {
 
     // Size (4 bytes LE) - this is the size of the data after the size field
     packet.putInt(totalSize);
-    log.info("packet size: " + totalSize);
+    log.info("packet size: {}", totalSize);
 
     // Generate nonce (32 bytes)
-    byte[] nonce =
-        CryptoUtils.hexToBytes("5fb13e11977cb5cff0fbf7f23f674d734cb7c4bf01322c5e6b928c5d8ea09cfd");
-    //    byte[] nonce = new byte[32];
-    //    new SecureRandom().nextBytes(nonce);
+    byte[] nonce = new byte[32];
+    new SecureRandom().nextBytes(nonce);
     packet.put(nonce);
-    log.info("packet nonce: " + CryptoUtils.hex(nonce));
+    log.info("packet nonce: {}", CryptoUtils.hex(nonce));
     // Payload
     packet.put(payload);
-    log.info("packet payload: " + CryptoUtils.hex(payload));
+    log.info("packet payload: {}", CryptoUtils.hex(payload));
 
     // Calculate checksum from nonce + payload (matching Go implementation)
     MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
     sha256.update(nonce);
     sha256.update(payload);
     byte[] checksum = sha256.digest();
-    log.info("packet checksum: " + CryptoUtils.hex(checksum));
+    log.info("packet checksum: {}", CryptoUtils.hex(checksum));
     // Add checksum
     packet.put(checksum);
 
@@ -428,16 +436,12 @@ public class AdnlTcpTransport {
     try {
       long randomId = new SecureRandom().nextLong();
 
-      Map<String, Object> pingData = new HashMap<>();
-      pingData.put("@type", "tcp.ping");
-      pingData.put("random_id", randomId);
-
-      //      byte[] serialized = schemas.serialize("tcp.ping", pingData, true); // todo replace
-      byte[] serialized = null; // todo replace
+      byte[] serialized = PingQuery.serialize(randomId);
 
       CompletableFuture<TcpPong> future = new CompletableFuture<>();
       activePings.put(randomId, future);
 
+      log.info("sent adnl tcp.ping {}", randomId);
       sendPacket(serialized);
 
       // Set timeout
@@ -458,55 +462,37 @@ public class AdnlTcpTransport {
     }
   }
 
-  public CompletableFuture<Object> query(Object query) {
+  public CompletableFuture<byte[]> query(byte[] query) {
     try {
       if (!connected || socket == null || socket.isClosed()) {
         throw new IllegalStateException("Not connected or socket closed");
       }
 
       // Generate query ID
-      // byte[] queryId = new byte[32]; was random
-      byte[] queryId =
-          CryptoUtils.hexToBytes(
-              "77c1545b96fa136b8e01cc08338bec47e8a43215492dda6d4d7e286382bb00c4");
-      //      new SecureRandom().nextBytes(queryId);
+      byte[] queryId = new byte[32];
+      new SecureRandom().nextBytes(queryId);
 
-      log.info("Sending query with ID: " + CryptoUtils.hex(queryId));
-      //      log.info("Query type: " + query.getClass().getName());
-      if (query instanceof byte[]) {
-        log.info("Query size: " + ((byte[]) query).length + " bytes");
+      log.info("Sending query with ID: {}", CryptoUtils.hex(queryId));
+      if (query != null) {
+        log.info("Query size: {}", query.length + " bytes");
 
         // Log the hex representation of the query for debugging
-        log.info("Query hex: " + CryptoUtils.hex((byte[]) query));
+        log.info("Query hex: {}", CryptoUtils.hex(query));
       }
 
-      // Wrap in ADNL query
-      //      java.util.Map<String, Object> adnlQuery = new java.util.HashMap<>();
-      //      adnlQuery.put("@type", "adnl.message.query");
-      //      adnlQuery.put("query_id", queryId);
-      //      adnlQuery.put("query", query);
+      assert query != null;
 
-      // byte[] serialized = schemas.serialize("adnl.message.query", adnlQuery, true);
-      byte[] serialized =
-          CryptoUtils.hexToBytes(
-              "7af98bb4"
-                  + "77c1545b96fa136b8e01cc08338bec47e8a43215492dda6d4d7e286382bb00c4"
-                  + "0"
-                  + Integer.toHexString(((byte[]) query).length) // works but need 0
-                  //                  + "0c"
-                  + CryptoUtils.hex((byte[]) query)
-                  + "000000");
-      //      log.info("Serialized ADNL query size: " + serialized.length + " bytes");
-      log.info("Serialized ADNL query hex: " + CryptoUtils.hex(serialized));
+      byte[] serialized = AdnlMessageQuery.serialize(queryId, query);
+      log.info("Serialized2 ADNL query hex: {}", CryptoUtils.hex(serialized));
 
       // Calculate the total packet size for verification
       int totalSize = 32 + serialized.length + 32; // nonce + payload + checksum
-      log.info("Total packet size will be: " + (4 + totalSize) + " bytes");
+      log.info("Total packet size will be: {} bytes", (4 + totalSize));
 
-      CompletableFuture<Object> future = new CompletableFuture<>();
+      CompletableFuture<byte[]> future = new CompletableFuture<>();
       String queryIdHex = CryptoUtils.hex(queryId);
       activeQueries.put(queryIdHex, future);
-      log.info("Added query to active queries with ID: " + queryIdHex);
+      log.info("Added query to active queries with ID: {}", queryIdHex);
 
       // Send the packet before setting up the timeout to ensure it's sent
       try {
@@ -519,11 +505,11 @@ public class AdnlTcpTransport {
         throw e;
       }
 
-      // Set timeout - increased to 60 seconds for liteserver queries
+      // Set timeout - increased to 60 seconds for lite-server queries
       timeoutExecutor.schedule(
           () -> {
             if (activeQueries.remove(queryIdHex) != null) {
-              log.info("Query timed out: " + queryIdHex);
+              log.info("Query timed out: {}", queryIdHex);
               future.completeExceptionally(new Exception("Query timeout"));
 
               // Check if we need to reconnect
@@ -539,7 +525,7 @@ public class AdnlTcpTransport {
       return future;
     } catch (Exception e) {
       log.info("Error sending query", e);
-      CompletableFuture<Object> future = new CompletableFuture<>();
+      CompletableFuture<byte[]> future = new CompletableFuture<>();
       future.completeExceptionally(e);
       return future;
     }
@@ -593,33 +579,5 @@ public class AdnlTcpTransport {
 
   public boolean isConnected() {
     return connected && socket != null && !socket.isClosed();
-  }
-
-  private static byte[] intToBytes(int value) {
-    return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(value).array();
-  }
-
-  private static <K, V> Map<K, V> mapOf(Object... keyValues) {
-    Map<K, V> map = new HashMap<>();
-    for (int i = 0; i < keyValues.length; i += 2) {
-      @SuppressWarnings("unchecked")
-      K key = (K) keyValues[i];
-      @SuppressWarnings("unchecked")
-      V value = (V) keyValues[i + 1];
-      map.put(key, value);
-    }
-    return map;
-  }
-
-  public static class TcpPong {
-    private final long randomId;
-
-    public TcpPong(long randomId) {
-      this.randomId = randomId;
-    }
-
-    public long getRandomId() {
-      return randomId;
-    }
   }
 }

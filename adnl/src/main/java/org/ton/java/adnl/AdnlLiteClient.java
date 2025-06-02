@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import lombok.extern.slf4j.Slf4j;
+import org.ton.ton4j.tl.queries.LiteServerQuery;
 import org.ton.ton4j.tl.types.MasterchainInfo;
 
 /**
@@ -62,7 +63,7 @@ public class AdnlLiteClient {
               log.info("Ping successful");
             }
           } catch (Exception e) {
-            log.warn("Ping failed", e);
+            log.warn("Adnl tcp.Ping failed: ", e);
             // Connection might be lost, could implement reconnection logic here
           }
         },
@@ -79,29 +80,11 @@ public class AdnlLiteClient {
    */
   public MasterchainInfo getMasterchainInfo() throws Exception {
     if (!connected || !transport.isConnected()) {
-      throw new IllegalStateException("Not connected to liteserver");
+      throw new IllegalStateException("Not connected to lite-server");
     }
 
-    // Create a direct binary representation of the getMasterchainInfo query
-    // This matches exactly what the Go implementation sends
-    // The TL-B schema for liteServer.getMasterchainInfo is:
-    // liteServer.getMasterchainInfo = liteServer.MasterchainInfo;
-    // Constructor ID: 0x2ee6b589 (little endian: 89 b5 e6 2e)
     byte[] queryBytes =
-        new byte[] {
-          (byte) 0xdf, // liteServer.query constructor
-          (byte) 0x06,
-          (byte) 0x8c,
-          (byte) 0x79,
-          (byte) 0x04, // bytes length (4 bytes)
-          (byte) 0x2e, // getMasterchainInfo constructor
-          (byte) 0xe6,
-          (byte) 0xb5,
-          (byte) 0x89,
-          (byte) 0x00, // padding to align to 4 bytes
-          (byte) 0x00,
-          (byte) 0x00
-        };
+        LiteServerQuery.serialize("liteServer.getMasterchainInfo = liteServer.MasterchainInfo");
 
     // Log the query details for debugging
     log.info("Sending getMasterchainInfo query, size: {} bytes", queryBytes.length);
@@ -111,25 +94,9 @@ public class AdnlLiteClient {
     Object response = null;
     try {
 
-      byte[] serializedQuery = queryBytes;
-      try {
-        // Send query and wait for response with increased timeout
-        response = transport.query(serializedQuery).get(60, TimeUnit.SECONDS);
-        //        logger.info(
-        //            "Received response of type: "
-        //                + (response != null ? response.getClass().getName() : "null"));
-      } catch (Exception e) {
-        log.warn("Error with serialized query: {}", e.getMessage(), e);
+      // Send query and wait for response with increased timeout
+      response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
 
-        // Check if we're still connected
-        if (!transport.isConnected()) {
-          log.info("Connection lost during query, reconnecting is required");
-          connected = false;
-          throw new IOException("Connection lost during query", e);
-        }
-
-        throw e;
-      }
     } catch (Exception e) {
       log.warn("Error with serialized query approach: {}", e.getMessage(), e);
 
@@ -181,26 +148,5 @@ public class AdnlLiteClient {
    */
   public boolean isConnected() {
     return connected && transport.isConnected();
-  }
-
-  /** Convert int to bytes (little endian) */
-  private static byte[] intToBytes(int value) {
-    return java.nio.ByteBuffer.allocate(4)
-        .order(java.nio.ByteOrder.LITTLE_ENDIAN)
-        .putInt(value)
-        .array();
-  }
-
-  /** Create map from key-value pairs */
-  private static <K, V> Map<K, V> mapOf(Object... keyValues) {
-    Map<K, V> map = new HashMap<>();
-    for (int i = 0; i < keyValues.length; i += 2) {
-      @SuppressWarnings("unchecked")
-      K key = (K) keyValues[i];
-      @SuppressWarnings("unchecked")
-      V value = (V) keyValues[i + 1];
-      map.put(key, value);
-    }
-    return map;
   }
 }
