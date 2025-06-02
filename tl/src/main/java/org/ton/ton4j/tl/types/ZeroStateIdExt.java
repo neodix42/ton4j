@@ -1,5 +1,6 @@
 package org.ton.ton4j.tl.types;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
@@ -11,7 +12,7 @@ import org.ton.ton4j.utils.Utils;
 /**
  * tonNode.zeroStateIdExt workchain:int root_hash:int256 file_hash:int256 = tonNode.ZeroStateIdExt;
  */
-public class ZeroStateIdExt {
+public class ZeroStateIdExt implements Serializable, LiteServerAnswer {
   int workchain;
   byte[] rootHash;
   byte[] fileHash;
@@ -34,6 +35,7 @@ public class ZeroStateIdExt {
   }
 
   public static ZeroStateIdExt deserialize(ByteBuffer bf) {
+    bf.order(ByteOrder.LITTLE_ENDIAN);
     return ZeroStateIdExt.builder()
         .workchain(bf.getInt())
         .rootHash(Utils.read(bf, 32))

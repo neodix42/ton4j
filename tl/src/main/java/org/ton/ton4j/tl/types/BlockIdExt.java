@@ -1,5 +1,6 @@
 package org.ton.ton4j.tl.types;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
@@ -21,7 +22,7 @@ import org.ton.ton4j.utils.Utils;
  */
 @Builder
 @Data
-public class BlockIdExt {
+public class BlockIdExt implements Serializable, LiteServerAnswer {
   int workchain;
   long shard;
   long seqno;
@@ -52,6 +53,7 @@ public class BlockIdExt {
   }
 
   public static BlockIdExt deserialize(ByteBuffer bf) {
+    bf.order(ByteOrder.LITTLE_ENDIAN);
     return BlockIdExt.builder()
         .workchain(bf.getInt())
         .shard(bf.getLong())

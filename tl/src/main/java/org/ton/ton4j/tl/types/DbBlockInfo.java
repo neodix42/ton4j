@@ -1,5 +1,6 @@
 package org.ton.ton4j.tl.types;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
@@ -25,7 +26,7 @@ import org.ton.ton4j.utils.Utils;
  */
 @Builder
 @Data
-public class DbBlockInfo {
+public class DbBlockInfo implements Serializable, LiteServerAnswer {
 
   public static final long DB_BLOCK_INFO_MAGIC = 0x4ac6e727;
 

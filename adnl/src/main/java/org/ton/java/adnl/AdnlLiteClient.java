@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.tl.queries.LiteServerQuery;
+import org.ton.ton4j.tl.types.LiteServerAnswer;
 import org.ton.ton4j.tl.types.MasterchainInfo;
 
 /**
@@ -90,13 +91,10 @@ public class AdnlLiteClient {
     log.info("Sending getMasterchainInfo query, size: {} bytes", queryBytes.length);
     log.info("Query hex: {}", CryptoUtils.hex(queryBytes));
 
-    // Try alternative approach - create the query using the TL serializer
-    Object response = null;
+    LiteServerAnswer response;
     try {
-
-      // Send query and wait for response with increased timeout
       response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-
+      return (MasterchainInfo) response;
     } catch (Exception e) {
       log.warn("Error with serialized query approach: {}", e.getMessage(), e);
 
@@ -108,21 +106,7 @@ public class AdnlLiteClient {
       }
     }
 
-    // Parse response
-    try {
-      return MasterchainInfo.deserialize((byte[]) response);
-
-    } catch (Exception e) {
-      log.warn("Error parsing response: {}", e.getMessage(), e);
-    }
-
-    throw new Exception(
-        "Invalid response format: " + (response != null ? response.getClass().getName() : "null"));
-  }
-
-  /** Convert bytes to hex string for debugging */
-  private String bytesToHex(byte[] bytes) {
-    return CryptoUtils.hex(bytes);
+    throw new Exception("Was not able to retrieve masterchainInfo from lite server");
   }
 
   /** Close connection */

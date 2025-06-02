@@ -1,5 +1,6 @@
 package org.ton.ton4j.tl.types;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +12,7 @@ import org.ton.ton4j.utils.Utils;
  */
 @Builder
 @Data
-public class MasterchainInfo {
+public class MasterchainInfo implements Serializable, LiteServerAnswer {
   BlockIdExt last;
   byte[] state_root_hash;
   ZeroStateIdExt init;

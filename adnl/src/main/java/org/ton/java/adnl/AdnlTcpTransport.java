@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.tl.queries.AdnlMessageQuery;
 import org.ton.ton4j.tl.queries.PingQuery;
 import org.ton.ton4j.tl.types.AdnlMessageAnswer;
+import org.ton.ton4j.tl.types.LiteServerAnswer;
 import org.ton.ton4j.tl.types.MasterchainInfo;
 import org.ton.ton4j.tl.types.TcpPong;
 import org.ton.ton4j.utils.Utils;
@@ -34,7 +35,7 @@ public class AdnlTcpTransport {
   private volatile boolean running = false;
 
   private final Client client;
-  private final ConcurrentHashMap<String, CompletableFuture<byte[]>> activeQueries =
+  private final ConcurrentHashMap<String, CompletableFuture<LiteServerAnswer>> activeQueries =
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Long, CompletableFuture<TcpPong>> activePings =
       new ConcurrentHashMap<>();
@@ -354,13 +355,13 @@ public class AdnlTcpTransport {
             if (!activeQueries.isEmpty()) {
 
               String queryIdStr = activeQueries.keySet().iterator().next();
-              CompletableFuture<byte[]> future = activeQueries.remove(queryIdStr);
+              CompletableFuture<LiteServerAnswer> future = activeQueries.remove(queryIdStr);
               if (future != null) {
                 // Try to deserialize as liteServer.masterchainInfo
                 try {
-                  byte[] result = new byte[0];
+                  LiteServerAnswer result = null;
                   if (Integer.reverseBytes(constructorBody) == MasterchainInfo.constructorId) {
-                    result = MasterchainInfo.deserialize(queryBodyPayload).serialize();
+                    result = MasterchainInfo.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.masterchainInfo response");
                   }
 
@@ -369,7 +370,7 @@ public class AdnlTcpTransport {
                   log.error(
                       "Could not deserialize as liteServer.masterchainInfo, completing with raw bytes: ",
                       e);
-                  future.complete(payload);
+                  future.complete(null);
                 }
               }
             }
@@ -462,7 +463,7 @@ public class AdnlTcpTransport {
     }
   }
 
-  public CompletableFuture<byte[]> query(byte[] query) {
+  public CompletableFuture<LiteServerAnswer> query(byte[] query) {
     try {
       if (!connected || socket == null || socket.isClosed()) {
         throw new IllegalStateException("Not connected or socket closed");
@@ -489,7 +490,7 @@ public class AdnlTcpTransport {
       int totalSize = 32 + serialized.length + 32; // nonce + payload + checksum
       log.info("Total packet size will be: {} bytes", (4 + totalSize));
 
-      CompletableFuture<byte[]> future = new CompletableFuture<>();
+      CompletableFuture<LiteServerAnswer> future = new CompletableFuture<>();
       String queryIdHex = CryptoUtils.hex(queryId);
       activeQueries.put(queryIdHex, future);
       log.info("Added query to active queries with ID: {}", queryIdHex);
@@ -525,7 +526,7 @@ public class AdnlTcpTransport {
       return future;
     } catch (Exception e) {
       log.info("Error sending query", e);
-      CompletableFuture<byte[]> future = new CompletableFuture<>();
+      CompletableFuture<LiteServerAnswer> future = new CompletableFuture<>();
       future.completeExceptionally(e);
       return future;
     }

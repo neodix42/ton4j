@@ -1,11 +1,12 @@
 package org.ton.ton4j.tl.types;
 
+import java.io.Serializable;
 import lombok.Builder;
 import org.ton.ton4j.utils.Utils;
 
 /** adnl.message.answer query_id:int256 answer:bytes = adnl.Message, id 1684ac0f */
 @Builder
-public class AdnlMessageAnswer {
+public class AdnlMessageAnswer implements Serializable, LiteServerAnswer {
   byte[] answer;
   public static final int constructorId =
       (int)
