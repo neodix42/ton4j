@@ -76,7 +76,7 @@ public class AdnlTcpTransport {
     connected = true;
     logger.info("Connected successfully");
 
-    // Authentication is optional for liteservers
+    // Authentication is optional for lite-servers
     if (authKey != null) {
       authenticate(authKey);
     }

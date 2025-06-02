@@ -2,85 +2,20 @@ package org.ton.java.adnl;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.List;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import lombok.Getter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.tl.types.MasterchainInfo;
+import org.ton.ton4j.utils.Utils;
 
-@Getter
-@JsonIgnoreProperties(ignoreUnknown = true)
-class LiteServerConfig {
-  @JsonProperty("liteservers")
-  private List<LiteServer> liteServers;
-
-  public LiteServer getRandomLiteServer() {
-    if (liteServers == null || liteServers.isEmpty()) {
-      return null;
-    }
-    return liteServers.get(new Random().nextInt(liteServers.size()));
-  }
-
-  public LiteServer getLiteServerByIndex(int index) {
-    if (liteServers == null || liteServers.isEmpty()) {
-      return null;
-    }
-    return liteServers.get(index);
-  }
-}
-
-class LiteServer {
-  @JsonProperty("ip")
-  private long ip;
-
-  @Getter
-  @JsonProperty("port")
-  private int port;
-
-  @JsonProperty("id")
-  private ServerId id;
-
-  public String getHost() {
-    // Convert long to IP address
-    return String.format(
-        "%d.%d.%d.%d", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF);
-  }
-
-  public String getKey() {
-    return id.getKey();
-  }
-}
-
-@Getter
-@JsonIgnoreProperties(ignoreUnknown = true)
-class ServerId {
-  @JsonProperty("key")
-  private String key;
-}
+// global config
+// slf4j
 
 /** Test class for ADNL Lite Client Demonstrates usage and basic functionality */
 public class AdnlLiteClientTest {
-
-  private LiteServerConfig fetchLiteServerConfig(String path) throws IOException {
-    ObjectMapper mapper = new ObjectMapper();
-    // Try to load from classpath first
-    InputStream is = getClass().getClassLoader().getResourceAsStream(path);
-    if (is != null) {
-      return mapper.readValue(is, LiteServerConfig.class);
-    }
-    // Fall back to URL if not found in classpath
-    return mapper.readValue(new URL(path), LiteServerConfig.class);
-  }
 
   private static final Logger logger = Logger.getLogger(AdnlLiteClientTest.class.getName());
 
@@ -108,19 +43,20 @@ public class AdnlLiteClientTest {
 
   @Test
   void testSingleConnection() throws Exception {
-    logger.info("Testing single liteserver connection");
+    logger.info("Testing single lite-server connection");
 
-    // Fetch test server configuration
-    LiteServerConfig config = fetchLiteServerConfig(CONFIG_PATH);
-    LiteServer server = config.getLiteServerByIndex(0);
+    TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromPath(CONFIG_PATH);
 
-    if (server == null) {
-      fail("No liteservers found in configuration");
+    if (tonGlobalConfig.getLiteservers().length == 0) {
+      fail("No lite-servers found in configuration");
     }
 
     client = new AdnlLiteClient();
     try {
-      client.connect(server.getHost(), server.getPort(), server.getKey());
+      client.connect(
+          Utils.int2ip(tonGlobalConfig.getLiteservers()[0].getIp()),
+          (int) tonGlobalConfig.getLiteservers()[0].getPort(),
+          tonGlobalConfig.getLiteservers()[0].getId().getKey());
       assertTrue(client.isConnected(), "Client should be connected");
     } catch (Exception e) {
       logger.severe("Connection failed: " + e.getMessage());
@@ -143,16 +79,17 @@ public class AdnlLiteClientTest {
   void testConnectionPool() throws Exception {
     logger.info("Testing connection pool");
 
-    // Fetch test server configuration
-    LiteServerConfig config = fetchLiteServerConfig(CONFIG_PATH);
-    LiteServer server = config.getRandomLiteServer();
+    TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromPath(CONFIG_PATH);
 
-    if (server == null) {
-      fail("No liteservers found in configuration");
+    if (tonGlobalConfig.getLiteservers().length == 0) {
+      fail("No lite-servers found in configuration");
     }
 
     pool = new LiteClientConnectionPool();
-    pool.addConnection(server.getHost(), server.getPort(), server.getKey());
+    pool.addConnection(
+        Utils.int2ip(tonGlobalConfig.getLiteservers()[0].getIp()),
+        (int) tonGlobalConfig.getLiteservers()[0].getPort(),
+        tonGlobalConfig.getLiteservers()[0].getId().getKey());
 
     assertEquals(1, pool.getTotalConnectionCount(), "Should have 1 connection");
     assertEquals(1, pool.getActiveConnectionCount(), "Should have 1 active connection");
@@ -276,15 +213,16 @@ public class AdnlLiteClientTest {
 
       // Fetch test server configuration
       AdnlLiteClientTest test = new AdnlLiteClientTest();
-      LiteServerConfig config = test.fetchLiteServerConfig(CONFIG_PATH);
-      LiteServer server = config.getLiteServerByIndex(0);
+      TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromPath(CONFIG_PATH);
 
-      if (server == null) {
-        System.err.println("No liteservers found in configuration");
-        return;
+      if (tonGlobalConfig.getLiteservers().length == 0) {
+        fail("No lite-servers found in configuration");
       }
 
-      client.connect(server.getHost(), server.getPort(), server.getKey());
+      client.connect(
+          Utils.int2ip(tonGlobalConfig.getLiteservers()[0].getIp()),
+          (int) tonGlobalConfig.getLiteservers()[0].getPort(),
+          tonGlobalConfig.getLiteservers()[0].getId().getKey());
       System.out.println("Connected successfully!");
 
       // Get masterchain info

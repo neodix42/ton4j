@@ -16,11 +16,7 @@ public class LiteClientExample {
 
       // Connect to liteserver (using testnet config)
       System.out.println("Connecting to liteserver...");
-      // You need to provide actual testnet liteserver details
-      String host = "135.181.140.212"; // Example testnet liteserver
-      int port = 13206;
-      String serverPublicKey = "K0t3+IWLOXHYMvMcrGZDPs+pn58a17LFbnXoQkKc2xw="; // Example key
-      client.connect(host, port, serverPublicKey);
+      client.connect("135.181.140.212", 13206, "K0t3+IWLOXHYMvMcrGZDPs+pn58a17LFbnXoQkKc2xw=");
 
       if (client.isConnected()) {
         System.out.println("✓ Connected successfully!");

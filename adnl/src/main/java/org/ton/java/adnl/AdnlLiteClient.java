@@ -50,7 +50,7 @@ public class AdnlLiteClient {
     // Start ping scheduler (every 5 seconds as per specification)
     startPingScheduler();
 
-    logger.info("Connected to liteserver " + host + ":" + port);
+    logger.info("Connected to lite-server " + host + ":" + port);
   }
 
   /** Start ping scheduler to maintain connection */
