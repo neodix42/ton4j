@@ -5,8 +5,10 @@ import java.util.*;
 import java.util.concurrent.*;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.tl.queries.LiteServerQuery;
+import org.ton.ton4j.tl.types.CurrentTime;
 import org.ton.ton4j.tl.types.LiteServerAnswer;
 import org.ton.ton4j.tl.types.MasterchainInfo;
+import org.ton.ton4j.tl.types.Version;
 
 /**
  * Native ADNL Lite Client implementation for TON blockchain Uses TCP transport to communicate with
@@ -107,6 +109,32 @@ public class AdnlLiteClient {
     }
 
     throw new Exception("Was not able to retrieve masterchainInfo from lite server");
+  }
+
+  public CurrentTime getTime() throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes = LiteServerQuery.serialize("liteServer.getTime = liteServer.CurrentTime");
+    log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+    log.info("Query hex: {}", CryptoUtils.hex(queryBytes));
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (CurrentTime) response;
+  }
+
+  public Version getVersion() throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes = LiteServerQuery.serialize("liteServer.getVersion = liteServer.Version");
+    log.info("Sending getVersion query, size: {} bytes", queryBytes.length);
+    log.info("Query hex: {}", CryptoUtils.hex(queryBytes));
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (Version) response;
   }
 
   /** Close connection */

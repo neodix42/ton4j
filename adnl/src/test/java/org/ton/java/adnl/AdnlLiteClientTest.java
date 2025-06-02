@@ -8,7 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.ton.java.adnl.globalconfig.TonGlobalConfig;
+import org.ton.ton4j.tl.types.CurrentTime;
 import org.ton.ton4j.tl.types.MasterchainInfo;
+import org.ton.ton4j.tl.types.Version;
 import org.ton.ton4j.utils.Utils;
 
 // global config
@@ -95,6 +97,58 @@ public class AdnlLiteClientTest {
     //    MasterchainInfo info = pool.getMasterchainInfo();
     //    assertNotNull(info, "Masterchain info should not be null");
     //    log.info("Pool query successful - Last block seqno: " + info.getLast().getSeqno());
+  }
+
+  @Test
+  void testGetTime() throws Exception {
+    log.info("Testing getTime query");
+
+    TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromUrl(Utils.getGlobalConfigUrlTestnetGithub());
+
+    if (tonGlobalConfig.getLiteservers().length == 0) {
+      fail("No lite-servers found in configuration");
+    }
+
+    client = new AdnlLiteClient();
+    client.connect(
+        Utils.int2ip(tonGlobalConfig.getLiteservers()[0].getIp()),
+        (int) tonGlobalConfig.getLiteservers()[0].getPort(),
+        tonGlobalConfig.getLiteservers()[0].getId().getKey());
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    CurrentTime time = client.getTime();
+    assertNotNull(time, "CurrentTime should not be null");
+    assertTrue(time.getNow() > 0, "Now timestamp should be positive");
+    
+    log.info("Current time: {}", time.getNow());
+  }
+
+  @Test
+  void testGetVersion() throws Exception {
+    log.info("Testing getVersion query");
+
+    TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromUrl(Utils.getGlobalConfigUrlTestnetGithub());
+
+    if (tonGlobalConfig.getLiteservers().length == 0) {
+      fail("No lite-servers found in configuration");
+    }
+
+    client = new AdnlLiteClient();
+    client.connect(
+        Utils.int2ip(tonGlobalConfig.getLiteservers()[0].getIp()),
+        (int) tonGlobalConfig.getLiteservers()[0].getPort(),
+        tonGlobalConfig.getLiteservers()[0].getId().getKey());
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    Version version = client.getVersion();
+    assertNotNull(version, "Version should not be null");
+    assertTrue(version.getVersion() > 0, "Version number should be positive");
+    assertTrue(version.getNow() > 0, "Now timestamp should be positive");
+    
+    log.info("Lite server version: {}", version.getVersion());
+    log.info("Mode: {}", version.getMode());
+    log.info("Capabilities: {}", version.getCapabilities());
+    log.info("Now: {}", version.getNow());
   }
 
   //  @Test

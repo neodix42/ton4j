@@ -14,9 +14,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.tl.queries.AdnlMessageQuery;
 import org.ton.ton4j.tl.queries.PingQuery;
 import org.ton.ton4j.tl.types.AdnlMessageAnswer;
+import org.ton.ton4j.tl.types.CurrentTime;
 import org.ton.ton4j.tl.types.LiteServerAnswer;
 import org.ton.ton4j.tl.types.MasterchainInfo;
 import org.ton.ton4j.tl.types.TcpPong;
+import org.ton.ton4j.tl.types.Version;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -363,6 +365,12 @@ public class AdnlTcpTransport {
                   if (Integer.reverseBytes(constructorBody) == MasterchainInfo.constructorId) {
                     result = MasterchainInfo.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.masterchainInfo response");
+                  } else if (Integer.reverseBytes(constructorBody) == CurrentTime.constructorId) {
+                    result = CurrentTime.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.currentTime response");
+                  } else if (Integer.reverseBytes(constructorBody) == Version.constructorId) {
+                    result = Version.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.version response");
                   }
 
                   future.complete(result);
