@@ -12,18 +12,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.CRC32;
 import javax.crypto.Cipher;
+import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.tl.types.MasterchainInfo;
 
 /**
  * TCP-based ADNL transport implementation for lite-server communication Based on the ADNL-TCP
  * specification and Go reference implementation
  */
+@Slf4j
 public class AdnlTcpTransport {
-  private static final Logger logger = Logger.getLogger(AdnlTcpTransport.class.getName());
 
   private Socket socket;
   private DataInputStream input;
@@ -60,7 +59,7 @@ public class AdnlTcpTransport {
 
   public void connect(String host, int port, byte[] serverPublicKey, byte[] authKey)
       throws Exception {
-    logger.info("Connecting to " + host + ":" + port);
+    log.info("Connecting to {}:{}", host, port);
 
     socket = new Socket();
     socket.connect(new InetSocketAddress(host, port), 10000);
@@ -74,7 +73,7 @@ public class AdnlTcpTransport {
     waitForHandshakeConfirmation();
 
     connected = true;
-    logger.info("Connected successfully");
+    log.info("Connected successfully");
 
     // Authentication is optional for lite-servers
     if (authKey != null) {
@@ -84,7 +83,7 @@ public class AdnlTcpTransport {
   }
 
   private void performHandshake(byte[] serverPublicKey) throws Exception {
-    logger.fine("Performing ADNL handshake");
+    log.info("Performing ADNL handshake");
 
     // Generate 160 random bytes for encryption keys (matching Go implementation)
     byte[] randomData = new byte[160];
@@ -129,8 +128,8 @@ public class AdnlTcpTransport {
     Cipher handshakeCipher = CryptoUtils.createAESCtrCipher(k, iv, Cipher.ENCRYPT_MODE);
     byte[] encryptedData = CryptoUtils.aesCtrTransform(handshakeCipher, randomData);
 
-    logger.info("Server key ID: " + CryptoUtils.hex(serverKeyId));
-    logger.info("Client public key: " + CryptoUtils.hex(clientPublicKey));
+    log.info("Server key ID: " + CryptoUtils.hex(serverKeyId));
+    log.info("Client public key: " + CryptoUtils.hex(clientPublicKey));
 
     // Build handshake packet: serverKeyId(32) + clientPublicKey(32) + checksum(32) +
     // encryptedData(160)
@@ -146,7 +145,7 @@ public class AdnlTcpTransport {
     output.write(handshakePacket.array());
     output.flush();
 
-    logger.info("Handshake packet sent with serverKeyId: " + CryptoUtils.hex(serverKeyId));
+    log.info("Handshake packet sent with serverKeyId: " + CryptoUtils.hex(serverKeyId));
   }
 
   private byte[] calculateKeyId(byte[] publicKey) throws Exception {
@@ -193,7 +192,7 @@ public class AdnlTcpTransport {
 
   /** Listen for incoming packets */
   private void listenForPackets() {
-    logger.fine("Starting packet listener");
+    log.info("Starting packet listener");
 
     try {
       while (running && !socket.isClosed()) {
@@ -210,7 +209,7 @@ public class AdnlTcpTransport {
         long packetSizeLong =
             ByteBuffer.wrap(sizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xFFFFFFFFL;
 
-        logger.info("Decrypted packet size: " + packetSizeLong);
+        log.info("Decrypted packet size: " + packetSizeLong);
 
         // Validate packet size
         if (packetSizeLong > 16 * 1024 * 1024) { // 16MB limit
@@ -236,7 +235,7 @@ public class AdnlTcpTransport {
       }
     } catch (Exception e) {
       if (running) {
-        logger.log(Level.SEVERE, "Error in packet listener", e);
+        log.info("Error in packet listener", e);
       }
     } finally {
       running = false;
@@ -245,7 +244,7 @@ public class AdnlTcpTransport {
           socket.close();
         }
       } catch (IOException e) {
-        logger.log(Level.WARNING, "Error closing socket", e);
+        log.warn("Error closing socket", e);
       }
     }
   }
@@ -275,13 +274,13 @@ public class AdnlTcpTransport {
       if (packetData.length == 0) {
         // Empty packet = handshake confirmation
         connected = true;
-        logger.info("Received handshake confirmation (empty packet)");
+        log.info("Received handshake confirmation (empty packet)");
         return;
       }
 
       // Validate packet checksum
       if (packetData.length < 64) { // 32 bytes nonce + 32 bytes checksum minimum
-        logger.warning("Packet too small: " + packetData.length);
+        log.info("Packet too small: {}", packetData.length);
         return;
       }
 
@@ -297,22 +296,22 @@ public class AdnlTcpTransport {
       byte[] calculatedChecksum = sha256.digest();
 
       if (!Arrays.equals(receivedChecksum, calculatedChecksum)) {
-        logger.warning("Invalid packet checksum");
-        logger.warning("Received checksum: " + CryptoUtils.hex(receivedChecksum));
-        logger.warning("Calculated checksum: " + CryptoUtils.hex(calculatedChecksum));
+        log.info("Invalid packet checksum");
+        log.info("Received checksum: {}", CryptoUtils.hex(receivedChecksum));
+        log.info("Calculated checksum: {}", CryptoUtils.hex(calculatedChecksum));
         return;
       }
 
       // Handle handshake confirmation (empty payload)
       if (payload.length == 0) {
         connected = true;
-        logger.info("Received handshake confirmation (empty packet)");
+        log.info("Received handshake confirmation (empty packet)");
         return;
       }
 
       // Log payload for debugging
-      logger.info("Received payload of size: " + payload.length + " bytes");
-      logger.info("Payload hex: " + CryptoUtils.hex(payload));
+      log.info("Received payload of size: {}", payload.length + " bytes");
+      log.info("Payload hex: {}", CryptoUtils.hex(payload));
 
       // Special handling for liteServer responses
       // This is a direct response to our query
@@ -325,18 +324,17 @@ public class AdnlTcpTransport {
           byte[] queryBody = Arrays.copyOfRange(payload, 37, 37 + querySize);
           byte[] queryBodyConstructorId = Arrays.copyOfRange(queryBody, 0, 4);
           byte[] queryBodyPayload = Arrays.copyOfRange(queryBody, 4, queryBody.length);
-          logger.info("Checking constructorId: " + CryptoUtils.hex(constructorId));
-          logger.info("Checking queryId: " + CryptoUtils.hex(queryId));
-          logger.info("Checking queryBody: " + CryptoUtils.hex(queryBody));
-          logger.info(
-              "Checking queryBodyConstructorId: " + CryptoUtils.hex(queryBodyConstructorId));
-          logger.info("Checking queryBodyPayload: " + CryptoUtils.hex(queryBodyPayload));
+          log.info("Checking constructorId: {}", CryptoUtils.hex(constructorId));
+          log.info("Checking queryId: {}", CryptoUtils.hex(queryId));
+          log.info("Checking queryBody: {}", CryptoUtils.hex(queryBody));
+          log.info("Checking queryBodyConstructorId: {}", CryptoUtils.hex(queryBodyConstructorId));
+          log.info("Checking queryBodyPayload: {}", CryptoUtils.hex(queryBodyPayload));
 
           // Check for liteServer.masterchainInfo (constructor ID: 0x81288385)
           //          if (Arrays.equals(
           //                  queryBodyConstructorId, new byte[] {(byte) 0x85, (byte) 0x83, (byte)
           // 0x28, (byte) 0x81})) {
-          //            logger.info("Detected liteServer.masterchainInfo response by constructor
+          //            log.info("Detected liteServer.masterchainInfo response by constructor
           // ID");
 
           // Find any active getMasterchainInfo query and complete it
@@ -352,12 +350,12 @@ public class AdnlTcpTransport {
                 }
                 //                  Map<String, Object> result =
                 // schemas.deserializeToMap(payload);
-                logger.info("Successfully deserialized liteServer.masterchainInfo response");
+                log.info("Successfully deserialized liteServer.masterchainInfo response");
                 future.complete(result);
               } catch (Exception e) {
-                logger.info(
-                    "Could not deserialize as liteServer.masterchainInfo, completing with raw bytes: "
-                        + e.getMessage());
+                log.error(
+                    "Could not deserialize as liteServer.masterchainInfo, completing with raw bytes: ",
+                    e);
                 future.complete(payload);
               }
               return;
@@ -366,15 +364,14 @@ public class AdnlTcpTransport {
           //          }
 
         } catch (Exception e) {
-          logger.log(Level.INFO, "Error checking for TL response: " + e.getMessage(), e);
+          log.error("Error checking for TL response:", e);
         }
       }
 
-      logger.warning("Received unhandled payload: " + CryptoUtils.hex(payload));
+      log.info("Received unhandled payload: " + CryptoUtils.hex(payload));
 
     } catch (Exception e) {
-      logger.log(Level.SEVERE, "Error processing incoming packet", e);
-      e.printStackTrace();
+      log.error("Error processing incoming packet", e);
     }
   }
 
@@ -393,7 +390,7 @@ public class AdnlTcpTransport {
 
     // Size (4 bytes LE) - this is the size of the data after the size field
     packet.putInt(totalSize);
-    logger.info("packet size: " + totalSize);
+    log.info("packet size: " + totalSize);
 
     // Generate nonce (32 bytes)
     byte[] nonce =
@@ -401,17 +398,17 @@ public class AdnlTcpTransport {
     //    byte[] nonce = new byte[32];
     //    new SecureRandom().nextBytes(nonce);
     packet.put(nonce);
-    logger.info("packet nonce: " + CryptoUtils.hex(nonce));
+    log.info("packet nonce: " + CryptoUtils.hex(nonce));
     // Payload
     packet.put(payload);
-    logger.info("packet payload: " + CryptoUtils.hex(payload));
+    log.info("packet payload: " + CryptoUtils.hex(payload));
 
     // Calculate checksum from nonce + payload (matching Go implementation)
     MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
     sha256.update(nonce);
     sha256.update(payload);
     byte[] checksum = sha256.digest();
-    logger.info("packet checksum: " + CryptoUtils.hex(checksum));
+    log.info("packet checksum: " + CryptoUtils.hex(checksum));
     // Add checksum
     packet.put(checksum);
 
@@ -474,13 +471,13 @@ public class AdnlTcpTransport {
               "77c1545b96fa136b8e01cc08338bec47e8a43215492dda6d4d7e286382bb00c4");
       //      new SecureRandom().nextBytes(queryId);
 
-      logger.info("Sending query with ID: " + CryptoUtils.hex(queryId));
-      //      logger.info("Query type: " + query.getClass().getName());
+      log.info("Sending query with ID: " + CryptoUtils.hex(queryId));
+      //      log.info("Query type: " + query.getClass().getName());
       if (query instanceof byte[]) {
-        logger.info("Query size: " + ((byte[]) query).length + " bytes");
+        log.info("Query size: " + ((byte[]) query).length + " bytes");
 
         // Log the hex representation of the query for debugging
-        logger.info("Query hex: " + CryptoUtils.hex((byte[]) query));
+        log.info("Query hex: " + CryptoUtils.hex((byte[]) query));
       }
 
       // Wrap in ADNL query
@@ -499,22 +496,22 @@ public class AdnlTcpTransport {
                   //                  + "0c"
                   + CryptoUtils.hex((byte[]) query)
                   + "000000");
-      //      logger.info("Serialized ADNL query size: " + serialized.length + " bytes");
-      logger.info("Serialized ADNL query hex: " + CryptoUtils.hex(serialized));
+      //      log.info("Serialized ADNL query size: " + serialized.length + " bytes");
+      log.info("Serialized ADNL query hex: " + CryptoUtils.hex(serialized));
 
       // Calculate the total packet size for verification
       int totalSize = 32 + serialized.length + 32; // nonce + payload + checksum
-      logger.info("Total packet size will be: " + (4 + totalSize) + " bytes");
+      log.info("Total packet size will be: " + (4 + totalSize) + " bytes");
 
       CompletableFuture<Object> future = new CompletableFuture<>();
       String queryIdHex = CryptoUtils.hex(queryId);
       activeQueries.put(queryIdHex, future);
-      logger.info("Added query to active queries with ID: " + queryIdHex);
+      log.info("Added query to active queries with ID: " + queryIdHex);
 
       // Send the packet before setting up the timeout to ensure it's sent
       try {
         sendPacket(serialized); // ADNLQuery
-        logger.info("Query packet sent successfully");
+        log.info("Query packet sent successfully");
       } catch (Exception e) {
         // If sending fails, remove the query from active queries and complete the future
         // exceptionally
@@ -526,12 +523,12 @@ public class AdnlTcpTransport {
       timeoutExecutor.schedule(
           () -> {
             if (activeQueries.remove(queryIdHex) != null) {
-              logger.warning("Query timed out: " + queryIdHex);
+              log.info("Query timed out: " + queryIdHex);
               future.completeExceptionally(new Exception("Query timeout"));
 
               // Check if we need to reconnect
               if (connected && (socket == null || socket.isClosed())) {
-                logger.warning("Socket closed during query, marking as disconnected");
+                log.info("Socket closed during query, marking as disconnected");
                 connected = false;
               }
             }
@@ -541,7 +538,7 @@ public class AdnlTcpTransport {
 
       return future;
     } catch (Exception e) {
-      logger.log(Level.SEVERE, "Error sending query", e);
+      log.info("Error sending query", e);
       CompletableFuture<Object> future = new CompletableFuture<>();
       future.completeExceptionally(e);
       return future;
@@ -556,7 +553,7 @@ public class AdnlTcpTransport {
     ourNonce = new byte[32];
     new SecureRandom().nextBytes(ourNonce);
 
-    logger.info("Starting authentication with nonce: " + CryptoUtils.hex(ourNonce));
+    log.info("Starting authentication with nonce: " + CryptoUtils.hex(ourNonce));
 
     // Send authentication request
     Map<String, Object> authRequest = new HashMap<>();
@@ -571,7 +568,7 @@ public class AdnlTcpTransport {
     // Wait for authentication to complete
     authFuture.get(10, TimeUnit.SECONDS);
     authenticated = true;
-    logger.info("Authentication completed successfully");
+    log.info("Authentication completed successfully");
   }
 
   public void close() {
@@ -590,7 +587,7 @@ public class AdnlTcpTransport {
         socket.close();
       }
     } catch (IOException e) {
-      logger.log(Level.WARNING, "Error closing socket", e);
+      log.info("Error closing socket", e);
     }
   }
 

@@ -4,15 +4,17 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import lombok.extern.slf4j.Slf4j;
+import org.ton.java.adnl.globalconfig.LiteServers;
+import org.ton.java.adnl.globalconfig.TonGlobalConfig;
+import org.ton.ton4j.utils.Utils;
 
 /**
  * Connection pool for managing multiple lite-server connections Provides load balancing and
  * failover capabilities
  */
+@Slf4j
 public class LiteClientConnectionPool {
-  private static final Logger logger = Logger.getLogger(LiteClientConnectionPool.class.getName());
 
   private final List<AdnlLiteClient> connections = new ArrayList<>();
   private final AtomicInteger currentIndex = new AtomicInteger(0);
@@ -28,21 +30,22 @@ public class LiteClientConnectionPool {
   /**
    * Add connection from config
    *
-   * @param config Global config with liteserver list
    * @throws Exception if no connections could be established
    */
-  public void addConnectionsFromConfig(GlobalConfig config) throws Exception {
-    if (config.getLiteservers().isEmpty()) {
-      throw new Exception("No liteservers in config");
+  public void addConnectionsFromConfig(String configPath) throws Exception {
+    TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromPath(configPath);
+
+    if (tonGlobalConfig.getLiteservers().length == 0) {
+      throw new Error("No lite-servers found in configuration");
     }
 
     List<Exception> errors = new ArrayList<>();
     int successCount = 0;
 
-    for (GlobalConfig.LiteServer liteserver : config.getLiteservers()) {
+    for (LiteServers liteserver : tonGlobalConfig.getLiteservers()) {
       try {
-        String host = intToIp(liteserver.getIp());
-        int port = liteserver.getPort();
+        String host = Utils.int2ip(liteserver.getIp());
+        int port = Math.toIntExact(liteserver.getPort());
         String publicKey = liteserver.getId().getKey();
 
         AdnlLiteClient client = new AdnlLiteClient();
@@ -53,7 +56,7 @@ public class LiteClientConnectionPool {
         }
 
         successCount++;
-        logger.info("Connected to liteserver " + host + ":" + port);
+        log.info("Connected to lite-server {}:{}", host, port);
 
         // Try to connect to at least 2 servers for redundancy
         if (successCount >= 2) {
@@ -62,7 +65,7 @@ public class LiteClientConnectionPool {
 
       } catch (Exception e) {
         errors.add(e);
-        logger.log(Level.WARNING, "Failed to connect to liteserver", e);
+        log.info("Failed to connect to liteserver", e);
       }
     }
 
@@ -70,7 +73,7 @@ public class LiteClientConnectionPool {
       throw new Exception("Failed to connect to any liteserver. Errors: " + errors);
     }
 
-    logger.info("Connected to " + successCount + " liteservers");
+    log.info("Connected to {} lite-servers", successCount);
   }
 
   /**
@@ -89,7 +92,7 @@ public class LiteClientConnectionPool {
       connections.add(client);
     }
 
-    logger.info("Added connection to " + host + ":" + port);
+    log.info("Added connection to {}:{}", host, port);
   }
 
   /**
@@ -123,7 +126,7 @@ public class LiteClientConnectionPool {
         }
       } catch (Exception e) {
         errors.add(e);
-        logger.log(Level.WARNING, "Query failed on connection " + index, e);
+        log.info("Query failed on connection " + index, e);
       }
     }
 
@@ -219,7 +222,7 @@ public class LiteClientConnectionPool {
             connections.removeIf(
                 client -> {
                   if (!client.isConnected()) {
-                    logger.info("Removing disconnected client");
+                    log.info("Removing disconnected client");
                     client.close();
                     return true;
                   }
@@ -231,7 +234,7 @@ public class LiteClientConnectionPool {
           int totalCount = getTotalConnectionCount();
 
           if (activeCount < totalCount) {
-            logger.warning("Some connections are inactive: " + activeCount + "/" + totalCount);
+            log.warn("Some connections are inactive: {}/{}", activeCount, totalCount);
           }
         },
         30,
@@ -258,78 +261,12 @@ public class LiteClientConnectionPool {
         try {
           client.close();
         } catch (Exception e) {
-          logger.log(Level.WARNING, "Error closing client", e);
+          log.info("Error closing client", e);
         }
       }
       connections.clear();
     }
 
-    logger.info("Connection pool closed");
-  }
-
-  /**
-   * Convert integer IP to string
-   *
-   * @param ip Integer IP
-   * @return IP string
-   */
-  private static String intToIp(int ip) {
-    return String.format(
-        "%d.%d.%d.%d", (ip >>> 24) & 0xFF, (ip >>> 16) & 0xFF, (ip >>> 8) & 0xFF, ip & 0xFF);
-  }
-
-  /** Global config class for parsing liteserver configurations */
-  public static class GlobalConfig {
-    private List<LiteServer> liteservers = new ArrayList<>();
-
-    public List<LiteServer> getLiteservers() {
-      return liteservers;
-    }
-
-    public void setLiteservers(List<LiteServer> liteservers) {
-      this.liteservers = liteservers;
-    }
-
-    public static class LiteServer {
-      private int ip;
-      private int port;
-      private Id id;
-
-      public int getIp() {
-        return ip;
-      }
-
-      public void setIp(int ip) {
-        this.ip = ip;
-      }
-
-      public int getPort() {
-        return port;
-      }
-
-      public void setPort(int port) {
-        this.port = port;
-      }
-
-      public Id getId() {
-        return id;
-      }
-
-      public void setId(Id id) {
-        this.id = id;
-      }
-
-      public static class Id {
-        private String key;
-
-        public String getKey() {
-          return key;
-        }
-
-        public void setKey(String key) {
-          this.key = key;
-        }
-      }
-    }
+    log.info("Connection pool closed");
   }
 }

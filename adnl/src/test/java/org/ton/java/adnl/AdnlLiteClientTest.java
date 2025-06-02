@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.tl.types.MasterchainInfo;
@@ -15,21 +15,14 @@ import org.ton.ton4j.utils.Utils;
 // slf4j
 
 /** Test class for ADNL Lite Client Demonstrates usage and basic functionality */
+@Slf4j
 public class AdnlLiteClientTest {
-
-  private static final Logger logger = Logger.getLogger(AdnlLiteClientTest.class.getName());
 
   private AdnlLiteClient client;
   private LiteClientConnectionPool pool;
 
   // Get test configuration from resources
   private static final String CONFIG_PATH = "test-config.json";
-
-  @BeforeEach
-  void setUp() {
-    // Enable debug logging for tests
-    Logger.getLogger("org.ton.java.adnl").setLevel(Level.ALL);
-  }
 
   @AfterEach
   void tearDown() {
@@ -43,7 +36,7 @@ public class AdnlLiteClientTest {
 
   @Test
   void testSingleConnection() throws Exception {
-    logger.info("Testing single lite-server connection");
+    log.info("Testing single lite-server connection");
 
     TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromPath(CONFIG_PATH);
 
@@ -59,7 +52,7 @@ public class AdnlLiteClientTest {
           tonGlobalConfig.getLiteservers()[0].getId().getKey());
       assertTrue(client.isConnected(), "Client should be connected");
     } catch (Exception e) {
-      logger.severe("Connection failed: " + e.getMessage());
+      log.error("Connection failed: {}", e.getMessage());
       throw e;
     }
 
@@ -68,16 +61,16 @@ public class AdnlLiteClientTest {
     assertNotNull(info, "Masterchain info should not be null");
     assertNotNull(info.getLast(), "Last block should not be null");
 
-    logger.info("Last block seqno: " + info.getLast().getSeqno());
-    logger.info("Workchain: " + info.getLast().getWorkchain());
-    logger.info("Shard: " + info.getLast().getShard());
+    log.info("Last block seqno: {} ", info.getLast().getSeqno());
+    log.info("Workchain: {}", info.getLast().getWorkchain());
+    log.info("Shard: {}", info.getLast().getShard());
 
     assertTrue(info.getLast().getSeqno() > 0, "Seqno should be positive");
   }
 
   @Test
   void testConnectionPool() throws Exception {
-    logger.info("Testing connection pool");
+    log.info("Testing connection pool");
 
     TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromPath(CONFIG_PATH);
 
@@ -97,12 +90,12 @@ public class AdnlLiteClientTest {
     // Test query through pool
     //    MasterchainInfo info = pool.getMasterchainInfo();
     //    assertNotNull(info, "Masterchain info should not be null");
-    //    logger.info("Pool query successful - Last block seqno: " + info.getLast().getSeqno());
+    //    log.info("Pool query successful - Last block seqno: " + info.getLast().getSeqno());
   }
 
   //  @Test
   //  void testAccountStateQuery() throws Exception {
-  //    logger.info("Testing account state query");
+  //    log.info("Testing account state query");
   //
   //    // Fetch test server configuration
   //    LiteServerConfig config = fetchLiteServerConfig(CONFIG_PATH);
@@ -126,16 +119,16 @@ public class AdnlLiteClientTest {
   //    try {
   //      AccountState state = client.getAccountState(lastBlock, accountId);
   //      assertNotNull(state, "Account state should not be null");
-  //      logger.info("Account state query successful");
+  //      log.info("Account state query successful");
   //    } catch (Exception e) {
   //      // Account might not exist, which is fine for this test
-  //      logger.info("Account state query completed (account may not exist): " + e.getMessage());
+  //      log.info("Account state query completed (account may not exist): " + e.getMessage());
   //    }
   //  }
 
   //  @Test
   //  void testSmcMethodCall() throws Exception {
-  //    logger.info("Testing smart contract method call");
+  //    log.info("Testing smart contract method call");
   //
   //    // Fetch test server configuration
   //    LiteServerConfig config = fetchLiteServerConfig(CONFIG_PATH);
@@ -166,16 +159,16 @@ public class AdnlLiteClientTest {
   //              );
   //
   //      assertNotNull(result, "Run method result should not be null");
-  //      logger.info("SMC method call completed with exit code: " + result.getExitCode());
+  //      log.info("SMC method call completed with exit code: " + result.getExitCode());
   //    } catch (Exception e) {
   //      // Method call might fail if account doesn't exist or method doesn't exist
-  //      logger.info("SMC method call completed: " + e.getMessage());
+  //      log.info("SMC method call completed: " + e.getMessage());
   //    }
   //  }
   //
   //  @Test
   //  void testMultipleQueries() throws Exception {
-  //    logger.info("Testing multiple sequential queries");
+  //    log.info("Testing multiple sequential queries");
   //
   //    // Fetch test server configuration
   //    LiteServerConfig config = fetchLiteServerConfig(CONFIG_PATH);
@@ -192,13 +185,13 @@ public class AdnlLiteClientTest {
   //    for (int i = 0; i < 5; i++) {
   //      AdnlLiteClient.MasterchainInfo info = client.getMasterchainInfo();
   //      assertNotNull(info, "Masterchain info should not be null for query " + i);
-  //      logger.info("Query " + i + " - Seqno: " + info.getLast().getSeqno());
+  //      log.info("Query " + i + " - Seqno: " + info.getLast().getSeqno());
   //
   //      // Small delay between queries
   //      Thread.sleep(100);
   //    }
   //
-  //    logger.info("Multiple queries completed successfully");
+  //    log.info("Multiple queries completed successfully");
   //  }
 
   /** Manual test method (not a JUnit test) for interactive testing */
@@ -209,7 +202,7 @@ public class AdnlLiteClientTest {
     try {
       // Test single connection
       AdnlLiteClient client = new AdnlLiteClient();
-      System.out.println("Connecting to liteserver...");
+      System.out.println("Connecting to lite-server...");
 
       // Fetch test server configuration
       AdnlLiteClientTest test = new AdnlLiteClientTest();

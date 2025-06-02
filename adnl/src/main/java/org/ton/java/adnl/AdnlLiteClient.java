@@ -3,16 +3,15 @@ package org.ton.java.adnl;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.tl.types.MasterchainInfo;
 
 /**
  * Native ADNL Lite Client implementation for TON blockchain Uses TCP transport to communicate with
  * lite-servers
  */
+@Slf4j
 public class AdnlLiteClient {
-  private static final Logger logger = Logger.getLogger(AdnlLiteClient.class.getName());
 
   private final AdnlTcpTransport transport;
   private final ScheduledExecutorService pingScheduler;
@@ -50,7 +49,7 @@ public class AdnlLiteClient {
     // Start ping scheduler (every 5 seconds as per specification)
     startPingScheduler();
 
-    logger.info("Connected to lite-server " + host + ":" + port);
+    log.info("Connected to lite-server " + host + ":" + port);
   }
 
   /** Start ping scheduler to maintain connection */
@@ -60,10 +59,10 @@ public class AdnlLiteClient {
           try {
             if (connected && transport.isConnected()) {
               transport.ping().get(5, TimeUnit.SECONDS);
-              logger.fine("Ping successful");
+              log.info("Ping successful");
             }
           } catch (Exception e) {
-            logger.log(Level.WARNING, "Ping failed", e);
+            log.warn("Ping failed", e);
             // Connection might be lost, could implement reconnection logic here
           }
         },
@@ -105,8 +104,8 @@ public class AdnlLiteClient {
         };
 
     // Log the query details for debugging
-    logger.info("Sending getMasterchainInfo query, size: " + queryBytes.length + " bytes");
-    logger.info("Query hex: " + bytesToHex(queryBytes));
+    log.info("Sending getMasterchainInfo query, size: {} bytes", queryBytes.length);
+    log.info("Query hex: {}", CryptoUtils.hex(queryBytes));
 
     // Try alternative approach - create the query using the TL serializer
     Object response = null;
@@ -120,11 +119,11 @@ public class AdnlLiteClient {
         //            "Received response of type: "
         //                + (response != null ? response.getClass().getName() : "null"));
       } catch (Exception e) {
-        logger.log(Level.WARNING, "Error with serialized query: " + e.getMessage(), e);
+        log.warn("Error with serialized query: {}", e.getMessage(), e);
 
         // Check if we're still connected
         if (!transport.isConnected()) {
-          logger.warning("Connection lost during query, reconnecting is required");
+          log.info("Connection lost during query, reconnecting is required");
           connected = false;
           throw new IOException("Connection lost during query", e);
         }
@@ -132,11 +131,11 @@ public class AdnlLiteClient {
         throw e;
       }
     } catch (Exception e) {
-      logger.log(Level.WARNING, "Error with serialized query approach: " + e.getMessage(), e);
+      log.warn("Error with serialized query approach: {}", e.getMessage(), e);
 
       // Check if we're still connected before trying the direct binary approach
       if (!transport.isConnected()) {
-        logger.warning("Connection lost, reconnecting is required");
+        log.info("Connection lost, reconnecting is required");
         connected = false;
         throw new IOException("Connection lost, reconnecting is required", e);
       }
@@ -147,7 +146,7 @@ public class AdnlLiteClient {
       return MasterchainInfo.deserialize((byte[]) response);
 
     } catch (Exception e) {
-      logger.log(Level.WARNING, "Error parsing response: " + e.getMessage(), e);
+      log.warn("Error parsing response: {}", e.getMessage(), e);
     }
 
     throw new Exception(
@@ -156,11 +155,7 @@ public class AdnlLiteClient {
 
   /** Convert bytes to hex string for debugging */
   private String bytesToHex(byte[] bytes) {
-    StringBuilder sb = new StringBuilder();
-    for (byte b : bytes) {
-      sb.append(String.format("%02x", b & 0xff));
-    }
-    return sb.toString();
+    return CryptoUtils.hex(bytes);
   }
 
   /** Close connection */
