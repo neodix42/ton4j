@@ -6,19 +6,17 @@ import org.ton.ton4j.utils.Utils;
 
 /** adnl.message.query query_id:int256 query:bytes = adnl.Message, id **7af98bb4** */
 public class AdnlMessageQuery {
+  public static final int ADNL_MESSAGE_QUERY = -1265895046; // 0x7af98bb4
 
   public static byte[] serialize(byte[] queryId, byte[] queryPayload) {
+    byte[] temp = Utils.toBytes(queryPayload);
+
     ByteBuffer byteBuffer =
-        ByteBuffer.allocate(4 + 32 + (1 + 12 + 3))
+        ByteBuffer.allocate(4 + 32 + temp.length)
             .order(ByteOrder.LITTLE_ENDIAN)
-            .putInt(
-                (int)
-                    Utils.getQueryCrc32IEEEE(
-                        "adnl.message.query query_id:int256 query:bytes = adnl.Message")) // 798c06df
+            .putInt(ADNL_MESSAGE_QUERY)
             .put(queryId)
-            .put((byte) 12)
-            .put(queryPayload);
-    System.out.printf(Utils.bytesToHex(byteBuffer.array()));
+            .put(temp);
 
     return byteBuffer.array();
   }

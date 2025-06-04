@@ -17,6 +17,11 @@ public class MasterchainInfo implements Serializable, LiteServerAnswer {
   byte[] state_root_hash;
   ZeroStateIdExt init;
 
+  private String getState_root_hash() {
+    return Utils.bytesToHex(state_root_hash);
+  }
+
+  // 0x81288385
   public static final int constructorId =
       (int)
           Utils.getQueryCrc32IEEEE(

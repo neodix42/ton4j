@@ -7,11 +7,11 @@ import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.utils.Utils;
 
-@Builder
-@Data
 /**
  * tonNode.zeroStateIdExt workchain:int root_hash:int256 file_hash:int256 = tonNode.ZeroStateIdExt;
  */
+@Builder
+@Data
 public class ZeroStateIdExt implements Serializable, LiteServerAnswer {
   int workchain;
   byte[] rootHash;
@@ -26,7 +26,7 @@ public class ZeroStateIdExt implements Serializable, LiteServerAnswer {
   }
 
   public byte[] serialize() {
-    return ByteBuffer.allocate((32 + 256 + 256) / 8)
+    return ByteBuffer.allocate(8 + 32 + 32)
         .order(ByteOrder.LITTLE_ENDIAN)
         .putInt(workchain)
         .put(rootHash)
@@ -44,6 +44,6 @@ public class ZeroStateIdExt implements Serializable, LiteServerAnswer {
   }
 
   public static int getSize() {
-    return (32 + 256 + 256) / 8;
+    return 8 + 32 + 32;
   }
 }

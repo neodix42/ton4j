@@ -451,7 +451,7 @@ public class Cell implements Serializable {
       byte[] crcInBoc = Arrays.copyOfRange(data, data.length - 4, data.length);
       byte[] crc32 = Utils.getCRC32ChecksumAsBytesReversed(bocWithoutCrc);
       if (!Utils.compareBytes(crc32, crcInBoc)) {
-        throw new Error("Crc32c hashsum mismatch");
+        throw new Error("Crc32c hash mismatch");
       }
     }
 

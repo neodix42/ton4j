@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.zip.CRC32;
@@ -827,5 +828,108 @@ public class Utils {
     CRC32 crc32 = new CRC32();
     crc32.update(query.getBytes(StandardCharsets.UTF_8));
     return crc32.getValue();
+  }
+
+  public static byte[] fromBytes(ByteBuffer data) {
+    byte[] dst2 = Arrays.copyOfRange(data.array(), data.position(), data.array().length);
+    return fromBytes(dst2);
+  }
+
+  public static byte[] fromBytes(byte[] data) throws IllegalArgumentException {
+    if (data.length == 0) {
+      throw new IllegalArgumentException("failed to load length, too short data");
+    }
+
+    int offset = 1;
+    int ln = Byte.toUnsignedInt(data[0]);
+    if (ln == 0xFE) {
+      if (data.length < 4) {
+        throw new IllegalArgumentException("failed to read 4 bytes for extended length");
+      }
+      // Read little-endian uint32 and shift right by 8
+      ln = ByteBuffer.wrap(data, 0, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() >>> 8;
+      offset = 4;
+    }
+
+    int bufSz = ln + offset;
+    int padding = bufSz % 4;
+    if (padding != 0) {
+      bufSz += 4 - padding;
+    }
+
+    if (bufSz >= data.length) {
+      if (data.length < offset + ln) {
+        throw new IllegalArgumentException(
+            "failed to get payload with len " + ln + ", too short data");
+      }
+      return Arrays.copyOfRange(data, offset, offset + ln);
+    }
+
+    if (data.length < bufSz) {
+      throw new IllegalArgumentException("failed to get payload, too short data");
+    }
+
+    return Arrays.copyOfRange(data, offset, offset + ln);
+    //    byte[] remaining = Arrays.copyOfRange(data, bufSz, data.length);
+    //    return new FromBytesResult(res, remaining);
+  }
+
+  public static int pad4(int size) {
+    int padding = size % 4;
+    if (padding != 0) {
+      size += 4 - padding;
+    }
+    return size;
+  }
+
+  public static int pad8(int size) {
+    int padding = size % 8;
+    if (padding != 0) {
+      size += 8 - padding;
+    }
+    return size;
+  }
+
+  public static int pad16(int size) {
+    int padding = size % 16;
+    if (padding != 0) {
+      size += 16 - padding;
+    }
+    return size;
+  }
+
+  public static byte[] toBytes(ByteBuffer buf) {
+    return toBytes(buf.array());
+  }
+
+  /** used to serialize and align TL type */
+  public static byte[] toBytes(byte[] buf) {
+
+    int bufLen = buf.length;
+
+    // Initial capacity estimate: ((len(buf) + 4) / 4 + 1) * 4
+    int capacity = ((bufLen + 4) / 4 + 1) * 4;
+    ByteBuffer out = ByteBuffer.allocate(capacity);
+    out.order(ByteOrder.LITTLE_ENDIAN);
+
+    // Encode length
+    if (bufLen >= 0xFE) {
+      int encodedLen = (bufLen << 8) | 0xFE;
+      out.putInt(encodedLen);
+    } else {
+      out.put((byte) bufLen);
+    }
+
+    out.put(buf);
+
+    // Align to 4-byte boundary
+    int padding = out.position() % 4;
+    if (padding != 0) {
+      int padLen = 4 - padding;
+      out.put(new byte[padLen]);
+    }
+
+    // Return the used part of the buffer
+    return Arrays.copyOf(out.array(), out.position());
   }
 }

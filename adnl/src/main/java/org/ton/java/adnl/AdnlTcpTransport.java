@@ -13,12 +13,7 @@ import javax.crypto.Cipher;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.tl.queries.AdnlMessageQuery;
 import org.ton.ton4j.tl.queries.PingQuery;
-import org.ton.ton4j.tl.types.AdnlMessageAnswer;
-import org.ton.ton4j.tl.types.CurrentTime;
-import org.ton.ton4j.tl.types.LiteServerAnswer;
-import org.ton.ton4j.tl.types.MasterchainInfo;
-import org.ton.ton4j.tl.types.TcpPong;
-import org.ton.ton4j.tl.types.Version;
+import org.ton.ton4j.tl.types.*;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -213,8 +208,6 @@ public class AdnlTcpTransport {
         long packetSizeLong =
             ByteBuffer.wrap(sizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xFFFFFFFFL;
 
-        log.info("Decrypted packet size: " + packetSizeLong);
-
         // Validate packet size
         if (packetSizeLong > 16 * 1024 * 1024) { // 16MB limit
           throw new IOException("Packet too large: " + packetSizeLong);
@@ -317,43 +310,33 @@ public class AdnlTcpTransport {
       log.info("Received payload of size: {}", payload.length + " bytes");
       log.info("Payload hex: {}", CryptoUtils.hex(payload));
 
-      // Special handling for liteServer responses
-      // This is a direct response to our query
       if (payload.length >= 4) {
         try {
           // Check for known constructor IDs
           byte[] constructorId = Arrays.copyOfRange(payload, 0, 4);
           int constructor = Utils.bytesToInt(constructorId);
-          log.info("received constructorId: {}", CryptoUtils.hex(constructorId));
-          log.info("received constructor: {}", constructor);
-          log.info("received reversed   : {}", Integer.reverseBytes(constructor));
+          log.info("received constructorId int-reversed={}", Integer.reverseBytes(constructor));
 
           if (Integer.reverseBytes(constructor) == TcpPong.constructorId) {
-            log.info("TcpPong");
             byte[] queryBody = Arrays.copyOfRange(payload, 4, 16);
             TcpPong tcpPong = TcpPong.deserialize(queryBody);
             log.info("received adnl tcp.pong {}", tcpPong.getRandomId());
             CompletableFuture<TcpPong> future = activePings.remove(tcpPong.getRandomId());
             future.complete(tcpPong);
-          }
-
-          if (Integer.reverseBytes(constructor) == AdnlMessageAnswer.constructorId) {
+          } else if (Integer.reverseBytes(constructor) == AdnlMessagePart.constructorId) {
+            log.info("AdnlMessagePart");
+          } else if (Integer.reverseBytes(constructor) == AdnlMessageAnswer.constructorId) {
             log.info("AdnlMessageAnswer");
 
             byte[] queryId = Arrays.copyOfRange(payload, 4, 36);
-            int querySize = Arrays.copyOfRange(payload, 36, 37)[0] & 0xFF;
-            byte[] queryBody = Arrays.copyOfRange(payload, 37, 37 + querySize);
+            byte[] queryBody = Utils.fromBytes(Arrays.copyOfRange(payload, 36, payload.length));
+
             byte[] queryBodyConstructorId = Arrays.copyOfRange(queryBody, 0, 4);
             int constructorBody = Utils.bytesToInt(queryBodyConstructorId);
             byte[] queryBodyPayload = Arrays.copyOfRange(queryBody, 4, queryBody.length);
 
             log.info("received queryId: {}", CryptoUtils.hex(queryId));
-            log.info("received queryBody: {}", CryptoUtils.hex(queryBody));
-            log.info(
-                "received queryBodyConstructorId: {}", CryptoUtils.hex(queryBodyConstructorId));
-            log.info("received queryBodyPayload: {}", CryptoUtils.hex(queryBodyPayload));
 
-            // Find any active getMasterchainInfo query and complete it
             if (!activeQueries.isEmpty()) {
 
               String queryIdStr = activeQueries.keySet().iterator().next();
@@ -362,21 +345,55 @@ public class AdnlTcpTransport {
                 // Try to deserialize as liteServer.masterchainInfo
                 try {
                   LiteServerAnswer result = null;
-                  if (Integer.reverseBytes(constructorBody) == MasterchainInfo.constructorId) {
+
+                  int id = Integer.reverseBytes(constructorBody);
+                  if (id == LiteServerError.constructorId) {
+                    result = LiteServerError.deserialize(queryBodyPayload);
+                    log.error("Result {}", result);
+                  }
+                  if (id == MasterchainInfo.constructorId) {
                     result = MasterchainInfo.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.masterchainInfo response");
-                  } else if (Integer.reverseBytes(constructorBody) == CurrentTime.constructorId) {
+                  } else if (id == CurrentTime.constructorId) {
                     result = CurrentTime.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.currentTime response");
-                  } else if (Integer.reverseBytes(constructorBody) == Version.constructorId) {
+                  } else if (id == Version.constructorId) {
                     result = Version.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.version response");
+                  } else if (id == BlockData.constructorId) {
+                    result = BlockData.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.blockData response");
+                  } else if (id == BlockState.constructorId) {
+                    result = BlockState.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.blockState response");
+                  } else if (id == BlockHeader.constructorId) {
+                    result = BlockHeader.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.blockHeader response");
+                  } else if (id == SendMsgStatus.constructorId) {
+                    result = SendMsgStatus.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.sendMsgStatus response");
+                  } else if (id == AccountState.constructorId) {
+                    result = AccountState.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.accountState response");
+                  } else if (id == ConfigAll.constructorId) {
+                    result = ConfigAll.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.accountState response");
+                  } else if (id == ShardInfo.constructorId) {
+                    result = ShardInfo.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.shardInfo response");
+                  } else if (id == AllShardsInfo.constructorId) {
+                    result = AllShardsInfo.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.allShardsInfo response");
+                  } else if (id == RunMethodResult.constructorId) {
+                    result = RunMethodResult.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.runMethodResult response");
                   }
 
                   future.complete(result);
                 } catch (Exception e) {
                   log.error(
-                      "Could not deserialize as liteServer.masterchainInfo, completing with raw bytes: ",
+                      "Could not deserialize constructor {} completing with raw bytes: ",
+                      constructorBody,
                       e);
                   future.complete(null);
                 }
@@ -415,18 +432,13 @@ public class AdnlTcpTransport {
     byte[] nonce = new byte[32];
     new SecureRandom().nextBytes(nonce);
     packet.put(nonce);
-    log.info("packet nonce: {}", CryptoUtils.hex(nonce));
-    // Payload
     packet.put(payload);
-    log.info("packet payload: {}", CryptoUtils.hex(payload));
 
     // Calculate checksum from nonce + payload (matching Go implementation)
     MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
     sha256.update(nonce);
     sha256.update(payload);
     byte[] checksum = sha256.digest();
-    log.info("packet checksum: {}", CryptoUtils.hex(checksum));
-    // Add checksum
     packet.put(checksum);
 
     // Encrypt and send
@@ -482,17 +494,10 @@ public class AdnlTcpTransport {
       new SecureRandom().nextBytes(queryId);
 
       log.info("Sending query with ID: {}", CryptoUtils.hex(queryId));
-      if (query != null) {
-        log.info("Query size: {}", query.length + " bytes");
-
-        // Log the hex representation of the query for debugging
-        log.info("Query hex: {}", CryptoUtils.hex(query));
-      }
-
-      assert query != null;
+      log.info("liteQuery hex: {}", CryptoUtils.hex(query));
 
       byte[] serialized = AdnlMessageQuery.serialize(queryId, query);
-      log.info("Serialized2 ADNL query hex: {}", CryptoUtils.hex(serialized));
+      log.info("adnlQuery hex: {}", CryptoUtils.hex(serialized));
 
       // Calculate the total packet size for verification
       int totalSize = 32 + serialized.length + 32; // nonce + payload + checksum
@@ -501,7 +506,7 @@ public class AdnlTcpTransport {
       CompletableFuture<LiteServerAnswer> future = new CompletableFuture<>();
       String queryIdHex = CryptoUtils.hex(queryId);
       activeQueries.put(queryIdHex, future);
-      log.info("Added query to active queries with ID: {}", queryIdHex);
+      //      log.info("Added query to active queries with ID: {}", queryIdHex);
 
       // Send the packet before setting up the timeout to ensure it's sent
       try {

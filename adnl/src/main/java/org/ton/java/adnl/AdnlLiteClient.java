@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import lombok.extern.slf4j.Slf4j;
-import org.ton.ton4j.tl.queries.LiteServerQuery;
-import org.ton.ton4j.tl.types.CurrentTime;
-import org.ton.ton4j.tl.types.LiteServerAnswer;
-import org.ton.ton4j.tl.types.MasterchainInfo;
-import org.ton.ton4j.tl.types.Version;
+import org.ton.java.adnl.globalconfig.LiteServers;
+import org.ton.ton4j.address.Address;
+import org.ton.ton4j.tl.queries.*;
+import org.ton.ton4j.tl.types.*;
+import org.ton.ton4j.utils.Utils;
 
 /**
  * Native ADNL Lite Client implementation for TON blockchain Uses TCP transport to communicate with
@@ -56,6 +56,11 @@ public class AdnlLiteClient {
     log.info("Connected to lite-server " + host + ":" + port);
   }
 
+  public void connect(LiteServers liteServer) throws Exception {
+    connect(
+        Utils.int2ip(liteServer.getIp()), (int) liteServer.getPort(), liteServer.getId().getKey());
+  }
+
   /** Start ping scheduler to maintain connection */
   private void startPingScheduler() {
     pingScheduler.scheduleAtFixedRate(
@@ -85,13 +90,8 @@ public class AdnlLiteClient {
     if (!connected || !transport.isConnected()) {
       throw new IllegalStateException("Not connected to lite-server");
     }
-
-    byte[] queryBytes =
-        LiteServerQuery.serialize("liteServer.getMasterchainInfo = liteServer.MasterchainInfo");
-
-    // Log the query details for debugging
+    byte[] queryBytes = LiteServerQuery.pack(MasterchainInfoQuery.builder().build());
     log.info("Sending getMasterchainInfo query, size: {} bytes", queryBytes.length);
-    log.info("Query hex: {}", CryptoUtils.hex(queryBytes));
 
     LiteServerAnswer response;
     try {
@@ -116,9 +116,8 @@ public class AdnlLiteClient {
       throw new IllegalStateException("Not connected to lite-server");
     }
 
-    byte[] queryBytes = LiteServerQuery.serialize("liteServer.getTime = liteServer.CurrentTime");
+    byte[] queryBytes = LiteServerQuery.pack(CurrentTimeQuery.builder().build());
     log.info("Sending getTime query, size: {} bytes", queryBytes.length);
-    log.info("Query hex: {}", CryptoUtils.hex(queryBytes));
 
     LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
     return (CurrentTime) response;
@@ -129,12 +128,237 @@ public class AdnlLiteClient {
       throw new IllegalStateException("Not connected to lite-server");
     }
 
-    byte[] queryBytes = LiteServerQuery.serialize("liteServer.getVersion = liteServer.Version");
+    byte[] queryBytes = LiteServerQuery.pack(VersionQuery.builder().build());
     log.info("Sending getVersion query, size: {} bytes", queryBytes.length);
-    log.info("Query hex: {}", CryptoUtils.hex(queryBytes));
 
     LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
     return (Version) response;
+  }
+
+  public ConfigAll getConfigAll(BlockIdExt id, int mode) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes = LiteServerQuery.pack(ConfigAllQuery.builder().mode(mode).id(id).build());
+
+    log.info("Sending getConfigAll query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response;
+    try {
+      response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+      return (ConfigAll) response;
+    } catch (Exception e) {
+      log.warn("Error with serialized query approach: {}", e.getMessage(), e);
+
+      // Check if we're still connected before trying the direct binary approach
+      if (!transport.isConnected()) {
+        log.info("Connection lost, reconnecting is required");
+        connected = false;
+        throw new IOException("Connection lost, reconnecting is required", e);
+      }
+    }
+
+    throw new Exception("Was not able to retrieve masterchainInfo from lite server");
+  }
+
+  public BlockData getBlock(BlockIdExt id) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes = LiteServerQuery.pack(BlockQuery.builder().id(id).build());
+    log.info("Sending getBlock query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(15, TimeUnit.SECONDS);
+    return (BlockData) response;
+  }
+
+  public BlockState getBlockState(BlockIdExt id) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes = LiteServerQuery.pack(BlockStateQuery.builder().id(id).build());
+    log.info("Sending getBlockState query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (BlockState) response;
+  }
+
+  public BlockHeader getBlockHeader(BlockIdExt id, int mode) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes = LiteServerQuery.pack(BlockHeaderQuery.builder().id(id).mode(mode).build());
+
+    log.info("Sending getBlockHeader query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (BlockHeader) response;
+  }
+
+  public SendMsgStatus sendMessage(byte[] body) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.serialize("liteServer.sendMessage body:bytes = liteServer.SendMsgStatus");
+    log.info("Sending sendMessage query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (SendMsgStatus) response;
+  }
+
+  public AccountState getAccountState(BlockIdExt id, Address accountAddress) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.pack(AccountStateQuery.builder().id(id).account(accountAddress).build());
+    //    LiteServerQuery.serialize(
+    //        "liteServer.getAccountState id:tonNode.blockIdExt account_address:tonNode.accountId =
+    // liteServer.AccountState");
+    log.info("Sending getAccountState query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (AccountState) response;
+  }
+
+  public RunMethodResult runMethod(
+      BlockIdExt id, String accountAddress, String methodName, String methodParams)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.serialize(
+            "liteServer.runMethod id:tonNode.blockIdExt account_address:tonNode.accountId method_name:string method_params:bytes = liteServer.RunMethodResult");
+    log.info("Sending runMethod query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (RunMethodResult) response;
+  }
+
+  public ShardInfo getShardInfo(BlockIdExt id, int workchain, long shard, boolean exact)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.pack(
+            ShardInfoQuery.builder().id(id).workchain(workchain).shard(shard).exact(exact).build());
+
+    log.info("Sending getShardInfo query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (ShardInfo) response;
+  }
+
+  public AllShardsInfo getAllShardsInfo(BlockIdExt id) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes = LiteServerQuery.pack(AllShardsInfoQuery.builder().id(id).build());
+    log.info("Sending getAllShardsInfo query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (AllShardsInfo) response;
+  }
+
+  public TransactionInfo getOneTransaction(BlockIdExt id, String accountAddress, long lt)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.serialize(
+            "liteServer.getOneTransaction id:tonNode.blockIdExt account:tonNode.accountId lt:long = liteServer.TransactionInfo");
+    log.info("Sending getOneTransaction query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (TransactionInfo) response;
+  }
+
+  public TransactionList getTransactions(String accountAddress, long lt, String hash, int count)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.serialize(
+            "liteServer.getTransactions account:tonNode.accountId lt:long hash:bytes count:# = liteServer.TransactionList");
+    log.info("Sending getTransactions query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (TransactionList) response;
+  }
+
+  public BlockHeader lookupBlock(BlockId id, int mode, long lt, long utime) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.serialize(
+            "liteServer.lookupBlock mode:# id:tonNode.blockId lt:?long utime:?int = liteServer.BlockHeader");
+    log.info("Sending lookupBlock query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (BlockHeader) response;
+  }
+
+  public LookupBlockResult lookupBlockWithProof(BlockId id, int mode, long lt, long utime)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.serialize(
+            "liteServer.lookupBlockWithProof mode:# id:tonNode.blockId lt:?long utime:?int = liteServer.LookupBlockResult");
+    log.info("Sending lookupBlockWithProof query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (LookupBlockResult) response;
+  }
+
+  public BlockTransactions listBlockTransactions(BlockIdExt id, int mode, int count, String after)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.serialize(
+            "liteServer.listBlockTransactions id:tonNode.blockIdExt mode:# count:# after:mode.7?liteServer.transactionId3 = liteServer.BlockTransactions");
+    log.info("Sending listBlockTransactions query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (BlockTransactions) response;
+  }
+
+  public BlockTransactionsExt listBlockTransactionsExt(
+      BlockIdExt id, int mode, int count, String after) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.serialize(
+            "liteServer.listBlockTransactionsExt id:tonNode.blockIdExt mode:# count:# after:mode.7?liteServer.transactionId3 = liteServer.BlockTransactionsExt");
+    log.info("Sending listBlockTransactionsExt query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (BlockTransactionsExt) response;
   }
 
   /** Close connection */

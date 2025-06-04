@@ -27,7 +27,7 @@ public class MsgMetaData implements Serializable {
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        .storeUint(0, 1) // magic
+        .storeUint(0, 4) // magic
         .storeUint(depth, 32)
         .storeAddress(initiatorAddress.toAddress())
         .storeUint(initiatorLt, 64)
@@ -35,7 +35,7 @@ public class MsgMetaData implements Serializable {
   }
 
   public static MsgMetaData deserialize(CellSlice cs) {
-    long magic = cs.loadUint(1).longValue();
+    long magic = cs.loadUint(4).longValue();
     assert (magic == 0) : "MsgMetaData: magic not equal to 0, found 0x" + Long.toHexString(magic);
 
     return MsgMetaData.builder()
