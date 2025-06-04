@@ -11,7 +11,6 @@ public class SignatureWithRecovery {
   private byte[] v;
 
   public byte[] getSignature() {
-
     return Utils.concatBytes(r, s);
   }
 }
