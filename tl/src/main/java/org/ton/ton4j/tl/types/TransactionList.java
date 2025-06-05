@@ -15,48 +15,23 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class TransactionList implements Serializable, LiteServerAnswer {
-  public final int TRANSACTION_LIST_ANSWER = 0;
+  public static final int TRANSACTION_LIST_ANSWER = 1864812043;
 
   List<BlockIdExt> ids;
   byte[] transactions;
 
-  public static final int constructorId =
-      (int)
-          Utils.getQueryCrc32IEEEE(
-              "liteServer.transactionList ids:(vector tonNode.blockIdExt) transactions:bytes = liteServer.TransactionList");
-
-  public byte[] serialize() {
-    // Calculate total size: 4 bytes for vector length + size of each BlockIdExt + transactions
-    int totalSize = 4;
-    for (BlockIdExt id : ids) {
-      totalSize += BlockIdExt.getSize();
-    }
-    totalSize += 4 + transactions.length;
-
-    ByteBuffer buffer = ByteBuffer.allocate(totalSize);
-
-    // Write vector of ids
-    buffer.putInt(ids.size());
-    for (BlockIdExt id : ids) {
-      buffer.put(id.serialize());
-    }
-
-    // Write transactions
-    buffer.put(Utils.toBytes(transactions));
-
-    return buffer.array();
-  }
+  public static final int constructorId = TRANSACTION_LIST_ANSWER;
 
   public static TransactionList deserialize(ByteBuffer byteBuffer) {
     // Read vector of ids
-    int idsCount = byteBuffer.getInt();
+    int idsCount = byteBuffer.getInt(); // todo
     List<BlockIdExt> ids = new ArrayList<>(idsCount);
     for (int i = 0; i < idsCount; i++) {
       ids.add(BlockIdExt.deserialize(byteBuffer));
     }
 
     // Read transactions
-    byte[] transactions = Utils.fromBytes(byteBuffer);
+    byte[] transactions = Utils.fromBytes(byteBuffer); // boc (multi-root?)
 
     return TransactionList.builder().ids(ids).transactions(transactions).build();
   }

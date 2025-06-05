@@ -81,6 +81,6 @@ public class BlockIdExt implements Serializable, LiteServerAnswer {
   }
 
   public static int getSize() {
-    return 4 + 8 + 4 + 32 + 32;
+    return 80;
   }
 }

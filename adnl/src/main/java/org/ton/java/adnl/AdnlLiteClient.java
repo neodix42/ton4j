@@ -94,21 +94,20 @@ public class AdnlLiteClient {
     log.info("Sending getMasterchainInfo query, size: {} bytes", queryBytes.length);
 
     LiteServerAnswer response;
-    try {
-      response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-      return (MasterchainInfo) response;
-    } catch (Exception e) {
-      log.warn("Error with serialized query approach: {}", e.getMessage(), e);
+    response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (MasterchainInfo) response;
+  }
 
-      // Check if we're still connected before trying the direct binary approach
-      if (!transport.isConnected()) {
-        log.info("Connection lost, reconnecting is required");
-        connected = false;
-        throw new IOException("Connection lost, reconnecting is required", e);
-      }
+  public MasterchainInfoExt getMasterchainInfoExt(int mode) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
     }
+    byte[] queryBytes = LiteServerQuery.pack(MasterchainInfoExtQuery.builder().mode(mode).build());
+    log.info("Sending getMasterchainInfoExt query, size: {} bytes", queryBytes.length);
 
-    throw new Exception("Was not able to retrieve masterchainInfo from lite server");
+    LiteServerAnswer response;
+    response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (MasterchainInfoExt) response;
   }
 
   public CurrentTime getTime() throws Exception {
@@ -289,7 +288,7 @@ public class AdnlLiteClient {
     return (TransactionInfo) response;
   }
 
-  public TransactionList getTransactions(Address accountAddress, long lt, String hash, int count)
+  public TransactionList getTransactions(Address accountAddress, long lt, byte[] hash, int count)
       throws Exception {
     if (!connected || !transport.isConnected()) {
       throw new IllegalStateException("Not connected to lite-server");
@@ -301,7 +300,7 @@ public class AdnlLiteClient {
                 .count(count)
                 .account(accountAddress)
                 .lt(lt)
-                .hash(Utils.hexToSignedBytes(hash))
+                .hash(hash)
                 .build());
 
     log.info("Sending getTransactions query, size: {} bytes", queryBytes.length);

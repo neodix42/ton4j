@@ -1882,4 +1882,18 @@ public class Utils {
     crc32.update(query.getBytes(StandardCharsets.UTF_8));
     return crc32.getValue();
   }
+
+  /** generates random byte array of size 32 */
+  public static byte[] randomBytes() {
+    byte[] randomData = new byte[32];
+    new SecureRandom().nextBytes(randomData);
+    return randomData;
+  }
+
+  /** generates random byte array of specified size */
+  public static byte[] randomBytes(int size) {
+    byte[] randomData = new byte[size];
+    new SecureRandom().nextBytes(randomData);
+    return randomData;
+  }
 }

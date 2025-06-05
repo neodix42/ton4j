@@ -10,7 +10,7 @@ import org.ton.ton4j.tl.types.LiteServerQueryData;
 @Builder
 @Getter
 public class BlockStateQuery implements LiteServerQueryData {
-  public static final int BLOCK_STATE_QUERY = -1984567762; // 2ee6b589
+  public static final int BLOCK_STATE_QUERY = -1167184202;
 
   private BlockIdExt id;
 

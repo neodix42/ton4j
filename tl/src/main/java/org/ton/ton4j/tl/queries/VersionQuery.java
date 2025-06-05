@@ -5,7 +5,6 @@ import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.tl.types.LiteServerQueryData;
-import org.ton.ton4j.utils.Utils;
 
 @Builder
 @Getter
@@ -17,13 +16,11 @@ public class VersionQuery implements LiteServerQueryData {
   }
 
   public byte[] getQueryData() {
-    int bodyLenPad4 = Utils.pad4(serialize().length + 1);
-
-    ByteBuffer buffer = ByteBuffer.allocate(bodyLenPad4);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt(VERSION_QUERY);
-    buffer.put(serialize()); // important
-    return buffer.array();
+    return ByteBuffer.allocate(serialize().length + 4)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .putInt(VERSION_QUERY)
+        .put(serialize())
+        .array();
   }
 
   public byte[] serialize() {

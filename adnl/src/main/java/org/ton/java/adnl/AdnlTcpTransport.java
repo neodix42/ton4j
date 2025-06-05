@@ -144,7 +144,7 @@ public class AdnlTcpTransport {
     output.write(handshakePacket.array());
     output.flush();
 
-    log.info("Handshake packet sent with serverKeyId: " + CryptoUtils.hex(serverKeyId));
+    //    log.info("Handshake packet sent with serverKeyId: " + CryptoUtils.hex(serverKeyId));
   }
 
   private byte[] calculateKeyId(byte[] publicKey) throws Exception {
@@ -191,7 +191,7 @@ public class AdnlTcpTransport {
 
   /** Listen for incoming packets */
   private void listenForPackets() {
-    log.info("Starting packet listener");
+    //    log.info("Starting packet listener");
 
     try {
       while (running && !socket.isClosed()) {
@@ -315,7 +315,8 @@ public class AdnlTcpTransport {
           // Check for known constructor IDs
           byte[] constructorId = Arrays.copyOfRange(payload, 0, 4);
           int constructor = Utils.bytesToInt(constructorId);
-          log.info("received constructorId int-reversed={}", Integer.reverseBytes(constructor));
+          //          log.info("received constructorId int-reversed={}",
+          // Integer.reverseBytes(constructor));
 
           if (Integer.reverseBytes(constructor) == TcpPong.constructorId) {
             byte[] queryBody = Arrays.copyOfRange(payload, 4, 16);
@@ -335,7 +336,7 @@ public class AdnlTcpTransport {
             int constructorBody = Utils.bytesToInt(queryBodyConstructorId);
             byte[] queryBodyPayload = Arrays.copyOfRange(queryBody, 4, queryBody.length);
 
-            log.info("received queryId: {}", CryptoUtils.hex(queryId));
+            //            log.info("received queryId: {}", CryptoUtils.hex(queryId));
 
             if (!activeQueries.isEmpty()) {
 
@@ -350,10 +351,12 @@ public class AdnlTcpTransport {
                   if (id == LiteServerError.constructorId) {
                     result = LiteServerError.deserialize(queryBodyPayload);
                     log.error("Result {}", result);
-                  }
-                  if (id == MasterchainInfo.constructorId) {
+                  } else if (id == MasterchainInfo.constructorId) {
                     result = MasterchainInfo.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.masterchainInfo response");
+                  } else if (id == MasterchainInfoExt.constructorId) {
+                    result = MasterchainInfoExt.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.masterchainInfoExt response");
                   } else if (id == CurrentTime.constructorId) {
                     result = CurrentTime.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.currentTime response");
@@ -384,9 +387,14 @@ public class AdnlTcpTransport {
                   } else if (id == AllShardsInfo.constructorId) {
                     result = AllShardsInfo.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.allShardsInfo response");
+                  } else if (id == TransactionList.constructorId) {
+                    result = TransactionList.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.transactionList response");
                   } else if (id == RunMethodResult.constructorId) {
                     result = RunMethodResult.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.runMethodResult response");
+                  } else {
+                    log.info("unknown adnl.query id {}", id);
                   }
 
                   future.complete(result);
@@ -399,6 +407,8 @@ public class AdnlTcpTransport {
                 }
               }
             }
+          } else {
+            log.info("unknown adnl.message id {}", Integer.reverseBytes(constructor));
           }
 
         } catch (Exception e) {

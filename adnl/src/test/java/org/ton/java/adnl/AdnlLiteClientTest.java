@@ -15,7 +15,7 @@ import org.ton.ton4j.utils.Utils;
 @Slf4j
 public class AdnlLiteClientTest {
 
-  public static final String TON_ELECTOR =
+  public static final String TESTNET_ADDRESS =
       "0:3120dc879b8a2c677941789f11c0d5343da5041d795de6c2a0ac3d9b625e55f6";
 
   private static AdnlLiteClient client;
@@ -58,6 +58,24 @@ public class AdnlLiteClientTest {
   }
 
   @Test
+  void testMasterchainInfoExt() throws Exception {
+    log.info("Testing single lite-server connection");
+
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfoExt infoExt = client.getMasterchainInfoExt(0);
+    assertNotNull(infoExt, "Masterchain info should not be null");
+    assertNotNull(infoExt.getLast(), "Last block should not be null");
+
+    log.info("Last block seqno: {} ", infoExt.getLast().getSeqno());
+    log.info("Workchain: {}", infoExt.getLast().getWorkchain());
+    log.info("Shard: {}", infoExt.getLast().getShard());
+    log.info("init.wc: {}", infoExt.getInit().getWorkchain());
+
+    assertTrue(infoExt.getLast().getSeqno() > 0, "Seqno should be positive");
+  }
+
+  @Test
   void testGetAccountState() throws Exception {
     log.info("Testing getAccountState");
     assertTrue(client.isConnected(), "Client should be connected");
@@ -68,7 +86,7 @@ public class AdnlLiteClientTest {
     assertNotNull(info, "Masterchain info should not be null");
     assertNotNull(info.getLast(), "Last block should not be null");
 
-    AccountState accountState = client.getAccountState(info.getLast(), Address.of(TON_ELECTOR));
+    AccountState accountState = client.getAccountState(info.getLast(), Address.of(TESTNET_ADDRESS));
     log.info("accountState: {} ", accountState);
     log.info("Last block seqno: {} ", accountState.getId().getSeqno());
     log.info("shard block seqno: {} ", accountState.getShardblk().getSeqno());
@@ -188,7 +206,7 @@ public class AdnlLiteClientTest {
             masterchainInfo.getLast(),
             masterchainInfo.getLast().getWorkchain(),
             masterchainInfo.getLast().shard,
-            true); // Not enough data to read at 96 todo
+            false); // Not enough data to read at 96 todo
 
     log.info("shardInfo {}", shardInfo);
   }
@@ -200,8 +218,7 @@ public class AdnlLiteClientTest {
 
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
 
-    AllShardsInfo allShardInfo =
-        client.getAllShardsInfo(masterchainInfo.getLast()); // Not enough data to read at 96 todo
+    AllShardsInfo allShardInfo = client.getAllShardsInfo(masterchainInfo.getLast());
 
     log.info("allShardInfo {}", allShardInfo);
     log.info("allShardInfo.shardHashes {}", allShardInfo.getShardHashes());
@@ -215,8 +232,10 @@ public class AdnlLiteClientTest {
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
 
     TransactionInfo transactionInfo =
-        client.getOneTransaction(masterchainInfo.getLast(), Address.of(TON_ELECTOR), 10);
+        client.getOneTransaction(masterchainInfo.getLast(), Address.of(TESTNET_ADDRESS), 1);
     log.info("getOneTransaction {}", transactionInfo);
+
+    // todo requested account id is not contained in the shard of the specified block
   }
 
   @Test
@@ -224,11 +243,11 @@ public class AdnlLiteClientTest {
     log.info("Testing getTransactions query");
     assertTrue(client.isConnected(), "Client should be connected");
 
-    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    TransactionList transactionList =
+        client.getTransactions(Address.of(TESTNET_ADDRESS), 0, Utils.randomBytes(), 10);
 
-    TransactionList transactionList = client.getTransactions(Address.of(TON_ELECTOR), 0, "", 10);
-    // Placeholder for actual implementation
-    log.info("getTransactions test completed");
+    log.info("getTransactions {}", transactionList);
+    // todo deserialize vector
   }
 
   @Test
@@ -238,9 +257,11 @@ public class AdnlLiteClientTest {
 
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
 
-    BlockHeader blockHeader = client.lookupBlock(masterchainInfo.getLast().getBlockId(), 0, 0, 10);
-    // Placeholder for actual implementation
-    log.info("    BlockHeader blockHeader =\n test completed");
+    BlockHeader blockHeader =
+        client.lookupBlock(
+            masterchainInfo.getLast().getBlockId(), 1, 1, Long.valueOf(Utils.now()).intValue());
+    log.info("blockHeader {}", blockHeader);
+    // todo Too much data to fetch at 24
   }
 
   @Test
@@ -252,9 +273,14 @@ public class AdnlLiteClientTest {
 
     LookupBlockResult lookupBlockResult =
         client.lookupBlockWithProof(
-            0, masterchainInfo.getLast().getBlockId(), masterchainInfo.getLast(), 0, 0);
-    // Placeholder for actual implementation
-    log.info("lookupBlockWithProof test completed");
+            2,
+            masterchainInfo.getLast().getBlockId(),
+            masterchainInfo.getLast(),
+            0,
+            Long.valueOf(Utils.now()).intValue());
+
+    log.info("lookupBlockResult {}", lookupBlockResult);
+    // todo Not enough data to read at 104
   }
 
   @Test
@@ -283,6 +309,4 @@ public class AdnlLiteClientTest {
     // Placeholder for actual implementation
     log.info("getBlockProof test completed");
   }
-
-  // ... manual test method ...
 }

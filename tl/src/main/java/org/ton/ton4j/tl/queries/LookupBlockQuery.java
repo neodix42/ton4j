@@ -1,17 +1,17 @@
 package org.ton.ton4j.tl.queries;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.tl.types.BlockId;
 import org.ton.ton4j.tl.types.LiteServerQueryData;
-import org.ton.ton4j.utils.Utils;
 
 @Builder
 @Getter
 public class LookupBlockQuery implements LiteServerQueryData {
 
-  public final int LOOKUP_BLOCK_QUERY = (int) Utils.getQueryCrc32IEEEE(getQueryName());
+  public final int LOOKUP_BLOCK_QUERY = -87492834;
 
   private int mode;
   private BlockId id;
@@ -23,11 +23,13 @@ public class LookupBlockQuery implements LiteServerQueryData {
   }
 
   public byte[] getQueryData() {
-    int size = BlockId.getSize() + 4;
-    if ((mode & 1) != 0) size += 8; // lt
-    if ((mode & 2) != 0) size += 4; // utime
+    int size = BlockId.getSize() + 4 + 4;
+    if ((mode & 1) != 0) size += 8;
+    if ((mode & 2) != 0) size += 4;
 
     ByteBuffer buffer = ByteBuffer.allocate(size);
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
+    buffer.putInt(LOOKUP_BLOCK_QUERY);
     buffer.putInt(mode);
     buffer.put(id.serialize());
 
