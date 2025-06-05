@@ -26,10 +26,6 @@ public class ConfigAll implements Serializable, LiteServerAnswer {
   public static final int CONFIG_ALL_ANSWER = -1367660753; // 2ee6b589
 
   public static final int constructorId = CONFIG_ALL_ANSWER;
-  //      (int)
-  //          Utils.getQueryCrc32IEEEE(
-  //              "liteServer.configInfo mode:# id:tonNode.blockIdExt state_proof:bytes
-  // config_proof:bytes = liteServer.ConfigInfo");
 
   int mode;
   BlockIdExt id;
@@ -44,25 +40,26 @@ public class ConfigAll implements Serializable, LiteServerAnswer {
     return Utils.bytesToHex(stateProof);
   }
 
-  //  public byte[] serialize() {
-  //    ByteBuffer byteBuffer =
-  //        ByteBuffer.allocate(4 + 8 + 4 + 32 + 32)
-  //            .order(ByteOrder.LITTLE_ENDIAN)
-  //            .putInt(workchain)
-  //            .putLong(shard)
-  //            .putInt((int) seqno)
-  //            .put(rootHash)
-  //            .put(fileHash);
-  //    return byteBuffer.array();
-  //  }
+  public byte[] serialize() {
+    byte[] t1 = Utils.toBytes(stateProof);
+    byte[] t2 = Utils.toBytes(configProof);
+    ByteBuffer byteBuffer =
+        ByteBuffer.allocate(4 + BlockIdExt.getSize() + t1.length + t2.length)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .putInt(mode)
+            .put(id.serialize())
+            .put(t1)
+            .put(t2);
+    return byteBuffer.array();
+  }
 
   public static ConfigAll deserialize(ByteBuffer bf) {
     bf.order(ByteOrder.LITTLE_ENDIAN);
     return ConfigAll.builder()
         .mode(bf.getInt())
         .id(BlockIdExt.deserialize(bf))
-        // .configProof(Utils.fromBytes(bs.))
-        // .stateProof(null) // todo
+        .stateProof(Utils.fromBytes(bf))
+        .configProof(Utils.fromBytes(bf))
         .build();
   }
 
@@ -70,7 +67,10 @@ public class ConfigAll implements Serializable, LiteServerAnswer {
     return deserialize(ByteBuffer.wrap(data));
   }
 
-  public static int getSize() {
-    return 4 + 8 + 4 + 32 + 32;
+  public int getSize() {
+    return 4
+        + BlockIdExt.getSize()
+        + Utils.toBytes(stateProof).length
+        + Utils.toBytes(configProof).length;
   }
 }

@@ -42,16 +42,11 @@ public class ShardInfo implements Serializable, LiteServerAnswer {
   }
 
   public static ShardInfo deserialize(ByteBuffer byteBuffer) {
-    BlockIdExt id = BlockIdExt.deserialize(byteBuffer);
-    BlockIdExt shardblk = BlockIdExt.deserialize(byteBuffer);
-    byte[] shardProof = Utils.fromBytes(byteBuffer);
-    byte[] shardDescr = Utils.fromBytes(byteBuffer);
-
     return ShardInfo.builder()
-        .id(id)
-        .shardblk(shardblk)
-        .shardProof(shardProof)
-        .shardDescr(shardDescr)
+        .id(BlockIdExt.deserialize(byteBuffer))
+        .shardblk(BlockIdExt.deserialize(byteBuffer))
+        .shardProof(Utils.fromBytes(byteBuffer))
+        .shardDescr(Utils.fromBytes(byteBuffer))
         .build();
   }
 

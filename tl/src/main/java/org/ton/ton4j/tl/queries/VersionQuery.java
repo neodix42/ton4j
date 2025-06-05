@@ -18,11 +18,9 @@ public class VersionQuery implements LiteServerQueryData {
 
   public byte[] getQueryData() {
     int bodyLenPad4 = Utils.pad4(serialize().length + 1);
-    //    int queryLenPad8 = Utils.pad8(bodyLenPad4 + 1);
 
     ByteBuffer buffer = ByteBuffer.allocate(bodyLenPad4);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-    //    buffer.put((byte) bodyLenPad4);
     buffer.putInt(VERSION_QUERY);
     buffer.put(serialize()); // important
     return buffer.array();

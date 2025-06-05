@@ -9,19 +9,21 @@ import org.ton.ton4j.utils.Utils;
 @Data
 @Builder
 public class SendMsgStatus implements Serializable, LiteServerAnswer {
-    private int status;
-    
-    public static final int constructorId = 
-        (int) Utils.getQueryCrc32IEEEE("liteServer.sendMsgStatus status:int = liteServer.SendMsgStatus");
-    
-    public static SendMsgStatus deserialize(ByteBuffer buffer) {
-        int status = buffer.getInt();
-        return SendMsgStatus.builder()
-            .status(status)
-            .build();
-    }
-    
-    public static SendMsgStatus deserialize(byte[] data) {
-        return deserialize(ByteBuffer.wrap(data));
-    }
+  public final int SEND_MSG_STATUS_ANSWER = 0;
+
+  private int status;
+
+  public static final int constructorId =
+      (int)
+          Utils.getQueryCrc32IEEEE(
+              "liteServer.sendMsgStatus status:int = liteServer.SendMsgStatus");
+
+  public static SendMsgStatus deserialize(ByteBuffer buffer) {
+
+    return SendMsgStatus.builder().status(buffer.getInt()).build();
+  }
+
+  public static SendMsgStatus deserialize(byte[] data) {
+    return deserialize(ByteBuffer.wrap(data));
+  }
 }

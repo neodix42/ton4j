@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import lombok.Builder;
 import lombok.Data;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.ShardHashes;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -24,6 +27,13 @@ public class AllShardsInfo implements Serializable, LiteServerAnswer {
 
   public String getData() {
     return Utils.bytesToHex(data);
+  }
+
+  public ShardHashes getShardHashes() {
+    if (data == null || data.length == 0) {
+      return null;
+    }
+    return org.ton.ton4j.tlb.ShardHashes.deserialize(CellSlice.beginParse(Cell.fromBoc(data)));
   }
 
   public static final int constructorId = ALL_SHARDS_INFO_ANSWER;

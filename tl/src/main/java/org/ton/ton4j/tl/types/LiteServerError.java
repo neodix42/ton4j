@@ -10,10 +10,12 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class LiteServerError implements Serializable, LiteServerAnswer {
+  public static final int LITE_SERVER_ERROR_ANSWER = -1146494648;
+
   int code;
   String message;
 
-  public static final int constructorId = -1146494648;
+  public static final int constructorId = LITE_SERVER_ERROR_ANSWER;
 
   public byte[] serialize() {
     ByteBuffer buffer = ByteBuffer.allocate(4 + message.length());

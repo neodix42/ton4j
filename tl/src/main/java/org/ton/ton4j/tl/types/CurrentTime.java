@@ -5,15 +5,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
-import org.ton.ton4j.utils.Utils;
 
 @Data
 @Builder
 public class CurrentTime implements Serializable, LiteServerAnswer {
+  public static final int CURRENT_TIME_ANSWER = -380436467;
+
   private int now;
 
-  public static final int constructorId =
-      (int) Utils.getQueryCrc32IEEEE("liteServer.currentTime now:int = liteServer.CurrentTime");
+  public static final int constructorId = CURRENT_TIME_ANSWER;
 
   public static CurrentTime deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);

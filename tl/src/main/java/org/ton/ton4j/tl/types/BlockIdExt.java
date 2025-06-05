@@ -23,32 +23,37 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class BlockIdExt implements Serializable, LiteServerAnswer {
+
   int workchain;
   public long shard;
-  long seqno;
-  byte[] rootHash;
-  byte[] fileHash;
+  int seqno;
+  public byte[] rootHash;
+  public byte[] fileHash;
   private byte[] rootHashBase64;
   private byte[] fileHashBase64;
 
-  private String getRootHash() {
+  public String getRootHash() {
     return Utils.bytesToHex(rootHash);
   }
 
-  private String getFileHash() {
+  public String getFileHash() {
     return Utils.bytesToHex(fileHash);
   }
 
-  private String getRootHashBase64() {
+  public String getRootHashBase64() {
     return Utils.bytesToBase64SafeUrl(rootHash);
   }
 
-  private String getFileHashBase64() {
+  public String getFileHashBase64() {
     return Utils.bytesToBase64SafeUrl(fileHash);
   }
 
   public String getShard() {
     return Long.toHexString(shard);
+  }
+
+  public BlockId getBlockId() {
+    return BlockId.builder().workchain(workchain).shard(shard).seqno(seqno).build();
   }
 
   public byte[] serialize() {
@@ -57,14 +62,9 @@ public class BlockIdExt implements Serializable, LiteServerAnswer {
             .order(ByteOrder.LITTLE_ENDIAN)
             .putInt(workchain)
             .putLong(shard)
-            .putInt((int) seqno)
+            .putInt(seqno)
             .put(rootHash)
             .put(fileHash);
-    //    int padding = byteBuffer.position() % 4;
-    //    if (padding != 0) {
-    //      int padLen = 4 - padding;
-    //      byteBuffer.put(new byte[padLen]);
-    //    }
 
     return byteBuffer.array();
   }

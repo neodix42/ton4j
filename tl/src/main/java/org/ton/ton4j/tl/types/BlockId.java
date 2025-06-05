@@ -2,6 +2,7 @@ package org.ton.ton4j.tl.types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,8 +11,16 @@ import lombok.Data;
 @Data
 public class BlockId implements Serializable {
   int workchain;
-  long shard;
+  public long shard;
   int seqno;
+
+  public long getSeqno() {
+    return seqno & 0xFFFFFFFFL;
+  }
+
+  //  public String getShard() {
+  //    return Long.toHexString(shard);
+  //  }
 
   public static int getSize() {
     return 4 + 8 + 4; // workchain (int) + shard (long) + seqno (int)
@@ -19,6 +28,7 @@ public class BlockId implements Serializable {
 
   public byte[] serialize() {
     ByteBuffer buffer = ByteBuffer.allocate(getSize());
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
     buffer.putInt(workchain);
     buffer.putLong(shard);
     buffer.putInt(seqno);

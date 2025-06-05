@@ -13,24 +13,22 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class MasterchainInfo implements Serializable, LiteServerAnswer {
+  public static final int MASTERCHAIN_INFO_ANSWER = -2055001983;
   BlockIdExt last;
-  byte[] state_root_hash;
+  byte[] stateRootHash;
   ZeroStateIdExt init;
 
-  private String getState_root_hash() {
-    return Utils.bytesToHex(state_root_hash);
+  private String getStateRootHash() {
+    return Utils.bytesToHex(stateRootHash);
   }
 
   // 0x81288385
-  public static final int constructorId =
-      (int)
-          Utils.getQueryCrc32IEEEE(
-              "liteServer.masterchainInfo last:tonNode.blockIdExt state_root_hash:int256 init:tonNode.zeroStateIdExt = liteServer.MasterchainInfo");
+  public static final int constructorId = MASTERCHAIN_INFO_ANSWER;
 
   public byte[] serialize() {
     return ByteBuffer.allocate(BlockIdExt.getSize() + 32 + ZeroStateIdExt.getSize())
         .put(last.serialize())
-        .put(state_root_hash)
+        .put(stateRootHash)
         .put(init.serialize())
         .array();
   }
@@ -38,13 +36,12 @@ public class MasterchainInfo implements Serializable, LiteServerAnswer {
   public static MasterchainInfo deserialize(ByteBuffer byteBuffer) {
     return MasterchainInfo.builder()
         .last(BlockIdExt.deserialize(byteBuffer))
-        .state_root_hash(Utils.read(byteBuffer, 32))
+        .stateRootHash(Utils.read(byteBuffer, 32))
         .init(ZeroStateIdExt.deserialize(byteBuffer))
         .build();
   }
 
   public static MasterchainInfo deserialize(byte[] byteBuffer) {
-    ByteBuffer bf = ByteBuffer.wrap(byteBuffer);
-    return deserialize(bf);
+    return deserialize(ByteBuffer.wrap(byteBuffer));
   }
 }

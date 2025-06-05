@@ -1726,9 +1726,81 @@ public class Utils {
     return size;
   }
 
+  //  public static byte[] fromBytes(ByteBuffer data) {
+  //    byte[] dst2 = Arrays.copyOfRange(data.array(), data.position(), data.array().length);
+  //    byte[] res = fromBytes(dst2);
+  //    data.position(data.position() + res.length);
+  //    return res;
+  //  }
+
+  //  public static byte[] fromBytes(ByteBuffer data) throws IllegalArgumentException {
+  //    if (!data.hasRemaining()) {
+  //      throw new IllegalArgumentException("failed to load length, too short data");
+  //    }
+  //
+  //    data = data.slice(); // Avoid modifying the original buffer's position
+  //    int offset = 1;
+  //    int ln = Byte.toUnsignedInt(data.get(0));
+  //
+  //    if (ln == 0xFE) {
+  //      if (data.remaining() < 4) {
+  //        throw new IllegalArgumentException("failed to read 4 bytes for extended length");
+  //      }
+  //      ByteBuffer leBuf = data.order(ByteOrder.LITTLE_ENDIAN).slice();
+  //      ln = leBuf.getInt(0) >>> 8;
+  //      offset = 4;
+  //    }
+  //
+  //    int bufSz = ln + offset;
+  //    int padding = bufSz % 4;
+  //    if (padding != 0) {
+  //      bufSz += 4 - padding;
+  //    }
+  //
+  //    if (data.remaining() < offset + ln) {
+  //      throw new IllegalArgumentException(
+  //          "failed to get payload with len " + ln + ", too short data");
+  //    }
+  //
+  //    byte[] result = new byte[ln];
+  //    data.position(offset);
+  //    data.get(result, 0, ln);
+  //    return result;
+  //  }
+
   public static byte[] fromBytes(ByteBuffer data) {
-    byte[] dst2 = Arrays.copyOfRange(data.array(), data.position(), data.array().length);
-    return fromBytes(dst2);
+    data.order(ByteOrder.LITTLE_ENDIAN);
+
+    if (!data.hasRemaining()) {
+      throw new IllegalArgumentException("failed to load length, too short data");
+    }
+
+    int offset = 1;
+    int ln;
+
+    // Peek first byte (length or prefix marker)
+    byte firstByte = data.get();
+    ln = Byte.toUnsignedInt(firstByte);
+
+    if (ln == 0xFE) {
+      if (data.remaining() < 3) { // we've already read 1 byte, need 3 more
+        throw new IllegalArgumentException("failed to read 4 bytes for extended length");
+      }
+
+      //      byte newLn = Utils.read(data, 3);
+      // Read next 3 bytes as little-endian uint24
+      int b0 = Byte.toUnsignedInt(data.get());
+      int b1 = Byte.toUnsignedInt(data.get());
+      int b2 = Byte.toUnsignedInt(data.get());
+      ln = b0 | (b1 << 8) | (b2 << 16);
+    }
+
+    // if the end do not add padding
+    if ((Utils.pad4(ln) + data.position()) != data.capacity()) {
+      ln = Utils.pad4(ln);
+    }
+
+    return Utils.read(data, ln);
   }
 
   public static byte[] fromBytes(byte[] data) throws IllegalArgumentException {

@@ -32,26 +32,22 @@ public class AccountState implements Serializable, LiteServerAnswer {
   }
 
   public org.ton.ton4j.tlb.AccountState getAccountState() {
-    return org.ton.ton4j.tlb.AccountStateActive.deserialize(
-        CellSlice.beginParse(Cell.fromBoc(state)));
+    if (state == null || state.length == 0) {
+      return null;
+    }
+    return org.ton.ton4j.tlb.AccountState.deserialize(CellSlice.beginParse(Cell.fromBoc(state)));
   }
 
   public static final int constructorId = ACCOUNT_STATE_ANSWER;
 
   public static AccountState deserialize(ByteBuffer buffer) {
-    BlockIdExt id = BlockIdExt.deserialize(buffer);
-    BlockIdExt shardblk = BlockIdExt.deserialize(buffer);
-
-    byte[] shardProof = Utils.fromBytes(buffer);
-    byte[] proof = Utils.fromBytes(buffer);
-    byte[] state = Utils.fromBytes(buffer);
 
     return AccountState.builder()
-        .id(id)
-        .shardblk(shardblk)
-        .shardProof(shardProof)
-        .proof(proof)
-        .state(state)
+        .id(BlockIdExt.deserialize(buffer))
+        .shardblk(BlockIdExt.deserialize(buffer))
+        .shardProof(Utils.fromBytes(buffer))
+        .proof(Utils.fromBytes(buffer))
+        .state(Utils.fromBytes(buffer))
         .build();
   }
 

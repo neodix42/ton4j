@@ -13,6 +13,8 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class TransactionInfo implements Serializable, LiteServerAnswer {
+  public final int TRANSACTION_INFO_ANSWER = 0;
+
   BlockIdExt id;
   byte[] proof;
   byte[] transaction;
@@ -23,25 +25,22 @@ public class TransactionInfo implements Serializable, LiteServerAnswer {
               "liteServer.transactionInfo id:tonNode.blockIdExt proof:bytes transaction:bytes = liteServer.TransactionInfo");
 
   public byte[] serialize() {
-    ByteBuffer buffer =
-        ByteBuffer.allocate(BlockIdExt.getSize() + 4 + proof.length + 4 + transaction.length);
+    byte[] t1 = Utils.toBytes(proof);
+    byte[] t2 = Utils.toBytes(transaction);
+    ByteBuffer buffer = ByteBuffer.allocate(BlockIdExt.getSize() + 4 + t1.length + 4 + t2.length);
     buffer.put(id.serialize());
-    buffer.putInt(proof.length);
-    buffer.put(proof);
-    buffer.putInt(transaction.length);
-    buffer.put(transaction);
+    buffer.put(t1);
+    buffer.put(t2);
     return buffer.array();
   }
 
   public static TransactionInfo deserialize(ByteBuffer byteBuffer) {
-    BlockIdExt id = BlockIdExt.deserialize(byteBuffer);
-    int proofLen = byteBuffer.getInt();
-    byte[] proof = new byte[proofLen];
-    byteBuffer.get(proof);
-    int transactionLen = byteBuffer.getInt();
-    byte[] transaction = new byte[transactionLen];
-    byteBuffer.get(transaction);
-    return TransactionInfo.builder().id(id).proof(proof).transaction(transaction).build();
+
+    return TransactionInfo.builder()
+        .id(BlockIdExt.deserialize(byteBuffer))
+        .proof(Utils.fromBytes(byteBuffer))
+        .transaction(Utils.fromBytes(byteBuffer))
+        .build();
   }
 
   public static TransactionInfo deserialize(byte[] byteArray) {

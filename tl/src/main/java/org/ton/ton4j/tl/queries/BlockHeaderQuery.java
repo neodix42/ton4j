@@ -29,7 +29,6 @@ public class BlockHeaderQuery implements LiteServerQueryData {
 
   public byte[] serialize() {
     ByteBuffer buffer = ByteBuffer.allocate(BlockIdExt.getSize() + 4);
-    //    buffer.order(ByteOrder.LITTLE_ENDIAN);
     buffer.put(id.serialize());
     buffer.putInt(mode);
     return buffer.array();

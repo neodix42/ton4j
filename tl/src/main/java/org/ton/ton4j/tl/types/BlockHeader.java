@@ -1,6 +1,7 @@
 package org.ton.ton4j.tl.types;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import lombok.Builder;
 import lombok.Data;
@@ -16,8 +17,16 @@ public class BlockHeader implements Serializable, LiteServerAnswer {
 
   int mode;
   BlockId id;
-  long lt; // present if mode has bit 1 set
+  public long lt; // present if mode has bit 1 set
   int utime; // present if mode has bit 2 set
+
+  public String getLt() {
+    return BigInteger.valueOf(lt).toString(16);
+  }
+
+  public long getUtime() {
+    return utime & 0xFFFFFFFFL;
+  }
 
   public static final int constructorId = BLOCK_HEADER_ANSWER;
 
@@ -46,18 +55,15 @@ public class BlockHeader implements Serializable, LiteServerAnswer {
 
   public static BlockHeader deserialize(ByteBuffer byteBuffer) {
     int mode = byteBuffer.getInt();
-    BlockId id = null;
-    if (byteBuffer.remaining() >= BlockId.getSize()) {
-      id = BlockId.deserialize(byteBuffer);
-    }
+    BlockId id = BlockId.deserialize(byteBuffer);
 
     long lt = 0;
-    if ((mode & 1) != 0 && byteBuffer.remaining() >= 8) {
+    if ((mode & 1) != 0) {
       lt = byteBuffer.getLong();
     }
 
     int utime = 0;
-    if ((mode & 2) != 0 && byteBuffer.remaining() >= 4) {
+    if ((mode & 2) != 0) {
       utime = byteBuffer.getInt();
     }
 

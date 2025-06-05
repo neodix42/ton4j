@@ -15,6 +15,8 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class TransactionList implements Serializable, LiteServerAnswer {
+  public final int TRANSACTION_LIST_ANSWER = 0;
+
   List<BlockIdExt> ids;
   byte[] transactions;
 
@@ -40,8 +42,7 @@ public class TransactionList implements Serializable, LiteServerAnswer {
     }
 
     // Write transactions
-    buffer.putInt(transactions.length);
-    buffer.put(transactions);
+    buffer.put(Utils.toBytes(transactions));
 
     return buffer.array();
   }
@@ -55,9 +56,7 @@ public class TransactionList implements Serializable, LiteServerAnswer {
     }
 
     // Read transactions
-    int transactionsLen = byteBuffer.getInt();
-    byte[] transactions = new byte[transactionsLen];
-    byteBuffer.get(transactions);
+    byte[] transactions = Utils.fromBytes(byteBuffer);
 
     return TransactionList.builder().ids(ids).transactions(transactions).build();
   }

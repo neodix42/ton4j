@@ -15,7 +15,8 @@ import org.ton.ton4j.utils.Utils;
 @Slf4j
 public class AdnlLiteClientTest {
 
-  public static final String TON_FOUNDATION = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
+  public static final String TON_ELECTOR =
+      "0:3120dc879b8a2c677941789f11c0d5343da5041d795de6c2a0ac3d9b625e55f6";
 
   private static AdnlLiteClient client;
   private LiteClientConnectionPool pool;
@@ -67,7 +68,7 @@ public class AdnlLiteClientTest {
     assertNotNull(info, "Masterchain info should not be null");
     assertNotNull(info.getLast(), "Last block should not be null");
 
-    AccountState accountState = client.getAccountState(info.getLast(), Address.of(TON_FOUNDATION));
+    AccountState accountState = client.getAccountState(info.getLast(), Address.of(TON_ELECTOR));
     log.info("accountState: {} ", accountState);
     log.info("Last block seqno: {} ", accountState.getId().getSeqno());
     log.info("shard block seqno: {} ", accountState.getShardblk().getSeqno());
@@ -144,33 +145,10 @@ public class AdnlLiteClientTest {
     assertTrue(client.isConnected(), "Client should be connected");
 
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
-    log.info("block {}", masterchainInfo.getLast());
-    //    BlockIdExt customBlock =
-    //        BlockIdExt.builder()
-    //            .seqno(31856756)
-    //            .workchain(-1)
-    //            .shard(-9223372036854775808L)
-    //            .rootHash(
-    //                Utils.hexToSignedBytes(
-    //                    "2bf8ef2c056191e5ad256e1dc2b3540de82d53ffc0c125fef401917db39c522f"))
-    //            .fileHash(
-    //                Utils.hexToSignedBytes(
-    //                    "c7d6883bb3dbc17cb704e6fe41ddbfdecb5574bda8bdaa8ffd3cb0825ca14d87"))
-    //            .build();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
     ConfigAll configAll = client.getConfigAll(masterchainInfo.getLast(), 0);
     log.info("configAll {}", configAll);
     assertThat(configAll.getId().getSeqno()).isGreaterThan(0);
-    /* <pre>
-    //
-    // my                                                                           liteQuery    cfgAllQ
-    // 7af98bb4 4319c2b9b2fd5f0fd3640134cce2d75cd9bbfe548df63cec84694e85f9230da95d df068c79 58 b7261b91         ffffffff00000000000000807418e6012bf8ef2c056191e5ad256e1dc2b3540de82d53ffc0c125fef401917db39c522fc7d6883bb3dbc17cb704e6fe41ddbfdecb5574bda8bdaa8ffd3cb0825ca14d87000000000000
-    // go
-    // 7af98bb4 23c1a5f4ec33591202d36572036fafedc5d137e2897d95a1dcc1aad8982c0f3960 df068c79 58 b7261b91 00000000ffffffff00000000000000807418e6012bf8ef2c056191e5ad256e1dc2b3540de82d53ffc0c125fef401917db39c522fc7d6883bb3dbc17cb704e6fe41ddbfdecb5574bda8bdaa8ffd3cb0825ca14d87000000000000
-    // change 2
-    // 7af98bb4 e2ae0f277e79bbdf43171ddcfa534ad81288d6adbd9a5e89d2b90bc35a371aa964 df068c79 58 b7261b91 00000000ffffffff00000000000000807418e6012bf8ef2c056191e5ad256e1dc2b3540de82d53ffc0c125fef401917db39c522fc7d6883bb3dbc17cb704e6fe41ddbfdecb5574bda8bdaa8ffd3cb0825ca14d87000000000000 000000000000000000000000
-    </pre>
-     */
-
   }
 
   @Test
@@ -179,7 +157,7 @@ public class AdnlLiteClientTest {
     assertTrue(client.isConnected(), "Client should be connected");
 
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
-    BlockHeader blockHeader = client.getBlockHeader(masterchainInfo.getLast(), 1);
+    BlockHeader blockHeader = client.getBlockHeader(masterchainInfo.getLast(), 0);
     log.info("getBlockHeader {}", blockHeader); // todo review result
     log.info("Block  {}", blockHeader.getId());
     assertThat(blockHeader.getId().getSeqno()).isGreaterThan(0);
@@ -226,6 +204,7 @@ public class AdnlLiteClientTest {
         client.getAllShardsInfo(masterchainInfo.getLast()); // Not enough data to read at 96 todo
 
     log.info("allShardInfo {}", allShardInfo);
+    log.info("allShardInfo.shardHashes {}", allShardInfo.getShardHashes());
   }
 
   @Test
@@ -233,8 +212,11 @@ public class AdnlLiteClientTest {
     log.info("Testing getOneTransaction query");
     assertTrue(client.isConnected(), "Client should be connected");
 
-    // Placeholder for actual implementation
-    log.info("getOneTransaction test completed");
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    TransactionInfo transactionInfo =
+        client.getOneTransaction(masterchainInfo.getLast(), Address.of(TON_ELECTOR), 10);
+    log.info("getOneTransaction {}", transactionInfo);
   }
 
   @Test
@@ -242,6 +224,9 @@ public class AdnlLiteClientTest {
     log.info("Testing getTransactions query");
     assertTrue(client.isConnected(), "Client should be connected");
 
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    TransactionList transactionList = client.getTransactions(Address.of(TON_ELECTOR), 0, "", 10);
     // Placeholder for actual implementation
     log.info("getTransactions test completed");
   }
@@ -251,8 +236,11 @@ public class AdnlLiteClientTest {
     log.info("Testing lookupBlock query");
     assertTrue(client.isConnected(), "Client should be connected");
 
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    BlockHeader blockHeader = client.lookupBlock(masterchainInfo.getLast().getBlockId(), 0, 0, 10);
     // Placeholder for actual implementation
-    log.info("lookupBlock test completed");
+    log.info("    BlockHeader blockHeader =\n test completed");
   }
 
   @Test
@@ -260,6 +248,11 @@ public class AdnlLiteClientTest {
     log.info("Testing lookupBlockWithProof query");
     assertTrue(client.isConnected(), "Client should be connected");
 
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    LookupBlockResult lookupBlockResult =
+        client.lookupBlockWithProof(
+            0, masterchainInfo.getLast().getBlockId(), masterchainInfo.getLast(), 0, 0);
     // Placeholder for actual implementation
     log.info("lookupBlockWithProof test completed");
   }

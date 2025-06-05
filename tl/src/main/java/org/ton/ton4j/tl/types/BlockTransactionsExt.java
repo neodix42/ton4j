@@ -13,6 +13,8 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class BlockTransactionsExt implements Serializable, LiteServerAnswer {
+  public static final int BLOCK_TRANSACTIONS_ANSWER = 0;
+
   BlockIdExt id;
   int req_count;
   boolean incomplete;
@@ -25,18 +27,16 @@ public class BlockTransactionsExt implements Serializable, LiteServerAnswer {
               "liteServer.blockTransactionsExt id:tonNode.blockIdExt req_count:# incomplete:Bool transactions:bytes proof:bytes = liteServer.BlockTransactionsExt");
 
   public byte[] serialize() {
-    int totalSize = BlockIdExt.getSize() + 4 + 1 + 4 + transactions.length + 4 + proof.length;
+    byte[] t1 = Utils.toBytes(transactions);
+    byte[] t2 = Utils.toBytes(proof);
 
-    ByteBuffer buffer = ByteBuffer.allocate(totalSize);
+    ByteBuffer buffer =
+        ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 1 + t1.length + 4 + t2.length);
     buffer.put(id.serialize());
     buffer.putInt(req_count);
     buffer.put(incomplete ? (byte) 1 : (byte) 0);
-
-    buffer.putInt(transactions.length);
-    buffer.put(transactions);
-
-    buffer.putInt(proof.length);
-    buffer.put(proof);
+    buffer.put(t1);
+    buffer.put(t2);
 
     return buffer.array();
   }
@@ -46,13 +46,8 @@ public class BlockTransactionsExt implements Serializable, LiteServerAnswer {
     int req_count = byteBuffer.getInt();
     boolean incomplete = byteBuffer.get() == 1;
 
-    int transactionsLen = byteBuffer.getInt();
-    byte[] transactions = new byte[transactionsLen];
-    byteBuffer.get(transactions);
-
-    int proofLen = byteBuffer.getInt();
-    byte[] proof = new byte[proofLen];
-    byteBuffer.get(proof);
+    byte[] transactions = Utils.fromBytes(byteBuffer);
+    byte[] proof = Utils.fromBytes(byteBuffer);
 
     return BlockTransactionsExt.builder()
         .id(id)

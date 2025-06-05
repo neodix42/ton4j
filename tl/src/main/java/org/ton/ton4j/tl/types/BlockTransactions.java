@@ -15,6 +15,8 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class BlockTransactions implements Serializable, LiteServerAnswer {
+  public static final int BLOCK_TRANSACTIONS_ANSWER = 0;
+
   BlockIdExt id;
   int req_count;
   boolean incomplete;
@@ -27,30 +29,19 @@ public class BlockTransactions implements Serializable, LiteServerAnswer {
               "liteServer.blockTransactions id:tonNode.blockIdExt req_count:# incomplete:Bool ids:(vector liteServer.transactionId) proof:bytes = liteServer.BlockTransactions");
 
   public byte[] serialize() {
-    // Calculate total size: BlockIdExt + 4 (req_count) + 1 (incomplete) + 4 (vector length) +
-    // (ids.size() * TransactionId3.getSize()) + 4 (proof length) + proof.length
-    int totalSize =
-        BlockIdExt.getSize()
-            + 4
-            + 1
-            + 4
-            + (ids.size() * TransactionId3.getSize())
-            + 4
-            + proof.length;
+    byte[] t1 = Utils.toBytes(proof);
 
-    ByteBuffer buffer = ByteBuffer.allocate(totalSize);
+    ByteBuffer buffer =
+        ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 1 + ids.size() + 16 + t1.length);
     buffer.put(id.serialize());
     buffer.putInt(req_count);
     buffer.put(incomplete ? (byte) 1 : (byte) 0);
-
     // Write vector of transaction IDs
-    buffer.putInt(ids.size());
+    buffer.putInt(ids.size()); // todo
     for (TransactionId3 id : ids) {
       buffer.put(id.serialize());
     }
-
-    buffer.putInt(proof.length);
-    buffer.put(proof);
+    buffer.put(t1);
 
     return buffer.array();
   }
@@ -61,14 +52,12 @@ public class BlockTransactions implements Serializable, LiteServerAnswer {
     boolean incomplete = byteBuffer.get() == 1;
 
     int idsCount = byteBuffer.getInt();
-    List<TransactionId3> ids = new ArrayList<>(idsCount);
+    List<TransactionId3> ids = new ArrayList<>(idsCount); // todo
     for (int i = 0; i < idsCount; i++) {
       ids.add(TransactionId3.deserialize(byteBuffer));
     }
 
-    int proofLen = byteBuffer.getInt();
-    byte[] proof = new byte[proofLen];
-    byteBuffer.get(proof);
+    byte[] proof = Utils.fromBytes(byteBuffer);
 
     return BlockTransactions.builder()
         .id(id)

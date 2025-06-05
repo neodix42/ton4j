@@ -7,12 +7,14 @@ import lombok.Data;
 import org.ton.ton4j.utils.Utils;
 
 /**
- * liteServer.lookupBlockWithProof mode:# id:tonNode.blockId mc_block_id:tonNode.blockIdExt
- * lt:mode.1?long utime:mode.2?int = liteServer.LookupBlockResult;
+ * liteServer.lookupBlockResult id:tonNode.blockIdExt mode:# mc_block_id:tonNode.blockIdExt
+ * client_mc_state_proof:bytes mc_block_proof:bytes shard_links:(vector liteServer.shardBlockLink)
+ * header:bytes prev_header:bytes = liteServer.LookupBlockResult;
  */
 @Builder
 @Data
 public class LookupBlockResult implements Serializable, LiteServerAnswer {
+  public static final int LOOKUP_BLOCK_ANSWER = 0;
   int mode;
   BlockId id;
   BlockIdExt mc_block_id;
@@ -23,7 +25,7 @@ public class LookupBlockResult implements Serializable, LiteServerAnswer {
   public static final int constructorId =
       (int)
           Utils.getQueryCrc32IEEEE(
-              "liteServer.lookupBlockWithProof mode:# id:tonNode.blockId mc_block_id:tonNode.blockIdExt lt:mode.1?long utime:mode.2?int = liteServer.LookupBlockResult");
+              "liteServer.lookupBlockResult id:tonNode.blockIdExt mode:# mc_block_id:tonNode.blockIdExt client_mc_state_proof:bytes mc_block_proof:bytes shard_links:(vector liteServer.shardBlockLink) header:bytes prev_header:bytes = liteServer.LookupBlockResult");
 
   public byte[] serialize() {
     // Calculate size: mode (4) + BlockId size + BlockIdExt size + proof length (4+len) +

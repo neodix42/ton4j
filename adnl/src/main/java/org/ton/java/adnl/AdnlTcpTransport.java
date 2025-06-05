@@ -307,8 +307,8 @@ public class AdnlTcpTransport {
       }
 
       // Log payload for debugging
-      log.info("Received payload of size: {}", payload.length + " bytes");
-      log.info("Payload hex: {}", CryptoUtils.hex(payload));
+      //      log.info("Received payload of size: {}", payload.length + " bytes");
+      //      log.info("Payload hex: {}", CryptoUtils.hex(payload));
 
       if (payload.length >= 4) {
         try {
@@ -426,7 +426,7 @@ public class AdnlTcpTransport {
 
     // Size (4 bytes LE) - this is the size of the data after the size field
     packet.putInt(totalSize);
-    log.info("packet size: {}", totalSize);
+    //    log.info("packet size: {}", totalSize);
 
     // Generate nonce (32 bytes)
     byte[] nonce = new byte[32];
@@ -493,15 +493,15 @@ public class AdnlTcpTransport {
       byte[] queryId = new byte[32];
       new SecureRandom().nextBytes(queryId);
 
-      log.info("Sending query with ID: {}", CryptoUtils.hex(queryId));
-      log.info("liteQuery hex: {}", CryptoUtils.hex(query));
+      //      log.info("Sending query with ID: {}", CryptoUtils.hex(queryId));
+      //      log.info("liteQuery hex: {}", CryptoUtils.hex(query));
 
       byte[] serialized = AdnlMessageQuery.serialize(queryId, query);
-      log.info("adnlQuery hex: {}", CryptoUtils.hex(serialized));
+      //      log.info("adnlQuery hex: {}", CryptoUtils.hex(serialized));
 
       // Calculate the total packet size for verification
       int totalSize = 32 + serialized.length + 32; // nonce + payload + checksum
-      log.info("Total packet size will be: {} bytes", (4 + totalSize));
+      //      log.info("Total packet size will be: {} bytes", (4 + totalSize));
 
       CompletableFuture<LiteServerAnswer> future = new CompletableFuture<>();
       String queryIdHex = CryptoUtils.hex(queryId);
@@ -511,7 +511,7 @@ public class AdnlTcpTransport {
       // Send the packet before setting up the timeout to ensure it's sent
       try {
         sendPacket(serialized); // ADNLQuery
-        log.info("Query packet sent successfully");
+        //        log.info("Query packet sent successfully");
       } catch (Exception e) {
         // If sending fails, remove the query from active queries and complete the future
         // exceptionally
