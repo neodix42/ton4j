@@ -15,18 +15,19 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class BlockTransactions implements Serializable, LiteServerAnswer {
-  public static final int BLOCK_TRANSACTIONS_ANSWER = 0;
+  public static final int BLOCK_TRANSACTIONS_ANSWER = -1114854101;
 
   BlockIdExt id;
   int req_count;
   boolean incomplete;
-  List<TransactionId3> ids;
-  byte[] proof;
+  List<TransactionId> ids;
+  public byte[] proof;
 
-  public static final int constructorId =
-      (int)
-          Utils.getQueryCrc32IEEEE(
-              "liteServer.blockTransactions id:tonNode.blockIdExt req_count:# incomplete:Bool ids:(vector liteServer.transactionId) proof:bytes = liteServer.BlockTransactions");
+  public String getProof() {
+    return Utils.bytesToHex(proof);
+  }
+
+  public static final int constructorId = BLOCK_TRANSACTIONS_ANSWER;
 
   public byte[] serialize() {
     byte[] t1 = Utils.toBytes(proof);
@@ -36,9 +37,8 @@ public class BlockTransactions implements Serializable, LiteServerAnswer {
     buffer.put(id.serialize());
     buffer.putInt(req_count);
     buffer.put(incomplete ? (byte) 1 : (byte) 0);
-    // Write vector of transaction IDs
-    buffer.putInt(ids.size()); // todo
-    for (TransactionId3 id : ids) {
+    buffer.putInt(ids.size());
+    for (TransactionId id : ids) {
       buffer.put(id.serialize());
     }
     buffer.put(t1);
@@ -49,12 +49,12 @@ public class BlockTransactions implements Serializable, LiteServerAnswer {
   public static BlockTransactions deserialize(ByteBuffer byteBuffer) {
     BlockIdExt id = BlockIdExt.deserialize(byteBuffer);
     int req_count = byteBuffer.getInt();
-    boolean incomplete = byteBuffer.get() == 1;
+    boolean incomplete = byteBuffer.getInt() == 0; // why 4 bytes?
 
     int idsCount = byteBuffer.getInt();
-    List<TransactionId3> ids = new ArrayList<>(idsCount); // todo
+    List<TransactionId> ids = new ArrayList<>(idsCount);
     for (int i = 0; i < idsCount; i++) {
-      ids.add(TransactionId3.deserialize(byteBuffer));
+      ids.add(TransactionId.deserialize(byteBuffer));
     }
 
     byte[] proof = Utils.fromBytes(byteBuffer);

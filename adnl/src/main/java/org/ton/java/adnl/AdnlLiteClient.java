@@ -358,7 +358,7 @@ public class AdnlLiteClient {
                 .id(id)
                 .mode(mode)
                 .count(count)
-                .after(transactionId3)
+                .afterTx(transactionId3)
                 .build());
 
     log.info("Sending listBlockTransactions query, size: {} bytes", queryBytes.length);
@@ -372,7 +372,7 @@ public class AdnlLiteClient {
       int mode,
       int count,
       TransactionId3 after,
-      boolean reverOrder,
+      boolean reverseOrder,
       boolean wantProof)
       throws Exception {
     if (!connected || !transport.isConnected()) {
@@ -386,7 +386,7 @@ public class AdnlLiteClient {
                 .mode(mode)
                 .count(count)
                 .after(after)
-                .reverseOrder(reverOrder)
+                .reverseOrder(reverseOrder)
                 .wantProof(wantProof)
                 .build());
     log.info("Sending listBlockTransactionsExt query, size: {} bytes", queryBytes.length);

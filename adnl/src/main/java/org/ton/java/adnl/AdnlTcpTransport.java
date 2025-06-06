@@ -390,6 +390,12 @@ public class AdnlTcpTransport {
                   } else if (id == TransactionList.constructorId) {
                     result = TransactionList.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.transactionList response");
+                  } else if (id == BlockTransactions.constructorId) {
+                    result = BlockTransactions.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.blockTransactions response");
+                  } else if (id == BlockTransactionsExt.constructorId) {
+                    result = BlockTransactionsExt.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.blockTransactionsExt response");
                   } else if (id == RunMethodResult.constructorId) {
                     result = RunMethodResult.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.runMethodResult response");

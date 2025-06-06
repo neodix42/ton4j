@@ -13,6 +13,7 @@ import org.ton.ton4j.utils.Utils;
 public class CellBuilder {
 
   Cell cell;
+  List<Cell> cells;
 
   private CellBuilder() {
     cell = new Cell();
@@ -38,6 +39,16 @@ public class CellBuilder {
       cell.calculateHashes();
     }
     return cell;
+  }
+
+  public List<Cell> endCells() {
+    for (Cell c : cells) {
+      c.levelMask = c.resolveMask();
+      if (c.getHashes().length == 0) {
+        c.calculateHashes();
+      }
+    }
+    return cells;
   }
 
   public CellBuilder storeBit(Boolean bit) {
@@ -497,6 +508,11 @@ public class CellBuilder {
 
   public CellBuilder fromBoc(int[] data) {
     cell = Cell.fromBocMultiRoot(Utils.unsignedBytesToSigned(data)).get(0);
+    return this;
+  }
+
+  public CellBuilder fromBocMultiRoot(byte[] data) {
+    cells = Cell.fromBocMultiRoot(data);
     return this;
   }
 }

@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import lombok.Builder;
 import lombok.Data;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.Transaction;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -16,8 +19,20 @@ public class TransactionInfo implements Serializable, LiteServerAnswer {
   public final int TRANSACTION_INFO_ANSWER = 0;
 
   BlockIdExt id;
-  byte[] proof;
-  byte[] transaction;
+  public byte[] proof;
+  public byte[] transaction;
+
+  public String getTransaction() {
+    return Utils.bytesToHex(transaction);
+  }
+
+  public String getProof() {
+    return Utils.bytesToHex(proof);
+  }
+
+  public Transaction getTransactionParsed() {
+    return Transaction.deserialize(CellSlice.beginParse(Cell.fromBoc(transaction)));
+  }
 
   public static final int constructorId =
       (int)

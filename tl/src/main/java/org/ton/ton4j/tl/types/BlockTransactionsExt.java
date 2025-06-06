@@ -2,8 +2,14 @@ package org.ton.ton4j.tl.types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.Transaction;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -13,18 +19,32 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class BlockTransactionsExt implements Serializable, LiteServerAnswer {
-  public static final int BLOCK_TRANSACTIONS_ANSWER = 0;
+  public static final int BLOCK_TRANSACTIONS_EXT_ANSWER = -74449692;
 
   BlockIdExt id;
   int req_count;
   boolean incomplete;
-  byte[] transactions;
-  byte[] proof;
+  public byte[] transactions;
+  public byte[] proof;
 
-  public static final int constructorId =
-      (int)
-          Utils.getQueryCrc32IEEEE(
-              "liteServer.blockTransactionsExt id:tonNode.blockIdExt req_count:# incomplete:Bool transactions:bytes proof:bytes = liteServer.BlockTransactionsExt");
+  public String getTransactions() {
+    return Utils.bytesToHex(transactions);
+  }
+
+  public String getProof() {
+    return Utils.bytesToHex(proof);
+  }
+
+  public List<Transaction> getTransactionsParsed() {
+    List<Transaction> txs = new ArrayList<>();
+    List<Cell> cells = CellBuilder.beginCell().fromBocMultiRoot(transactions).endCells();
+    for (Cell c : cells) {
+      txs.add(Transaction.deserialize(CellSlice.beginParse(c)));
+    }
+    return txs;
+  }
+
+  public static final int constructorId = BLOCK_TRANSACTIONS_EXT_ANSWER;
 
   public byte[] serialize() {
     byte[] t1 = Utils.toBytes(transactions);
@@ -44,9 +64,10 @@ public class BlockTransactionsExt implements Serializable, LiteServerAnswer {
   public static BlockTransactionsExt deserialize(ByteBuffer byteBuffer) {
     BlockIdExt id = BlockIdExt.deserialize(byteBuffer);
     int req_count = byteBuffer.getInt();
-    boolean incomplete = byteBuffer.get() == 1;
+    boolean incomplete = byteBuffer.getInt() == 0; // why 4 bytes?
 
     byte[] transactions = Utils.fromBytes(byteBuffer);
+
     byte[] proof = Utils.fromBytes(byteBuffer);
 
     return BlockTransactionsExt.builder()

@@ -23,15 +23,14 @@ public class TransactionList implements Serializable, LiteServerAnswer {
   public static final int constructorId = TRANSACTION_LIST_ANSWER;
 
   public static TransactionList deserialize(ByteBuffer byteBuffer) {
-    // Read vector of ids
-    int idsCount = byteBuffer.getInt(); // todo
+
+    int idsCount = byteBuffer.getInt();
     List<BlockIdExt> ids = new ArrayList<>(idsCount);
     for (int i = 0; i < idsCount; i++) {
       ids.add(BlockIdExt.deserialize(byteBuffer));
     }
 
-    // Read transactions
-    byte[] transactions = Utils.fromBytes(byteBuffer); // boc (multi-root?)
+    byte[] transactions = Utils.fromBytes(byteBuffer); // multi-root boc
 
     return TransactionList.builder().ids(ids).transactions(transactions).build();
   }

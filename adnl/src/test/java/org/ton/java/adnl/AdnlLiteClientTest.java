@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.tl.types.*;
+import org.ton.ton4j.tlb.Transaction;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -232,8 +233,9 @@ public class AdnlLiteClientTest {
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
 
     TransactionInfo transactionInfo =
-        client.getOneTransaction(masterchainInfo.getLast(), Address.of(TESTNET_ADDRESS), 1);
+        client.getOneTransaction(masterchainInfo.getLast(), Address.of(TESTNET_ADDRESS), 0);
     log.info("getOneTransaction {}", transactionInfo);
+    log.info("getOneTransaction parsed {}", transactionInfo.getTransactionParsed());
 
     // todo requested account id is not contained in the shard of the specified block
   }
@@ -244,10 +246,9 @@ public class AdnlLiteClientTest {
     assertTrue(client.isConnected(), "Client should be connected");
 
     TransactionList transactionList =
-        client.getTransactions(Address.of(TESTNET_ADDRESS), 0, Utils.randomBytes(), 10);
+        client.getTransactions(Address.of(TESTNET_ADDRESS), 0, new byte[32], 10);
 
     log.info("getTransactions {}", transactionList);
-    // todo deserialize vector
   }
 
   @Test
@@ -283,13 +284,55 @@ public class AdnlLiteClientTest {
     // todo Not enough data to read at 104
   }
 
+  /** fetch only accounts */
   @Test
-  void testListBlockTransactions() throws Exception {
+  void testListBlockTransactionsMode1() throws Exception {
     log.info("Testing listBlockTransactions query");
     assertTrue(client.isConnected(), "Client should be connected");
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
 
-    // Placeholder for actual implementation
-    log.info("listBlockTransactions test completed");
+    BlockTransactions blockTransactions =
+        client.listBlockTransactions(masterchainInfo.getLast(), 1, 10, null);
+    log.info("blockTransactions {}", blockTransactions);
+  }
+
+  /** fetch accounts, lt, hash */
+  @Test
+  void testListBlockTransactionsMode7() throws Exception {
+    log.info("Testing listBlockTransactions query");
+    assertTrue(client.isConnected(), "Client should be connected");
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    BlockTransactions blockTransactions =
+        client.listBlockTransactions(masterchainInfo.getLast(), 7, 10, null);
+    log.info("blockTransactions {}", blockTransactions);
+  }
+
+  /** fetch metadata */
+  @Test
+  void testListBlockTransactionsMode256() throws Exception {
+    log.info("Testing listBlockTransactions query");
+    assertTrue(client.isConnected(), "Client should be connected");
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    BlockTransactions blockTransactions =
+        client.listBlockTransactions(masterchainInfo.getLast(), 256, 10, null);
+    log.info("blockTransactions {}", blockTransactions);
+    // Too much data to fetch at 92
+  }
+
+  @Test
+  void testListBlockTransactionsAfter() throws Exception {
+    log.info("Testing listBlockTransactions query");
+    assertTrue(client.isConnected(), "Client should be connected");
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    TransactionId3 after =
+        TransactionId3.builder().account(Address.of(TESTNET_ADDRESS).hashPart).lt(0).build();
+
+    BlockTransactions blockTransactions =
+        client.listBlockTransactions(masterchainInfo.getLast(), 64, 10, after); // 7th bit
+    log.info("blockTransactions {}", blockTransactions);
   }
 
   @Test
@@ -297,8 +340,31 @@ public class AdnlLiteClientTest {
     log.info("Testing listBlockTransactionsExt query");
     assertTrue(client.isConnected(), "Client should be connected");
 
-    // Placeholder for actual implementation
-    log.info("listBlockTransactionsExt test completed");
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    BlockTransactionsExt blockTransactionsExt =
+        client.listBlockTransactionsExt(masterchainInfo.getLast(), 0, 10, null, false, false);
+    log.info("listBlockTransactionsExt {}", blockTransactionsExt);
+    for (Transaction tx : blockTransactionsExt.getTransactionsParsed()) {
+      log.info("transaction tl-b {}", tx);
+    }
+  }
+
+  @Test
+  void testListBlockTransactionsExtAfter() throws Exception {
+    log.info("Testing listBlockTransactionsExt query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    TransactionId3 afterTx =
+        TransactionId3.builder().account(Address.of(TESTNET_ADDRESS).hashPart).lt(0).build();
+    BlockTransactionsExt blockTransactionsExt =
+        client.listBlockTransactionsExt(masterchainInfo.getLast(), 128, 10, afterTx, false, false);
+    log.info("listBlockTransactionsExt {}", blockTransactionsExt);
+    for (Transaction tx : blockTransactionsExt.getTransactionsParsed()) {
+      log.info("transaction tl-b {}", tx);
+    }
   }
 
   @Test

@@ -2,26 +2,26 @@ package org.ton.ton4j.tl.types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
+import org.ton.ton4j.utils.Utils;
 
 @Builder
-@Getter
+@Data
 public class TransactionId3 implements Serializable {
-  private long account;
+  public byte[] account;
   private long lt;
 
+  public String getAccount() {
+    return Utils.bytesToHex(account);
+  }
+
   public byte[] serialize() {
-    ByteBuffer buffer = ByteBuffer.allocate(16);
-    buffer.putLong(account);
-    buffer.putLong(lt);
-    return buffer.array();
+    return ByteBuffer.allocate(32 + 8).put(account).putLong(lt).array();
   }
 
   public static TransactionId3 deserialize(ByteBuffer buffer) {
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    return TransactionId3.builder().account(buffer.getLong()).lt(buffer.getLong()).build();
+    return TransactionId3.builder().account(Utils.read(buffer, 32)).lt(buffer.getLong()).build();
   }
 
   public static TransactionId3 deserialize(byte[] data) {
@@ -29,6 +29,6 @@ public class TransactionId3 implements Serializable {
   }
 
   public static int getSize() {
-    return 16;
+    return 32 + 8;
   }
 }
