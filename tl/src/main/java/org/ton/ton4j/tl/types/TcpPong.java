@@ -15,6 +15,7 @@ public class TcpPong implements Serializable, LiteServerAnswer {
   public static final int constructorId = TCP_PONG_ANSWER;
 
   public static TcpPong deserialize(byte[] payload) {
+
     return TcpPong.builder()
         .randomId(Long.reverseBytes(ByteBuffer.wrap(payload).getLong()))
         .build();

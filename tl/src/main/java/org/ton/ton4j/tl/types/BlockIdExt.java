@@ -57,16 +57,14 @@ public class BlockIdExt implements Serializable, LiteServerAnswer {
   }
 
   public byte[] serialize() {
-    ByteBuffer byteBuffer =
-        ByteBuffer.allocate(4 + 8 + 4 + 32 + 32)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .putInt(workchain)
-            .putLong(shard)
-            .putInt(seqno)
-            .put(rootHash)
-            .put(fileHash);
-
-    return byteBuffer.array();
+    return ByteBuffer.allocate(4 + 8 + 4 + 32 + 32)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .putInt(workchain)
+        .putLong(shard)
+        .putInt(seqno)
+        .put(rootHash)
+        .put(fileHash)
+        .array();
   }
 
   public static BlockIdExt deserialize(ByteBuffer bf) {

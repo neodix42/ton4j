@@ -18,6 +18,10 @@ public class BlockId implements Serializable {
     return seqno & 0xFFFFFFFFL;
   }
 
+  public String getShard() {
+    return Long.toHexString(shard);
+  }
+
   //  public String getShard() {
   //    return Long.toHexString(shard);
   //  }
@@ -36,6 +40,7 @@ public class BlockId implements Serializable {
   }
 
   public static BlockId deserialize(ByteBuffer byteBuffer) {
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
     return BlockId.builder()
         .workchain(byteBuffer.getInt())
         .shard(byteBuffer.getLong())

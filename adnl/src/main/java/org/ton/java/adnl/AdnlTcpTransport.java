@@ -372,6 +372,9 @@ public class AdnlTcpTransport {
                   } else if (id == BlockHeader.constructorId) {
                     result = BlockHeader.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.blockHeader response");
+                  } else if (id == LookupBlockResult.constructorId) {
+                    result = LookupBlockResult.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.lookupBlockResult response");
                   } else if (id == SendMsgStatus.constructorId) {
                     result = SendMsgStatus.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.sendMsgStatus response");
@@ -390,6 +393,9 @@ public class AdnlTcpTransport {
                   } else if (id == TransactionList.constructorId) {
                     result = TransactionList.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.transactionList response");
+                  } else if (id == TransactionInfo.constructorId) {
+                    result = TransactionInfo.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.transactionInfo response");
                   } else if (id == BlockTransactions.constructorId) {
                     result = BlockTransactions.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.blockTransactions response");

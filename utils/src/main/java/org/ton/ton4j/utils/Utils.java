@@ -50,6 +50,9 @@ import org.bouncycastle.util.BigIntegers;
 @Slf4j
 public class Utils {
 
+  public static final int TL_TRUE = 0x997275b5;
+  public static final int TL_FALSE = 0xbc799737;
+
   //  public static final String ANSI_RESET = "\u001B[0m";
   //  public static final String ANSI_BLACK = "\u001B[30m";
   //  public static final String ANSI_RED = "\u001B[31m";

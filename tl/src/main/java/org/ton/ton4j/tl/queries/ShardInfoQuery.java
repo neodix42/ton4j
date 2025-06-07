@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.tl.types.BlockIdExt;
 import org.ton.ton4j.tl.types.LiteServerQueryData;
+import org.ton.ton4j.utils.Utils;
 
 @Builder
 @Getter
@@ -22,20 +23,20 @@ public class ShardInfoQuery implements LiteServerQueryData {
   }
 
   public byte[] getQueryData() {
-    int len = serialize().length + 4;
-    ByteBuffer buffer = ByteBuffer.allocate(len);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt(SHARD_INFO_QUERY);
-    buffer.put(serialize());
-    return buffer.array();
+    return ByteBuffer.allocate(serialize().length + 4)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .putInt(SHARD_INFO_QUERY)
+        .put(serialize())
+        .array();
   }
 
   public byte[] serialize() {
-    ByteBuffer buffer = ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 8 + 1);
-    buffer.put(id.serialize());
-    buffer.putInt(workchain);
-    buffer.putLong(shard);
-    buffer.put(exact ? (byte) 1 : (byte) 0);
-    return buffer.array();
+    return ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 8 + 4)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .put(id.serialize())
+        .putInt(workchain)
+        .putLong(shard)
+        .putInt(exact ? Utils.TL_TRUE : Utils.TL_FALSE)
+        .array();
   }
 }

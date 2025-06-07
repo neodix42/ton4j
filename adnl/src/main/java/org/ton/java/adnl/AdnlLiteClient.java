@@ -203,8 +203,8 @@ public class AdnlLiteClient {
       throw new IllegalStateException("Not connected to lite-server");
     }
 
-    byte[] queryBytes =
-        LiteServerQuery.serialize("liteServer.sendMessage body:bytes = liteServer.SendMsgStatus");
+    byte[] queryBytes = LiteServerQuery.pack(SendMessageQuery.builder().build()); // todo
+
     log.info("Sending sendMessage query, size: {} bytes", queryBytes.length);
 
     LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
@@ -234,9 +234,8 @@ public class AdnlLiteClient {
       throw new IllegalStateException("Not connected to lite-server");
     }
 
-    byte[] queryBytes =
-        LiteServerQuery.serialize(
-            "liteServer.runMethod id:tonNode.blockIdExt account_address:tonNode.accountId method_name:string method_params:bytes = liteServer.RunMethodResult");
+    byte[] queryBytes = LiteServerQuery.pack(RunSmcMethodQuery.builder().build()); // todo
+
     log.info("Sending runMethod query, size: {} bytes", queryBytes.length);
 
     LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
@@ -280,8 +279,6 @@ public class AdnlLiteClient {
     byte[] queryBytes =
         LiteServerQuery.pack(
             OneTransactionQuery.builder().id(id).account(accountAddress).lt(lt).build());
-    LiteServerQuery.serialize(
-        "liteServer.getOneTransaction id:tonNode.blockIdExt account:tonNode.accountId lt:long = liteServer.TransactionInfo");
     log.info("Sending getOneTransaction query, size: {} bytes", queryBytes.length);
 
     LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
@@ -296,7 +293,7 @@ public class AdnlLiteClient {
 
     byte[] queryBytes =
         LiteServerQuery.pack(
-            TransactionsQuery.builder()
+            TransactionListQuery.builder()
                 .count(count)
                 .account(accountAddress)
                 .lt(lt)

@@ -53,13 +53,13 @@ public class ConfigAll implements Serializable, LiteServerAnswer {
     return byteBuffer.array();
   }
 
-  public static ConfigAll deserialize(ByteBuffer bf) {
-    bf.order(ByteOrder.LITTLE_ENDIAN);
+  public static ConfigAll deserialize(ByteBuffer byteBuffer) {
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
     return ConfigAll.builder()
-        .mode(bf.getInt())
-        .id(BlockIdExt.deserialize(bf))
-        .stateProof(Utils.fromBytes(bf))
-        .configProof(Utils.fromBytes(bf))
+        .mode(byteBuffer.getInt())
+        .id(BlockIdExt.deserialize(byteBuffer))
+        .stateProof(Utils.fromBytes(byteBuffer))
+        .configProof(Utils.fromBytes(byteBuffer))
         .build();
   }
 

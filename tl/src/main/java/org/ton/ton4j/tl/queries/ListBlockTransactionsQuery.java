@@ -27,9 +27,9 @@ public class ListBlockTransactionsQuery implements LiteServerQueryData {
   public byte[] getQueryData() {
     // Calculate size
     int size = BlockIdExt.getSize() + 4 + 4 + 4;
-    if ((mode & 256) != 0) size += TransactionId3.getSize(); // after
-    if ((mode & 128) != 0) size += 1; // reverse_order
-    if ((mode & 64) != 0) size += 1; // want_proof
+    if ((mode & 128) != 0) size += TransactionId3.getSize(); // after
+    if ((mode & 64) != 0) size += 1; // reverse_order
+    if ((mode & 32) != 0) size += 1; // want_proof
 
     ByteBuffer buffer = ByteBuffer.allocate(size);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -38,15 +38,15 @@ public class ListBlockTransactionsQuery implements LiteServerQueryData {
     buffer.putInt(mode);
     buffer.putInt(count);
 
-    if ((mode & 256) != 0 && afterTx != null) {
+    if ((mode & 128) != 0 && afterTx != null) {
       buffer.put(afterTx.serialize());
     }
 
-    if ((mode & 128) != 0) {
+    if ((mode & 64) != 0) {
       buffer.put((byte) (reverseOrder ? 1 : 0));
     }
 
-    if ((mode & 64) != 0) {
+    if ((mode & 32) != 0) {
       buffer.put((byte) (wantProof ? 1 : 0));
     }
 

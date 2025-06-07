@@ -23,6 +23,7 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.types.*;
+import org.ton.ton4j.tonlib.types.BlockHeader;
 import org.ton.ton4j.tonlib.types.BlockIdExt;
 import org.ton.ton4j.tonlib.types.globalconfig.*;
 import org.ton.ton4j.tonlib.types.globalconfig.BlockInfo;

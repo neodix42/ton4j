@@ -2,6 +2,7 @@ package org.ton.ton4j.tl.types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.utils.Utils;
@@ -27,6 +28,7 @@ public class MasterchainInfo implements Serializable, LiteServerAnswer {
 
   public byte[] serialize() {
     return ByteBuffer.allocate(BlockIdExt.getSize() + 32 + ZeroStateIdExt.getSize())
+        .order(ByteOrder.LITTLE_ENDIAN)
         .put(last.serialize())
         .put(stateRootHash)
         .put(init.serialize())
@@ -34,6 +36,7 @@ public class MasterchainInfo implements Serializable, LiteServerAnswer {
   }
 
   public static MasterchainInfo deserialize(ByteBuffer byteBuffer) {
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
     return MasterchainInfo.builder()
         .last(BlockIdExt.deserialize(byteBuffer))
         .stateRootHash(Utils.read(byteBuffer, 32))

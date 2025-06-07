@@ -35,6 +35,7 @@ public class TransactionMetadata {
   }
 
   public static TransactionMetadata deserialize(ByteBuffer byteBuffer) {
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
     return TransactionMetadata.builder()
         .mode(byteBuffer.getInt())
         .depth(byteBuffer.getInt())

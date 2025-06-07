@@ -17,19 +17,25 @@ public class ListBlockTransactionsExtQuery implements LiteServerQueryData {
   private int mode;
   private int count;
   private TransactionId3 after;
-  private Boolean reverseOrder;
-  private Boolean wantProof;
+  private boolean reverseOrder;
+  private boolean wantProof;
 
   public String getQueryName() {
     return "liteServer.listBlockTransactionsExt id:tonNode.blockIdExt mode:# count:# after:mode.7?liteServer.transactionId3 reverse_order:mode.6?true want_proof:mode.5?true = liteServer.BlockTransactionsExt";
   }
 
   public byte[] getQueryData() {
-    // Calculate size
+
     int size = BlockIdExt.getSize() + 4 + 4 + 4;
-    if ((mode & 128) != 0 && after != null) size += TransactionId3.getSize(); // after
-    if ((mode & 64) != 0 && reverseOrder != null) size += 1; // reverse_order
-    if ((mode & 32) != 0 && wantProof != null) size += 1; // want_proof
+    if ((mode & 128) != 0) {
+      size += TransactionId3.getSize();
+    }
+    if (reverseOrder) {
+      mode = mode | 64;
+    }
+    if (wantProof) {
+      mode = mode | 32;
+    }
 
     ByteBuffer buffer = ByteBuffer.allocate(size);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -38,18 +44,9 @@ public class ListBlockTransactionsExtQuery implements LiteServerQueryData {
     buffer.putInt(mode);
     buffer.putInt(count);
 
-    if ((mode & 128) != 0 && after != null) {
+    if ((mode & 128) != 0) {
       buffer.put(after.serialize());
     }
-
-    if ((mode & 64) != 0 && reverseOrder != null) {
-      buffer.put((byte) (reverseOrder ? 1 : 0));
-    }
-
-    if ((mode & 32) != 0 && wantProof != null) {
-      buffer.put((byte) (wantProof ? 1 : 0));
-    }
-
     return buffer.array();
   }
 }

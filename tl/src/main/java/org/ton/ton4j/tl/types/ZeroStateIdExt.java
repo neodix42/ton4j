@@ -34,12 +34,12 @@ public class ZeroStateIdExt implements Serializable, LiteServerAnswer {
         .array();
   }
 
-  public static ZeroStateIdExt deserialize(ByteBuffer bf) {
-    bf.order(ByteOrder.LITTLE_ENDIAN);
+  public static ZeroStateIdExt deserialize(ByteBuffer byteBuffer) {
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
     return ZeroStateIdExt.builder()
-        .workchain(bf.getInt())
-        .rootHash(Utils.read(bf, 32))
-        .fileHash(Utils.read(bf, 32))
+        .workchain(byteBuffer.getInt())
+        .rootHash(Utils.read(byteBuffer, 32))
+        .fileHash(Utils.read(byteBuffer, 32))
         .build();
   }
 

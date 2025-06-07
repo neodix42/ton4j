@@ -19,18 +19,14 @@ public class BlockHeaderQuery implements LiteServerQueryData {
   }
 
   public byte[] getQueryData() {
-    int len = serialize().length + 4;
-    ByteBuffer buffer = ByteBuffer.allocate(len);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt(BLOCK_HEADER_QUERY);
-    buffer.put(serialize());
-    return buffer.array();
+    return ByteBuffer.allocate(serialize().length + 4)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .putInt(BLOCK_HEADER_QUERY)
+        .put(serialize())
+        .array();
   }
 
   public byte[] serialize() {
-    ByteBuffer buffer = ByteBuffer.allocate(BlockIdExt.getSize() + 4);
-    buffer.put(id.serialize());
-    buffer.putInt(mode);
-    return buffer.array();
+    return ByteBuffer.allocate(BlockIdExt.getSize() + 4).put(id.serialize()).putInt(mode).array();
   }
 }

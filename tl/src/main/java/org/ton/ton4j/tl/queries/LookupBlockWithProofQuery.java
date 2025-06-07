@@ -25,8 +25,8 @@ public class LookupBlockWithProofQuery implements LiteServerQueryData {
 
   public byte[] getQueryData() {
     int size = 4 + 4 + BlockId.getSize() + BlockIdExt.getSize();
-    if ((mode & 1) != 0) size += 8; // lt
-    if ((mode & 2) != 0) size += 4; // utime
+    if ((mode & 2) != 0) size += 8; // lt
+    if ((mode & 4) != 0) size += 4; // utime
 
     ByteBuffer buffer = ByteBuffer.allocate(size);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -35,11 +35,11 @@ public class LookupBlockWithProofQuery implements LiteServerQueryData {
     buffer.put(id.serialize());
     buffer.put(mcBlockId.serialize());
 
-    if ((mode & 1) != 0) {
+    if ((mode & 2) != 0) {
       buffer.putLong(lt);
     }
 
-    if ((mode & 2) != 0) {
+    if ((mode & 4) != 0) {
       buffer.putInt(utime);
     }
 

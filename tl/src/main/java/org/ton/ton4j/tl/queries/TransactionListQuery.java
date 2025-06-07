@@ -3,19 +3,24 @@ package org.ton.ton4j.tl.queries;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.tl.types.LiteServerQueryData;
+import org.ton.ton4j.utils.Utils;
 
 @Builder
-@Getter
-public class TransactionsQuery implements LiteServerQueryData {
-  public static final int TRANSACTIONS_QUERY = 474015649;
+@Data
+public class TransactionListQuery implements LiteServerQueryData {
+  public static final int TRANSACTION_LIST_QUERY = 474015649;
 
   private int count;
   private Address account;
   private long lt;
-  private byte[] hash;
+  public byte[] hash;
+
+  public String getHash() {
+    return Utils.bytesToHex(hash);
+  }
 
   public String getQueryName() {
     return "liteServer.getTransactions count:# account:liteServer.accountId lt:long hash:int256 = liteServer.TransactionList";
@@ -28,7 +33,7 @@ public class TransactionsQuery implements LiteServerQueryData {
 
     ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + 4 + 32 + 8 + 32);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt(TRANSACTIONS_QUERY);
+    buffer.putInt(TRANSACTION_LIST_QUERY);
     buffer.putInt(count);
     buffer.putInt(account.wc);
     buffer.put(account.hashPart);

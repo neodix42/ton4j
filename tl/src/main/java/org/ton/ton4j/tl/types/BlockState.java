@@ -2,6 +2,7 @@ package org.ton.ton4j.tl.types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.utils.Utils;
@@ -22,17 +23,18 @@ public class BlockState implements Serializable, LiteServerAnswer {
 
   public static final int constructorId = BLOCK_STATE_ANSWER;
 
-  public static BlockState deserialize(ByteBuffer buffer) {
-    BlockIdExt id = BlockIdExt.deserialize(buffer);
-    BlockIdExt root = BlockIdExt.deserialize(buffer);
+  public static BlockState deserialize(ByteBuffer byteBuffer) {
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    BlockIdExt id = BlockIdExt.deserialize(byteBuffer);
+    BlockIdExt root = BlockIdExt.deserialize(byteBuffer);
     byte[] fileHash = new byte[32];
-    buffer.get(fileHash);
+    byteBuffer.get(fileHash);
 
     return BlockState.builder()
         .id(id)
         .root(root)
         .fileHash(fileHash)
-        .data(Utils.fromBytes(buffer))
+        .data(Utils.fromBytes(byteBuffer))
         .build();
   }
 

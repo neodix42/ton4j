@@ -5,20 +5,18 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
-import org.ton.ton4j.utils.Utils;
 
 @Data
 @Builder
 public class Version implements Serializable, LiteServerAnswer {
+  public static final int VERSION_ANSWER = 1510248933;
+
   private int mode;
   private int version;
   private long capabilities;
   private int now;
 
-  public static final int constructorId =
-      (int)
-          Utils.getQueryCrc32IEEEE(
-              "liteServer.version mode:# version:int capabilities:long now:int = liteServer.Version");
+  public static final int constructorId = VERSION_ANSWER;
 
   public static Version deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);

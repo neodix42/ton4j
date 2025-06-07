@@ -2,6 +2,7 @@ package org.ton.ton4j.tl.types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.utils.Utils;
@@ -25,6 +26,7 @@ public class LiteServerError implements Serializable, LiteServerAnswer {
   }
 
   public static LiteServerError deserialize(ByteBuffer byteBuffer) {
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
     return LiteServerError.builder()
         .code(byteBuffer.getInt())
         .message(new String(Utils.read(byteBuffer, byteBuffer.remaining())))

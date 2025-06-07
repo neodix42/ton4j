@@ -15,6 +15,8 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class TransactionId implements Serializable {
+  public static final int TRANSACTION_ID_ANSWER = -1322293841;
+
   int mode;
   public byte[] account;
   long lt;
@@ -30,11 +32,11 @@ public class TransactionId implements Serializable {
   }
 
   public byte[] serialize() {
-    ByteBuffer buffer = ByteBuffer.allocate(4 + 32); // todo
+    ByteBuffer buffer = ByteBuffer.allocate(4 + 32);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt(0xb12f65af);
+
     buffer.putInt(mode);
-    if (mode == 1) {
+    if ((mode & 1) != 0) {
       buffer.put(account);
     }
     if ((mode & 2) != 0) {
@@ -49,24 +51,24 @@ public class TransactionId implements Serializable {
     return buffer.array();
   }
 
-  public static TransactionId deserialize(ByteBuffer buffer) {
-    //    int id = buffer.getInt();
-    int mode = buffer.getInt();
+  public static TransactionId deserialize(ByteBuffer byteBuffer) {
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    int mode = byteBuffer.getInt();
     byte[] account = new byte[0];
     if ((mode & 1) != 0) {
-      account = Utils.read(buffer, 32);
+      account = Utils.read(byteBuffer, 32);
     }
     long lt = 0;
     if ((mode & 2) != 0) {
-      lt = buffer.getLong();
+      lt = byteBuffer.getLong();
     }
     byte[] hash = new byte[0];
     if ((mode & 4) != 0) {
-      hash = Utils.read(buffer, 32);
+      hash = Utils.read(byteBuffer, 32);
     }
     TransactionMetadata transactionMetadata = null;
     if ((mode & 256) != 0) {
-      transactionMetadata = TransactionMetadata.deserialize(buffer);
+      transactionMetadata = TransactionMetadata.deserialize(byteBuffer);
     }
     return TransactionId.builder()
         .account(account)

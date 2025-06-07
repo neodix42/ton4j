@@ -2,6 +2,7 @@ package org.ton.ton4j.tl.types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
@@ -54,7 +55,7 @@ public class BlockTransactionsExt implements Serializable, LiteServerAnswer {
         ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 1 + t1.length + 4 + t2.length);
     buffer.put(id.serialize());
     buffer.putInt(req_count);
-    buffer.put(incomplete ? (byte) 1 : (byte) 0);
+    buffer.putInt(incomplete ? Utils.TL_TRUE : Utils.TL_FALSE);
     buffer.put(t1);
     buffer.put(t2);
 
@@ -62,9 +63,10 @@ public class BlockTransactionsExt implements Serializable, LiteServerAnswer {
   }
 
   public static BlockTransactionsExt deserialize(ByteBuffer byteBuffer) {
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
     BlockIdExt id = BlockIdExt.deserialize(byteBuffer);
     int req_count = byteBuffer.getInt();
-    boolean incomplete = byteBuffer.getInt() == 0; // why 4 bytes?
+    boolean incomplete = byteBuffer.getInt() == Utils.TL_TRUE;
 
     byte[] transactions = Utils.fromBytes(byteBuffer);
 

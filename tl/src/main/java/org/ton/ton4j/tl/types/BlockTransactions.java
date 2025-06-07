@@ -2,6 +2,7 @@ package org.ton.ton4j.tl.types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
@@ -20,7 +21,7 @@ public class BlockTransactions implements Serializable, LiteServerAnswer {
   BlockIdExt id;
   int req_count;
   boolean incomplete;
-  List<TransactionId> ids;
+  List<TransactionId> transactionIds;
   public byte[] proof;
 
   public String getProof() {
@@ -33,12 +34,12 @@ public class BlockTransactions implements Serializable, LiteServerAnswer {
     byte[] t1 = Utils.toBytes(proof);
 
     ByteBuffer buffer =
-        ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 1 + ids.size() + 16 + t1.length);
+        ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 4 + transactionIds.size() + 16 + t1.length);
     buffer.put(id.serialize());
     buffer.putInt(req_count);
-    buffer.put(incomplete ? (byte) 1 : (byte) 0);
-    buffer.putInt(ids.size());
-    for (TransactionId id : ids) {
+    buffer.putInt(incomplete ? Utils.TL_TRUE : Utils.TL_FALSE);
+    buffer.putInt(transactionIds.size());
+    for (TransactionId id : transactionIds) {
       buffer.put(id.serialize());
     }
     buffer.put(t1);
@@ -47,9 +48,10 @@ public class BlockTransactions implements Serializable, LiteServerAnswer {
   }
 
   public static BlockTransactions deserialize(ByteBuffer byteBuffer) {
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
     BlockIdExt id = BlockIdExt.deserialize(byteBuffer);
     int req_count = byteBuffer.getInt();
-    boolean incomplete = byteBuffer.getInt() == 0; // why 4 bytes?
+    boolean incomplete = byteBuffer.getInt() == Utils.TL_TRUE;
 
     int idsCount = byteBuffer.getInt();
     List<TransactionId> ids = new ArrayList<>(idsCount);
@@ -63,7 +65,7 @@ public class BlockTransactions implements Serializable, LiteServerAnswer {
         .id(id)
         .req_count(req_count)
         .incomplete(incomplete)
-        .ids(ids)
+        .transactionIds(ids)
         .proof(proof)
         .build();
   }
