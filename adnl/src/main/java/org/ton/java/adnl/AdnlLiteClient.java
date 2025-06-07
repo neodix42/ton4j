@@ -203,7 +203,7 @@ public class AdnlLiteClient {
       throw new IllegalStateException("Not connected to lite-server");
     }
 
-    byte[] queryBytes = LiteServerQuery.pack(SendMessageQuery.builder().build()); // todo
+    byte[] queryBytes = LiteServerQuery.pack(SendMessageQuery.builder().body(body).build()); // todo
 
     log.info("Sending sendMessage query, size: {} bytes", queryBytes.length);
 
@@ -228,13 +228,21 @@ public class AdnlLiteClient {
   }
 
   public RunMethodResult runMethod(
-      BlockIdExt id, String accountAddress, String methodName, String methodParams)
+      BlockIdExt id, int mode, Address accountAddress, long methodId, byte[] methodParams)
       throws Exception {
     if (!connected || !transport.isConnected()) {
       throw new IllegalStateException("Not connected to lite-server");
     }
 
-    byte[] queryBytes = LiteServerQuery.pack(RunSmcMethodQuery.builder().build()); // todo
+    byte[] queryBytes =
+        LiteServerQuery.pack(
+            RunSmcMethodQuery.builder()
+                .mode(mode)
+                .id(id)
+                .account(accountAddress)
+                .methodId(methodId)
+                .params(methodParams)
+                .build());
 
     log.info("Sending runMethod query, size: {} bytes", queryBytes.length);
 

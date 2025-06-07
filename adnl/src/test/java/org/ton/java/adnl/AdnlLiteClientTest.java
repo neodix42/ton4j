@@ -498,7 +498,36 @@ public class AdnlLiteClientTest {
     log.info("Testing getBlockProof query");
     assertTrue(client.isConnected(), "Client should be connected");
 
+    //    RunMethodResult runMethodResult = client.getBlockProof();
     // Placeholder for actual implementation
     log.info("getBlockProof test completed");
+    // todo
+  }
+
+  @Test
+  void testRunSmcMethod() throws Exception {
+    log.info("Testing runSmcMethod query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    RunMethodResult runMethodResult =
+        client.runMethod(masterchainInfo.getLast(), 0, Address.of(TESTNET_ADDRESS), 0, new byte[0]);
+
+    log.info("runMethodResult {}", runMethodResult);
+    // todo
+  }
+
+  @Test
+  void testSendMessage() throws Exception {
+    log.info("Testing sendMessage query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    String bocMessage =
+        "B5EE9C724101030100F10002CF88004B1CA92C714D3015CBA78EC7055FA7E9E65C68905B5F86EA3C66B0B1391BC01A11900AF60938844B0DDEE0D7F5C6C6B55C2D7F661170E029B8978AACCD402F2FF03FDD08D94398DB0826DA42FA96A6CBA73D232370025BF544D3A954208C990600A000000010010200BAFF0020DD2082014C97BA218201339CBAB19C71B0ED44D0D31FD70BFFE304E0A4F260810200D71820D70B1FED44D0D31FD3FFD15112BAF2A122F901541044F910F2A2F80001D31F3120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED5400480000000082A0B2543D06FEC0AAC952E9EC738BE56AB1B6027FC0C1AA817AE14B4D1ED2FB111EE9AE";
+    SendMsgStatus sendMsgStatus = client.sendMessage(Utils.hexToSignedBytes(bocMessage));
+
+    log.info("sendMsgStatus {}", sendMsgStatus);
+    // todo
   }
 }
