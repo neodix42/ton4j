@@ -494,17 +494,6 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetBlockProof() throws Exception {
-    log.info("Testing getBlockProof query");
-    assertTrue(client.isConnected(), "Client should be connected");
-
-    //    RunMethodResult runMethodResult = client.getBlockProof();
-    // Placeholder for actual implementation
-    log.info("getBlockProof test completed");
-    // todo
-  }
-
-  @Test
   void testRunSmcMethod() throws Exception {
     log.info("Testing runSmcMethod query");
     assertTrue(client.isConnected(), "Client should be connected");
@@ -579,5 +568,31 @@ public class AdnlLiteClientTest {
 
     log.info("shardBlockProof {}", shardBlockProof);
     assertThat(shardBlockProof.getMasterchainId().getSeqno()).isGreaterThan(0);
+  }
+
+  @Test
+  void testGetBlockProofMode0() throws Exception {
+    log.info("Testing getBlockProof query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    PartialBlockProof partialBlockProof = client.getBlockProof(0, masterchainInfo.getLast(), null);
+
+    log.info("partialBlockProof {}", partialBlockProof);
+    assertThat(partialBlockProof.getFrom().getSeqno()).isGreaterThan(0);
+  }
+
+  @Test
+  void testGetBlockProofMode1() throws Exception {
+    log.info("Testing getBlockProof query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo knownBlock = client.getMasterchainInfo();
+    MasterchainInfo targetBlock = client.getMasterchainInfo();
+    PartialBlockProof partialBlockProof =
+        client.getBlockProof(0, knownBlock.getLast(), targetBlock.getLast());
+
+    log.info("partialBlockProof {}", partialBlockProof);
+    assertThat(partialBlockProof.getFrom().getSeqno()).isGreaterThan(0);
   }
 }

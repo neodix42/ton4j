@@ -246,6 +246,26 @@ public class AdnlLiteClient {
     return (ShardBlockProof) response;
   }
 
+  public PartialBlockProof getBlockProof(int mode, BlockIdExt knownBlock, BlockIdExt targetBlock)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.pack(
+            BlockProofQuery.builder()
+                .mode(mode)
+                .knownBlock(knownBlock)
+                .targetBlock(targetBlock)
+                .build());
+
+    log.info("Sending sendMessage query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (PartialBlockProof) response;
+  }
+
   public AccountState getAccountState(BlockIdExt id, Address accountAddress) throws Exception {
     if (!connected || !transport.isConnected()) {
       throw new IllegalStateException("Not connected to lite-server");

@@ -408,6 +408,9 @@ public class AdnlTcpTransport {
                   } else if (id == ValidatorStats.constructorId) {
                     result = ValidatorStats.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.runMethodResult response");
+                  } else if (id == PartialBlockProof.constructorId) {
+                    result = PartialBlockProof.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.partialBlockProof response");
                   } else if (id == ShardBlockProof.constructorId) {
                     result = ShardBlockProof.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.shardBlockProof response");
