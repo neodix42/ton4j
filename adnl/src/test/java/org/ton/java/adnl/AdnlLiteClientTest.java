@@ -530,4 +530,54 @@ public class AdnlLiteClientTest {
     log.info("sendMsgStatus {}", sendMsgStatus);
     // todo
   }
+
+  @Test
+  void testSendValidatorStatsMode0() throws Exception {
+    log.info("Testing validatorStats query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    ValidatorStats validatorStats =
+        client.getValidatorStats(masterchainInfo.getLast(), 0, 10, null, 0);
+
+    log.info("validatorStats {}", validatorStats);
+  }
+
+  @Test
+  void testSendValidatorStatsMode1() throws Exception {
+    log.info("Testing validatorStats query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    ValidatorStats validatorStats =
+        client.getValidatorStats(masterchainInfo.getLast(), 1, 10, null, 0);
+
+    log.info("validatorStats {}", validatorStats);
+    // todo
+  }
+
+  @Test
+  void testSendValidatorStatsMode4() throws Exception {
+    log.info("Testing validatorStats query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    ValidatorStats validatorStats =
+        client.getValidatorStats(masterchainInfo.getLast(), 4, 10, null, 0);
+
+    log.info("validatorStats {}", validatorStats);
+    // todo
+  }
+
+  @Test
+  void testGetShardBlockProof() throws Exception {
+    log.info("Testing getShardBlockProof query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    ShardBlockProof shardBlockProof = client.getShardBlockProof(masterchainInfo.getLast());
+
+    log.info("shardBlockProof {}", shardBlockProof);
+    assertThat(shardBlockProof.getMasterchainId().getSeqno()).isGreaterThan(0);
+  }
 }

@@ -7,8 +7,9 @@ import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.utils.Utils;
 
-@Data
+/** liteServer.shardBlockLink id:tonNode.blockIdExt proof:bytes = liteServer.ShardBlockLink; */
 @Builder
+@Data
 public class ShardBlockLink implements Serializable {
   private BlockIdExt id;
   private byte[] proof;

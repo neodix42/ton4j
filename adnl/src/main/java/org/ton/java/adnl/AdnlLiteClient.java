@@ -211,6 +211,41 @@ public class AdnlLiteClient {
     return (SendMsgStatus) response;
   }
 
+  public ValidatorStats getValidatorStats(
+      BlockIdExt id, int mode, int limit, byte[] startAfter, int modifiedAfter) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.pack(
+            ValidatorStatsQuery.builder()
+                .id(id)
+                .mode(mode)
+                .limit(limit)
+                .startAfter(startAfter)
+                .modifiedAfter(modifiedAfter)
+                .build());
+
+    log.info("Sending sendMessage query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (ValidatorStats) response;
+  }
+
+  public ShardBlockProof getShardBlockProof(BlockIdExt id) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes = LiteServerQuery.pack(ShardBlockProofQuery.builder().id(id).build());
+
+    log.info("Sending sendMessage query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (ShardBlockProof) response;
+  }
+
   public AccountState getAccountState(BlockIdExt id, Address accountAddress) throws Exception {
     if (!connected || !transport.isConnected()) {
       throw new IllegalStateException("Not connected to lite-server");

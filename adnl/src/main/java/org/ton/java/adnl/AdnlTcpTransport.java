@@ -405,6 +405,12 @@ public class AdnlTcpTransport {
                   } else if (id == RunMethodResult.constructorId) {
                     result = RunMethodResult.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.runMethodResult response");
+                  } else if (id == ValidatorStats.constructorId) {
+                    result = ValidatorStats.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.runMethodResult response");
+                  } else if (id == ShardBlockProof.constructorId) {
+                    result = ShardBlockProof.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.shardBlockProof response");
                   } else {
                     log.info("unknown adnl.query id {}", id);
                   }

@@ -9,7 +9,7 @@ import org.ton.ton4j.utils.Utils;
 @Data
 @Builder
 public class RunMethodResult implements Serializable, LiteServerAnswer {
-  public final int SEND_MSG_STATUS_ANSWER = 0;
+  public static final int SEND_MSG_STATUS_ANSWER = 60452816;
 
   private int mode;
   private BlockIdExt id;
@@ -22,10 +22,14 @@ public class RunMethodResult implements Serializable, LiteServerAnswer {
   private int exitCode;
   private byte[] result;
 
-  public static final int constructorId =
-      (int)
-          Utils.getQueryCrc32IEEEE(
-              "liteServer.runMethodResult mode:# id:tonNode.blockIdExt shardblk:tonNode.blockIdExt shard_proof:maybe(bytes) proof:maybe(bytes) state_proof:maybe(bytes) init_c7:maybe(bytes) lib_extras:maybe(bytes) exit_code:int result:bytes = liteServer.RunMethodResult");
+  public static final int constructorId = SEND_MSG_STATUS_ANSWER;
+
+  //      (int)
+  //          Utils.getQueryCrc32IEEEE(
+  //              "liteServer.runMethodResult mode:# id:tonNode.blockIdExt
+  // shardblk:tonNode.blockIdExt shard_proof:maybe(bytes) proof:maybe(bytes)
+  // state_proof:maybe(bytes) init_c7:maybe(bytes) lib_extras:maybe(bytes) exit_code:int
+  // result:bytes = liteServer.RunMethodResult");
 
   public static RunMethodResult deserialize(ByteBuffer buffer) {
     int mode = buffer.getInt();
