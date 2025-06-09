@@ -752,4 +752,33 @@ public class AdnlLiteClientTest {
     LibraryResult libraryResult = client.getLibraries(List.of(new byte[32]));
     log.info("libraryResult {}", libraryResult);
   }
+
+  @Test
+  void testGetOutMsgQueueSizesQueryMode0() throws Exception { // no wc no shard are used
+    log.info("Testing testGetOutMsgQueueSizesQuery query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    OutMsgQueueSizes outMsgQueueSizes = client.getOutMsgQueueSizesQuery(0, 0, 0);
+    log.info("outMsgQueueSizes {}", outMsgQueueSizes);
+    for (OutMsgQueueSize outMsg : outMsgQueueSizes.getShards()) {
+      log.info("outMsg {}", outMsg);
+    }
+  }
+
+  @Test
+  void testGetOutMsgQueueSizesQueryMode1() throws Exception { // with wc and shard
+    log.info("Testing testGetOutMsgQueueSizesQuery query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    OutMsgQueueSizes outMsgQueueSizes =
+        client.getOutMsgQueueSizesQuery(1, -1, -9223372036854775808L);
+    log.info("outMsgQueueSizes {}", outMsgQueueSizes);
+    for (OutMsgQueueSize outMsg : outMsgQueueSizes.getShards()) {
+      log.info("outMsg {}", outMsg);
+    }
+  }
 }
