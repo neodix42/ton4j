@@ -501,4 +501,36 @@ public class AdnlLiteClient {
     LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
     return (DispatchQueueInfo) response;
   }
+
+  public DispatchQueueMessages getDispatchQueueMessages(
+      BlockIdExt id,
+      int mode,
+      Address addr,
+      long afterLt,
+      int maxMessages,
+      boolean wantProof,
+      boolean oneAccount,
+      boolean messageBoc)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.pack(
+            DispatchQueueMessagesQuery.builder()
+                .id(id)
+                .mode(mode)
+                .addr(addr)
+                .afterLt(afterLt)
+                .maxMessages(maxMessages)
+                .wantProof(wantProof)
+                .oneAccount(oneAccount)
+                .messagesBoc(messageBoc)
+                .build());
+    log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (DispatchQueueMessages) response;
+  }
 }

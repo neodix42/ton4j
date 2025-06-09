@@ -659,4 +659,84 @@ public class AdnlLiteClientTest {
             masterchainInfo.getLast(), 1 + 2, Address.of(TESTNET_ADDRESS), 20, false);
     log.info("dispatchQueueInfo {}", dispatchQueueInfo);
   }
+
+  @Test
+  void testGetDispatchQueueMessagesMode0() throws Exception {
+    log.info("Testing testDispatchQueueMessages query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    DispatchQueueMessages dispatchQueueMessages =
+        client.getDispatchQueueMessages(
+            masterchainInfo.getLast(),
+            0,
+            Address.of(TESTNET_ADDRESS),
+            35473445000001L,
+            10,
+            false,
+            false,
+            false);
+    log.info("dispatchQueueMessages {}", dispatchQueueMessages);
+  }
+
+  @Test
+  void testGetDispatchQueueMessagesMode1() throws Exception { // with proof
+    log.info("Testing testDispatchQueueMessages query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    DispatchQueueMessages dispatchQueueMessages =
+        client.getDispatchQueueMessages(
+            masterchainInfo.getLast(),
+            1,
+            Address.of(TESTNET_ADDRESS),
+            35473445000001L,
+            10,
+            false,
+            false,
+            false);
+    log.info("dispatchQueueMessages {}", dispatchQueueMessages);
+  }
+
+  @Test
+  void testGetDispatchQueueMessagesMode2() throws Exception { // one account
+    log.info("Testing testDispatchQueueMessages query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    DispatchQueueMessages dispatchQueueMessages =
+        client.getDispatchQueueMessages(
+            masterchainInfo.getLast(),
+            2,
+            Address.of(TESTNET_ADDRESS),
+            35473445000001L,
+            10,
+            false,
+            false,
+            false);
+    log.info("dispatchQueueMessages {}", dispatchQueueMessages);
+  }
+
+  @Test
+  void testGetDispatchQueueMessagesMode4() throws Exception { // boc with messages
+    log.info("Testing testDispatchQueueMessages query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    DispatchQueueMessages dispatchQueueMessages =
+        client.getDispatchQueueMessages(
+            masterchainInfo.getLast(),
+            4,
+            Address.of(TESTNET_ADDRESS),
+            35473445000001L,
+            10,
+            false,
+            false,
+            false);
+    log.info("dispatchQueueMessages {}", dispatchQueueMessages);
+  }
 }
