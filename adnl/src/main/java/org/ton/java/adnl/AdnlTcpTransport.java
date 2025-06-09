@@ -381,8 +381,8 @@ public class AdnlTcpTransport {
                   } else if (id == AccountState.constructorId) {
                     result = AccountState.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.accountState response");
-                  } else if (id == ConfigAll.constructorId) {
-                    result = ConfigAll.deserialize(queryBodyPayload);
+                  } else if (id == ConfigInfo.constructorId) {
+                    result = ConfigInfo.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.accountState response");
                   } else if (id == ShardInfo.constructorId) {
                     result = ShardInfo.deserialize(queryBodyPayload);
@@ -414,6 +414,9 @@ public class AdnlTcpTransport {
                   } else if (id == ShardBlockProof.constructorId) {
                     result = ShardBlockProof.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.shardBlockProof response");
+                  } else if (id == DispatchQueueInfo.constructorId) {
+                    result = DispatchQueueInfo.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.dispatchQueueInfo response");
                   } else {
                     log.info("unknown adnl.query id {}", id);
                   }

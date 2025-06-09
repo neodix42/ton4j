@@ -1,6 +1,5 @@
 package org.ton.java.adnl;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import lombok.extern.slf4j.Slf4j;
@@ -134,7 +133,7 @@ public class AdnlLiteClient {
     return (Version) response;
   }
 
-  public ConfigAll getConfigAll(BlockIdExt id, int mode) throws Exception {
+  public ConfigInfo getConfigAll(BlockIdExt id, int mode) throws Exception {
     if (!connected || !transport.isConnected()) {
       throw new IllegalStateException("Not connected to lite-server");
     }
@@ -144,21 +143,25 @@ public class AdnlLiteClient {
     log.info("Sending getConfigAll query, size: {} bytes", queryBytes.length);
 
     LiteServerAnswer response;
-    try {
-      response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-      return (ConfigAll) response;
-    } catch (Exception e) {
-      log.warn("Error with serialized query approach: {}", e.getMessage(), e);
 
-      // Check if we're still connected before trying the direct binary approach
-      if (!transport.isConnected()) {
-        log.info("Connection lost, reconnecting is required");
-        connected = false;
-        throw new IOException("Connection lost, reconnecting is required", e);
-      }
+    response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (ConfigInfo) response;
+  }
+
+  public ConfigInfo getConfigParams(BlockIdExt id, int mode, int[] paramList) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
     }
 
-    throw new Exception("Was not able to retrieve masterchainInfo from lite server");
+    byte[] queryBytes =
+        LiteServerQuery.pack(
+            ConfigParamsQuery.builder().mode(mode).id(id).paramList(paramList).build());
+
+    log.info("Sending getConfigParams query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response;
+    response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (ConfigInfo) response;
   }
 
   public BlockData getBlock(BlockIdExt id) throws Exception {
@@ -273,9 +276,6 @@ public class AdnlLiteClient {
 
     byte[] queryBytes =
         LiteServerQuery.pack(AccountStateQuery.builder().id(id).account(accountAddress).build());
-    //    LiteServerQuery.serialize(
-    //        "liteServer.getAccountState id:tonNode.blockIdExt account_address:tonNode.accountId =
-    // liteServer.AccountState");
     log.info("Sending getAccountState query, size: {} bytes", queryBytes.length);
 
     LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
@@ -478,5 +478,27 @@ public class AdnlLiteClient {
    */
   public boolean isConnected() {
     return connected && transport.isConnected();
+  }
+
+  public DispatchQueueInfo getDispatchQueueInfo(
+      BlockIdExt id, int mode, Address afterAddress, int maxAccounts, boolean wantProof)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.pack(
+            DispatchQueueInfoQuery.builder()
+                .id(id)
+                .mode(mode)
+                .afterAddr(afterAddress)
+                .maxAccounts(maxAccounts)
+                .wantProof(wantProof)
+                .build());
+    log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (DispatchQueueInfo) response;
   }
 }

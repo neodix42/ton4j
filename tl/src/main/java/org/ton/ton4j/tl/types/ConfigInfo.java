@@ -5,6 +5,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.ConfigParams;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -21,7 +24,7 @@ import org.ton.ton4j.utils.Utils;
  */
 @Builder
 @Data
-public class ConfigAll implements Serializable, LiteServerAnswer {
+public class ConfigInfo implements Serializable, LiteServerAnswer {
 
   public static final int CONFIG_ALL_ANSWER = -1367660753; // 2ee6b589
 
@@ -40,6 +43,14 @@ public class ConfigAll implements Serializable, LiteServerAnswer {
     return Utils.bytesToHex(stateProof);
   }
 
+  public ConfigParams getConfigParsed() {
+    if ((configProof == null) || (configProof.length < 10)) {
+      return null;
+    } else {
+      return ConfigParams.deserialize(CellSlice.beginParse(Cell.fromBoc(configProof)));
+    }
+  }
+
   public byte[] serialize() {
     byte[] t1 = Utils.toBytes(stateProof);
     byte[] t2 = Utils.toBytes(configProof);
@@ -53,9 +64,9 @@ public class ConfigAll implements Serializable, LiteServerAnswer {
     return byteBuffer.array();
   }
 
-  public static ConfigAll deserialize(ByteBuffer byteBuffer) {
+  public static ConfigInfo deserialize(ByteBuffer byteBuffer) {
     byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-    return ConfigAll.builder()
+    return ConfigInfo.builder()
         .mode(byteBuffer.getInt())
         .id(BlockIdExt.deserialize(byteBuffer))
         .stateProof(Utils.fromBytes(byteBuffer))
@@ -63,7 +74,7 @@ public class ConfigAll implements Serializable, LiteServerAnswer {
         .build();
   }
 
-  public static ConfigAll deserialize(byte[] data) {
+  public static ConfigInfo deserialize(byte[] data) {
     return deserialize(ByteBuffer.wrap(data));
   }
 

@@ -15,9 +15,9 @@ public class BlockData implements Serializable, LiteServerAnswer {
   public static final int BLOCK_DATA_ANSWER = -1519063700;
 
   private BlockIdExt id;
-  private byte[] data;
+  public byte[] data;
 
-  String getData() {
+  public String getData() {
     return Utils.bytesToHex(data);
   }
 

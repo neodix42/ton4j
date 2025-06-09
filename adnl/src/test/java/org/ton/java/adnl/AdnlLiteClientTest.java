@@ -164,9 +164,23 @@ public class AdnlLiteClientTest {
 
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
     log.info("masterchainInfo {}", masterchainInfo.getLast());
-    ConfigAll configAll = client.getConfigAll(masterchainInfo.getLast(), 0);
-    log.info("configAll {}", configAll);
-    assertThat(configAll.getId().getSeqno()).isGreaterThan(0);
+    ConfigInfo configInfo = client.getConfigAll(masterchainInfo.getLast(), 0);
+    log.info("configAll {}", configInfo);
+    assertThat(configInfo.getId().getSeqno()).isGreaterThan(0);
+    log.info("configParsed {}", configInfo.getConfigParsed());
+  }
+
+  @Test
+  void testGetConfigParams() throws Exception {
+    log.info("Testing testConfigParams query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    ConfigInfo configInfo = client.getConfigParams(masterchainInfo.getLast(), 0, new int[] {32});
+    log.info("configInfo {}", configInfo);
+    assertThat(configInfo.getId().getSeqno()).isGreaterThan(0);
+    log.info("configParsed {}", configInfo.getConfigParsed());
   }
 
   @Test
@@ -594,5 +608,55 @@ public class AdnlLiteClientTest {
 
     log.info("partialBlockProof {}", partialBlockProof);
     assertThat(partialBlockProof.getFrom().getSeqno()).isGreaterThan(0);
+  }
+
+  @Test
+  void testGetDispatchQueueInfoMode0() throws Exception {
+    log.info("Testing testDispatchQueueInfo query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    DispatchQueueInfo dispatchQueueInfo =
+        client.getDispatchQueueInfo(masterchainInfo.getLast(), 0, null, 20, true);
+    log.info("dispatchQueueInfo {}", dispatchQueueInfo);
+  }
+
+  @Test
+  void testGetDispatchQueueInfoMode1() throws Exception { // with proof
+    log.info("Testing testDispatchQueueInfo query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    DispatchQueueInfo dispatchQueueInfo =
+        client.getDispatchQueueInfo(masterchainInfo.getLast(), 1, null, 20, true);
+    log.info("dispatchQueueInfo {}", dispatchQueueInfo);
+  }
+
+  @Test
+  void testGetDispatchQueueInfoMode2() throws Exception { // after address
+    log.info("Testing testDispatchQueueInfo query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    DispatchQueueInfo dispatchQueueInfo =
+        client.getDispatchQueueInfo(
+            masterchainInfo.getLast(), 2, Address.of(TESTNET_ADDRESS), 20, false);
+    log.info("dispatchQueueInfo {}", dispatchQueueInfo);
+  }
+
+  @Test
+  void testGetDispatchQueueInfoMode12() throws Exception { // after address
+    log.info("Testing testDispatchQueueInfo query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    DispatchQueueInfo dispatchQueueInfo =
+        client.getDispatchQueueInfo(
+            masterchainInfo.getLast(), 1 + 2, Address.of(TESTNET_ADDRESS), 20, false);
+    log.info("dispatchQueueInfo {}", dispatchQueueInfo);
   }
 }
