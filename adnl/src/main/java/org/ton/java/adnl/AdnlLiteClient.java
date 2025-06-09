@@ -533,4 +533,18 @@ public class AdnlLiteClient {
     LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
     return (DispatchQueueMessages) response;
   }
+
+  public LibraryResult getLibraries(List<byte[]> listLibraries) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.pack(LibrariesQuery.builder().libraryList(listLibraries).build());
+
+    log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (LibraryResult) response;
+  }
 }

@@ -3,6 +3,7 @@ package org.ton.java.adnl;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -594,6 +595,7 @@ public class AdnlLiteClientTest {
 
     log.info("partialBlockProof {}", partialBlockProof);
     assertThat(partialBlockProof.getFrom().getSeqno()).isGreaterThan(0);
+    // todo BlockLink
   }
 
   @Test
@@ -738,5 +740,16 @@ public class AdnlLiteClientTest {
             false,
             false);
     log.info("dispatchQueueMessages {}", dispatchQueueMessages);
+  }
+
+  @Test
+  void testGetLibraries() throws Exception { // boc with messages
+    log.info("Testing testGetLibraries query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    LibraryResult libraryResult = client.getLibraries(List.of(new byte[32]));
+    log.info("libraryResult {}", libraryResult);
   }
 }

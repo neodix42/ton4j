@@ -13,10 +13,25 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Getter
 public class DispatchQueueMessage {
-  private final byte[] addr;
+  public final byte[] addr;
   private final long lt;
-  private final byte[] hash;
-  private final TransactionMetadata metadata; // Placeholder for transactionMetadata
+  public final byte[] hash;
+
+  public String getAddr() {
+    if (addr == null) {
+      return "";
+    }
+    return Utils.bytesToHex(addr);
+  }
+
+  public String getHash() {
+    if (hash == null) {
+      return "";
+    }
+    return Utils.bytesToHex(hash);
+  }
+
+  private final TransactionMetadata metadata;
 
   public static DispatchQueueMessage deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -28,24 +43,4 @@ public class DispatchQueueMessage {
         .metadata(TransactionMetadata.deserialize(buffer))
         .build();
   }
-
-  //  public byte[] serialize() {
-  //    byte[] addrBytes = new byte[32];
-  //    byte[] originalAddr = addr.toByteArray();
-  //    int startAddr = 32 - originalAddr.length;
-  //    System.arraycopy(originalAddr, 0, addrBytes, startAddr, originalAddr.length);
-  //
-  //    byte[] hashBytes = new byte[32];
-  //    byte[] originalHash = hash.toByteArray();
-  //    int startHash = 32 - originalHash.length;
-  //    System.arraycopy(originalHash, 0, hashBytes, startHash, originalHash.length);
-  //
-  //    return ByteBuffer.allocate(32 + 8 + 32 + metadata.length)
-  //        .order(ByteOrder.LITTLE_ENDIAN)
-  //        .put(addrBytes)
-  //        .putLong(lt)
-  //        .put(hashBytes)
-  //        .put(metadata)
-  //        .array();
-  //  }
 }

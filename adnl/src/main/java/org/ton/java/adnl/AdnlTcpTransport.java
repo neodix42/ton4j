@@ -420,6 +420,9 @@ public class AdnlTcpTransport {
                   } else if (id == DispatchQueueMessages.constructorId) {
                     result = DispatchQueueMessages.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.dispatchQueueMessages response");
+                  } else if (id == LibraryResult.constructorId) {
+                    result = LibraryResult.deserialize(queryBodyPayload);
+                    log.info("Successfully deserialized liteServer.librariesQuery response");
                   } else {
                     log.info("unknown adnl.query id {}", id);
                   }
