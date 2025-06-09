@@ -11,9 +11,9 @@ import java.util.concurrent.*;
 import java.util.zip.CRC32;
 import javax.crypto.Cipher;
 import lombok.extern.slf4j.Slf4j;
-import org.ton.ton4j.tl.queries.AdnlMessageQuery;
-import org.ton.ton4j.tl.queries.PingQuery;
-import org.ton.ton4j.tl.types.*;
+import org.ton.ton4j.tl.liteserver.queries.AdnlMessageQuery;
+import org.ton.ton4j.tl.liteserver.queries.PingQuery;
+import org.ton.ton4j.tl.liteserver.responses.*;
 import org.ton.ton4j.utils.Utils;
 
 /**

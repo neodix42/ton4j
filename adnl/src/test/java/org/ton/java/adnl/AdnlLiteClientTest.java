@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.address.Address;
-import org.ton.ton4j.tl.types.*;
+import org.ton.ton4j.tl.liteserver.responses.*;
 import org.ton.ton4j.tlb.Transaction;
 import org.ton.ton4j.utils.Utils;
 

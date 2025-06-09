@@ -5,6 +5,8 @@ import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
+import org.ton.ton4j.tl.liteserver.responses.LiteServerAnswer;
 import org.ton.ton4j.utils.Utils;
 
 /**

@@ -5,8 +5,8 @@ import java.util.concurrent.*;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.java.adnl.globalconfig.LiteServers;
 import org.ton.ton4j.address.Address;
-import org.ton.ton4j.tl.queries.*;
-import org.ton.ton4j.tl.types.*;
+import org.ton.ton4j.tl.liteserver.queries.*;
+import org.ton.ton4j.tl.liteserver.responses.*;
 import org.ton.ton4j.utils.Utils;
 
 /**

@@ -1,7 +1,7 @@
 package org.ton.java.adnl.examples;
 
 import org.ton.java.adnl.AdnlLiteClient;
-import org.ton.ton4j.tl.types.MasterchainInfo;
+import org.ton.ton4j.tl.liteserver.responses.MasterchainInfo;
 
 /** Example demonstrating ADNL Lite Client usage */
 public class LiteClientExample {
