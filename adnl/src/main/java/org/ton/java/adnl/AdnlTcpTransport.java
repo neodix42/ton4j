@@ -423,6 +423,10 @@ public class AdnlTcpTransport {
                   } else if (id == LibraryResult.constructorId) {
                     result = LibraryResult.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.librariesQuery response");
+                  } else if (id == LibraryResultWithProof.constructorId) {
+                    result = LibraryResultWithProof.deserialize(queryBodyPayload);
+                    log.info(
+                        "Successfully deserialized liteServer.libraryResultWithProof response");
                   } else if (id == OutMsgQueueSizes.constructorId) {
                     result = OutMsgQueueSizes.deserialize(queryBodyPayload);
                     log.info("Successfully deserialized liteServer.librariesQuery response");

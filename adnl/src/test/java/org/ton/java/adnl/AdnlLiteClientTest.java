@@ -743,7 +743,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetLibraries() throws Exception { // boc with messages
+  void testGetLibraries() throws Exception {
     log.info("Testing testGetLibraries query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -751,6 +751,30 @@ public class AdnlLiteClientTest {
     log.info("masterchainInfo {}", masterchainInfo.getLast());
     LibraryResult libraryResult = client.getLibraries(List.of(new byte[32]));
     log.info("libraryResult {}", libraryResult);
+  }
+
+  @Test
+  void testGetLibrariesWithProofMode0() throws Exception {
+    log.info("Testing testGetLibrariesWithProof query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    LibraryResultWithProof librariesWithProof =
+        client.getLibrariesWithProof(masterchainInfo.getLast(), 0, List.of(new byte[32]));
+    log.info("librariesWithProof {}", librariesWithProof);
+  }
+
+  @Test
+  void testGetLibrariesWithProofMode1() throws Exception { // no mode used
+    log.info("Testing testGetLibrariesWithProof query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    LibraryResultWithProof librariesWithProof =
+        client.getLibrariesWithProof(masterchainInfo.getLast(), 1, List.of(new byte[32]));
+    log.info("librariesWithProof {}", librariesWithProof);
   }
 
   @Test

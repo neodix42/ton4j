@@ -26,7 +26,7 @@ import org.ton.ton4j.utils.Utils;
 @Data
 public class ConfigInfo implements Serializable, LiteServerAnswer {
 
-  public static final int CONFIG_ALL_ANSWER = -1367660753; // 2ee6b589
+  public static final int CONFIG_ALL_ANSWER = -1367660753;
 
   public static final int constructorId = CONFIG_ALL_ANSWER;
 

@@ -548,6 +548,22 @@ public class AdnlLiteClient {
     return (LibraryResult) response;
   }
 
+  public LibraryResultWithProof getLibrariesWithProof(
+      BlockIdExt id, int mode, List<byte[]> listLibraries) throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.pack(
+            LibrariesWithProofQuery.builder().id(id).mode(mode).libraryList(listLibraries).build());
+
+    log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (LibraryResultWithProof) response;
+  }
+
   public OutMsgQueueSizes getOutMsgQueueSizesQuery(int mode, int wc, long shard) throws Exception {
     if (!connected || !transport.isConnected()) {
       throw new IllegalStateException("Not connected to lite-server");
