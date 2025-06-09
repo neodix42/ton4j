@@ -578,4 +578,20 @@ public class AdnlLiteClient {
     LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
     return (OutMsgQueueSizes) response;
   }
+
+  public BlockOutMsgQueueSize getBlockOutMsgQueueSize(BlockIdExt id, int mode, boolean wantProof)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.pack(
+            BlockOutMsgQueueSizeQuery.builder().id(id).mode(mode).wantProof(wantProof).build());
+
+    log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (BlockOutMsgQueueSize) response;
+  }
 }

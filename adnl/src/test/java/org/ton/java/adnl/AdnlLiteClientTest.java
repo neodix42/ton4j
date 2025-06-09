@@ -805,4 +805,28 @@ public class AdnlLiteClientTest {
       log.info("outMsg {}", outMsg);
     }
   }
+
+  @Test
+  void testGetBlockOutMsgQueueSizeMode0() throws Exception { // without proof
+    log.info("Testing testGetBlockOutMsgQueueSize query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    BlockOutMsgQueueSize blockOutMsgQueueSize =
+        client.getBlockOutMsgQueueSize(masterchainInfo.getLast(), 0, false);
+    log.info("outMsgQueueSizes {}", blockOutMsgQueueSize);
+  }
+
+  @Test
+  void testGetBlockOutMsgQueueSizeMode1() throws Exception { // with proof
+    log.info("Testing testGetBlockOutMsgQueueSize query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    log.info("masterchainInfo {}", masterchainInfo.getLast());
+    BlockOutMsgQueueSize blockOutMsgQueueSize =
+        client.getBlockOutMsgQueueSize(masterchainInfo.getLast(), 1, true);
+    log.info("outMsgQueueSizes {}", blockOutMsgQueueSize);
+  }
 }
