@@ -536,7 +536,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testSendValidatorStatsMode0() throws Exception {
+  void testValidatorStatsMode0() throws Exception {
     log.info("Testing validatorStats query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -548,7 +548,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testSendValidatorStatsMode1() throws Exception {
+  void testValidatorStatsMode1() throws Exception {
     log.info("Testing validatorStats query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -561,7 +561,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testSendValidatorStatsMode4() throws Exception {
+  void testValidatorStatsMode4() throws Exception {
     log.info("Testing validatorStats query");
     assertTrue(client.isConnected(), "Client should be connected");
 

@@ -7,13 +7,17 @@ import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.utils.Utils;
 
-@Data
+/**
+ * liteServer.blockState id:tonNode.blockIdExt root_hash:int256 file_hash:int256 data:bytes =
+ * liteServer.BlockState;
+ */
 @Builder
+@Data
 public class BlockState implements Serializable, LiteServerAnswer {
   public static final int BLOCK_STATE_ANSWER = 659847997;
 
   private BlockIdExt id;
-  private BlockIdExt root;
+  private byte[] rootHash;
   private byte[] fileHash;
   private byte[] data;
 
@@ -25,15 +29,11 @@ public class BlockState implements Serializable, LiteServerAnswer {
 
   public static BlockState deserialize(ByteBuffer byteBuffer) {
     byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-    BlockIdExt id = BlockIdExt.deserialize(byteBuffer);
-    BlockIdExt root = BlockIdExt.deserialize(byteBuffer);
-    byte[] fileHash = new byte[32];
-    byteBuffer.get(fileHash);
 
     return BlockState.builder()
-        .id(id)
-        .root(root)
-        .fileHash(fileHash)
+        .id(BlockIdExt.deserialize(byteBuffer))
+        .rootHash(Utils.read(byteBuffer, 32))
+        .fileHash(Utils.read(byteBuffer, 32))
         .data(Utils.fromBytes(byteBuffer))
         .build();
   }
