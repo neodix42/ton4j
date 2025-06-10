@@ -350,7 +350,7 @@ public class AdnlTcpTransport {
                   int id = Integer.reverseBytes(constructorBody);
                   if (id == LiteServerError.constructorId) {
                     result = LiteServerError.deserialize(queryBodyPayload);
-                    log.error("Result {}", result);
+                    //                    log.error("Result {}", result);
                   } else if (id == MasterchainInfo.constructorId) {
                     result = MasterchainInfo.deserialize(queryBodyPayload);
                     //                    log.debug("Successfully deserialized

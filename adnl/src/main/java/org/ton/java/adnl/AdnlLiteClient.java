@@ -6,6 +6,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ton.java.adnl.globalconfig.LiteServers;
 import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.address.Address;
@@ -102,27 +103,26 @@ public class AdnlLiteClient {
 
     connect(globalConfig.getLiteservers()[serverIndex]);
   }
-  
+
   /**
-   * Connect to a lite server with retry mechanism
-   * If connection fails, it will try to connect to another lite server from the config
+   * Connect to a lite server with retry mechanism If connection fails, it will try to connect to
+   * another lite server from the config
    *
-   * @return true if connection was successful
    * @throws Exception if all connection attempts fail
    */
-  private boolean connectWithRetry() throws Exception {
+  private void connectWithRetry() throws Exception {
     Exception lastException = null;
     int retries = 0;
-    
+
     while (retries < maxRetries) {
       try {
         connect();
-        return true;
+        return;
       } catch (Exception e) {
         lastException = e;
         log.warn("Connection failed (attempt {}/{}): {}", retries + 1, maxRetries, e.getMessage());
-        
-        if (!useServerRotation 
+
+        if (!useServerRotation
             || globalConfig == null
             || globalConfig.getLiteservers() == null
             || globalConfig.getLiteservers().length <= 1
@@ -131,16 +131,16 @@ public class AdnlLiteClient {
           retries++;
           continue;
         }
-        
+
         // Try next server
         int nextIndex = (currentServerIndex.get() + 1) % globalConfig.getLiteservers().length;
         currentServerIndex.set(nextIndex);
         log.info("Trying next lite-server at index: {}", nextIndex);
-        
+
         retries++;
       }
     }
-    
+
     throw new Exception(
         "Failed to connect after "
             + maxRetries
@@ -180,11 +180,18 @@ public class AdnlLiteClient {
             throw new IllegalStateException("Not connected to lite-server");
           }
           byte[] queryBytes = LiteServerQuery.pack(MasterchainInfoQuery.builder().build());
-          log.info("Sending getMasterchainInfo query, size: {} bytes", queryBytes.length);
+          log.info("Sending getMasterchainInfo query");
 
           LiteServerAnswer response;
           response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (MasterchainInfo) response;
+          try {
+            return (MasterchainInfo) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -196,11 +203,18 @@ public class AdnlLiteClient {
           }
           byte[] queryBytes =
               LiteServerQuery.pack(MasterchainInfoExtQuery.builder().mode(mode).build());
-          log.info("Sending getMasterchainInfoExt query, size: {} bytes", queryBytes.length);
+          log.info("Sending getMasterchainInfoExt query");
 
           LiteServerAnswer response;
           response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (MasterchainInfoExt) response;
+          try {
+            return (MasterchainInfoExt) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -212,10 +226,17 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(CurrentTimeQuery.builder().build());
-          log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+          log.info("Sending getTime query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (CurrentTime) response;
+          try {
+            return (CurrentTime) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -227,10 +248,17 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(VersionQuery.builder().build());
-          log.info("Sending getVersion query, size: {} bytes", queryBytes.length);
+          log.info("Sending getVersion query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (Version) response;
+          try {
+            return (Version) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -244,12 +272,17 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(ConfigAllQuery.builder().mode(mode).id(id).build());
 
-          log.info("Sending getConfigAll query, size: {} bytes", queryBytes.length);
+          log.info("Sending getConfigAll query");
 
-          LiteServerAnswer response;
-
-          response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (ConfigInfo) response;
+          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          try {
+            return (ConfigInfo) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -264,11 +297,17 @@ public class AdnlLiteClient {
               LiteServerQuery.pack(
                   ConfigParamsQuery.builder().mode(mode).id(id).paramList(paramList).build());
 
-          log.info("Sending getConfigParams query, size: {} bytes", queryBytes.length);
+          log.info("Sending getConfigParams query");
 
-          LiteServerAnswer response;
-          response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (ConfigInfo) response;
+          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          try {
+            return (ConfigInfo) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -280,10 +319,17 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(BlockQuery.builder().id(id).build());
-          log.info("Sending getBlock query, size: {} bytes", queryBytes.length);
+          log.info("Sending getBlock query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(15, TimeUnit.SECONDS);
-          return (BlockData) response;
+          try {
+            return (BlockData) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -295,10 +341,17 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(BlockStateQuery.builder().id(id).build());
-          log.info("Sending getBlockState query, size: {} bytes", queryBytes.length);
+          log.info("Sending getBlockState query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (BlockState) response;
+          try {
+            return (BlockState) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -312,10 +365,17 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(BlockHeaderQuery.builder().id(id).mode(mode).build());
 
-          log.info("Sending getBlockHeader query, size: {} bytes", queryBytes.length);
+          log.info("Sending getBlockHeader query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (BlockHeader) response;
+          try {
+            return (BlockHeader) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -326,13 +386,19 @@ public class AdnlLiteClient {
             throw new IllegalStateException("Not connected to lite-server");
           }
 
-          byte[] queryBytes =
-              LiteServerQuery.pack(SendMessageQuery.builder().body(body).build()); // todo
+          byte[] queryBytes = LiteServerQuery.pack(SendMessageQuery.builder().body(body).build());
 
-          log.info("Sending sendMessage query, size: {} bytes", queryBytes.length);
+          log.info("Sending sendMessage query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (SendMsgStatus) response;
+          try {
+            return (SendMsgStatus) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -354,10 +420,17 @@ public class AdnlLiteClient {
                       .modifiedAfter(modifiedAfter)
                       .build());
 
-          log.info("Sending sendMessage query, size: {} bytes", queryBytes.length);
+          log.info("Sending ValidatorStatsQuery query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (ValidatorStats) response;
+          try {
+            return (ValidatorStats) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -370,10 +443,17 @@ public class AdnlLiteClient {
 
           byte[] queryBytes = LiteServerQuery.pack(ShardBlockProofQuery.builder().id(id).build());
 
-          log.info("Sending sendMessage query, size: {} bytes", queryBytes.length);
+          log.info("Sending sendMessage query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (ShardBlockProof) response;
+          try {
+            return (ShardBlockProof) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -393,10 +473,17 @@ public class AdnlLiteClient {
                       .targetBlock(targetBlock)
                       .build());
 
-          log.info("Sending sendMessage query, size: {} bytes", queryBytes.length);
+          log.info("Sending sendMessage query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (PartialBlockProof) response;
+          try {
+            return (PartialBlockProof) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -410,10 +497,17 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(
                   AccountStateQuery.builder().id(id).account(accountAddress).build());
-          log.info("Sending getAccountState query, size: {} bytes", queryBytes.length);
+          log.info("Sending getAccountState query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (AccountState) response;
+          try {
+            return (AccountState) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -428,10 +522,17 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(
                   AccountStatePrunedQuery.builder().id(id).account(accountAddress).build());
-          log.info("Sending getAccountStatePruned query, size: {} bytes", queryBytes.length);
+          log.info("Sending getAccountStatePruned query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (AccountState) response;
+          try {
+            return (AccountState) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -454,10 +555,17 @@ public class AdnlLiteClient {
                       .params(methodParams)
                       .build());
 
-          log.info("Sending runMethod query, size: {} bytes", queryBytes.length);
+          log.info("Sending runMethod query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (RunMethodResult) response;
+          try {
+            return (RunMethodResult) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -478,10 +586,17 @@ public class AdnlLiteClient {
                       .exact(exact)
                       .build());
 
-          log.info("Sending getShardInfo query, size: {} bytes", queryBytes.length);
+          log.info("Sending getShardInfo query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (ShardInfo) response;
+          try {
+            return (ShardInfo) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -493,10 +608,17 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(AllShardsInfoQuery.builder().id(id).build());
-          log.info("Sending getAllShardsInfo query, size: {} bytes", queryBytes.length);
+          log.info("Sending getAllShardsInfo query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (AllShardsInfo) response;
+          try {
+            return (AllShardsInfo) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -511,10 +633,17 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(
                   OneTransactionQuery.builder().id(id).account(accountAddress).lt(lt).build());
-          log.info("Sending getOneTransaction query, size: {} bytes", queryBytes.length);
+          log.info("Sending getOneTransaction query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (TransactionInfo) response;
+          try {
+            return (TransactionInfo) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -535,10 +664,17 @@ public class AdnlLiteClient {
                       .hash(hash)
                       .build());
 
-          log.info("Sending getTransactions query, size: {} bytes", queryBytes.length);
+          log.info("Sending getTransactions query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (TransactionList) response;
+          try {
+            return (TransactionList) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -553,10 +689,17 @@ public class AdnlLiteClient {
               LiteServerQuery.pack(
                   LookupBlockQuery.builder().id(id).mode(mode).lt(lt).utime(utime).build());
 
-          log.info("Sending lookupBlock query, size: {} bytes", queryBytes.length);
+          log.info("Sending lookupBlock query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (BlockHeader) response;
+          try {
+            return (BlockHeader) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -578,10 +721,17 @@ public class AdnlLiteClient {
                       .utime(utime)
                       .build());
 
-          log.info("Sending lookupBlockWithProof query, size: {} bytes", queryBytes.length);
+          log.info("Sending lookupBlockWithProof query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (LookupBlockResult) response;
+          try {
+            return (LookupBlockResult) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -602,10 +752,17 @@ public class AdnlLiteClient {
                       .afterTx(transactionId3)
                       .build());
 
-          log.info("Sending listBlockTransactions query, size: {} bytes", queryBytes.length);
+          log.info("Sending listBlockTransactions query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (BlockTransactions) response;
+          try {
+            return (BlockTransactions) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -633,10 +790,17 @@ public class AdnlLiteClient {
                       .reverseOrder(reverseOrder)
                       .wantProof(wantProof)
                       .build());
-          log.info("Sending listBlockTransactionsExt query, size: {} bytes", queryBytes.length);
+          log.info("Sending listBlockTransactionsExt query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (BlockTransactionsExt) response;
+          try {
+            return (BlockTransactionsExt) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -683,10 +847,17 @@ public class AdnlLiteClient {
                       .maxAccounts(maxAccounts)
                       .wantProof(wantProof)
                       .build());
-          log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+          log.info("Sending getTime query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (DispatchQueueInfo) response;
+          try {
+            return (DispatchQueueInfo) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -718,10 +889,17 @@ public class AdnlLiteClient {
                       .oneAccount(oneAccount)
                       .messagesBoc(messageBoc)
                       .build());
-          log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+          log.info("Sending getTime query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (DispatchQueueMessages) response;
+          try {
+            return (DispatchQueueMessages) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -735,10 +913,17 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(LibrariesQuery.builder().libraryList(listLibraries).build());
 
-          log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+          log.info("Sending getTime query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (LibraryResult) response;
+          try {
+            return (LibraryResult) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -758,10 +943,17 @@ public class AdnlLiteClient {
                       .libraryList(listLibraries)
                       .build());
 
-          log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+          log.info("Sending getTime query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (LibraryResultWithProof) response;
+          try {
+            return (LibraryResultWithProof) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -776,10 +968,17 @@ public class AdnlLiteClient {
               LiteServerQuery.pack(
                   OutMsgQueueSizesQuery.builder().mode(mode).wc(wc).shard(shard).build());
 
-          log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+          log.info("Sending getTime query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (OutMsgQueueSizes) response;
+          try {
+            return (OutMsgQueueSizes) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -799,10 +998,17 @@ public class AdnlLiteClient {
                       .wantProof(wantProof)
                       .build());
 
-          log.info("Sending getTime query, size: {} bytes", queryBytes.length);
+          log.info("Sending getTime query");
 
           LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
-          return (BlockOutMsgQueueSize) response;
+          try {
+            return (BlockOutMsgQueueSize) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(((LiteServerError) response).getMessage());
+            }
+            throw e;
+          }
         });
   }
 
@@ -823,7 +1029,13 @@ public class AdnlLiteClient {
         return supplier.call();
       } catch (Exception e) {
         lastException = e;
-        log.warn("Query failed (attempt {}/{}): {}", retries + 1, maxRetries, e.getMessage());
+        log.warn(
+            "Query failed (attempt {}/{}): {}",
+            retries + 1,
+            maxRetries,
+            e.getMessage() == null
+                ? ExceptionUtils.getRootCauseMessage(lastException)
+                : lastException.getMessage());
 
         if (!useServerRotation
             || globalConfig == null
@@ -860,7 +1072,11 @@ public class AdnlLiteClient {
         "Failed after "
             + maxRetries
             + " attempts. Last error: "
-            + (lastException != null ? lastException.getMessage() : "unknown error"));
+            + (lastException != null
+                ? (lastException.getMessage() != null
+                    ? lastException.getMessage()
+                    : ExceptionUtils.getStackTrace(lastException))
+                : "unknown error"));
   }
 
   /** Builder for AdnlLiteClient */
