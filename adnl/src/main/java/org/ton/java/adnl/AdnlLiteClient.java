@@ -102,6 +102,51 @@ public class AdnlLiteClient {
 
     connect(globalConfig.getLiteservers()[serverIndex]);
   }
+  
+  /**
+   * Connect to a lite server with retry mechanism
+   * If connection fails, it will try to connect to another lite server from the config
+   *
+   * @return true if connection was successful
+   * @throws Exception if all connection attempts fail
+   */
+  private boolean connectWithRetry() throws Exception {
+    Exception lastException = null;
+    int retries = 0;
+    
+    while (retries < maxRetries) {
+      try {
+        connect();
+        return true;
+      } catch (Exception e) {
+        lastException = e;
+        log.warn("Connection failed (attempt {}/{}): {}", retries + 1, maxRetries, e.getMessage());
+        
+        if (!useServerRotation 
+            || globalConfig == null
+            || globalConfig.getLiteservers() == null
+            || globalConfig.getLiteservers().length <= 1
+            || liteServerIndex >= 0) {
+          // No server rotation or only one server available or fixed server index
+          retries++;
+          continue;
+        }
+        
+        // Try next server
+        int nextIndex = (currentServerIndex.get() + 1) % globalConfig.getLiteservers().length;
+        currentServerIndex.set(nextIndex);
+        log.info("Trying next lite-server at index: {}", nextIndex);
+        
+        retries++;
+      }
+    }
+    
+    throw new Exception(
+        "Failed to connect after "
+            + maxRetries
+            + " attempts. Last error: "
+            + (lastException != null ? lastException.getMessage() : "unknown error"));
+  }
 
   /** Start ping scheduler to maintain connection */
   private void startPingScheduler() {
@@ -936,7 +981,7 @@ public class AdnlLiteClient {
      */
     public AdnlLiteClient build() throws Exception {
       AdnlLiteClient adnlLiteClient = new AdnlLiteClient(this);
-      adnlLiteClient.connect();
+      adnlLiteClient.connectWithRetry();
       return adnlLiteClient;
     }
   }

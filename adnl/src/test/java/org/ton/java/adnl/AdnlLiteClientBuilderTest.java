@@ -8,7 +8,7 @@ import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.tl.liteserver.responses.*;
 
 @Slf4j
-public class AdnlLiteClientTestBuilder {
+public class AdnlLiteClientBuilderTest {
 
   public static final String TESTNET_ADDRESS = "0QAyni3YDAhs7c-7imWvPyEbMEeVPMX8eWDLQ5GUe-B-Bl9Z";
   public static final String MAINNET_ADDRESS = "EQCRGnccIFznQqxm_oBm8PHz95iOe89Oe6hRAhSlAaMctuo6";
@@ -57,11 +57,7 @@ public class AdnlLiteClientTestBuilder {
         TonGlobalConfig.loadFromPath(
             "/home/neodix/gitProjects/ton4j/adnl/testnet-global.config.json");
     AdnlLiteClient client =
-        AdnlLiteClient.builder()
-            .globalConfig(tonGlobalConfig)
-            .liteServerIndex(1)
-            .maxRetries(3)
-            .build();
+        AdnlLiteClient.builder().globalConfig(tonGlobalConfig).maxRetries(3).build();
 
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -75,7 +71,6 @@ public class AdnlLiteClientTestBuilder {
     AdnlLiteClient client =
         AdnlLiteClient.builder()
             .configPath("/home/neodix/gitProjects/ton4j/adnl/testnet-global.config.json")
-            .liteServerIndex(1)
             .maxRetries(3)
             .build();
 
