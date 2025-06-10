@@ -12,9 +12,12 @@ import org.ton.ton4j.utils.Utils;
 @Data
 public class ShardBlockLink implements Serializable {
   private BlockIdExt id;
-  private byte[] proof;
+  public byte[] proof;
 
-  String getProof() {
+  public String getProof() {
+    if (proof == null) {
+      return "";
+    }
     return Utils.bytesToHex(proof);
   }
 

@@ -20,6 +20,9 @@ public class ValidatorStatsQuery implements LiteServerQueryData {
   private final int modifiedAfter;
 
   public String getStartAfter() {
+    if (startAfter == null) {
+      return "";
+    }
     return Utils.bytesToHex(startAfter);
   }
 

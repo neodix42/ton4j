@@ -3,13 +3,13 @@ package org.ton.ton4j.tl.liteserver.queries;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.ton.ton4j.tl.liteserver.responses.BlockId;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tl.liteserver.responses.LiteServerQueryData;
 
 @Builder
-@Getter
+@Data
 public class LookupBlockWithProofQuery implements LiteServerQueryData {
   public final int LOOKUP_BLOCK_WITH_PROOF_QUERY = -1677434888;
 

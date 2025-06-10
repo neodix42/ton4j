@@ -25,6 +25,9 @@ public class BlockTransactions implements Serializable, LiteServerAnswer {
   public byte[] proof;
 
   public String getProof() {
+    if (proof == null) {
+      return "";
+    }
     return Utils.bytesToHex(proof);
   }
 

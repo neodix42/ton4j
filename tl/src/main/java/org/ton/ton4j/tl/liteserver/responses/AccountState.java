@@ -2,6 +2,7 @@ package org.ton.ton4j.tl.liteserver.responses;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
@@ -20,14 +21,23 @@ public class AccountState implements Serializable, LiteServerAnswer {
   public byte[] state;
 
   public String getShardProof() {
+    if (shardProof == null) {
+      return "";
+    }
     return Utils.bytesToHex(shardProof);
   }
 
   public String getProof() {
+    if (proof == null) {
+      return "";
+    }
     return Utils.bytesToHex(proof);
   }
 
   public String getState() {
+    if (state == null) {
+      return "";
+    }
     return Utils.bytesToHex(state);
   }
 
@@ -41,7 +51,7 @@ public class AccountState implements Serializable, LiteServerAnswer {
   public static final int constructorId = ACCOUNT_STATE_ANSWER;
 
   public static AccountState deserialize(ByteBuffer buffer) {
-
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
     return AccountState.builder()
         .id(BlockIdExt.deserialize(buffer))
         .shardblk(BlockIdExt.deserialize(buffer))

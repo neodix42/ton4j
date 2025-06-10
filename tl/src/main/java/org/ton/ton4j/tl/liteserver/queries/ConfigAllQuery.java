@@ -3,12 +3,12 @@ package org.ton.ton4j.tl.liteserver.queries;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tl.liteserver.responses.LiteServerQueryData;
 
 @Builder
-@Getter
+@Data
 public class ConfigAllQuery implements LiteServerQueryData {
   public static final int CONFIG_ALL_QUERY = -1860491593; // 0xb7261b91
   BlockIdExt id;

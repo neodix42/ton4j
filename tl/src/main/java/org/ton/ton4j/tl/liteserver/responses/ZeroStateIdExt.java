@@ -18,10 +18,16 @@ public class ZeroStateIdExt implements Serializable, LiteServerAnswer {
   byte[] fileHash;
 
   private String getRootHash() {
+    if (rootHash == null) {
+      return "";
+    }
     return Utils.bytesToHex(rootHash);
   }
 
   private String getFileHash() {
+    if (fileHash == null) {
+      return "";
+    }
     return Utils.bytesToHex(fileHash);
   }
 

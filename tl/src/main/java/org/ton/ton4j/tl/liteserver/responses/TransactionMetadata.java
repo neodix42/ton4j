@@ -20,6 +20,9 @@ public class TransactionMetadata {
   long initiatorLt;
 
   public String getHash() {
+    if (hash == null) {
+      return "";
+    }
     return Utils.bytesToHex(hash);
   }
 

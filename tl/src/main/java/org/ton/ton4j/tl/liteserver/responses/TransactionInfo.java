@@ -24,10 +24,16 @@ public class TransactionInfo implements Serializable, LiteServerAnswer {
   public byte[] transaction;
 
   public String getTransaction() {
+    if (transaction == null) {
+      return "";
+    }
     return Utils.bytesToHex(transaction);
   }
 
   public String getProof() {
+    if (proof == null) {
+      return "";
+    }
     return Utils.bytesToHex(proof);
   }
 

@@ -10,25 +10,23 @@ import org.ton.ton4j.tl.liteserver.responses.LiteServerQueryData;
 
 @Builder
 @Data
-public class OneTransactionQuery implements LiteServerQueryData {
-  public static final int ONE_TRANSACTION_QUERY = -737205014;
+public class AccountStatePrunedQuery implements LiteServerQueryData {
+  public static final int ACCOUNT_STATE_PRUNED_QUERY = 1516864775;
 
   private BlockIdExt id;
-  private Address account;
-  private long lt;
+  public Address account;
 
   public String getQueryName() {
-    return "liteServer.getOneTransaction id:tonNode.blockIdExt account:liteServer.accountId lt:long = liteServer.TransactionInfo";
+    return "liteServer.getAccountStatePrunned id:tonNode.blockIdExt account:liteServer.accountId = liteServer.AccountState";
   }
 
   public byte[] getQueryData() {
-    return ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 4 + 32 + 8)
+    return ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 4 + 32)
         .order(ByteOrder.LITTLE_ENDIAN)
-        .putInt(ONE_TRANSACTION_QUERY)
+        .putInt(ACCOUNT_STATE_PRUNED_QUERY)
         .put(id.serialize())
         .putInt(account.wc)
         .put(account.hashPart)
-        .putLong(lt)
         .array();
   }
 }

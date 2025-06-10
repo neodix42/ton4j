@@ -3,11 +3,11 @@ package org.ton.ton4j.tl.liteserver.queries;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.ton.ton4j.tl.liteserver.responses.LiteServerQueryData;
 
 @Builder
-@Getter
+@Data
 public class VersionQuery implements LiteServerQueryData {
   public static final int VERSION_QUERY = 590058507;
 

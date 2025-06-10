@@ -18,6 +18,9 @@ public class BlockData implements Serializable, LiteServerAnswer {
   public byte[] data;
 
   public String getData() {
+    if (data == null) {
+      return "";
+    }
     return Utils.bytesToHex(data);
   }
 

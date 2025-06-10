@@ -38,8 +38,9 @@ public class Client {
       System.arraycopy(ed25519Private, 0, privateKeySeed, 0, 32);
     }
 
-    this.x25519Private = CryptoUtils.convertEd25519ToX25519Private(privateKeySeed);
-    this.x25519Public = CryptoUtils.convertEd25519ToX25519Public(ed25519Public);
+    this.x25519Private =
+        privateKeySeed; // CryptoUtils.convertEd25519ToX25519Private(privateKeySeed);
+    this.x25519Public = ed25519Public; // CryptoUtils.convertEd25519ToX25519Public(ed25519Public);
 
     // Calculate key ID
     this.keyId = getKeyId(ed25519Public);

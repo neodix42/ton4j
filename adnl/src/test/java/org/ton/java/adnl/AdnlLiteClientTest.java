@@ -18,18 +18,25 @@ import org.ton.ton4j.utils.Utils;
 public class AdnlLiteClientTest {
 
   public static final String TESTNET_ADDRESS = "0QAyni3YDAhs7c-7imWvPyEbMEeVPMX8eWDLQ5GUe-B-Bl9Z";
+  public static final String MAINNET_ADDRESS = "EQCRGnccIFznQqxm_oBm8PHz95iOe89Oe6hRAhSlAaMctuo6";
   public static final String ELECTOR_ADDRESS =
       "-1:3333333333333333333333333333333333333333333333333333333333333333";
 
   private static AdnlLiteClient client;
   private LiteClientConnectionPool pool;
-  private static final String CONFIG_PATH = "testnet-global.config.json";
+  private static final String TESTNET_CONFIG_PATH = "testnet-global.config.json";
+  private static final String MAINNET_CONFIG_PATH = "global.config.json";
+  private static final boolean mainnet = true;
 
   @BeforeAll
   static void tearBeforeAll() throws Exception {
     client = new AdnlLiteClient();
-    TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromPath(CONFIG_PATH);
-
+    TonGlobalConfig tonGlobalConfig;
+    if (mainnet) {
+      tonGlobalConfig = TonGlobalConfig.loadFromPath(MAINNET_CONFIG_PATH);
+    } else {
+      tonGlobalConfig = TonGlobalConfig.loadFromPath(TESTNET_CONFIG_PATH);
+    }
     client.connect(tonGlobalConfig.getLiteservers()[1]);
   }
 
@@ -38,6 +45,13 @@ public class AdnlLiteClientTest {
     if (client != null) {
       client.close();
     }
+  }
+
+  public static String getAddress() {
+    if (mainnet) {
+      return MAINNET_ADDRESS;
+    }
+    return TESTNET_ADDRESS;
   }
 
   @Test
@@ -81,13 +95,29 @@ public class AdnlLiteClientTest {
     log.info("Testing getAccountState");
     assertTrue(client.isConnected(), "Client should be connected");
 
-    // Test ping by getting masterchain info
-    Utils.sleep(6);
     MasterchainInfo info = client.getMasterchainInfo();
     assertNotNull(info, "Masterchain info should not be null");
     assertNotNull(info.getLast(), "Last block should not be null");
 
-    AccountState accountState = client.getAccountState(info.getLast(), Address.of(TESTNET_ADDRESS));
+    AccountState accountState = client.getAccountState(info.getLast(), Address.of(getAddress()));
+    log.info("accountState: {} ", accountState);
+    log.info("Last block seqno: {} ", accountState.getId().getSeqno());
+    log.info("shard block seqno: {} ", accountState.getShardblk().getSeqno());
+    assertTrue(info.getLast().getSeqno() > 0, "Seqno should be positive");
+    log.info("accountStateObject: {} ", accountState.getAccountState());
+  }
+
+  @Test
+  void testGetAccountStatePruned() throws Exception {
+    log.info("Testing getAccountStatePruned");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo info = client.getMasterchainInfo();
+    assertNotNull(info, "Masterchain info should not be null");
+    assertNotNull(info.getLast(), "Last block should not be null");
+
+    AccountState accountState =
+        client.getAccountStatePruned(info.getLast(), Address.of(getAddress()));
     log.info("accountState: {} ", accountState);
     log.info("Last block seqno: {} ", accountState.getId().getSeqno());
     log.info("shard block seqno: {} ", accountState.getShardblk().getSeqno());
@@ -279,7 +309,8 @@ public class AdnlLiteClientTest {
             Address.of(ELECTOR_ADDRESS),
             35473445000001L,
             Utils.hexToSignedBytes(
-                "86030163a1e5bcb428ac0919394855f5ffea527ef2d3e1cd51dd2cf8594ccdd1"),
+                "86030163a1e5bcb428ac0919394855f5ffea527ef2d3e1cd51dd2cf8594ccdd1"), // testnet
+            // specific
             10);
 
     for (Transaction tx : transactionList.getTransactionsParsed()) {
@@ -288,7 +319,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testLookupBlockMode2() throws Exception {
+  void testLookupBlockMode2() throws Exception { // by LT
     log.info("Testing lookupBlock query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -316,7 +347,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testLookupBlockWithProofMode2() throws Exception {
+  void testLookupBlockWithProofMode2() throws Exception { // by LT
     log.info("Testing lookupBlockWithProof query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -334,7 +365,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testLookupBlockWithProofMode4() throws Exception {
+  void testLookupBlockWithProofMode4() throws Exception { // by UTIME
     log.info("Testing lookupBlockWithProof query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -419,7 +450,7 @@ public class AdnlLiteClientTest {
 
     TransactionId3 after =
         TransactionId3.builder()
-            .account(Address.of(TESTNET_ADDRESS).hashPart)
+            .account(Address.of(getAddress()).hashPart)
             .lt(35473445000001L)
             .build();
 
@@ -469,7 +500,7 @@ public class AdnlLiteClientTest {
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
 
     TransactionId3 afterTx =
-        TransactionId3.builder().account(Address.of(TESTNET_ADDRESS).hashPart).lt(0).build();
+        TransactionId3.builder().account(Address.of(getAddress()).hashPart).lt(0).build();
     BlockTransactionsExt blockTransactionsExt =
         client.listBlockTransactionsExt(masterchainInfo.getLast(), 128, 10, afterTx, false, false);
     log.info("listBlockTransactionsExt {}", blockTransactionsExt);
@@ -516,7 +547,7 @@ public class AdnlLiteClientTest {
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
 
     RunMethodResult runMethodResult =
-        client.runMethod(masterchainInfo.getLast(), 0, Address.of(TESTNET_ADDRESS), 0, new byte[0]);
+        client.runMethod(masterchainInfo.getLast(), 0, Address.of(getAddress()), 0, new byte[0]);
 
     log.info("runMethodResult {}", runMethodResult);
     // todo
@@ -645,7 +676,7 @@ public class AdnlLiteClientTest {
     log.info("masterchainInfo {}", masterchainInfo.getLast());
     DispatchQueueInfo dispatchQueueInfo =
         client.getDispatchQueueInfo(
-            masterchainInfo.getLast(), 2, Address.of(TESTNET_ADDRESS), 20, false);
+            masterchainInfo.getLast(), 2, Address.of(getAddress()), 20, false);
     log.info("dispatchQueueInfo {}", dispatchQueueInfo);
   }
 
@@ -658,7 +689,7 @@ public class AdnlLiteClientTest {
     log.info("masterchainInfo {}", masterchainInfo.getLast());
     DispatchQueueInfo dispatchQueueInfo =
         client.getDispatchQueueInfo(
-            masterchainInfo.getLast(), 1 + 2, Address.of(TESTNET_ADDRESS), 20, false);
+            masterchainInfo.getLast(), 1 + 2, Address.of(getAddress()), 20, false);
     log.info("dispatchQueueInfo {}", dispatchQueueInfo);
   }
 
@@ -673,7 +704,7 @@ public class AdnlLiteClientTest {
         client.getDispatchQueueMessages(
             masterchainInfo.getLast(),
             0,
-            Address.of(TESTNET_ADDRESS),
+            Address.of(getAddress()),
             35473445000001L,
             10,
             false,
@@ -693,7 +724,7 @@ public class AdnlLiteClientTest {
         client.getDispatchQueueMessages(
             masterchainInfo.getLast(),
             1,
-            Address.of(TESTNET_ADDRESS),
+            Address.of(getAddress()),
             35473445000001L,
             10,
             false,
@@ -713,7 +744,7 @@ public class AdnlLiteClientTest {
         client.getDispatchQueueMessages(
             masterchainInfo.getLast(),
             2,
-            Address.of(TESTNET_ADDRESS),
+            Address.of(getAddress()),
             35473445000001L,
             10,
             false,
@@ -733,7 +764,7 @@ public class AdnlLiteClientTest {
         client.getDispatchQueueMessages(
             masterchainInfo.getLast(),
             4,
-            Address.of(TESTNET_ADDRESS),
+            Address.of(getAddress()),
             35473445000001L,
             10,
             false,

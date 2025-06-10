@@ -26,6 +26,9 @@ public class TransactionList implements Serializable, LiteServerAnswer {
   byte[] transactions;
 
   public String getTransactions() {
+    if (transactions == null) {
+      return "";
+    }
     return Utils.bytesToHex(transactions);
   }
 

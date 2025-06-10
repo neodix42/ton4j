@@ -22,10 +22,13 @@ public class MasterchainInfoExt implements Serializable, LiteServerAnswer {
   BlockIdExt last;
   int lastTime;
   int now;
-  byte[] stateRootHash;
+  public byte[] stateRootHash;
   ZeroStateIdExt init;
 
-  private String getStateRootHash() {
+  public String getStateRootHash() {
+    if (stateRootHash == null) {
+      return "";
+    }
     return Utils.bytesToHex(stateRootHash);
   }
 

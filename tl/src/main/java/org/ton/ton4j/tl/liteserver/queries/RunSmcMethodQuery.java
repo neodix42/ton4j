@@ -3,14 +3,14 @@ package org.ton.ton4j.tl.liteserver.queries;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tl.liteserver.responses.LiteServerQueryData;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
-@Getter
+@Data
 public class RunSmcMethodQuery implements LiteServerQueryData {
   public static final int RUN_SMC_METHOD_QUERY = 0;
 
@@ -18,7 +18,14 @@ public class RunSmcMethodQuery implements LiteServerQueryData {
   private BlockIdExt id;
   private Address account;
   private long methodId;
-  private byte[] params;
+  public byte[] params;
+
+  public String getParams() {
+    if (params == null) {
+      return "";
+    }
+    return Utils.bytesToHex(params);
+  }
 
   public String getQueryName() {
     return "liteServer.runSmcMethod mode:# id:tonNode.blockIdExt account:liteServer.accountId method_id:long params:bytes = liteServer.RunMethodResult";

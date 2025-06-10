@@ -20,6 +20,9 @@ public class BlockHeader implements Serializable, LiteServerAnswer {
   public byte[] headerProof;
 
   public String getHeaderProof() {
+    if (headerProof == null) {
+      return "";
+    }
     return Utils.bytesToHex(headerProof);
   }
 

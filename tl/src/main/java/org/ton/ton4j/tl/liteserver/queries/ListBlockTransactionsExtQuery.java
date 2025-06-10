@@ -3,13 +3,13 @@ package org.ton.ton4j.tl.liteserver.queries;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tl.liteserver.responses.LiteServerQueryData;
 import org.ton.ton4j.tl.liteserver.responses.TransactionId3;
 
 @Builder
-@Getter
+@Data
 public class ListBlockTransactionsExtQuery implements LiteServerQueryData {
   public static final int LIST_BLOCK_TRANSACTIONS_EXT_QUERY = 7986524;
 

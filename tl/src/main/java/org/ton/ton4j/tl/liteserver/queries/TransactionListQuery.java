@@ -19,6 +19,9 @@ public class TransactionListQuery implements LiteServerQueryData {
   public byte[] hash;
 
   public String getHash() {
+    if (hash == null) {
+      return "";
+    }
     return Utils.bytesToHex(hash);
   }
 
@@ -31,14 +34,14 @@ public class TransactionListQuery implements LiteServerQueryData {
       throw new IllegalArgumentException("Hash must be 32 bytes");
     }
 
-    ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + 4 + 32 + 8 + 32);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt(TRANSACTION_LIST_QUERY);
-    buffer.putInt(count);
-    buffer.putInt(account.wc);
-    buffer.put(account.hashPart);
-    buffer.putLong(lt);
-    buffer.put(hash);
-    return buffer.array();
+    return ByteBuffer.allocate(4 + 4 + 4 + 32 + 8 + 32)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .putInt(TRANSACTION_LIST_QUERY)
+        .putInt(count)
+        .putInt(account.wc)
+        .put(account.hashPart)
+        .putLong(lt)
+        .put(hash)
+        .array();
   }
 }

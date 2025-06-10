@@ -16,10 +16,13 @@ import org.ton.ton4j.utils.Utils;
 public class MasterchainInfo implements Serializable, LiteServerAnswer {
   public static final int MASTERCHAIN_INFO_ANSWER = -2055001983;
   BlockIdExt last;
-  byte[] stateRootHash;
+  public byte[] stateRootHash;
   ZeroStateIdExt init;
 
-  private String getStateRootHash() {
+  public String getStateRootHash() {
+    if (stateRootHash == null) {
+      return "";
+    }
     return Utils.bytesToHex(stateRootHash);
   }
 

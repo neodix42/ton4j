@@ -23,10 +23,16 @@ public class TransactionId implements Serializable {
   TransactionMetadata transactionMetadata;
 
   public String getAccount() {
+    if (account == null) {
+      return "";
+    }
     return Utils.bytesToHex(account);
   }
 
   public String getHash() {
+    if (hash == null) {
+      return "";
+    }
     return Utils.bytesToHex(hash);
   }
 

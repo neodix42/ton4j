@@ -27,19 +27,31 @@ public class LookupBlockResult implements Serializable, LiteServerAnswer {
   public byte[] header;
   public byte[] prevHeader;
 
-  String getClientMcStateProof() {
+  public String getClientMcStateProof() {
+    if (clientMcStateProof == null) {
+      return "";
+    }
     return Utils.bytesToHex(clientMcStateProof);
   }
 
-  String getMcBlockProof() {
+  public String getMcBlockProof() {
+    if (mcBlockProof == null) {
+      return "";
+    }
     return Utils.bytesToHex(mcBlockProof);
   }
 
-  String getHeader() {
+  public String getHeader() {
+    if (header == null) {
+      return "";
+    }
     return Utils.bytesToHex(header);
   }
 
   String getPrevHeader() {
+    if (prevHeader == null) {
+      return "";
+    }
     return Utils.bytesToHex(prevHeader);
   }
 

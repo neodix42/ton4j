@@ -13,10 +13,17 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Getter
 public class AccountDispatchQueueInfo {
-  private final byte[] addr;
+  public final byte[] addr;
   private final long size;
   private final long minLt;
   private final long maxLt;
+
+  public String getAddr() {
+    if (addr == null) {
+      return "";
+    }
+    return Utils.bytesToHex(addr);
+  }
 
   public static AccountDispatchQueueInfo deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);

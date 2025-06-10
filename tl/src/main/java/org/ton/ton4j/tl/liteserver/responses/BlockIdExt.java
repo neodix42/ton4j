@@ -33,18 +33,30 @@ public class BlockIdExt implements Serializable, LiteServerAnswer {
   private byte[] fileHashBase64;
 
   public String getRootHash() {
+    if (rootHash == null) {
+      return "";
+    }
     return Utils.bytesToHex(rootHash);
   }
 
   public String getFileHash() {
+    if (fileHash == null) {
+      return "";
+    }
     return Utils.bytesToHex(fileHash);
   }
 
   public String getRootHashBase64() {
+    if (rootHash == null) {
+      return "";
+    }
     return Utils.bytesToBase64SafeUrl(rootHash);
   }
 
   public String getFileHashBase64() {
+    if (fileHash == null) {
+      return "";
+    }
     return Utils.bytesToBase64SafeUrl(fileHash);
   }
 

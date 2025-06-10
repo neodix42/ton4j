@@ -17,11 +17,28 @@ public class BlockState implements Serializable, LiteServerAnswer {
   public static final int BLOCK_STATE_ANSWER = 659847997;
 
   private BlockIdExt id;
-  private byte[] rootHash;
-  private byte[] fileHash;
-  private byte[] data;
+  public byte[] rootHash;
+  public byte[] fileHash;
+  public byte[] data;
 
-  String getData() {
+  public String getFileHash() {
+    if (fileHash == null) {
+      return "";
+    }
+    return Utils.bytesToHex(fileHash);
+  }
+
+  public String getRootHash() {
+    if (rootHash == null) {
+      return "";
+    }
+    return Utils.bytesToHex(rootHash);
+  }
+
+  public String getData() {
+    if (data == null) {
+      return "";
+    }
     return Utils.bytesToHex(data);
   }
 

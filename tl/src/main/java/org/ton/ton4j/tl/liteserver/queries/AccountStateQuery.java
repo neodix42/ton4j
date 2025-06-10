@@ -3,13 +3,13 @@ package org.ton.ton4j.tl.liteserver.queries;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tl.liteserver.responses.LiteServerQueryData;
 
 @Builder
-@Getter
+@Data
 public class AccountStateQuery implements LiteServerQueryData {
   public static final int ACCOUNT_STATE_QUERY = 1804144165;
 

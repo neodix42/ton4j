@@ -1799,7 +1799,7 @@ public class Utils {
     }
 
     // if the end do not add padding
-    if ((Utils.pad4(ln) + data.position()) != data.capacity()) {
+    if ((Utils.pad4(ln) + data.position()) < data.capacity()) {
       ln = Utils.pad4(ln);
     }
 

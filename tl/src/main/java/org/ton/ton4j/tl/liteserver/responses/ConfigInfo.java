@@ -36,11 +36,17 @@ public class ConfigInfo implements Serializable, LiteServerAnswer {
   public byte[] configProof;
 
   private String getConfigProof() {
-    return Utils.bytesToHex(configProof);
+    if (configProof != null) {
+      return Utils.bytesToHex(configProof);
+    }
+    return "";
   }
 
   private String getStateProof() {
-    return Utils.bytesToHex(stateProof);
+    if (stateProof != null) {
+      return Utils.bytesToHex(stateProof);
+    }
+    return "";
   }
 
   public ConfigParams getConfigParsed() {

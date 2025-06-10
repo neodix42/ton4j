@@ -3,16 +3,23 @@ package org.ton.ton4j.tl.liteserver.queries;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.ton.ton4j.tl.liteserver.responses.LiteServerQueryData;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
-@Getter
+@Data
 public class SendMessageQuery implements LiteServerQueryData {
   public static final int SEND_MESSAGE_QUERY = 0;
 
-  private byte[] body;
+  public byte[] body;
+
+  public String getBody() {
+    if (body == null) {
+      return "";
+    }
+    return Utils.bytesToHex(body);
+  }
 
   public String getQueryName() {
     return "liteServer.sendMessage body:bytes = liteServer.SendMsgStatus";

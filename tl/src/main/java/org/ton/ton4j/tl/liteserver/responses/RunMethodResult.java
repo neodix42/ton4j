@@ -14,22 +14,50 @@ public class RunMethodResult implements Serializable, LiteServerAnswer {
   private int mode;
   private BlockIdExt id;
   private BlockIdExt shardblk;
-  private byte[] shardProof;
-  private byte[] proof;
-  private byte[] stateProof;
-  private byte[] initC7;
-  private byte[] libExtras;
+  public byte[] shardProof;
+  public byte[] proof;
+  public byte[] stateProof;
+  public byte[] initC7;
+  public byte[] libExtras;
   private int exitCode;
-  private byte[] result;
+  public byte[] result;
 
   public static final int constructorId = SEND_MSG_STATUS_ANSWER;
 
-  //      (int)
-  //          Utils.getQueryCrc32IEEEE(
-  //              "liteServer.runMethodResult mode:# id:tonNode.blockIdExt
-  // shardblk:tonNode.blockIdExt shard_proof:maybe(bytes) proof:maybe(bytes)
-  // state_proof:maybe(bytes) init_c7:maybe(bytes) lib_extras:maybe(bytes) exit_code:int
-  // result:bytes = liteServer.RunMethodResult");
+  public String getProof() {
+    if (proof == null) {
+      return "";
+    }
+    return Utils.bytesToHex(proof);
+  }
+
+  public String getStateProof() {
+    if (stateProof == null) {
+      return "";
+    }
+    return Utils.bytesToHex(stateProof);
+  }
+
+  public String getInit7() {
+    if (initC7 == null) {
+      return "";
+    }
+    return Utils.bytesToHex(initC7);
+  }
+
+  public String getLibExtras() {
+    if (libExtras == null) {
+      return "";
+    }
+    return Utils.bytesToHex(libExtras);
+  }
+
+  public String getResult() {
+    if (result == null) {
+      return "";
+    }
+    return Utils.bytesToHex(result);
+  }
 
   public static RunMethodResult deserialize(ByteBuffer buffer) {
     int mode = buffer.getInt();

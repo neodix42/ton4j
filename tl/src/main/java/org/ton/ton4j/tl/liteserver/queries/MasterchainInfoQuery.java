@@ -3,12 +3,12 @@ package org.ton.ton4j.tl.liteserver.queries;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.ton.ton4j.tl.liteserver.responses.LiteServerQueryData;
 
 /** liteServer.getMasterchainInfo = liteServer.MasterchainInfo */
 @Builder
-@Getter
+@Data
 public class MasterchainInfoQuery implements LiteServerQueryData {
   public static final int MASTERCHAIN_INFO_QUERY = -1984567762; // 2ee6b589
 

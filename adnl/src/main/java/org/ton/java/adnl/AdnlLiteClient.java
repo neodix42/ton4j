@@ -282,6 +282,21 @@ public class AdnlLiteClient {
     return (AccountState) response;
   }
 
+  public AccountState getAccountStatePruned(BlockIdExt id, Address accountAddress)
+      throws Exception {
+    if (!connected || !transport.isConnected()) {
+      throw new IllegalStateException("Not connected to lite-server");
+    }
+
+    byte[] queryBytes =
+        LiteServerQuery.pack(
+            AccountStatePrunedQuery.builder().id(id).account(accountAddress).build());
+    log.info("Sending getAccountStatePruned query, size: {} bytes", queryBytes.length);
+
+    LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+    return (AccountState) response;
+  }
+
   public RunMethodResult runMethod(
       BlockIdExt id, int mode, Address accountAddress, long methodId, byte[] methodParams)
       throws Exception {

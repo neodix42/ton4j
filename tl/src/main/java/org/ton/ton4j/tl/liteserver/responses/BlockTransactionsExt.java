@@ -29,18 +29,26 @@ public class BlockTransactionsExt implements Serializable, LiteServerAnswer {
   public byte[] proof;
 
   public String getTransactions() {
+    if (transactions == null) {
+      return "";
+    }
     return Utils.bytesToHex(transactions);
   }
 
   public String getProof() {
+    if (proof == null) {
+      return "";
+    }
     return Utils.bytesToHex(proof);
   }
 
   public List<Transaction> getTransactionsParsed() {
     List<Transaction> txs = new ArrayList<>();
-    List<Cell> cells = CellBuilder.beginCell().fromBocMultiRoot(transactions).endCells();
-    for (Cell c : cells) {
-      txs.add(Transaction.deserialize(CellSlice.beginParse(c)));
+    if (transactions != null) {
+      List<Cell> cells = CellBuilder.beginCell().fromBocMultiRoot(transactions).endCells();
+      for (Cell c : cells) {
+        txs.add(Transaction.deserialize(CellSlice.beginParse(c)));
+      }
     }
     return txs;
   }

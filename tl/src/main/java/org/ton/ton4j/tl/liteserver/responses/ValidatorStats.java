@@ -20,10 +20,16 @@ public class ValidatorStats implements Serializable, LiteServerAnswer {
   public final byte[] dataProof;
 
   public String getStateProof() {
+    if (stateProof == null) {
+      return "";
+    }
     return Utils.bytesToHex(stateProof);
   }
 
   public String getDataProof() {
+    if (dataProof == null) {
+      return "";
+    }
     return Utils.bytesToHex(dataProof);
   }
 
