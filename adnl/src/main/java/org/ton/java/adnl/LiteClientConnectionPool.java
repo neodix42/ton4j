@@ -46,10 +46,8 @@ public class LiteClientConnectionPool {
       try {
         String host = Utils.int2ip(liteserver.getIp());
         int port = Math.toIntExact(liteserver.getPort());
-        String publicKey = liteserver.getId().getKey();
 
-        AdnlLiteClient client = new AdnlLiteClient();
-        client.connect(host, port, publicKey);
+        AdnlLiteClient client = AdnlLiteClient.builder().liteServer(liteserver).build();
 
         synchronized (connections) {
           connections.add(client);
@@ -79,20 +77,17 @@ public class LiteClientConnectionPool {
   /**
    * Add single connection
    *
-   * @param host Server host
-   * @param port Server port
-   * @param serverPublicKeyBase64 Server public key (base64)
+   * @param liteServer from global config
    * @throws Exception if connection fails
    */
-  public void addConnection(String host, int port, String serverPublicKeyBase64) throws Exception {
-    AdnlLiteClient client = new AdnlLiteClient();
-    client.connect(host, port, serverPublicKeyBase64);
+  public void addConnection(LiteServers liteServer) throws Exception {
+    AdnlLiteClient client = AdnlLiteClient.builder().liteServer(liteServer).build();
 
     synchronized (connections) {
       connections.add(client);
     }
 
-    log.info("Added connection to {}:{}", host, port);
+    log.info("Added connection to {}:{}", liteServer.getIp(), liteServer.getPort());
   }
 
   /**

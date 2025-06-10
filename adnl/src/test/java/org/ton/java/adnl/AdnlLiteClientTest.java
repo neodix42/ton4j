@@ -30,14 +30,14 @@ public class AdnlLiteClientTest {
 
   @BeforeAll
   static void tearBeforeAll() throws Exception {
-    client = new AdnlLiteClient();
+
     TonGlobalConfig tonGlobalConfig;
     if (mainnet) {
       tonGlobalConfig = TonGlobalConfig.loadFromPath(MAINNET_CONFIG_PATH);
     } else {
       tonGlobalConfig = TonGlobalConfig.loadFromPath(TESTNET_CONFIG_PATH);
     }
-    client.connect(tonGlobalConfig.getLiteservers()[1]);
+    client = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).build();
   }
 
   @AfterAll
