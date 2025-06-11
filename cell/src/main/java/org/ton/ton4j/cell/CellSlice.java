@@ -1,5 +1,6 @@
 package org.ton.ton4j.cell;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.Serializable;
@@ -50,6 +51,9 @@ public class CellSlice implements Serializable {
   }
 
   public static CellSlice beginParse(Cell cell) {
+    if (isNull(cell)) {
+      throw new IllegalArgumentException("cell is null");
+    }
     return new CellSlice(cell.getBits(), cell.refs, cell.getCellType());
   }
 

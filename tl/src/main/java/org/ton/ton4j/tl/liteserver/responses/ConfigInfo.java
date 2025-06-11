@@ -8,6 +8,7 @@ import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.tlb.ConfigParams;
+import org.ton.ton4j.tlb.ShardStateUnsplit;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -49,11 +50,14 @@ public class ConfigInfo implements Serializable, LiteServerAnswer {
     return Utils.bytesToHex(stateProof);
   }
 
-  public ConfigParams getConfigParsed() {
+  public ConfigParams getConfigParams() {
     if ((configProof == null) || (configProof.length < 10)) {
       return null;
     } else {
-      return ConfigParams.deserialize(CellSlice.beginParse(Cell.fromBoc(configProof)));
+      return ShardStateUnsplit.deserialize(
+              CellSlice.beginParse(Cell.fromBoc(configProof).getRefs().get(0)))
+          .getCustom()
+          .getConfigParams();
     }
   }
 

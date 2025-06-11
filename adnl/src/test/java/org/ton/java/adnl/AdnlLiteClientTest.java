@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.tl.liteserver.responses.*;
+import org.ton.ton4j.tlb.ConfigParams32;
 import org.ton.ton4j.tlb.Transaction;
 import org.ton.ton4j.utils.Utils;
 
@@ -213,9 +214,12 @@ public class AdnlLiteClientTest {
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
     log.info("masterchainInfo {}", masterchainInfo.getLast());
     ConfigInfo configInfo = client.getConfigAll(masterchainInfo.getLast(), 0);
-    log.info("configAll {}", configInfo);
+    //    log.info("configAll {}", configInfo);
     assertThat(configInfo.getId().getSeqno()).isGreaterThan(0);
-    log.info("configParsed {}", configInfo.getConfigParsed());
+    log.info("configParsed {}", configInfo.getConfigParams());
+    //    Cell c = (Cell)
+    // configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(32));
+    //    log.info("cell {}", ValidatorSet.deserialize(CellSlice.beginParse(c)));
   }
 
   @Test
@@ -228,7 +232,91 @@ public class AdnlLiteClientTest {
     ConfigInfo configInfo = client.getConfigParams(masterchainInfo.getLast(), 0, new int[] {32});
     log.info("configInfo {}", configInfo);
     assertThat(configInfo.getId().getSeqno()).isGreaterThan(0);
-    log.info("configParsed {}", configInfo.getConfigParsed());
+    log.info("configParsed {}", configInfo.getConfigParams());
+  }
+
+  @Test
+  void testGetConfigParam0() throws Exception {
+    log.info("Testing testConfigParam0 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams0 {}", client.getConfigParam0());
+  }
+
+  @Test
+  void testGetConfigParam1() throws Exception {
+    log.info("Testing testConfigParam1 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams1 {}", client.getConfigParam1());
+  }
+
+  @Test
+  void testGetConfigParam2() throws Exception {
+    log.info("Testing testConfigParam2 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams2 {}", client.getConfigParam2());
+  }
+
+  @Test
+  void testGetConfigParam3() throws Exception {
+    log.info("Testing testConfigParam3 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams3 {}", client.getConfigParam3());
+
+    // todo
+  }
+
+  @Test
+  void testGetConfigParam4() throws Exception {
+    log.info("Testing testConfigParam4 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams4 {}", client.getConfigParam4());
+  }
+
+  @Test
+  void testGetConfigParam5() throws Exception {
+    log.info("Testing testConfigParam5 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams5 {}", client.getConfigParam5());
+  }
+
+  @Test
+  void testGetConfigParam6() throws Exception {
+    log.info("Testing testConfigParam6 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams6 {}", client.getConfigParam6());
+    // todo
+  }
+
+  @Test
+  void testGetConfigParam8() throws Exception {
+    log.info("Testing testConfigParam8 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams8 {}", client.getConfigParam8());
+  }
+
+  @Test
+  void testGetConfigParam9() throws Exception {
+    log.info("Testing testConfigParam9 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams9 {}", client.getConfigParam9());
+  }
+
+  @Test
+  void testGetConfigParam32() throws Exception {
+    log.info("Testing testConfigParam32 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    ConfigParams32 configParams32 = client.getConfigParam32();
+    log.info("configParams0 {}", configParams32);
   }
 
   @Test

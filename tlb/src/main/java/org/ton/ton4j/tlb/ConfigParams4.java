@@ -7,12 +7,20 @@ import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.utils.Utils;
 
 /** _ dns_root_addr:bits256 = ConfigParam 4; */
 @Builder
 @Data
 public class ConfigParams4 implements Serializable {
   BigInteger dnsRootAddr;
+
+  public String getDnsRootAddr() {
+    if (dnsRootAddr == null) {
+      return "";
+    }
+    return Utils.bytesToHex(Utils.to32ByteArray(dnsRootAddr));
+  }
 
   public Cell toCell() {
     return CellBuilder.beginCell().storeUint(dnsRootAddr, 256).endCell();

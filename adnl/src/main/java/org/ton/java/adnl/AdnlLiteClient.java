@@ -11,9 +11,16 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ton.java.adnl.globalconfig.LiteServers;
 import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.tl.liteserver.queries.*;
 import org.ton.ton4j.tl.liteserver.responses.*;
-import org.ton.ton4j.tlb.Account;
+import org.ton.ton4j.tl.liteserver.responses.AccountState;
+import org.ton.ton4j.tl.liteserver.responses.AllShardsInfo;
+import org.ton.ton4j.tl.liteserver.responses.BlockData;
+import org.ton.ton4j.tl.liteserver.responses.BlockHeader;
+import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
+import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -317,6 +324,78 @@ public class AdnlLiteClient {
             throw e;
           }
         });
+  }
+
+  public ConfigParams32 getConfigParam32() throws Exception {
+
+    //    ConfigInfo configInfo = getConfigParams(getMasterchainInfo().getLast(), 0, new int[]
+    // {32});
+    ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
+    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(32));
+    return ConfigParams32.deserialize(CellSlice.beginParse(c));
+  }
+
+  public ConfigParams0 getConfigParam0() throws Exception {
+
+    ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
+    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(0));
+    return ConfigParams0.deserialize(CellSlice.beginParse(c));
+  }
+
+  public ConfigParams1 getConfigParam1() throws Exception {
+
+    ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
+    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(1));
+    return ConfigParams1.deserialize(CellSlice.beginParse(c));
+  }
+
+  public ConfigParams2 getConfigParam2() throws Exception {
+
+    ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
+    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(2));
+    return ConfigParams2.deserialize(CellSlice.beginParse(c));
+  }
+
+  public ConfigParams3 getConfigParam3() throws Exception {
+
+    ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
+    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(3));
+    return ConfigParams3.deserialize(CellSlice.beginParse(c));
+  }
+
+  public ConfigParams4 getConfigParam4() throws Exception {
+
+    ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
+    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(4));
+    return ConfigParams4.deserialize(CellSlice.beginParse(c));
+  }
+
+  public ConfigParams5 getConfigParam5() throws Exception {
+
+    ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
+    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(5));
+    return ConfigParams5.deserialize(CellSlice.beginParse(c));
+  }
+
+  public ConfigParams6 getConfigParam6() throws Exception {
+
+    ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
+    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(6));
+    return ConfigParams6.deserialize(CellSlice.beginParse(c));
+  }
+
+  public ConfigParams8 getConfigParam8() throws Exception {
+
+    ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
+    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(8));
+    return ConfigParams8.deserialize(CellSlice.beginParse(c));
+  }
+
+  public ConfigParams9 getConfigParam9() throws Exception {
+
+    ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
+    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(9));
+    return ConfigParams9.deserialize(CellSlice.beginParse(c));
   }
 
   public BlockData getBlock(BlockIdExt id) throws Exception {
@@ -1090,24 +1169,25 @@ public class AdnlLiteClient {
     } catch (Exception e) {
       // This is a query failure (connected but query failed)
       // We should not retry, just return the exception
-      log.warn("Query failed: {}", e.getMessage() == null 
-          ? ExceptionUtils.getRootCauseMessage(e) 
-          : e.getMessage());
-      
+      log.warn(
+          "Query failed: {}",
+          e.getMessage() == null ? ExceptionUtils.getRootCauseMessage(e) : e.getMessage());
+
       // Check if the connection is still valid, but don't change the connection state
       // This ensures that isConnected() will return the correct state for subsequent calls
       if (transport != null && !transport.isConnected()) {
-        log.warn("Connection lost during query execution, but not reconnecting as per requirements");
+        log.warn(
+            "Connection lost during query execution, but not reconnecting as per requirements");
         // Update the connected flag to match the transport state
         // This ensures that isConnected() will return false for subsequent calls
         // but we don't trigger any reconnection logic
         connected = false;
       }
-      
+
       throw e;
     }
   }
-  
+
   /**
    * Handle connection failure with retry mechanism
    *
@@ -1117,7 +1197,8 @@ public class AdnlLiteClient {
    * @return The query result
    * @throws Exception if all connection attempts fail
    */
-  private <T> T handleConnectionFailure(Callable<T> supplier, Exception initialException) throws Exception {
+  private <T> T handleConnectionFailure(Callable<T> supplier, Exception initialException)
+      throws Exception {
     Exception lastException = initialException;
     int retries = 0;
 

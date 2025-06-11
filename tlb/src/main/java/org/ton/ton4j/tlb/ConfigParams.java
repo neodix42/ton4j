@@ -28,8 +28,10 @@ public class ConfigParams implements Serializable {
 
   public static ConfigParams deserialize(CellSlice cs) {
     return ConfigParams.builder()
-        .configAddr(Address.of(cs.loadBits(256).toByteArray())) // bounceable and workchain -1
-        .config(CellSlice.beginParse(cs.loadRef()).loadDict(32, k -> k.readUint(32), v -> v))
+        .configAddr(Address.of(cs.loadBits(256).toByteArray()))
+        .config(
+            CellSlice.beginParse(cs.loadRef())
+                .loadDict(32, k -> k.readUint(32), v -> CellSlice.beginParse(v).loadRef()))
         .build();
   }
 }

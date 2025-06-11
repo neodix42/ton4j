@@ -7,6 +7,7 @@ import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.utils.Utils;
 
 /**
  *
@@ -23,9 +24,16 @@ import org.ton.ton4j.cell.CellSlice;
 @Data
 public class ConfigParams5 implements Serializable {
   long magic;
-  BigInteger blackholeAddr;
+  public BigInteger blackholeAddr;
   long feeBurnNum;
   long feeBurnDenom;
+
+  public String getBlackholeAddr() {
+    if (blackholeAddr == null) {
+      return "";
+    }
+    return Utils.bytesToHex(Utils.to32ByteArray(blackholeAddr));
+  }
 
   public Cell toCell() {
     return CellBuilder.beginCell()

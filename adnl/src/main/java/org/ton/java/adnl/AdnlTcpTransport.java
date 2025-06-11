@@ -231,7 +231,7 @@ public class AdnlTcpTransport {
       }
     } catch (Exception e) {
       if (running) {
-        log.info("Error in packet listener", e);
+        log.info("Error in packet listener");
       }
     } finally {
       running = false;

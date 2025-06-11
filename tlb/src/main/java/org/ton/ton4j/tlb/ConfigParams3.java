@@ -7,6 +7,7 @@ import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.utils.Utils;
 
 /**
  *
@@ -19,6 +20,13 @@ import org.ton.ton4j.cell.CellSlice;
 @Data
 public class ConfigParams3 implements Serializable {
   BigInteger feeCollectorAddr;
+
+  public String getConfigAddr() {
+    if (feeCollectorAddr == null) {
+      return "";
+    }
+    return Utils.bytesToHex(Utils.to32ByteArray(feeCollectorAddr));
+  }
 
   public Cell toCell() {
     return CellBuilder.beginCell().storeUint(feeCollectorAddr, 256).endCell();
