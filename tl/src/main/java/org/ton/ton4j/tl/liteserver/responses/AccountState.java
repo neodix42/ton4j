@@ -74,11 +74,10 @@ public class AccountState implements Serializable, LiteServerAnswer {
 
     List<Cell> cells = CellBuilder.beginCell().fromBocMultiRoot(proof).endCells();
 
-    return null;
-    //        return
-    // ShardStateUnsplit.deserialize(CellSlice.beginParse(cells.get(1).getRefs().get(0)))
-    //            .getShardAccounts()
-    //            .getShardAccountsAsList();
+    //    return null;
+    return ShardStateUnsplit.deserialize(CellSlice.beginParse(cells.get(1).getRefs().get(0)))
+        .getShardAccounts()
+        .getShardAccountsAsList();
   }
 
   public static final int constructorId = ACCOUNT_STATE_ANSWER;

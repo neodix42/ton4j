@@ -33,9 +33,9 @@ public class AdnlLiteClientTest {
 
     TonGlobalConfig tonGlobalConfig;
     if (mainnet) {
-      tonGlobalConfig = TonGlobalConfig.loadFromPath(MAINNET_CONFIG_PATH);
+      tonGlobalConfig = TonGlobalConfig.loadFromUrl(Utils.getGlobalConfigUrlMainnetGithub());
     } else {
-      tonGlobalConfig = TonGlobalConfig.loadFromPath(TESTNET_CONFIG_PATH);
+      tonGlobalConfig = TonGlobalConfig.loadFromUrl(Utils.getGlobalConfigUrlTestnetGithub());
     }
     client =
         AdnlLiteClient.builder()
@@ -116,6 +116,7 @@ public class AdnlLiteClientTest {
     log.info("accountState: {} ", accountState);
     log.info("Last block seqno: {} ", accountState.getId().getSeqno());
     log.info("shard block seqno: {} ", accountState.getShardblk().getSeqno());
+    log.info("accountHex: {} ", Address.of(getAddress()).toRaw());
     log.info("accountBalance: {} ", accountState.getAccount().getAccountStorage().getBalance());
     assertTrue(info.getLast().getSeqno() > 0, "Seqno should be positive");
     log.info("accountObject: {} ", accountState.getAccount());
@@ -318,7 +319,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetTransactionsByLtHash2() throws Exception {
+  void testGetTransactionsByNone() throws Exception {
     log.info("Testing getTransactions query");
     assertTrue(client.isConnected(), "Client should be connected");
 

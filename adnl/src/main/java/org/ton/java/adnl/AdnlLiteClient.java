@@ -673,12 +673,11 @@ public class AdnlLiteClient {
           long tempLt = 0;
           byte[] tempHash = new byte[32];
           if ((lt == 0) || (hash == null)) {
-            Account account = getAccount(accountAddress);
-            //            tempLt = account.getAccountStorage().getLastTransactionLt().longValue();
-            tempLt =
-                58179919000001L; // account.getAccountStorage().getLastTransactionLt().longValue();
-            //            tempHash =
-            // account.getAccountStorage().getAccountState().toCell().getHash();
+            MasterchainInfo masterchainInfo = getMasterchainInfo();
+            AccountState account = getAccountState(masterchainInfo.getLast(), accountAddress);
+            tempLt = account.getShardAccounts().get(0).getLastTransLt().longValue();
+            tempHash = account.getShardAccounts().get(0).lastTransHash.toByteArray();
+            System.out.println("tempLt " + tempLt + ", tempHash " + Utils.bytesToHex(tempHash));
           }
 
           byte[] queryBytes =

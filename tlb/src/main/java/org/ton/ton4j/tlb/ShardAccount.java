@@ -20,8 +20,12 @@ import org.ton.ton4j.cell.CellSlice;
 @Data
 public class ShardAccount implements Serializable {
   Account account;
-  BigInteger lastTransHash;
+  public BigInteger lastTransHash;
   BigInteger lastTransLt;
+
+  public String getLastTransHash() {
+    return lastTransHash.toString(16);
+  }
 
   public Cell toCell() {
     return CellBuilder.beginCell()
