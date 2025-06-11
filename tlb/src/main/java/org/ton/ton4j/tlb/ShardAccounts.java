@@ -41,9 +41,9 @@ public class ShardAccounts {
             CellSlice.beginParse(cs)
                 .loadDictAugE(
                     256,
-                    k -> k.readInt(256),
-                    v -> ShardAccount.deserialize(v),
-                    e -> DepthBalanceInfo.deserialize(e)))
+                    k -> k.readUint(256),
+                    ShardAccount::deserialize,
+                    DepthBalanceInfo::deserialize))
         .build();
   }
 

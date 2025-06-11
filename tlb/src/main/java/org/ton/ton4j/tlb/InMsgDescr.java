@@ -40,7 +40,7 @@ public class InMsgDescr implements Serializable {
   public static InMsgDescr deserialize(CellSlice cs) {
     return InMsgDescr.builder()
         .inMsg(
-            cs.loadDictAugE(256, k -> k.readInt(256), InMsg::deserialize, ImportFees::deserialize))
+            cs.loadDictAugE(256, k -> k.readUint(256), InMsg::deserialize, ImportFees::deserialize))
         .build();
   }
 

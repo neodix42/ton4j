@@ -65,7 +65,7 @@ public class McStateExtraInfo implements Serializable {
             .flags(cs.loadUint(16))
             .validatorInfo(ValidatorInfo.deserialize(cs))
             //                .prevBlocks(OldMcBlocksInfo.deserialize(cs))
-            .prevBlocks(cs.loadDictAugE(32, k -> k.readInt(32), v -> v, e -> e))
+            .prevBlocks(cs.loadDictAugE(32, k -> k.readUint(32), v -> v, e -> e))
             .afterKeyBlock(cs.loadBit())
             .build();
 

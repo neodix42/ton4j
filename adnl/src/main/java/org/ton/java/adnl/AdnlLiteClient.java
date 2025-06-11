@@ -1,6 +1,7 @@
 package org.ton.java.adnl;
 
 import java.io.File;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,6 +13,7 @@ import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.tl.liteserver.queries.*;
 import org.ton.ton4j.tl.liteserver.responses.*;
+import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -487,6 +489,20 @@ public class AdnlLiteClient {
         });
   }
 
+  public BigInteger getBalance(Address address) throws Exception {
+    MasterchainInfo masterchainInfo = getMasterchainInfo();
+    return getAccountState(masterchainInfo.getLast(), address)
+        .getAccount()
+        .getAccountStorage()
+        .getBalance()
+        .getCoins();
+  }
+
+  public Account getAccount(Address address) throws Exception {
+    MasterchainInfo masterchainInfo = getMasterchainInfo();
+    return getAccountState(masterchainInfo.getLast(), address).getAccount();
+  }
+
   public AccountState getAccountState(BlockIdExt id, Address accountAddress) throws Exception {
     return executeWithRetry(
         () -> {
@@ -654,14 +670,24 @@ public class AdnlLiteClient {
           if (!connected || !transport.isConnected()) {
             throw new IllegalStateException("Not connected to lite-server");
           }
+          long tempLt = 0;
+          byte[] tempHash = new byte[32];
+          if ((lt == 0) || (hash == null)) {
+            Account account = getAccount(accountAddress);
+            //            tempLt = account.getAccountStorage().getLastTransactionLt().longValue();
+            tempLt =
+                58179919000001L; // account.getAccountStorage().getLastTransactionLt().longValue();
+            //            tempHash =
+            // account.getAccountStorage().getAccountState().toCell().getHash();
+          }
 
           byte[] queryBytes =
               LiteServerQuery.pack(
                   TransactionListQuery.builder()
                       .count(count)
                       .account(accountAddress)
-                      .lt(lt)
-                      .hash(hash)
+                      .lt((lt == 0) ? tempLt : lt)
+                      .hash((hash == null) ? tempHash : hash)
                       .build());
 
           log.info("Sending getTransactions query");

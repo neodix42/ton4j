@@ -71,7 +71,7 @@ public class McBlockExtra implements Serializable {
             .keyBlock(keyBlock)
             .shardHashes(ShardHashes.deserialize(cs))
             //                .shardFees(ShardFees.deserialize(cs))
-            .shardFees(cs.loadDictAugE(96, k -> k.readInt(96), v -> v, e -> e))
+            .shardFees(cs.loadDictAugE(96, k -> k.readUint(96), v -> v, e -> e))
             .build();
     mcBlockExtra.setInfo(McBlockExtraInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
     mcBlockExtra.setConfig(keyBlock ? ConfigParams.deserialize(cs) : null);

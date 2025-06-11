@@ -44,7 +44,7 @@ public class BlockCreateStatsExt implements BlockCreateStats, Serializable {
         .counters(
             cs.loadDictAugE(
                 256,
-                k -> k.readInt(256),
+                k -> k.readUint(256),
                 v -> CreatorStats.deserialize(CellSlice.beginParse(v)),
                 e -> cs.loadUint(32)))
         .build();

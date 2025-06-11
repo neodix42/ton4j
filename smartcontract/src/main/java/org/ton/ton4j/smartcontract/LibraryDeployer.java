@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 
 import lombok.Builder;
 import lombok.Data;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
@@ -20,6 +21,17 @@ public class LibraryDeployer implements Contract {
   private long wc;
   Cell libraryDeployerCode;
   Cell libraryCode;
+  private AdnlLiteClient adnlLiteClient;
+
+  @Override
+  public AdnlLiteClient getAdnlLiteClient() {
+    return adnlLiteClient;
+  }
+
+  @Override
+  public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
+    adnlLiteClient = pAdnlLiteClient;
+  }
 
   @Override
   public Tonlib getTonlib() {

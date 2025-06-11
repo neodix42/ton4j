@@ -7,6 +7,7 @@ import com.iwebpp.crypto.TweetNaclFast;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
@@ -47,6 +48,17 @@ public class WalletV3R2 implements Contract {
 
   private Tonlib tonlib;
   private long wc;
+  private AdnlLiteClient adnlLiteClient;
+
+  @Override
+  public AdnlLiteClient getAdnlLiteClient() {
+    return adnlLiteClient;
+  }
+
+  @Override
+  public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
+    adnlLiteClient = pAdnlLiteClient;
+  }
 
   @Override
   public Tonlib getTonlib() {

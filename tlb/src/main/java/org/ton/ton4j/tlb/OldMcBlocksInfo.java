@@ -47,7 +47,7 @@ public class OldMcBlocksInfo implements Serializable {
         .list(
             cs.loadDictAugE(
                 32,
-                k -> k.readInt(32),
+                k -> k.readUint(32),
                 v -> KeyExtBlkRef.deserialize(CellSlice.beginParse(v)),
                 e -> KeyMaxLt.deserialize(CellSlice.beginParse(e))))
         .build();

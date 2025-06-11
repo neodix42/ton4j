@@ -10,13 +10,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.cell.*;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
-import org.ton.ton4j.cell.*;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -57,6 +58,18 @@ public class MultiSigWallet implements Contract {
 
   private Tonlib tonlib;
   private long wc;
+
+  private AdnlLiteClient adnlLiteClient;
+
+  @Override
+  public AdnlLiteClient getAdnlLiteClient() {
+    return adnlLiteClient;
+  }
+
+  @Override
+  public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
+    adnlLiteClient = pAdnlLiteClient;
+  }
 
   @Override
   public Tonlib getTonlib() {

@@ -10,6 +10,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.smartcontract.types.*;
@@ -43,6 +44,18 @@ public class WalletV5 implements Contract {
 
   private Tonlib tonlib;
   private long wc;
+
+  private AdnlLiteClient adnlLiteClient;
+
+  @Override
+  public AdnlLiteClient getAdnlLiteClient() {
+    return adnlLiteClient;
+  }
+
+  @Override
+  public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
+    adnlLiteClient = pAdnlLiteClient;
+  }
 
   private boolean deployAsLibrary;
 

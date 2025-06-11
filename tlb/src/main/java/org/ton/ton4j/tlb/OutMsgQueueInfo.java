@@ -46,7 +46,7 @@ public class OutMsgQueueInfo implements Serializable {
         .outMsgQueue(
             cs.loadDictAugE(
                 352,
-                k -> k.readInt(352),
+                k -> k.readUint(352),
                 v -> EnqueuedMsg.deserialize(v),
                 e -> CellSlice.beginParse(e).loadUint(64)))
         .processedInfo(

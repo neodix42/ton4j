@@ -1,10 +1,12 @@
 package org.ton.ton4j.smartcontract.wallet;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.TonHashMapE;
@@ -22,12 +24,16 @@ public interface Contract {
 
   Tonlib getTonlib();
 
+  AdnlLiteClient getAdnlLiteClient();
+
   /**
    * Used for late tonlib assignment
    *
    * @param pTonlib Tonlib instance
    */
   void setTonlib(Tonlib pTonlib);
+
+  void setAdnlLiteClient(AdnlLiteClient pAdnlClient);
 
   long getWorkchain();
 
@@ -100,6 +106,14 @@ public interface Contract {
   }
 
   default boolean isDeployed() {
+    if (nonNull(getAdnlLiteClient())) {
+      try {
+        return (getAdnlLiteClient().getAccount(getAddress()).getAccountStorage().getAccountState()
+            instanceof AccountStateActive);
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     return StringUtils.isNotEmpty(getTonlib().getRawAccountState(getAddress()).getCode());
   }
 
@@ -177,6 +191,13 @@ public interface Contract {
   }
 
   default BigInteger getBalance() {
+    if (nonNull(getAdnlLiteClient())) {
+      try {
+        return getAdnlLiteClient().getBalance(getAddress());
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     return new BigInteger(getTonlib().getRawAccountState(getAddress()).getBalance());
   }
 
@@ -190,6 +211,52 @@ public interface Contract {
     return getTonlib()
         .getAllRawTransactions(getAddress().toBounceable(), BigInteger.ZERO, null, 20)
         .getTransactions();
+  }
+
+  default List<Transaction> getTransactionsTlb() {
+    if (isNull(getAdnlLiteClient())) {
+      throw new Error("ADNL lite client not initialized");
+    }
+    try {
+      return getAdnlLiteClient().getTransactions(getAddress(), 0, null, 20).getTransactionsParsed();
+    } catch (Exception e) {
+      throw new Error(e);
+    }
+  }
+
+  default List<Transaction> getTransactionsTlb(int lt, int historyLimit) {
+    if (isNull(getAdnlLiteClient())) {
+      throw new Error("ADNL lite client not initialized");
+    }
+    try {
+      return getTransactionsTlb(lt, null, historyLimit);
+    } catch (Exception e) {
+      throw new Error(e);
+    }
+  }
+
+  default List<Transaction> getTransactionsTlb(int lt, byte[] hash, int historyLimit) {
+    if (isNull(getAdnlLiteClient())) {
+      throw new Error("ADNL lite client not initialized");
+    }
+    try {
+      return getAdnlLiteClient()
+          .getTransactions(getAddress(), lt, hash, historyLimit)
+          .getTransactionsParsed();
+    } catch (Exception e) {
+      throw new Error(e);
+    }
+  }
+
+  default List<Transaction> getTransactionsTlb(int historyLimit) {
+    if (isNull(getAdnlLiteClient())) {
+      throw new Error("ADNL lite client not initialized");
+    }
+    try {
+      return getTransactionsTlb(0, new byte[32], historyLimit);
+    } catch (Exception e) {
+      throw new Error(e);
+    }
   }
 
   default Message prepareDeployMsg() {

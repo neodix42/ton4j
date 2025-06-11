@@ -5,6 +5,7 @@ import static java.util.Objects.isNull;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.types.WalletV1R3Config;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R3;
@@ -78,8 +79,69 @@ public class TestnetFaucet {
       throw new Error(extMessageInfo.getError().getMessage());
     }
 
-    tonlib.waitForBalanceChange(destinationAddress, 60);
+    faucet.waitForBalanceChange(60);
 
-    return tonlib.getAccountBalance(destinationAddress);
+    return faucet.getBalance();
+  }
+
+  public static BigInteger topUpContract(
+      AdnlLiteClient adnlLiteClient, Address destinationAddress, BigInteger amount)
+      throws InterruptedException {
+
+    if (amount.compareTo(Utils.toNano(20)) > 0) {
+      throw new Error(
+          "Too many TONs requested from the TestnetFaucet, maximum amount per request is 20.");
+    }
+
+    TweetNaclFast.Signature.KeyPair keyPair =
+        TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY));
+
+    WalletV1R3 faucet =
+        WalletV1R3.builder().adnlLiteClient(adnlLiteClient).keyPair(keyPair).build();
+
+    BigInteger faucetBalance = null;
+    int i = 0;
+    do {
+      try {
+        if (i++ > 10) {
+          throw new Error("Cannot get testnet faucet balance. Restart.");
+        }
+
+        faucetBalance = faucet.getBalance();
+        log.info(
+            "Testnet faucet address {}, balance {}",
+            faucet.getAddress().toBounceable(),
+            Utils.formatNanoValue(faucetBalance));
+        if (faucetBalance.compareTo(amount) < 0) {
+          throw new Error(
+              "Testnet faucet does not have that much toncoins. Faucet balance "
+                  + Utils.formatNanoValue(faucetBalance)
+                  + ", requested "
+                  + Utils.formatNanoValue(amount));
+        }
+      } catch (Exception e) {
+        log.info("Cannot get testnet faucet balance. Restarting...");
+        Utils.sleep(5, "Waiting for testnet faucet balance");
+      }
+    } while (isNull(faucetBalance));
+
+    WalletV1R3Config config =
+        WalletV1R3Config.builder()
+            .bounce(false)
+            .seqno(faucet.getSeqno())
+            .destination(destinationAddress)
+            .amount(amount)
+            .comment("top-up from ton4j faucet")
+            .build();
+
+    ExtMessageInfo extMessageInfo = faucet.send(config);
+
+    if (extMessageInfo.getError().getCode() != 0) {
+      throw new Error(extMessageInfo.getError().getMessage());
+    }
+
+    faucet.waitForBalanceChange(60);
+
+    return faucet.getBalance();
   }
 }

@@ -37,7 +37,11 @@ public class AdnlLiteClientTest {
     } else {
       tonGlobalConfig = TonGlobalConfig.loadFromPath(TESTNET_CONFIG_PATH);
     }
-    client = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).liteServerIndex(0).build();
+    client =
+        AdnlLiteClient.builder()
+            .globalConfig(tonGlobalConfig)
+            //            .liteServerIndex(2)
+            .build();
   }
 
   @AfterAll
@@ -91,6 +95,15 @@ public class AdnlLiteClientTest {
   }
 
   @Test
+  void testGetBalance() throws Exception {
+    log.info("Testing getBalance");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info(
+        "account balance: {} ", Utils.formatNanoValue(client.getBalance(Address.of(getAddress()))));
+  }
+
+  @Test
   void testGetAccountState() throws Exception {
     log.info("Testing getAccountState");
     assertTrue(client.isConnected(), "Client should be connected");
@@ -103,8 +116,12 @@ public class AdnlLiteClientTest {
     log.info("accountState: {} ", accountState);
     log.info("Last block seqno: {} ", accountState.getId().getSeqno());
     log.info("shard block seqno: {} ", accountState.getShardblk().getSeqno());
+    log.info("accountBalance: {} ", accountState.getAccount().getAccountStorage().getBalance());
     assertTrue(info.getLast().getSeqno() > 0, "Seqno should be positive");
-    log.info("accountStateObject: {} ", accountState.getAccountState());
+    log.info("accountObject: {} ", accountState.getAccount());
+    //    log.info("accountShardObject: {} ", accountState.getShardAccount());
+    //    log.info("ShardState: {} ", accountState.getShardState());
+    log.info("ShardStateUnsplit: {} ", accountState.getShardStateUnsplit());
   }
 
   @Test
@@ -122,7 +139,7 @@ public class AdnlLiteClientTest {
     log.info("Last block seqno: {} ", accountState.getId().getSeqno());
     log.info("shard block seqno: {} ", accountState.getShardblk().getSeqno());
     assertTrue(info.getLast().getSeqno() > 0, "Seqno should be positive");
-    log.info("accountStateObject: {} ", accountState.getAccountState());
+    log.info("accountObject: {} ", accountState.getAccount());
   }
 
   //  @Test
@@ -297,6 +314,19 @@ public class AdnlLiteClientTest {
             masterchainInfo.getLast(), Address.of(ELECTOR_ADDRESS), 35473445000001L);
     log.info("getOneTransaction {}", transactionInfo);
     log.info("getOneTransaction parsed {}", transactionInfo.getTransactionParsed());
+  }
+
+  @Test
+  void testGetTransactionsByLtHash2() throws Exception {
+    log.info("Testing getTransactions query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    TransactionList transactionList = client.getTransactions(Address.of(getAddress()), 0, null, 10);
+    log.info("getTransactions {}", transactionList);
+
+    for (Transaction tx : transactionList.getTransactionsParsed()) {
+      log.info("tx {}", tx);
+    }
   }
 
   @Test

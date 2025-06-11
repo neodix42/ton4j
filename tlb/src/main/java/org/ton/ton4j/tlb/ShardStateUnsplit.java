@@ -47,7 +47,7 @@ public class ShardStateUnsplit implements Serializable {
   Cell outMsgQueueInfo;
   //    OutMsgQueueInfo outMsgQueueInfo;
   boolean beforeSplit;
-  //    ShardAccounts shardAccounts;
+  //  ShardAccounts shardAccounts;
   Cell shardAccounts;
   ShardStateInfo shardStateInfo;
   McStateExtra custom;
@@ -98,7 +98,8 @@ public class ShardStateUnsplit implements Serializable {
             .build();
     shardStateUnsplit.setBeforeSplit(cs.loadBit());
     //
-    // shardStateUnsplit.setShardAccounts(ShardAccounts.deserialize(CellSlice.beginParse(cs.loadRef())));
+    //    shardStateUnsplit.setShardAccounts(
+    //        ShardAccounts.deserialize(CellSlice.beginParse(cs.loadRef())));
     shardStateUnsplit.setShardAccounts(cs.loadRef());
 
     shardStateUnsplit.setShardStateInfo(

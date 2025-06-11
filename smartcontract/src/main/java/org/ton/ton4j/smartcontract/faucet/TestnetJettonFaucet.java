@@ -2,6 +2,7 @@ package org.ton.ton4j.smartcontract.faucet;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinter;
 import org.ton.ton4j.smartcontract.token.ft.JettonWallet;
@@ -77,5 +78,58 @@ public class TestnetJettonFaucet {
     Utils.sleep(10);
     return ContractUtils.getJettonBalance(
         tonlib, Address.of(FAUCET_MASTER_ADDRESS), destinationAddress);
+  }
+
+  public static BigInteger topUpContractWithNeoj(
+      AdnlLiteClient adnlLiteClient, Address destinationAddress, BigInteger jettonsAmount) {
+
+    if (jettonsAmount.compareTo(Utils.toNano(100)) > 0) {
+      throw new Error(
+          "Too many NEOJ jettons requested from the TestnetJettonFaucet, maximum amount per request is 100.");
+    }
+
+    TweetNaclFast.Signature.KeyPair keyPair =
+        TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(ADMIN_WALLET_SECRET_KEY));
+
+    WalletV3R2 adminWallet =
+        WalletV3R2.builder().adnlLiteClient(adnlLiteClient).walletId(42).keyPair(keyPair).build();
+
+    JettonMinter jettonMinterWallet =
+        JettonMinter.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .customAddress(Address.of(FAUCET_MASTER_ADDRESS))
+            .build();
+
+    JettonWallet adminJettonWallet = jettonMinterWallet.getJettonWallet(adminWallet.getAddress());
+
+    WalletV3Config walletV3Config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(adminWallet.getSeqno())
+            .destination(adminJettonWallet.getAddress())
+            .amount(Utils.toNano(0.06))
+            .body(
+                JettonWallet.createTransferBody(
+                    0,
+                    jettonsAmount,
+                    destinationAddress, // recipient
+                    adminWallet.getAddress(), // response address
+                    null, // custom payload
+                    BigInteger.ONE, // forward amount
+                    MsgUtils.createTextMessageBody(
+                        "jetton top up from ton4j faucet") // forward payload
+                    ))
+            .build();
+    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
+
+    if (extMessageInfo.getError().getCode() != 0) {
+      throw new Error(extMessageInfo.getError().getMessage());
+    }
+
+    ContractUtils.waitForJettonBalanceChange(
+        adnlLiteClient, Address.of(FAUCET_MASTER_ADDRESS), adminWallet.getAddress(), 60);
+    Utils.sleep(10);
+    return ContractUtils.getJettonBalance(
+        adnlLiteClient, Address.of(FAUCET_MASTER_ADDRESS), destinationAddress);
   }
 }

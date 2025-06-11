@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -49,6 +50,18 @@ public class JettonMinter implements Contract {
 
   private Tonlib tonlib;
   private long wc;
+
+  private AdnlLiteClient adnlLiteClient;
+
+  @Override
+  public AdnlLiteClient getAdnlLiteClient() {
+    return adnlLiteClient;
+  }
+
+  @Override
+  public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
+    adnlLiteClient = pAdnlLiteClient;
+  }
 
   @Override
   public Tonlib getTonlib() {

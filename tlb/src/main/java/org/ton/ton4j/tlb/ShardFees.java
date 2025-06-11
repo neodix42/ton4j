@@ -42,7 +42,7 @@ public class ShardFees {
         .shardFees(
             cs.loadDictAugE(
                 96,
-                k -> k.readInt(96),
+                k -> k.readUint(96),
                 v -> ShardFeeCreated.deserialize(v),
                 e -> ShardFeeCreated.deserialize(e)))
         .build();

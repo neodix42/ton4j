@@ -8,6 +8,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import lombok.Builder;
 import lombok.Getter;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -64,6 +65,18 @@ public class NftCollection implements Contract {
 
   private Tonlib tonlib;
   private long wc;
+
+  private AdnlLiteClient adnlLiteClient;
+
+  @Override
+  public AdnlLiteClient getAdnlLiteClient() {
+    return adnlLiteClient;
+  }
+
+  @Override
+  public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
+    adnlLiteClient = pAdnlLiteClient;
+  }
 
   @Override
   public Tonlib getTonlib() {
