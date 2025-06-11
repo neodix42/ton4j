@@ -592,12 +592,12 @@ public class CellSlice implements Serializable {
    *     var_uint$_ {n:#} len:(#&lt; n) value:(uint (len * 8)) = VarUInteger n;
    * </pre>
    */
-  public BigInteger loadVarUInteger(BigInteger bitLength) {
-    BigInteger len = loadUint(bitLength.intValue());
-    if (len.compareTo(BigInteger.ZERO) == 0) {
+  public BigInteger loadVarUInteger(int value) {
+    int len = loadUint(BigInteger.valueOf(value - 1).bitLength()).intValue();
+    if (len == 0) {
       return BigInteger.ZERO;
     } else {
-      return loadUint(len.multiply(BigInteger.valueOf(8L)).intValue());
+      return loadUint(len * 8);
     }
   }
 
@@ -607,29 +607,17 @@ public class CellSlice implements Serializable {
    * <p>nanograms$_ amount:(VarUInteger 16) = Grams;
    */
   public BigInteger loadCoins() {
-    BigInteger len = loadUint(4);
-    if (len.compareTo(BigInteger.ZERO) == 0) {
-      return BigInteger.ZERO;
-    } else {
-      return loadUint(len.multiply(BigInteger.valueOf(8L)).intValue());
-    }
+    return loadVarUInteger(16);
   }
 
   public BigInteger preloadCoins() {
     // Save current position instead of cloning the entire BitString
     int savedPosition = bits.readCursor;
     try {
-      BigInteger len = loadUint(4);
-      if (len.compareTo(BigInteger.ZERO) == 0) {
-        // Restore position
-        bits.readCursor = savedPosition;
-        return BigInteger.ZERO;
-      } else {
-        BigInteger result = loadUint(len.multiply(BigInteger.valueOf(8L)).intValue());
-        // Restore position
-        bits.readCursor = savedPosition;
-        return result;
-      }
+      BigInteger result = loadVarUInteger(16);
+      // Restore position
+      bits.readCursor = savedPosition;
+      return result;
     } catch (Throwable e) {
       // Restore position on error
       bits.readCursor = savedPosition;

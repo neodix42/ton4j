@@ -27,7 +27,7 @@ public class ConfigParams7 implements Serializable {
       dict =
           extraCurrencies.serialize( // dict:(HashmapE 32 (VarUInteger 32))
               k -> CellBuilder.beginCell().storeUint((BigInteger) k, 32).endCell().getBits(),
-              v -> CellBuilder.beginCell().storeVarUint((byte) v, 5).endCell());
+              v -> CellBuilder.beginCell().storeVarUint((byte) v, 32).endCell());
     }
     return CellBuilder.beginCell().storeDict(dict).endCell();
   }
@@ -35,10 +35,7 @@ public class ConfigParams7 implements Serializable {
   public static ConfigParams7 deserialize(CellSlice cs) {
     return ConfigParams7.builder()
         .extraCurrencies(
-            cs.loadDictE(
-                32,
-                k -> k.readUint(32),
-                v -> CellSlice.beginParse(v).loadVarUInteger(BigInteger.valueOf(5))))
+            cs.loadDictE(32, k -> k.readUint(32), v -> CellSlice.beginParse(v).loadVarUInteger(32)))
         .build();
   }
 }

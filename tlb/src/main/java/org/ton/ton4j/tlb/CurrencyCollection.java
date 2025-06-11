@@ -33,7 +33,7 @@ public class CurrencyCollection implements Serializable {
       dict =
           extraCurrencies.serialize(
               k -> CellBuilder.beginCell().storeUint((Long) k, 32).endCell().getBits(),
-              v -> CellBuilder.beginCell().storeVarUint((BigInteger) v, 5).endCell());
+              v -> CellBuilder.beginCell().storeVarUint((BigInteger) v, 32).endCell());
     }
     return CellBuilder.beginCell().storeCoins(coins).storeDict(dict).endCell();
   }
@@ -45,7 +45,7 @@ public class CurrencyCollection implements Serializable {
             cs.loadDictE(
                 32,
                 k -> k.readUint(32).longValue(),
-                v -> CellSlice.beginParse(v).loadVarUInteger(BigInteger.valueOf(5))))
+                v -> CellSlice.beginParse(v).loadVarUInteger(32)))
         .build();
   }
 }

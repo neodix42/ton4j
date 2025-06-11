@@ -122,6 +122,7 @@ public class AdnlLiteClientTest {
     //    log.info("accountShardObject: {} ", accountState.getShardAccount());
     //    log.info("ShardState: {} ", accountState.getShardState());
     log.info("ShardStateUnsplit: {} ", accountState.getShardStateUnsplit());
+    log.info("getShardAccounts: {} ", accountState.getShardAccounts());
   }
 
   @Test

@@ -65,8 +65,7 @@ public class TestCellSlice {
 
     for (int i = 3; i <= 18; i++) {
       CellBuilder cell = CellBuilder.beginCell().storeVarUint(BigInteger.valueOf(777), i);
-      BigInteger loadedValue =
-          CellSlice.beginParse(cell.endCell()).loadVarUInteger(BigInteger.valueOf(i));
+      BigInteger loadedValue = CellSlice.beginParse(cell.endCell()).loadVarUInteger(i);
       log.info("loaded {}", loadedValue);
       if (loadedValue.intValue() != 777) {
         assertFalse(true);
@@ -77,8 +76,7 @@ public class TestCellSlice {
   @Test
   public void testBitStringVarUint2() {
     CellBuilder cell1 = CellBuilder.beginCell().storeVarUint(BigInteger.valueOf(10), 10);
-    BigInteger loadedValue1 =
-        CellSlice.beginParse(cell1.endCell()).loadVarUInteger(BigInteger.valueOf(10));
+    BigInteger loadedValue1 = CellSlice.beginParse(cell1.endCell()).loadVarUInteger(10);
     assertThat(loadedValue1).isEqualTo(BigInteger.valueOf(10));
   }
 

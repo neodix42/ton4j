@@ -423,17 +423,17 @@ public class BitString implements Serializable {
    * Write variable-length unsigned integer
    *
    * @param value BigInteger value to write
-   * @param bitLength int size of length field in bits
+   * @param valueBits int size of length field in bits
    */
-  public void writeVarUint(BigInteger value, int bitLength) {
+  public void writeVarUint(BigInteger value, int valueBits) {
     if (value.compareTo(BigInteger.ZERO) == 0) {
-      writeUint(BigInteger.ZERO, bitLength);
+      writeUint(BigInteger.ZERO, valueBits);
     } else {
       int bytesSize = (value.bitLength() + 7) / 8;
-      if (bytesSize > bitLength) {
-        throw new Error("Amount is too big. Should fit in " + bitLength + " bits");
-      }
-      writeUint(BigInteger.valueOf(bytesSize), bitLength);
+      //      if (bytesSize > bitLength) {
+      //        throw new Error("Amount is too big. Should fit in " + bitLength + " bits");
+      //      }
+      writeUint(BigInteger.valueOf(bytesSize), BigInteger.valueOf(valueBits - 1).bitLength());
       writeUint(value, bytesSize * 8);
     }
   }

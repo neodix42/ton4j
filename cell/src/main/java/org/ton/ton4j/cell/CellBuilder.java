@@ -146,9 +146,9 @@ public class CellBuilder {
     return this;
   }
 
-  public CellBuilder storeVarUint(BigInteger number, int bitLength) {
+  public CellBuilder storeVarUint(BigInteger number, int value) {
     checkSign(number);
-    cell.bits.writeVarUint(number, bitLength);
+    cell.bits.writeVarUint(number, value);
     return this;
   }
 
@@ -158,19 +158,19 @@ public class CellBuilder {
     return this;
   }
 
-  public CellBuilder storeVarUint(Byte number, int bitLength) {
+  public CellBuilder storeVarUint(Byte number, int value) {
     checkSign(BigInteger.valueOf(number));
-    cell.bits.writeVarUint(BigInteger.valueOf(number), bitLength);
+    cell.bits.writeVarUint(BigInteger.valueOf(number), value);
     return this;
   }
 
-  public CellBuilder storeVarUintMaybe(BigInteger number, int bitLength) {
+  public CellBuilder storeVarUintMaybe(BigInteger number, int value) {
     if (isNull(number)) {
       cell.bits.writeBit(false);
     } else {
       cell.bits.writeBit(true);
       checkSign(number);
-      cell.bits.writeVarUint(number, bitLength);
+      cell.bits.writeVarUint(number, value);
     }
     return this;
   }

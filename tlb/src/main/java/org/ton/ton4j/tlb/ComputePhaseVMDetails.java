@@ -51,9 +51,9 @@ public class ComputePhaseVMDetails implements Serializable {
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        .storeVarUint(gasUsed, 3)
-        .storeVarUint(gasLimit, 3)
-        .storeVarUintMaybe(gasCredit, 2)
+        .storeVarUint(gasUsed, 7)
+        .storeVarUint(gasLimit, 7)
+        .storeVarUintMaybe(gasCredit, 3)
         .storeInt(mode, 8)
         .storeInt(exitCode, 32)
         .storeIntMaybe(exitArg, 32)
@@ -65,9 +65,9 @@ public class ComputePhaseVMDetails implements Serializable {
 
   public static ComputePhaseVMDetails deserialize(CellSlice cs) {
     return ComputePhaseVMDetails.builder()
-        .gasUsed(cs.loadVarUInteger(BigInteger.valueOf(3)))
-        .gasLimit(cs.loadVarUInteger(BigInteger.valueOf(3)))
-        .gasCredit(cs.loadBit() ? cs.loadVarUInteger(BigInteger.valueOf(2)) : null)
+        .gasUsed(cs.loadVarUInteger(7))
+        .gasLimit(cs.loadVarUInteger(7))
+        .gasCredit(cs.loadBit() ? cs.loadVarUInteger(3) : null)
         .mode(cs.loadInt(8).intValue())
         .exitCode(cs.loadInt(32).longValue())
         .exitArg(cs.loadBit() ? cs.loadInt(32) : null)

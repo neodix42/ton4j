@@ -24,13 +24,13 @@ public class StorageUsed implements Serializable {
   BigInteger bitsUsed;
 
   public Cell toCell() {
-    return CellBuilder.beginCell().storeVarUint(cellsUsed, 3).storeVarUint(bitsUsed, 3).endCell();
+    return CellBuilder.beginCell().storeVarUint(cellsUsed, 7).storeVarUint(bitsUsed, 7).endCell();
   }
 
   public static StorageUsed deserialize(CellSlice cs) {
     return StorageUsed.builder()
-        .cellsUsed(cs.loadVarUInteger(BigInteger.valueOf(3)))
-        .bitsUsed(cs.loadVarUInteger(BigInteger.valueOf(3)))
+        .cellsUsed(cs.loadVarUInteger(7))
+        .bitsUsed(cs.loadVarUInteger(7))
         .build();
   }
 }
