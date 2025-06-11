@@ -35,7 +35,11 @@ public class AdnlLiteClientTest {
     } else {
       tonGlobalConfig = TonGlobalConfig.loadFromUrl(Utils.getGlobalConfigUrlTestnetGithub());
     }
-    client = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).liteServerIndex(2).build();
+    client =
+        AdnlLiteClient.builder()
+            .globalConfig(tonGlobalConfig)
+            //            .liteServerIndex(2)
+            .build();
   }
 
   @AfterAll

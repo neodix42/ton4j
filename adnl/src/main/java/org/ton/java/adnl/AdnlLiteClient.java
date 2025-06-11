@@ -1077,55 +1077,100 @@ public class AdnlLiteClient {
    * @throws Exception if all retries fail
    */
   private <T> T executeWithRetry(Callable<T> supplier) throws Exception {
-    Exception lastException = null;
+    try {
+      return supplier.call();
+    } catch (IllegalStateException e) {
+      // This is a connection failure (not connected to lite-server)
+      // We should retry connecting to another server
+      if (e.getMessage() != null && e.getMessage().contains("Not connected to lite-server")) {
+        return handleConnectionFailure(supplier, e);
+      }
+      // For other IllegalStateException, just throw it
+      throw e;
+    } catch (Exception e) {
+      // This is a query failure (connected but query failed)
+      // We should not retry, just return the exception
+      log.warn("Query failed: {}", e.getMessage() == null 
+          ? ExceptionUtils.getRootCauseMessage(e) 
+          : e.getMessage());
+      
+      // Check if the connection is still valid, but don't change the connection state
+      // This ensures that isConnected() will return the correct state for subsequent calls
+      if (transport != null && !transport.isConnected()) {
+        log.warn("Connection lost during query execution, but not reconnecting as per requirements");
+        // Update the connected flag to match the transport state
+        // This ensures that isConnected() will return false for subsequent calls
+        // but we don't trigger any reconnection logic
+        connected = false;
+      }
+      
+      throw e;
+    }
+  }
+  
+  /**
+   * Handle connection failure with retry mechanism
+   *
+   * @param <T> The return type of the query
+   * @param supplier The query supplier
+   * @param initialException The initial connection exception
+   * @return The query result
+   * @throws Exception if all connection attempts fail
+   */
+  private <T> T handleConnectionFailure(Callable<T> supplier, Exception initialException) throws Exception {
+    Exception lastException = initialException;
     int retries = 0;
 
     while (retries < maxRetries) {
-      try {
-        return supplier.call();
-      } catch (Exception e) {
-        lastException = e;
-        log.warn(
-            "Query failed (attempt {}/{}): {}",
-            retries + 1,
-            maxRetries,
-            e.getMessage() == null
-                ? ExceptionUtils.getRootCauseMessage(lastException)
-                : lastException.getMessage());
+      log.warn(
+          "Connection failed (attempt {}/{}): {}",
+          retries + 1,
+          maxRetries,
+          lastException.getMessage() == null
+              ? ExceptionUtils.getRootCauseMessage(lastException)
+              : lastException.getMessage());
 
-        if (!useServerRotation
-            || globalConfig == null
-            || globalConfig.getLiteservers() == null
-            || globalConfig.getLiteservers().length <= 1
-            || liteServerIndex >= 0) {
-          // No server rotation or only one server available or fixed server index
-          retries++;
-          continue;
-        }
-
-        // Try next server
-        int nextIndex = (currentServerIndex.get() + 1) % globalConfig.getLiteservers().length;
-        currentServerIndex.set(nextIndex);
-
-        try {
-          // Close current connection
-          close();
-          // Connect to next server
-          connect(globalConfig.getLiteservers()[nextIndex]);
-          log.info("Switched to lite-server at index: {}", nextIndex);
-        } catch (Exception connectException) {
-          log.error(
-              "Failed to connect to lite-server at index {}: {}",
-              nextIndex,
-              connectException.getMessage());
-        }
-
+      if (!useServerRotation
+          || globalConfig == null
+          || globalConfig.getLiteservers() == null
+          || globalConfig.getLiteservers().length <= 1
+          || liteServerIndex >= 0) {
+        // No server rotation or only one server available or fixed server index
         retries++;
+        try {
+          // Try to reconnect to the same server
+          connectWithRetry();
+          return supplier.call();
+        } catch (Exception e) {
+          lastException = e;
+        }
+        continue;
       }
+
+      // Try next server
+      int nextIndex = (currentServerIndex.get() + 1) % globalConfig.getLiteservers().length;
+      currentServerIndex.set(nextIndex);
+
+      try {
+        // Close current connection
+        close();
+        // Connect to next server
+        connect(globalConfig.getLiteservers()[nextIndex]);
+        log.info("Switched to lite-server at index: {}", nextIndex);
+        return supplier.call();
+      } catch (Exception connectException) {
+        lastException = connectException;
+        log.error(
+            "Failed to connect to lite-server at index {}: {}",
+            nextIndex,
+            connectException.getMessage());
+      }
+
+      retries++;
     }
 
     throw new Exception(
-        "Failed after "
+        "Failed to connect after "
             + maxRetries
             + " attempts. Last error: "
             + (lastException != null
