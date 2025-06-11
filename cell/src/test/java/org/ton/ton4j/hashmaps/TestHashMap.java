@@ -186,7 +186,7 @@ public class TestHashMap {
 
     CellSlice cs = CellSlice.beginParse(cellWithDict);
     log.info("deserializing hashmap...");
-    TonHashMap dex = cs.loadDict(32, k -> k.readInt(32), v -> v);
+    TonHashMap dex = cs.loadDict(32, k -> k.readUint(32), v -> v);
 
     log.info("Deserialized hashmap from cell {}, count {}", dex, dex.elements.size());
 

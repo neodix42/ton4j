@@ -22,17 +22,17 @@ public class AllShardsInfo implements Serializable, LiteServerAnswer {
   public byte[] data;
 
   public String getProof() {
-    if (proof != null) {
-      return Utils.bytesToHex(proof);
+    if (proof == null) {
+      return "";
     }
-    return "";
+    return Utils.bytesToHex(proof);
   }
 
   public String getData() {
-    if (data != null) {
-      return Utils.bytesToHex(data);
+    if (data == null) {
+      return "";
     }
-    return "";
+    return Utils.bytesToHex(data);
   }
 
   public ShardHashes getShardHashes() {

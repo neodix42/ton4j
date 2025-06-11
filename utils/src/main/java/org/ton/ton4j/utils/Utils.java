@@ -831,7 +831,7 @@ public class Utils {
     }
   }
 
-  private static byte[] to32ByteArray(BigInteger value) {
+  public static byte[] to32ByteArray(BigInteger value) {
     byte[] rawBytes = value.toByteArray();
 
     if (rawBytes.length == 33 && rawBytes[0] == 0x00) {
@@ -1669,6 +1669,10 @@ public class Utils {
 
   public static String getGlobalConfigUrlTestnet() {
     return "https://ton.org/testnet-global.config.json";
+  }
+
+  public static String getGlobalConfigUrlMyLocalTon() {
+    return "http://127.0.0.1:8000/localhost.global.config.json";
   }
 
   public static String getGlobalConfigUrlMainnetGithub() {

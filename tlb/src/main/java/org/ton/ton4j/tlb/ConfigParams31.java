@@ -26,7 +26,7 @@ public class ConfigParams31 implements Serializable {
 
   public static ConfigParams31 deserialize(CellSlice cs) {
     return ConfigParams31.builder()
-        .fundamentalSmcAddr((cs.loadDictE(256, k -> k.readInt(256), v -> v)))
+        .fundamentalSmcAddr((cs.loadDictE(256, k -> k.readUint(256), v -> v)))
         .build();
   }
 }

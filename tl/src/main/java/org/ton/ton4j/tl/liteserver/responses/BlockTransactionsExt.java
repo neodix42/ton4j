@@ -44,7 +44,7 @@ public class BlockTransactionsExt implements Serializable, LiteServerAnswer {
 
   public List<Transaction> getTransactionsParsed() {
     List<Transaction> txs = new ArrayList<>();
-    if (transactions != null) {
+    if ((transactions != null) && (transactions.length != 0)) {
       List<Cell> cells = CellBuilder.beginCell().fromBocMultiRoot(transactions).endCells();
       for (Cell c : cells) {
         txs.add(Transaction.deserialize(CellSlice.beginParse(c)));

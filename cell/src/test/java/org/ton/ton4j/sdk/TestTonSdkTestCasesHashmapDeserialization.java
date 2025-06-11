@@ -1,8 +1,14 @@
 package org.ton.ton4j.sdk;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.URL;
+import java.nio.charset.Charset;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -11,13 +17,6 @@ import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.URL;
-import java.nio.charset.Charset;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -108,7 +107,7 @@ public class TestTonSdkTestCasesHashmapDeserialization {
         Cell cell = CellBuilder.beginCell().fromBocBase64(bocBase64).endCell();
         CellSlice cs = CellSlice.beginParse(cell);
         TonHashMap x = cs.loadDict(keySizeBits,
-                k -> k.readInt(intValueSizeBits),
+                k -> k.readUint(intValueSizeBits),
                 v -> v);
 
         int elementsCount = Integer.parseInt(testCase.getExpectedOutput().get("elementsCount").toString());

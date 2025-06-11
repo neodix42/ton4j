@@ -38,7 +38,7 @@ public class ListBlockTransactionsQuery implements LiteServerQueryData {
     buffer.putInt(mode);
     buffer.putInt(count);
 
-    if ((mode & 128) != 0 && afterTx != null) {
+    if ((mode & 128) != 0) {
       buffer.put(afterTx.serialize());
     }
 

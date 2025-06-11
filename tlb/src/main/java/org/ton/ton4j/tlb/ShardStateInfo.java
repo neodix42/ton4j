@@ -55,7 +55,7 @@ public class ShardStateInfo implements Serializable {
           .totalValidatorFees(CurrencyCollection.deserialize(cs))
           .libraries(
               cs.loadDictE(
-                  256, k -> k.readInt(256), v -> LibDescr.deserialize(CellSlice.beginParse(v))))
+                  256, k -> k.readUint(256), v -> LibDescr.deserialize(CellSlice.beginParse(v))))
           .masterRef(cs.loadBit() ? ExtBlkRef.deserialize(CellSlice.beginParse(cs)) : null)
           .build();
     } else {

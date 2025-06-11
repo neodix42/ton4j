@@ -19,7 +19,8 @@ public class MessagesList implements Serializable {
     }
     return MessagesList.builder()
         .list(
-            cs.loadDictE(15, k -> k.readInt(15), v -> Message.deserialize(CellSlice.beginParse(v))))
+            cs.loadDictE(
+                15, k -> k.readUint(15), v -> Message.deserialize(CellSlice.beginParse(v))))
         .build();
   }
 }

@@ -46,7 +46,7 @@ public class ConfigParams39 implements Serializable {
         .validatorSignedTemp(
             cs.loadDictE(
                 256,
-                k -> k.readInt(16),
+                k -> k.readUint(16),
                 v -> ValidatorSignedTempKey.deserialize(CellSlice.beginParse(v))))
         .build();
   }

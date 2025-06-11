@@ -57,7 +57,7 @@ public class McBlockExtraInfo implements Serializable {
 
   public static McBlockExtraInfo deserialize(CellSlice cs) {
     return McBlockExtraInfo.builder()
-        .prevBlkSignatures(cs.loadDictE(16, k -> k.readInt(16), v -> v))
+        .prevBlkSignatures(cs.loadDictE(16, k -> k.readUint(16), v -> v))
         .recoverCreateMsg(
             cs.loadBit() ? InMsg.deserialize(CellSlice.beginParse(cs.loadRef())) : null)
         .mintMsg(cs.loadBit() ? InMsg.deserialize(CellSlice.beginParse(cs.loadRef())) : null)

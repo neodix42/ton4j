@@ -36,7 +36,7 @@ public class BlockCreateStatsOrdinary implements BlockCreateStats, Serializable 
     return BlockCreateStatsOrdinary.builder()
         .list(
             cs.loadDictE(
-                256, k -> k.readInt(256), v -> CreatorStats.deserialize(CellSlice.beginParse(v))))
+                256, k -> k.readUint(256), v -> CreatorStats.deserialize(CellSlice.beginParse(v))))
         .build();
   }
 }

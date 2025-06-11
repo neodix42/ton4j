@@ -34,7 +34,8 @@ public class ShardHashes implements Serializable {
   public static ShardHashes deserialize(CellSlice cs) {
     return ShardHashes.builder()
         .shardHashes(
-            cs.loadDictE(32, k -> k.readInt(32), v -> BinTree.deserialize(CellSlice.beginParse(v))))
+            cs.loadDictE(
+                32, k -> k.readUint(32), v -> BinTree.deserialize(CellSlice.beginParse(v))))
         .build();
   }
 }

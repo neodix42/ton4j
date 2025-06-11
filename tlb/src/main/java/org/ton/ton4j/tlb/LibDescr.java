@@ -46,7 +46,7 @@ public class LibDescr implements Serializable {
     return LibDescr.builder()
         .magic(0b00)
         .lib(cs.loadRef())
-        .publishers(cs.loadDict(256, k -> k.readInt(256), v -> CellSlice.beginParse(v).loadBit()))
+        .publishers(cs.loadDict(256, k -> k.readUint(256), v -> CellSlice.beginParse(v).loadBit()))
         .build();
   }
 }

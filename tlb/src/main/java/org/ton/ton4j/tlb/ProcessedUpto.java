@@ -22,10 +22,10 @@ public class ProcessedUpto implements Serializable {
   BigInteger lastMsgHash;
 
   public Cell toCell() {
-    return CellBuilder.beginCell().storeUint(lastMsgLt, 64).storeUint(lastMsgHash, 64).endCell();
+    return CellBuilder.beginCell().storeUint(lastMsgLt, 64).storeUint(lastMsgHash, 256).endCell();
   }
 
   public static ProcessedUpto deserialize(CellSlice cs) {
-    return ProcessedUpto.builder().lastMsgLt(cs.loadUint(64)).lastMsgHash(cs.loadUint(64)).build();
+    return ProcessedUpto.builder().lastMsgLt(cs.loadUint(64)).lastMsgHash(cs.loadUint(256)).build();
   }
 }

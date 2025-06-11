@@ -21,17 +21,17 @@ public class ShardInfo implements Serializable, LiteServerAnswer {
   public byte[] shardDescr;
 
   public String getShardProof() {
-    if (shardProof != null) {
-      return Utils.bytesToHex(shardProof);
+    if (shardProof == null) {
+      return "";
     }
-    return "";
+    return Utils.bytesToHex(shardProof);
   }
 
   public String getShardDescr() {
-    if (shardDescr != null) {
-      return Utils.bytesToHex(shardDescr);
+    if (shardDescr == null) {
+      return "";
     }
-    return "";
+    return Utils.bytesToHex(shardDescr);
   }
 
   public static final int constructorId = SHARD_INFO_ANSWER;

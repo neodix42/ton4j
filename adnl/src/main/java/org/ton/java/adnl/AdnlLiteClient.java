@@ -39,6 +39,7 @@ public class AdnlLiteClient {
   private final int liteServerIndex;
   private final boolean useServerRotation;
   private final int maxRetries;
+  private final int queryTimeout;
   private final AtomicInteger currentServerIndex = new AtomicInteger(0);
 
   private AdnlLiteClient(Builder builder) {
@@ -49,6 +50,7 @@ public class AdnlLiteClient {
     this.liteServerIndex = builder.liteServerIndex;
     this.useServerRotation = builder.useServerRotation;
     this.maxRetries = builder.maxRetries;
+    this.queryTimeout = builder.queryTimeout;
 
     if (this.liteServerIndex >= 0) {
       this.currentServerIndex.set(this.liteServerIndex);
@@ -185,7 +187,7 @@ public class AdnlLiteClient {
           log.info("Sending getMasterchainInfo query");
 
           LiteServerAnswer response;
-          response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          response = transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (MasterchainInfo) response;
           } catch (Exception e) {
@@ -208,7 +210,7 @@ public class AdnlLiteClient {
           log.info("Sending getMasterchainInfoExt query");
 
           LiteServerAnswer response;
-          response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          response = transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (MasterchainInfoExt) response;
           } catch (Exception e) {
@@ -230,7 +232,8 @@ public class AdnlLiteClient {
           byte[] queryBytes = LiteServerQuery.pack(CurrentTimeQuery.builder().build());
           log.info("Sending getTime query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (CurrentTime) response;
           } catch (Exception e) {
@@ -252,7 +255,8 @@ public class AdnlLiteClient {
           byte[] queryBytes = LiteServerQuery.pack(VersionQuery.builder().build());
           log.info("Sending getVersion query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (Version) response;
           } catch (Exception e) {
@@ -276,7 +280,8 @@ public class AdnlLiteClient {
 
           log.info("Sending getConfigAll query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (ConfigInfo) response;
           } catch (Exception e) {
@@ -301,7 +306,8 @@ public class AdnlLiteClient {
 
           log.info("Sending getConfigParams query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (ConfigInfo) response;
           } catch (Exception e) {
@@ -345,7 +351,8 @@ public class AdnlLiteClient {
           byte[] queryBytes = LiteServerQuery.pack(BlockStateQuery.builder().id(id).build());
           log.info("Sending getBlockState query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (BlockState) response;
           } catch (Exception e) {
@@ -369,7 +376,8 @@ public class AdnlLiteClient {
 
           log.info("Sending getBlockHeader query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (BlockHeader) response;
           } catch (Exception e) {
@@ -392,7 +400,8 @@ public class AdnlLiteClient {
 
           log.info("Sending sendMessage query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (SendMsgStatus) response;
           } catch (Exception e) {
@@ -424,7 +433,8 @@ public class AdnlLiteClient {
 
           log.info("Sending ValidatorStatsQuery query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (ValidatorStats) response;
           } catch (Exception e) {
@@ -447,7 +457,8 @@ public class AdnlLiteClient {
 
           log.info("Sending sendMessage query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (ShardBlockProof) response;
           } catch (Exception e) {
@@ -477,7 +488,8 @@ public class AdnlLiteClient {
 
           log.info("Sending sendMessage query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (PartialBlockProof) response;
           } catch (Exception e) {
@@ -515,7 +527,8 @@ public class AdnlLiteClient {
                   AccountStateQuery.builder().id(id).account(accountAddress).build());
           log.info("Sending getAccountState query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (AccountState) response;
           } catch (Exception e) {
@@ -540,7 +553,8 @@ public class AdnlLiteClient {
                   AccountStatePrunedQuery.builder().id(id).account(accountAddress).build());
           log.info("Sending getAccountStatePruned query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (AccountState) response;
           } catch (Exception e) {
@@ -573,7 +587,8 @@ public class AdnlLiteClient {
 
           log.info("Sending runMethod query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (RunMethodResult) response;
           } catch (Exception e) {
@@ -604,7 +619,8 @@ public class AdnlLiteClient {
 
           log.info("Sending getShardInfo query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (ShardInfo) response;
           } catch (Exception e) {
@@ -626,7 +642,8 @@ public class AdnlLiteClient {
           byte[] queryBytes = LiteServerQuery.pack(AllShardsInfoQuery.builder().id(id).build());
           log.info("Sending getAllShardsInfo query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (AllShardsInfo) response;
           } catch (Exception e) {
@@ -651,7 +668,8 @@ public class AdnlLiteClient {
                   OneTransactionQuery.builder().id(id).account(accountAddress).lt(lt).build());
           log.info("Sending getOneTransaction query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (TransactionInfo) response;
           } catch (Exception e) {
@@ -671,13 +689,15 @@ public class AdnlLiteClient {
             throw new IllegalStateException("Not connected to lite-server");
           }
           long tempLt = 0;
-          byte[] tempHash = new byte[32];
+          byte[] tempHash = new byte[0];
           if ((lt == 0) || (hash == null)) {
             MasterchainInfo masterchainInfo = getMasterchainInfo();
             AccountState account = getAccountState(masterchainInfo.getLast(), accountAddress);
-            tempLt = account.getShardAccounts().get(0).getLastTransLt().longValue();
-            tempHash = account.getShardAccounts().get(0).lastTransHash.toByteArray();
-            System.out.println("tempLt " + tempLt + ", tempHash " + Utils.bytesToHex(tempHash));
+            if ((account.getShardAccounts() != null) && (!account.getShardAccounts().isEmpty())) {
+              tempLt = account.getShardAccounts().get(0).getLastTransLt().longValue();
+              tempHash = Utils.to32ByteArray(account.getShardAccounts().get(0).lastTransHash);
+              log.info("found latest LT {}, hash {}", tempLt, Utils.bytesToHex(tempHash));
+            }
           }
 
           byte[] queryBytes =
@@ -685,13 +705,14 @@ public class AdnlLiteClient {
                   TransactionListQuery.builder()
                       .count(count)
                       .account(accountAddress)
-                      .lt((lt == 0) ? tempLt : lt)
-                      .hash((hash == null) ? tempHash : hash)
+                      .lt((tempLt != 0) ? tempLt : lt)
+                      .hash((tempHash.length != 0) ? tempHash : hash)
                       .build());
 
           log.info("Sending getTransactions query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (TransactionList) response;
           } catch (Exception e) {
@@ -716,7 +737,8 @@ public class AdnlLiteClient {
 
           log.info("Sending lookupBlock query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (BlockHeader) response;
           } catch (Exception e) {
@@ -748,7 +770,8 @@ public class AdnlLiteClient {
 
           log.info("Sending lookupBlockWithProof query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (LookupBlockResult) response;
           } catch (Exception e) {
@@ -779,7 +802,8 @@ public class AdnlLiteClient {
 
           log.info("Sending listBlockTransactions query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (BlockTransactions) response;
           } catch (Exception e) {
@@ -817,7 +841,8 @@ public class AdnlLiteClient {
                       .build());
           log.info("Sending listBlockTransactionsExt query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (BlockTransactionsExt) response;
           } catch (Exception e) {
@@ -874,7 +899,8 @@ public class AdnlLiteClient {
                       .build());
           log.info("Sending getTime query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (DispatchQueueInfo) response;
           } catch (Exception e) {
@@ -916,7 +942,8 @@ public class AdnlLiteClient {
                       .build());
           log.info("Sending getTime query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (DispatchQueueMessages) response;
           } catch (Exception e) {
@@ -940,7 +967,8 @@ public class AdnlLiteClient {
 
           log.info("Sending getTime query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (LibraryResult) response;
           } catch (Exception e) {
@@ -970,7 +998,8 @@ public class AdnlLiteClient {
 
           log.info("Sending getTime query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (LibraryResultWithProof) response;
           } catch (Exception e) {
@@ -995,7 +1024,8 @@ public class AdnlLiteClient {
 
           log.info("Sending getTime query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (OutMsgQueueSizes) response;
           } catch (Exception e) {
@@ -1025,7 +1055,8 @@ public class AdnlLiteClient {
 
           log.info("Sending getTime query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(60, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (BlockOutMsgQueueSize) response;
           } catch (Exception e) {
@@ -1112,6 +1143,7 @@ public class AdnlLiteClient {
     private int liteServerIndex = -1;
     private boolean useServerRotation = true;
     private int maxRetries = 5;
+    private int queryTimeout = 60;
 
     /** Create a new builder */
     public Builder() {}
@@ -1212,6 +1244,17 @@ public class AdnlLiteClient {
      */
     public Builder maxRetries(int maxRetries) {
       this.maxRetries = maxRetries;
+      return this;
+    }
+
+    /**
+     * Set the timeout in seconds for each query
+     *
+     * @param queryTimeout Number of seconds to wait for query response
+     * @return Builder
+     */
+    public Builder queryTimeout(int queryTimeout) {
+      this.queryTimeout = queryTimeout;
       return this;
     }
 

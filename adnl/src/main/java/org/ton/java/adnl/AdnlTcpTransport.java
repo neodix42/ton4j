@@ -72,7 +72,7 @@ public class AdnlTcpTransport {
     waitForHandshakeConfirmation();
 
     connected = true;
-    log.info("Connected successfully");
+    //    log.info("Connected successfully");
 
     // Authentication is optional for lite-servers
     if (authKey != null) {
@@ -82,7 +82,7 @@ public class AdnlTcpTransport {
   }
 
   private void performHandshake(byte[] serverPublicKey) throws Exception {
-    log.info("Performing ADNL handshake");
+    //    log.debug("Performing ADNL handshake");
 
     // Generate 160 random bytes for encryption keys (matching Go implementation)
     byte[] randomData = new byte[160];
@@ -127,12 +127,11 @@ public class AdnlTcpTransport {
     Cipher handshakeCipher = CryptoUtils.createAESCtrCipher(k, iv, Cipher.ENCRYPT_MODE);
     byte[] encryptedData = CryptoUtils.aesCtrTransform(handshakeCipher, randomData);
 
-    log.info("Server key ID: " + CryptoUtils.hex(serverKeyId));
-    log.info("Client public key: " + CryptoUtils.hex(clientPublicKey));
+    //    log.debug("Server key ID: " + CryptoUtils.hex(serverKeyId));
+    //    log.debug("Client public key: " + CryptoUtils.hex(clientPublicKey));
 
     // Build handshake packet: serverKeyId(32) + clientPublicKey(32) + checksum(32) +
     // encryptedData(160)
-    // Total: 256 bytes (matching Go implementation)
     ByteBuffer handshakePacket = ByteBuffer.allocate(256);
     handshakePacket.put(serverKeyId); // 32 bytes
     handshakePacket.put(clientPublicKey); // 32 bytes
@@ -271,7 +270,7 @@ public class AdnlTcpTransport {
       if (packetData.length == 0) {
         // Empty packet = handshake confirmation
         connected = true;
-        log.info("Received handshake confirmation (empty packet)");
+        //        log.info("Received handshake confirmation (empty packet)");
         return;
       }
 
@@ -302,7 +301,7 @@ public class AdnlTcpTransport {
       // Handle handshake confirmation (empty payload)
       if (payload.length == 0) {
         connected = true;
-        log.info("Received handshake confirmation (empty packet)");
+        //        log.info("Received handshake confirmation (empty packet)");
         return;
       }
 
@@ -492,7 +491,6 @@ public class AdnlTcpTransport {
       throw new IllegalStateException("Not connected");
     }
 
-    // Build packet following the Go implementation:
     // [size:4][nonce:32][payload:N][checksum:32]
 
     // First allocate buffer with size + nonce, then we'll append payload and checksum

@@ -47,13 +47,13 @@ public class OutMsgQueueInfo implements Serializable {
             cs.loadDictAugE(
                 352,
                 k -> k.readUint(352),
-                v -> EnqueuedMsg.deserialize(v),
+                EnqueuedMsg::deserialize,
                 e -> CellSlice.beginParse(e).loadUint(64)))
         .processedInfo(
             cs.loadDictE(
-                96, k -> k.readInt(96), v -> ProcessedUpto.deserialize(CellSlice.beginParse(v))))
+                96, k -> k.readUint(96), v -> ProcessedUpto.deserialize(CellSlice.beginParse(v))))
         .ihrPendingInfo(
-            cs.loadDictE(320, k -> k.readInt(320), v -> CellSlice.beginParse(v).loadUint(64)))
+            cs.loadDictE(320, k -> k.readUint(320), v -> CellSlice.beginParse(v).loadUint(64)))
         .build();
   }
 }

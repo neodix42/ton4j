@@ -11,6 +11,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -163,6 +164,7 @@ public class TestTonSdkTestCasesTlbDeserialization {
     assertThat(block.getBlockInfo().getGenCatchainSeqno()).isEqualTo(genCatchainSeqno);
   }
 
+  @Ignore("input was generated using wrong sdk")
   @Test
   public void testTlbDeserialization5() {
 

@@ -55,7 +55,7 @@ public class AccountBlock implements Serializable {
         .transactions(
             cs.loadDictAug(
                 64,
-                k -> k.readInt(64),
+                k -> k.readUint(64),
                 v -> Transaction.deserialize(CellSlice.beginParse(v.loadRef())),
                 e -> CurrencyCollection.deserialize(e)))
         .stateUpdate(cs.loadRef()) // ^(HASH_UPDATE Account) todo

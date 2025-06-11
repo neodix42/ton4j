@@ -24,8 +24,6 @@ public class AdnlLiteClientTest {
 
   private static AdnlLiteClient client;
   private LiteClientConnectionPool pool;
-  private static final String TESTNET_CONFIG_PATH = "testnet-global.config.json";
-  private static final String MAINNET_CONFIG_PATH = "global.config.json";
   private static final boolean mainnet = true;
 
   @BeforeAll
@@ -37,11 +35,7 @@ public class AdnlLiteClientTest {
     } else {
       tonGlobalConfig = TonGlobalConfig.loadFromUrl(Utils.getGlobalConfigUrlTestnetGithub());
     }
-    client =
-        AdnlLiteClient.builder()
-            .globalConfig(tonGlobalConfig)
-            //            .liteServerIndex(2)
-            .build();
+    client = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).liteServerIndex(2).build();
   }
 
   @AfterAll
@@ -244,6 +238,7 @@ public class AdnlLiteClientTest {
     assertThat(blockHeader.getId().getSeqno()).isGreaterThan(0);
   }
 
+  //  @Ignore("cannot request total state: possibly too large")
   @Test
   void testGetBlockState() throws Exception {
     // cannot request total state: possibly too large todo
@@ -338,11 +333,10 @@ public class AdnlLiteClientTest {
 
     TransactionList transactionList =
         client.getTransactions(
-            Address.of(ELECTOR_ADDRESS),
-            35473445000001L,
+            Address.of(getAddress()),
+            58178049000003L,
             Utils.hexToSignedBytes(
-                "86030163a1e5bcb428ac0919394855f5ffea527ef2d3e1cd51dd2cf8594ccdd1"), // testnet
-            // specific
+                "ce0c54c80f7a71da97b853f53d4850b84dd055cf4d412fb5a6a15f357f5350f4"),
             10);
 
     for (Transaction tx : transactionList.getTransactionsParsed()) {
