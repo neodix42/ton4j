@@ -12,11 +12,10 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.smartcontract.types.WalletConfig;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R1;
+import org.ton.ton4j.tl.liteserver.responses.SendMsgStatus;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtraCurrency;
-import org.ton.ton4j.tonlib.types.RawTransaction;
-import org.ton.ton4j.tonlib.types.RawTransactions;
+import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.utils.Utils;
 
 /** Interface for all smart contract objects in ton4j. */
@@ -122,6 +121,47 @@ public interface Contract {
       }
     }
     return StringUtils.isNotEmpty(getTonlib().getRawAccountState(getAddress()).getCode());
+  }
+
+  default ExtMessageInfo send(Message externalMessage) {
+    if (nonNull(getAdnlLiteClient())) {
+      try {
+
+        SendMsgStatus sendMsgStatus =
+            getAdnlLiteClient()
+                .sendMessage(
+                    externalMessage); // raw boc // prepareExternalMsg(config).toCell().toBoc()
+        return ExtMessageInfo.builder()
+            .error(
+                TonlibError.builder()
+                    .code(0)
+                    .build()) // compatibility, if user checks tonlib error when using adnl client
+            .adnlLiteClientError(
+                AdnlLiteClientError.builder().code(sendMsgStatus.getStatus()).build())
+            .build();
+      } catch (Exception e) {
+        return ExtMessageInfo.builder()
+            .error(
+                TonlibError.builder()
+                    .code(Long.parseLong(e.getCause().getMessage()))
+                    .build()) // if user checks tonlib error when using adnl client
+            .adnlLiteClientError(
+                AdnlLiteClientError.builder()
+                    .code(Long.parseLong(e.getCause().getMessage()))
+                    .message(e.getMessage())
+                    .build())
+            .build();
+      }
+    }
+    return getTonlib().sendRawMessage(externalMessage.toCell().toBase64()); // base64
+  }
+
+  default void sendWithConfirmation(Message externalMessage) throws Exception {
+    if (nonNull(getAdnlLiteClient())) {
+      getAdnlLiteClient().sendRawMessageWithConfirmation(externalMessage, getAddress());
+    } else {
+      getTonlib().sendRawMessageWithConfirmation(externalMessage.toCell().toBase64(), getAddress());
+    }
   }
 
   /** Checks every 2 seconds for 60 seconds if account state was deployed at address */

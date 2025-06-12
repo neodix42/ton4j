@@ -1,5 +1,7 @@
 package org.ton.java.adnl;
 
+import static java.util.Objects.nonNull;
+
 import java.io.File;
 import java.math.BigInteger;
 import java.util.*;
@@ -170,7 +172,7 @@ public class AdnlLiteClient {
           try {
             if (connected && transport.isConnected()) {
               transport.ping().get(5, TimeUnit.SECONDS);
-//              log.info("Ping successful");
+              //              log.info("Ping successful");
             }
           } catch (Exception e) {
             log.warn("Adnl tcp.Ping failed: ", e);
@@ -827,30 +829,6 @@ public class AdnlLiteClient {
           } catch (Exception e) {
             if (response instanceof LiteServerError) {
               throw new Exception(((LiteServerError) response).getMessage());
-            }
-            throw e;
-          }
-        });
-  }
-
-  public SendMsgStatus sendMessage(byte[] body) throws Exception {
-    return executeWithRetry(
-        () -> {
-          if (!connected || !transport.isConnected()) {
-            throw new IllegalStateException("Not connected to lite-server");
-          }
-
-          byte[] queryBytes = LiteServerQuery.pack(SendMessageQuery.builder().body(body).build());
-
-          LiteServerAnswer response =
-              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
-          try {
-            return (SendMsgStatus) response;
-          } catch (Exception e) {
-            if (response instanceof LiteServerError) {
-              throw new Exception(
-                  ((LiteServerError) response).getMessage(),
-                  new Throwable(String.valueOf(((LiteServerError) response).getCode())));
             }
             throw e;
           }
@@ -1783,9 +1761,8 @@ public class AdnlLiteClient {
      *
      * @param configUrl URL to global.config.json file
      * @return Builder
-     * @throws Exception if URL cannot be read
      */
-    public Builder configUrl(String configUrl) throws Exception {
+    public Builder configUrl(String configUrl) {
       if (StringUtils.isEmpty(configUrl)) {
         throw new IllegalArgumentException("Config URL cannot be empty");
       }
@@ -1885,5 +1862,63 @@ public class AdnlLiteClient {
           Math.max(currentBalance.longValue(), initialBalance.longValue())
               - Math.min(currentBalance.longValue(), initialBalance.longValue());
     } while (diff < tolerateNanoCoins.longValue());
+  }
+
+  /**
+   * Sends Message with deliver confirmation. After the message has been sent to the network this
+   * method looks up specified account transactions and returns true if message was found among
+   * them. Timeout 60 seconds.
+   *
+   * @param externalMessage - Message
+   * @throws TimeoutException if message not found within a timeout
+   */
+  public void sendRawMessageWithConfirmation(Message externalMessage, Address account)
+      throws Exception {
+
+    SendMsgStatus sendMsgStatus = sendMessage(externalMessage);
+    log.info(
+        "Message has been successfully sent. Waiting for delivery of message with hash {}",
+        Utils.bytesToHex(externalMessage.getNormalizedHash()));
+
+    TransactionList rawTransactions;
+    for (int i = 0; i < 12; i++) {
+      rawTransactions = getTransactions(account, 0, null, 10);
+      for (Transaction tx : rawTransactions.getTransactionsParsed()) {
+        if (nonNull(tx.getInOut().getIn())
+            && Arrays.equals(
+                tx.getInOut().getIn().getNormalizedHash(), externalMessage.getNormalizedHash())) {
+          log.info("Message has been delivered.");
+        }
+      }
+      Utils.sleep(5);
+    }
+    log.error("Timeout waiting for message hash");
+    throw new TimeoutException("Cannot find hash of the sent message");
+  }
+
+  public SendMsgStatus sendMessage(Message externalMessage) throws Exception {
+    return executeWithRetry(
+        () -> {
+          if (!connected || !transport.isConnected()) {
+            throw new IllegalStateException("Not connected to lite-server");
+          }
+
+          byte[] queryBytes =
+              LiteServerQuery.pack(
+                  SendMessageQuery.builder().body(externalMessage.toCell().toBoc()).build());
+
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
+          try {
+            return (SendMsgStatus) response;
+          } catch (Exception e) {
+            if (response instanceof LiteServerError) {
+              throw new Exception(
+                  ((LiteServerError) response).getMessage(),
+                  new Throwable(String.valueOf(((LiteServerError) response).getCode())));
+            }
+            throw e;
+          }
+        });
   }
 }

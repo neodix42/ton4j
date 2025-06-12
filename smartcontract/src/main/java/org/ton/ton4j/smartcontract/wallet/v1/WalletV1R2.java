@@ -142,7 +142,9 @@ public class WalletV1R2 implements Contract {
    * @param config WalletV1R2Config
    */
   public ExtMessageInfo send(WalletV1R2Config config) {
-
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareExternalMsg(config));
+    }
     return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
   }
 
@@ -150,7 +152,10 @@ public class WalletV1R2 implements Contract {
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
-  public RawTransaction sendWithConfirmation(WalletV1R2Config config) {
+  public RawTransaction sendWithConfirmation(WalletV1R2Config config) throws Exception {
+    if (nonNull(adnlLiteClient)) {
+      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+    }
     return tonlib.sendRawMessageWithConfirmation(
         prepareExternalMsg(config).toCell().toBase64(), getAddress());
   }
@@ -161,10 +166,16 @@ public class WalletV1R2 implements Contract {
   }
 
   public ExtMessageInfo deploy() {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareDeployMsg());
+    }
     return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
   }
 
   public ExtMessageInfo deploy(byte[] signedBody) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareDeployMsg(signedBody));
+    }
     return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
   }
 
@@ -178,6 +189,9 @@ public class WalletV1R2 implements Contract {
   }
 
   public ExtMessageInfo send(WalletV1R2Config config, byte[] signedBodyHash) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareExternalMsg(config, signedBodyHash));
+    }
     return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
   }
 

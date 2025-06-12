@@ -107,7 +107,7 @@ public class TestWalletV1R1 extends CommonTest {
   }
 
   @Test
-  public void testWalletSignedExternally() throws InterruptedException {
+  public void testWalletSignedExternally() throws Exception {
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
     byte[] publicKey = keyPair.getPublicKey();
 
@@ -153,7 +153,7 @@ public class TestWalletV1R1 extends CommonTest {
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
     AdnlLiteClient adnlLiteClient =
         AdnlLiteClient.builder()
-            .configUrl(Utils.getGlobalConfigUrlMainnet())
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
             .liteServerIndex(0)
             .build();
 
@@ -192,7 +192,7 @@ public class TestWalletV1R1 extends CommonTest {
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    extMessageInfo = contract.send(config);
+    extMessageInfo = contract.send(contract.prepareExternalMsg(config));
     assertThat(extMessageInfo.getError().getCode()).isZero();
 
     contract.waitForBalanceChange(45);

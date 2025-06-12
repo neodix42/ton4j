@@ -15,7 +15,6 @@ import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.types.WalletV1R3Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.Contract;
-import org.ton.ton4j.tl.liteserver.responses.SendMsgStatus;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
@@ -157,32 +156,7 @@ public class WalletV1R3 implements Contract {
    */
   public ExtMessageInfo send(WalletV1R3Config config) {
     if (nonNull(adnlLiteClient)) {
-
-      try {
-
-        SendMsgStatus sendMsgStatus =
-            adnlLiteClient.sendMessage(prepareExternalMsg(config).toCell().toBoc());
-        return ExtMessageInfo.builder()
-            .error(
-                TonlibError.builder()
-                    .code(0)
-                    .build()) // compatibility, if user checks tonlib error when using adnl client
-            .adnlLiteClientError(
-                AdnlLiteClientError.builder().code(sendMsgStatus.getStatus()).build())
-            .build();
-      } catch (Exception e) {
-        return ExtMessageInfo.builder()
-            .error(
-                TonlibError.builder()
-                    .code(Long.parseLong(e.getCause().getMessage()))
-                    .build()) // if user checks tonlib error when using adnl client
-            .adnlLiteClientError(
-                AdnlLiteClientError.builder()
-                    .code(Long.parseLong(e.getCause().getMessage()))
-                    .message(e.getMessage())
-                    .build())
-            .build();
-      }
+      return send(prepareExternalMsg(config));
     }
     return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
   }
@@ -191,7 +165,10 @@ public class WalletV1R3 implements Contract {
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
-  public RawTransaction sendWithConfirmation(WalletV1R3Config config) {
+  public RawTransaction sendWithConfirmation(WalletV1R3Config config) throws Exception {
+    if (nonNull(adnlLiteClient)) {
+      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+    }
     return tonlib.sendRawMessageWithConfirmation(
         prepareExternalMsg(config).toCell().toBase64(), getAddress());
   }
@@ -203,58 +180,14 @@ public class WalletV1R3 implements Contract {
 
   public ExtMessageInfo deploy() {
     if (nonNull(adnlLiteClient)) {
-
-      try {
-
-        SendMsgStatus sendMsgStatus =
-            adnlLiteClient.sendMessage(prepareDeployMsg().toCell().toBoc());
-        return ExtMessageInfo.builder()
-            .error(
-                TonlibError.builder()
-                    .code(0)
-                    .build()) // compatibility, if user checks tonlib error when using adnl client
-            .adnlLiteClientError(
-                AdnlLiteClientError.builder().code(sendMsgStatus.getStatus()).build())
-            .build();
-      } catch (Exception e) {
-        return ExtMessageInfo.builder()
-            .error(
-                TonlibError.builder()
-                    .code(-42)
-                    .build()) // if user checks tonlib error when using adnl client
-            .adnlLiteClientError(
-                AdnlLiteClientError.builder().code(0).message(e.getMessage()).build())
-            .build();
-      }
+      return send(prepareDeployMsg());
     }
     return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
   }
 
   public ExtMessageInfo deploy(byte[] signedBody) {
     if (nonNull(adnlLiteClient)) {
-
-      try {
-
-        SendMsgStatus sendMsgStatus =
-            adnlLiteClient.sendMessage(prepareDeployMsg(signedBody).toCell().toBoc());
-        return ExtMessageInfo.builder()
-            .error(
-                TonlibError.builder()
-                    .code(0)
-                    .build()) // compatibility, if user checks tonlib error when using adnl client
-            .adnlLiteClientError(
-                AdnlLiteClientError.builder().code(sendMsgStatus.getStatus()).build())
-            .build();
-      } catch (Exception e) {
-        return ExtMessageInfo.builder()
-            .error(
-                TonlibError.builder()
-                    .code(-42)
-                    .build()) // if user checks tonlib error when using adnl client
-            .adnlLiteClientError(
-                AdnlLiteClientError.builder().code(0).message(e.getMessage()).build())
-            .build();
-      }
+      return send(prepareDeployMsg(signedBody));
     }
     return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
   }
@@ -269,6 +202,9 @@ public class WalletV1R3 implements Contract {
   }
 
   public ExtMessageInfo send(WalletV1R3Config config, byte[] signedBodyHash) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareExternalMsg(config, signedBodyHash));
+    }
     return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
   }
 

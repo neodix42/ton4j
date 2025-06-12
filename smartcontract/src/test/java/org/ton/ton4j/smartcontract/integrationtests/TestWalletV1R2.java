@@ -9,6 +9,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
@@ -104,5 +105,102 @@ public class TestWalletV1R2 extends CommonTest {
     log.info("extMessageInfo: {}", extMessageInfo);
     contract.waitForBalanceChange(120);
     Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
+  }
+
+  @Test
+  public void testNewWalletV1R2AdnlClient() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    WalletV1R2 contract =
+        WalletV1R2.builder().adnlLiteClient(adnlLiteClient).initialSeqno(2).build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", contract.getAddress().toString(false));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+    log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForDeployment(45);
+
+    log.info("wallet seqno: {}", contract.getSeqno());
+
+    WalletV1R2Config config =
+        WalletV1R2Config.builder()
+            .seqno(contract.getSeqno())
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.08))
+            .comment("testNewWalletV1R2")
+            .build();
+
+    // transfer coins from new wallet (back to faucet)
+    extMessageInfo = contract.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForBalanceChange(45);
+
+    balance = contract.getBalance();
+    log.info("wallet {} new balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    log.info("wallet seqno: {}", contract.getSeqno());
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
+  }
+
+  @Test
+  public void testNewWalletV1R2AdnlClientWithConfirmation() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    WalletV1R2 contract =
+        WalletV1R2.builder().adnlLiteClient(adnlLiteClient).initialSeqno(2).build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", contract.getAddress().toString(false));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+    log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForDeployment(45);
+
+    log.info("wallet seqno: {}", contract.getSeqno());
+
+    WalletV1R2Config config =
+        WalletV1R2Config.builder()
+            .seqno(contract.getSeqno())
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.08))
+            .comment("testNewWalletV1R2")
+            .build();
+
+    // transfer coins from new wallet (back to faucet)
+    contract.sendWithConfirmation(contract.prepareExternalMsg(config));
+
+    balance = contract.getBalance();
+    log.info("wallet {} new balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    log.info("wallet seqno: {}", contract.getSeqno());
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
   }
 }
