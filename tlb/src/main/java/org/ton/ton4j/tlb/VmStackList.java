@@ -20,7 +20,7 @@ public class VmStackList implements Serializable {
   List<VmStackValue> tos;
 
   /**
-   * Also knows as serializeTuple() in ton-core web.
+   * Also known as serializeTuple() in ton-core web.
    *
    * @return Cell
    */

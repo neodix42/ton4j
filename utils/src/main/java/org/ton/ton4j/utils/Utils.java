@@ -818,7 +818,7 @@ public class Utils {
     }
   }
 
-  /** Converts a private key into its corresponding public key. */
+  /** Converts a private key SECP256K1 into its corresponding public key. */
   public static byte[] getPublicKey(byte[] privateKey) {
     try {
       ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(SECP256K1);

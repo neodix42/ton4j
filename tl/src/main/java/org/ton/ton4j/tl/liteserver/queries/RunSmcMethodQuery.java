@@ -12,7 +12,7 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class RunSmcMethodQuery implements LiteServerQueryData {
-  public static final int RUN_SMC_METHOD_QUERY = 0;
+  public static final int RUN_SMC_METHOD_QUERY = 1556504018;
 
   private int mode;
   private BlockIdExt id;
@@ -36,7 +36,7 @@ public class RunSmcMethodQuery implements LiteServerQueryData {
     ByteBuffer byteBuffer =
         ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 4 + 4 + 32 + 8 + t1.length);
     byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-    byteBuffer.putInt((int) Utils.getQueryCrc32IEEEE(getQueryName()));
+    byteBuffer.putInt(RUN_SMC_METHOD_QUERY);
 
     byteBuffer.putInt(mode);
     byteBuffer.put(id.serialize());

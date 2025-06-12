@@ -1023,6 +1023,128 @@ public class AdnlLiteClient {
         });
   }
 
+  public long getSeqno(Address accountAddress) throws Exception {
+
+    RunMethodResult runMethodResult =
+        runMethod(
+            getMasterchainInfo().getLast(),
+            4,
+            accountAddress,
+            Utils.calculateMethodId("seqno"),
+            new byte[0]);
+    VmStack vmStack =
+        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+    return VmStackValueTinyInt.deserialize(
+            CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
+        .getValue()
+        .longValue();
+  }
+
+  public BigInteger getPublicKey(Address accountAddress) throws Exception {
+
+    RunMethodResult runMethodResult =
+        runMethod(
+            getMasterchainInfo().getLast(),
+            4,
+            accountAddress,
+            Utils.calculateMethodId("get_public_key"),
+            new byte[0]);
+    VmStack vmStack =
+        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+    return VmStackValueInt.deserialize(
+            CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
+        .getValue();
+  }
+
+  public long getSubWalletId(Address accountAddress) throws Exception {
+
+    RunMethodResult runMethodResult =
+        runMethod(
+            getMasterchainInfo().getLast(),
+            4,
+            accountAddress,
+            Utils.calculateMethodId("get_subwallet_id"),
+            new byte[0]);
+    VmStack vmStack =
+        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+    return VmStackValueTinyInt.deserialize(
+            CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
+        .getValue()
+        .longValue();
+  }
+
+  public long computeReturnedStake(Address validatorAddress) throws Exception {
+
+    VmStack vmStackParams =
+        VmStack.builder()
+            .depth(1)
+            .stack(
+                VmStackList.builder()
+                    .tos(
+                        List.of(
+                            VmStackValueInt.builder()
+                                .value(validatorAddress.toBigInteger())
+                                .build()))
+                    .build())
+            .build();
+
+    RunMethodResult runMethodResult =
+        runMethod(
+            getMasterchainInfo().getLast(),
+            4,
+            Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"),
+            Utils.calculateMethodId("compute_returned_stake"),
+            vmStackParams.toCell().toBoc());
+
+    VmStack vmStackResult =
+        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+    log.info("vmStackResult: " + vmStackResult);
+    return VmStackValueTinyInt.deserialize(
+            CellSlice.beginParse(vmStackResult.getStack().getTos().get(0).toCell()))
+        .getValue()
+        .longValue();
+  }
+
+  public RunMethodResult runMethod(Address accountAddress, String methodName) throws Exception {
+
+    return runMethod(
+        getMasterchainInfo().getLast(),
+        4,
+        accountAddress,
+        Utils.calculateMethodId(methodName),
+        new byte[0]);
+  }
+
+  public RunMethodResult runMethod(Address accountAddress, String methodName, byte[] params)
+      throws Exception {
+
+    return runMethod(
+        getMasterchainInfo().getLast(),
+        4,
+        accountAddress,
+        Utils.calculateMethodId(methodName),
+        params);
+  }
+
+  public RunMethodResult runMethod(
+      Address accountAddress, String methodName, VmStackValue... params) throws Exception {
+
+    List<VmStackValue> vmStackValuesReversed = Arrays.asList(params);
+    Collections.reverse(vmStackValuesReversed);
+    VmStack vmStackParams =
+        VmStack.builder()
+            .depth(vmStackValuesReversed.size())
+            .stack(VmStackList.builder().tos(vmStackValuesReversed).build())
+            .build();
+
+    return runMethod(
+        getMasterchainInfo().getLast(),
+        4,
+        accountAddress,
+        Utils.calculateMethodId(methodName),
+        vmStackParams.toCell().toBoc());
+  }
+
   public RunMethodResult runMethod(
       BlockIdExt id, int mode, Address accountAddress, long methodId, byte[] methodParams)
       throws Exception {

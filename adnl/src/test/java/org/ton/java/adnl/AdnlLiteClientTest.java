@@ -3,6 +3,7 @@ package org.ton.java.adnl;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.math.BigInteger;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
@@ -10,9 +11,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.tl.liteserver.responses.*;
-import org.ton.ton4j.tlb.ConfigParams32;
-import org.ton.ton4j.tlb.Transaction;
+import org.ton.ton4j.tl.liteserver.responses.AccountState;
+import org.ton.ton4j.tl.liteserver.responses.AllShardsInfo;
+import org.ton.ton4j.tl.liteserver.responses.BlockData;
+import org.ton.ton4j.tl.liteserver.responses.BlockHeader;
+import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -20,6 +26,8 @@ public class AdnlLiteClientTest {
 
   public static final String TESTNET_ADDRESS = "0QAyni3YDAhs7c-7imWvPyEbMEeVPMX8eWDLQ5GUe-B-Bl9Z";
   public static final String MAINNET_ADDRESS = "EQCRGnccIFznQqxm_oBm8PHz95iOe89Oe6hRAhSlAaMctuo6";
+  public static final String MAINNET_V5_ADDRESS =
+      "UQCHYR_fbDjjr1dtyMmgBbH3HSBAgSNwHdOZvAbgkNOV2n2D";
   public static final String ELECTOR_ADDRESS =
       "-1:3333333333333333333333333333333333333333333333333333333333333333";
 
@@ -921,16 +929,145 @@ public class AdnlLiteClientTest {
 
   @Test
   void testRunSmcMethod() throws Exception {
-    log.info("Testing runSmcMethod query");
+    log.info("Testing runSmcMethod seqno query");
     assertTrue(client.isConnected(), "Client should be connected");
 
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
 
     RunMethodResult runMethodResult =
-        client.runMethod(masterchainInfo.getLast(), 0, Address.of(getAddress()), 0, new byte[0]);
+        client.runMethod(
+            masterchainInfo.getLast(),
+            4,
+            Address.of(getAddress()),
+            Utils.calculateMethodId("seqno"),
+            new byte[0]);
+
+    VmStack vmStack =
+        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+    log.info("vmStack {}", vmStack);
 
     log.info("runMethodResult {}", runMethodResult);
-    // todo
+  }
+
+  @Test
+  void testRunSmcMethodParticipantsList() throws Exception {
+    log.info("Testing runSmcMethod participant_list query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    RunMethodResult runMethodResult =
+        client.runMethod(Address.of(ELECTOR_ADDRESS), "participant_list", new byte[0]);
+
+    VmStack vmStack =
+        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+    log.info("vmStack {}", vmStack);
+
+    log.info("runMethodResult {}", runMethodResult);
+  }
+
+  @Test
+  void testRunSmcMethodSeqno() throws Exception {
+    log.info("Testing runSmcMethod seqno query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    RunMethodResult runMethodResult = client.runMethod(Address.of(MAINNET_V5_ADDRESS), "seqno");
+
+    VmStack vmStack =
+        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+    log.info("vmStack {}", vmStack);
+
+    log.info("runMethodResult {}", runMethodResult);
+  }
+
+  @Test
+  void testRunSmcMethodSeqnoShort() throws Exception {
+    log.info("Testing runSmcMethod seqno query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    long seqno = client.getSeqno(Address.of(MAINNET_V5_ADDRESS));
+    log.info("seqno {}", seqno);
+  }
+
+  /** wrong method name, exit code 11 */
+  @Test
+  void testRunSmcMethodPublicKey() throws Exception {
+    log.info("Testing runSmcMethod public_key query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    RunMethodResult runMethodResult =
+        client.runMethod(Address.of(MAINNET_V5_ADDRESS), "public_key");
+
+    VmStack vmStack =
+        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+    log.info("vmStack {}", vmStack);
+    log.info("runMethodResult {}", runMethodResult);
+    assertThat(runMethodResult.getExitCode()).isEqualTo(11);
+  }
+
+  @Test
+  void testRunSmcMethodPublicKeyOk() throws Exception {
+    log.info("Testing runSmcMethod get_public_key query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    RunMethodResult runMethodResult =
+        client.runMethod(Address.of(MAINNET_V5_ADDRESS), "get_public_key");
+
+    VmStack vmStack =
+        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+    log.info("vmStack {}", vmStack);
+    log.info("runMethodResult {}", runMethodResult);
+  }
+
+  @Test
+  void testRunSmcMethodPublicKeyOkShort() throws Exception {
+    log.info("Testing runSmcMethod get_public_key query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    BigInteger pubKey = client.getPublicKey(Address.of(MAINNET_V5_ADDRESS));
+    log.info("pubKey {}", Utils.bytesToHex(Utils.to32ByteArray(pubKey)));
+  }
+
+  @Test
+  void testRunSmcMethodGetSubWalletId() throws Exception {
+    log.info("Testing runSmcMethod get_subwallet_id query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    long subWalletId = client.getSubWalletId(Address.of(MAINNET_V5_ADDRESS));
+    log.info("subWalletId {}", subWalletId);
+  }
+
+  @Test
+  void testRunSmcMethodWithParam() throws Exception {
+    log.info("Testing runSmcMethod compute_returned_stake address query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    long subWalletId =
+        client.computeReturnedStake(Address.of("Uf8KrqWGw1CTcUHRgqZE57aKBeSOK0iuxduwtlTHusmD5PWf"));
+    log.info("returnedStake {}", subWalletId);
+  }
+
+  @Test
+  void testRunSmcMethodWithParams() throws Exception {
+    log.info("Testing runSmcMethod compute_returned_stake address query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    RunMethodResult runMethodResult =
+        client.runMethod(
+            Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"),
+            "compute_returned_stake",
+            VmStackValueInt.builder()
+                .value(
+                    Address.of("Uf8KrqWGw1CTcUHRgqZE57aKBeSOK0iuxduwtlTHusmD5PWf").toBigInteger())
+                .build());
+    log.info("runMethodResult {}", runMethodResult);
+    VmStack vmStackResult =
+        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+    log.info("vmStackResult: " + vmStackResult);
+    long stake =
+        VmStackValueTinyInt.deserialize(
+                CellSlice.beginParse(vmStackResult.getStack().getTos().get(0).toCell()))
+            .getValue()
+            .longValue();
+    log.info("returnedStake {}", stake);
   }
 
   @Test

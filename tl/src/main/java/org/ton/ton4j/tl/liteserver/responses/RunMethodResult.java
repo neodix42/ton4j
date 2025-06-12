@@ -6,10 +6,15 @@ import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.utils.Utils;
 
+/**
+ * liteServer.runMethodResult mode:# id:tonNode.blockIdExt shardblk:tonNode.blockIdExt
+ * shard_proof:mode.0?bytes proof:mode.0?bytes state_proof:mode.1?bytes init_c7:mode.3?bytes
+ * lib_extras:mode.4?bytes exit_code:int result:mode.2?bytes = liteServer.RunMethodResult;
+ */
 @Data
 @Builder
 public class RunMethodResult implements Serializable, LiteServerAnswer {
-  public static final int SEND_MSG_STATUS_ANSWER = 60452816;
+  public static final int RUN_METHOD_RESULT_ANSWER = -1550163605;
 
   private int mode;
   private BlockIdExt id;
@@ -22,7 +27,7 @@ public class RunMethodResult implements Serializable, LiteServerAnswer {
   private int exitCode;
   public byte[] result;
 
-  public static final int constructorId = SEND_MSG_STATUS_ANSWER;
+  public static final int constructorId = RUN_METHOD_RESULT_ANSWER;
 
   public String getProof() {
     if (proof == null) {
