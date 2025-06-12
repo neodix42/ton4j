@@ -311,12 +311,276 @@ public class AdnlLiteClientTest {
   }
 
   @Test
+  void testGetConfigParam10() throws Exception {
+    log.info("Testing testConfigParam10 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams10 {}", client.getConfigParam10());
+  }
+
+  @Test
+  void testGetConfigParam11() throws Exception {
+    log.info("Testing testConfigParam11 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams11 {}", client.getConfigParam11());
+  }
+
+  @Test
+  void testGetConfigParam12() throws Exception {
+    log.info("Testing testConfigParam12 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams12 {}", client.getConfigParam12());
+  }
+
+  @Test
+  void testGetConfigParam13() throws Exception {
+    log.info("Testing testConfigParam13 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams13 {}", client.getConfigParam13());
+  }
+
+  @Test
+  void testGetConfigParam14() throws Exception {
+    log.info("Testing testConfigParam14 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams14 {}", client.getConfigParam14());
+  }
+
+  @Test
+  void testGetConfigParam15() throws Exception {
+    log.info("Testing testConfigParam15 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams15 {}", client.getConfigParam15());
+  }
+
+  @Test
+  void testGetConfigParam16() throws Exception {
+    log.info("Testing testConfigParam16 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams16 {}", client.getConfigParam16());
+  }
+
+  @Test
+  void testGetConfigParam17() throws Exception {
+    log.info("Testing testConfigParam17 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams17 {}", client.getConfigParam17());
+  }
+
+  @Test
+  void testGetConfigParam18() throws Exception {
+    log.info("Testing testConfigParam18 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams18 {}", client.getConfigParam18());
+  }
+
+  @Test
+  void testGetConfigParam20() throws Exception {
+    log.info("Testing testConfigParam20 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams20 {}", client.getConfigParam20());
+  }
+
+  @Test
+  void testGetConfigParam21() throws Exception {
+    log.info("Testing testConfigParam21 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams21 {}", client.getConfigParam21());
+  }
+
+  @Test
+  void testGetConfigParam22() throws Exception {
+    log.info("Testing testConfigParam22 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams22 {}", client.getConfigParam22());
+  }
+
+  @Test
+  void testGetConfigParam23() throws Exception {
+    log.info("Testing testConfigParam23 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams23 {}", client.getConfigParam23());
+  }
+
+  @Test
+  void testGetConfigParam24() throws Exception {
+    log.info("Testing testConfigParam24 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams24 {}", client.getConfigParam24());
+  }
+
+  @Test
+  void testGetConfigParam25() throws Exception {
+    log.info("Testing testConfigParam25 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams25 {}", client.getConfigParam25());
+  }
+
+  @Test
+  void testGetConfigParam28() throws Exception {
+    log.info("Testing testConfigParam28 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams28 {}", client.getConfigParam28());
+  }
+
+  @Test
+  void testGetConfigParam29() throws Exception {
+    log.info("Testing testConfigParam29 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams29 {}", client.getConfigParam29());
+  }
+
+  @Test
+  void testGetConfigParam31() throws Exception {
+    log.info("Testing testConfigParam31 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams31 {}", client.getConfigParam31());
+  }
+
+  @Test
   void testGetConfigParam32() throws Exception {
     log.info("Testing testConfigParam32 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
     ConfigParams32 configParams32 = client.getConfigParam32();
-    log.info("configParams0 {}", configParams32);
+    log.info("configParams32 {}", configParams32);
+  }
+
+  @Test
+  void testGetConfigParam33() throws Exception {
+    log.info("Testing testConfigParam33 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams33 {}", client.getConfigParam33());
+  }
+
+  @Test
+  void testGetConfigParam34() throws Exception {
+    log.info("Testing testConfigParam34 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams34 {}", client.getConfigParam34());
+  }
+
+  @Test
+  void testGetConfigParam35() throws Exception {
+    log.info("Testing testConfigParam35 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams35 {}", client.getConfigParam35());
+  }
+
+  @Test
+  void testGetConfigParam36() throws Exception {
+    log.info("Testing testConfigParam36 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams36 {}", client.getConfigParam36());
+  }
+
+  @Test
+  void testGetConfigParam37() throws Exception {
+    log.info("Testing testConfigParam37 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams37 {}", client.getConfigParam37());
+  }
+
+  @Test
+  void testGetConfigParam39() throws Exception {
+    log.info("Testing testConfigParam39 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams39 {}", client.getConfigParam39());
+  }
+
+  @Test
+  void testGetConfigParam40() throws Exception {
+    log.info("Testing testConfigParam40 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams40 {}", client.getConfigParam40());
+  }
+
+  @Test
+  void testGetConfigParam44() throws Exception {
+    log.info("Testing testConfigParam44 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams44 {}", client.getConfigParam44());
+  }
+
+  @Test
+  void testGetConfigParam45() throws Exception {
+    log.info("Testing testConfigParam45 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams45 {}", client.getConfigParam45());
+  }
+
+  @Test
+  void testGetConfigParam71() throws Exception {
+    log.info("Testing testConfigParam71 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams71 {}", client.getConfigParam71());
+  }
+
+  @Test
+  void testGetConfigParam72() throws Exception {
+    log.info("Testing testConfigParam72 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams72 {}", client.getConfigParam72());
+  }
+
+  @Test
+  void testGetConfigParam73() throws Exception {
+    log.info("Testing testConfigParam73 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams73 {}", client.getConfigParam73());
+  }
+
+  @Test
+  void testGetConfigParam79() throws Exception {
+    log.info("Testing testConfigParam79 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams79 {}", client.getConfigParam79());
+  }
+
+  @Test
+  void testGetConfigParam81() throws Exception {
+    log.info("Testing testConfigParam81 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams81 {}", client.getConfigParam81());
+  }
+
+  @Test
+  void testGetConfigParam82() throws Exception {
+    log.info("Testing testConfigParam82 query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    log.info("configParams82 {}", client.getConfigParam82());
   }
 
   @Test
