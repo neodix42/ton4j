@@ -919,11 +919,7 @@ public class AdnlLiteClient {
 
   public BigInteger getBalance(Address address) {
     try {
-      return getAccountState(getMasterchainInfo().getLast(), address)
-          .getAccount()
-          .getAccountStorage()
-          .getBalance()
-          .getCoins();
+      return getAccount(address).getAccountStorage().getBalance().getCoins();
     } catch (Throwable e) {
       return BigInteger.ZERO;
     }

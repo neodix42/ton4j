@@ -22,18 +22,18 @@ public class AccountStateQuery implements LiteServerQueryData {
 
   public byte[] getQueryData() {
     int len = serialize().length + 4;
-    ByteBuffer buffer = ByteBuffer.allocate(len);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt(ACCOUNT_STATE_QUERY);
-    buffer.put(serialize());
-    return buffer.array();
+    return ByteBuffer.allocate(len)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .putInt(ACCOUNT_STATE_QUERY)
+        .put(serialize())
+        .array();
   }
 
   public byte[] serialize() {
-    ByteBuffer buffer = ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 32);
-    buffer.put(id.serialize());
-    buffer.putInt(account.wc);
-    buffer.put(account.hashPart);
-    return buffer.array();
+    return ByteBuffer.allocate(BlockIdExt.getSize() + 4 + 32)
+        .put(id.serialize())
+        .putInt(account.wc)
+        .put(account.hashPart)
+        .array();
   }
 }

@@ -14,25 +14,17 @@ import org.ton.ton4j.utils.Utils;
 @RunWith(ConcurrentTestRunner.class)
 public class TestConcurrentAdnlLiteClient {
 
-  private static AdnlLiteClient adnlLiteClient;
-
-  static {
-    try {
-      adnlLiteClient =
-          AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlMainnetGithub()).build();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
+  public static final String TESTNET_ADDRESS = "0QAyni3YDAhs7c-7imWvPyEbMEeVPMX8eWDLQ5GUe-B-Bl9Z";
 
   @Test
   @ThreadCount(10)
   public void testAdnlLiteClientRunMethod() throws Exception {
+    Utils.sleepMs(Utils.getRandomInt() % 5000);
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
     MasterchainInfo masterchainInfo = adnlLiteClient.getMasterchainInfo();
     System.out.println(masterchainInfo);
-    BigInteger balance =
-        adnlLiteClient.getBalance(
-            Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"));
-    System.out.printf(balance.toString());
+    BigInteger balance = adnlLiteClient.getBalance(Address.of(TESTNET_ADDRESS));
+    System.out.println(balance.toString());
   }
 }
