@@ -13,6 +13,7 @@ import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.tl.liteserver.queries.*;
 import org.ton.ton4j.tl.liteserver.responses.*;
 import org.ton.ton4j.tl.liteserver.responses.AccountState;
@@ -21,6 +22,9 @@ import org.ton.ton4j.tl.liteserver.responses.BlockData;
 import org.ton.ton4j.tl.liteserver.responses.BlockHeader;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.tlb.JettonBridgeParamsV1;
+import org.ton.ton4j.tlb.OracleBridgeParams;
+import org.ton.ton4j.tlb.Validators;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -326,169 +330,340 @@ public class AdnlLiteClient {
         });
   }
 
+  /** config address */
   public ConfigParams0 getConfigParam0() throws Exception {
-    Cell c = getConfigParamCell(0);
-    return ConfigParams0.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(0);
+      return ConfigParams0.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams0.builder().configAddr(BigInteger.ZERO).build();
+    }
   }
 
+  /** elector address */
   public ConfigParams1 getConfigParam1() throws Exception {
-    Cell c = getConfigParamCell(1);
-    return ConfigParams1.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(1);
+      return ConfigParams1.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams1.builder().electorAddr(BigInteger.ONE.negate()).build();
+    }
   }
 
+  /** minter address */
   public ConfigParams2 getConfigParam2() throws Exception {
-    Cell c = getConfigParamCell(2);
-    return ConfigParams2.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(2);
+      return ConfigParams2.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams2.builder().minterAddr(BigInteger.ONE.negate()).build();
+    }
   }
 
+  /** fee collector address */
   public ConfigParams3 getConfigParam3() throws Exception {
-    Cell c = getConfigParamCell(3);
-    return ConfigParams3.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(3);
+      return ConfigParams3.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams3.builder().build();
+    }
   }
 
+  /** dns root address */
   public ConfigParams4 getConfigParam4() throws Exception {
-    Cell c = getConfigParamCell(4);
-    return ConfigParams4.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(4);
+      return ConfigParams4.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams4.builder().build();
+    }
   }
 
+  /** burning_config */
   public ConfigParams5 getConfigParam5() throws Exception {
-    Cell c = getConfigParamCell(5);
-    return ConfigParams5.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(5);
+      return ConfigParams5.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams5.builder().build();
+    }
   }
 
+  /** mint_new_price:Grams mint_add_price:Grams */
   public ConfigParams6 getConfigParam6() throws Exception {
-    Cell c = getConfigParamCell(6);
-    return ConfigParams6.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(6);
+      return ConfigParams6.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams6.builder().build();
+    }
   }
 
+  /**
+   * capabilities#c4 version:uint32 capabilities:uint64 = GlobalVersion; _ GlobalVersion =
+   * ConfigParam 8;
+   */
   public ConfigParams8 getConfigParam8() throws Exception {
-    Cell c = getConfigParamCell(8);
-    return ConfigParams8.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(8);
+      return ConfigParams8.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams8.builder().build();
+    }
   }
 
+  /** mandatory_params */
   public ConfigParams9 getConfigParam9() throws Exception {
-    Cell c = getConfigParamCell(9);
-    return ConfigParams9.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(9);
+      return ConfigParams9.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams9.builder().build();
+    }
   }
 
+  /** critical_params */
   public ConfigParams10 getConfigParam10() throws Exception {
-    Cell c = getConfigParamCell(10);
-    return ConfigParams10.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(10);
+      return ConfigParams10.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams10.builder().build();
+    }
   }
 
+  /**
+   * cfg_vote_setup#91 normal_params:^ConfigProposalSetup critical_params:^ConfigProposalSetup =
+   * ConfigVotingSetup; _ ConfigVotingSetup = ConfigParam 11;
+   */
   public ConfigParams11 getConfigParam11() throws Exception {
-    Cell c = getConfigParamCell(11);
-    return ConfigParams11.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(11);
+      return ConfigParams11.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams11.builder().build();
+    }
   }
 
+  /** workchains */
   public ConfigParams12 getConfigParam12() throws Exception {
-    Cell c = getConfigParamCell(12);
-    return ConfigParams12.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(12);
+      return ConfigParams12.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams12.builder().build();
+    }
   }
 
+  /** ComplaintPricing */
   public ConfigParams13 getConfigParam13() throws Exception {
-    Cell c = getConfigParamCell(13);
-    return ConfigParams13.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(13);
+      return ConfigParams13.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams13.builder().build();
+    }
   }
 
+  /** BlockCreateFees */
   public ConfigParams14 getConfigParam14() throws Exception {
-    Cell c = getConfigParamCell(14);
-    return ConfigParams14.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(14);
+      return ConfigParams14.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams14.builder().build();
+    }
   }
 
+  /** election timing */
   public ConfigParams15 getConfigParam15() throws Exception {
-    Cell c = getConfigParamCell(15);
-    return ConfigParams15.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(15);
+      return ConfigParams15.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams15.builder().build();
+    }
   }
 
+  /** max min validators */
   public ConfigParams16 getConfigParam16() throws Exception {
-    Cell c = getConfigParamCell(16);
-    return ConfigParams16.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(16);
+      return ConfigParams16.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams16.builder().build();
+    }
   }
 
+  /** max min stake */
   public ConfigParams17 getConfigParam17() throws Exception {
-    Cell c = getConfigParamCell(17);
-    return ConfigParams17.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(17);
+      return ConfigParams17.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams17.builder().build();
+    }
   }
 
+  /** storage prices */
   public ConfigParams18 getConfigParam18() throws Exception {
-    Cell c = getConfigParamCell(18);
-    return ConfigParams18.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(18);
+      return ConfigParams18.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams18.builder().build();
+    }
   }
 
+  /** GasLimitsPrices masterchain */
   public ConfigParams20 getConfigParam20() throws Exception {
-    Cell c = getConfigParamCell(20);
-    return ConfigParams20.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(20);
+      return ConfigParams20.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams20.builder().build();
+    }
   }
 
+  /** GasLimitsPrices workchains */
   public ConfigParams21 getConfigParam21() throws Exception {
-    Cell c = getConfigParamCell(21);
-    return ConfigParams21.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(21);
+      return ConfigParams21.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams21.builder().build();
+    }
   }
 
+  /** BlockLimits masterchain */
   public ConfigParams22 getConfigParam22() throws Exception {
-    Cell c = getConfigParamCell(22);
-    return ConfigParams22.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(22);
+      return ConfigParams22.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams22.builder().build();
+    }
   }
 
+  /** BlockLimits workchains */
   public ConfigParams23 getConfigParam23() throws Exception {
-    Cell c = getConfigParamCell(23);
-    return ConfigParams23.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(23);
+      return ConfigParams23.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams23.builder().build();
+    }
   }
 
+  /** MsgForwardPrices masterchain */
   public ConfigParams24 getConfigParam24() throws Exception {
-    Cell c = getConfigParamCell(24);
-    return ConfigParams24.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(24);
+      return ConfigParams24.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams24.builder().build();
+    }
   }
 
+  /** MsgForwardPrices */
   public ConfigParams25 getConfigParam25() throws Exception {
-    Cell c = getConfigParamCell(25);
-    return ConfigParams25.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(25);
+      return ConfigParams25.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams25.builder().build();
+    }
   }
 
+  /** CatchainConfig */
   public ConfigParams28 getConfigParam28() throws Exception {
-    Cell c = getConfigParamCell(28);
-    return ConfigParams28.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(28);
+      return ConfigParams28.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams28.builder().build();
+    }
   }
 
+  /** ConsensusConfig */
   public ConfigParams29 getConfigParam29() throws Exception {
-    Cell c = getConfigParamCell(29);
-    return ConfigParams29.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(29);
+      return ConfigParams29.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams29.builder().build();
+    }
   }
 
+  /** fundamental_smc_addr */
   public ConfigParams31 getConfigParam31() throws Exception {
-    Cell c = getConfigParamCell(31);
-    return ConfigParams31.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(31);
+      return ConfigParams31.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams31.builder().build();
+    }
   }
 
+  /** prev_validators */
   public ConfigParams32 getConfigParam32() throws Exception {
-    Cell c = getConfigParamCell(32);
-    return ConfigParams32.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(32);
+      return ConfigParams32.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams32.builder().prevValidatorSet(Validators.builder().build()).build();
+    }
   }
 
+  /** prev_temp_validators */
   public ConfigParams33 getConfigParam33() throws Exception {
-    Cell c = getConfigParamCell(33);
-    return ConfigParams33.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(33);
+      return ConfigParams33.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams33.builder().prevTempValidatorSet(Validators.builder().build()).build();
+    }
   }
 
+  /** cur_validators */
   public ConfigParams34 getConfigParam34() throws Exception {
-    Cell c = getConfigParamCell(34);
-    return ConfigParams34.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(34);
+      return ConfigParams34.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams34.builder().currValidatorSet(Validators.builder().build()).build();
+    }
   }
 
+  /** cur_temp_validators */
   public ConfigParams35 getConfigParam35() throws Exception {
-    Cell c = getConfigParamCell(35);
-    return ConfigParams35.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(35);
+      return ConfigParams35.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams35.builder().currTempValidatorSet(Validators.builder().build()).build();
+    }
   }
 
+  /** next_validators */
   public ConfigParams36 getConfigParam36() throws Exception {
-    Cell c = getConfigParamCell(36);
-    return ConfigParams36.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(36);
+      return ConfigParams36.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams36.builder().nextValidatorSet(Validators.builder().build()).build();
+    }
   }
 
+  /** next_temp_validators */
   public ConfigParams37 getConfigParam37() throws Exception {
-    Cell c = getConfigParamCell(37);
-    return ConfigParams37.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(37);
+      return ConfigParams37.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams37.builder().nextTempValidatorSet(Validators.builder().build()).build();
+    }
   }
 
   private Cell getConfigParamCell(int val) throws Exception {
@@ -497,54 +672,107 @@ public class AdnlLiteClient {
     return c;
   }
 
+  /** ValidatorSignedTempKey */
   public ConfigParams39 getConfigParam39() throws Exception {
-    Cell c = getConfigParamCell(39);
-    return ConfigParams39.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(39);
+      return ConfigParams39.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams39.builder().validatorSignedTemp(new TonHashMapE(0)).build();
+    }
   }
 
+  /** MisbehaviourPunishmentConfig */
   public ConfigParams40 getConfigParam40() throws Exception {
-    Cell c = getConfigParamCell(40);
-    return ConfigParams40.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(40);
+      return ConfigParams40.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      log.error("Error getting config params 40");
+      return ConfigParams40.builder().build();
+    }
   }
 
+  /** SuspendedAddressList */
   public ConfigParams44 getConfigParam44() throws Exception {
-    Cell c = getConfigParamCell(44);
-    return ConfigParams44.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(44);
+      return ConfigParams44.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams44.builder().build();
+    }
   }
 
+  /** PrecompiledContractsConfig */
   public ConfigParams45 getConfigParam45() throws Exception {
-    Cell c = getConfigParamCell(45);
-    return ConfigParams45.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(45);
+      return ConfigParams45.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams45.builder().build();
+    }
   }
 
+  /** Ethereum bridges */
   public ConfigParams71 getConfigParam71() throws Exception {
-    Cell c = getConfigParamCell(71);
-    return ConfigParams71.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(71);
+      return ConfigParams71.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams71.builder().build();
+    }
   }
 
+  /** Binance Smart Chain bridges */
   public ConfigParams72 getConfigParam72() throws Exception {
-    Cell c = getConfigParamCell(72);
-    return ConfigParams72.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(72);
+      return ConfigParams72.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams72.builder().build();
+    }
   }
 
+  /** Polygon bridges */
   public ConfigParams73 getConfigParam73() throws Exception {
-    Cell c = getConfigParamCell(73);
-    return ConfigParams73.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(73);
+      return ConfigParams73.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams73.builder().polygonBridge(OracleBridgeParams.builder().build()).build();
+    }
   }
 
+  /** ETH-&gt;TON token bridges */
   public ConfigParams79 getConfigParam79() throws Exception {
-    Cell c = getConfigParamCell(79);
-    return ConfigParams79.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(79);
+      return ConfigParams79.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams79.builder().build();
+    }
   }
 
+  /** BNB-&gt;TON token bridges */
   public ConfigParams81 getConfigParam81() throws Exception {
-    Cell c = getConfigParamCell(81);
-    return ConfigParams81.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(81);
+      return ConfigParams81.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams81.builder().build();
+    }
   }
 
+  /** Polygon-&gt;TON token bridges */
   public ConfigParams82 getConfigParam82() throws Exception {
-    Cell c = getConfigParamCell(82);
-    return ConfigParams82.deserialize(CellSlice.beginParse(c));
+    try {
+      Cell c = getConfigParamCell(82);
+      return ConfigParams82.deserialize(CellSlice.beginParse(c));
+    } catch (Throwable e) {
+      return ConfigParams82.builder()
+          .polygonTonTokenBridge(JettonBridgeParamsV1.builder().build())
+          .build();
+    }
   }
 
   public BlockData getBlock(BlockIdExt id) throws Exception {
@@ -557,7 +785,8 @@ public class AdnlLiteClient {
           byte[] queryBytes = LiteServerQuery.pack(BlockQuery.builder().id(id).build());
           log.info("Sending getBlock query");
 
-          LiteServerAnswer response = transport.query(queryBytes).get(15, TimeUnit.SECONDS);
+          LiteServerAnswer response =
+              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (BlockData) response;
           } catch (Exception e) {

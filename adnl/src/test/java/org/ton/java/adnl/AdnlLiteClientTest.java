@@ -265,8 +265,6 @@ public class AdnlLiteClientTest {
     assertTrue(client.isConnected(), "Client should be connected");
 
     log.info("configParams3 {}", client.getConfigParam3());
-
-    // todo
   }
 
   @Test
