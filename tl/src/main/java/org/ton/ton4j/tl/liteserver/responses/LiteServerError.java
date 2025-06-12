@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
-import org.ton.ton4j.utils.Utils;
+import org.apache.commons.lang3.StringUtils;
 
 /** liteServer.error code:int message:string = liteServer.Error; */
 @Builder
@@ -27,10 +27,12 @@ public class LiteServerError implements Serializable, LiteServerAnswer {
 
   public static LiteServerError deserialize(ByteBuffer byteBuffer) {
     byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-    return LiteServerError.builder()
-        .code(byteBuffer.getInt())
-        .message(new String(Utils.read(byteBuffer, byteBuffer.remaining())))
-        .build();
+    int code = byteBuffer.getInt();
+    String message = new String(byteBuffer.array(), byteBuffer.position(), byteBuffer.remaining());
+    if (StringUtils.isNotEmpty(message)) {
+      message = message.trim().substring(1, message.length() - 1);
+    }
+    return LiteServerError.builder().code(code).message(message).build();
   }
 
   public static LiteServerError deserialize(byte[] byteArray) {

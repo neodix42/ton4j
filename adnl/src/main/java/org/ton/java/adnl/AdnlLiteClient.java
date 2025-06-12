@@ -170,7 +170,7 @@ public class AdnlLiteClient {
           try {
             if (connected && transport.isConnected()) {
               transport.ping().get(5, TimeUnit.SECONDS);
-              log.info("Ping successful");
+//              log.info("Ping successful");
             }
           } catch (Exception e) {
             log.warn("Adnl tcp.Ping failed: ", e);
@@ -195,7 +195,6 @@ public class AdnlLiteClient {
             throw new IllegalStateException("Not connected to lite-server");
           }
           byte[] queryBytes = LiteServerQuery.pack(MasterchainInfoQuery.builder().build());
-          log.info("Sending getMasterchainInfo query");
 
           LiteServerAnswer response;
           response = transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -218,7 +217,6 @@ public class AdnlLiteClient {
           }
           byte[] queryBytes =
               LiteServerQuery.pack(MasterchainInfoExtQuery.builder().mode(mode).build());
-          log.info("Sending getMasterchainInfoExt query");
 
           LiteServerAnswer response;
           response = transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -241,7 +239,6 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(CurrentTimeQuery.builder().build());
-          log.info("Sending getTime query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -264,7 +261,6 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(VersionQuery.builder().build());
-          log.info("Sending getVersion query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -288,8 +284,6 @@ public class AdnlLiteClient {
 
           byte[] queryBytes =
               LiteServerQuery.pack(ConfigAllQuery.builder().mode(mode).id(id).build());
-
-          log.info("Sending getConfigAll query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -315,8 +309,6 @@ public class AdnlLiteClient {
               LiteServerQuery.pack(
                   ConfigParamsQuery.builder().mode(mode).id(id).paramList(paramList).build());
 
-          log.info("Sending getConfigParams query");
-
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
@@ -331,7 +323,7 @@ public class AdnlLiteClient {
   }
 
   /** config address */
-  public ConfigParams0 getConfigParam0() throws Exception {
+  public ConfigParams0 getConfigParam0() {
     try {
       Cell c = getConfigParamCell(0);
       return ConfigParams0.deserialize(CellSlice.beginParse(c));
@@ -341,7 +333,7 @@ public class AdnlLiteClient {
   }
 
   /** elector address */
-  public ConfigParams1 getConfigParam1() throws Exception {
+  public ConfigParams1 getConfigParam1() {
     try {
       Cell c = getConfigParamCell(1);
       return ConfigParams1.deserialize(CellSlice.beginParse(c));
@@ -351,7 +343,7 @@ public class AdnlLiteClient {
   }
 
   /** minter address */
-  public ConfigParams2 getConfigParam2() throws Exception {
+  public ConfigParams2 getConfigParam2() {
     try {
       Cell c = getConfigParamCell(2);
       return ConfigParams2.deserialize(CellSlice.beginParse(c));
@@ -361,7 +353,7 @@ public class AdnlLiteClient {
   }
 
   /** fee collector address */
-  public ConfigParams3 getConfigParam3() throws Exception {
+  public ConfigParams3 getConfigParam3() {
     try {
       Cell c = getConfigParamCell(3);
       return ConfigParams3.deserialize(CellSlice.beginParse(c));
@@ -371,7 +363,7 @@ public class AdnlLiteClient {
   }
 
   /** dns root address */
-  public ConfigParams4 getConfigParam4() throws Exception {
+  public ConfigParams4 getConfigParam4() {
     try {
       Cell c = getConfigParamCell(4);
       return ConfigParams4.deserialize(CellSlice.beginParse(c));
@@ -381,7 +373,7 @@ public class AdnlLiteClient {
   }
 
   /** burning_config */
-  public ConfigParams5 getConfigParam5() throws Exception {
+  public ConfigParams5 getConfigParam5() {
     try {
       Cell c = getConfigParamCell(5);
       return ConfigParams5.deserialize(CellSlice.beginParse(c));
@@ -391,7 +383,7 @@ public class AdnlLiteClient {
   }
 
   /** mint_new_price:Grams mint_add_price:Grams */
-  public ConfigParams6 getConfigParam6() throws Exception {
+  public ConfigParams6 getConfigParam6() {
     try {
       Cell c = getConfigParamCell(6);
       return ConfigParams6.deserialize(CellSlice.beginParse(c));
@@ -404,7 +396,7 @@ public class AdnlLiteClient {
    * capabilities#c4 version:uint32 capabilities:uint64 = GlobalVersion; _ GlobalVersion =
    * ConfigParam 8;
    */
-  public ConfigParams8 getConfigParam8() throws Exception {
+  public ConfigParams8 getConfigParam8() {
     try {
       Cell c = getConfigParamCell(8);
       return ConfigParams8.deserialize(CellSlice.beginParse(c));
@@ -414,7 +406,7 @@ public class AdnlLiteClient {
   }
 
   /** mandatory_params */
-  public ConfigParams9 getConfigParam9() throws Exception {
+  public ConfigParams9 getConfigParam9() {
     try {
       Cell c = getConfigParamCell(9);
       return ConfigParams9.deserialize(CellSlice.beginParse(c));
@@ -424,7 +416,7 @@ public class AdnlLiteClient {
   }
 
   /** critical_params */
-  public ConfigParams10 getConfigParam10() throws Exception {
+  public ConfigParams10 getConfigParam10() {
     try {
       Cell c = getConfigParamCell(10);
       return ConfigParams10.deserialize(CellSlice.beginParse(c));
@@ -437,7 +429,7 @@ public class AdnlLiteClient {
    * cfg_vote_setup#91 normal_params:^ConfigProposalSetup critical_params:^ConfigProposalSetup =
    * ConfigVotingSetup; _ ConfigVotingSetup = ConfigParam 11;
    */
-  public ConfigParams11 getConfigParam11() throws Exception {
+  public ConfigParams11 getConfigParam11() {
     try {
       Cell c = getConfigParamCell(11);
       return ConfigParams11.deserialize(CellSlice.beginParse(c));
@@ -447,7 +439,7 @@ public class AdnlLiteClient {
   }
 
   /** workchains */
-  public ConfigParams12 getConfigParam12() throws Exception {
+  public ConfigParams12 getConfigParam12() {
     try {
       Cell c = getConfigParamCell(12);
       return ConfigParams12.deserialize(CellSlice.beginParse(c));
@@ -457,7 +449,7 @@ public class AdnlLiteClient {
   }
 
   /** ComplaintPricing */
-  public ConfigParams13 getConfigParam13() throws Exception {
+  public ConfigParams13 getConfigParam13() {
     try {
       Cell c = getConfigParamCell(13);
       return ConfigParams13.deserialize(CellSlice.beginParse(c));
@@ -467,7 +459,7 @@ public class AdnlLiteClient {
   }
 
   /** BlockCreateFees */
-  public ConfigParams14 getConfigParam14() throws Exception {
+  public ConfigParams14 getConfigParam14() {
     try {
       Cell c = getConfigParamCell(14);
       return ConfigParams14.deserialize(CellSlice.beginParse(c));
@@ -477,7 +469,7 @@ public class AdnlLiteClient {
   }
 
   /** election timing */
-  public ConfigParams15 getConfigParam15() throws Exception {
+  public ConfigParams15 getConfigParam15() {
     try {
       Cell c = getConfigParamCell(15);
       return ConfigParams15.deserialize(CellSlice.beginParse(c));
@@ -487,7 +479,7 @@ public class AdnlLiteClient {
   }
 
   /** max min validators */
-  public ConfigParams16 getConfigParam16() throws Exception {
+  public ConfigParams16 getConfigParam16() {
     try {
       Cell c = getConfigParamCell(16);
       return ConfigParams16.deserialize(CellSlice.beginParse(c));
@@ -497,7 +489,7 @@ public class AdnlLiteClient {
   }
 
   /** max min stake */
-  public ConfigParams17 getConfigParam17() throws Exception {
+  public ConfigParams17 getConfigParam17() {
     try {
       Cell c = getConfigParamCell(17);
       return ConfigParams17.deserialize(CellSlice.beginParse(c));
@@ -507,7 +499,7 @@ public class AdnlLiteClient {
   }
 
   /** storage prices */
-  public ConfigParams18 getConfigParam18() throws Exception {
+  public ConfigParams18 getConfigParam18() {
     try {
       Cell c = getConfigParamCell(18);
       return ConfigParams18.deserialize(CellSlice.beginParse(c));
@@ -517,7 +509,7 @@ public class AdnlLiteClient {
   }
 
   /** GasLimitsPrices masterchain */
-  public ConfigParams20 getConfigParam20() throws Exception {
+  public ConfigParams20 getConfigParam20() {
     try {
       Cell c = getConfigParamCell(20);
       return ConfigParams20.deserialize(CellSlice.beginParse(c));
@@ -527,7 +519,7 @@ public class AdnlLiteClient {
   }
 
   /** GasLimitsPrices workchains */
-  public ConfigParams21 getConfigParam21() throws Exception {
+  public ConfigParams21 getConfigParam21() {
     try {
       Cell c = getConfigParamCell(21);
       return ConfigParams21.deserialize(CellSlice.beginParse(c));
@@ -537,7 +529,7 @@ public class AdnlLiteClient {
   }
 
   /** BlockLimits masterchain */
-  public ConfigParams22 getConfigParam22() throws Exception {
+  public ConfigParams22 getConfigParam22() {
     try {
       Cell c = getConfigParamCell(22);
       return ConfigParams22.deserialize(CellSlice.beginParse(c));
@@ -547,7 +539,7 @@ public class AdnlLiteClient {
   }
 
   /** BlockLimits workchains */
-  public ConfigParams23 getConfigParam23() throws Exception {
+  public ConfigParams23 getConfigParam23() {
     try {
       Cell c = getConfigParamCell(23);
       return ConfigParams23.deserialize(CellSlice.beginParse(c));
@@ -557,7 +549,7 @@ public class AdnlLiteClient {
   }
 
   /** MsgForwardPrices masterchain */
-  public ConfigParams24 getConfigParam24() throws Exception {
+  public ConfigParams24 getConfigParam24() {
     try {
       Cell c = getConfigParamCell(24);
       return ConfigParams24.deserialize(CellSlice.beginParse(c));
@@ -567,7 +559,7 @@ public class AdnlLiteClient {
   }
 
   /** MsgForwardPrices */
-  public ConfigParams25 getConfigParam25() throws Exception {
+  public ConfigParams25 getConfigParam25() {
     try {
       Cell c = getConfigParamCell(25);
       return ConfigParams25.deserialize(CellSlice.beginParse(c));
@@ -577,7 +569,7 @@ public class AdnlLiteClient {
   }
 
   /** CatchainConfig */
-  public ConfigParams28 getConfigParam28() throws Exception {
+  public ConfigParams28 getConfigParam28() {
     try {
       Cell c = getConfigParamCell(28);
       return ConfigParams28.deserialize(CellSlice.beginParse(c));
@@ -587,7 +579,7 @@ public class AdnlLiteClient {
   }
 
   /** ConsensusConfig */
-  public ConfigParams29 getConfigParam29() throws Exception {
+  public ConfigParams29 getConfigParam29() {
     try {
       Cell c = getConfigParamCell(29);
       return ConfigParams29.deserialize(CellSlice.beginParse(c));
@@ -597,7 +589,7 @@ public class AdnlLiteClient {
   }
 
   /** fundamental_smc_addr */
-  public ConfigParams31 getConfigParam31() throws Exception {
+  public ConfigParams31 getConfigParam31() {
     try {
       Cell c = getConfigParamCell(31);
       return ConfigParams31.deserialize(CellSlice.beginParse(c));
@@ -607,7 +599,7 @@ public class AdnlLiteClient {
   }
 
   /** prev_validators */
-  public ConfigParams32 getConfigParam32() throws Exception {
+  public ConfigParams32 getConfigParam32() {
     try {
       Cell c = getConfigParamCell(32);
       return ConfigParams32.deserialize(CellSlice.beginParse(c));
@@ -617,7 +609,7 @@ public class AdnlLiteClient {
   }
 
   /** prev_temp_validators */
-  public ConfigParams33 getConfigParam33() throws Exception {
+  public ConfigParams33 getConfigParam33() {
     try {
       Cell c = getConfigParamCell(33);
       return ConfigParams33.deserialize(CellSlice.beginParse(c));
@@ -627,7 +619,7 @@ public class AdnlLiteClient {
   }
 
   /** cur_validators */
-  public ConfigParams34 getConfigParam34() throws Exception {
+  public ConfigParams34 getConfigParam34() {
     try {
       Cell c = getConfigParamCell(34);
       return ConfigParams34.deserialize(CellSlice.beginParse(c));
@@ -637,7 +629,7 @@ public class AdnlLiteClient {
   }
 
   /** cur_temp_validators */
-  public ConfigParams35 getConfigParam35() throws Exception {
+  public ConfigParams35 getConfigParam35() {
     try {
       Cell c = getConfigParamCell(35);
       return ConfigParams35.deserialize(CellSlice.beginParse(c));
@@ -647,7 +639,7 @@ public class AdnlLiteClient {
   }
 
   /** next_validators */
-  public ConfigParams36 getConfigParam36() throws Exception {
+  public ConfigParams36 getConfigParam36() {
     try {
       Cell c = getConfigParamCell(36);
       return ConfigParams36.deserialize(CellSlice.beginParse(c));
@@ -657,7 +649,7 @@ public class AdnlLiteClient {
   }
 
   /** next_temp_validators */
-  public ConfigParams37 getConfigParam37() throws Exception {
+  public ConfigParams37 getConfigParam37() {
     try {
       Cell c = getConfigParamCell(37);
       return ConfigParams37.deserialize(CellSlice.beginParse(c));
@@ -668,12 +660,11 @@ public class AdnlLiteClient {
 
   private Cell getConfigParamCell(int val) throws Exception {
     ConfigInfo configInfo = getConfigAll(getMasterchainInfo().getLast(), 0);
-    Cell c = (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(val));
-    return c;
+    return (Cell) configInfo.getConfigParams().getConfig().elements.get(BigInteger.valueOf(val));
   }
 
   /** ValidatorSignedTempKey */
-  public ConfigParams39 getConfigParam39() throws Exception {
+  public ConfigParams39 getConfigParam39() {
     try {
       Cell c = getConfigParamCell(39);
       return ConfigParams39.deserialize(CellSlice.beginParse(c));
@@ -683,7 +674,7 @@ public class AdnlLiteClient {
   }
 
   /** MisbehaviourPunishmentConfig */
-  public ConfigParams40 getConfigParam40() throws Exception {
+  public ConfigParams40 getConfigParam40() {
     try {
       Cell c = getConfigParamCell(40);
       return ConfigParams40.deserialize(CellSlice.beginParse(c));
@@ -694,7 +685,7 @@ public class AdnlLiteClient {
   }
 
   /** SuspendedAddressList */
-  public ConfigParams44 getConfigParam44() throws Exception {
+  public ConfigParams44 getConfigParam44() {
     try {
       Cell c = getConfigParamCell(44);
       return ConfigParams44.deserialize(CellSlice.beginParse(c));
@@ -704,7 +695,7 @@ public class AdnlLiteClient {
   }
 
   /** PrecompiledContractsConfig */
-  public ConfigParams45 getConfigParam45() throws Exception {
+  public ConfigParams45 getConfigParam45() {
     try {
       Cell c = getConfigParamCell(45);
       return ConfigParams45.deserialize(CellSlice.beginParse(c));
@@ -714,7 +705,7 @@ public class AdnlLiteClient {
   }
 
   /** Ethereum bridges */
-  public ConfigParams71 getConfigParam71() throws Exception {
+  public ConfigParams71 getConfigParam71() {
     try {
       Cell c = getConfigParamCell(71);
       return ConfigParams71.deserialize(CellSlice.beginParse(c));
@@ -724,7 +715,7 @@ public class AdnlLiteClient {
   }
 
   /** Binance Smart Chain bridges */
-  public ConfigParams72 getConfigParam72() throws Exception {
+  public ConfigParams72 getConfigParam72() {
     try {
       Cell c = getConfigParamCell(72);
       return ConfigParams72.deserialize(CellSlice.beginParse(c));
@@ -734,7 +725,7 @@ public class AdnlLiteClient {
   }
 
   /** Polygon bridges */
-  public ConfigParams73 getConfigParam73() throws Exception {
+  public ConfigParams73 getConfigParam73() {
     try {
       Cell c = getConfigParamCell(73);
       return ConfigParams73.deserialize(CellSlice.beginParse(c));
@@ -744,7 +735,7 @@ public class AdnlLiteClient {
   }
 
   /** ETH-&gt;TON token bridges */
-  public ConfigParams79 getConfigParam79() throws Exception {
+  public ConfigParams79 getConfigParam79() {
     try {
       Cell c = getConfigParamCell(79);
       return ConfigParams79.deserialize(CellSlice.beginParse(c));
@@ -754,7 +745,7 @@ public class AdnlLiteClient {
   }
 
   /** BNB-&gt;TON token bridges */
-  public ConfigParams81 getConfigParam81() throws Exception {
+  public ConfigParams81 getConfigParam81() {
     try {
       Cell c = getConfigParamCell(81);
       return ConfigParams81.deserialize(CellSlice.beginParse(c));
@@ -764,7 +755,7 @@ public class AdnlLiteClient {
   }
 
   /** Polygon-&gt;TON token bridges */
-  public ConfigParams82 getConfigParam82() throws Exception {
+  public ConfigParams82 getConfigParam82() {
     try {
       Cell c = getConfigParamCell(82);
       return ConfigParams82.deserialize(CellSlice.beginParse(c));
@@ -783,7 +774,6 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(BlockQuery.builder().id(id).build());
-          log.info("Sending getBlock query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -806,7 +796,6 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(BlockStateQuery.builder().id(id).build());
-          log.info("Sending getBlockState query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -831,8 +820,6 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(BlockHeaderQuery.builder().id(id).mode(mode).build());
 
-          log.info("Sending getBlockHeader query");
-
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
@@ -855,15 +842,15 @@ public class AdnlLiteClient {
 
           byte[] queryBytes = LiteServerQuery.pack(SendMessageQuery.builder().body(body).build());
 
-          log.info("Sending sendMessage query");
-
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
             return (SendMsgStatus) response;
           } catch (Exception e) {
             if (response instanceof LiteServerError) {
-              throw new Exception(((LiteServerError) response).getMessage());
+              throw new Exception(
+                  ((LiteServerError) response).getMessage(),
+                  new Throwable(String.valueOf(((LiteServerError) response).getCode())));
             }
             throw e;
           }
@@ -888,8 +875,6 @@ public class AdnlLiteClient {
                       .modifiedAfter(modifiedAfter)
                       .build());
 
-          log.info("Sending ValidatorStatsQuery query");
-
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
@@ -911,8 +896,6 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(ShardBlockProofQuery.builder().id(id).build());
-
-          log.info("Sending sendMessage query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -943,8 +926,6 @@ public class AdnlLiteClient {
                       .targetBlock(targetBlock)
                       .build());
 
-          log.info("Sending sendMessage query");
-
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
@@ -958,18 +939,20 @@ public class AdnlLiteClient {
         });
   }
 
-  public BigInteger getBalance(Address address) throws Exception {
-    MasterchainInfo masterchainInfo = getMasterchainInfo();
-    return getAccountState(masterchainInfo.getLast(), address)
-        .getAccount()
-        .getAccountStorage()
-        .getBalance()
-        .getCoins();
+  public BigInteger getBalance(Address address) {
+    try {
+      return getAccountState(getMasterchainInfo().getLast(), address)
+          .getAccount()
+          .getAccountStorage()
+          .getBalance()
+          .getCoins();
+    } catch (Throwable e) {
+      return BigInteger.ZERO;
+    }
   }
 
   public Account getAccount(Address address) throws Exception {
-    MasterchainInfo masterchainInfo = getMasterchainInfo();
-    return getAccountState(masterchainInfo.getLast(), address).getAccount();
+    return getAccountState(getMasterchainInfo().getLast(), address).getAccount();
   }
 
   public AccountState getAccountState(BlockIdExt id, Address accountAddress) throws Exception {
@@ -982,7 +965,6 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(
                   AccountStateQuery.builder().id(id).account(accountAddress).build());
-          log.info("Sending getAccountState query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1008,7 +990,6 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(
                   AccountStatePrunedQuery.builder().id(id).account(accountAddress).build());
-          log.info("Sending getAccountStatePruned query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1164,8 +1145,6 @@ public class AdnlLiteClient {
                       .params(methodParams)
                       .build());
 
-          log.info("Sending runMethod query");
-
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
@@ -1196,8 +1175,6 @@ public class AdnlLiteClient {
                       .exact(exact)
                       .build());
 
-          log.info("Sending getShardInfo query");
-
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
@@ -1219,7 +1196,6 @@ public class AdnlLiteClient {
           }
 
           byte[] queryBytes = LiteServerQuery.pack(AllShardsInfoQuery.builder().id(id).build());
-          log.info("Sending getAllShardsInfo query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1245,7 +1221,6 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(
                   OneTransactionQuery.builder().id(id).account(accountAddress).lt(lt).build());
-          log.info("Sending getOneTransaction query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1288,8 +1263,6 @@ public class AdnlLiteClient {
                       .hash((tempHash.length != 0) ? tempHash : hash)
                       .build());
 
-          log.info("Sending getTransactions query");
-
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
@@ -1313,8 +1286,6 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(
                   LookupBlockQuery.builder().id(id).mode(mode).lt(lt).utime(utime).build());
-
-          log.info("Sending lookupBlock query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1347,8 +1318,6 @@ public class AdnlLiteClient {
                       .utime(utime)
                       .build());
 
-          log.info("Sending lookupBlockWithProof query");
-
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
@@ -1378,8 +1347,6 @@ public class AdnlLiteClient {
                       .count(count)
                       .afterTx(transactionId3)
                       .build());
-
-          log.info("Sending listBlockTransactions query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1418,7 +1385,6 @@ public class AdnlLiteClient {
                       .reverseOrder(reverseOrder)
                       .wantProof(wantProof)
                       .build());
-          log.info("Sending listBlockTransactionsExt query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1476,7 +1442,6 @@ public class AdnlLiteClient {
                       .maxAccounts(maxAccounts)
                       .wantProof(wantProof)
                       .build());
-          log.info("Sending getTime query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1519,7 +1484,6 @@ public class AdnlLiteClient {
                       .oneAccount(oneAccount)
                       .messagesBoc(messageBoc)
                       .build());
-          log.info("Sending getTime query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1543,8 +1507,6 @@ public class AdnlLiteClient {
 
           byte[] queryBytes =
               LiteServerQuery.pack(LibrariesQuery.builder().libraryList(listLibraries).build());
-
-          log.info("Sending getTime query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1575,8 +1537,6 @@ public class AdnlLiteClient {
                       .libraryList(listLibraries)
                       .build());
 
-          log.info("Sending getTime query");
-
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
           try {
@@ -1600,8 +1560,6 @@ public class AdnlLiteClient {
           byte[] queryBytes =
               LiteServerQuery.pack(
                   OutMsgQueueSizesQuery.builder().mode(mode).wc(wc).shard(shard).build());
-
-          log.info("Sending getTime query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1631,8 +1589,6 @@ public class AdnlLiteClient {
                       .mode(mode)
                       .wantProof(wantProof)
                       .build());
-
-          log.info("Sending getTime query");
 
           LiteServerAnswer response =
               transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
@@ -1894,5 +1850,40 @@ public class AdnlLiteClient {
       adnlLiteClient.connectWithRetry();
       return adnlLiteClient;
     }
+  }
+
+  public void waitForBalanceChange(Address address, int timeoutSeconds) {
+    log.info("Waiting for balance change (up to {}s) - ({})", timeoutSeconds, address.toRaw());
+    BigInteger initialBalance = getBalance(address);
+    int i = 0;
+    do {
+      if (++i * 2 >= timeoutSeconds) {
+        throw new Error(
+            "Balance of " + address.toRaw() + "was not changed within specified timeout.");
+      }
+      Utils.sleep(2);
+    } while (initialBalance.equals(getBalance(address)));
+  }
+
+  public void waitForBalanceChangeWithTolerance(
+      Address address, int timeoutSeconds, BigInteger tolerateNanoCoins) {
+
+    BigInteger initialBalance = getBalance(address);
+    long diff;
+    int i = 0;
+    do {
+      if (++i * 2 >= timeoutSeconds) {
+        throw new Error(
+            "Balance was not changed by +/- "
+                + Utils.formatNanoValue(tolerateNanoCoins)
+                + " within specified timeout.");
+      }
+      Utils.sleep(2);
+      BigInteger currentBalance = getBalance(address);
+
+      diff =
+          Math.max(currentBalance.longValue(), initialBalance.longValue())
+              - Math.min(currentBalance.longValue(), initialBalance.longValue());
+    } while (diff < tolerateNanoCoins.longValue());
   }
 }

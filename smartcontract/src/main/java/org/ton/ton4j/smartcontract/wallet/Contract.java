@@ -101,6 +101,13 @@ public interface Contract {
     if (this instanceof WalletV1R1) {
       throw new Error("Wallet V1R1 does not have seqno method");
     }
+    if (nonNull(getAdnlLiteClient())) {
+      try {
+        return getAdnlLiteClient().getSeqno(getAddress());
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
 
     return getTonlib().getSeqno(getAddress());
   }
@@ -149,9 +156,6 @@ public interface Contract {
         "waiting for balance change (up to "
             + timeoutSeconds
             + "s) - "
-            + (getTonlib().isTestnet()
-                ? getAddress().toBounceableTestnet()
-                : getAddress().toBounceable())
             + " ("
             + getAddress().toRaw()
             + ")");

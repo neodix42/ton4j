@@ -86,7 +86,7 @@ public class TestnetFaucet {
 
   public static BigInteger topUpContract(
       AdnlLiteClient adnlLiteClient, Address destinationAddress, BigInteger amount)
-      throws InterruptedException {
+      throws Exception {
 
     if (amount.compareTo(Utils.toNano(20)) > 0) {
       throw new Error(
@@ -140,8 +140,8 @@ public class TestnetFaucet {
       throw new Error(extMessageInfo.getError().getMessage());
     }
 
-    faucet.waitForBalanceChange(60);
+    adnlLiteClient.waitForBalanceChange(destinationAddress, 60);
 
-    return faucet.getBalance();
+    return adnlLiteClient.getBalance(destinationAddress);
   }
 }

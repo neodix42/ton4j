@@ -10,6 +10,9 @@
     </parent>
 
     <artifactId>adnl</artifactId>
+    <name>TON Java ADNL LiteClient</name>
+
+    <description>Pure Java implementation of LiteClient based on ADNL TCP protocol</description>
 
     <dependencies>
         <dependency>

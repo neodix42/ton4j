@@ -10,7 +10,7 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class SendMessageQuery implements LiteServerQueryData {
-  public static final int SEND_MESSAGE_QUERY = 0;
+  public static final int SEND_MESSAGE_QUERY = 1762317442;
 
   public byte[] body;
 
@@ -29,7 +29,7 @@ public class SendMessageQuery implements LiteServerQueryData {
     byte[] t1 = Utils.toBytes(body);
     ByteBuffer buffer = ByteBuffer.allocate(4 + t1.length);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt((int) Utils.getQueryCrc32IEEEE(getQueryName()));
+    buffer.putInt(SEND_MESSAGE_QUERY);
     buffer.put(t1);
     return buffer.array();
   }
