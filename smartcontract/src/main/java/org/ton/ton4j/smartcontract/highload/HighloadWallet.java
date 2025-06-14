@@ -20,8 +20,6 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
-import org.ton.ton4j.tonlib.types.RunResult;
-import org.ton.ton4j.tonlib.types.TvmStackEntryNumber;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -164,16 +162,11 @@ public class HighloadWallet implements Contract {
   //        return message.endCell();
   //    }
 
-  public String getPublicKey() {
-    Address myAddress = getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_public_key");
-
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_public_key, returned an exit code " + result.getExit_code());
+  public String getPublicKey() throws Exception {
+    if (nonNull(adnlLiteClient)) {
+      return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
     }
-
-    TvmStackEntryNumber publicKeyNumber = (TvmStackEntryNumber) result.getStack().get(0);
-    return publicKeyNumber.getNumber().toString(16);
+    return Utils.bytesToHex(Utils.to32ByteArray(tonlib.getPublicKey(getAddress())));
   }
 
   /**
@@ -194,7 +187,9 @@ public class HighloadWallet implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
-
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    }
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 
@@ -319,6 +314,9 @@ public class HighloadWallet implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    }
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 }

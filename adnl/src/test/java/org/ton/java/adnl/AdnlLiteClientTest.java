@@ -44,11 +44,7 @@ public class AdnlLiteClientTest {
     } else {
       tonGlobalConfig = TonGlobalConfig.loadFromUrl(Utils.getGlobalConfigUrlTestnetGithub());
     }
-    client =
-        AdnlLiteClient.builder()
-            .globalConfig(tonGlobalConfig)
-            //            .liteServerIndex(2)
-            .build();
+    client = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).build();
   }
 
   @AfterAll
@@ -124,6 +120,35 @@ public class AdnlLiteClientTest {
     log.info("Last block seqno: {} ", accountState.getId().getSeqno());
     log.info("shard block seqno: {} ", accountState.getShardblk().getSeqno());
     log.info("accountHex: {} ", Address.of(getAddress()).toRaw());
+    log.info("accountBalance: {} ", accountState.getAccount().getAccountStorage().getBalance());
+    assertTrue(info.getLast().getSeqno() > 0, "Seqno should be positive");
+    log.info("accountObject: {} ", accountState.getAccount());
+    //    log.info("accountShardObject: {} ", accountState.getShardAccount());
+    //    log.info("ShardState: {} ", accountState.getShardState());
+    log.info("ShardStateUnsplit: {} ", accountState.getShardStateUnsplit());
+    log.info("getShardAccounts: {} ", accountState.getShardAccounts());
+  }
+
+  @Test
+  void testGetAccountStateNoStateTipo() throws Exception {
+    log.info("Testing getAccountState");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo info = client.getMasterchainInfo();
+    assertNotNull(info, "Masterchain info should not be null");
+    assertNotNull(info.getLast(), "Last block should not be null");
+
+    //    AccountState accountState = client.getAccountState(info.getLast(),
+    // Address.of(getAddress()));
+    AccountState accountState =
+        client.getAccountState(
+            info.getLast(), Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka"));
+    log.info("accountState: {} ", accountState);
+    log.info("Last block seqno: {} ", accountState.getId().getSeqno());
+    log.info("shard block seqno: {} ", accountState.getShardblk().getSeqno());
+    //    log.info("accountHex: {} ", Address.of(getAddress()).toRaw());
+    log.info(
+        "accountHex: {} ", Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka").toRaw());
     log.info("accountBalance: {} ", accountState.getAccount().getAccountStorage().getBalance());
     assertTrue(info.getLast().getSeqno() > 0, "Seqno should be positive");
     log.info("accountObject: {} ", accountState.getAccount());
@@ -244,7 +269,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam0() throws Exception {
+  void testGetConfigParam0() {
     log.info("Testing testConfigParam0 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -252,7 +277,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam1() throws Exception {
+  void testGetConfigParam1() {
     log.info("Testing testConfigParam1 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -260,7 +285,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam2() throws Exception {
+  void testGetConfigParam2() {
     log.info("Testing testConfigParam2 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -268,7 +293,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam3() throws Exception {
+  void testGetConfigParam3() {
     log.info("Testing testConfigParam3 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -276,7 +301,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam4() throws Exception {
+  void testGetConfigParam4() {
     log.info("Testing testConfigParam4 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -284,7 +309,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam5() throws Exception {
+  void testGetConfigParam5() {
     log.info("Testing testConfigParam5 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -292,7 +317,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam6() throws Exception {
+  void testGetConfigParam6() {
     log.info("Testing testConfigParam6 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -301,7 +326,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam8() throws Exception {
+  void testGetConfigParam8() {
     log.info("Testing testConfigParam8 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -309,7 +334,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam9() throws Exception {
+  void testGetConfigParam9() {
     log.info("Testing testConfigParam9 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -317,7 +342,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam10() throws Exception {
+  void testGetConfigParam10() {
     log.info("Testing testConfigParam10 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -325,7 +350,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam11() throws Exception {
+  void testGetConfigParam11() {
     log.info("Testing testConfigParam11 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -333,7 +358,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam12() throws Exception {
+  void testGetConfigParam12() {
     log.info("Testing testConfigParam12 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -341,7 +366,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam13() throws Exception {
+  void testGetConfigParam13() {
     log.info("Testing testConfigParam13 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -349,7 +374,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam14() throws Exception {
+  void testGetConfigParam14() {
     log.info("Testing testConfigParam14 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -357,7 +382,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam15() throws Exception {
+  void testGetConfigParam15() {
     log.info("Testing testConfigParam15 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -365,7 +390,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam16() throws Exception {
+  void testGetConfigParam16() {
     log.info("Testing testConfigParam16 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -373,7 +398,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam17() throws Exception {
+  void testGetConfigParam17() {
     log.info("Testing testConfigParam17 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -381,7 +406,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam18() throws Exception {
+  void testGetConfigParam18() {
     log.info("Testing testConfigParam18 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -389,7 +414,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam20() throws Exception {
+  void testGetConfigParam20() {
     log.info("Testing testConfigParam20 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -397,7 +422,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam21() throws Exception {
+  void testGetConfigParam21() {
     log.info("Testing testConfigParam21 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -405,7 +430,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam22() throws Exception {
+  void testGetConfigParam22() {
     log.info("Testing testConfigParam22 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -413,7 +438,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam23() throws Exception {
+  void testGetConfigParam23() {
     log.info("Testing testConfigParam23 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -421,7 +446,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam24() throws Exception {
+  void testGetConfigParam24() {
     log.info("Testing testConfigParam24 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -429,7 +454,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam25() throws Exception {
+  void testGetConfigParam25() {
     log.info("Testing testConfigParam25 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -437,7 +462,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam28() throws Exception {
+  void testGetConfigParam28() {
     log.info("Testing testConfigParam28 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -445,7 +470,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam29() throws Exception {
+  void testGetConfigParam29() {
     log.info("Testing testConfigParam29 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -453,7 +478,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam31() throws Exception {
+  void testGetConfigParam31() {
     log.info("Testing testConfigParam31 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -461,7 +486,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam32() throws Exception {
+  void testGetConfigParam32() {
     log.info("Testing testConfigParam32 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -470,7 +495,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam33() throws Exception {
+  void testGetConfigParam33() {
     log.info("Testing testConfigParam33 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -478,7 +503,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam34() throws Exception {
+  void testGetConfigParam34() {
     log.info("Testing testConfigParam34 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -486,7 +511,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam35() throws Exception {
+  void testGetConfigParam35() {
     log.info("Testing testConfigParam35 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -494,7 +519,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam36() throws Exception {
+  void testGetConfigParam36() {
     log.info("Testing testConfigParam36 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -502,7 +527,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam37() throws Exception {
+  void testGetConfigParam37() {
     log.info("Testing testConfigParam37 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -510,7 +535,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam39() throws Exception {
+  void testGetConfigParam39() {
     log.info("Testing testConfigParam39 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -518,7 +543,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam40() throws Exception {
+  void testGetConfigParam40() {
     log.info("Testing testConfigParam40 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -526,7 +551,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam44() throws Exception {
+  void testGetConfigParam44() {
     log.info("Testing testConfigParam44 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -534,7 +559,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam45() throws Exception {
+  void testGetConfigParam45() {
     log.info("Testing testConfigParam45 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -542,7 +567,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam71() throws Exception {
+  void testGetConfigParam71() {
     log.info("Testing testConfigParam71 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -550,7 +575,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam72() throws Exception {
+  void testGetConfigParam72() {
     log.info("Testing testConfigParam72 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -558,7 +583,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam73() throws Exception {
+  void testGetConfigParam73() {
     log.info("Testing testConfigParam73 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -566,7 +591,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam79() throws Exception {
+  void testGetConfigParam79() {
     log.info("Testing testConfigParam79 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -574,7 +599,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetConfigParam81() throws Exception {
+  void testGetConfigParam81() {
     log.info("Testing testConfigParam81 query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -965,7 +990,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testRunSmcMethodSeqno() throws Exception {
+  void testRunSmcMethodSeqno() {
     log.info("Testing runSmcMethod seqno query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -989,7 +1014,7 @@ public class AdnlLiteClientTest {
 
   /** wrong method name, exit code 11 */
   @Test
-  void testRunSmcMethodPublicKey() throws Exception {
+  void testRunSmcMethodPublicKey() {
     log.info("Testing runSmcMethod public_key query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -1004,7 +1029,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testRunSmcMethodPublicKeyOk() throws Exception {
+  void testRunSmcMethodPublicKeyOk() {
     log.info("Testing runSmcMethod get_public_key query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -1018,7 +1043,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testRunSmcMethodPublicKeyOkShort() throws Exception {
+  void testRunSmcMethodPublicKeyOkShort() {
     log.info("Testing runSmcMethod get_public_key query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -1027,7 +1052,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testRunSmcMethodGetSubWalletId() throws Exception {
+  void testRunSmcMethodGetSubWalletId() {
     log.info("Testing runSmcMethod get_subwallet_id query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -1036,7 +1061,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testRunSmcMethodWithParam() throws Exception {
+  void testRunSmcMethodWithParam() {
     log.info("Testing runSmcMethod compute_returned_stake address query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -1046,7 +1071,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testRunSmcMethodWithParams() throws Exception {
+  void testRunSmcMethodWithParams() {
     log.info("Testing runSmcMethod compute_returned_stake address query");
     assertTrue(client.isConnected(), "Client should be connected");
 
@@ -1071,7 +1096,7 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testSendMessage() throws Exception {
+  void testSendMessage() {
     log.info("Testing sendMessage query");
     assertTrue(client.isConnected(), "Client should be connected");
 

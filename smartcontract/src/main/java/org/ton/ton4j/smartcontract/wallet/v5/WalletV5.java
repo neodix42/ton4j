@@ -1,6 +1,7 @@
 package org.ton.ton4j.smartcontract.wallet.v5;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
@@ -16,6 +17,7 @@ import org.ton.ton4j.cell.*;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
@@ -158,6 +160,9 @@ public class WalletV5 implements Contract {
   }
 
   public ExtMessageInfo send(WalletV5Config config) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareExternalMsg(config));
+    }
     return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
   }
 
@@ -165,17 +170,28 @@ public class WalletV5 implements Contract {
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
-  public RawTransaction sendWithConfirmation(WalletV5Config config) {
-    return tonlib.sendRawMessageWithConfirmation(
-        prepareExternalMsg(config).toCell().toBase64(), getAddress());
+  public RawTransaction sendWithConfirmation(WalletV5Config config) throws Exception {
+    if (nonNull(adnlLiteClient)) {
+      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else {
+      return tonlib.sendRawMessageWithConfirmation(
+          prepareExternalMsg(config).toCell().toBase64(), getAddress());
+    }
   }
 
   /** Deploy wallet without any extensions. One can be installed later into the wallet. */
   public ExtMessageInfo deploy() {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareDeployMsg());
+    }
     return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
   }
 
   public ExtMessageInfo deploy(byte[] signedBody) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareDeployMsg(signedBody));
+    }
     return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
   }
 
@@ -189,6 +205,9 @@ public class WalletV5 implements Contract {
   }
 
   public ExtMessageInfo send(WalletV5Config config, byte[] signedBodyHash) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareExternalMsg(config, signedBodyHash));
+    }
     return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
   }
 
@@ -446,18 +465,26 @@ public class WalletV5 implements Contract {
   // --------------------------------------------------------------------------------------------------
 
   public long getWalletId() {
-    RunResult result = tonlib.runMethod(getAddress(), Utils.calculateMethodId("get_subwallet_id"));
-    TvmStackEntryNumber subWalletId = (TvmStackEntryNumber) result.getStack().get(0);
-    return subWalletId.getNumber().longValue();
+    if (nonNull(adnlLiteClient)) {
+      return adnlLiteClient.getSubWalletId(getAddress());
+    }
+    return tonlib.getSubWalletId(getAddress());
   }
 
   public byte[] getPublicKey() {
-    RunResult result = tonlib.runMethod(getAddress(), Utils.calculateMethodId("get_public_key"));
-    TvmStackEntryNumber pubKey = (TvmStackEntryNumber) result.getStack().get(0);
-    return pubKey.getNumber().toByteArray();
+    if (nonNull(adnlLiteClient)) {
+      return Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress()));
+    }
+    return Utils.to32ByteArray(tonlib.getPublicKey(getAddress()));
   }
 
   public boolean getIsSignatureAuthAllowed() {
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(getAddress(), "is_signature_allowed");
+      BigInteger signatureAllowed = runMethodResult.getIntFromResult(0);
+      return signatureAllowed.longValue() != 0;
+    }
     RunResult result =
         tonlib.runMethod(getAddress(), Utils.calculateMethodId("is_signature_allowed"));
     TvmStackEntryNumber signatureAllowed = (TvmStackEntryNumber) result.getStack().get(0);
@@ -465,6 +492,13 @@ public class WalletV5 implements Contract {
   }
 
   public TonHashMap getRawExtensions() {
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_extensions");
+      Cell cellExtensions = runMethodResult.getCellFromResult(0);
+      CellSlice cs = CellSlice.beginParse(cellExtensions);
+
+      return cs.loadDict(256, k -> k.readUint(256), v -> v);
+    }
     RunResult result = tonlib.runMethod(getAddress(), Utils.calculateMethodId("get_extensions"));
     if (result.getStack().get(0) instanceof TvmStackEntryList) {
       return new TonHashMap(256);

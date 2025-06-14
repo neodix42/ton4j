@@ -13,6 +13,9 @@ public class SendMsgStatus implements Serializable, LiteServerAnswer {
 
   private int status;
 
+  private int responseCode;
+  private String responseMessage;
+
   public static final int constructorId = SEND_MSG_STATUS_ANSWER;
 
   public static SendMsgStatus deserialize(ByteBuffer buffer) {

@@ -189,12 +189,14 @@ public class WalletV2R1 implements Contract {
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
-  public RawTransaction sendWithConfirmation(WalletV2R1Config config) throws Exception {
+  public RawTransaction sendWithConfirmation(WalletV2R1Config config) {
     if (nonNull(adnlLiteClient)) {
       adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else {
+      return tonlib.sendRawMessageWithConfirmation(
+          prepareExternalMsg(config).toCell().toBase64(), getAddress());
     }
-    return tonlib.sendRawMessageWithConfirmation(
-        prepareExternalMsg(config).toCell().toBase64(), getAddress());
   }
 
   public Message prepareExternalMsg(WalletV2R1Config config) {

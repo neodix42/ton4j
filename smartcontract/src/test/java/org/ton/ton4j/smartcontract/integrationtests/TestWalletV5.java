@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
@@ -1288,5 +1289,174 @@ public class TestWalletV5 extends CommonTest {
               .build());
     }
     return result;
+  }
+
+  @Test
+  public void testWalletV5InternalTransferAdnlClient() throws Exception {
+
+    // create user wallet that sends an internal message to wallet v5
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    WalletV3R1 contractV3 =
+        WalletV3R1.builder().adnlLiteClient(adnlLiteClient).walletId(43).build();
+
+    Address walletAddressV3 = contractV3.getAddress();
+
+    String nonBounceableAddress = walletAddressV3.toNonBounceable();
+    String bounceableAddress = walletAddressV3.toBounceable();
+    log.info("bounceableAddress v3: {}", bounceableAddress);
+    log.info("pub key: {}", Utils.bytesToHex(contractV3.getKeyPair().getPublicKey()));
+    log.info("prv key: {}", Utils.bytesToHex(contractV3.getKeyPair().getSecretKey()));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(0.2));
+    log.info(
+        "walletId {} new wallet v3 {} balance: {}",
+        contractV3.getWalletId(),
+        contractV3.getName(),
+        Utils.formatNanoValue(balance));
+
+    // deploy wallet v3
+    ExtMessageInfo extMessageInfo = contractV3.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+    contractV3.waitForDeployment(60);
+
+    // create wallet v5
+    TweetNaclFast.Signature.KeyPair keyPairV5 = Utils.generateSignatureKeyPair();
+    WalletV5 contractV5 =
+        WalletV5.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .walletId(42)
+            .keyPair(keyPairV5)
+            .isSigAuthAllowed(true)
+            .build();
+
+    Address walletAddressV5 = contractV5.getAddress();
+
+    nonBounceableAddress = walletAddressV5.toNonBounceable();
+    bounceableAddress = walletAddressV5.toBounceable();
+    log.info("bounceableAddress v5: {}", bounceableAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contractV5.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contractV5.getKeyPair().getSecretKey()));
+
+    balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(0.2));
+    log.info("new wallet v5 {} balance: {}", contractV5.getName(), Utils.formatNanoValue(balance));
+
+    // deploy wallet v5
+    extMessageInfo = contractV5.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contractV5.waitForDeployment(60);
+
+    // internal payload for wallet v5
+    WalletV5Config walletV5Config =
+        WalletV5Config.builder()
+            .seqno(1)
+            .walletId(42)
+            .body(
+                contractV5
+                    .createBulkTransfer(
+                        Arrays.asList(
+                            Destination.builder()
+                                .bounce(false)
+                                .address(addr1.toNonBounceable())
+                                .amount(Utils.toNano(0.013))
+                                .build(),
+                            Destination.builder()
+                                .bounce(false)
+                                .address(addr2.toNonBounceable())
+                                .amount(Utils.toNano(0.015))
+                                .build()))
+                    .toCell())
+            .build();
+
+    WalletV3Config walletV3Config =
+        WalletV3Config.builder()
+            .seqno(1)
+            .walletId(43)
+            .destination(contractV5.getAddress())
+            .amount(Utils.toNano(0.017))
+            .body(contractV5.createInternalSignedBody(walletV5Config))
+            .build();
+
+    extMessageInfo = contractV3.send(walletV3Config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+  }
+
+  @Test
+  public void testWalletV5DeployTwoExtensionsAdnlClient() throws Exception {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    WalletV5 contract =
+        WalletV5.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .walletId(42)
+            .keyPair(keyPair)
+            .isSigAuthAllowed(true)
+            .build();
+
+    Address walletAddress = contract.getAddress();
+
+    String nonBounceableAddress = walletAddress.toNonBounceable();
+    String bounceableAddress = walletAddress.toBounceable();
+    log.info("bounceableAddress: {}", bounceableAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    // deploy wallet-v5
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForDeployment(60);
+
+    long newSeq = contract.getSeqno();
+    assertThat(newSeq).isEqualTo(1);
+
+    Cell extensions =
+        contract
+            .manageExtensions(
+                ActionList.builder()
+                    .actions(
+                        Arrays.asList(
+                            ExtendedAction.builder()
+                                .actionType(ExtendedActionType.ADD_EXTENSION)
+                                .address(Address.of(addr2))
+                                .build(),
+                            ExtendedAction.builder()
+                                .actionType(ExtendedActionType.ADD_EXTENSION)
+                                .address(Address.of(addr3))
+                                .build()))
+                    .build())
+            .toCell();
+
+    // test WalletV5InnerRequest de/serialization
+    WalletV5InnerRequest walletV5InnerRequest =
+        WalletV5InnerRequest.deserialize(CellSlice.beginParse(extensions));
+    log.info("walletV5InnerRequest (deserialized) {}", walletV5InnerRequest);
+    log.info("walletV5InnerRequest (serialized)   {}", walletV5InnerRequest.toCell().toHex());
+
+    WalletV5Config walletV5Config =
+        WalletV5Config.builder().seqno(newSeq).walletId(42).body(extensions).build();
+
+    extMessageInfo = contract.send(walletV5Config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+    Utils.sleep(15);
+    log.info("extensions {}", contract.getRawExtensions());
+    assertThat(contract.getRawExtensions().elements.size()).isEqualTo(2);
   }
 }

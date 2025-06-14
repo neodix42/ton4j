@@ -117,7 +117,7 @@ public interface Contract {
         return (getAdnlLiteClient().getAccount(getAddress()).getAccountStorage().getAccountState()
             instanceof AccountStateActive);
       } catch (Exception e) {
-        throw new Error(e);
+        return false;
       }
     }
     return StringUtils.isNotEmpty(getTonlib().getRawAccountState(getAddress()).getCode());
@@ -125,12 +125,12 @@ public interface Contract {
 
   default ExtMessageInfo send(Message externalMessage) {
     if (nonNull(getAdnlLiteClient())) {
-      try {
 
-        SendMsgStatus sendMsgStatus =
-            getAdnlLiteClient()
-                .sendMessage(
-                    externalMessage); // raw boc // prepareExternalMsg(config).toCell().toBoc()
+      SendMsgStatus sendMsgStatus =
+          getAdnlLiteClient()
+              .sendMessage(
+                  externalMessage); // raw boc // prepareExternalMsg(config).toCell().toBoc()
+      if (StringUtils.isEmpty(sendMsgStatus.getResponseMessage())) {
         return ExtMessageInfo.builder()
             .error(
                 TonlibError.builder()
@@ -139,16 +139,18 @@ public interface Contract {
             .adnlLiteClientError(
                 AdnlLiteClientError.builder().code(sendMsgStatus.getStatus()).build())
             .build();
-      } catch (Exception e) {
+      } else {
         return ExtMessageInfo.builder()
             .error(
                 TonlibError.builder()
-                    .code(Long.parseLong(e.getCause().getMessage()))
+                    .code(
+                        sendMsgStatus.getResponseCode() == 0 ? 1 : sendMsgStatus.getResponseCode())
                     .build()) // if user checks tonlib error when using adnl client
             .adnlLiteClientError(
                 AdnlLiteClientError.builder()
-                    .code(Long.parseLong(e.getCause().getMessage()))
-                    .message(e.getMessage())
+                    .code(
+                        sendMsgStatus.getResponseCode() == 0 ? 1 : sendMsgStatus.getResponseCode())
+                    .message(sendMsgStatus.getResponseMessage())
                     .build())
             .build();
       }
@@ -171,7 +173,6 @@ public interface Contract {
 
   /** Checks every 2 seconds for timeoutSeconds if account state was deployed at address */
   default void waitForDeployment(int timeoutSeconds) {
-    System.out.println("waiting for deployment (up to " + timeoutSeconds + "s)");
     int i = 0;
     do {
       if (++i * 2 >= timeoutSeconds) {
@@ -192,13 +193,6 @@ public interface Contract {
    * waitForBalanceChangeWithTolerance().
    */
   default void waitForBalanceChange(int timeoutSeconds) {
-    System.out.println(
-        "waiting for balance change (up to "
-            + timeoutSeconds
-            + "s) - "
-            + " ("
-            + getAddress().toRaw()
-            + ")");
     BigInteger initialBalance = getBalance();
     int i = 0;
     do {
@@ -363,6 +357,7 @@ public interface Contract {
    */
   default RawTransaction waitForExtraCurrency(
       long extraCurrencyId, BigInteger fromTxLt, String fromTxHash, int attempts) {
+    // todo
     for (int i = 0; i < attempts; i++) {
       RawTransactions txs =
           getTonlib().getRawTransactions(getAddress().toRaw(), fromTxLt, fromTxHash);

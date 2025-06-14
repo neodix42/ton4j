@@ -79,9 +79,9 @@ public class TestnetFaucet {
       throw new Error(extMessageInfo.getError().getMessage());
     }
 
-    faucet.waitForBalanceChange(60);
+    tonlib.waitForBalanceChange(destinationAddress, 60);
 
-    return faucet.getBalance();
+    return tonlib.getAccountBalance(destinationAddress);
   }
 
   public static BigInteger topUpContract(
@@ -141,7 +141,6 @@ public class TestnetFaucet {
     }
 
     adnlLiteClient.waitForBalanceChange(destinationAddress, 60);
-
     return adnlLiteClient.getBalance(destinationAddress);
   }
 }

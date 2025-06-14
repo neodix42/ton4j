@@ -169,10 +169,16 @@ public class WalletV3R2 implements Contract {
   }
 
   public ExtMessageInfo deploy() {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareDeployMsg());
+    }
     return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
   }
 
   public ExtMessageInfo deploy(byte[] signedBody) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareDeployMsg(signedBody));
+    }
     return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
   }
 
@@ -202,6 +208,9 @@ public class WalletV3R2 implements Contract {
   }
 
   public ExtMessageInfo send(WalletV3Config config, byte[] signedBodyHash) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareExternalMsg(config, signedBodyHash));
+    }
     return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
   }
 
@@ -211,6 +220,9 @@ public class WalletV3R2 implements Contract {
   }
 
   public ExtMessageInfo send(WalletV3Config config) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareExternalMsg(config));
+    }
     return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
   }
 
@@ -219,8 +231,13 @@ public class WalletV3R2 implements Contract {
    * account's transactions
    */
   public RawTransaction sendWithConfirmation(WalletV3Config config) {
-    return tonlib.sendRawMessageWithConfirmation(
-        prepareExternalMsg(config).toCell().toBase64(), getAddress());
+    if (nonNull(adnlLiteClient)) {
+      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else {
+      return tonlib.sendRawMessageWithConfirmation(
+          prepareExternalMsg(config).toCell().toBase64(), getAddress());
+    }
   }
 
   public Message prepareExternalMsg(WalletV3Config config) {

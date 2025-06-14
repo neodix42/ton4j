@@ -1,6 +1,7 @@
 package org.ton.ton4j.smartcontract.highload;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
@@ -194,7 +195,9 @@ public class HighloadWalletV3 implements Contract {
                     .storeRef(body)
                     .endCell())
             .build();
-
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    }
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 
@@ -202,7 +205,7 @@ public class HighloadWalletV3 implements Contract {
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
-  public RawTransaction sendWithConfirmation(HighloadV3Config highloadConfig) {
+  public RawTransaction sendWithConfirmation(HighloadV3Config highloadConfig) throws Exception {
     Address ownAddress = getAddress();
 
     Cell body = createTransferMessage(highloadConfig);
@@ -224,7 +227,14 @@ public class HighloadWalletV3 implements Contract {
                     .storeRef(body)
                     .endCell())
             .build();
-    return tonlib.sendRawMessageWithConfirmation(externalMessage.toCell().toBase64(), getAddress());
+
+    if (nonNull(adnlLiteClient)) {
+      adnlLiteClient.sendRawMessageWithConfirmation(externalMessage, getAddress());
+      return null;
+    } else {
+      return tonlib.sendRawMessageWithConfirmation(
+          externalMessage.toCell().toBase64(), getAddress());
+    }
   }
 
   public ExtMessageInfo deploy(HighloadV3Config highloadConfig) {
@@ -272,6 +282,9 @@ public class HighloadWalletV3 implements Contract {
                     .endCell())
             .build();
 
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    }
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 

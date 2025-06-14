@@ -110,6 +110,7 @@ public class DnsCollection implements Contract {
    * @return CollectionInfo
    */
   public static CollectionData getCollectionData(Tonlib tonlib, Address dnsCollectionAddress) {
+    // todo
     RunResult result = tonlib.runMethod(dnsCollectionAddress, "get_collection_data");
 
     if (result.getExit_code() != 0) {
@@ -145,6 +146,7 @@ public class DnsCollection implements Contract {
    */
   public static Address getNftItemAddressByIndex(
       Tonlib tonlib, Address collectionAddress, BigInteger index) {
+    // todo
     Deque<String> stack = new ArrayDeque<>();
 
     stack.offer("[num, " + index.toString() + "]");
@@ -162,6 +164,7 @@ public class DnsCollection implements Contract {
 
   public static Address getNftItemAddressByDomain(
       Tonlib tonlib, Address dnsCollectionAddress, String domain) {
+    // todo
     Cell cell = CellBuilder.beginCell().storeString(domain).endCell();
     String cellHash = Utils.bytesToHex(cell.hash());
     return getNftItemAddressByIndex(tonlib, dnsCollectionAddress, new BigInteger(cellHash, 16));

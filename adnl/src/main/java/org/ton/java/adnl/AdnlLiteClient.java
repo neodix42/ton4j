@@ -979,125 +979,161 @@ public class AdnlLiteClient {
   }
 
   public long getSeqno(Address accountAddress) throws Exception {
-
-    RunMethodResult runMethodResult =
-        runMethod(
-            getMasterchainInfo().getLast(),
-            4,
-            accountAddress,
-            Utils.calculateMethodId("seqno"),
-            new byte[0]);
-    VmStack vmStack =
-        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
-    return VmStackValueTinyInt.deserialize(
-            CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
-        .getValue()
-        .longValue();
+    try {
+      RunMethodResult runMethodResult =
+          runMethod(
+              getMasterchainInfo().getLast(),
+              4,
+              accountAddress,
+              Utils.calculateMethodId("seqno"),
+              new byte[0]);
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error("method seqno returned an exit code " + runMethodResult.getExitCode());
+      }
+      VmStack vmStack =
+          VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+      return VmStackValueTinyInt.deserialize(
+              CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
+          .getValue()
+          .longValue();
+    } catch (Exception e) {
+      throw new Error("cannot execute seqno");
+    }
   }
 
-  public BigInteger getPublicKey(Address accountAddress) throws Exception {
-
-    RunMethodResult runMethodResult =
-        runMethod(
-            getMasterchainInfo().getLast(),
-            4,
-            accountAddress,
-            Utils.calculateMethodId("get_public_key"),
-            new byte[0]);
-    VmStack vmStack =
-        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
-    return VmStackValueInt.deserialize(
-            CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
-        .getValue();
+  public BigInteger getPublicKey(Address accountAddress) {
+    try {
+      RunMethodResult runMethodResult =
+          runMethod(
+              getMasterchainInfo().getLast(),
+              4,
+              accountAddress,
+              Utils.calculateMethodId("get_public_key"),
+              new byte[0]);
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method get_public_key returned an exit code " + runMethodResult.getExitCode());
+      }
+      VmStack vmStack =
+          VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+      return VmStackValueInt.deserialize(
+              CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
+          .getValue();
+    } catch (Exception e) {
+      throw new Error("cannot execute get_public_key");
+    }
   }
 
-  public long getSubWalletId(Address accountAddress) throws Exception {
+  public long getSubWalletId(Address accountAddress) {
+    try {
+      RunMethodResult runMethodResult =
+          runMethod(
+              getMasterchainInfo().getLast(),
+              4,
+              accountAddress,
+              Utils.calculateMethodId("get_subwallet_id"),
+              new byte[0]);
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method get_subwallet_id returned an exit code " + runMethodResult.getExitCode());
+      }
 
-    RunMethodResult runMethodResult =
-        runMethod(
-            getMasterchainInfo().getLast(),
-            4,
-            accountAddress,
-            Utils.calculateMethodId("get_subwallet_id"),
-            new byte[0]);
-    VmStack vmStack =
-        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
-    return VmStackValueTinyInt.deserialize(
-            CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
-        .getValue()
-        .longValue();
+      VmStack vmStack =
+          VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+      return VmStackValueTinyInt.deserialize(
+              CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
+          .getValue()
+          .longValue();
+    } catch (Exception e) {
+      throw new Error("cannot execute get_subwallet_id");
+    }
   }
 
-  public long computeReturnedStake(Address validatorAddress) throws Exception {
+  public long computeReturnedStake(Address validatorAddress) {
+    try {
+      VmStack vmStackParams =
+          VmStack.builder()
+              .depth(1)
+              .stack(
+                  VmStackList.builder()
+                      .tos(
+                          List.of(
+                              VmStackValueInt.builder()
+                                  .value(validatorAddress.toBigInteger())
+                                  .build()))
+                      .build())
+              .build();
 
-    VmStack vmStackParams =
-        VmStack.builder()
-            .depth(1)
-            .stack(
-                VmStackList.builder()
-                    .tos(
-                        List.of(
-                            VmStackValueInt.builder()
-                                .value(validatorAddress.toBigInteger())
-                                .build()))
-                    .build())
-            .build();
-
-    RunMethodResult runMethodResult =
-        runMethod(
-            getMasterchainInfo().getLast(),
-            4,
-            Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"),
-            Utils.calculateMethodId("compute_returned_stake"),
-            vmStackParams.toCell().toBoc());
-
-    VmStack vmStackResult =
-        VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
-    log.info("vmStackResult: " + vmStackResult);
-    return VmStackValueTinyInt.deserialize(
-            CellSlice.beginParse(vmStackResult.getStack().getTos().get(0).toCell()))
-        .getValue()
-        .longValue();
+      RunMethodResult runMethodResult =
+          runMethod(
+              getMasterchainInfo().getLast(),
+              4,
+              Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"),
+              Utils.calculateMethodId("compute_returned_stake"),
+              vmStackParams.toCell().toBoc());
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method compute_returned_stake returned an exit code " + runMethodResult.getExitCode());
+      }
+      VmStack vmStackResult =
+          VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+      log.info("vmStackResult: " + vmStackResult);
+      return VmStackValueTinyInt.deserialize(
+              CellSlice.beginParse(vmStackResult.getStack().getTos().get(0).toCell()))
+          .getValue()
+          .longValue();
+    } catch (Exception e) {
+      throw new Error("cannot execute compute_returned_stake");
+    }
   }
 
-  public RunMethodResult runMethod(Address accountAddress, String methodName) throws Exception {
-
-    return runMethod(
-        getMasterchainInfo().getLast(),
-        4,
-        accountAddress,
-        Utils.calculateMethodId(methodName),
-        new byte[0]);
+  public RunMethodResult runMethod(Address accountAddress, String methodName) {
+    try {
+      return runMethod(
+          getMasterchainInfo().getLast(),
+          4,
+          accountAddress,
+          Utils.calculateMethodId(methodName),
+          new byte[0]);
+    } catch (Exception e) {
+      throw new Error("cannot execute runMethod on " + methodName);
+    }
   }
 
   public RunMethodResult runMethod(Address accountAddress, String methodName, byte[] params)
       throws Exception {
-
-    return runMethod(
-        getMasterchainInfo().getLast(),
-        4,
-        accountAddress,
-        Utils.calculateMethodId(methodName),
-        params);
+    try {
+      return runMethod(
+          getMasterchainInfo().getLast(),
+          4,
+          accountAddress,
+          Utils.calculateMethodId(methodName),
+          params);
+    } catch (Exception e) {
+      throw new Error("cannot execute runMethod on " + methodName);
+    }
   }
 
   public RunMethodResult runMethod(
-      Address accountAddress, String methodName, VmStackValue... params) throws Exception {
+      Address accountAddress, String methodName, VmStackValue... params) {
+    try {
+      List<VmStackValue> vmStackValuesReversed = Arrays.asList(params);
+      Collections.reverse(vmStackValuesReversed);
+      VmStack vmStackParams =
+          VmStack.builder()
+              .depth(vmStackValuesReversed.size())
+              .stack(VmStackList.builder().tos(vmStackValuesReversed).build())
+              .build();
 
-    List<VmStackValue> vmStackValuesReversed = Arrays.asList(params);
-    Collections.reverse(vmStackValuesReversed);
-    VmStack vmStackParams =
-        VmStack.builder()
-            .depth(vmStackValuesReversed.size())
-            .stack(VmStackList.builder().tos(vmStackValuesReversed).build())
-            .build();
-
-    return runMethod(
-        getMasterchainInfo().getLast(),
-        4,
-        accountAddress,
-        Utils.calculateMethodId(methodName),
-        vmStackParams.toCell().toBoc());
+      return runMethod(
+          getMasterchainInfo().getLast(),
+          4,
+          accountAddress,
+          Utils.calculateMethodId(methodName),
+          vmStackParams.toCell().toBoc());
+    } catch (Exception e) {
+      throw new Error("cannot execute runMethod on " + methodName);
+    }
   }
 
   public RunMethodResult runMethod(
@@ -1825,6 +1861,27 @@ public class AdnlLiteClient {
     }
   }
 
+  public boolean isDeployed(Address address) {
+    try {
+      return (getAccount(address).getAccountStorage().getAccountState()
+          instanceof AccountStateActive);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  public void waitForDeployment(Address address, int timeoutSeconds) {
+
+    int i = 0;
+    do {
+      if (++i * 2 >= timeoutSeconds) {
+        throw new Error("Can't deploy contract within specified timeout.");
+      }
+      Utils.sleep(2);
+      log.info("Waiting for deployment to be deployed, balance {}", getBalance(address));
+    } while (!isDeployed(address));
+  }
+
   public void waitForBalanceChange(Address address, int timeoutSeconds) {
     log.info("Waiting for balance change (up to {}s) - ({})", timeoutSeconds, address.toRaw());
     BigInteger initialBalance = getBalance(address);
@@ -1868,53 +1925,61 @@ public class AdnlLiteClient {
    * @param externalMessage - Message
    * @throws TimeoutException if message not found within a timeout
    */
-  public void sendRawMessageWithConfirmation(Message externalMessage, Address account)
-      throws Exception {
+  public void sendRawMessageWithConfirmation(Message externalMessage, Address account) {
+    try {
+      SendMsgStatus sendMsgStatus = sendMessage(externalMessage);
+      log.info(
+          "Message has been successfully sent. Waiting for delivery of message with hash {}",
+          Utils.bytesToHex(externalMessage.getNormalizedHash()));
 
-    SendMsgStatus sendMsgStatus = sendMessage(externalMessage);
-    log.info(
-        "Message has been successfully sent. Waiting for delivery of message with hash {}",
-        Utils.bytesToHex(externalMessage.getNormalizedHash()));
-
-    TransactionList rawTransactions;
-    for (int i = 0; i < 12; i++) {
-      rawTransactions = getTransactions(account, 0, null, 10);
-      for (Transaction tx : rawTransactions.getTransactionsParsed()) {
-        if (nonNull(tx.getInOut().getIn())
-            && Arrays.equals(
-                tx.getInOut().getIn().getNormalizedHash(), externalMessage.getNormalizedHash())) {
-          log.info("Message has been delivered.");
+      TransactionList rawTransactions;
+      for (int i = 0; i < 12; i++) {
+        rawTransactions = getTransactions(account, 0, null, 10);
+        for (Transaction tx : rawTransactions.getTransactionsParsed()) {
+          if (nonNull(tx.getInOut().getIn())
+              && Arrays.equals(
+                  tx.getInOut().getIn().getNormalizedHash(), externalMessage.getNormalizedHash())) {
+            log.info("Message has been delivered.");
+          }
         }
+        Utils.sleep(5);
       }
-      Utils.sleep(5);
+      log.error("Timeout waiting for message hash");
+      throw new Error("Cannot find hash of the sent message");
+    } catch (Exception e) {
+      log.error("Timeout waiting for message hash");
+      throw new Error("Cannot find hash of the sent message");
     }
-    log.error("Timeout waiting for message hash");
-    throw new TimeoutException("Cannot find hash of the sent message");
   }
 
-  public SendMsgStatus sendMessage(Message externalMessage) throws Exception {
-    return executeWithRetry(
-        () -> {
-          if (!connected || !transport.isConnected()) {
-            throw new IllegalStateException("Not connected to lite-server");
-          }
-
-          byte[] queryBytes =
-              LiteServerQuery.pack(
-                  SendMessageQuery.builder().body(externalMessage.toCell().toBoc()).build());
-
-          LiteServerAnswer response =
-              transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
-          try {
-            return (SendMsgStatus) response;
-          } catch (Exception e) {
-            if (response instanceof LiteServerError) {
-              throw new Exception(
-                  ((LiteServerError) response).getMessage(),
-                  new Throwable(String.valueOf(((LiteServerError) response).getCode())));
+  public SendMsgStatus sendMessage(Message externalMessage) {
+    try {
+      return executeWithRetry(
+          () -> {
+            if (!connected || !transport.isConnected()) {
+              throw new IllegalStateException("Not connected to lite-server");
             }
-            throw e;
-          }
-        });
+
+            byte[] queryBytes =
+                LiteServerQuery.pack(
+                    SendMessageQuery.builder().body(externalMessage.toCell().toBoc()).build());
+
+            LiteServerAnswer response =
+                transport.query(queryBytes).get(queryTimeout, TimeUnit.SECONDS);
+            try {
+              return (SendMsgStatus) response;
+            } catch (Exception e) {
+              if (response instanceof LiteServerError) {
+                return SendMsgStatus.builder()
+                    .responseCode(((LiteServerError) response).getCode())
+                    .responseMessage(((LiteServerError) response).getMessage())
+                    .build();
+              }
+              throw new Error("Cannot query lite server response", e);
+            }
+          });
+    } catch (Exception e) {
+      throw new Error("Cannot execute query", e);
+    }
   }
 }

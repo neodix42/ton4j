@@ -1,6 +1,7 @@
 package org.ton.ton4j.smartcontract.highload;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -10,6 +11,7 @@ import java.util.Deque;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
@@ -102,31 +104,25 @@ public class HighloadWalletV3S implements Contract {
 
   public String getPublicKey() {
 
-    Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_public_key");
-
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_public_key, returned an exit code " + result.getExit_code());
+    if (nonNull(adnlLiteClient)) {
+      return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
     }
-
-    TvmStackEntryNumber publicKeyNumber = (TvmStackEntryNumber) result.getStack().get(0);
-    return publicKeyNumber.getNumber().toString(16);
+    return Utils.bytesToHex(Utils.to32ByteArray(tonlib.getPublicKey(getAddress())));
   }
 
   /** Calls get_subwallet_id method of a contract. */
   public long getSubWalletId() {
-    Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_subwallet_id");
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_subwallet_id returned an exit code " + result.getExit_code());
+    if (nonNull(adnlLiteClient)) {
+      return adnlLiteClient.getSubWalletId(getAddress());
     }
-
-    TvmStackEntryNumber walletId = (TvmStackEntryNumber) result.getStack().get(0);
-    return walletId.getNumber().longValue();
+    return tonlib.getSubWalletId(getAddress());
   }
 
   /** Calls get_last_clean_time method of a contract. */
   public long getLastCleanTime() {
+    if (nonNull(adnlLiteClient)) {
+      throw new NotImplementedException("ADNL LiteClient not supported yet");
+    }
     Address myAddress = this.getAddress();
     RunResult result = tonlib.runMethod(myAddress, "get_last_clean_time");
     if (result.getExit_code() != 0) {
@@ -139,6 +135,9 @@ public class HighloadWalletV3S implements Contract {
 
   /** Calls get_timeout method of a contract. */
   public long getTimeout() {
+    if (nonNull(adnlLiteClient)) {
+      throw new NotImplementedException("ADNL LiteClient not supported yet");
+    }
     Address myAddress = this.getAddress();
     RunResult result = tonlib.runMethod(myAddress, "get_timeout");
     if (result.getExit_code() != 0) {
@@ -151,6 +150,9 @@ public class HighloadWalletV3S implements Contract {
 
   /** Calls get_timeout method of a contract. */
   public boolean isProcessed(long queryId, boolean needClean) {
+    if (nonNull(adnlLiteClient)) {
+      throw new NotImplementedException("ADNL LiteClient not supported yet");
+    }
     Address myAddress = this.getAddress();
     Deque<String> stack = new ArrayDeque<>();
 
@@ -245,6 +247,9 @@ public class HighloadWalletV3S implements Contract {
     SignatureWithRecovery signature =
         Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareExternalMsg(body, signature.getV()[0], signature.getSignature()));
+    }
     return tonlib.sendRawMessage(
         prepareExternalMsg(body, signature.getV()[0], signature.getSignature())
             .toCell()
@@ -261,6 +266,9 @@ public class HighloadWalletV3S implements Contract {
 
     byte v = Utils.getRecoveryId(r, s, body.hash(), publicKey);
 
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareExternalMsg(body, v, signedBody));
+    }
     return tonlib.sendRawMessage(prepareExternalMsg(body, v, signedBody).toCell().toBase64());
   }
 
@@ -268,16 +276,24 @@ public class HighloadWalletV3S implements Contract {
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
-  public RawTransaction sendWithConfirmation(HighloadV3Config highloadConfig) {
+  public RawTransaction sendWithConfirmation(HighloadV3Config highloadConfig) throws Exception {
 
     Cell body = createTransferMessage(highloadConfig);
 
     SignatureWithRecovery signature =
         Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
-    return tonlib.sendRawMessageWithConfirmation(
-        prepareExternalMsg(body, signature.getV()[0], signature.getSignature()).toCell().toBase64(),
-        getAddress());
+    if (nonNull(adnlLiteClient)) {
+      adnlLiteClient.sendRawMessageWithConfirmation(
+          prepareExternalMsg(body, signature.getV()[0], signature.getSignature()), getAddress());
+      return null;
+    } else {
+      return tonlib.sendRawMessageWithConfirmation(
+          prepareExternalMsg(body, signature.getV()[0], signature.getSignature())
+              .toCell()
+              .toBase64(),
+          getAddress());
+    }
   }
 
   public Message prepareExternalMsg(Cell body, byte v, byte[] signedBodyHash) {
@@ -338,6 +354,9 @@ public class HighloadWalletV3S implements Contract {
                     .storeRef(innerMsg)
                     .endCell())
             .build();
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    }
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 
@@ -365,6 +384,10 @@ public class HighloadWalletV3S implements Contract {
                     .storeRef(innerMsg)
                     .endCell())
             .build();
+
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    }
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 

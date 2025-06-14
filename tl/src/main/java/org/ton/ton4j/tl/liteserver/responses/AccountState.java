@@ -29,20 +29,6 @@ public class AccountState implements Serializable, LiteServerAnswer {
   public byte[] proof;
   public byte[] state;
 
-  public String getShardProof() {
-    if (shardProof == null) {
-      return "";
-    }
-    return Utils.bytesToHex(shardProof);
-  }
-
-  public String getProof() {
-    if (proof == null) {
-      return "";
-    }
-    return Utils.bytesToHex(proof);
-  }
-
   public String getState() {
     if (state == null) {
       return "";

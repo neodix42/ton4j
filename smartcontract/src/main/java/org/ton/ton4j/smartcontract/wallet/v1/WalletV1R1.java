@@ -156,9 +156,11 @@ public class WalletV1R1 implements Contract {
   public RawTransaction sendWithConfirmation(WalletV1R1Config config) throws Exception {
     if (nonNull(adnlLiteClient)) {
       adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else {
+      return tonlib.sendRawMessageWithConfirmation(
+          prepareExternalMsg(config).toCell().toBase64(), getAddress());
     }
-    return tonlib.sendRawMessageWithConfirmation(
-        prepareExternalMsg(config).toCell().toBase64(), getAddress());
   }
 
   public Message prepareExternalMsg(WalletV1R1Config config) {

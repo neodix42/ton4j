@@ -1,9 +1,15 @@
 package org.ton.ton4j.tl.liteserver.responses;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import lombok.Builder;
 import lombok.Data;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.VmStack;
+import org.ton.ton4j.tlb.VmStackValueCell;
+import org.ton.ton4j.tlb.VmStackValueInt;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -75,12 +81,12 @@ public class RunMethodResult implements Serializable, LiteServerAnswer {
     }
 
     byte[] proof = null;
-    if ((mode & 2) != 0) {
+    if ((mode & 1) != 0) {
       proof = Utils.fromBytes(buffer);
     }
 
     byte[] stateProof = null;
-    if ((mode & 4) != 0) {
+    if ((mode & 2) != 0) {
       stateProof = Utils.fromBytes(buffer);
     }
 
@@ -96,7 +102,11 @@ public class RunMethodResult implements Serializable, LiteServerAnswer {
 
     int exitCode = buffer.getInt();
 
-    byte[] result = Utils.fromBytes(buffer);
+    byte[] result = null;
+
+    if ((mode & 4) != 0) {
+      result = Utils.fromBytes(buffer);
+    }
 
     return RunMethodResult.builder()
         .mode(mode)
@@ -114,5 +124,21 @@ public class RunMethodResult implements Serializable, LiteServerAnswer {
 
   public static RunMethodResult deserialize(byte[] data) {
     return deserialize(ByteBuffer.wrap(data));
+  }
+
+  public BigInteger getIntFromResult(int stackIndex) {
+    VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result)));
+    VmStackValueInt result =
+        VmStackValueInt.deserialize(
+            CellSlice.beginParse(vmStack.getStack().getTos().get(stackIndex).toCell()));
+    return result.getValue();
+  }
+
+  public Cell getCellFromResult(int stackIndex) {
+    VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result)));
+    VmStackValueCell result =
+        VmStackValueCell.deserialize(
+            CellSlice.beginParse(vmStack.getStack().getTos().get(stackIndex).toCell()));
+    return result.getCell();
   }
 }
