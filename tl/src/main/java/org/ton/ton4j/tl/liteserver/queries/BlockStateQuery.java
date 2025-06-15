@@ -19,11 +19,11 @@ public class BlockStateQuery implements LiteServerQueryData {
   }
 
   public byte[] getQueryData() {
-    int len = id.serialize().length + 4;
-    ByteBuffer buffer = ByteBuffer.allocate(len);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt(BLOCK_STATE_QUERY);
-    buffer.put(id.serialize());
-    return buffer.array();
+
+    return ByteBuffer.allocate(80 + 4)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .putInt(BLOCK_STATE_QUERY)
+        .put(id.serialize())
+        .array();
   }
 }

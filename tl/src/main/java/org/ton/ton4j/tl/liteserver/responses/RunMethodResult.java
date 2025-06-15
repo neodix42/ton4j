@@ -3,6 +3,7 @@ package org.ton.ton4j.tl.liteserver.responses;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
@@ -13,9 +14,18 @@ import org.ton.ton4j.tlb.VmStackValueInt;
 import org.ton.ton4j.utils.Utils;
 
 /**
+ *
+ *
+ * <pre>
  * liteServer.runMethodResult mode:# id:tonNode.blockIdExt shardblk:tonNode.blockIdExt
- * shard_proof:mode.0?bytes proof:mode.0?bytes state_proof:mode.1?bytes init_c7:mode.3?bytes
- * lib_extras:mode.4?bytes exit_code:int result:mode.2?bytes = liteServer.RunMethodResult;
+ * shard_proof:mode.0?bytes
+ * proof:mode.0?bytes
+ * state_proof:mode.1?bytes
+ * init_c7:mode.3?bytes
+ * lib_extras:mode.4?bytes
+ * exit_code:int
+ * result:mode.2?bytes = liteServer.RunMethodResult;
+ * </pre>
  */
 @Data
 @Builder
@@ -71,6 +81,7 @@ public class RunMethodResult implements Serializable, LiteServerAnswer {
   }
 
   public static RunMethodResult deserialize(ByteBuffer buffer) {
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
     int mode = buffer.getInt();
     BlockIdExt id = BlockIdExt.deserialize(buffer);
     BlockIdExt shardblk = BlockIdExt.deserialize(buffer);

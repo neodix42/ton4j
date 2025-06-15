@@ -39,7 +39,7 @@ public class AllShardsInfo implements Serializable, LiteServerAnswer {
     if (data == null || data.length == 0) {
       return null;
     }
-    return org.ton.ton4j.tlb.ShardHashes.deserialize(CellSlice.beginParse(Cell.fromBoc(data)));
+    return ShardHashes.deserialize(CellSlice.beginParse(Cell.fromBoc(data)));
   }
 
   public static final int constructorId = ALL_SHARDS_INFO_ANSWER;

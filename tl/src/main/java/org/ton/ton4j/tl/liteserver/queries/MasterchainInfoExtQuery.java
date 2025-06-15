@@ -18,10 +18,10 @@ public class MasterchainInfoExtQuery implements LiteServerQueryData {
   }
 
   public byte[] getQueryData() {
-    ByteBuffer buffer = ByteBuffer.allocate(4 + 4);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt(MASTERCHAIN_INFO_EXT_QUERY);
-    buffer.putInt(mode);
-    return buffer.array();
+    return ByteBuffer.allocate(4 + 4)
+        .order(ByteOrder.LITTLE_ENDIAN)
+        .putInt(MASTERCHAIN_INFO_EXT_QUERY)
+        .putInt(mode)
+        .array();
   }
 }

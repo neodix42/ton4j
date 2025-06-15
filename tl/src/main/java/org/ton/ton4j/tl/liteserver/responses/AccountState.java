@@ -36,6 +36,20 @@ public class AccountState implements Serializable, LiteServerAnswer {
     return Utils.bytesToHex(state);
   }
 
+  public String getShardProof() {
+    if (shardProof == null) {
+      return "";
+    }
+    return Utils.bytesToHex(shardProof);
+  }
+
+  public String getProof() {
+    if (proof == null) {
+      return "";
+    }
+    return Utils.bytesToHex(proof);
+  }
+
   public Account getAccount() {
     if (state == null || state.length == 0) {
       return null;
@@ -70,13 +84,23 @@ public class AccountState implements Serializable, LiteServerAnswer {
 
   public static AccountState deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-    return AccountState.builder()
-        .id(BlockIdExt.deserialize(buffer))
-        .shardblk(BlockIdExt.deserialize(buffer))
-        .shardProof(Utils.fromBytes(buffer))
-        .proof(Utils.fromBytes(buffer))
-        .state(Utils.fromBytes(buffer))
-        .build();
+    AccountState accountState =
+        AccountState.builder()
+            .id(BlockIdExt.deserialize(buffer))
+            .shardblk(BlockIdExt.deserialize(buffer))
+            .build();
+
+    ByteBuffer slice = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN);
+
+    if (slice.getInt() != 0) {
+      accountState.setShardProof(Utils.fromBytes(buffer));
+    } else {
+      buffer.position(buffer.position() + 4);
+    }
+    accountState.setProof(Utils.fromBytes(buffer));
+    accountState.setState(Utils.fromBytes(buffer));
+
+    return accountState;
   }
 
   public static AccountState deserialize(byte[] data) {

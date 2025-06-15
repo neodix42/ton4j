@@ -1736,48 +1736,6 @@ public class Utils {
     return size;
   }
 
-  //  public static byte[] fromBytes(ByteBuffer data) {
-  //    byte[] dst2 = Arrays.copyOfRange(data.array(), data.position(), data.array().length);
-  //    byte[] res = fromBytes(dst2);
-  //    data.position(data.position() + res.length);
-  //    return res;
-  //  }
-
-  //  public static byte[] fromBytes(ByteBuffer data) throws IllegalArgumentException {
-  //    if (!data.hasRemaining()) {
-  //      throw new IllegalArgumentException("failed to load length, too short data");
-  //    }
-  //
-  //    data = data.slice(); // Avoid modifying the original buffer's position
-  //    int offset = 1;
-  //    int ln = Byte.toUnsignedInt(data.get(0));
-  //
-  //    if (ln == 0xFE) {
-  //      if (data.remaining() < 4) {
-  //        throw new IllegalArgumentException("failed to read 4 bytes for extended length");
-  //      }
-  //      ByteBuffer leBuf = data.order(ByteOrder.LITTLE_ENDIAN).slice();
-  //      ln = leBuf.getInt(0) >>> 8;
-  //      offset = 4;
-  //    }
-  //
-  //    int bufSz = ln + offset;
-  //    int padding = bufSz % 4;
-  //    if (padding != 0) {
-  //      bufSz += 4 - padding;
-  //    }
-  //
-  //    if (data.remaining() < offset + ln) {
-  //      throw new IllegalArgumentException(
-  //          "failed to get payload with len " + ln + ", too short data");
-  //    }
-  //
-  //    byte[] result = new byte[ln];
-  //    data.position(offset);
-  //    data.get(result, 0, ln);
-  //    return result;
-  //  }
-
   public static byte[] fromBytes(ByteBuffer data) {
     data.order(ByteOrder.LITTLE_ENDIAN);
 
@@ -1804,6 +1762,24 @@ public class Utils {
       int b2 = Byte.toUnsignedInt(data.get());
       ln = b0 | (b1 << 8) | (b2 << 16);
     }
+    if (ln == 0xFF) {
+      if (data.remaining() < 7) {
+        throw new IllegalArgumentException("Insufficient data to read 7-byte length");
+      }
+      long resultLenLong =
+          (long) Byte.toUnsignedInt(data.get())
+              | ((long) Byte.toUnsignedInt(data.get()) << 8)
+              | ((long) Byte.toUnsignedInt(data.get()) << 16)
+              | ((long) Byte.toUnsignedInt(data.get()) << 24)
+              | ((long) Byte.toUnsignedInt(data.get()) << 32)
+              | ((long) Byte.toUnsignedInt(data.get()) << 40)
+              | ((long) Byte.toUnsignedInt(data.get()) << 48);
+      if (resultLenLong > Integer.MAX_VALUE - 3) {
+        throw new IllegalArgumentException("Too big string found");
+      }
+      int resultLen = (int) resultLenLong;
+      ln = (resultLen + 3) & ~3;
+    }
 
     // if the end do not add padding
     if ((Utils.pad4(ln) + data.position()) < data.capacity()) {
@@ -1819,7 +1795,7 @@ public class Utils {
     }
 
     int offset = 1;
-    int ln = Byte.toUnsignedInt(data[0]);
+    long ln = Byte.toUnsignedInt(data[0]);
     if (ln == 0xFE) {
       if (data.length < 4) {
         throw new IllegalArgumentException("failed to read 4 bytes for extended length");
@@ -1828,9 +1804,22 @@ public class Utils {
       ln = ByteBuffer.wrap(data, 0, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() >>> 8;
       offset = 4;
     }
+    if (ln == 0xFF) {
+      if (data.length < 7) {
+        throw new IllegalArgumentException("Insufficient data to read 7-byte length");
+      }
+      ln = ByteBuffer.wrap(data, 0, 8).order(ByteOrder.LITTLE_ENDIAN).getLong() >>> 8;
 
-    int bufSz = ln + offset;
-    int padding = bufSz % 4;
+      if (ln > Integer.MAX_VALUE - 3) {
+        throw new IllegalArgumentException("Too big string found");
+      }
+      int resultLen = (int) ln;
+      ln = (resultLen + 3) & ~3;
+      offset = 8;
+    }
+
+    long bufSz = ln + offset;
+    long padding = bufSz % 4;
     if (padding != 0) {
       bufSz += 4 - padding;
     }
@@ -1840,10 +1829,10 @@ public class Utils {
         throw new IllegalArgumentException(
             "failed to get payload with len " + ln + ", too short data");
       }
-      return Arrays.copyOfRange(data, offset, offset + ln);
+      return Arrays.copyOfRange(data, offset, (int) (offset + ln));
     }
 
-    return Arrays.copyOfRange(data, offset, offset + ln);
+    return Arrays.copyOfRange(data, offset, (int) (offset + ln));
   }
 
   public static byte[] toBytes(ByteBuffer buf) {

@@ -138,22 +138,13 @@ public class AdnlLiteClientTest {
     assertNotNull(info, "Masterchain info should not be null");
     assertNotNull(info.getLast(), "Last block should not be null");
 
-    //    AccountState accountState = client.getAccountState(info.getLast(),
-    // Address.of(getAddress()));
     AccountState accountState =
-        client.getAccountState(
-            info.getLast(), Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka"));
+        client.getAccountState(info.getLast(), Address.of(MAINNET_V5_ADDRESS));
     log.info("accountState: {} ", accountState);
     log.info("Last block seqno: {} ", accountState.getId().getSeqno());
     log.info("shard block seqno: {} ", accountState.getShardblk().getSeqno());
-    //    log.info("accountHex: {} ", Address.of(getAddress()).toRaw());
-    log.info(
-        "accountHex: {} ", Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka").toRaw());
-    log.info("accountBalance: {} ", accountState.getAccount().getAccountStorage().getBalance());
     assertTrue(info.getLast().getSeqno() > 0, "Seqno should be positive");
     log.info("accountObject: {} ", accountState.getAccount());
-    //    log.info("accountShardObject: {} ", accountState.getShardAccount());
-    //    log.info("ShardState: {} ", accountState.getShardState());
     log.info("ShardStateUnsplit: {} ", accountState.getShardStateUnsplit());
     log.info("getShardAccounts: {} ", accountState.getShardAccounts());
   }
@@ -1403,4 +1394,32 @@ public class AdnlLiteClientTest {
         client.getBlockOutMsgQueueSize(masterchainInfo.getLast(), 1, true);
     log.info("outMsgQueueSizes {}", blockOutMsgQueueSize);
   }
+
+  @Test
+  public void testAccountBalanceAdnl() throws Exception {
+    Address beneficiaryAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+    log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
+
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+    log.info("balance {}", adnlLiteClient.getBalance(beneficiaryAddress));
+  }
+
+  @Test
+  public void testAccountBalanceAdnlOk() throws Exception {
+    Address beneficiaryAddress = Address.of("0QAyni3YDAhs7c-7imWvPyEbMEeVPMX8eWDLQ5GUe-B-Bl9Z");
+    log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
+
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+    log.info("balance {}", adnlLiteClient.getBalance(beneficiaryAddress));
+  }
+
+  //  @Test
+  //  public void testAccountBalanceTonlib() throws Exception {
+  //    Address beneficiaryAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+  //    log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
+  //
+  //    log.info("balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
+  //  }
 }

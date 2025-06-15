@@ -568,32 +568,4 @@ public class TestWalletV4R2Plugins extends CommonTest {
     extMessageInfo = contract.send(config);
     assertThat(extMessageInfo.getError().getCode()).isZero();
   }
-
-  @Test
-  public void testAccountBalanceAdnl() throws Exception {
-    Address beneficiaryAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
-    log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
-
-    AdnlLiteClient adnlLiteClient =
-        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
-    log.info("balance {}", adnlLiteClient.getBalance(beneficiaryAddress));
-  }
-
-  @Test
-  public void testAccountBalanceAdnl2() throws Exception {
-    Address beneficiaryAddress = Address.of("0QAyni3YDAhs7c-7imWvPyEbMEeVPMX8eWDLQ5GUe-B-Bl9Z");
-    log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
-
-    AdnlLiteClient adnlLiteClient =
-        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
-    log.info("balance {}", adnlLiteClient.getBalance(beneficiaryAddress));
-  }
-
-  @Test
-  public void testAccountBalanceTonlib() throws Exception {
-    Address beneficiaryAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
-    log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
-
-    log.info("balance {}", Utils.formatNanoValue(tonlib.getAccountBalance(beneficiaryAddress)));
-  }
 }
