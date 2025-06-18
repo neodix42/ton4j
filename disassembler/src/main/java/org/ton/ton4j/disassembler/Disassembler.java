@@ -64,7 +64,7 @@ public class Disassembler {
   }
 
   public static String decompileMethodsMap(CellSlice cs, int keyLen, Integer indent) {
-    TonHashMap methodsMap = cs.loadDict(keyLen, k -> k.readUint(keyLen).intValue(), v -> v);
+    TonHashMap methodsMap = cs.loadDict(keyLen, k -> k.readInt(keyLen).intValue(), v -> v);
     Map<Integer, String> methodsMapDecompiled = new LinkedHashMap<>();
 
     int actualIndent = indent == null ? 0 : indent;
