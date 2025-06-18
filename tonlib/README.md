@@ -2,13 +2,18 @@
 
 Java Tonlib library uses JNA to access methods in native Tonlib shared library.
 
+**For pure Java implementation of ADNL protocol and lite-client see [AdnlLiteClient.java](../adnl/src/main/java/org/ton/java/adnl/AdnlLiteClient.java) in [adnl](../adnl) module**.
+
 Since this is Java Tonlib wrapper around the native binary, you have to specify path to the library, see the example
 below.
+
+This tonlib wrapper is thread safe, which means one instance of it can be used in multiple threads.
 
 You can get the latest tonlib library by:
 
 * downloading it from the official TON Github release page [here](https://github.com/ton-blockchain/ton/releases).
 * by installing precompiled binaries, see instructions [here](https://github.com/ton-blockchain/packages).
+* by specifying URL (Utils.getTonlibGithubUrl()) in Tonlib builder. 
 
 ## Maven [![Maven Central][maven-central-svg]][maven-central]
 
