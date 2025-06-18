@@ -1,4 +1,6 @@
-## ADNL UDP (by Oleg Baranov https://github.com/xssnick/ton-deep-doc/blob/patch-1/TL.md)
+## ADNL UDP
+
+Originally written by Oleg Baranov https://github.com/xssnick/ton-deep-doc/blob/master/ADNL-UDP-Internal.md
 
 ADNL over UDP is used by nodes and TON components to communicate with each other. It is a low-level protocol on top of which other, higher-level TON protocols such as DHT and RLDP operate. In this article, we will analyze how ADNL over UDP works for basic data exchange between nodes, tunneling and anonymizing traffic will be discussed in a separate article.
 

@@ -1,5 +1,7 @@
 # TL
 
+Originally written by Oleg Baranov https://github.com/xssnick/ton-deep-doc/blob/master/TL.md
+
 TL (Type Language) is a language for describing data structures.
 
 For structuring useful data, when communicating, [TL schemas](https://github.com/ton-blockchain/ton/tree/master/tl/generate/scheme) are used.

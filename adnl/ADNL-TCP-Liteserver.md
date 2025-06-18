@@ -1,5 +1,8 @@
 
 ## ADNL TCP + Liteserver
+
+Originally written by Oleg Baranov https://github.com/xssnick/ton-deep-doc/blob/master/ADNL-TCP-Liteserver.md
+
 This is the lower level protocol on which all interaction in the TON network is built, it can work on top of any protocol, but is most often used on top of TCP and UDP. UDP is used for communication between nodes, and TCP is used for communication with lite servers.
 
 Now we will analyze ADNL running over TCP and learn how to interact with lite servers directly.
