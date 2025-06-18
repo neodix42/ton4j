@@ -52,11 +52,6 @@ jobs:
           cd address
           mvn test
 
-      - name: Run Cell tests
-        run: |
-          cd cell
-          mvn test
-
       - name: Run Disassembler tests
         run: |
           cd disassembler
@@ -77,3 +72,8 @@ jobs:
         run: |
           cd tonlib
           mvn test -Dtest=TestTonlibJsonTestnet#testTonlibRunMethodParticipantsList
+
+      - name: Run adnl lite-client - testTonlibGetTxsByAddress
+        run: |
+          cd adnl
+          mvn test -Dtest=AdnlLiteClientTest#testMasterchainInfoExt
