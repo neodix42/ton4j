@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.*;
@@ -150,7 +151,7 @@ public class AdnlTcpTransport {
     // Calculate TL constructor ID for pub.ed25519 schema
     String tlSchema = "pub.ed25519 key:int256 = PublicKey";
     CRC32 crc32 = new CRC32();
-    crc32.update(tlSchema.getBytes("UTF-8"));
+    crc32.update(tlSchema.getBytes(StandardCharsets.UTF_8));
     long constructorId = crc32.getValue();
 
     // Build TL-serialized structure: constructor_id + key
@@ -176,7 +177,7 @@ public class AdnlTcpTransport {
     long timeout = System.currentTimeMillis() + 10000; // 10 second timeout
 
     while (System.currentTimeMillis() < timeout && !connected) {
-      Thread.sleep(100);
+      Utils.sleepMs(100);
       // Check if listener thread is still running
       if (listenerThread != null && !listenerThread.isAlive()) {
         throw new Exception("Packet listener thread died during handshake");
@@ -210,9 +211,6 @@ public class AdnlTcpTransport {
         // Validate packet size
         if (packetSizeLong > 16 * 1024 * 1024) { // 16MB limit
           throw new IOException("Packet too large: " + packetSizeLong);
-        }
-        if (packetSizeLong < 0) { // Negative size is invalid
-          throw new IOException("Invalid packet size: " + packetSizeLong);
         }
 
         int packetSize = (int) packetSizeLong;

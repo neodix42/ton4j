@@ -27,8 +27,7 @@ public class CryptoUtils {
   public static byte[] getSharedKey(byte[] privateKey, byte[] publicKey) {
     TweetNaclFast.Box box = new TweetNaclFast.Box(publicKey, privateKey);
     byte[] zero = new byte[24];
-    byte[] sharedKey = box.before();
-    return sharedKey;
+    return box.before();
   }
 
   /**

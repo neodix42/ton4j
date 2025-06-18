@@ -5,6 +5,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 import org.ton.java.adnl.globalconfig.LiteServers;
 import org.ton.java.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.utils.Utils;
@@ -23,8 +24,9 @@ public class LiteClientConnectionPool {
 
   /** Create connection pool */
   public LiteClientConnectionPool() {
-    this.healthChecker = Executors.newSingleThreadScheduledExecutor();
-    startHealthChecker();
+    throw new NotImplementedException();
+    // this.healthChecker = Executors.newSingleThreadScheduledExecutor();
+    // startHealthChecker();
   }
 
   /**

@@ -723,6 +723,17 @@ public class AdnlLiteClientTest {
   }
 
   @Test
+  void testLookupBlockMode1() throws Exception { // by LT
+    log.info("Testing lookupBlock query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    BlockHeader blockHeader = client.lookupBlock(masterchainInfo.getLast().getBlockId(), 1, 0, 0);
+    log.info("blockHeader {}", blockHeader);
+  }
+
+  @Test
   void testLookupBlockMode2() throws Exception { // by LT
     log.info("Testing lookupBlock query");
     assertTrue(client.isConnected(), "Client should be connected");
@@ -1132,10 +1143,9 @@ public class AdnlLiteClientTest {
 
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
     ValidatorStats validatorStats =
-        client.getValidatorStats(masterchainInfo.getLast(), 4, 10, null, 0);
+        client.getValidatorStats(masterchainInfo.getLast(), 4, 10, new byte[32], 0);
 
     log.info("validatorStats {}", validatorStats);
-    // todo
   }
 
   @Test
