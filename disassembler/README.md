@@ -11,7 +11,7 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>disassembler</artifactId>
-    <version>0.9.9</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 

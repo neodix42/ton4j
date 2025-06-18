@@ -15,7 +15,7 @@ ton4j requires minimum Java 11.
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>0.9.9</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
@@ -36,7 +36,7 @@ ton4j requires minimum Java 11.
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>ton4j</artifactId>
-    <version>0.9.9</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
