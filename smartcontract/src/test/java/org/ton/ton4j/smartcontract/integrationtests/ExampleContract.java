@@ -1,6 +1,7 @@
 package org.ton.ton4j.smartcontract.integrationtests;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
@@ -149,6 +150,10 @@ public class ExampleContract implements Contract {
                     .endCell())
             .build();
 
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    }
+
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 
@@ -164,7 +169,9 @@ public class ExampleContract implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
-
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    }
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 }

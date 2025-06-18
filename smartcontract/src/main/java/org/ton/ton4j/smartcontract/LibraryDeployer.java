@@ -1,6 +1,7 @@
 package org.ton.ton4j.smartcontract;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import lombok.Builder;
 import lombok.Data;
@@ -90,6 +91,9 @@ public class LibraryDeployer implements Contract {
   }
 
   public ExtMessageInfo deploy() {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareDeployMsg());
+    }
     return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
   }
 }

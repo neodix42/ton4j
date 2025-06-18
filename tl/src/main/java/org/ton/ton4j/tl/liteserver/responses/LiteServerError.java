@@ -30,7 +30,7 @@ public class LiteServerError implements Serializable, LiteServerAnswer {
     int code = byteBuffer.getInt();
     String message = new String(byteBuffer.array(), byteBuffer.position(), byteBuffer.remaining());
     if (StringUtils.isNotEmpty(message)) {
-      message = message.trim().substring(1, message.length() - 1);
+      message = message.substring(1, message.length() - 1).trim();
     }
     return LiteServerError.builder().code(code).message(message).build();
   }

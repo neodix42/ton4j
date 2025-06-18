@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWalletV3;
@@ -17,6 +18,9 @@ import org.ton.ton4j.smartcontract.types.HighloadQueryId;
 import org.ton.ton4j.smartcontract.types.HighloadV3Config;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
+import org.ton.ton4j.tl.liteserver.responses.TransactionList;
+import org.ton.ton4j.tlb.Account;
+import org.ton.ton4j.tlb.Transaction;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.utils.Utils;
@@ -289,6 +293,115 @@ public class TestExtraCurrency {
     log.info("state {}", accountState);
     rawAccountState = tonlib.getRawAccountState(Address.of(rawAddress));
     log.info("rawState {}", rawAccountState);
+  }
+
+  @Test
+  public void testExtraCurrencyHighloadWalletV3AdnlLiteClient() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    HighloadWalletV3 contract =
+        HighloadWalletV3.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(keyPair)
+            .walletId(42)
+            .build();
+
+    String nonBounceableAddress1 = contract.getAddress().toNonBounceable();
+    String rawAddress = contract.getAddress().toRaw();
+
+    log.info("    raw address: {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress1), Utils.toNano(4));
+    log.info("topped up {}", Utils.formatNanoValue(balance));
+
+    HighloadV3Config config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            .build();
+
+    ExtMessageInfo extMessageInfo = contract.deploy(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+    contract.waitForDeployment();
+
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+            .body(
+                contract.createBulkTransfer(
+                    Collections.singletonList(
+                        Destination.builder()
+                            .address(ecSwapAddress)
+                            .amount(Utils.toNano(3.7))
+                            .build()),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+            .build();
+
+    //  receive test extra-currency (ECHIDNA)
+    extMessageInfo = contract.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+    log.info("sent 1 message with request to get 3.7 ECHIDNA extra-currency");
+
+    contract.waitForBalanceChange();
+
+    Utils.sleep(30);
+
+    Account accountState = adnlLiteClient.getAccount(Address.of(rawAddress));
+    //    log.info("state {}", accountState);
+    //    RawAccountState rawAccountState =
+    // adnlLiteClient.getRawAccountState(Address.of(rawAddress));
+    //    log.info("rawState {}", rawAccountState);
+
+    TransactionList txs = adnlLiteClient.getTransactions(contract.getAddress(), 0, null, 10);
+    for (Transaction tx : txs.getTransactionsParsed()) {
+      log.info("tx {}", tx);
+    }
+
+    log.info(
+        "new extra-currency balance {} ECHIDNA",
+        Utils.formatJettonValue(
+            accountState
+                .getAccountStorage()
+                .getBalance()
+                .getExtraCurrenciesParsed()
+                .get(0)
+                .getAmount(),
+            8,
+            2));
+
+    // bulk send 0.001 ECHIDNA to random 900 addresses
+
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(2).getQueryId())
+            .body(
+                contract.createBulkTransfer(
+                    createDummyDestinationsWithEc(1000),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(2).getQueryId())))
+            .build();
+
+    extMessageInfo = contract.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+    log.info("sent 1000 messages");
+
+    //    contract.waitForBalanceChange();
+    //
+    //    Utils.sleep(30);
+    //    accountState = tonlib.getAccountState(Address.of(rawAddress));
+    //    log.info("state {}", accountState);
+    //    rawAccountState = tonlib.getRawAccountState(Address.of(rawAddress));
+    //    log.info("rawState {}", rawAccountState);
   }
 
   List<Destination> createDummyDestinationsWithEc(int count) {

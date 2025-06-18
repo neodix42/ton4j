@@ -57,7 +57,7 @@ public class ShardStateUnsplit implements Serializable {
   public Cell toCell() {
     return CellBuilder.beginCell()
         .storeUint(0x9023afe2, 32)
-        .storeUint(globalId, 32)
+        .storeInt(globalId, 32)
         .storeCell(shardIdent.toCell())
         .storeUint(seqno, 32)
         .storeUint(vertSeqno, 32)

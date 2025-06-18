@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.SendMode;
@@ -658,6 +659,317 @@ public class TestWalletMultiSigV2 extends CommonTest {
     log.info(
         "getOrderEstimate for 10 years {}",
         multiSigWalletV2.getOrderEstimate(orderBody, Utils.now() + 60 * 60 * 24 * 365 * 10));
+  }
+
+  @Test
+  public void testMultiSigV2UpdateParamsAdnlClient() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+
+    WalletV3R2 deployer =
+        WalletV3R2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(Utils.generateSignatureKeyPair())
+            .walletId(42)
+            .build();
+    WalletV3R2 signer2 =
+        WalletV3R2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(Utils.generateSignatureKeyPair())
+            .walletId(42)
+            .build();
+    WalletV3R2 signer3 =
+        WalletV3R2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(Utils.generateSignatureKeyPair())
+            .walletId(42)
+            .build();
+    WalletV3R2 signer4 =
+        WalletV3R2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(Utils.generateSignatureKeyPair())
+            .walletId(42)
+            .build();
+
+    WalletV3R2 proposer1 =
+        WalletV3R2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(Utils.generateSignatureKeyPair())
+            .walletId(42)
+            .build();
+
+    WalletV3R2 proposer2 =
+        WalletV3R2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(Utils.generateSignatureKeyPair())
+            .walletId(42)
+            .build();
+
+    log.info("deployer {}", deployer.getAddress().toRaw());
+    log.info("signer2 {}", signer2.getAddress().toRaw());
+    log.info("signer3 {}", signer3.getAddress().toRaw());
+    log.info("signer4 {}", signer4.getAddress().toRaw());
+    log.info("proposer1 {}", proposer1.getAddress().toRaw());
+    log.info("recipient1 {}", dummyRecipient1.toRaw());
+    log.info("recipient2 {}", dummyRecipient2.toRaw());
+
+    topUpAndDeploy(adnlLiteClient, deployer);
+    topUpAndDeploy(adnlLiteClient, signer2);
+    log.info("deployer seqno {}", deployer.getSeqno());
+    log.info("signer2 seqno {}", signer2.getSeqno());
+
+    MultiSigWalletV2 multiSigWalletV2 =
+        MultiSigWalletV2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .config(
+                MultiSigV2Config.builder()
+                    .allowArbitraryOrderSeqno(false)
+                    .nextOrderSeqno(BigInteger.ZERO)
+                    .threshold(2)
+                    .numberOfSigners(3)
+                    .signers(
+                        Arrays.asList(
+                            deployer.getAddress(), signer2.getAddress(), signer3.getAddress()))
+                    .proposers(Collections.singletonList(proposer1.getAddress()))
+                    .build())
+            .build();
+
+    log.info("multisig address {}", multiSigWalletV2.getAddress().toBounceable());
+
+    // deploy multisig from admin wallet on testnet
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(1)
+            .destination(multiSigWalletV2.getAddress())
+            .amount(Utils.toNano(0.2))
+            .stateInit(multiSigWalletV2.getStateInit())
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
+            .build();
+    deployer.send(config);
+    deployer.waitForDeployment(30);
+    Utils.sleep(15);
+
+    MultiSigV2Data data = multiSigWalletV2.getMultiSigData();
+    log.info("multiSig data before {}", data);
+
+    // send external msg to admin wallet that sends internal msg to multisig to change its
+    // parameters (new threshold=4, new 4 signers and one proposer)
+
+    Cell orderBody =
+        MultiSigWalletV2.createOrder(
+            Collections.singletonList(
+                MultiSigWalletV2.updateMultiSigParam(
+                    4,
+                    Arrays.asList(
+                        deployer.getAddress(),
+                        signer2.getAddress(),
+                        signer3.getAddress(),
+                        signer4.getAddress()),
+                    Arrays.asList(proposer1.getAddress(), proposer2.getAddress()))));
+    config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(2)
+            .destination(multiSigWalletV2.getAddress())
+            .amount(Utils.toNano(0.1))
+            .body(
+                MultiSigWalletV2.newOrder(
+                    0, BigInteger.ZERO, true, 0, Utils.now() + 3600, orderBody))
+            .build();
+
+    deployer.send(config);
+    deployer.waitForBalanceChange();
+
+    Utils.sleep(15);
+
+    Address orderAddress = multiSigWalletV2.getOrderAddress(BigInteger.ZERO);
+    log.info("orderAddress {}", orderAddress);
+
+    log.info("sending approve from signer2 to order address");
+    config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(1)
+            .destination(orderAddress)
+            .amount(Utils.toNano(0.05))
+            .body(MultiSigWalletV2.approve(0, 1))
+            .build();
+    signer2.send(config);
+    signer2.waitForBalanceChange();
+
+    Utils.sleep(20);
+
+    data = multiSigWalletV2.getMultiSigData();
+    log.info("multiSig data after {}", data);
+    assertThat(data.getThreshold()).isEqualTo(4);
+    assertThat(data.getSigners().size()).isEqualTo(4);
+    assertThat(data.getProposers().size()).isEqualTo(2);
+
+    log.info("orderData {}", multiSigWalletV2.getOrderData(BigInteger.valueOf(0)));
+
+    log.info(
+        "getOrderEstimate for 10 years {}",
+        multiSigWalletV2.getOrderEstimate(orderBody, Utils.now() + 60 * 60 * 24 * 365 * 10));
+  }
+
+  @Test
+  public void testMultiSigV2DeploymentAnd2out3ApprovalsAdnlClient() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    WalletV3R2 deployer =
+        WalletV3R2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(Utils.generateSignatureKeyPair())
+            .walletId(42)
+            .build();
+    WalletV3R2 signer2 =
+        WalletV3R2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(Utils.generateSignatureKeyPair())
+            .walletId(42)
+            .build();
+    WalletV3R2 signer3 =
+        WalletV3R2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(Utils.generateSignatureKeyPair())
+            .walletId(42)
+            .build();
+
+    log.info("deployer {}", deployer.getAddress().toRaw());
+    log.info("signer2 {}", signer2.getAddress().toRaw());
+    log.info("signer3 {}", signer3.getAddress().toRaw());
+    log.info("recipient1 {}", dummyRecipient1.toRaw());
+    log.info("recipient2 {}", dummyRecipient2.toRaw());
+
+    topUpAndDeploy(deployer);
+    topUpAndDeploy(signer2);
+    log.info("deployer seqno {}", deployer.getSeqno());
+    log.info("signer2 seqno {}", signer2.getSeqno());
+    //    topUpAndDeploy(signer3);
+
+    MultiSigWalletV2 multiSigWalletV2 =
+        MultiSigWalletV2.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .config(
+                MultiSigV2Config.builder()
+                    .allowArbitraryOrderSeqno(false)
+                    .nextOrderSeqno(BigInteger.ZERO)
+                    .threshold(2)
+                    .numberOfSigners(3)
+                    .signers(
+                        Arrays.asList(
+                            deployer.getAddress(), signer2.getAddress(), signer3.getAddress()))
+                    .proposers(Collections.emptyList())
+                    .build())
+            .build();
+
+    log.info("multisig address {}", multiSigWalletV2.getAddress().toBounceable());
+
+    // deploy multisig from admin wallet on testnet
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(1)
+            .destination(multiSigWalletV2.getAddress())
+            .amount(Utils.toNano(0.2))
+            .stateInit(multiSigWalletV2.getStateInit())
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
+            .build();
+    deployer.send(config);
+    deployer.waitForDeployment(30);
+    Utils.sleep(10, "pause");
+
+    // send external msg to admin wallet that sends internal msg to multisig with body to create
+    // order-contract
+
+    Cell orderBody =
+        MultiSigWalletV2.createOrder(
+            Arrays.asList(
+                MultiSigWalletV2.createSendMessageAction(
+                    1,
+                    MsgUtils.createInternalMessageRelaxed(
+                            dummyRecipient1, Utils.toNano(0.025), null, null, null, false)
+                        .toCell()),
+                MultiSigWalletV2.createSendMessageAction(
+                    1,
+                    MsgUtils.createInternalMessageRelaxed(
+                            dummyRecipient2, Utils.toNano(0.026), null, null, null, false)
+                        .toCell())));
+    config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(2)
+            .destination(multiSigWalletV2.getAddress())
+            .amount(Utils.toNano(0.1))
+            .body(
+                MultiSigWalletV2.newOrder(
+                    0, BigInteger.ZERO, true, 0, Utils.now() + 3600, orderBody))
+            .build();
+
+    deployer.send(config);
+    deployer.waitForBalanceChange();
+
+    Utils.sleep(15);
+
+    Address orderAddress = multiSigWalletV2.getOrderAddress(BigInteger.ZERO);
+    log.info("orderAddress {}", orderAddress);
+
+    log.info(
+        "orderData when once approved {}", multiSigWalletV2.getOrderData(BigInteger.valueOf(0)));
+
+    log.info(
+        "getOrderEstimate {}", multiSigWalletV2.getOrderEstimate(orderBody, Utils.now() + 3600));
+
+    log.info("sending approve from signer2 to order address");
+    config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(1)
+            .destination(orderAddress)
+            .amount(Utils.toNano(0.05))
+            .body(MultiSigWalletV2.approve(0, 1))
+            .build();
+    signer2.send(config);
+    signer2.waitForBalanceChange();
+
+    Utils.sleep(20);
+
+    log.info(
+        "orderData when twice approved {}", multiSigWalletV2.getOrderData(BigInteger.valueOf(0)));
+
+    BigInteger balanceRecipient1 = adnlLiteClient.getBalance(dummyRecipient1);
+    BigInteger balanceRecipient2 = adnlLiteClient.getBalance(dummyRecipient2);
+
+    assertThat(balanceRecipient1).isGreaterThan(BigInteger.ZERO);
+    assertThat(balanceRecipient2).isGreaterThan(BigInteger.ZERO);
+  }
+
+  private void topUpAndDeploy(AdnlLiteClient adnlLiteClient, WalletV3R2 wallet) throws Exception {
+
+    String nonBounceableAddress = wallet.getAddress().toNonBounceable();
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(1));
+    log.info(
+        "new wallet (id={} {}) balance: {}",
+        wallet.getWalletId(),
+        wallet.getName(),
+        Utils.formatNanoValue(balance));
+
+    ExtMessageInfo extMessageInfo = wallet.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    wallet.waitForDeployment();
+    log.info("deployed {} {}", wallet.getWalletId(), wallet.getName());
   }
 
   private void topUpAndDeploy(WalletV3R2 wallet) throws InterruptedException {

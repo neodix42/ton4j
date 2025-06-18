@@ -46,7 +46,7 @@ public class MsgAddressIntVar implements MsgAddressInt, Serializable {
       result.storeBit(true);
       result.storeCell(anycast.toCell());
     }
-    result.storeUint(addrLen, 9).storeUint(workchainId, 32).storeUint(address, addrLen);
+    result.storeUint(addrLen, 9).storeInt(workchainId, 32).storeUint(address, addrLen);
     return result.endCell();
   }
 
@@ -63,7 +63,7 @@ public class MsgAddressIntVar implements MsgAddressInt, Serializable {
         .magic(magic)
         .anycast(anycast)
         .addrLen(addrLen)
-        .workchainId(cs.loadUint(32).intValue())
+        .workchainId(cs.loadInt(32).intValue())
         .address(cs.loadUint(addrLen))
         .build();
   }

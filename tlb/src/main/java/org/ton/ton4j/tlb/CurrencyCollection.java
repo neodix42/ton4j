@@ -4,6 +4,9 @@ import static java.util.Objects.nonNull;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
@@ -47,5 +50,17 @@ public class CurrencyCollection implements Serializable {
                 k -> k.readUint(32).longValue(),
                 v -> CellSlice.beginParse(v).loadVarUInteger(32)))
         .build();
+  }
+
+  public List<ExtraCurrency> getExtraCurrenciesParsed() {
+    ArrayList<ExtraCurrency> result = new ArrayList<>();
+    for (Map.Entry<Object, Object> entry : extraCurrencies.elements.entrySet()) {
+      result.add(
+          ExtraCurrency.builder()
+              .id((Long) entry.getKey())
+              .amount((BigInteger) entry.getValue())
+              .build());
+    }
+    return result;
   }
 }

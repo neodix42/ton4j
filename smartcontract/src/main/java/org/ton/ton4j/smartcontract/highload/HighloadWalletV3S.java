@@ -24,6 +24,7 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
+import org.ton.ton4j.tonlib.types.ExtraCurrency;
 import org.ton.ton4j.utils.Secp256k1KeyPair;
 import org.ton.ton4j.utils.SignatureWithRecovery;
 import org.ton.ton4j.utils.Utils;

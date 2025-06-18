@@ -1,6 +1,7 @@
 package org.ton.ton4j.tlb;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -79,5 +80,28 @@ public class VmTuple implements VmStackValue, Serializable {
             : null);
 
     return VmTuple.builder().values(ar).build();
+  }
+
+  public BigInteger getIntByIndex(int stackIndex) {
+
+    VmStackValue vmStackValue = values.get(stackIndex);
+    if (vmStackValue instanceof VmStackValueInt) {
+      return ((VmStackValueInt) vmStackValue).getValue();
+    } else if (vmStackValue instanceof VmStackValueTinyInt) {
+      return ((VmStackValueTinyInt) vmStackValue).getValue();
+    } else {
+      throw new RuntimeException(
+          "Unsupported vm tuple value type: " + vmStackValue + ". Expecting number.");
+    }
+  }
+
+  public Cell getCellByIndex(int stackIndex) {
+    if (values.get(stackIndex) instanceof VmStackValueCell) {
+      return ((VmStackValueCell) values.get(stackIndex)).getCell();
+    } else if (values.get(stackIndex) instanceof VmStackValueSlice) {
+      return ((VmStackValueSlice) values.get(stackIndex)).getCell().getCell();
+    } else {
+      throw new RuntimeException("Unsupported vm tuple value type: " + values.get(stackIndex));
+    }
   }
 }

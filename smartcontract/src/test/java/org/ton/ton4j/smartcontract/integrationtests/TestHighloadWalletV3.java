@@ -12,6 +12,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -153,10 +154,68 @@ public class TestHighloadWalletV3 extends CommonTest {
     log.info("sent 1000 messages");
   }
 
+  @Test
+  public void testBulkTransferSimplified_1000_AdnlLiteClient() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    HighloadWalletV3 contract =
+        HighloadWalletV3.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(keyPair)
+            .walletId(42)
+            .build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+    String rawAddress = contract.getAddress().toRaw();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(2));
+    Utils.sleep(30, "topping up...");
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    HighloadV3Config config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            .build();
+
+    ExtMessageInfo extMessageInfo = contract.deploy(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForDeployment(45);
+
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+            .body(
+                contract.createBulkTransfer(
+                    createDummyDestinations(1000),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+            .build();
+
+    extMessageInfo = contract.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+    log.info("sent 1000 messages");
+  }
+
   /** Sends 1000 messages with jetton values with comment */
   @Test
-  public void testBulkJettonTransferSimplified_1000()
-      throws InterruptedException, NoSuchAlgorithmException {
+  public void testBulkJettonTransferSimplified_1000() throws InterruptedException {
 
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 

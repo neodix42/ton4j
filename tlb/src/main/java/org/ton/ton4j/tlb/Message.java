@@ -11,6 +11,7 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.utils.Utils;
 
 /**
  *
@@ -104,5 +105,23 @@ public class Message implements Serializable {
                 : CellBuilder.beginCell().storeCell(body).endCell())
         .endCell()
         .getHash();
+  }
+
+  public String getComment() {
+    if (nonNull(body)) {
+      CellSlice cs = CellSlice.beginParse(body);
+      if (cs.preloadUint(32).longValue() == 0) {
+        if (cs.getRefsCount() == 1) {
+          cs.loadUint(32);
+          return cs.loadSnakeString();
+        } else {
+          cs.loadUint(32);
+          return cs.loadString(cs.getRestBits());
+        }
+      }
+      return Utils.bytesToHex(cs.loadBytes());
+    } else {
+      return "";
+    }
   }
 }

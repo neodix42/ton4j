@@ -4,13 +4,13 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.tlb.VmStack;
-import org.ton.ton4j.tlb.VmStackValueCell;
-import org.ton.ton4j.tlb.VmStackValueInt;
+import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -137,19 +137,41 @@ public class RunMethodResult implements Serializable, LiteServerAnswer {
     return deserialize(ByteBuffer.wrap(data));
   }
 
-  public BigInteger getIntFromResult(int stackIndex) {
+  public BigInteger getIntByIndex(int stackIndex) {
     VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result)));
-    VmStackValueInt result =
-        VmStackValueInt.deserialize(
-            CellSlice.beginParse(vmStack.getStack().getTos().get(stackIndex).toCell()));
-    return result.getValue();
+    VmStackValue vmStackValue = vmStack.getStack().getTos().get(stackIndex);
+    if (vmStackValue instanceof VmStackValueInt) {
+      return ((VmStackValueInt) vmStack.getStack().getTos().get(stackIndex)).getValue();
+    } else if (vmStackValue instanceof VmStackValueTinyInt) {
+      return ((VmStackValueTinyInt) vmStack.getStack().getTos().get(stackIndex)).getValue();
+    } else {
+      throw new RuntimeException(
+          "Unsupported vm stack value type: " + vmStackValue + ". Expecting number.");
+    }
   }
 
-  public Cell getCellFromResult(int stackIndex) {
+  public Cell getCellByIndex(int stackIndex) {
     VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result)));
-    VmStackValueCell result =
-        VmStackValueCell.deserialize(
-            CellSlice.beginParse(vmStack.getStack().getTos().get(stackIndex).toCell()));
-    return result.getCell();
+    return ((VmStackValueCell) vmStack.getStack().getTos().get(stackIndex)).getCell();
+  }
+
+  public VmTuple getTupleByIndex(int stackIndex) {
+    VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result)));
+    return (VmTuple) vmStack.getStack().getTos().get(stackIndex);
+  }
+
+  public List<VmStackValue> getListByIndex(int stackIndex) {
+    try {
+      VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result)));
+      return ((VmStackList) vmStack.getStack().getTos().get(stackIndex)).getTos();
+
+    } catch (Throwable e) {
+      return new ArrayList<>();
+    }
+  }
+
+  public VmCellSlice getSliceByIndex(int stackIndex) {
+    VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result)));
+    return ((VmStackValueSlice) vmStack.getStack().getTos().get(stackIndex)).getCell();
   }
 }

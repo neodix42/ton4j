@@ -9,6 +9,7 @@ import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -563,6 +564,71 @@ public class TestHighloadWalletV3S extends CommonTest {
   }
 
   @Test
+  public void testTransfer_200_CustomCell_AdnlLiteClient() throws Exception {
+
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
+
+    HighloadWalletV3S contract =
+        HighloadWalletV3S.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(keyPair)
+            .walletId(42)
+            .build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", contract.getAddress().toString(false));
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getPrivateKey()));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(3));
+
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    //        long createdAt = Instant.now().getEpochSecond() - 60 * 5;
+
+    HighloadV3Config config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            .build();
+
+    ExtMessageInfo extMessageInfo = contract.deploy(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForDeployment(30);
+
+    int numberOfRecipients = 200;
+    BigInteger amountToSendTotal = Utils.toNano(0.01 * numberOfRecipients);
+
+    Cell nMessages = createDummyRecipients(numberOfRecipients, contract, null);
+
+    Cell extMsgWith200Mgs = contract.createBulkTransfer(amountToSendTotal, nMessages);
+
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .body(extMsgWith200Mgs)
+            .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+            .build();
+
+    extMessageInfo = contract.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+    log.info("sent {} messages", numberOfRecipients);
+  }
+
+  @Test
   public void testTransfer_1000_CustomCell() throws InterruptedException, NoSuchAlgorithmException {
 
     Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
@@ -692,9 +758,7 @@ public class TestHighloadWalletV3S extends CommonTest {
   }
 
   @Test
-  public void testBulkJettonTransfer() throws InterruptedException, NoSuchAlgorithmException {
-
-    Tonlib tonlib = Tonlib.builder().testnet(true).ignoreCache(false).build();
+  public void testBulkJettonTransfer() throws InterruptedException {
 
     Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
 
@@ -803,5 +867,115 @@ public class TestHighloadWalletV3S extends CommonTest {
               .build());
     }
     return result;
+  }
+
+  @Test
+  public void testBulkJettonTransferAdnlLiteClient() throws Exception {
+
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
+
+    HighloadWalletV3S myHighLoadWalletV3 =
+        HighloadWalletV3S.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(keyPair)
+            .walletId(42)
+            .build();
+
+    String nonBounceableAddress = myHighLoadWalletV3.getAddress().toNonBounceable();
+    String bounceableAddress = myHighLoadWalletV3.getAddress().toBounceable();
+    String rawAddress = myHighLoadWalletV3.getAddress().toRaw();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(myHighLoadWalletV3.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(myHighLoadWalletV3.getKeyPair().getPrivateKey()));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(1));
+    log.info(
+        "new wallet {} toncoins balance: {}",
+        myHighLoadWalletV3.getName(),
+        Utils.formatNanoValue(balance));
+
+    // top up new wallet with NEOJ using test-jetton-faucet-wallet
+
+    balance =
+        TestnetJettonFaucet.topUpContractWithNeoj(
+            tonlib, Address.of(nonBounceableAddress), BigInteger.valueOf(100));
+    balance =
+        TestnetJettonFaucet.topUpContractWithNeoj(
+            adnlLiteClient, Address.of(nonBounceableAddress), BigInteger.valueOf(100));
+    log.info(
+        "new wallet {} jetton balance: {}",
+        myHighLoadWalletV3.getName(),
+        Utils.formatJettonValue(balance, 2, 2));
+
+    HighloadV3Config config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            .build();
+
+    ExtMessageInfo extMessageInfo = myHighLoadWalletV3.deploy(config);
+    Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    myHighLoadWalletV3.waitForDeployment(60);
+
+    String singleRandomAddress = Utils.generateRandomAddress(0);
+
+    JettonMinter jettonMinterWallet =
+        JettonMinter.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .customAddress(Address.of("kQAN6TAGauShFKDQvZCwNb_EeTUIjQDwRZ9t6GOn4FBzfg9Y"))
+            .build();
+
+    JettonWallet myJettonHighLoadWallet =
+        jettonMinterWallet.getJettonWallet(myHighLoadWalletV3.getAddress());
+
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+            .body(
+                myHighLoadWalletV3.createBulkTransfer(
+                    Collections.singletonList(
+                        Destination.builder()
+                            .address(myJettonHighLoadWallet.getAddress().toBounceable())
+                            .amount(Utils.toNano(0.07))
+                            .body(
+                                JettonWallet.createTransferBody(
+                                    0,
+                                    BigInteger.valueOf(100),
+                                    Address.of(singleRandomAddress), // recipient
+                                    myJettonHighLoadWallet.getAddress(), // response address
+                                    null, // custom payload
+                                    BigInteger.ONE, // forward amount
+                                    MsgUtils.createTextMessageBody("test sdk") // forward payload
+                                    ))
+                            .build()),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
+            .build();
+
+    extMessageInfo = myHighLoadWalletV3.send(config);
+    Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    Utils.sleep(60, "sending jettons...");
+
+    BigInteger balanceOfDestinationWallet =
+        adnlLiteClient.getBalance(Address.of(singleRandomAddress));
+    log.info("balanceOfDestinationWallet in nanocoins: {}", balanceOfDestinationWallet);
+
+    JettonWallet randomJettonWallet =
+        jettonMinterWallet.getJettonWallet(Address.of(singleRandomAddress));
+    log.info("balanceOfDestinationWallet in jettons: {}", randomJettonWallet.getBalance());
   }
 }

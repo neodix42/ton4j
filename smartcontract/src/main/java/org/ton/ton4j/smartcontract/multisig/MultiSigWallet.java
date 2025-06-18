@@ -15,9 +15,11 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
+import org.ton.ton4j.tonlib.types.ExtraCurrency;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -133,33 +135,53 @@ public class MultiSigWallet implements Contract {
   }
 
   public List<BigInteger> getPublicKeys() {
-
     List<BigInteger> publicKeys = new ArrayList<>();
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_public_keys");
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method get_public_keys, returned an exit code " + runMethodResult.getExitCode());
+      }
 
-    Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_public_keys");
+      CellSlice cs = CellSlice.beginParse(runMethodResult.getCellByIndex(0));
+      TonHashMap loadedDict =
+          cs.loadDict(
+              8,
+              k -> k.readUint(8), // index
+              v -> v // ownerInfo cell
+              );
+      for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+        CellSlice cSlice = CellSlice.beginParse((Cell) entry.getValue());
+        BigInteger pubKey = cSlice.loadUint(256);
+        publicKeys.add(pubKey);
+      }
+      return publicKeys;
+    } else {
 
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_public_keys, returned an exit code " + result.getExit_code());
+      Address myAddress = this.getAddress();
+      RunResult result = tonlib.runMethod(myAddress, "get_public_keys");
+
+      if (result.getExit_code() != 0) {
+        throw new Error("method get_public_keys, returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStack().get(0);
+      Cell cell = CellBuilder.beginCell().fromBocBase64(cellResult.getCell().getBytes()).endCell();
+
+      CellSlice cs = CellSlice.beginParse(cell);
+      TonHashMap loadedDict =
+          cs.loadDict(
+              8,
+              k -> k.readUint(8), // index
+              v -> v // ownerInfo cell
+              );
+      for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+        CellSlice cSlice = CellSlice.beginParse((Cell) entry.getValue());
+        BigInteger pubKey = cSlice.loadUint(256);
+        publicKeys.add(pubKey);
+      }
+      return publicKeys;
     }
-
-    TvmStackEntryCell cellResult = (TvmStackEntryCell) result.getStack().get(0);
-    Cell cell = CellBuilder.beginCell().fromBocBase64(cellResult.getCell().getBytes()).endCell();
-    //        Cell cell = Cell.fromBocBase64(cellResult.getCell().getBytes());
-
-    CellSlice cs = CellSlice.beginParse(cell);
-    TonHashMap loadedDict =
-        cs.loadDict(
-            8,
-            k -> k.readUint(8), // index
-            v -> v // ownerInfo cell
-            );
-    for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
-      CellSlice cSlice = CellSlice.beginParse((Cell) entry.getValue());
-      BigInteger pubKey = cSlice.loadUint(256);
-      publicKeys.add(pubKey);
-    }
-    return publicKeys;
   }
 
   public List<String> getPublicKeysHex() {
@@ -182,21 +204,36 @@ public class MultiSigWallet implements Contract {
    */
   public Cell getInitState(long walletId, int n, int k, Cell ownersInfo) {
 
-    Address myAddress = this.getAddress();
-    Deque<String> stack = new ArrayDeque<>();
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              getAddress(),
+              "create_init_state",
+              VmStackValueInt.builder().value(BigInteger.valueOf(walletId)).build(),
+              VmStackValueInt.builder().value(BigInteger.valueOf(n)).build(),
+              VmStackValueInt.builder().value(BigInteger.valueOf(k)).build(),
+              VmStackValueCell.builder().cell(ownersInfo).build());
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method create_init_state, returned an exit code " + runMethodResult.getExitCode());
+      }
+      return runMethodResult.getCellByIndex(0);
+    } else {
+      Deque<String> stack = new ArrayDeque<>();
 
-    stack.offer("[num, " + walletId + "]");
-    stack.offer("[num, " + n + "]");
-    stack.offer("[num, " + k + "]");
-    stack.offer("[cell, " + ownersInfo.toHex(false) + "]");
-    RunResult result = tonlib.runMethod(myAddress, "create_init_state", stack);
+      stack.offer("[num, " + walletId + "]");
+      stack.offer("[num, " + n + "]");
+      stack.offer("[num, " + k + "]");
+      stack.offer("[cell, " + ownersInfo.toHex(false) + "]");
+      RunResult result = tonlib.runMethod(getAddress(), "create_init_state", stack);
 
-    if (result.getExit_code() != 0) {
-      throw new Error("method createInitState, returned an exit code " + result.getExit_code());
+      if (result.getExit_code() != 0) {
+        throw new Error("method createInitState, returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStack().get(0);
+      return CellBuilder.beginCell().fromBocBase64(domainCell.getCell().getBytes()).endCell();
     }
-
-    TvmStackEntryCell domainCell = (TvmStackEntryCell) result.getStack().get(0);
-    return CellBuilder.beginCell().fromBocBase64(domainCell.getCell().getBytes()).endCell();
   }
 
   /**
@@ -223,7 +260,11 @@ public class MultiSigWallet implements Contract {
                     .storeCell(signingMessageBody)
                     .endCell())
             .build();
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    } else {
+      return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    }
   }
 
   /**
@@ -246,7 +287,11 @@ public class MultiSigWallet implements Contract {
                     .storeCell(signingMessageBody)
                     .endCell())
             .build();
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    } else {
+      return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    }
   }
 
   /**
@@ -389,8 +434,11 @@ public class MultiSigWallet implements Contract {
             .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
             .init(getStateInit())
             .build();
-
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    } else {
+      return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    }
   }
 
   /**
@@ -585,17 +633,24 @@ public class MultiSigWallet implements Contract {
 
   public Pair<Long, Long> getNandK() {
 
-    Address myAddress = getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_n_k");
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_n_k");
+      return Pair.of(
+          runMethodResult.getIntByIndex(0).longValue(),
+          runMethodResult.getIntByIndex(1).longValue());
+    } else {
 
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_n_k, returned an exit code " + result.getExit_code());
+      RunResult result = tonlib.runMethod(getAddress(), "get_n_k");
+
+      if (result.getExit_code() != 0) {
+        throw new Error("method get_n_k, returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntryNumber nNumber = (TvmStackEntryNumber) result.getStack().get(0);
+      TvmStackEntryNumber kNumber = (TvmStackEntryNumber) result.getStack().get(1);
+
+      return Pair.of(nNumber.getNumber().longValue(), kNumber.getNumber().longValue());
     }
-
-    TvmStackEntryNumber nNumber = (TvmStackEntryNumber) result.getStack().get(0);
-    TvmStackEntryNumber kNumber = (TvmStackEntryNumber) result.getStack().get(1);
-
-    return Pair.of(nNumber.getNumber().longValue(), kNumber.getNumber().longValue());
   }
 
   /**
@@ -604,33 +659,55 @@ public class MultiSigWallet implements Contract {
    * @return List<Cell> pending queries
    */
   public Map<BigInteger, Cell> getMessagesUnsigned() {
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(getAddress(), "get_messages_unsigned");
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method get_messages_signed_by_id, returned an exit code "
+                + runMethodResult.getExitCode());
+      }
+      Cell cellDict = runMethodResult.getCellByIndex(0);
 
-    Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_messages_unsigned");
+      CellSlice cs = CellSlice.beginParse(cellDict);
 
-    if (result.getExit_code() != 0) {
-      throw new Error(
-          "method get_messages_unsigned, returned an exit code " + result.getExit_code());
+      TonHashMap loadedDict = cs.loadDict(64, k -> k.readUint(64), v -> v);
+
+      Map<BigInteger, Cell> resultMap = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+        // query-id, query
+        resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
+      }
+      return resultMap;
+    } else {
+      Address myAddress = this.getAddress();
+      RunResult result = tonlib.runMethod(myAddress, "get_messages_unsigned");
+
+      if (result.getExit_code() != 0) {
+        throw new Error(
+            "method get_messages_unsigned, returned an exit code " + result.getExit_code());
+      }
+
+      if (result.getStack().get(0) instanceof TvmStackEntryList) {
+        return new HashMap<>();
+      }
+
+      TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
+      Cell cellDict =
+          CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
+
+      CellSlice cs = CellSlice.beginParse(cellDict);
+
+      TonHashMap loadedDict = cs.loadDict(64, k -> k.readUint(64), v -> v);
+
+      Map<BigInteger, Cell> resultMap = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+        // query-id, query
+        resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
+      }
+
+      return resultMap;
     }
-
-    if (result.getStack().get(0) instanceof TvmStackEntryList) {
-      return new HashMap<>();
-    }
-
-    TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
-    Cell cellDict = CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
-
-    CellSlice cs = CellSlice.beginParse(cellDict);
-
-    TonHashMap loadedDict = cs.loadDict(64, k -> k.readUint(64), v -> v);
-
-    Map<BigInteger, Cell> resultMap = new HashMap<>();
-    for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
-      // query-id, query
-      resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
-    }
-
-    return resultMap;
   }
 
   /**
@@ -640,35 +717,62 @@ public class MultiSigWallet implements Contract {
    */
   public Map<BigInteger, Cell> getMessagesSignedByIndex(long index) {
 
-    Address myAddress = this.getAddress();
-    Deque<String> stack = new ArrayDeque<>();
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              getAddress(),
+              "get_messages_signed_by_id",
+              VmStackValueInt.builder().value(BigInteger.valueOf(index)).build());
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method get_messages_signed_by_id, returned an exit code "
+                + runMethodResult.getExitCode());
+      }
+      Cell cellDict = runMethodResult.getCellByIndex(0);
 
-    stack.offer("[num, " + index + "]");
+      CellSlice cs = CellSlice.beginParse(cellDict);
 
-    RunResult result = tonlib.runMethod(myAddress, "get_messages_signed_by_id", stack);
+      TonHashMap loadedDict = cs.loadDict(64, k -> k.readUint(64), v -> v);
 
-    if (result.getExit_code() != 0) {
-      throw new Error(
-          "method get_messages_signed_by_id, returned an exit code " + result.getExit_code());
+      Map<BigInteger, Cell> resultMap = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+        // query-id, query
+        resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
+      }
+      return resultMap;
+    } else {
+
+      Address myAddress = this.getAddress();
+      Deque<String> stack = new ArrayDeque<>();
+
+      stack.offer("[num, " + index + "]");
+
+      RunResult result = tonlib.runMethod(myAddress, "get_messages_signed_by_id", stack);
+
+      if (result.getExit_code() != 0) {
+        throw new Error(
+            "method get_messages_signed_by_id, returned an exit code " + result.getExit_code());
+      }
+
+      if (result.getStack().get(0) instanceof TvmStackEntryList) {
+        return new HashMap<>();
+      }
+
+      TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
+      Cell cellDict =
+          CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
+
+      CellSlice cs = CellSlice.beginParse(cellDict);
+
+      TonHashMap loadedDict = cs.loadDict(64, k -> k.readUint(64), v -> v);
+
+      Map<BigInteger, Cell> resultMap = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+        // query-id, query
+        resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
+      }
+      return resultMap;
     }
-
-    if (result.getStack().get(0) instanceof TvmStackEntryList) {
-      return new HashMap<>();
-    }
-
-    TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
-    Cell cellDict = CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
-
-    CellSlice cs = CellSlice.beginParse(cellDict);
-
-    TonHashMap loadedDict = cs.loadDict(64, k -> k.readUint(64), v -> v);
-
-    Map<BigInteger, Cell> resultMap = new HashMap<>();
-    for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
-      // query-id, query
-      resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
-    }
-    return resultMap;
   }
 
   /**
@@ -678,35 +782,61 @@ public class MultiSigWallet implements Contract {
    */
   public Map<BigInteger, Cell> getMessagesUnsignedByIndex(long index) {
 
-    Address myAddress = this.getAddress();
-    Deque<String> stack = new ArrayDeque<>();
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              getAddress(),
+              "get_messages_unsigned_by_id",
+              VmStackValueInt.builder().value(BigInteger.valueOf(index)).build());
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method get_messages_unsigned_by_id, returned an exit code "
+                + runMethodResult.getExitCode());
+      }
+      Cell cellDict = runMethodResult.getCellByIndex(0);
 
-    stack.offer("[num, " + index + "]");
+      CellSlice cs = CellSlice.beginParse(cellDict);
 
-    RunResult result = tonlib.runMethod(myAddress, "get_messages_unsigned_by_id", stack);
+      TonHashMap loadedDict = cs.loadDict(64, k -> k.readUint(64), v -> v);
 
-    if (result.getExit_code() != 0) {
-      throw new Error(
-          "method get_messages_unsigned_by_id, returned an exit code " + result.getExit_code());
+      Map<BigInteger, Cell> resultMap = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+        // query-id, query
+        resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
+      }
+      return resultMap;
+    } else {
+
+      Deque<String> stack = new ArrayDeque<>();
+
+      stack.offer("[num, " + index + "]");
+
+      RunResult result = tonlib.runMethod(getAddress(), "get_messages_unsigned_by_id", stack);
+
+      if (result.getExit_code() != 0) {
+        throw new Error(
+            "method get_messages_unsigned_by_id, returned an exit code " + result.getExit_code());
+      }
+
+      if (result.getStack().get(0) instanceof TvmStackEntryList) {
+        return new HashMap<>();
+      }
+
+      TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
+      Cell cellDict =
+          CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
+
+      CellSlice cs = CellSlice.beginParse(cellDict);
+
+      TonHashMap loadedDict = cs.loadDict(64, k -> k.readUint(64), v -> v);
+
+      Map<BigInteger, Cell> resultMap = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
+        // query-id, query
+        resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
+      }
+      return resultMap;
     }
-
-    if (result.getStack().get(0) instanceof TvmStackEntryList) {
-      return new HashMap<>();
-    }
-
-    TvmStackEntryCell entryCell = (TvmStackEntryCell) result.getStack().get(0);
-    Cell cellDict = CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
-
-    CellSlice cs = CellSlice.beginParse(cellDict);
-
-    TonHashMap loadedDict = cs.loadDict(64, k -> k.readUint(64), v -> v);
-
-    Map<BigInteger, Cell> resultMap = new HashMap<>();
-    for (Map.Entry<Object, Object> entry : loadedDict.elements.entrySet()) {
-      // query-id, query
-      resultMap.put((BigInteger) entry.getKey(), (Cell) entry.getValue());
-    }
-    return resultMap;
   }
 
   /**
@@ -717,21 +847,34 @@ public class MultiSigWallet implements Contract {
    */
   public Pair<Long, Long> getQueryState(BigInteger queryId) {
 
-    Address myAddress = this.getAddress();
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              getAddress(), "get_query_state", VmStackValueInt.builder().value(queryId).build());
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method get_query_state, returned an exit code " + runMethodResult.getExitCode());
+      }
+      return Pair.of(
+          runMethodResult.getIntByIndex(0).longValue(),
+          runMethodResult.getIntByIndex(1).longValue());
 
-    Deque<String> stack = new ArrayDeque<>();
+    } else {
 
-    stack.offer("[num, " + queryId.toString(10) + "]");
+      Deque<String> stack = new ArrayDeque<>();
 
-    RunResult result = tonlib.runMethod(myAddress, "get_query_state", stack);
+      stack.offer("[num, " + queryId.toString(10) + "]");
 
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_query_state, returned an exit code " + result.getExit_code());
+      RunResult result = tonlib.runMethod(getAddress(), "get_query_state", stack);
+
+      if (result.getExit_code() != 0) {
+        throw new Error("method get_query_state, returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntryNumber r = (TvmStackEntryNumber) result.getStack().get(0);
+      TvmStackEntryNumber n = (TvmStackEntryNumber) result.getStack().get(1);
+      return Pair.of(r.getNumber().longValue(), n.getNumber().longValue());
     }
-
-    TvmStackEntryNumber r = (TvmStackEntryNumber) result.getStack().get(0);
-    TvmStackEntryNumber n = (TvmStackEntryNumber) result.getStack().get(1);
-    return Pair.of(r.getNumber().longValue(), n.getNumber().longValue());
   }
 
   /**
@@ -743,31 +886,44 @@ public class MultiSigWallet implements Contract {
    */
   public Pair<Long, Long> checkQuerySignatures(Tonlib tonlib, Cell query) {
 
-    Address myAddress = this.getAddress();
-    Deque<String> stack = new ArrayDeque<>();
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              getAddress(),
+              "check_query_signatures",
+              VmStackValueCell.builder().cell(query).build());
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method check_query_signatures, returned an exit code "
+                + runMethodResult.getExitCode());
+      }
+      return Pair.of(
+          runMethodResult.getIntByIndex(0).longValue(),
+          runMethodResult.getIntByIndex(1).longValue());
+    } else {
+      Deque<String> stack = new ArrayDeque<>();
 
-    stack.offer("[cell, " + query.toHex(false) + "]");
-    RunResult result = tonlib.runMethod(myAddress, "check_query_signatures", stack);
+      stack.offer("[cell, " + query.toHex(false) + "]");
+      RunResult result = tonlib.runMethod(getAddress(), "check_query_signatures", stack);
 
-    if (result.getExit_code() != 0) {
-      throw new Error(
-          "method check_query_signatures, returned an exit code " + result.getExit_code());
+      if (result.getExit_code() != 0) {
+        throw new Error(
+            "method check_query_signatures, returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntryNumber cnt = (TvmStackEntryNumber) result.getStack().get(0);
+      TvmStackEntryNumber mask = (TvmStackEntryNumber) result.getStack().get(1);
+
+      return Pair.of(cnt.getNumber().longValue(), mask.getNumber().longValue());
     }
-
-    TvmStackEntryNumber cnt = (TvmStackEntryNumber) result.getStack().get(0);
-    TvmStackEntryNumber mask = (TvmStackEntryNumber) result.getStack().get(1);
-
-    return Pair.of(cnt.getNumber().longValue(), mask.getNumber().longValue());
   }
 
   public Cell mergePendingQueries(Tonlib tonlib, Cell a, Cell b) {
-
-    Address myAddress = this.getAddress();
     Deque<String> stack = new ArrayDeque<>();
 
     stack.offer("[cell, " + a.toHex(false) + "]");
     stack.offer("[cell, " + b.toHex(false) + "]");
-    RunResult result = tonlib.runMethod(myAddress, "merge_inner_queries", stack);
+    RunResult result = tonlib.runMethod(getAddress(), "merge_inner_queries", stack);
 
     if (result.getExit_code() != 0) {
       throw new Error("method merge_inner_queries, returned an exit code " + result.getExit_code());
@@ -778,6 +934,21 @@ public class MultiSigWallet implements Contract {
     return CellBuilder.beginCell().fromBocBase64(entryCell.getCell().getBytes()).endCell();
   }
 
+  public Cell mergePendingQueries(AdnlLiteClient adnlLiteClient, Cell a, Cell b) {
+
+    RunMethodResult runMethodResult =
+        adnlLiteClient.runMethod(
+            getAddress(),
+            "merge_inner_queries",
+            VmStackValueCell.builder().cell(a).build(),
+            VmStackValueCell.builder().cell(b).build());
+    if (runMethodResult.getExitCode() != 0) {
+      throw new Error(
+          "method merge_inner_queries, returned an exit code " + runMethodResult.getExitCode());
+    }
+    return runMethodResult.getCellByIndex(0);
+  }
+
   /**
    * Returns -1 for processed queries, 0 for unprocessed, 1 for unknown (forgotten)
    *
@@ -785,19 +956,26 @@ public class MultiSigWallet implements Contract {
    */
   public long processed(Tonlib tonlib, BigInteger queryId) {
 
-    Address myAddress = this.getAddress();
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              getAddress(), "processed?", VmStackValueInt.builder().value(queryId).build());
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method processed?, returned an exit code " + runMethodResult.getExitCode());
+      }
+      return runMethodResult.getIntByIndex(0).longValue();
+    } else {
+      Deque<String> stack = new ArrayDeque<>();
+      stack.offer("[num, " + queryId.toString(10) + "]");
+      RunResult result = tonlib.runMethod(getAddress(), "processed?", stack);
 
-    Deque<String> stack = new ArrayDeque<>();
-
-    stack.offer("[num, " + queryId.toString(10) + "]");
-
-    RunResult result = tonlib.runMethod(myAddress, "processed?", stack);
-
-    if (result.getExit_code() != 0) {
-      throw new Error("method processed, returned an exit code " + result.getExit_code());
+      if (result.getExit_code() != 0) {
+        throw new Error("method processed, returned an exit code " + result.getExit_code());
+      }
+      TvmStackEntryNumber cnt = (TvmStackEntryNumber) result.getStack().get(0);
+      return cnt.getNumber().longValue();
     }
-    TvmStackEntryNumber cnt = (TvmStackEntryNumber) result.getStack().get(0);
-    return cnt.getNumber().longValue();
   }
 
   private static TonHashMapE convertExtraCurrenciesToMap(List<ExtraCurrency> extraCurrencies) {

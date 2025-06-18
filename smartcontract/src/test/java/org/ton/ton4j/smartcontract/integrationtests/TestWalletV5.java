@@ -1108,7 +1108,7 @@ public class TestWalletV5 extends CommonTest {
   }
 
   @Test
-  public void testWalletV5SimpleJettonTransfer() throws InterruptedException {
+  public void testWalletV5SimpleJettonTransfer() throws Exception {
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
     WalletV5 walletV5 =
         WalletV5.builder()
@@ -1221,6 +1221,7 @@ public class TestWalletV5 extends CommonTest {
             .tonlib(tonlib)
             .walletId(42)
             .keyPair(keyPair)
+            .isSigAuthAllowed(true)
             .isSigAuthAllowed(true)
             .build();
 

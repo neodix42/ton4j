@@ -482,7 +482,7 @@ public class WalletV5 implements Contract {
     if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
           adnlLiteClient.runMethod(getAddress(), "is_signature_allowed");
-      BigInteger signatureAllowed = runMethodResult.getIntFromResult(0);
+      BigInteger signatureAllowed = runMethodResult.getIntByIndex(0);
       return signatureAllowed.longValue() != 0;
     }
     RunResult result =
@@ -494,7 +494,7 @@ public class WalletV5 implements Contract {
   public TonHashMap getRawExtensions() {
     if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_extensions");
-      Cell cellExtensions = runMethodResult.getCellFromResult(0);
+      Cell cellExtensions = runMethodResult.getCellByIndex(0);
       CellSlice cs = CellSlice.beginParse(cellExtensions);
 
       return cs.loadDict(256, k -> k.readUint(256), v -> v);

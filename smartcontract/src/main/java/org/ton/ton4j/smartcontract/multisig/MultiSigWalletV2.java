@@ -1,6 +1,7 @@
 package org.ton.ton4j.smartcontract.multisig;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -12,9 +13,11 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
+import org.ton.ton4j.tonlib.types.ExtraCurrency;
 
 /** <a href="https://github.com/ton-blockchain/multisig-contract-v2">multisig-v2</a> */
 @Builder
@@ -208,50 +211,111 @@ public class MultiSigWalletV2 implements Contract {
   }
 
   public Address getOrderAddress(BigInteger orderSeqno) {
-    Deque<String> stackData = new ArrayDeque<>();
-    stackData.offer("[num, " + orderSeqno + "]");
-    RunResult runResult = tonlib.runMethod(getAddress(), "get_order_address", stackData);
-    TvmStackEntrySlice orderAddrCell = (TvmStackEntrySlice) runResult.getStack().get(0);
-    return MsgAddressInt.deserialize(
-            CellSlice.beginParse(Cell.fromBocBase64(orderAddrCell.getSlice().getBytes())))
-        .toAddress();
+    Cell orderAddrCell;
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              getAddress(),
+              "get_order_address",
+              VmStackValueInt.builder().value(orderSeqno).build());
+      VmCellSlice slice = runMethodResult.getSliceByIndex(0);
+      return CellSlice.beginParse(slice.getCell()).skipBits(slice.getStBits()).loadAddress();
+    } else {
+      Deque<String> stackData = new ArrayDeque<>();
+      stackData.offer("[num, " + orderSeqno + "]");
+      RunResult runResult = tonlib.runMethod(getAddress(), "get_order_address", stackData);
+      TvmStackEntrySlice orderAddrCellT = (TvmStackEntrySlice) runResult.getStack().get(0);
+      orderAddrCell = Cell.fromBocBase64(orderAddrCellT.getSlice().getBytes());
+    }
+
+    return MsgAddressInt.deserialize(CellSlice.beginParse(orderAddrCell)).toAddress();
   }
 
   public MultiSigV2OrderData getOrderData(BigInteger orderSeqno) {
     Address orderAddress = getOrderAddress(orderSeqno);
-    RunResult runResult = tonlib.runMethod(orderAddress, "get_order_data");
-    TvmStackEntrySlice multiSigAddressCell = (TvmStackEntrySlice) runResult.getStack().get(0);
-    TvmStackEntryNumber orderSeqNo = (TvmStackEntryNumber) runResult.getStack().get(1);
-    TvmStackEntryNumber threshold = (TvmStackEntryNumber) runResult.getStack().get(2);
-    TvmStackEntryNumber sentForExecution = (TvmStackEntryNumber) runResult.getStack().get(3);
-    TvmStackEntryCell signersCell = (TvmStackEntryCell) runResult.getStack().get(4);
-    TonHashMap signers =
-        CellSlice.beginParse(Cell.fromBocBase64(signersCell.getCell().getBytes()))
-            .loadDict(
-                8, k -> k.readUint(8), v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
-    TvmStackEntryNumber approvalsMask = (TvmStackEntryNumber) runResult.getStack().get(5);
-    TvmStackEntryNumber numberOfApprovals = (TvmStackEntryNumber) runResult.getStack().get(6);
-    TvmStackEntryNumber expirationDate = (TvmStackEntryNumber) runResult.getStack().get(7);
-    TvmStackEntryCell order = (TvmStackEntryCell) runResult.getStack().get(8);
+    Address multiSigAddressCell;
+    BigInteger orderSeqNo;
+    BigInteger threshold;
+    BigInteger sentForExecution;
+    TonHashMap signers;
+    BigInteger approvalsMask;
+    BigInteger numberOfApprovals;
+    BigInteger expirationDate;
+    Cell order;
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(orderAddress, "get_order_data");
+      if (runMethodResult.getExitCode() == 0) {
+        VmCellSlice slice = runMethodResult.getSliceByIndex(0);
+        multiSigAddressCell =
+            CellSlice.beginParse(slice.getCell()).skipBits(slice.getStBits()).loadAddress();
+        //        multiSigAddress = runMethodResult.getSliceByIndex(0).getCell();
+        orderSeqNo = runMethodResult.getIntByIndex(1);
+        threshold = runMethodResult.getIntByIndex(2);
+        sentForExecution = runMethodResult.getIntByIndex(3);
+        Cell signersDictCell = runMethodResult.getCellByIndex(4);
+        signers =
+            CellSlice.beginParse(signersDictCell)
+                .loadDict(
+                    8,
+                    k -> k.readUint(8),
+                    v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+        approvalsMask = runMethodResult.getIntByIndex(5);
+        numberOfApprovals = runMethodResult.getIntByIndex(6);
+        expirationDate = runMethodResult.getIntByIndex(7);
+        order = runMethodResult.getCellByIndex(8);
+      } else {
+        throw new Error("Error retrieving order data. Exit code: " + runMethodResult.getExitCode());
+      }
 
+    } else {
+
+      RunResult runResult = tonlib.runMethod(orderAddress, "get_order_data");
+      TvmSlice multiSigAddressSlice = ((TvmStackEntrySlice) runResult.getStack().get(0)).getSlice();
+      multiSigAddressCell =
+          MsgAddressInt.deserialize(
+                  CellSlice.beginParse(Cell.fromBocBase64(multiSigAddressSlice.getBytes())))
+              .toAddress();
+      orderSeqNo = ((TvmStackEntryNumber) runResult.getStack().get(1)).getNumber();
+      threshold = ((TvmStackEntryNumber) runResult.getStack().get(2)).getNumber();
+      sentForExecution = ((TvmStackEntryNumber) runResult.getStack().get(3)).getNumber();
+      TvmCell signersDictCell = ((TvmStackEntryCell) runResult.getStack().get(4)).getCell();
+      signers =
+          CellSlice.beginParse(Cell.fromBocBase64(signersDictCell.getBytes()))
+              .loadDict(
+                  8,
+                  k -> k.readUint(8),
+                  v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+      approvalsMask = ((TvmStackEntryNumber) runResult.getStack().get(5)).getNumber();
+      numberOfApprovals = ((TvmStackEntryNumber) runResult.getStack().get(6)).getNumber();
+      expirationDate = ((TvmStackEntryNumber) runResult.getStack().get(7)).getNumber();
+      TvmCell orderT = ((TvmStackEntryCell) runResult.getStack().get(8)).getCell();
+      order = Cell.fromBocBase64(orderT.getBytes());
+    }
     return MultiSigV2OrderData.builder()
         .multiSigAddress(
-            MsgAddressInt.deserialize(
-                    CellSlice.beginParse(
-                        Cell.fromBocBase64(multiSigAddressCell.getSlice().getBytes())))
-                .toAddress())
-        .orderSeqno(orderSeqNo.getNumber())
-        .threshold(threshold.getNumber().longValue())
-        .sentForExecution(sentForExecution.getNumber().longValue() == -1)
+            MsgAddressInt.deserialize(CellSlice.beginParse(multiSigAddressCell)).toAddress())
+        .orderSeqno(orderSeqNo)
+        .threshold(threshold.longValue())
+        .sentForExecution(sentForExecution.longValue() == -1)
         .signers(fromSignersDict(signers))
-        .approvals_mask(approvalsMask.getNumber().longValue())
-        .approvals_num(numberOfApprovals.getNumber().longValue())
-        .expirationDate(expirationDate.getNumber().longValue())
-        .order(Cell.fromBocBase64(order.getCell().getBytes()))
+        .approvals_mask(approvalsMask.longValue())
+        .approvals_num(numberOfApprovals.longValue())
+        .expirationDate(expirationDate.longValue())
+        .order(order)
         .build();
   }
 
   public BigInteger getOrderEstimate(Cell order, long expirationDate) {
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              getAddress(),
+              "get_order_estimate",
+              VmStackValueCell.builder().cell(Cell.fromBoc(order.toHex())).build(),
+              VmStackValueInt.builder().value(BigInteger.valueOf(expirationDate)).build());
+      return runMethodResult.getIntByIndex(0);
+    }
+
     Deque<String> stackData = new ArrayDeque<>();
     stackData.offer("[cell, " + order.toHex() + "]");
     stackData.offer("[num, " + expirationDate + "]");
@@ -261,28 +325,56 @@ public class MultiSigWalletV2 implements Contract {
   }
 
   public MultiSigV2Data getMultiSigData() {
-    RunResult runResult = tonlib.runMethod(getAddress(), "get_multisig_data");
-    TvmStackEntryNumber nextOrderSeqno = (TvmStackEntryNumber) runResult.getStack().get(0);
+    BigInteger nextOrderSeqno;
+    BigInteger threshold;
+    TonHashMap signers;
+    TonHashMap proposers;
 
-    TvmStackEntryNumber threshold = (TvmStackEntryNumber) runResult.getStack().get(1);
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_multisig_data");
+      nextOrderSeqno = runMethodResult.getIntByIndex(0);
+      threshold = runMethodResult.getIntByIndex(1);
+      Cell cellSignersDict = runMethodResult.getCellByIndex(2);
+      signers =
+          CellSlice.beginParse(cellSignersDict)
+              .loadDict(
+                  8,
+                  k -> k.readUint(8),
+                  v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+      Cell cellProposersDict = runMethodResult.getCellByIndex(3);
+      proposers =
+          CellSlice.beginParse(cellProposersDict)
+              .loadDict(
+                  8,
+                  k -> k.readUint(8),
+                  v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+    } else {
+      RunResult runResult = tonlib.runMethod(getAddress(), "get_multisig_data");
+      nextOrderSeqno = ((TvmStackEntryNumber) runResult.getStack().get(0)).getNumber();
 
-    TvmStackEntryCell signersCell = (TvmStackEntryCell) runResult.getStack().get(2);
+      threshold = ((TvmStackEntryNumber) runResult.getStack().get(1)).getNumber();
 
-    TonHashMap signers =
-        CellSlice.beginParse(Cell.fromBocBase64(signersCell.getCell().getBytes()))
-            .loadDict(
-                8, k -> k.readUint(8), v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+      TvmCell signersCell = ((TvmStackEntryCell) runResult.getStack().get(2)).getCell();
 
-    TvmStackEntryCell proposersCell = (TvmStackEntryCell) runResult.getStack().get(3);
+      signers =
+          CellSlice.beginParse(Cell.fromBocBase64(signersCell.getBytes()))
+              .loadDict(
+                  8,
+                  k -> k.readUint(8),
+                  v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
 
-    TonHashMap proposers =
-        CellSlice.beginParse(Cell.fromBocBase64(proposersCell.getCell().getBytes()))
-            .loadDict(
-                8, k -> k.readUint(8), v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+      TvmCell proposersCell = ((TvmStackEntryCell) runResult.getStack().get(3)).getCell();
 
+      proposers =
+          CellSlice.beginParse(Cell.fromBocBase64(proposersCell.getBytes()))
+              .loadDict(
+                  8,
+                  k -> k.readUint(8),
+                  v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+    }
     return MultiSigV2Data.builder()
-        .nextOrderSeqno(nextOrderSeqno.getNumber())
-        .threshold(threshold.getNumber().longValue())
+        .nextOrderSeqno(nextOrderSeqno)
+        .threshold(threshold.longValue())
         .signers(fromSignersDict(signers))
         .proposers(fromProposersDict(proposers))
         .build();

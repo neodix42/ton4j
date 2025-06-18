@@ -22,6 +22,7 @@ import org.ton.ton4j.smartcontract.types.LockupWalletV1Config;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
@@ -226,34 +227,49 @@ public class LockupWalletV1 implements Contract {
    * @return long
    */
   public long getWalletId() {
-
-    Address myAddress = getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "wallet_id");
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "wallet_id");
+      return runMethodResult.getIntByIndex(0).longValue();
+    }
+    RunResult result = tonlib.runMethod(getAddress(), "wallet_id");
     TvmStackEntryNumber subWalletId = (TvmStackEntryNumber) result.getStack().get(0);
 
     return subWalletId.getNumber().longValue();
   }
 
   public String getPublicKey() {
-
-    Address myAddress = getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_public_key");
+    if (nonNull(adnlLiteClient)) {
+      return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
+    }
+    RunResult result = tonlib.runMethod(getAddress(), "get_public_key");
     TvmStackEntryNumber pubkey = (TvmStackEntryNumber) result.getStack().get(0);
 
     return pubkey.getNumber().toString(16);
   }
 
   public boolean check_destination(String destination) {
+    Cell cellAddr = CellBuilder.beginCell().storeAddress(Address.of(destination)).endCell();
+    if (nonNull(adnlLiteClient)) {
 
-    Address myAddress = getAddress();
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              getAddress(),
+              "check_destination",
+              VmStackValueSlice.builder()
+                  .cell(VmCellSlice.builder().cell(cellAddr).build())
+                  .build());
+      if (runMethodResult.getExitCode() != 0) {
+        throw new Error(
+            "method check_destination, returned an exit code " + runMethodResult.getExitCode());
+      }
+      return runMethodResult.getIntByIndex(0).intValue() == -1;
+    }
 
     Deque<String> stack = new ArrayDeque<>();
 
-    CellBuilder c = CellBuilder.beginCell();
-    c.storeAddress(Address.of(destination));
-    stack.offer("[slice, " + c.endCell().toHex(true) + "]");
+    stack.offer("[slice, " + cellAddr.toHex(true) + "]");
 
-    RunResult result = tonlib.runMethod(myAddress, "check_destination", stack);
+    RunResult result = tonlib.runMethod(getAddress(), "check_destination", stack);
     TvmStackEntryNumber found = (TvmStackEntryNumber) result.getStack().get(0);
 
     return (found.getNumber().intValue() == -1);
@@ -288,8 +304,14 @@ public class LockupWalletV1 implements Contract {
    *     restricted value nominal locked value
    */
   public List<BigInteger> getBalances() {
-    Address myAddress = getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_balances");
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_balances");
+      BigInteger balance = runMethodResult.getIntByIndex(0);
+      BigInteger restrictedValue = runMethodResult.getIntByIndex(1);
+      BigInteger lockedValue = runMethodResult.getIntByIndex(2);
+      return Arrays.asList(balance, restrictedValue, lockedValue);
+    }
+    RunResult result = tonlib.runMethod(getAddress(), "get_balances");
     TvmStackEntryNumber balance = (TvmStackEntryNumber) result.getStack().get(0); // ton balance
     TvmStackEntryNumber restrictedValue =
         (TvmStackEntryNumber) result.getStack().get(1); // total_restricted_value
@@ -314,10 +336,16 @@ public class LockupWalletV1 implements Contract {
                     .endCell())
             .build();
 
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    }
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 
   public ExtMessageInfo deploy(byte[] signedBody) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareDeployMsg(signedBody));
+    }
     return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
   }
 
@@ -331,6 +359,9 @@ public class LockupWalletV1 implements Contract {
   }
 
   public ExtMessageInfo send(LockupWalletV1Config config, byte[] signedBodyHash) {
+    if (nonNull(adnlLiteClient)) {
+      return send(prepareExternalMsg(config, signedBodyHash));
+    }
     return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
   }
 
@@ -352,7 +383,9 @@ public class LockupWalletV1 implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
-
+    if (nonNull(adnlLiteClient)) {
+      return send(externalMessage);
+    }
     return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 
@@ -373,6 +406,12 @@ public class LockupWalletV1 implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
-    return tonlib.sendRawMessageWithConfirmation(externalMessage.toCell().toBase64(), getAddress());
+    if (nonNull(adnlLiteClient)) {
+      send(externalMessage);
+      return null;
+    } else {
+      return tonlib.sendRawMessageWithConfirmation(
+          externalMessage.toCell().toBase64(), getAddress());
+    }
   }
 }

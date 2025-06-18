@@ -1,5 +1,7 @@
 package org.ton.ton4j.smartcontract.token.ft;
 
+import static java.util.Objects.nonNull;
+
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Getter;
@@ -7,10 +9,13 @@ import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.smartcontract.token.nft.NftUtils;
 import org.ton.ton4j.smartcontract.types.JettonWalletData;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
+import org.ton.ton4j.tlb.VmCellSlice;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryCell;
@@ -144,6 +149,26 @@ public class JettonWalletStableCoin implements Contract {
   }
 
   public JettonWalletData getData() {
+
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_wallet_data");
+      BigInteger balance = runMethodResult.getIntByIndex(0);
+      VmCellSlice slice = runMethodResult.getSliceByIndex(1);
+      Address ownerAddress =
+          CellSlice.beginParse(slice.getCell()).skipBits(slice.getStBits()).loadAddress();
+      slice = runMethodResult.getSliceByIndex(2);
+      Address jettonMinterAddress =
+          CellSlice.beginParse(slice.getCell()).skipBits(slice.getStBits()).loadAddress();
+
+      Cell jettonWalletCode = runMethodResult.getCellByIndex(3);
+      return JettonWalletData.builder()
+          .balance(balance)
+          .ownerAddress(ownerAddress)
+          .jettonMinterAddress(jettonMinterAddress)
+          .jettonWalletCode(jettonWalletCode)
+          .build();
+    }
+
     RunResult result = tonlib.runMethod(address, "get_wallet_data");
 
     if (result.getExit_code() != 0) {
@@ -181,6 +206,11 @@ public class JettonWalletStableCoin implements Contract {
   }
 
   public BigInteger getBalance() {
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_wallet_data");
+      return runMethodResult.getIntByIndex(0);
+    }
+
     RunResult result = tonlib.runMethod(address, "get_wallet_data");
 
     if (result.getExit_code() != 0) {

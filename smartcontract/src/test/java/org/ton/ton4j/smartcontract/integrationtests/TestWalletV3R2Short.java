@@ -6,9 +6,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
@@ -16,6 +18,9 @@ import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWallet;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
+import org.ton.ton4j.tl.liteserver.responses.TransactionList;
+import org.ton.ton4j.tlb.Message;
+import org.ton.ton4j.tlb.Transaction;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawMessage;
@@ -227,9 +232,8 @@ public class TestWalletV3R2Short extends CommonTest {
 
     Tonlib tonlib =
         Tonlib.builder()
-            .pathToTonlibSharedLib("path to libtonlibjson.so/dll/dylib")
-            .pathToGlobalConfig("<user>/global.config.json") // global config from MyLocalTon
-            // (http://127.0.0.1:8000/global.config.json)
+            .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
+            .pathToGlobalConfig("http://127.0.0.1:8000/localhost.global.config.json")
             .ignoreCache(false)
             .build();
 
@@ -252,7 +256,7 @@ public class TestWalletV3R2Short extends CommonTest {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .pathToGlobalConfig("http://127.0.0.1:8000/localhost.global.config.json")
             .ignoreCache(false)
             .build();
 
@@ -281,7 +285,7 @@ public class TestWalletV3R2Short extends CommonTest {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .pathToGlobalConfig("http://127.0.0.1:8000/localhost.global.config.json")
             .ignoreCache(false)
             .build();
 
@@ -303,7 +307,7 @@ public class TestWalletV3R2Short extends CommonTest {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .pathToGlobalConfig("http://127.0.0.1:8000/localhost.global.config.json")
             .ignoreCache(false)
             .build();
 
@@ -325,7 +329,7 @@ public class TestWalletV3R2Short extends CommonTest {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .pathToGlobalConfig("http://127.0.0.1:8000/localhost.global.config.json")
             .ignoreCache(false)
             .build();
 
@@ -347,7 +351,7 @@ public class TestWalletV3R2Short extends CommonTest {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .pathToGlobalConfig("http://127.0.0.1:8000/localhost.global.config.json")
             .ignoreCache(false)
             .build();
 
@@ -369,7 +373,7 @@ public class TestWalletV3R2Short extends CommonTest {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .pathToGlobalConfig("http://127.0.0.1:8000/localhost.global.config.json")
             .ignoreCache(false)
             .build();
 
@@ -391,7 +395,7 @@ public class TestWalletV3R2Short extends CommonTest {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
-            .pathToGlobalConfig("g:/libs/global.config-mlt.json")
+            .pathToGlobalConfig("http://127.0.0.1:8000/localhost.global.config.json")
             .ignoreCache(false)
             .build();
 
@@ -451,5 +455,171 @@ public class TestWalletV3R2Short extends CommonTest {
     log.info("extMessageInfo: {}", extMessageInfo);
     contract.waitForBalanceChange();
     assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
+  }
+
+  @Test
+  public void testWalletV3R2AdnlLiteClient() throws Exception {
+
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+    WalletV3R2 contract1 =
+        WalletV3R2.builder().adnlLiteClient(adnlLiteClient).keyPair(keyPair).walletId(42).build();
+
+    String nonBounceableAddress1 = contract1.getAddress().toNonBounceable();
+    String bounceableAddress1 = contract1.getAddress().toBounceable();
+    String rawAddress1 = contract1.getAddress().toRaw();
+
+    log.info("non-bounceable address 1: {}", nonBounceableAddress1);
+    log.info("    bounceable address 1: {}", bounceableAddress1);
+    log.info("    raw address 1: {}", rawAddress1);
+    log.info("pub-key {}", Utils.bytesToHex(contract1.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract1.getKeyPair().getSecretKey()));
+
+    WalletV3R2 contract2 =
+        WalletV3R2.builder().adnlLiteClient(adnlLiteClient).keyPair(keyPair).walletId(98).build();
+
+    String nonBounceableAddress2 = contract2.getAddress().toNonBounceable();
+    String bounceableAddress2 = contract2.getAddress().toBounceable();
+    String rawAddress2 = contract2.getAddress().toRaw();
+
+    log.info("non-bounceable address 2: {}", nonBounceableAddress2);
+    log.info("    bounceable address 2: {}", bounceableAddress2);
+    log.info("    raw address 2: {}", rawAddress2);
+
+    log.info("pub-key {}", Utils.bytesToHex(contract2.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract2.getKeyPair().getSecretKey()));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance1 =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress1), Utils.toNano(1));
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract1.getWalletId(),
+        contract1.getName(),
+        Utils.formatNanoValue(balance1));
+
+    BigInteger balance2 =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress2), Utils.toNano(1));
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract2.getWalletId(),
+        contract2.getName(),
+        Utils.formatNanoValue(balance2));
+
+    ExtMessageInfo extMessageInfo = contract1.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract1.waitForDeployment(30);
+
+    extMessageInfo = contract2.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract2.waitForDeployment(30);
+
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(contract1.getSeqno())
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.8))
+            .comment("testWalletV3R2-42")
+            .build();
+
+    // transfer coins from new wallet (back to faucet)
+    extMessageInfo = contract1.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract1.waitForBalanceChange(90);
+
+    config =
+        WalletV3Config.builder()
+            .walletId(98)
+            .seqno(contract2.getSeqno())
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.7))
+            .comment("testWalletV3R2-98")
+            .build();
+
+    extMessageInfo = contract2.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract2.waitForBalanceChange(90);
+
+    balance1 = contract1.getBalance();
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract1.getWalletId(),
+        contract1.getName(),
+        Utils.formatNanoValue(balance1));
+
+    balance2 = contract2.getBalance();
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract2.getWalletId(),
+        contract2.getName(),
+        Utils.formatNanoValue(balance2));
+
+    log.info("1 seqno {}", contract1.getSeqno());
+    log.info("1 pubkey {}", contract1.getPublicKey());
+
+    log.info("2 seqno {}", contract2.getSeqno());
+    log.info("2 pubkey {}", contract2.getPublicKey());
+
+    assertThat(contract1.getPublicKey()).isEqualTo(contract2.getPublicKey());
+
+    log.info("txs of wallet1");
+    TransactionList txs = adnlLiteClient.getTransactions(contract1.getAddress(), 0, null, 100);
+    for (Transaction tx : txs.getTransactionsParsed()) {
+      if (nonNull(tx.getInOut().getIn())
+          && StringUtils.isNotEmpty(tx.getInOut().getIn().getInfo().getSourceAddress())) {
+        log.info(
+            "{}, {} <<<<< {} : {}, comment: {} ",
+            Utils.toUTC(tx.getNow()),
+            tx.getInOut().getIn().getInfo().getSourceAddress(),
+            tx.getInOut().getIn().getInfo().getDestinationAddress(),
+            Utils.formatNanoValue(tx.getInOut().getIn().getInfo().getValueCoins()),
+            tx.getInOut().getIn().getComment());
+      }
+      if (nonNull(tx.getInOut().getOut())) {
+        for (Message msg : tx.getInOut().getOutMessages()) {
+          log.info(
+              "{}, {} >>>>> {} : {}, comment: {}",
+              Utils.toUTC(tx.getNow()),
+              msg.getInfo().getSourceAddress(),
+              msg.getInfo().getDestinationAddress(),
+              Utils.formatNanoValue(msg.getInfo().getValueCoins()),
+              msg.getComment());
+        }
+      }
+    }
+
+    log.info("txs of wallet2");
+    txs = adnlLiteClient.getTransactions(contract2.getAddress(), 0, null, 100);
+    for (Transaction tx : txs.getTransactionsParsed()) {
+      if (nonNull(tx.getInOut().getIn())
+          && StringUtils.isNotEmpty(tx.getInOut().getIn().getInfo().getSourceAddress())) {
+        log.info(
+            "{}, {} <<<<< {} : {}, comment: {} ",
+            Utils.toUTC(tx.getNow()),
+            tx.getInOut().getIn().getInfo().getSourceAddress(),
+            tx.getInOut().getIn().getInfo().getDestinationAddress(),
+            Utils.formatNanoValue(tx.getInOut().getIn().getInfo().getValueCoins()),
+            tx.getInOut().getIn().getComment());
+      }
+      if (nonNull(tx.getInOut().getOut())) {
+        for (Message msg : tx.getInOut().getOutMessages()) {
+          log.info(
+              "{}, {} >>>>> {} : {}, comment: {}",
+              Utils.toUTC(tx.getNow()),
+              msg.getInfo().getSourceAddress(),
+              msg.getInfo().getDestinationAddress(),
+              Utils.formatNanoValue(msg.getInfo().getValueCoins()),
+              msg.getComment());
+        }
+      }
+    }
   }
 }

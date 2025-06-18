@@ -6,6 +6,7 @@ import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.SendMode;
@@ -99,5 +100,38 @@ public class TestWalletV3R1Short extends CommonTest {
     log.info("extMessageInfo: {}", extMessageInfo);
     contract.waitForBalanceChange(120);
     assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
+  }
+
+  @Test
+  public void testWalletV3R1AdnlLiteClient() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+    WalletV3R1 contract = WalletV3R1.builder().adnlLiteClient(adnlLiteClient).walletId(42).build();
+    log.info("pub key: {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv key: {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(adnlLiteClient, contract.getAddress(), Utils.toNano(0.1));
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract.getWalletId(),
+        contract.getName(),
+        Utils.formatNanoValue(balance));
+
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    log.info(extMessageInfo.toString());
+    contract.waitForDeployment(60);
+    // send toncoins
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(contract.getSeqno())
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
+            .amount(Utils.toNano(0.08))
+            .comment("testWalletV3R1")
+            .build();
+    extMessageInfo = contract.send(config);
+    log.info(extMessageInfo.toString());
   }
 }

@@ -359,7 +359,7 @@ public class WalletV4R2 implements Contract {
               VmStackValueInt.builder().value(BigInteger.valueOf(pluginAddress.wc)).build(),
               VmStackValueInt.builder().value(new BigInteger(hashPart)).build());
 
-      return runMethodResult.getIntFromResult(0).intValue() != 0;
+      return runMethodResult.getIntByIndex(0).intValue() != 0;
     } else {
       Deque<String> stack = new ArrayDeque<>();
       stack.offer("[num, " + pluginAddress.wc + "]");

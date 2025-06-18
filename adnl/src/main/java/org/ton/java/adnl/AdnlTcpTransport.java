@@ -293,8 +293,10 @@ public class AdnlTcpTransport {
 
       if (!Arrays.equals(receivedChecksum, calculatedChecksum)) {
         log.info("Invalid packet checksum");
-        log.info("Received checksum: {}", CryptoUtils.hex(receivedChecksum));
-        log.info("Calculated checksum: {}", CryptoUtils.hex(calculatedChecksum));
+        log.info(
+            "Received checksum: {}, Calculated checksum: {}",
+            CryptoUtils.hex(receivedChecksum),
+            CryptoUtils.hex(calculatedChecksum));
         return;
       }
 

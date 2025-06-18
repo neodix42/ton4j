@@ -24,7 +24,7 @@ public class IntermediateAddressExt implements IntermediateAddress, Serializable
     return CellBuilder.beginCell()
         .storeBit(true)
         .storeBit(true)
-        .storeUint(workchainId, 32)
+        .storeInt(workchainId, 32)
         .storeUint(addrPfx, 64)
         .endCell();
   }

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
@@ -118,6 +119,57 @@ public class TestWalletV3R1 extends CommonTest {
     RawTransaction tx = tonlib.sendRawMessageWithConfirmation(msg.toCell().toBase64(), address);
     log.info("msg found in tx {}", tx);
     assertThat(tx).isNotNull();
+
+    contract.waitForDeployment(40);
+
+    // try to transfer coins from new wallet (back to faucet)
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .seqno(contract.getSeqno())
+            .walletId(42)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.8))
+            .comment("testWalletV3R1")
+            .build();
+
+    ExtMessageInfo extMessageInfo = contract.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForBalanceChange(90);
+
+    balance = contract.getBalance();
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
+  }
+
+  @Test
+  public void testWalletV3R1SendRawMessageWithConfirmationAdnlLiteClient() throws Exception {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+    WalletV3R1 contract =
+        WalletV3R1.builder().adnlLiteClient(adnlLiteClient).keyPair(keyPair).walletId(42).build();
+
+    Message msg =
+        MsgUtils.createExternalMessageWithSignedBody(
+            keyPair,
+            contract.getAddress(),
+            contract.getStateInit(),
+            CellBuilder.beginCell()
+                .storeUint(42, 32) // subwallet
+                .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32) // valid-until
+                .storeUint(0, 32) // seqno
+                .endCell());
+    Address address = msg.getInit().getAddress();
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(address.toNonBounceable()), Utils.toNano(1));
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    // deploy new wallet
+    adnlLiteClient.sendRawMessageWithConfirmation(msg, address);
 
     contract.waitForDeployment(40);
 

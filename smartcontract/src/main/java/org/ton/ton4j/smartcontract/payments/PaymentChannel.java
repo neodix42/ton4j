@@ -6,6 +6,7 @@ import static org.ton.ton4j.smartcontract.payments.PaymentsUtils.*;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.adnl.AdnlLiteClient;
@@ -19,6 +20,9 @@ import org.ton.ton4j.smartcontract.types.ChannelData;
 import org.ton.ton4j.smartcontract.types.ChannelState;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
+import org.ton.ton4j.tlb.VmStackValue;
+import org.ton.ton4j.tlb.VmTuple;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.utils.Utils;
@@ -327,96 +331,160 @@ public class PaymentChannel implements Contract {
   }
 
   public BigInteger getChannelState() {
-    RunResult result = tonlib.runMethod(getAddress(), "get_channel_state");
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_channel_state");
+      return runMethodResult.getIntByIndex(0);
+    } else {
+      RunResult result = tonlib.runMethod(getAddress(), "get_channel_state");
 
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_channel_state, returned an exit code " + result.getExit_code());
+      if (result.getExit_code() != 0) {
+        throw new Error("method get_channel_state, returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntryNumber addr = (TvmStackEntryNumber) result.getStack().get(0);
+      return addr.getNumber();
     }
-
-    TvmStackEntryNumber addr = (TvmStackEntryNumber) result.getStack().get(0);
-    return addr.getNumber();
   }
 
   public ChannelData getData() {
-    RunResult result = tonlib.runMethod(getAddress(), "get_channel_data");
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_channel_data");
 
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_channel_data, returned an exit code " + result.getExit_code());
+      BigInteger stateNumber = runMethodResult.getIntByIndex(0);
+
+      VmTuple balanceTuple = runMethodResult.getTupleByIndex(1);
+      BigInteger balanceA = balanceTuple.getIntByIndex(0);
+      BigInteger balanceB = balanceTuple.getIntByIndex(1);
+
+      VmTuple keyTuple = runMethodResult.getTupleByIndex(2);
+      BigInteger publicKeyA = keyTuple.getIntByIndex(0);
+      BigInteger publicKeyB = keyTuple.getIntByIndex(1);
+
+      BigInteger channelIdNumber = runMethodResult.getIntByIndex(3);
+
+      VmTuple closureConfigTuple = runMethodResult.getTupleByIndex(4);
+      BigInteger quarantineDuration = closureConfigTuple.getIntByIndex(0);
+      BigInteger misbehaviourFine = closureConfigTuple.getIntByIndex(1);
+      BigInteger conditionalCloseDuration = closureConfigTuple.getIntByIndex(2);
+
+      VmTuple commitedSeqnoTuple = runMethodResult.getTupleByIndex(5);
+      BigInteger seqnoA = commitedSeqnoTuple.getIntByIndex(0);
+      BigInteger seqnoB = commitedSeqnoTuple.getIntByIndex(1);
+
+      Cell quarantine = null;
+      List<VmStackValue> quarantineList = runMethodResult.getListByIndex(6);
+      for (VmStackValue o : quarantineList) {
+        TvmStackEntryCell t = (TvmStackEntryCell) o;
+        quarantine = CellBuilder.beginCell().fromBoc(t.getCell().getBytes()).endCell();
+      }
+
+      VmTuple trippleTuple = runMethodResult.getTupleByIndex(7);
+      BigInteger excessFee = trippleTuple.getIntByIndex(0);
+      Cell addressCellA = trippleTuple.getCellByIndex(1);
+      Address addressA = NftUtils.parseAddress(addressCellA);
+      Cell addressCellB = trippleTuple.getCellByIndex(2);
+      Address addressB = NftUtils.parseAddress(addressCellB);
+
+      return ChannelData.builder()
+          .state(stateNumber.longValue())
+          .balanceA(balanceA)
+          .balanceB(balanceB)
+          .publicKeyA(publicKeyA.toByteArray())
+          .publicKeyB(publicKeyB.toByteArray())
+          .channelId(channelIdNumber)
+          .quarantineDuration(quarantineDuration.longValue())
+          .misbehaviorFine(misbehaviourFine)
+          .conditionalCloseDuration(conditionalCloseDuration.longValue())
+          .seqnoA(seqnoA)
+          .seqnoB(seqnoB)
+          .quarantine(quarantine)
+          .excessFee(excessFee)
+          .addressA(addressA)
+          .addressB(addressB)
+          .build();
+    } else {
+      RunResult result = tonlib.runMethod(getAddress(), "get_channel_data");
+
+      if (result.getExit_code() != 0) {
+        throw new Error("method get_channel_data, returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntryNumber stateNumber = (TvmStackEntryNumber) result.getStack().get(0);
+
+      TvmStackEntryTuple balanceTuple = (TvmStackEntryTuple) result.getStack().get(1);
+      TvmStackEntryNumber balanceA =
+          (TvmStackEntryNumber) balanceTuple.getTuple().getElements().get(0);
+      TvmStackEntryNumber balanceB =
+          (TvmStackEntryNumber) balanceTuple.getTuple().getElements().get(1);
+
+      TvmStackEntryTuple keyTuple = (TvmStackEntryTuple) result.getStack().get(2);
+      TvmStackEntryNumber publicKeyA =
+          (TvmStackEntryNumber) keyTuple.getTuple().getElements().get(0);
+      TvmStackEntryNumber publicKeyB =
+          (TvmStackEntryNumber) keyTuple.getTuple().getElements().get(1);
+
+      TvmStackEntryNumber channelIdNumber = (TvmStackEntryNumber) result.getStack().get(3);
+
+      TvmStackEntryTuple closureConfigTuple = (TvmStackEntryTuple) result.getStack().get(4);
+      TvmStackEntryNumber quarantineDuration =
+          (TvmStackEntryNumber) closureConfigTuple.getTuple().getElements().get(0);
+      TvmStackEntryNumber misbehaviourFine =
+          (TvmStackEntryNumber) closureConfigTuple.getTuple().getElements().get(1);
+      TvmStackEntryNumber conditionalCloseDuration =
+          (TvmStackEntryNumber) closureConfigTuple.getTuple().getElements().get(2);
+
+      TvmStackEntryTuple commitedSeqnoTuple = (TvmStackEntryTuple) result.getStack().get(5);
+      TvmStackEntryNumber seqnoA =
+          (TvmStackEntryNumber) commitedSeqnoTuple.getTuple().getElements().get(0);
+      TvmStackEntryNumber seqnoB =
+          (TvmStackEntryNumber) commitedSeqnoTuple.getTuple().getElements().get(1);
+
+      Cell quarantine = null;
+      TvmStackEntryList quarantineList = (TvmStackEntryList) result.getStack().get(6);
+      for (Object o : quarantineList.getList().getElements()) {
+        TvmStackEntryCell t = (TvmStackEntryCell) o;
+        quarantine = CellBuilder.beginCell().fromBoc(t.getCell().getBytes()).endCell();
+      }
+
+      TvmStackEntryTuple trippleTuple = (TvmStackEntryTuple) result.getStack().get(7);
+      TvmStackEntryNumber excessFee =
+          (TvmStackEntryNumber) trippleTuple.getTuple().getElements().get(0);
+
+      TvmStackEntrySlice addressACell =
+          (TvmStackEntrySlice) trippleTuple.getTuple().getElements().get(1);
+
+      Address addressA =
+          NftUtils.parseAddress(
+              CellBuilder.beginCell()
+                  .fromBoc(Utils.base64ToBytes(addressACell.getSlice().getBytes()))
+                  .endCell());
+
+      TvmStackEntrySlice AddressBCell =
+          (TvmStackEntrySlice) trippleTuple.getTuple().getElements().get(2);
+
+      Address addressB =
+          NftUtils.parseAddress(
+              CellBuilder.beginCell()
+                  .fromBoc(Utils.base64ToBytes(AddressBCell.getSlice().getBytes()))
+                  .endCell());
+
+      return ChannelData.builder()
+          .state(stateNumber.getNumber().longValue())
+          .balanceA(balanceA.getNumber())
+          .balanceB(balanceB.getNumber())
+          .publicKeyA(publicKeyA.getNumber().toByteArray())
+          .publicKeyB(publicKeyB.getNumber().toByteArray())
+          .channelId(channelIdNumber.getNumber())
+          .quarantineDuration(quarantineDuration.getNumber().longValue())
+          .misbehaviorFine(misbehaviourFine.getNumber())
+          .conditionalCloseDuration(conditionalCloseDuration.getNumber().longValue())
+          .seqnoA(seqnoA.getNumber())
+          .seqnoB(seqnoB.getNumber())
+          .quarantine(quarantine)
+          .excessFee(excessFee.getNumber())
+          .addressA(addressA)
+          .addressB(addressB)
+          .build();
     }
-
-    TvmStackEntryNumber stateNumber = (TvmStackEntryNumber) result.getStack().get(0);
-
-    TvmStackEntryTuple balanceTuple = (TvmStackEntryTuple) result.getStack().get(1);
-    TvmStackEntryNumber balanceA =
-        (TvmStackEntryNumber) balanceTuple.getTuple().getElements().get(0);
-    TvmStackEntryNumber balanceB =
-        (TvmStackEntryNumber) balanceTuple.getTuple().getElements().get(1);
-
-    TvmStackEntryTuple keyTuple = (TvmStackEntryTuple) result.getStack().get(2);
-    TvmStackEntryNumber publicKeyA = (TvmStackEntryNumber) keyTuple.getTuple().getElements().get(0);
-    TvmStackEntryNumber publicKeyB = (TvmStackEntryNumber) keyTuple.getTuple().getElements().get(1);
-
-    TvmStackEntryNumber channelIdNumber = (TvmStackEntryNumber) result.getStack().get(3);
-
-    TvmStackEntryTuple closureConfigTuple = (TvmStackEntryTuple) result.getStack().get(4);
-    TvmStackEntryNumber quarantineDuration =
-        (TvmStackEntryNumber) closureConfigTuple.getTuple().getElements().get(0);
-    TvmStackEntryNumber misbehaviourFine =
-        (TvmStackEntryNumber) closureConfigTuple.getTuple().getElements().get(1);
-    TvmStackEntryNumber conditionalCloseDuration =
-        (TvmStackEntryNumber) closureConfigTuple.getTuple().getElements().get(2);
-
-    TvmStackEntryTuple commitedSeqnoTuple = (TvmStackEntryTuple) result.getStack().get(5);
-    TvmStackEntryNumber seqnoA =
-        (TvmStackEntryNumber) commitedSeqnoTuple.getTuple().getElements().get(0);
-    TvmStackEntryNumber seqnoB =
-        (TvmStackEntryNumber) commitedSeqnoTuple.getTuple().getElements().get(1);
-
-    Cell quarantine = null;
-    TvmStackEntryList quarantineList = (TvmStackEntryList) result.getStack().get(6);
-    for (Object o : quarantineList.getList().getElements()) {
-      TvmStackEntryCell t = (TvmStackEntryCell) o;
-      quarantine = CellBuilder.beginCell().fromBoc(t.getCell().getBytes()).endCell();
-    }
-
-    TvmStackEntryTuple trippleTuple = (TvmStackEntryTuple) result.getStack().get(7);
-    TvmStackEntryNumber excessFee =
-        (TvmStackEntryNumber) trippleTuple.getTuple().getElements().get(0);
-
-    TvmStackEntrySlice addressACell =
-        (TvmStackEntrySlice) trippleTuple.getTuple().getElements().get(1);
-
-    Address addressA =
-        NftUtils.parseAddress(
-            CellBuilder.beginCell()
-                .fromBoc(Utils.base64ToBytes(addressACell.getSlice().getBytes()))
-                .endCell());
-
-    TvmStackEntrySlice AddressBCell =
-        (TvmStackEntrySlice) trippleTuple.getTuple().getElements().get(2);
-
-    Address addressB =
-        NftUtils.parseAddress(
-            CellBuilder.beginCell()
-                .fromBoc(Utils.base64ToBytes(AddressBCell.getSlice().getBytes()))
-                .endCell());
-
-    return ChannelData.builder()
-        .state(stateNumber.getNumber().longValue())
-        .balanceA(balanceA.getNumber())
-        .balanceB(balanceB.getNumber())
-        .publicKeyA(publicKeyA.getNumber().toByteArray())
-        .publicKeyB(publicKeyB.getNumber().toByteArray())
-        .channelId(channelIdNumber.getNumber())
-        .quarantineDuration(quarantineDuration.getNumber().longValue())
-        .misbehaviorFine(misbehaviourFine.getNumber())
-        .conditionalCloseDuration(conditionalCloseDuration.getNumber().longValue())
-        .seqnoA(seqnoA.getNumber())
-        .seqnoB(seqnoB.getNumber())
-        .quarantine(quarantine)
-        .excessFee(excessFee.getNumber())
-        .addressA(addressA)
-        .addressB(addressB)
-        .build();
   }
 }

@@ -14,10 +14,14 @@ import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.smartcontract.token.nft.NftUtils;
 import org.ton.ton4j.smartcontract.types.JettonMinterData;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
+import org.ton.ton4j.tlb.VmCellSlice;
+import org.ton.ton4j.tlb.VmStackValueCell;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryCell;
@@ -97,7 +101,7 @@ public class JettonMinterStableCoin implements Contract {
           .storeAddress(nextAdminAddress)
           .storeRef(CellBuilder.beginCell().fromBoc(code).endCell())
           .storeRef(content)
-          //                .storeRef(NftUtils.createOnchainDataCell(jettonContentUri, 6L))
+          //          .storeRef(NftUtils.createOnChainDataCell(jettonContentUri, 6L))
           .endCell();
     } else {
       return CellBuilder.beginCell()
@@ -109,7 +113,7 @@ public class JettonMinterStableCoin implements Contract {
                   .fromBoc(WalletCodes.jettonMinterStableCoin.getValue())
                   .endCell())
           .storeRef(content)
-          //                .storeRef(NftUtils.createOnchainDataCell(jettonContentUri, 6L))
+          //          .storeRef(NftUtils.createOnChainDataCell(jettonContentUri, 6L))
           .endCell();
     }
   }
@@ -219,6 +223,34 @@ public class JettonMinterStableCoin implements Contract {
    * @return JettonData
    */
   public JettonMinterData getJettonData() {
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult;
+      if (nonNull(customAddress)) {
+        runMethodResult = adnlLiteClient.runMethod(customAddress, "get_jetton_data");
+      } else {
+        runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_jetton_data");
+      }
+
+      BigInteger totalSupply = runMethodResult.getIntByIndex(0);
+      boolean isMutable = runMethodResult.getIntByIndex(1).intValue() == -1;
+      VmCellSlice slice = runMethodResult.getSliceByIndex(2);
+      Address adminAddress =
+          CellSlice.beginParse(slice.getCell()).skipBits(slice.getStBits()).loadAddress();
+      Cell jettonContentCell = runMethodResult.getCellByIndex(3);
+      String jettonContentUri = null;
+
+      jettonContentUri = NftUtils.parseOnChainUriCell(jettonContentCell);
+      Cell jettonWalletCode = runMethodResult.getCellByIndex(4);
+
+      return JettonMinterData.builder()
+          .totalSupply(totalSupply)
+          .isMutable(isMutable)
+          .adminAddress(adminAddress)
+          .jettonContentCell(jettonContentCell)
+          .jettonContentUri(jettonContentUri)
+          .jettonWalletCode(jettonWalletCode)
+          .build();
+    }
     RunResult result;
     if (nonNull(customAddress)) {
       result = tonlib.runMethod(customAddress, "get_jetton_data");
@@ -269,6 +301,16 @@ public class JettonMinterStableCoin implements Contract {
   }
 
   public BigInteger getTotalSupply() {
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult;
+      if (nonNull(customAddress)) {
+        runMethodResult = adnlLiteClient.runMethod(customAddress, "get_jetton_data");
+      } else {
+        runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_jetton_data");
+      }
+      return runMethodResult.getIntByIndex(0);
+    }
+
     RunResult result;
     if (nonNull(customAddress)) {
       result = tonlib.runMethod(customAddress, "get_jetton_data"); // minter
@@ -281,12 +323,35 @@ public class JettonMinterStableCoin implements Contract {
   }
 
   public JettonWalletStableCoin getJettonWallet(Address ownerAddress) {
-    CellBuilder cell = CellBuilder.beginCell();
-    cell.storeAddress(ownerAddress);
+    Cell cellAddr = CellBuilder.beginCell().storeAddress(ownerAddress).endCell();
+    if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult;
+      if (nonNull(customAddress)) {
+        runMethodResult =
+            adnlLiteClient.runMethod(
+                customAddress,
+                "get_wallet_address",
+                VmStackValueCell.builder().cell(cellAddr).build());
+      } else {
+        runMethodResult =
+            adnlLiteClient.runMethod(
+                getAddress(),
+                "get_wallet_address",
+                VmStackValueCell.builder().cell(cellAddr).build());
+      }
+      VmCellSlice slice = runMethodResult.getSliceByIndex(0);
+      Address jettonWalletAddress =
+          CellSlice.beginParse(slice.getCell()).skipBits(slice.getStBits()).loadAddress();
+
+      return JettonWalletStableCoin.builder()
+          .adnlLiteClient(adnlLiteClient)
+          .address(jettonWalletAddress)
+          .build();
+    }
 
     Deque<String> stack = new ArrayDeque<>();
 
-    stack.offer("[slice, " + cell.endCell().toHex(true) + "]");
+    stack.offer("[slice, " + cellAddr.toHex(true) + "]");
 
     RunResult result;
     if (nonNull(customAddress)) {

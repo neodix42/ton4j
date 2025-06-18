@@ -47,7 +47,9 @@ public class TestnetJettonFaucet {
             .customAddress(Address.of(FAUCET_MASTER_ADDRESS))
             .build();
 
+    System.out.println("tonlib - adminWallet " + adminWallet.getAddress().toRaw());
     JettonWallet adminJettonWallet = jettonMinterWallet.getJettonWallet(adminWallet.getAddress());
+    System.out.println("tonlib - adminJettonWallet " + adminJettonWallet.getAddress().toRaw());
 
     WalletV3Config walletV3Config =
         WalletV3Config.builder()
@@ -100,7 +102,9 @@ public class TestnetJettonFaucet {
             .customAddress(Address.of(FAUCET_MASTER_ADDRESS))
             .build();
 
+    System.out.println("adnl - adminWallet " + adminWallet.getAddress().toRaw());
     JettonWallet adminJettonWallet = jettonMinterWallet.getJettonWallet(adminWallet.getAddress());
+    System.out.println("adnl - adminJettonWallet " + adminJettonWallet.getAddress().toRaw());
 
     WalletV3Config walletV3Config =
         WalletV3Config.builder()

@@ -95,6 +95,9 @@ public class WalletV3R2 implements Contract {
   }
 
   public String getPublicKey() {
+    if (nonNull(adnlLiteClient)) {
+      return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
+    }
 
     RunResult result = tonlib.runMethod(getAddress(), "get_public_key");
 

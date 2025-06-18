@@ -14,6 +14,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -936,6 +937,260 @@ public class TestWalletMultiSig extends CommonTest {
 
     Cell c = Cell.fromBoc(bocHexWithCrc);
     System.out.println("print c: \n" + c.print());
+  }
+
+  @Test
+  public void testWalletMultiSigOfflineAdnlClient() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
+    log.info("pubKey2 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
+    log.info("pubKey3 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
+    log.info("pubKey4 {}", Utils.bytesToHex(keyPair4.getPublicKey()));
+    log.info("pubKey5 {}", Utils.bytesToHex(keyPair5.getPublicKey()));
+
+    BigInteger queryId = new BigInteger("9223372036854775807");
+
+    Long walletId = 1045609917L;
+    log.info("queryId {}, walletId {}", queryId, walletId);
+
+    int rootIndex = 0;
+    int pubkey2Index = 1;
+    int pubkey3Index = 2;
+    int pubkey4Index = 3;
+    int pubkey5Index = 4;
+    int k = 3;
+    int n = 5;
+
+    MultiSigWallet contract =
+        MultiSigWallet.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(ownerKeyPair)
+            .walletId(walletId)
+            .config(
+                MultiSigConfig.builder()
+                    .queryId(queryId)
+                    .k(k)
+                    .n(n)
+                    .rootI(rootIndex)
+                    .owners(
+                        Arrays.asList(
+                            OwnerInfo.builder()
+                                .publicKey(ownerKeyPair.getPublicKey())
+                                .flood(1)
+                                .build(),
+                            OwnerInfo.builder().publicKey(keyPair2.getPublicKey()).flood(2).build(),
+                            OwnerInfo.builder().publicKey(keyPair3.getPublicKey()).flood(3).build(),
+                            OwnerInfo.builder().publicKey(keyPair4.getPublicKey()).flood(4).build(),
+                            OwnerInfo.builder()
+                                .publicKey(keyPair5.getPublicKey())
+                                .flood(5)
+                                .build()))
+                    .build())
+            .build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(5));
+    Utils.sleep(30, "topping up...");
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForDeployment(30); // with empty ext-msg
+
+    log.info("owners publicKeys {}", contract.getPublicKeys());
+    log.info("owners publicKeysHex {}", contract.getPublicKeysHex());
+
+    Pair<Long, Long> n_k = contract.getNandK();
+    log.info("n {}, k {}", n_k.getLeft(), n_k.getRight());
+
+    // You can include up to 3 destinations
+    Cell msg1 =
+        MultiSigWallet.createOneInternalMsg(
+            Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.5), 3);
+    Cell msg2 =
+        MultiSigWallet.createOneInternalMsg(
+            Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.6), 3);
+    Cell msg3 =
+        MultiSigWallet.createOneInternalMsg(
+            Address.of("EQCAy2ue54I-uDvEgD3qXdqjtrJI4F4OeFn3V10Kgt0jXpQn"), Utils.toNano(0.7), 3);
+
+    // Having message(s) to send you can group it to a new order
+    Cell order = MultiSigWallet.createOrder(walletId, queryId, msg1, msg2, msg3);
+    order.toFile("order.boc");
+
+    byte[] orderSignatureUser1 = MultiSigWallet.signOrder(ownerKeyPair, order);
+    byte[] orderSignatureUser2 = MultiSigWallet.signOrder(keyPair2, order);
+    byte[] orderSignatureUser3 = MultiSigWallet.signOrder(keyPair3, order);
+    byte[] orderSignatureUser4 = MultiSigWallet.signOrder(keyPair4, order);
+    byte[] orderSignatureUser5 = MultiSigWallet.signOrder(keyPair5, order);
+
+    // collected two more signatures
+    Cell signedOrder =
+        MultiSigWallet.addSignatures(
+            order,
+            Arrays.asList(
+                MultisigSignature.builder()
+                    .pubKeyPosition(pubkey3Index)
+                    .signature(orderSignatureUser3)
+                    .build(),
+                MultisigSignature.builder()
+                    .pubKeyPosition(pubkey4Index)
+                    .signature(orderSignatureUser4)
+                    .build(),
+                MultisigSignature.builder()
+                    .pubKeyPosition(pubkey5Index)
+                    .signature(orderSignatureUser5)
+                    .build()));
+
+    signedOrder.toFile("signedOrder.boc", false);
+
+    // submitter keypair must come from User3 or User4, otherwise you get error 34
+    extMessageInfo = contract.sendOrder(keyPair5, pubkey5Index, signedOrder);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForBalanceChange(30);
+
+    Pair<Long, Long> queryState = contract.getQueryState(queryId);
+    log.info(
+        "get_query_state (query {}): status {}, mask {}",
+        queryId,
+        queryState.getLeft(),
+        queryState.getRight());
+
+    assertThat(queryState.getLeft()).isEqualTo(-1);
+  }
+
+  @Test
+  public void testMergePendingQueriesAdnlClient() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    log.info("pubKey0 {}", Utils.bytesToHex(ownerKeyPair.getPublicKey()));
+    log.info("pubKey1 {}", Utils.bytesToHex(keyPair2.getPublicKey()));
+    log.info("pubKey2 {}", Utils.bytesToHex(keyPair3.getPublicKey()));
+
+    BigInteger queryId1 =
+        BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 10 * 60L, 32));
+    BigInteger queryId2 =
+        BigInteger.valueOf((long) Math.pow(Instant.now().getEpochSecond() + 10 * 60L, 32) - 5);
+
+    long walletId = new Random().nextLong() & 0xffffffffL;
+    log.info("queryId-1 {}, walletId {}", queryId1.toString(10), walletId);
+
+    int k = 2;
+    int n = 3;
+
+    Cell msg1 =
+        MultiSigWallet.createOneInternalMsg(
+            Address.of("EQAaGHUHfkpWFGs428ETmym4vbvRNxCA1o4sTkwqigKjgf-_"), Utils.toNano(0.3), 3);
+    Cell msg2 =
+        MultiSigWallet.createOneInternalMsg(
+            Address.of("EQDUna0j-TKlMU9pOBBHNoLzpwlewHl7S1qXtnaYdTTs_Ict"), Utils.toNano(0.4), 3);
+
+    MultiSigWallet contract =
+        MultiSigWallet.builder()
+            .adnlLiteClient(adnlLiteClient)
+            .keyPair(ownerKeyPair)
+            .walletId(walletId)
+            .config(
+                MultiSigConfig.builder()
+                    .queryId(queryId1)
+                    .k(k)
+                    .n(n)
+                    .rootI(0) // initial root index
+                    .owners(
+                        Arrays.asList(
+                            OwnerInfo.builder()
+                                .publicKey(ownerKeyPair.getPublicKey())
+                                .flood(1)
+                                .build(),
+                            OwnerInfo.builder()
+                                .publicKey(keyPair2.getPublicKey())
+                                .flood(2)
+                                .build()))
+                    .build())
+            .build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(1));
+    Utils.sleep(30, "topping up...");
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    contract.waitForDeployment(45); // with empty ext msg
+
+    log.info("owners publicKeysHex {}", contract.getPublicKeysHex());
+    Cell dict1 =
+        MultiSigWallet.createPendingQueries(
+            Arrays.asList(
+                PendingQuery.builder()
+                    .queryId(queryId1)
+                    .creatorI(0)
+                    .cnt(2) // number of confirmation
+                    .cntBits(3) // bit mask of confirmed pubkeys
+                    .msg(msg1)
+                    .build(),
+                PendingQuery.builder()
+                    .queryId(queryId2)
+                    .creatorI(0)
+                    .cnt(2)
+                    .cntBits(3)
+                    .msg(msg1)
+                    .build()),
+            n);
+
+    Cell dict2 =
+        MultiSigWallet.createPendingQueries(
+            Arrays.asList(
+                PendingQuery.builder()
+                    .queryId(queryId1)
+                    .creatorI(0)
+                    .cnt(2)
+                    .cntBits(3)
+                    .msg(msg1)
+                    .build(),
+                PendingQuery.builder()
+                    .queryId(queryId2)
+                    .creatorI(0)
+                    .cnt(2)
+                    .cntBits(3)
+                    .msg(msg1)
+                    .build()),
+            n);
+
+    log.info("pendingQueriesToMerge1 {}", dict1.toHex(false));
+    log.info("pendingQueriesToMerge2 {}", dict2.toHex(false));
+    log.info("pendingQueriesToMerge1-hash {}", Utils.bytesToHex(dict1.getHash()));
+    log.info("pendingQueriesToMerge2-hash {}", Utils.bytesToHex(dict2.getHash()));
+
+    Cell mergeDict = contract.mergePendingQueries(adnlLiteClient, dict1, dict2);
+    log.info("merged dict {}", mergeDict);
+    assertThat(mergeDict).isNotNull();
   }
 
   private Cell createOwnersInfoDict(List<OwnerInfo> testOwnerInfos) {

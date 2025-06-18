@@ -16,6 +16,7 @@ import org.ton.ton4j.tl.liteserver.responses.SendMsgStatus;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
+import org.ton.ton4j.tonlib.types.ExtraCurrency;
 import org.ton.ton4j.utils.Utils;
 
 /** Interface for all smart contract objects in ton4j. */

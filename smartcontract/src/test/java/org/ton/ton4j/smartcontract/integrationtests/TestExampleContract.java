@@ -8,9 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.CustomContractConfig;
+import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryNumber;
@@ -82,5 +84,72 @@ public class TestExampleContract extends CommonTest {
     log.info("extra_field: {}", extra_field.getNumber());
 
     assertThat(extra_field.getNumber().longValue()).isEqualTo(42);
+  }
+
+  @Test
+  public void testExampleContractAdnlLiteClient() throws Exception {
+    // echo "F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4" | xxd -r -p - >
+    // new-wallet.pk
+    // byte[] secretKey =
+    // Utils.hexToBytes("F182111193F30D79D517F2339A1BA7C25FDF6C52142F0F2C1D960A1F1D65E1E4");
+    // TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPairFromSeed(secretKey);
+
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    ExampleContract exampleContract =
+        ExampleContract.builder().adnlLiteClient(adnlLiteClient).keyPair(keyPair).build();
+
+    log.info("pubkey {}", Utils.bytesToHex(exampleContract.getKeyPair().getPublicKey()));
+
+    Address address = exampleContract.getAddress();
+    log.info("contract address {}", address);
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(address.toString(true)), Utils.toNano(0.1));
+    log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
+
+    ExtMessageInfo extMessageInfo = exampleContract.deploy();
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    exampleContract.waitForDeployment(45);
+
+    log.info("seqno: {}", exampleContract.getSeqno());
+
+    RunMethodResult result = adnlLiteClient.runMethod(address, "get_x_data");
+
+    log.info("x_data: {}", result.getIntByIndex(0));
+
+    result = adnlLiteClient.runMethod(address, "get_extra_field");
+    log.info("extra_field: {}", result.getIntByIndex(0));
+
+    Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+
+    CustomContractConfig config =
+        CustomContractConfig.builder()
+            .seqno(exampleContract.getSeqno())
+            .destination(destinationAddress)
+            .amount(Utils.toNano(0.05))
+            .extraField(42)
+            .comment("no-way")
+            .build();
+
+    extMessageInfo = exampleContract.send(config);
+    assertThat(extMessageInfo.getError().getCode()).isZero();
+
+    exampleContract.waitForBalanceChange(45);
+
+    result = adnlLiteClient.runMethod(address, "get_extra_field");
+
+    log.info("extra_field: {}", result.getIntByIndex(0));
+
+    assertThat(result.getIntByIndex(0).longValue()).isEqualTo(42);
   }
 }

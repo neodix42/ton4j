@@ -26,7 +26,7 @@ public interface IntermediateAddress {
           .build();
     }
     return IntermediateAddressExt.builder()
-        .workchainId(cs.loadUint(32).intValue())
+        .workchainId(cs.loadInt(32).intValue())
         .addrPfx(cs.loadUint(64))
         .build();
   }

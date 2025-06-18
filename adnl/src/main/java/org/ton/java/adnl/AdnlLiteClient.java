@@ -929,6 +929,14 @@ public class AdnlLiteClient {
     return getAccountState(getMasterchainInfo().getLast(), address).getAccount();
   }
 
+  public String getAccountStatus(Address address) throws Exception {
+    Account account = getAccountState(getMasterchainInfo().getLast(), address).getAccount();
+    if (account == null) {
+      return "UNINIT";
+    }
+    return account.getAccountStorage().getAccountStatus();
+  }
+
   public AccountState getAccountState(BlockIdExt id, Address accountAddress) throws Exception {
     return executeWithRetry(
         () -> {
@@ -1118,7 +1126,7 @@ public class AdnlLiteClient {
       Address accountAddress, String methodName, VmStackValue... params) {
     try {
       List<VmStackValue> vmStackValuesReversed = Arrays.asList(params);
-      Collections.reverse(vmStackValuesReversed);
+      //      Collections.reverse(vmStackValuesReversed);
       VmStack vmStackParams =
           VmStack.builder()
               .depth(vmStackValuesReversed.size())
@@ -1889,7 +1897,7 @@ public class AdnlLiteClient {
     do {
       if (++i * 2 >= timeoutSeconds) {
         throw new Error(
-            "Balance of " + address.toRaw() + "was not changed within specified timeout.");
+            "Balance of " + address.toRaw() + " was not changed within specified timeout.");
       }
       Utils.sleep(2);
     } while (initialBalance.equals(getBalance(address)));
@@ -1934,12 +1942,13 @@ public class AdnlLiteClient {
 
       TransactionList rawTransactions;
       for (int i = 0; i < 12; i++) {
-        rawTransactions = getTransactions(account, 0, null, 10);
+        rawTransactions = getTransactions(account, 0, null, 2);
         for (Transaction tx : rawTransactions.getTransactionsParsed()) {
           if (nonNull(tx.getInOut().getIn())
               && Arrays.equals(
                   tx.getInOut().getIn().getNormalizedHash(), externalMessage.getNormalizedHash())) {
             log.info("Message has been delivered.");
+            return;
           }
         }
         Utils.sleep(5);

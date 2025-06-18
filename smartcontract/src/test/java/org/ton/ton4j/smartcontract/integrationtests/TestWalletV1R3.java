@@ -12,6 +12,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -213,6 +214,49 @@ public class TestWalletV1R3 extends CommonTest {
 
     BigInteger balance =
         TestnetFaucet.topUpContract(tonlib, contract.getAddress(), Utils.toNano(0.1));
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    // deploy using externally signed body
+    Cell deployBody = contract.createDeployMessage();
+
+    byte[] signedDeployBodyHash =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
+
+    ExtMessageInfo extMessageInfo = contract.deploy(signedDeployBodyHash);
+    log.info("extMessageInfo {}", extMessageInfo);
+    contract.waitForDeployment(120);
+
+    // send toncoins
+    WalletV1R3Config config =
+        WalletV1R3Config.builder()
+            .seqno(1)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.08))
+            .comment("testWalletV1R3-signed-externally")
+            .build();
+
+    // transfer coins from new wallet (back to faucet) using externally signed body
+    Cell transferBody = contract.createTransferBody(config);
+    byte[] signedTransferBodyHash =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
+    extMessageInfo = contract.send(config, signedTransferBodyHash);
+    log.info("extMessageInfo: {}", extMessageInfo);
+    contract.waitForBalanceChange(120);
+    Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
+  }
+
+  @Test
+  public void testWalletSignedExternallyAdnlClient() throws Exception {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    byte[] publicKey = keyPair.getPublicKey();
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+    WalletV1R3 contract =
+        WalletV1R3.builder().adnlLiteClient(adnlLiteClient).publicKey(publicKey).build();
+    log.info("pub key: {}", Utils.bytesToHex(publicKey));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(adnlLiteClient, contract.getAddress(), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy using externally signed body

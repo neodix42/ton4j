@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -39,6 +40,31 @@ public class TestDns extends CommonTest {
   @Test
   public void testDnsResolveTestnet() {
     Dns dns = Dns.builder().tonlib(tonlib).build();
+    log.info(
+        "root DNS address = {}",
+        dns.getRootDnsAddress()); // Ef_v5x0Thgr6pq6ur2NvkWhIf4DxAxsL-Nk5rknT6n99oPKX
+
+    Object result = dns.resolve("apple.ton", DNS_CATEGORY_NEXT_RESOLVER, true);
+    String resolvedAddress = ((Address) result).toBounceable();
+    log.info("apple.ton resolved to {}", resolvedAddress);
+    assertThat(resolvedAddress).isNotEmpty();
+
+    //  item EQD9YWaIR_M_FIDQbNP6S8miv-3FU7kIHMRqg_S6bH_bDowf
+    //  owner EQAsEbAKNuRFDkoB6PjYP2dPTdHgt1rX2szkFFHahuDOEkbB
+    //  new owner EQBCMRzsJBTMDqF5JW8Mbq9Ap7b88qKxkwktlZEChtLbiFIH
+    Address addr =
+        (Address) dns.resolve("alice-alice-alice-9.ton", DNS_CATEGORY_NEXT_RESOLVER, true);
+    log.info("alice-alice-alice-9 resolved to {}", addr.toString(true, true, true));
+  }
+
+  @Test
+  public void testDnsResolveTestnetAdnlLiteClient() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    Dns dns = Dns.builder().adnlLiteClient(adnlLiteClient).build();
     log.info("root DNS address = {}", dns.getRootDnsAddress());
 
     Object result = dns.resolve("apple.ton", DNS_CATEGORY_NEXT_RESOLVER, true);
@@ -56,8 +82,27 @@ public class TestDns extends CommonTest {
 
   @Test
   public void testDnsResolveMainnet() {
-    Tonlib tonlib = Tonlib.builder().build();
     Dns dns = Dns.builder().tonlib(tonlib).build();
+    Address rootAddress = dns.getRootDnsAddress();
+    log.info("root DNS address = {}", rootAddress.toString(true, true, true));
+
+    Object result = dns.resolve("apple.ton", DNS_CATEGORY_NEXT_RESOLVER, true);
+    assertThat(result).isNotNull();
+    log.info("apple.ton resolved to {}", ((Address) result).toString(true, true, true));
+
+    Address addr = (Address) dns.getWalletAddress("foundation.ton");
+    log.info("foundation.ton resolved to {}", addr.toString(true, true, true));
+    assertThat(addr).isNotNull();
+  }
+
+  @Test
+  public void testDnsResolveMainnetAdnlLiteClient() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder()
+            .configUrl(Utils.getGlobalConfigUrlTestnetGithub())
+            .liteServerIndex(0)
+            .build();
+    Dns dns = Dns.builder().adnlLiteClient(adnlLiteClient).build();
     Address rootAddress = dns.getRootDnsAddress();
     log.info("root DNS address = {}", rootAddress.toString(true, true, true));
 

@@ -24,6 +24,7 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
+import org.ton.ton4j.tonlib.types.ExtraCurrency;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
@@ -125,9 +126,11 @@ public class HighloadWalletV3 implements Contract {
   }
 
   public String getPublicKey() {
+    if (nonNull(adnlLiteClient)) {
+      return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
+    }
 
-    Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_public_key");
+    RunResult result = tonlib.runMethod(getAddress(), "get_public_key");
 
     if (result.getExit_code() != 0) {
       throw new Error("method get_public_key, returned an exit code " + result.getExit_code());

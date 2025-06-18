@@ -1,12 +1,11 @@
 package org.ton.ton4j.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
-
-import java.io.Serializable;
 
 /**
  *
@@ -28,9 +27,9 @@ public class VmCellSlice implements Serializable {
     return CellBuilder.beginCell()
         .storeRef(cell)
         .storeUint(stBits, 10)
-        .storeUint(endBits, 10)
+        .storeUint(endBits == 0 ? cell.getBitLength() : endBits, 10)
         .storeUint(stRef, 3)
-        .storeUint(endRef, 3)
+        .storeUint(endRef == 0 ? cell.getRefs().size() : endRef, 3)
         .endCell();
   }
 
