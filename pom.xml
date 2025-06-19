@@ -224,9 +224,9 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <executable>C:\Program Files\Git\usr\bin\gpg.exe</executable>
-                </configuration>
+                <!--                <configuration>-->
+                <!--                    <executable>C:\Program Files\Git\usr\bin\gpg.exe</executable>-->
+                <!--                </configuration>-->
             </plugin>
 
             <!-- Nexus Staging Maven Plugin for Deployment and Release -->
