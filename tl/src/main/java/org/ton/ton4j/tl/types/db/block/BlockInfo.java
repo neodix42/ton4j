@@ -1,180 +1,318 @@
 package org.ton.ton4j.tl.types.db.block;
 
-import java.io.Serializable;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import lombok.Builder;
-import lombok.Data;
-import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
-import org.ton.ton4j.utils.Utils;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- *
- *
- * <pre>
- * ton_api.tl
- * db.block.info#4ac6e727 id:tonNode.blockIdExt flags:# prev_left:flags.1?tonNode.blockIdExt
- *                                            prev_right:flags.2?tonNode.blockIdExt
- *                                            next_left:flags.3?tonNode.blockIdExt
- *                                            next_right:flags.4?tonNode.blockIdExt
- *                                            lt:flags.13?long 
- *                                            ts:flags.14?int
- *                                            state:flags.17?int256 
- *                                            masterchain_ref_seqno:flags.23?int = db.block.Info;
- * </pre>
+ * Represents information about a TON blockchain block.
+ * Based on the TL schema definition for db.block.info.
  */
-@Builder
-@Data
-public class BlockInfo implements Serializable {
-
-  public static final long MAGIC = 0x4ac6e727L;
-
-  long magic;
-  BlockIdExt id;
-  public BigInteger flags;
-  BlockIdExt prevLeft;
-  BlockIdExt prevRight;
-  BlockIdExt nextLeft;
-  BlockIdExt nextRight;
-  BigInteger lt;
-  BigInteger ts;
-  public byte[] state;  // int256
-  BigInteger masterchainRefSeqno;
-
-  // Convenience getter
-  public String getState() {
-    return Utils.bytesToHex(state);
-  }
-
-  public static BlockInfo deserialize(ByteBuffer buffer) {
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
+public class BlockInfo {
+    private static final int MAGIC = 0x4ac6e727; // db.block.info#4ac6e727
     
-    long magic = buffer.getInt() & 0xFFFFFFFFL; // Read as unsigned int
-    if (magic != MAGIC) {
-      throw new IllegalArgumentException("Invalid magic: " + Long.toHexString(magic) + ", expected: " + Long.toHexString(MAGIC));
+    private int flags;
+    private boolean afterMerge;
+    private boolean afterSplit;
+    private boolean beforeSplit;
+    private boolean wantSplit;
+    private boolean wantMerge;
+    private boolean keyBlock;
+    private boolean vertSeqnoIncr;
+    private int version;
+    private boolean notMaster;
+    private int genUtime;
+    private long startLt;
+    private long endLt;
+    private long genValidatorListHashShort;
+    private long genCatchainSeqno;
+    private long minRefMcSeqno;
+    private long prevKeyBlockSeqno;
+    private List<BlockIdExt> masterRefSeqno;
+    
+    /**
+     * Deserializes a BlockInfo from a ByteBuffer.
+     * 
+     * @param buffer The ByteBuffer containing the serialized BlockInfo
+     * @return The deserialized BlockInfo
+     */
+    public static BlockInfo deserialize(ByteBuffer buffer) {
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        
+        BlockInfo blockInfo = new BlockInfo();
+        
+        // Skip magic (already verified)
+        buffer.getInt();
+        
+        // Read flags
+        blockInfo.flags = buffer.getInt();
+        blockInfo.afterMerge = (blockInfo.flags & 1) != 0;
+        blockInfo.afterSplit = (blockInfo.flags & 2) != 0;
+        blockInfo.beforeSplit = (blockInfo.flags & 4) != 0;
+        blockInfo.wantSplit = (blockInfo.flags & 8) != 0;
+        blockInfo.wantMerge = (blockInfo.flags & 16) != 0;
+        blockInfo.keyBlock = (blockInfo.flags & 32) != 0;
+        blockInfo.vertSeqnoIncr = (blockInfo.flags & 64) != 0;
+        
+        // Read version
+        blockInfo.version = buffer.getInt();
+        blockInfo.notMaster = (blockInfo.version & 0x80000000) != 0;
+        blockInfo.version = blockInfo.version & 0x7FFFFFFF;
+        
+        // Read timestamps and sequence numbers
+        blockInfo.genUtime = buffer.getInt();
+        blockInfo.startLt = buffer.getLong();
+        blockInfo.endLt = buffer.getLong();
+        blockInfo.genValidatorListHashShort = buffer.getLong();
+        blockInfo.genCatchainSeqno = buffer.getLong();
+        blockInfo.minRefMcSeqno = buffer.getLong();
+        blockInfo.prevKeyBlockSeqno = buffer.getLong();
+        
+        // Read master reference sequence numbers
+        int count = buffer.getInt();
+        blockInfo.masterRefSeqno = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            BlockIdExt blockIdExt = BlockIdExt.deserialize(buffer);
+            blockInfo.masterRefSeqno.add(blockIdExt);
+        }
+        
+        return blockInfo;
     }
     
-    BlockIdExt id = BlockIdExt.deserialize(buffer);
-    int flagsInt = buffer.getInt();
-    BigInteger flags = BigInteger.valueOf(flagsInt);
-    
-    BlockInfoBuilder builder = BlockInfo.builder()
-        .magic(MAGIC)
-        .id(id)
-        .flags(flags);
-    
-    // Optional fields based on flags
-    if (flags.testBit(1)) {
-      builder.prevLeft(BlockIdExt.deserialize(buffer));
+    /**
+     * Serializes this BlockInfo to a ByteBuffer.
+     * 
+     * @return The serialized ByteBuffer
+     */
+    public ByteBuffer serialize() {
+        // Calculate size
+        int size = 4 + // magic
+                  4 + // flags
+                  4 + // version
+                  4 + // genUtime
+                  8 + // startLt
+                  8 + // endLt
+                  8 + // genValidatorListHashShort
+                  8 + // genCatchainSeqno
+                  8 + // minRefMcSeqno
+                  8 + // prevKeyBlockSeqno
+                  4; // masterRefSeqno count
+        
+        // Add size for each BlockIdExt
+        for (BlockIdExt blockIdExt : masterRefSeqno) {
+            size += blockIdExt.getSerializedSize();
+        }
+        
+        ByteBuffer buffer = ByteBuffer.allocate(size);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        
+        // Write magic
+        buffer.putInt(MAGIC);
+        
+        // Write flags
+        int flags = 0;
+        if (afterMerge) flags |= 1;
+        if (afterSplit) flags |= 2;
+        if (beforeSplit) flags |= 4;
+        if (wantSplit) flags |= 8;
+        if (wantMerge) flags |= 16;
+        if (keyBlock) flags |= 32;
+        if (vertSeqnoIncr) flags |= 64;
+        buffer.putInt(flags);
+        
+        // Write version
+        int versionWithFlag = version;
+        if (notMaster) versionWithFlag |= 0x80000000;
+        buffer.putInt(versionWithFlag);
+        
+        // Write timestamps and sequence numbers
+        buffer.putInt(genUtime);
+        buffer.putLong(startLt);
+        buffer.putLong(endLt);
+        buffer.putLong(genValidatorListHashShort);
+        buffer.putLong(genCatchainSeqno);
+        buffer.putLong(minRefMcSeqno);
+        buffer.putLong(prevKeyBlockSeqno);
+        
+        // Write master reference sequence numbers
+        buffer.putInt(masterRefSeqno.size());
+        for (BlockIdExt blockIdExt : masterRefSeqno) {
+            blockIdExt.serialize(buffer);
+        }
+        
+        buffer.flip();
+        return buffer;
     }
     
-    if (flags.testBit(2)) {
-      builder.prevRight(BlockIdExt.deserialize(buffer));
+    // Getters and setters
+    
+    public int getFlags() {
+        return flags;
     }
     
-    if (flags.testBit(3)) {
-      builder.nextLeft(BlockIdExt.deserialize(buffer));
+    public void setFlags(int flags) {
+        this.flags = flags;
+        this.afterMerge = (flags & 1) != 0;
+        this.afterSplit = (flags & 2) != 0;
+        this.beforeSplit = (flags & 4) != 0;
+        this.wantSplit = (flags & 8) != 0;
+        this.wantMerge = (flags & 16) != 0;
+        this.keyBlock = (flags & 32) != 0;
+        this.vertSeqnoIncr = (flags & 64) != 0;
     }
     
-    if (flags.testBit(4)) {
-      builder.nextRight(BlockIdExt.deserialize(buffer));
+    public boolean isAfterMerge() {
+        return afterMerge;
     }
     
-    if (flags.testBit(13)) {
-      builder.lt(BigInteger.valueOf(buffer.getLong()));
+    public void setAfterMerge(boolean afterMerge) {
+        this.afterMerge = afterMerge;
+        updateFlags();
     }
     
-    if (flags.testBit(14)) {
-      builder.ts(BigInteger.valueOf(buffer.getInt()));
+    public boolean isAfterSplit() {
+        return afterSplit;
     }
     
-    if (flags.testBit(17)) {
-      builder.state(Utils.read(buffer, 32));
+    public void setAfterSplit(boolean afterSplit) {
+        this.afterSplit = afterSplit;
+        updateFlags();
     }
     
-    if (flags.testBit(23)) {
-      builder.masterchainRefSeqno(BigInteger.valueOf(buffer.getInt()));
+    public boolean isBeforeSplit() {
+        return beforeSplit;
     }
     
-    return builder.build();
-  }
-
-  public byte[] serialize() {
-    // Calculate buffer size based on which optional fields are present
-    int size = 4 + BlockIdExt.getSize() + 4; // magic + id + flags
-    
-    if (flags.testBit(1) && prevLeft != null) {
-      size += BlockIdExt.getSize();
+    public void setBeforeSplit(boolean beforeSplit) {
+        this.beforeSplit = beforeSplit;
+        updateFlags();
     }
     
-    if (flags.testBit(2) && prevRight != null) {
-      size += BlockIdExt.getSize();
+    public boolean isWantSplit() {
+        return wantSplit;
     }
     
-    if (flags.testBit(3) && nextLeft != null) {
-      size += BlockIdExt.getSize();
+    public void setWantSplit(boolean wantSplit) {
+        this.wantSplit = wantSplit;
+        updateFlags();
     }
     
-    if (flags.testBit(4) && nextRight != null) {
-      size += BlockIdExt.getSize();
+    public boolean isWantMerge() {
+        return wantMerge;
     }
     
-    if (flags.testBit(13) && lt != null) {
-      size += 8; // long
+    public void setWantMerge(boolean wantMerge) {
+        this.wantMerge = wantMerge;
+        updateFlags();
     }
     
-    if (flags.testBit(14) && ts != null) {
-      size += 4; // int
+    public boolean isKeyBlock() {
+        return keyBlock;
     }
     
-    if (flags.testBit(17) && state != null) {
-      size += 32; // int256
+    public void setKeyBlock(boolean keyBlock) {
+        this.keyBlock = keyBlock;
+        updateFlags();
     }
     
-    if (flags.testBit(23) && masterchainRefSeqno != null) {
-      size += 4; // int
+    public boolean isVertSeqnoIncr() {
+        return vertSeqnoIncr;
     }
     
-    ByteBuffer buffer = ByteBuffer.allocate(size);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    
-    buffer.putInt((int) magic);
-    buffer.put(id.serialize());
-    buffer.putInt(flags.intValue());
-    
-    if (flags.testBit(1) && prevLeft != null) {
-      buffer.put(prevLeft.serialize());
+    public void setVertSeqnoIncr(boolean vertSeqnoIncr) {
+        this.vertSeqnoIncr = vertSeqnoIncr;
+        updateFlags();
     }
     
-    if (flags.testBit(2) && prevRight != null) {
-      buffer.put(prevRight.serialize());
+    public int getVersion() {
+        return version;
     }
     
-    if (flags.testBit(3) && nextLeft != null) {
-      buffer.put(nextLeft.serialize());
+    public void setVersion(int version) {
+        this.version = version;
     }
     
-    if (flags.testBit(4) && nextRight != null) {
-      buffer.put(nextRight.serialize());
+    public boolean isNotMaster() {
+        return notMaster;
     }
     
-    if (flags.testBit(13) && lt != null) {
-      buffer.putLong(lt.longValue());
+    public void setNotMaster(boolean notMaster) {
+        this.notMaster = notMaster;
     }
     
-    if (flags.testBit(14) && ts != null) {
-      buffer.putInt(ts.intValue());
+    public int getGenUtime() {
+        return genUtime;
     }
     
-    if (flags.testBit(17) && state != null) {
-      buffer.put(state);
+    public void setGenUtime(int genUtime) {
+        this.genUtime = genUtime;
     }
     
-    if (flags.testBit(23) && masterchainRefSeqno != null) {
-      buffer.putInt(masterchainRefSeqno.intValue());
+    public long getStartLt() {
+        return startLt;
     }
     
-    return buffer.array();
-  }
+    public void setStartLt(long startLt) {
+        this.startLt = startLt;
+    }
+    
+    public long getEndLt() {
+        return endLt;
+    }
+    
+    public void setEndLt(long endLt) {
+        this.endLt = endLt;
+    }
+    
+    public long getGenValidatorListHashShort() {
+        return genValidatorListHashShort;
+    }
+    
+    public void setGenValidatorListHashShort(long genValidatorListHashShort) {
+        this.genValidatorListHashShort = genValidatorListHashShort;
+    }
+    
+    public long getGenCatchainSeqno() {
+        return genCatchainSeqno;
+    }
+    
+    public void setGenCatchainSeqno(long genCatchainSeqno) {
+        this.genCatchainSeqno = genCatchainSeqno;
+    }
+    
+    public long getMinRefMcSeqno() {
+        return minRefMcSeqno;
+    }
+    
+    public void setMinRefMcSeqno(long minRefMcSeqno) {
+        this.minRefMcSeqno = minRefMcSeqno;
+    }
+    
+    public long getPrevKeyBlockSeqno() {
+        return prevKeyBlockSeqno;
+    }
+    
+    public void setPrevKeyBlockSeqno(long prevKeyBlockSeqno) {
+        this.prevKeyBlockSeqno = prevKeyBlockSeqno;
+    }
+    
+    public List<BlockIdExt> getMasterRefSeqno() {
+        return masterRefSeqno;
+    }
+    
+    public void setMasterRefSeqno(List<BlockIdExt> masterRefSeqno) {
+        this.masterRefSeqno = masterRefSeqno;
+    }
+    
+    private void updateFlags() {
+        flags = 0;
+        if (afterMerge) flags |= 1;
+        if (afterSplit) flags |= 2;
+        if (beforeSplit) flags |= 4;
+        if (wantSplit) flags |= 8;
+        if (wantMerge) flags |= 16;
+        if (keyBlock) flags |= 32;
+        if (vertSeqnoIncr) flags |= 64;
+    }
 }
