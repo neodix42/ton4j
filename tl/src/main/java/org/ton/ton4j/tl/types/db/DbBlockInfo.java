@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types;
+package org.ton.ton4j.tl.types.db;
 
 import java.io.Serializable;
 import java.math.BigInteger;

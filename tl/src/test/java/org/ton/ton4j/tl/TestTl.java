@@ -13,7 +13,7 @@ import org.ton.ton4j.cell.ByteReader;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.tl.types.DbBlockInfo;
+import org.ton.ton4j.tl.types.db.DbBlockInfo;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.utils.Utils;
 
