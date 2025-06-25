@@ -13,7 +13,7 @@ import org.ton.ton4j.cell.ByteReader;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.tl.types.db.DbBlockInfo;
+import org.ton.ton4j.tl.types.db.block.BlockInfo;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.utils.Utils;
 
@@ -41,7 +41,7 @@ public class TestTl {
       BitString bs2 = new BitString(valueReader.readBytes());
       Cell c2 = CellBuilder.beginCell().storeBitStringUnsafe(bs2).endCell();
       CellSlice cs = CellSlice.beginParse(c2);
-      DbBlockInfo dbBlockInfo = DbBlockInfo.deserialize(cs);
+      BlockInfo dbBlockInfo = BlockInfo.deserialize(cs);
 
       log.info("dbBlockInfo {}", dbBlockInfo);
     }
@@ -60,7 +60,7 @@ public class TestTl {
       BitString bs2 = new BitString(valueReader.readBytes());
       Cell c2 = CellBuilder.beginCell().storeBitStringUnsafe(bs2).endCell();
       CellSlice cs = CellSlice.beginParse(c2);
-      DbBlockInfo dbBlockInfo = DbBlockInfo.deserialize(cs);
+      BlockInfo dbBlockInfo = BlockInfo.deserialize(cs);
 
       log.info("dbBlockInfo {}", dbBlockInfo);
     }
@@ -79,7 +79,7 @@ public class TestTl {
       BitString bs2 = new BitString(valueReader.readBytes());
       Cell c2 = CellBuilder.beginCell().storeBitStringUnsafe(bs2).endCell();
       CellSlice cs = CellSlice.beginParse(c2);
-      DbBlockInfo dbBlockInfo = DbBlockInfo.deserialize(cs);
+      BlockInfo dbBlockInfo = BlockInfo.deserialize(cs);
 
       log.info("dbBlockInfo {}", dbBlockInfo);
     }
