@@ -85,11 +85,26 @@ public class PackageReader implements Closeable {
      * @throws IOException If an I/O error occurs
      */
     public PackageEntry getEntryAt(long offset) throws IOException {
+        if (offset < 0) {
+            throw new IOException("Negative seek offset: " + offset);
+        }
+        
         long oldPosition = currentPosition;
-        currentPosition = offset + 4; // Skip package header
-        PackageEntry entry = readNextEntry();
-        currentPosition = oldPosition;
-        return entry;
+        try {
+            currentPosition = offset + 4; // Skip package header
+            
+            // Check if the position is valid
+            if (currentPosition >= file.length()) {
+                throw new IOException("Offset beyond file size: " + offset);
+            }
+            
+            PackageEntry entry = readNextEntry();
+            return entry;
+        } catch (IOException e) {
+            throw new IOException("Error reading entry at offset " + offset + ": " + e.getMessage(), e);
+        } finally {
+            currentPosition = oldPosition;
+        }
     }
     
     /**

@@ -73,7 +73,6 @@
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
             <version>10.2.1</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
