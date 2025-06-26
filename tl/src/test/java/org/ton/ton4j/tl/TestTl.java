@@ -2,6 +2,7 @@ package org.ton.ton4j.tl;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -82,7 +83,12 @@ public class TestTl {
   }
 
   @Test
-  public void testRocksDbFiles1() throws IOException {
+  public void testRocksDbFiles1() throws IOException, URISyntaxException {
+    //    String p =
+    //
+    // "file:\\\\\\H:\\G\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db\\archive\\packages\\arch0000\\archive.00000.pack";
+    //    byte[] b = IOUtils.toByteArray(new URL(p));
+
     InputStream pack =
         getClass().getClassLoader().getResourceAsStream("rocksdb/archive.00000.pack");
     byte[] b = IOUtils.toByteArray(pack);
@@ -115,7 +121,7 @@ public class TestTl {
       if (c.getBits().preReadUint(8).longValue() == 0xc3) {
         // c.bits.readUint(8);
         BlockProof blockProof =
-            BlockProof.deserialize(CellSlice.beginParse(c)); // block tlb magic 11ef55aa
+            BlockProof.deserialize(CellSlice.beginParse(c)); // blockproof tlb magic 0xc3
         log.info("skip proof block: {}", blockProof);
         continue;
       }

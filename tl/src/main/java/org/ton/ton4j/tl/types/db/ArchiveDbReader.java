@@ -1,7 +1,5 @@
 package org.ton.ton4j.tl.types.db;
 
-import static java.util.Objects.nonNull;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -18,7 +16,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.ton.ton4j.cell.ByteReader;
-import org.ton.ton4j.tl.types.db.block.BlockInfo;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockInfo;
 
 /** Specialized reader for TON archive database. */
 public class ArchiveDbReader implements Closeable {
@@ -234,10 +236,34 @@ public class ArchiveDbReader implements Closeable {
         signedBytes[i] = (byte) bytesArray[i];
       }
       ByteBuffer buffer = ByteBuffer.wrap(signedBytes);
-      return BlockInfo.deserialize(buffer);
+      //      return BlockInfo.deserialize(buffer); // todo
+      return null;
     } else {
       throw new IOException("Invalid block info magic: " + magicId);
     }
+  }
+
+  public List<Block> getAllBlocks() throws IOException {
+    ArrayList<Block> blocks = new ArrayList<>();
+    Map<String, byte[]> entries = getAllEntries();
+    for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
+      try {
+        //        log.info("key " + entry.getKey());
+        Cell c = CellBuilder.beginCell().fromBoc(entry.getValue()).endCell();
+        long magic = c.getBits().preReadUint(32).longValue();
+        if (magic == 0x11ef55aaL) { // block
+          Block block = Block.deserialize(CellSlice.beginParse(c));
+          blocks.add(block);
+        } else {
+          //          log.info("not a block");
+          // return Block.builder().build();
+        }
+      } catch (Throwable e) {
+        log.info("Error parsing block info");
+        // return Block.builder().build();
+      }
+    }
+    return blocks;
   }
 
   /**
@@ -246,7 +272,7 @@ public class ArchiveDbReader implements Closeable {
    * @return Map of block hash to block data
    * @throws IOException If an I/O error occurs
    */
-  public Map<String, byte[]> getAllBlocks() throws IOException {
+  public Map<String, byte[]> getAllEntries() throws IOException {
     Map<String, byte[]> blocks = new HashMap<>();
 
     // Iterate through all archives
@@ -371,15 +397,15 @@ public class ArchiveDbReader implements Closeable {
   public Map<String, BlockInfo> getAllBlockInfos() throws IOException {
     Map<String, BlockInfo> blockInfos = new HashMap<>();
 
-    Map<String, byte[]> blocks = getAllBlocks();
+    Map<String, byte[]> blocks = getAllEntries();
     for (Map.Entry<String, byte[]> entry : blocks.entrySet()) {
       String hash = entry.getKey();
       byte[] data = entry.getValue();
 
-      BlockInfo blockInfo = getBlockInfo(data);
-      if (nonNull(blockInfo)) {
-        blockInfos.put(hash, getBlockInfo(data));
-      }
+      Block block = getBlock(data);
+
+      blockInfos.put(hash, block.getBlockInfo());
+
       //      try {
       //        ByteReader reader = new ByteReader(data);
       //        byte[] magicBytes = new byte[4];
@@ -406,27 +432,21 @@ public class ArchiveDbReader implements Closeable {
     return blockInfos;
   }
 
-  public static BlockInfo getBlockInfo(byte[] data) throws IOException {
+  public static Block getBlock(byte[] data) {
     try {
-      byte[] magicBytes = new byte[4];
-      System.arraycopy(data, 0, magicBytes, 0, 4);
-      String magicId = bytesToHex(magicBytes);
-
-      if (magicId.equals("27e7c64a")) { // db.block.info#4ac6e727
-        ByteReader valueReader = new ByteReader(data);
-        int[] bytesArray = valueReader.readBytes();
-        byte[] signedBytes = new byte[bytesArray.length];
-        for (int i = 0; i < bytesArray.length; i++) {
-          signedBytes[i] = (byte) bytesArray[i];
-        }
-        ByteBuffer buffer = ByteBuffer.wrap(signedBytes);
-        BlockInfo blockInfo = BlockInfo.deserialize(buffer);
-        return blockInfo;
+      Cell c = CellBuilder.beginCell().fromBoc(data).endCell();
+      long magic = c.getBits().preReadUint(32).longValue();
+      if (magic == 0x11ef55aaL) { // block
+        Block block = Block.deserialize(CellSlice.beginParse(c));
+        //        log.info("block: {}" + block);
+        return block;
+      } else {
+        log.info("not a block");
+        return Block.builder().build();
       }
-      return null;
     } catch (Exception e) {
       log.warning("Error parsing block info");
-      return null;
+      return Block.builder().build();
     }
   }
 

@@ -1,5 +1,8 @@
 package org.ton.ton4j.tl.types.db;
 
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -7,156 +10,160 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
 
-/**
- * Reader for TON package files.
- */
+/** Reader for TON package files. */
 public class PackageReader implements Closeable {
-    
-    private static final int PACKAGE_HEADER_MAGIC = 0xae8fdd01;
-    private static final short ENTRY_HEADER_MAGIC = 0x1e8b;
-    
-    private final RandomAccessFile file;
-    private long currentPosition;
-    
-    /**
-     * Creates a new PackageReader.
-     * 
-     * @param path Path to the package file
-     * @throws IOException If an I/O error occurs
-     */
-    public PackageReader(String path) throws IOException {
-        file = new RandomAccessFile(path, "r");
-        
-        // Verify package header magic
-        int magic = readInt();
-        if (magic != PACKAGE_HEADER_MAGIC) {
-            throw new IOException("Invalid package header magic: 0x" + 
-                    Integer.toHexString(magic) + ", expected: 0x" + 
-                    Integer.toHexString(PACKAGE_HEADER_MAGIC));
-        }
-        
-        currentPosition = 4; // After header
+
+  private static final int PACKAGE_HEADER_MAGIC = 0xae8fdd01;
+  private static final short ENTRY_HEADER_MAGIC = 0x1e8b;
+
+  private final RandomAccessFile file;
+  private long currentPosition;
+
+  /**
+   * Creates a new PackageReader.
+   *
+   * @param path Path to the package file
+   * @throws IOException If an I/O error occurs
+   */
+  public PackageReader(String path) throws IOException {
+    file = new RandomAccessFile(path, "r");
+
+    // Verify package header magic
+    int magic = readInt();
+    if (magic != PACKAGE_HEADER_MAGIC) {
+      throw new IOException(
+          "Invalid package header magic: 0x"
+              + Integer.toHexString(magic)
+              + ", expected: 0x"
+              + Integer.toHexString(PACKAGE_HEADER_MAGIC));
     }
-    
-    /**
-     * Reads the next entry in the package.
-     * 
-     * @return The next entry, or null if the end of the file is reached
-     * @throws IOException If an I/O error occurs
-     */
-    public PackageEntry readNextEntry() throws IOException {
-        if (currentPosition >= file.length()) {
-            return null;
-        }
-        
-        file.seek(currentPosition);
-        
-        // Read entry header
-        short entryMagic = readShort();
-        if (entryMagic != ENTRY_HEADER_MAGIC) {
-            throw new IOException("Invalid entry header magic: 0x" + 
-                    Integer.toHexString(entryMagic) + ", expected: 0x" + 
-                    Integer.toHexString(ENTRY_HEADER_MAGIC));
-        }
-        
-        short filenameLength = readShort();
-        int dataSize = readInt();
-        
-        // Read filename
-        byte[] filenameBytes = new byte[filenameLength];
-        file.readFully(filenameBytes);
-        String filename = new String(filenameBytes);
-        
-        // Read data
-        byte[] data = new byte[dataSize];
-        file.readFully(data);
-        
-        // Update position for next read
-        currentPosition = file.getFilePointer();
-        
-        return new PackageEntry(filename, data);
+
+    currentPosition = 4; // After header
+  }
+
+  /**
+   * Reads the next entry in the package.
+   *
+   * @return The next entry, or null if the end of the file is reached
+   * @throws IOException If an I/O error occurs
+   */
+  public PackageEntry readNextEntry() throws IOException {
+    if (currentPosition >= file.length()) {
+      return null;
     }
-    
-    /**
-     * Gets an entry at a specific offset.
-     * 
-     * @param offset The offset in the file
-     * @return The entry
-     * @throws IOException If an I/O error occurs
-     */
-    public PackageEntry getEntryAt(long offset) throws IOException {
-        if (offset < 0) {
-            throw new IOException("Negative seek offset: " + offset);
-        }
-        
-        long oldPosition = currentPosition;
-        try {
-            currentPosition = offset + 4; // Skip package header
-            
-            // Check if the position is valid
-            if (currentPosition >= file.length()) {
-                throw new IOException("Offset beyond file size: " + offset);
-            }
-            
-            PackageEntry entry = readNextEntry();
-            return entry;
-        } catch (IOException e) {
-            throw new IOException("Error reading entry at offset " + offset + ": " + e.getMessage(), e);
-        } finally {
-            currentPosition = oldPosition;
-        }
+
+    file.seek(currentPosition);
+
+    // Read entry header
+    short entryMagic = readShort();
+    if (entryMagic != ENTRY_HEADER_MAGIC) {
+      throw new IOException(
+          "Invalid entry header magic: 0x"
+              + Integer.toHexString(entryMagic)
+              + ", expected: 0x"
+              + Integer.toHexString(ENTRY_HEADER_MAGIC));
     }
-    
-    /**
-     * Iterates through all entries in the package.
-     * 
-     * @param consumer Consumer for entries
-     * @throws IOException If an I/O error occurs
-     */
-    public void forEach(Consumer<PackageEntry> consumer) throws IOException {
-        currentPosition = 4; // Reset to start (after header)
-        
-        PackageEntry entry;
-        while ((entry = readNextEntry()) != null) {
-            consumer.accept(entry);
-        }
+
+    short filenameLength = readShort();
+    int dataSize = readInt();
+
+    // Read filename
+    byte[] filenameBytes = new byte[filenameLength];
+    file.readFully(filenameBytes);
+    String filename = new String(filenameBytes);
+
+    // Read data
+    byte[] data = new byte[dataSize];
+    file.readFully(data);
+
+    // Update position for next read
+    currentPosition = file.getFilePointer();
+
+    return new PackageEntry(filename, data);
+  }
+
+  /**
+   * Gets an entry at a specific offset.
+   *
+   * @param offset The offset in the file
+   * @return The entry
+   * @throws IOException If an I/O error occurs
+   */
+  public PackageEntry getEntryAt(long offset) throws IOException {
+    if (offset < 0) {
+      throw new IOException("Negative seek offset: " + offset);
     }
-    
-    private int readInt() throws IOException {
-        byte[] bytes = new byte[4];
-        file.readFully(bytes);
-        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
+
+    long oldPosition = currentPosition;
+    try {
+      currentPosition = offset + 4; // Skip package header
+
+      // Check if the position is valid
+      if (currentPosition >= file.length()) {
+        throw new IOException("Offset beyond file size: " + offset);
+      }
+
+      PackageEntry entry = readNextEntry();
+      return entry;
+    } catch (IOException e) {
+      throw new IOException("Error reading entry at offset " + offset + ": " + e.getMessage(), e);
+    } finally {
+      currentPosition = oldPosition;
     }
-    
-    private short readShort() throws IOException {
-        byte[] bytes = new byte[2];
-        file.readFully(bytes);
-        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getShort();
+  }
+
+  /**
+   * Iterates through all entries in the package.
+   *
+   * @param consumer Consumer for entries
+   * @throws IOException If an I/O error occurs
+   */
+  public void forEach(Consumer<PackageEntry> consumer) throws IOException {
+    currentPosition = 4; // Reset to start (after header)
+
+    PackageEntry entry;
+    while ((entry = readNextEntry()) != null) {
+      consumer.accept(entry);
     }
-    
-    @Override
-    public void close() throws IOException {
-        file.close();
+  }
+
+  private int readInt() throws IOException {
+    byte[] bytes = new byte[4];
+    file.readFully(bytes);
+    return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
+  }
+
+  private short readShort() throws IOException {
+    byte[] bytes = new byte[2];
+    file.readFully(bytes);
+    return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getShort();
+  }
+
+  @Override
+  public void close() throws IOException {
+    file.close();
+  }
+
+  /** Represents an entry in a package file. */
+  public static class PackageEntry {
+    private final String filename;
+    private final byte[] data; // boc
+
+    public PackageEntry(String filename, byte[] data) {
+      this.filename = filename;
+      this.data = data;
     }
-    
-    /**
-     * Represents an entry in a package file.
-     */
-    public static class PackageEntry {
-        private final String filename;
-        private final byte[] data;
-        
-        public PackageEntry(String filename, byte[] data) {
-            this.filename = filename;
-            this.data = data;
-        }
-        
-        public String getFilename() {
-            return filename;
-        }
-        
-        public byte[] getData() {
-            return data;
-        }
+
+    public String getFilename() {
+      return filename;
     }
+
+    public byte[] getData() {
+      return data;
+    }
+
+    public Cell getCell() {
+      return CellBuilder.beginCell().fromBoc(data).endCell();
+    }
+  }
 }

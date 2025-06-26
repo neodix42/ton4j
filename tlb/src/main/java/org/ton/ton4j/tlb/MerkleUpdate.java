@@ -13,7 +13,7 @@ import org.ton.ton4j.cell.CellType;
  *
  *
  * <pre>
- * !merkle_update#02 {X:Type} old_hash:bits256 new_hash:bits256 old:^X new:^X  = MERKLE_UPDATE X;
+ * !merkle_update#04 {X:Type} old_hash:bits256 new_hash:bits256 old:^X new:^X  = MERKLE_UPDATE X;
  *  update_hashes#72 {X:Type} old_hash:bits256 new_hash:bits256                = HASH_UPDATE X;
  * !merkle_proof#03 {X:Type} virtual_hash:bits256 depth:uint16 virtual_root:^X = MERKLE_PROOF X;
  * </pre>
@@ -21,8 +21,8 @@ import org.ton.ton4j.cell.CellType;
 @Builder
 @Data
 public class MerkleUpdate implements Serializable {
-  BigInteger oldHash;
-  BigInteger newHash;
+  public BigInteger oldHash;
+  public BigInteger newHash;
   BigInteger oldDepth;
   BigInteger newDepth;
   ShardState oldShardState;
@@ -59,11 +59,11 @@ public class MerkleUpdate implements Serializable {
         .build();
   }
 
-  private String getOldHash() {
+  public String getOldHash() {
     return oldHash.toString(16);
   }
 
-  private String getNewHash() {
+  public String getNewHash() {
     return newHash.toString(16);
   }
 }

@@ -1,15 +1,18 @@
 package org.ton.ton4j.tl.types.db;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.tl.types.db.block.BlockInfo;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockInfo;
+import org.ton.ton4j.tlb.BlockProof;
 
 /** Test class for demonstrating how to use the DbReader to read TON RocksDB files. */
 @Slf4j
@@ -19,21 +22,6 @@ public class TestDbReader {
   private static final String TON_DB_PATH =
       "H:\\G\\Git_Projects\\MyLocalTon\\myLocalTon\\genesis\\db";
   private DbReader dbReader;
-
-  /** Main method to run the tests. */
-  public static void main(String[] args) {
-    try {
-      TestDbReader test = new TestDbReader();
-      test.setUp();
-      test.testReadArchiveDb();
-      test.testReadBlockInfos();
-      test.testReadPackageFiles();
-      test.testReadOtherDbs();
-      test.tearDown();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
 
   /** Set up the test environment. */
   @Before
@@ -57,22 +45,41 @@ public class TestDbReader {
     // Get all available archive keys
     List<String> archiveKeys = archiveDbReader.getArchiveKeys();
     log.info("Available archive keys: {}", archiveKeys);
-
-    // Get all blocks
-    Map<String, byte[]> blocks = archiveDbReader.getAllBlocks();
-    log.info("Total blocks: {}", blocks.size());
-
-    // Print first few blocks
-    int count = 0;
-    for (Map.Entry<String, byte[]> entry : blocks.entrySet()) {
-      if (count++ < 5) {
-        log.info(
-            "Block key {}, size: {} bytes, deserialized {}",
-            entry.getKey(),
-            entry.getValue().length,
-            ArchiveDbReader.getBlockInfo(entry.getValue()));
-      }
+    List<Block> blocks1 = archiveDbReader.getAllBlocks();
+    log.info("All blocks: {}", blocks1.size());
+    blocks1.sort(
+        (o1, o2) -> {
+          return Long.compare(o2.getBlockInfo().getSeqno(), o1.getBlockInfo().getSeqno());
+        });
+    for (Block block : blocks1) {
+      log.info(
+          "{}:{}:{} prevRootHash {}, prefFileHash {}, {}",
+          block.getBlockInfo().getShard().getWorkchain(),
+          block.getBlockInfo().getSeqno(),
+          block.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
+          block.getBlockInfo().getPrevRef().getPrev1().getRootHash(),
+          block.getBlockInfo().getPrevRef().getPrev1().getFileHash(),
+          block.getStateUpdate().getNewHash());
     }
+
+    //    // Get all blocks
+    //    Map<String, byte[]> blocks = archiveDbReader.getAllEntries();
+    //    log.info("Total blocks: {}", blocks.size());
+    //
+    //    // Print first few blocks
+    //    int count = 0;
+    //    for (Map.Entry<String, byte[]> entry : blocks.entrySet()) {
+    //      if (count++ < 385) {
+    //        Block block = ArchiveDbReader.getBlock(entry.getValue());
+    //        log.info("Block: {}", block);
+    //        log.info(
+    //            "idx {}, Block key {}, size: {} bytes, deserialized {}",
+    //            count,
+    //            entry.getKey(),
+    //            entry.getValue().length,
+    //            block.getBlockInfo());
+    //      }
+    //    }
   }
 
   /** Test reading block infos. */
@@ -89,11 +96,11 @@ public class TestDbReader {
         BlockInfo blockInfo = entry.getValue();
         log.info("Block hash: {}", entry.getKey());
         log.info("  Version: {}", blockInfo.getVersion());
-        log.info("  Gen time: {}", blockInfo.getGenUtime());
+        log.info("  Gen time: {}", blockInfo.getGenuTime());
         log.info("  Start LT: {}", blockInfo.getStartLt());
         log.info("  End LT: {}", blockInfo.getEndLt());
         log.info("  Is key block: {}", blockInfo.isKeyBlock());
-        log.info("  Master refs: {}", blockInfo.getMasterRefSeqno().size());
+        log.info("  Master refs: {}", blockInfo.getMasterRef().getSeqno());
         log.info("");
       }
     }
@@ -108,15 +115,43 @@ public class TestDbReader {
       // Read all entries in the package
       packageReader.forEach(
           entry -> {
+            Cell c = entry.getCell();
             log.info(
-                "Entry filename: {}, size: {} bytes", entry.getFilename(), entry.getData().length);
+                "Entry filename: {}, size: {} bytes, boc {}",
+                entry.getFilename(),
+                entry.getData().length,
+                c);
+            if (c.getBits().preReadUint(8).longValue() == 0xc3) {
+              BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c));
+              log.info("deserialized blockProof: {}", blockProof);
+            } else if (c.getBits().preReadUint(32).longValue() == 0x11ef55aa) {
+              //              Cell blockCell = getFirstCellWithBlock(c);
+
+              //              Block block = Block.deserialize(CellSlice.beginParse(c));
+              //              log.info("deserialized block: {}", block);
+            }
           });
     }
   }
 
+  private Cell getFirstCellWithBlock(Cell c) {
+
+    long blockMagic = c.getBits().preReadUint(32).longValue();
+    if (blockMagic == 0x11ef55aa) {
+      return c;
+    }
+
+    int i = 0;
+    for (Cell ref : c.getRefs()) {
+      return getFirstCellWithBlock(ref);
+    }
+
+    return null;
+  }
+
   /** Test reading other RocksDB databases. */
   @Test
-  public void testReadOtherDbs() throws IOException {
+  public void testReadCellDb() throws IOException {
     try {
       // Open the celldb database
       RocksDbWrapper cellDb = dbReader.openDb("celldb");
@@ -127,10 +162,13 @@ public class TestDbReader {
     } catch (IOException e) {
       log.warn("Could not open celldb database: {}", e.getMessage());
     }
+  }
 
+  @Test
+  public void testReadFilesDb() throws IOException {
     try {
       // Open the files database
-      RocksDbWrapper filesDb = dbReader.openDb("files");
+      RocksDbWrapper filesDb = dbReader.openDb("files/globalindex");
 
       // Print some stats
       log.info("FilesDB stats:");
@@ -138,7 +176,10 @@ public class TestDbReader {
     } catch (IOException e) {
       log.warn("Could not open files database: {}", e.getMessage());
     }
+  }
 
+  @Test
+  public void testReadAdnlDb() throws IOException {
     try {
       // Open the adnl database
       RocksDbWrapper adnlDb = dbReader.openDb("adnl");

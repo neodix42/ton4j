@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-import org.ton.ton4j.tl.types.db.block.BlockInfo;
+import org.ton.ton4j.tlb.BlockInfo;
 
 /**
  * Main entry point for reading TON RocksDB files. This class provides access to various specialized
@@ -103,7 +103,7 @@ public class DbReader implements Closeable {
    * @throws IOException If an I/O error occurs
    */
   public Map<String, byte[]> getAllBlocks() throws IOException {
-    return getArchiveDbReader().getAllBlocks();
+    return getArchiveDbReader().getAllEntries();
   }
 
   /**

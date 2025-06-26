@@ -28,10 +28,16 @@ public class ExtBlkRef implements Serializable {
   BigInteger fileHash;
 
   public String getRootHash() {
+    if (rootHash == null) {
+      return "";
+    }
     return rootHash.toString(16);
   }
 
   public String getFileHash() {
+    if (rootHash == null) {
+      return "";
+    }
     return fileHash.toString(16);
   }
 
