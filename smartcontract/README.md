@@ -6,7 +6,7 @@
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -16,7 +16,7 @@
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>smartcontract</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
