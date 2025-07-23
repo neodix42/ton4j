@@ -9,9 +9,14 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
+
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -97,7 +102,7 @@ public class TestTvmEmulator {
 
   @Test
   public void testInitTvmEmulator() {
-    TvmEmulatorI tvmEmulatorI = Native.load("libemulator.dll", TvmEmulatorI.class);
+    TvmEmulatorI tvmEmulatorI = Native.load("libemulator-linux-x86_64.so", TvmEmulatorI.class);
     long emulator =
         tvmEmulatorI.tvm_emulator_create(
             walletV4R2.getStateInit().getCode().toBase64(),
@@ -111,7 +116,7 @@ public class TestTvmEmulator {
     TvmEmulator tvmEmulator =
         TvmEmulator.builder()
             .pathToEmulatorSharedLib(
-                "https://github.com/ton-blockchain/ton/releases/download/v2025.02/libemulator.dll")
+                "https://github.com/ton-blockchain/ton/releases/download/v2025.06/libemulator-linux-x86_64.so")
             .codeBoc(code.toBase64())
             .dataBoc(data.toBase64())
             .verbosityLevel(TvmVerbosityLevel.TRUNCATED)
@@ -409,11 +414,14 @@ public class TestTvmEmulator {
   }
 
   @Test
-  public void testTvmEmulatorSendExternalMessageCustom() {
+  public void testTvmEmulatorSendExternalMessageCustom() throws URISyntaxException {
+    URL resource = TestTvmEmulator.class.getResource("/new-wallet-v4r2.fc");
+    File funcFile = Paths.get(resource.toURI()).toFile();
+    String absolutePath = funcFile.getAbsolutePath();
 
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
+            .contractPath(absolutePath)
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
             .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
@@ -445,7 +453,7 @@ public class TestTvmEmulator {
 
     tvmEmulator =
         TvmEmulator.builder()
-            .pathToEmulatorSharedLib("G:/libs/emulator.dll")
+            .pathToEmulatorSharedLib(emulatorPath)
             .codeBoc(codeCell.toBase64())
             .dataBoc(dataCell.toBase64())
             .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
@@ -711,10 +719,15 @@ public class TestTvmEmulator {
   }
 
   @Test
-  public void testTvmEmulatorSendInternalMessageCustomContract() {
+  public void testTvmEmulatorSendInternalMessageCustomContract() throws URISyntaxException {
+
+    URL resource = TestTvmEmulator.class.getResource("/new-wallet-v4r2.fc");
+    File funcFile = Paths.get(resource.toURI()).toFile();
+    String absolutePath = funcFile.getAbsolutePath();
+
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            .contractPath("G:/smartcontracts/new-wallet-v4r2.fc")
+            .contractPath(absolutePath)
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
             .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
@@ -741,6 +754,7 @@ public class TestTvmEmulator {
             .codeBoc(codeCell.toBase64())
             .dataBoc(dataCell.toBase64())
             .verbosityLevel(TvmVerbosityLevel.UNLIMITED)
+            .pathToEmulatorSharedLib(emulatorPath)
             .build();
 
     // optionally set C7

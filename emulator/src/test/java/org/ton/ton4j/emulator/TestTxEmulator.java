@@ -6,9 +6,14 @@ import static org.junit.Assert.assertTrue;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import com.sun.jna.Native;
+
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +55,7 @@ public class TestTxEmulator {
   static Account testAccount;
 
   static String emulatorPath = Utils.getEmulatorGithubUrl();
+  static String localEmulatorAbsolutePath = System.getProperty("user.dir") + "/libemulator.so";
   static String tonlibPath = Utils.getTonlibGithubUrl();
   static String funcPath = Utils.getFuncGithubUrl();
   static String fiftPath = Utils.getFiftGithubUrl();
@@ -122,7 +128,7 @@ public class TestTxEmulator {
                 TestTxEmulator.class.getResourceAsStream("/config-all-testnet.txt")),
             StandardCharsets.UTF_8);
 
-    TxEmulatorI txEmulatorI = Native.load("emulator.dll", TxEmulatorI.class);
+    TxEmulatorI txEmulatorI = Native.load("libemulator-linux-x86_64.so", TxEmulatorI.class);
     long emulator = txEmulatorI.transaction_emulator_create(configAllTestnet, 2);
     assertNotEquals(0, emulator);
   }
@@ -137,7 +143,7 @@ public class TestTxEmulator {
     TxEmulator txEmulator =
         TxEmulator.builder()
             .pathToEmulatorSharedLib(
-                "https://github.com/ton-blockchain/ton/releases/download/v2024.12-1/libemulator.dll")
+                "https://github.com/ton-blockchain/ton/releases/download/v2025.06/libemulator-linux-x86_64.so")
             .configType(EmulatorConfig.TESTNET)
             .verbosityLevel(TxVerbosityLevel.TRUNCATED)
             .build();
@@ -163,6 +169,8 @@ public class TestTxEmulator {
             .configType(EmulatorConfig.CUSTOM)
             .customConfig(configAllTestnet)
             .verbosityLevel(TxVerbosityLevel.UNLIMITED)
+                .pathToEmulatorSharedLib(
+                        "https://github.com/ton-blockchain/ton/releases/download/v2025.06/libemulator-linux-x86_64.so")
             .build();
     txEmulator.setVerbosityLevel(4);
   }
@@ -325,11 +333,13 @@ public class TestTxEmulator {
   }
 
   @Test
-  public void testTxEmulatorWalletV5ExternalMsg() {
-
+  public void testTxEmulatorWalletV5ExternalMsg() throws URISyntaxException {
+    URL resource = TestTvmEmulator.class.getResource("/new-wallet-v5.fc");
+    File funcFile = Paths.get(resource.toURI()).toFile();
+    String absolutePath = funcFile.getAbsolutePath();
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            .contractPath("G:/smartcontracts/new-wallet-v5.fc")
+            .contractPath(absolutePath)
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
             .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
@@ -426,10 +436,12 @@ public class TestTxEmulator {
     EmulateTransactionResult result =
         txEmulator.emulateTransaction(shardAccountBocBase64, extMsg.toCell().toBase64());
 
-    //    log.info("result sendExternalMessage[1]: "+ result);
+    log.info("result: {}", result);
+
+    // log.info("result sendExternalMessage[1]: "+ result);
 
     ShardAccount newShardAccount = result.getNewShardAccount();
-    //    log.info("new ShardAccount "+ newShardAccount);
+    // log.info("new ShardAccount "+ newShardAccount);
 
     TransactionDescription txDesc = result.getTransaction().getDescription();
     //    log.info("txDesc "+ txDesc);
@@ -491,11 +503,13 @@ public class TestTxEmulator {
   }
 
   @Test
-  public void testTxEmulatorWalletV5ExternalMsgSimplified() {
-
+  public void testTxEmulatorWalletV5ExternalMsgSimplified() throws URISyntaxException {
+    URL resource = TestTvmEmulator.class.getResource("/new-wallet-v5.fc");
+    File funcFile = Paths.get(resource.toURI()).toFile();
+    String absolutePath = funcFile.getAbsolutePath();
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            .contractPath("G:/smartcontracts/new-wallet-v5.fc")
+            .contractPath(absolutePath)
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
             .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
@@ -556,15 +570,15 @@ public class TestTxEmulator {
   }
 
   @Test
-  public void testTxEmulatorWalletV5InternalMsg() {
+  public void testTxEmulatorWalletV5InternalMsg() throws URISyntaxException {
 
-    String contractAbsolutePath =
-        System.getProperty("user.dir")
-            + "/../smartcontract/src/test/resources/contracts/wallets/new-wallet-v5.fc";
+    URL resource = TestTvmEmulator.class.getResource("/new-wallet-v5.fc");
+    File funcFile = Paths.get(resource.toURI()).toFile();
+    String absolutePath = funcFile.getAbsolutePath();
 
     SmartContractCompiler smcFunc =
         SmartContractCompiler.builder()
-            .contractPath(contractAbsolutePath)
+            .contractPath(absolutePath)
             .funcRunner(FuncRunner.builder().funcExecutablePath(funcPath).build())
             .fiftRunner(FiftRunner.builder().fiftExecutablePath(fiftPath).build())
             .tolkRunner(TolkRunner.builder().tolkExecutablePath(tolkPath).build())
@@ -608,7 +622,7 @@ public class TestTxEmulator {
                             .bitsUsed(BigInteger.ZERO)
                             .build())
                     .storageExtraInfo(StorageExtraNone.builder().build())
-                    .lastPaid(System.currentTimeMillis() / 1000)
+                    .lastPaid(777)
                     .duePayment(BigInteger.ZERO)
                     .build())
             .accountStorage(

@@ -25,6 +25,7 @@ public class WorkchainDescrV2 implements WorkchainDescr, Serializable {
   long version;
   WorkchainFormat format;
   WcSplitMergeTimings wcSplitMergeTimings;
+  int persistentStateSplitDepth;
 
   public Cell toCell() {
     return CellBuilder.beginCell()
@@ -42,6 +43,7 @@ public class WorkchainDescrV2 implements WorkchainDescr, Serializable {
         .storeUint(version, 32)
         .storeCell(format.toCell(true))
         .storeCell(wcSplitMergeTimings.toCell())
+        .storeUint(persistentStateSplitDepth, 8)
         .endCell();
   }
 
@@ -63,6 +65,7 @@ public class WorkchainDescrV2 implements WorkchainDescr, Serializable {
     workchainDescrV2.setVersion(cs.loadUint(32).intValue());
     workchainDescrV2.setFormat(WorkchainFormat.deserialize(cs, basic));
     workchainDescrV2.setWcSplitMergeTimings(WcSplitMergeTimings.deserialize(cs));
+    workchainDescrV2.setPersistentStateSplitDepth(cs.loadUint(8).intValue());
     return workchainDescrV2;
   }
 }

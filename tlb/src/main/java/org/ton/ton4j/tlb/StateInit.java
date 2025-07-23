@@ -16,7 +16,7 @@ import org.ton.ton4j.utils.Utils;
  *
  *
  * <pre>
- * _ split_depth:(Maybe (## 5))
+ * _ split_depth:(Maybe (## 5)) // renamed to fixed_prefix_length
  *   special:(Maybe TickTock)
  *   code:(Maybe ^Cell)
  *   data:(Maybe ^Cell)
