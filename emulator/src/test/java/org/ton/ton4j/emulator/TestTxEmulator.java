@@ -94,7 +94,7 @@ public class TestTxEmulator {
                             .build())
                     .storageExtraInfo(StorageExtraNone.builder().build())
                     .lastPaid(System.currentTimeMillis() / 1000)
-                    .duePayment(Utils.toNano(2))
+                    .duePayment(BigInteger.ZERO)
                     .build())
             .accountStorage(
                 AccountStorage.builder()
@@ -219,13 +219,12 @@ public class TestTxEmulator {
     ShardAccount shardAccount =
         ShardAccount.builder()
             .account(testAccount)
-            .lastTransHash(BigInteger.valueOf(2))
+            .lastTransHash(BigInteger.ZERO)
             .lastTransLt(BigInteger.ZERO)
             .build();
 
-    log.info("shardAccount: {}", shardAccount);
     String shardAccountBocBase64 = shardAccount.toCell().toBase64();
-    log.info("shardAccountCellBocBase64: {}", shardAccountBocBase64);
+
     EmulateTransactionResult result =
         txEmulator.emulateTickTockTransaction(shardAccountBocBase64, false);
     log.info("result {}", result);
@@ -238,7 +237,7 @@ public class TestTxEmulator {
     ShardAccount shardAccount =
         ShardAccount.builder()
             .account(testAccount)
-            .lastTransHash(BigInteger.valueOf(2))
+            .lastTransHash(BigInteger.ZERO)
             .lastTransLt(BigInteger.ZERO)
             .build();
 
