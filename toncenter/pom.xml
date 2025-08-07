@@ -9,7 +9,7 @@
         <version>1.0.1</version>
     </parent>
 
-    <artifactId>tolk</artifactId>
+    <artifactId>toncenter</artifactId>
     <name>TON Java TonCenter API V2 wrapper</name>
 
     <description>Java wrapper for TonCenter V2 API REST calls.</description>
@@ -42,7 +42,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-
     <dependencies>
         <dependency>
             <groupId>commons-codec</groupId>
@@ -63,7 +62,8 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <scope>compile</scope>
+            <version>1.18.30</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -72,6 +72,14 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
         </dependency>
     </dependencies>
 </project>
