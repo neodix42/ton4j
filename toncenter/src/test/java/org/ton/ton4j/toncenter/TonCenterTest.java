@@ -4,17 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.toncenter.model.AddressInformationResponse;
-import org.ton.ton4j.toncenter.model.ExtendedAddressInformationResponse;
-import org.ton.ton4j.toncenter.model.WalletInformationResponse;
-import org.ton.ton4j.toncenter.model.AddressBalanceResponse;
-import org.ton.ton4j.toncenter.model.AddressStateResponse;
-import org.ton.ton4j.toncenter.model.DetectAddressResponse;
-import org.ton.ton4j.toncenter.model.BlockTransactionsResponse;
-import org.ton.ton4j.toncenter.model.BlockHeaderResponse;
-import org.ton.ton4j.toncenter.model.MasterchainInfoResponse;
-import org.ton.ton4j.toncenter.model.ShardsResponse;
-import org.ton.ton4j.toncenter.model.TransactionResponse;
+import org.ton.ton4j.toncenter.model.*;
+import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -29,10 +20,11 @@ import static org.junit.Assert.*;
 @RunWith(JUnit4.class)
 public class TonCenterTest {
 
-    private static final String TEST_ADDRESS = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
     private static final String API_KEY = "";
+    private static final Network NETWORK = Network.MAINNET;
     
     // Test addresses for different scenarios
+    private static final String TEST_ADDRESS = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
     private static final String WALLET_ADDRESS = "EQD7vdOGw8KvXW6_OgBR2QpBQq5-9R8N8DCo0peQJZrP_VLu";
     private static final String NFT_ADDRESS = "EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N";
     
@@ -42,7 +34,7 @@ public class TonCenterTest {
     public void testBuilderPattern() {
         TonCenter client = TonCenter.builder()
                 .apiKey("test-api-key")
-                .testnet()
+                .network(NETWORK)
                 .connectTimeout(Duration.ofSeconds(5))
                 .readTimeout(Duration.ofSeconds(15))
                 .writeTimeout(Duration.ofSeconds(15))
@@ -57,7 +49,7 @@ public class TonCenterTest {
         // Test mainnet (default)
         TonCenter mainnetClient = TonCenter.builder()
                 .apiKey("test-key")
-                .mainnet()
+                .network(NETWORK)
                 .build();
         assertNotNull(mainnetClient);
         mainnetClient.close();
@@ -65,7 +57,7 @@ public class TonCenterTest {
         // Test testnet
         TonCenter testnetClient = TonCenter.builder()
                 .apiKey("test-key")
-                .testnet()
+                .network(NETWORK)
                 .build();
         assertNotNull(testnetClient);
         testnetClient.close();
@@ -73,7 +65,7 @@ public class TonCenterTest {
         // Test explicit network enum
         TonCenter explicitClient = TonCenter.builder()
                 .apiKey("test-key")
-                .network(Network.TESTNET)
+                .network(Network.MAINNET)
                 .build();
         assertNotNull(explicitClient);
         explicitClient.close();
@@ -92,17 +84,16 @@ public class TonCenterTest {
     public void testGetAddressInformation() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             TonResponse<AddressInformationResponse> response = client.getAddressInformation(TEST_ADDRESS);
+            log.info("response {}", response);
             assertTrue("Address information should be successful", response.isSuccess());
             assertNotNull("Result should not be null", response.getResult());
             assertNotNull("Balance should not be null", response.getResult().getBalance());
             log.info("Address info: balance={}", response.getResult().getBalance());
-        } catch (TonCenterException e) {
-            log.warn("Address information failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -112,16 +103,15 @@ public class TonCenterTest {
     public void testGetExtendedAddressInformation() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             TonResponse<ExtendedAddressInformationResponse> response = client.getExtendedAddressInformation(TEST_ADDRESS);
+            log.info("response {}", response.getResult());
             assertTrue("Extended address info should be successful", response.isSuccess());
             assertNotNull("Result should not be null", response.getResult());
             log.info("Extended address info retrieved successfully");
-        } catch (TonCenterException e) {
-            log.warn("Extended address information failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -131,16 +121,14 @@ public class TonCenterTest {
     public void testGetWalletInformation() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
-        
         try {
-            TonResponse<WalletInformationResponse> response = client.getWalletInformation(WALLET_ADDRESS);
+            TonResponse<WalletInformationResponse> response = client.getWalletInformation(TEST_ADDRESS);
+            log.info("response {}",  response.getResult());
             assertTrue("Wallet information should be successful", response.isSuccess());
             assertNotNull("Result should not be null", response.getResult());
             log.info("Wallet information retrieved successfully");
-        } catch (TonCenterException e) {
-            log.warn("Wallet information failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -150,16 +138,15 @@ public class TonCenterTest {
     public void testGetTransactions() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             TonResponse<List<TransactionResponse>> response = client.getTransactions(TEST_ADDRESS, 5, null, null, null, false);
+            log.info("response {}", response.getResult());
             assertTrue("Transactions should be successful", response.isSuccess());
             assertNotNull("Result should not be null", response.getResult());
             log.info("Retrieved {} transactions", response.getResult().size());
-        } catch (TonCenterException e) {
-            log.warn("Get transactions failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -169,16 +156,14 @@ public class TonCenterTest {
     public void testGetAddressBalance() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<AddressBalanceResponse> response = client.getAddressBalance(TEST_ADDRESS);
+            TonResponse<String> response = client.getAddressBalance(TEST_ADDRESS);
             assertTrue("Address balance should be successful", response.isSuccess());
             assertNotNull("Balance should not be null", response.getResult());
             log.info("Address balance: {}", response.getResult());
-        } catch (TonCenterException e) {
-            log.warn("Get address balance failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -188,16 +173,14 @@ public class TonCenterTest {
     public void testGetAddressState() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<AddressStateResponse> response = client.getAddressState(TEST_ADDRESS);
+            TonResponse<String> response = client.getAddressState(TEST_ADDRESS);
             assertTrue("Address state should be successful", response.isSuccess());
             assertNotNull("State should not be null", response.getResult());
             log.info("Address state: {}", response.getResult());
-        } catch (TonCenterException e) {
-            log.warn("Get address state failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -207,7 +190,7 @@ public class TonCenterTest {
     public void testPackAddress() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
@@ -216,8 +199,6 @@ public class TonCenterTest {
             assertTrue("Pack address should be successful", response.isSuccess());
             assertNotNull("Packed address should not be null", response.getResult());
             log.info("Packed address: {}", response.getResult());
-        } catch (TonCenterException e) {
-            log.warn("Pack address failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -227,7 +208,7 @@ public class TonCenterTest {
     public void testUnpackAddress() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
@@ -235,8 +216,6 @@ public class TonCenterTest {
             assertTrue("Unpack address should be successful", response.isSuccess());
             assertNotNull("Unpacked address should not be null", response.getResult());
             log.info("Unpacked address: {}", response.getResult());
-        } catch (TonCenterException e) {
-            log.warn("Unpack address failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -246,16 +225,15 @@ public class TonCenterTest {
     public void testDetectAddress() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             TonResponse<DetectAddressResponse> response = client.detectAddress(TEST_ADDRESS);
+            log.info("response {}", response.getResult());
             assertTrue("Detect address should be successful", response.isSuccess());
             assertNotNull("Detected address forms should not be null", response.getResult());
             log.info("Address detection completed successfully");
-        } catch (TonCenterException e) {
-            log.warn("Detect address failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -265,16 +243,16 @@ public class TonCenterTest {
     public void testGetTokenData() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<Object> response = client.getTokenData(NFT_ADDRESS);
+            TonResponse<TokenDataResponse> response = client.getTokenData(NFT_ADDRESS);
+            log.info("token data: {}", response.getResult());
+            log.info("response {}", response.getResult());
             assertTrue("Token data should be successful", response.isSuccess());
             assertNotNull("Token data should not be null", response.getResult());
             log.info("Token data retrieved successfully");
-        } catch (TonCenterException e) {
-            log.warn("Get token data failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -286,16 +264,15 @@ public class TonCenterTest {
     public void testGetMasterchainInfo() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             TonResponse<MasterchainInfoResponse> response = client.getMasterchainInfo();
+            log.info("response {}", response.getResult());
             assertTrue("Masterchain info should be successful", response.isSuccess());
             assertNotNull("Masterchain info should not be null", response.getResult());
             log.info("Masterchain seqno: {}", response.getResult().getLast().getSeqno());
-        } catch (TonCenterException e) {
-            log.warn("Get masterchain info failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -305,16 +282,15 @@ public class TonCenterTest {
     public void testGetMasterchainBlockSignatures() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<Object> response = client.getMasterchainBlockSignatures(1000);
+            TonResponse<MasterchainBlockSignaturesResponse> response = client.getMasterchainBlockSignatures(1000);
+            log.info("response {}", response.getResult());
             assertTrue("Block signatures should be successful", response.isSuccess());
             assertNotNull("Block signatures should not be null", response.getResult());
             log.info("Block signatures retrieved successfully");
-        } catch (TonCenterException e) {
-            log.warn("Get masterchain block signatures failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -324,16 +300,15 @@ public class TonCenterTest {
     public void testGetShardBlockProof() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
-        
+
         try {
-            TonResponse<Object> response = client.getShardBlockProof(-1, -9223372036854775808L, 1000L);
+            TonResponse<ShardBlockProofResponse> response = client.getShardBlockProof(-1, -9223372036854775808L, 1000L);
+            log.info("response {}", response.getResult());
             assertTrue("Shard block proof should be successful", response.isSuccess());
             assertNotNull("Shard block proof should not be null", response.getResult());
             log.info("Shard block proof retrieved successfully");
-        } catch (TonCenterException e) {
-            log.warn("Get shard block proof failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -343,16 +318,15 @@ public class TonCenterTest {
     public void testGetConsensusBlock() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<Object> response = client.getConsensusBlock();
+            TonResponse<ConsensusBlockResponse> response = client.getConsensusBlock();
+            log.info("response {}", response.getResult());
             assertTrue("Consensus block should be successful", response.isSuccess());
             assertNotNull("Consensus block should not be null", response.getResult());
             log.info("Consensus block retrieved successfully");
-        } catch (TonCenterException e) {
-            log.warn("Get consensus block failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -362,16 +336,15 @@ public class TonCenterTest {
     public void testLookupBlock() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<Object> response = client.lookupBlockBySeqno(-1, -9223372036854775808L, 1000);
+            TonResponse<LookupBlockResponse> response = client.lookupBlockBySeqno(-1, -9223372036854775808L, 1000);
+            log.info("response {}", response.getResult());
             assertTrue("Lookup block should be successful", response.isSuccess());
             assertNotNull("Block lookup result should not be null", response.getResult());
             log.info("Block lookup completed successfully");
-        } catch (TonCenterException e) {
-            log.warn("Lookup block failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -381,7 +354,7 @@ public class TonCenterTest {
     public void testGetShards() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
@@ -399,8 +372,6 @@ public class TonCenterTest {
             
             log.info("Shards information retrieved successfully: {} shards", response.getResult().getShards().size());
             log.info("First shard: workchain={}, seqno={}", firstShard.getWorkchain(), firstShard.getSeqno());
-        } catch (TonCenterException e) {
-            log.warn("Get shards failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -410,36 +381,34 @@ public class TonCenterTest {
     public void testGetBlockTransactions() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             TonResponse<BlockTransactionsResponse> response = client.getBlockTransactions(-1, -9223372036854775808L, 1000L);
+            log.info("response {}", response.getResult());
             assertTrue("Block transactions should be successful", response.isSuccess());
             assertNotNull("Block transactions should not be null", response.getResult());
             log.info("Block transactions retrieved successfully");
-        } catch (TonCenterException e) {
-            log.warn("Get block transactions failed: {}", e.getMessage());
         } finally {
             client.close();
         }
+
     }
     
     @Test
     public void testGetBlockTransactionsExt() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             TonResponse<BlockTransactionsResponse> response = client.getBlockTransactionsExt(-1, -9223372036854775808L, 1000L, null, null, null, null, null);
+            log.info("response {}", response.getResult());
             assertTrue("Block transactions ext should be successful", response.isSuccess());
             assertNotNull("Block transactions ext should not be null", response.getResult());
             log.info("Block transactions ext retrieved successfully");
-            log.info("response {}", response.getResult());
-        } catch (TonCenterException e) {
-            log.warn("Get block transactions ext failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -449,16 +418,14 @@ public class TonCenterTest {
     public void testGetBlockHeader() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             TonResponse<BlockHeaderResponse> response = client.getBlockHeader(-1, -9223372036854775808L, 1000L);
+            log.info("response {}", response.getResult());
             assertTrue("Block header should be successful", response.isSuccess());
             assertNotNull("Block header should not be null", response.getResult());
-            log.info("response {}", response.getResult());
-        } catch (TonCenterException e) {
-            log.warn("Get block header failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -468,16 +435,15 @@ public class TonCenterTest {
     public void testGetOutMsgQueueSizes() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<Object> response = client.getOutMsgQueueSizes();
+            TonResponse<OutMsgQueueSizesResponse> response = client.getOutMsgQueueSizes();
+            log.info("response {}", response.getResult());
             assertTrue("Out msg queue sizes should be successful", response.isSuccess());
             assertNotNull("Queue sizes should not be null", response.getResult());
             log.info("Out message queue sizes retrieved successfully");
-        } catch (TonCenterException e) {
-            log.warn("Get out msg queue sizes failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -489,16 +455,15 @@ public class TonCenterTest {
     public void testGetConfigParam() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<Object> response = client.getConfigParam(0); // Config param 0 (address of config smart contract)
+            TonResponse<ConfigParamResponse> response = client.getConfigParam(0); // Config param 0 (address of config smart contract)
+            log.info("response {}", response.getResult());
             assertTrue("Config param should be successful", response.isSuccess());
             assertNotNull("Config param should not be null", response.getResult());
             log.info("Config param 0 retrieved successfully");
-        } catch (TonCenterException e) {
-            log.warn("Get config param failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -508,16 +473,15 @@ public class TonCenterTest {
     public void testGetConfigAll() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<Object> response = client.getConfigAll();
+            TonResponse<ConfigAllResponse> response = client.getConfigAll();
+            log.info("response {}", response.getResult());
             assertTrue("Config all should be successful", response.isSuccess());
             assertNotNull("Full config should not be null", response.getResult());
             log.info("Full config retrieved successfully");
-        } catch (TonCenterException e) {
-            log.warn("Get config all failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -529,11 +493,11 @@ public class TonCenterTest {
     public void testTryLocateTx() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<Object> response = client.tryLocateTx(TEST_ADDRESS, WALLET_ADDRESS, 1000000L);
+            TonResponse<LocateTxResponse> response = client.tryLocateTx(TEST_ADDRESS, WALLET_ADDRESS, 1000000L);
             // This might not find a transaction, but should not error
             log.info("Try locate tx completed: success={}", response.isSuccess());
         } catch (TonCenterException e) {
@@ -547,11 +511,11 @@ public class TonCenterTest {
     public void testTryLocateResultTx() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<Object> response = client.tryLocateResultTx(TEST_ADDRESS, WALLET_ADDRESS, 1000000L);
+            TonResponse<LocateTxResponse> response = client.tryLocateResultTx(TEST_ADDRESS, WALLET_ADDRESS, 1000000L);
             // This might not find a transaction, but should not error
             log.info("Try locate result tx completed: success={}", response.isSuccess());
         } catch (TonCenterException e) {
@@ -565,11 +529,11 @@ public class TonCenterTest {
     public void testTryLocateSourceTx() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
-            TonResponse<Object> response = client.tryLocateSourceTx(TEST_ADDRESS, WALLET_ADDRESS, 1000000L);
+            TonResponse<LocateTxResponse> response = client.tryLocateSourceTx(TEST_ADDRESS, WALLET_ADDRESS, 1000000L);
             // This might not find a transaction, but should not error
             log.info("Try locate source tx completed: success={}", response.isSuccess());
         } catch (TonCenterException e) {
@@ -585,17 +549,16 @@ public class TonCenterTest {
     public void testRunGetMethod() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             // Test calling seqno method on a wallet
-            TonResponse<Object> response = client.runGetMethod(WALLET_ADDRESS, "seqno", new ArrayList<>());
+            TonResponse<RunGetMethodResponse> response = client.runGetMethod(TEST_ADDRESS, "seqno", new ArrayList<>());
+            log.info("response {}", response.getResult());
             assertTrue("Run get method should be successful", response.isSuccess());
             assertNotNull("Method result should not be null", response.getResult());
             log.info("Get method 'seqno' executed successfully");
-        } catch (TonCenterException e) {
-            log.warn("Run get method failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -608,16 +571,14 @@ public class TonCenterTest {
     public void testSendBoc() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             // Using dummy BOC data - this will fail but tests the endpoint
             String dummyBoc = "te6ccgEBAQEAJgAAOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABYvI0mM=";
-            TonResponse<Object> response = client.sendBoc(dummyBoc);
+            TonResponse<SendBocResponse> response = client.sendBoc(dummyBoc);
             log.info("Send BOC completed: success={}", response.isSuccess());
-        } catch (TonCenterException e) {
-            log.info("Send BOC failed as expected with dummy data: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -627,7 +588,7 @@ public class TonCenterTest {
     public void testSendBocReturnHash() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
@@ -635,8 +596,6 @@ public class TonCenterTest {
             String dummyBoc = "te6ccgEBAQEAJgAAOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABYvI0mM=";
             TonResponse<String> response = client.sendBocReturnHash(dummyBoc);
             log.info("Send BOC return hash completed: success={}", response.isSuccess());
-        } catch (TonCenterException e) {
-            log.info("Send BOC return hash failed as expected with dummy data: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -646,15 +605,13 @@ public class TonCenterTest {
     public void testSendQuery() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             // Using dummy data - this will fail but tests the endpoint
-            TonResponse<Object> response = client.sendQuery(TEST_ADDRESS, "dummyBody", "", "");
+            TonResponse<SendQueryResponse> response = client.sendQuery(TEST_ADDRESS, "dummyBody", "", "");
             log.info("Send query completed: success={}", response.isSuccess());
-        } catch (TonCenterException e) {
-            log.info("Send query failed as expected with dummy data: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -664,15 +621,13 @@ public class TonCenterTest {
     public void testEstimateFee() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
             // Using dummy data - this will fail but tests the endpoint
-            TonResponse<Object> response = client.estimateFee(TEST_ADDRESS, "dummyBody");
+            TonResponse<EstimateFeeResponse> response = client.estimateFee(TEST_ADDRESS, "dummyBody");
             log.info("Estimate fee completed: success={}", response.isSuccess());
-        } catch (TonCenterException e) {
-            log.info("Estimate fee failed as expected with dummy data: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -684,7 +639,7 @@ public class TonCenterTest {
     public void testConvenienceMethods() {
         TonCenter client = TonCenter.builder()
                 .apiKey(API_KEY)
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {
@@ -698,9 +653,6 @@ public class TonCenterTest {
             assertTrue("Convenience method with limit should work", response2.isSuccess());
             log.info("Convenience method getTransactions(limit) works");
             log.info("response {}", response2.getResult());
-            
-        } catch (TonCenterException e) {
-            log.warn("Convenience methods failed: {}", e.getMessage());
         } finally {
             client.close();
         }
@@ -731,7 +683,7 @@ public class TonCenterTest {
     public void testApiKeyValidation() {
         TonCenter client = TonCenter.builder()
                 .apiKey("invalid-api-key")
-                .testnet()
+                .network(NETWORK)
                 .build();
         
         try {

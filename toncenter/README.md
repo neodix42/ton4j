@@ -4,14 +4,14 @@ A comprehensive Java wrapper for the [TonCenter API v2](https://toncenter.com/ap
 
 ## Features
 
-- **Complete API Coverage**: All 27 TonCenter API v2 endpoints implemented
-- **Type Safety**: Strongly typed request/response models using Gson
-- **Builder Pattern**: Fluent API for easy configuration
-- **Network Support**: Both mainnet and testnet endpoints
-- **Error Handling**: Comprehensive exception handling with custom exception types
-- **HTTP Client**: Built on OkHttp for reliable HTTP communication
-- **Logging**: Integrated SLF4J logging for debugging and monitoring
-- **Timeouts**: Configurable connection, read, and write timeouts
+- ✅ **Complete API Coverage**: All 27 TonCenter API v2 endpoints implemented
+- ✅ **Type Safety**: Strongly typed request/response models using Gson
+- ✅ **Builder Pattern**: Fluent API for easy configuration
+- ✅ **Network Support**: Both mainnet and testnet support
+- ✅ **Error Handling**: Comprehensive exception handling with detailed error messages
+- ✅ **HTTP Client**: Built on OkHttp for reliable HTTP communication
+- ✅ **Logging**: Built-in request/response logging using SLF4J
+- ✅ **Resource Management**: Proper cleanup with close() method
 
 ## Installation
 
@@ -29,13 +29,13 @@ Add the dependency to your `pom.xml`:
 
 ```java
 import org.ton.ton4j.toncenter.TonCenter;
-import org.ton.ton4j.toncenter.TonResponse;
-import org.ton.ton4j.toncenter.model.AddressInformationResponse;
+import org.ton.ton4j.toncenter.Network;
+import org.ton.ton4j.toncenter.model.*;
 
-// Create client for testnet
+// Create client with API key
 TonCenter client = TonCenter.builder()
-    .apiKey("your-api-key")
-    .testnet()
+    .apiKey("your-api-key-here")
+    .network(Network.MAINNET)
     .build();
 
 try {
@@ -44,172 +44,80 @@ try {
         client.getAddressInformation("EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N");
     
     if (response.isSuccess()) {
-        System.out.println("Balance: " + response.getResult().getBalance());
+        AddressInformationResponse info = response.getResult();
+        System.out.println("Balance: " + info.getBalance());
+        System.out.println("State: " + info.getState());
     }
+    
+    // Get recent transactions
+    TonResponse<List<TransactionResponse>> txResponse = 
+        client.getTransactions("EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N", 10);
+    
+    if (txResponse.isSuccess()) {
+        List<TransactionResponse> transactions = txResponse.getResult();
+        System.out.println("Found " + transactions.size() + " transactions");
+    }
+    
 } finally {
-    client.close();
+    client.close(); // Important: cleanup resources
 }
 ```
 
-## Configuration
-
-### Basic Configuration
-
-```java
-// Mainnet with API key
-TonCenter client = TonCenter.builder()
-    .apiKey("your-api-key")
-    .mainnet()
-    .build();
-
-// Testnet without API key (limited functionality)
-TonCenter client = TonCenter.builder()
-    .testnet()
-    .build();
-```
-
-### Advanced Configuration
+## Configuration Options
 
 ```java
 TonCenter client = TonCenter.builder()
-    .apiKey("your-api-key")
-    .network(Network.TESTNET)
-    .connectTimeout(Duration.ofSeconds(10))
-    .readTimeout(Duration.ofSeconds(30))
-    .writeTimeout(Duration.ofSeconds(30))
+    .apiKey("your-api-key")                    // Optional: API key for higher rate limits
+    .network(Network.MAINNET)                  // MAINNET or TESTNET
+    .connectTimeout(Duration.ofSeconds(10))    // Connection timeout
+    .readTimeout(Duration.ofSeconds(30))       // Read timeout  
+    .writeTimeout(Duration.ofSeconds(30))      // Write timeout
     .build();
 ```
 
-### Custom Endpoint
-
-```java
-TonCenter client = TonCenter.builder()
-    .endpoint("https://your-custom-endpoint.com/api/v2")
-    .apiKey("your-api-key")
-    .build();
-```
-
-## API Methods
+## API Endpoints Coverage
 
 ### Account Methods (10 endpoints)
-
-```java
-// Get basic address information
-TonResponse<AddressInformationResponse> info = client.getAddressInformation(address);
-
-// Get extended address information
-TonResponse<Object> extendedInfo = client.getExtendedAddressInformation(address);
-
-// Get wallet information
-TonResponse<Object> walletInfo = client.getWalletInformation(address);
-
-// Get transaction history
-TonResponse<List<TransactionResponse>> transactions = client.getTransactions(address, 10);
-
-// Get address balance
-TonResponse<String> balance = client.getAddressBalance(address);
-
-// Get address state
-TonResponse<String> state = client.getAddressState(address);
-
-// Address format conversion
-TonResponse<String> packed = client.packAddress(rawAddress);
-TonResponse<String> unpacked = client.unpackAddress(friendlyAddress);
-TonResponse<Object> detected = client.detectAddress(address);
-
-// Get token data (NFT/Jetton)
-TonResponse<Object> tokenData = client.getTokenData(address);
-```
+- `getAddressInformation(address)` - Basic address information
+- `getExtendedAddressInformation(address)` - Extended address information
+- `getWalletInformation(address)` - Wallet-specific information
+- `getTransactions(address, ...)` - Transaction history
+- `getAddressBalance(address)` - Address balance
+- `getAddressState(address)` - Address state
+- `packAddress(address)` - Convert raw to user-friendly format
+- `unpackAddress(address)` - Convert user-friendly to raw format
+- `detectAddress(address)` - Get all address forms
+- `getTokenData(address)` - NFT/Jetton information
 
 ### Block Methods (9 endpoints)
-
-```java
-// Get masterchain information
-TonResponse<MasterchainInfoResponse> masterchainInfo = client.getMasterchainInfo();
-
-// Get block signatures
-TonResponse<Object> signatures = client.getMasterchainBlockSignatures(seqno);
-
-// Get shard block proof
-TonResponse<Object> proof = client.getShardBlockProof(workchain, shard, seqno);
-
-// Get consensus block
-TonResponse<Object> consensus = client.getConsensusBlock();
-
-// Lookup block
-TonResponse<Object> block = client.lookupBlockBySeqno(workchain, shard, seqno);
-
-// Get shards information
-TonResponse<ShardsResponse> shards = client.getShards(seqno);
-
-// Get block transactions
-TonResponse<Object> blockTxs = client.getBlockTransactions(workchain, shard, seqno);
-TonResponse<Object> blockTxsExt = client.getBlockTransactionsExt(workchain, shard, seqno, null, null, null, null, null);
-
-// Get block header
-TonResponse<Object> header = client.getBlockHeader(workchain, shard, seqno);
-
-// Get message queue sizes
-TonResponse<Object> queueSizes = client.getOutMsgQueueSizes();
-```
+- `getMasterchainInfo()` - Current masterchain state
+- `getMasterchainBlockSignatures(seqno)` - Block signatures
+- `getShardBlockProof(...)` - Merkle proof of shardchain block
+- `getConsensusBlock()` - Consensus block information
+- `lookupBlock(...)` - Find block by seqno/lt/unixtime
+- `getShards(seqno)` - Shard information
+- `getBlockTransactions(...)` - Block transactions
+- `getBlockTransactionsExt(...)` - Extended block transactions
+- `getBlockHeader(...)` - Block metadata
+- `getOutMsgQueueSizes()` - Message queue sizes
 
 ### Configuration Methods (2 endpoints)
-
-```java
-// Get specific config parameter
-TonResponse<Object> configParam = client.getConfigParam(configId);
-
-// Get full configuration
-TonResponse<Object> fullConfig = client.getConfigAll();
-```
+- `getConfigParam(configId)` - Get config parameter
+- `getConfigAll()` - Get full config
 
 ### Transaction Methods (3 endpoints)
+- `tryLocateTx(...)` - Locate outgoing transaction
+- `tryLocateResultTx(...)` - Same as tryLocateTx
+- `tryLocateSourceTx(...)` - Locate incoming transaction
 
-```java
-// Locate transactions
-TonResponse<Object> tx = client.tryLocateTx(source, destination, createdLt);
-TonResponse<Object> resultTx = client.tryLocateResultTx(source, destination, createdLt);
-TonResponse<Object> sourceTx = client.tryLocateSourceTx(source, destination, createdLt);
-```
-
-### Smart Contract Methods (1 endpoint)
-
-```java
-// Run get method on smart contract
-List<List<Object>> stack = new ArrayList<>();
-TonResponse<Object> result = client.runGetMethod(address, "get_method_name", stack);
-```
+### Run Method (1 endpoint)
+- `runGetMethod(address, method, stack)` - Execute smart contract get method
 
 ### Send Methods (4 endpoints)
-
-```java
-// Send BOC (Bag of Cells)
-TonResponse<Object> sendResult = client.sendBoc(bocData);
-TonResponse<String> hash = client.sendBocReturnHash(bocData);
-
-// Send query
-TonResponse<Object> queryResult = client.sendQuery(address, body, initCode, initData);
-
-// Estimate fees
-TonResponse<Object> feeEstimate = client.estimateFee(address, body);
-```
-
-## Response Handling
-
-All API methods return a `TonResponse<T>` object:
-
-```java
-TonResponse<AddressInformationResponse> response = client.getAddressInformation(address);
-
-if (response.isSuccess()) {
-    AddressInformationResponse data = response.getResult();
-    System.out.println("Balance: " + data.getBalance());
-    System.out.println("State: " + data.getState());
-} else {
-    System.err.println("Error: " + response.getError());
-    System.err.println("Code: " + response.getCode());
-}
-```
+- `sendBoc(boc)` - Send serialized message
+- `sendBocReturnHash(boc)` - Send message and return hash
+- `sendQuery(...)` - Send unpacked external message
+- `estimateFee(...)` - Estimate transaction fees
 
 ## Error Handling
 
@@ -217,49 +125,67 @@ The wrapper provides comprehensive error handling:
 
 ```java
 try {
-    TonResponse<AddressInformationResponse> response = client.getAddressInformation(address);
-    // Handle successful response
+    TonResponse<AddressInformationResponse> response = 
+        client.getAddressInformation("invalid-address");
 } catch (TonCenterApiException e) {
-    // API returned an error response
-    System.err.println("API Error: " + e.getMessage());
-    System.err.println("Error Code: " + e.getErrorCode());
+    // API returned an error (4xx, 5xx with structured error response)
+    System.err.println("API Error [" + e.getErrorCode() + "]: " + e.getMessage());
 } catch (TonCenterException e) {
-    // Network or other error
-    System.err.println("Network Error: " + e.getMessage());
+    // Network error, parsing error, or other issues
+    System.err.println("Client Error: " + e.getMessage());
 }
 ```
 
-## Exception Types
+## Response Format
 
-- `TonCenterException`: Base exception for all TonCenter-related errors
-- `TonCenterApiException`: Thrown when the API returns an error response
+All API methods return a `TonResponse<T>` object:
 
-## Typed Response Models
+```java
+public class TonResponse<T> {
+    private Boolean ok;           // Success indicator
+    private T result;            // Response data (when successful)
+    private String error;        // Error message (when failed)
+    private Integer code;        // Error code (when failed)
+    
+    public boolean isSuccess() { return Boolean.TRUE.equals(ok); }
+    public boolean isError() { return !isSuccess(); }
+    // ... getters
+}
+```
 
-The wrapper includes strongly typed models for common responses:
+## Network Selection
 
-- `AddressInformationResponse`: Address information with balance, state, etc.
-- `TransactionResponse`: Transaction details
-- `MasterchainInfoResponse`: Masterchain state information
-- `ShardsResponse`: Shards information with block details
-- `SendBocRequest`: Request model for sending BOC data
-- `RunGetMethodRequest`: Request model for smart contract method calls
+```java
+// Mainnet (default)
+TonCenter mainnet = TonCenter.builder()
+    .network(Network.MAINNET)
+    .build();
+
+// Testnet
+TonCenter testnet = TonCenter.builder()
+    .network(Network.TESTNET)
+    .build();
+```
 
 ## Convenience Methods
 
-The wrapper provides convenience methods for common use cases:
+The wrapper includes convenience methods for common operations:
 
 ```java
 // Get transactions with default limit (10)
-TonResponse<List<TransactionResponse>> txs = client.getTransactions(address);
+client.getTransactions(address);
 
 // Get transactions with custom limit
-TonResponse<List<TransactionResponse>> txs = client.getTransactions(address, 5);
+client.getTransactions(address, 20);
 
-// Lookup block by different criteria
-TonResponse<Object> block1 = client.lookupBlockBySeqno(workchain, shard, seqno);
-TonResponse<Object> block2 = client.lookupBlockByLt(workchain, shard, lt);
-TonResponse<Object> block3 = client.lookupBlockByUnixtime(workchain, shard, unixtime);
+// Get config parameter without seqno
+client.getConfigParam(0);
+
+// Lookup block by seqno only
+client.lookupBlockBySeqno(workchain, shard, seqno);
+
+// Estimate fees with default parameters
+client.estimateFee(address, body);
 ```
 
 ## Logging
@@ -267,133 +193,90 @@ TonResponse<Object> block3 = client.lookupBlockByUnixtime(workchain, shard, unix
 The wrapper uses SLF4J for logging. HTTP requests and responses are logged at DEBUG level:
 
 ```java
-// Enable debug logging to see HTTP requests
-Logger logger = LoggerFactory.getLogger(TonCenter.class);
-((ch.qos.logback.classic.Logger) logger).setLevel(Level.DEBUG);
+// Add to your logback.xml or log4j2.xml
+<logger name="org.ton.ton4j.toncenter.TonCenter" level="DEBUG"/>
 ```
+
+## Thread Safety
+
+The `TonCenter` client is thread-safe and can be shared across multiple threads. However, each client should be properly closed when no longer needed.
 
 ## Resource Management
 
-Always close the client when done to release resources:
+Always close the client to release HTTP connection resources:
 
 ```java
 TonCenter client = TonCenter.builder().build();
 try {
-    // Use client
+    // Use client...
 } finally {
-    client.close();
+    client.close(); // Important!
 }
 ```
 
-Or use try-with-resources pattern if implementing AutoCloseable:
+Or use try-with-resources pattern if you implement AutoCloseable.
 
-```java
-// Note: TonCenter doesn't implement AutoCloseable yet, but you can wrap it
-try (var wrapper = new AutoCloseableWrapper(client)) {
-    // Use client
-}
-```
+## API Rate Limits
 
-## Testing
+- Without API key: 1 request per second
+- With API key: Higher limits (check TonCenter documentation)
 
-The wrapper includes comprehensive tests covering all endpoints:
-
-```bash
-mvn test
-```
-
-Run specific test:
-
-```bash
-mvn test -Dtest=TonCenterTest#testGetAddressInformation
-```
-
-## API Key
-
-Get your API key from [TonCenter](https://toncenter.com/). Some endpoints work without an API key but with rate limiting.
-
-## Network Endpoints
-
-- **Mainnet**: `https://toncenter.com/api/v2`
-- **Testnet**: `https://testnet.toncenter.com/api/v2`
-
-## Dependencies
-
-- **OkHttp**: HTTP client
-- **Gson**: JSON serialization/deserialization
-- **SLF4J**: Logging facade
-- **Lombok**: Code generation (annotations)
+Get your API key from [TonCenter](https://toncenter.com/).
 
 ## Examples
 
 ### Get Wallet Balance
 
 ```java
-TonCenter client = TonCenter.builder()
-    .apiKey("your-api-key")
-    .testnet()
-    .build();
+TonResponse<AddressBalanceResponse> response = 
+    client.getAddressBalance("EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N");
 
-try {
-    String address = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
-    TonResponse<String> response = client.getAddressBalance(address);
-    
-    if (response.isSuccess()) {
-        long balanceNanotons = Long.parseLong(response.getResult());
-        double balanceTons = balanceNanotons / 1_000_000_000.0;
-        System.out.println("Balance: " + balanceTons + " TON");
-    }
-} finally {
-    client.close();
+if (response.isSuccess()) {
+    String balance = response.getResult().getBalance();
+    System.out.println("Balance: " + balance + " nanotons");
 }
 ```
 
-### Get Transaction History
+### Execute Smart Contract Method
 
 ```java
-TonCenter client = TonCenter.builder()
-    .apiKey("your-api-key")
-    .testnet()
-    .build();
+List<List<Object>> stack = new ArrayList<>(); // Empty stack for seqno method
 
-try {
-    String address = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
-    TonResponse<List<TransactionResponse>> response = client.getTransactions(address, 5);
-    
-    if (response.isSuccess()) {
-        for (TransactionResponse tx : response.getResult()) {
-            System.out.println("Transaction: " + tx.getTransactionId().getHash());
-            System.out.println("Time: " + tx.getUtime());
-        }
-    }
-} finally {
-    client.close();
+TonResponse<RunGetMethodResponse> response = 
+    client.runGetMethod("EQD7vdOGw8KvXW6_OgBR2QpBQq5-9R8N8DCo0peQJZrP_VLu", "seqno", stack);
+
+if (response.isSuccess()) {
+    RunGetMethodResponse result = response.getResult();
+    System.out.println("Exit code: " + result.getExitCode());
+    System.out.println("Stack: " + result.getStack());
 }
 ```
 
-### Call Smart Contract Method
+### Get Recent Transactions
 
 ```java
-TonCenter client = TonCenter.builder()
-    .apiKey("your-api-key")
-    .testnet()
-    .build();
+TonResponse<List<TransactionResponse>> response = 
+    client.getTransactions("EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N", 5);
 
-try {
-    String contractAddress = "EQD7vdOGw8KvXW6_OgBR2QpBQq5-9R8N8DCo0peQJZrP_VLu";
-    TonResponse<Object> response = client.runGetMethod(contractAddress, "seqno", new ArrayList<>());
-    
-    if (response.isSuccess()) {
-        System.out.println("Contract seqno: " + response.getResult());
+if (response.isSuccess()) {
+    for (TransactionResponse tx : response.getResult()) {
+        System.out.println("Transaction: " + tx.getTransactionId().getHash());
+        System.out.println("Time: " + tx.getUtime());
+        System.out.println("Fee: " + tx.getFee());
     }
-} finally {
-    client.close();
 }
 ```
+
+## Dependencies
+
+- **OkHttp**: HTTP client
+- **Gson**: JSON serialization/deserialization  
+- **SLF4J**: Logging facade
+- **Lombok**: Code generation (compile-time only)
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](../LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
 
 ## Contributing
 
@@ -401,6 +284,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Support
 
-For issues and questions:
-- Create an issue on GitHub
-- Check the [TonCenter API documentation](https://toncenter.com/api/v2/)
+- [TonCenter API Documentation](https://toncenter.com/api/v2/)
+- [TON Documentation](https://ton.org/docs/)
+- [GitHub Issues](https://github.com/neodix42/ton4j/issues)

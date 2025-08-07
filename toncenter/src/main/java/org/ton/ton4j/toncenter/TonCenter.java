@@ -3,10 +3,10 @@ package org.ton.ton4j.toncenter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.ton.ton4j.toncenter.model.*;
+import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -23,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class TonCenter {
 
-    private static final String MAINNET_ENDPOINT = "https://toncenter.com/api/v2";
-    private static final String TESTNET_ENDPOINT = "https://testnet.toncenter.com/api/v2";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     
     private String apiKey;
@@ -43,7 +41,7 @@ public class TonCenter {
 
     public static class TonCenterBuilder {
         private String apiKey;
-        private String endpoint = MAINNET_ENDPOINT;
+    private String endpoint = Network.MAINNET.getEndpoint();
         private Network network;
         private Duration connectTimeout = Duration.ofSeconds(10);
         private Duration readTimeout = Duration.ofSeconds(30);
@@ -77,12 +75,12 @@ public class TonCenter {
         public TonCenterBuilder network(Network network) {
             this.network = network;
             // Set endpoint based on network if not explicitly set
-            if (this.endpoint == null || this.endpoint.equals(MAINNET_ENDPOINT) || this.endpoint.equals(TESTNET_ENDPOINT)) {
+            if (this.endpoint == null || this.endpoint.equals(Network.MAINNET.getEndpoint()) || this.endpoint.equals(Network.TESTNET.getEndpoint())) {
                 this.endpoint = network.getEndpoint();
             }
             return this;
         }
-        
+
         public TonCenterBuilder mainnet() {
             return network(Network.MAINNET);
         }
@@ -95,9 +93,6 @@ public class TonCenter {
             // Ensure endpoint matches network
             if (this.network != null) {
                 this.endpoint = this.network.getEndpoint();
-            }
-            else {
-                this.endpoint = endpoint;
             }
             
             TonCenter tonCenter = new TonCenter();
@@ -161,9 +156,7 @@ public class TonCenter {
         // Add query parameters
         if (params != null) {
             for (Map.Entry<String, String> entry : params.entrySet()) {
-                if (entry.getValue() != null) {
-                    urlBuilder.addQueryParameter(entry.getKey(), entry.getValue());
-                }
+                urlBuilder.addQueryParameter(entry.getKey(), entry.getValue());
             }
         }
         
@@ -210,7 +203,32 @@ public class TonCenter {
             String responseBody = response.body().string();
             
             if (!response.isSuccessful()) {
-                throw new TonCenterException("HTTP error: " + response.code() + " " + response.message());
+                // Try to parse error response from API
+                try {
+                    Type errorResponseType = new TypeToken<TonResponse<Object>>(){}.getType();
+                    TonResponse<Object> errorResponse = gson.fromJson(responseBody, errorResponseType);
+                    
+                    if (errorResponse != null && errorResponse.getError() != null) {
+                        // API returned structured error - use the error code from the response if available
+                        Integer errorCode = errorResponse.getCode() != null ? errorResponse.getCode() : response.code();
+                        throw new TonCenterApiException(errorResponse.getError(), errorCode);
+                    }
+                } catch (TonCenterApiException e) {
+                    // Re-throw TonCenterApiException
+                    throw e;
+                } catch (Exception parseException) {
+                    // If we can't parse the error response, fall back to basic HTTP error
+                    log.debug("Could not parse error response: {}", parseException.getMessage());
+                }
+                
+                // Fallback to basic HTTP error with response body if available
+                String errorMessage = "HTTP error: " + response.code();
+                if (responseBody != null && !responseBody.trim().isEmpty()) {
+                    errorMessage += " - " + responseBody;
+                } else if (response.message() != null) {
+                    errorMessage += " " + response.message();
+                }
+                throw new TonCenterException(errorMessage);
             }
             
             // Parse the response
@@ -247,44 +265,6 @@ public class TonCenter {
     }
     
     /**
-     * Get transaction history of a given address
-     */
-    public TonResponse<List<TransactionResponse>> getTransactions(String address, Integer limit, Long lt, String hash, Long toLt, Boolean archival) {
-        Map<String, String> params = new HashMap<>();
-        params.put("address", address);
-        if (limit != null) params.put("limit", limit.toString());
-        if (lt != null) params.put("lt", lt.toString());
-        if (hash != null) params.put("hash", hash);
-        if (toLt != null) params.put("to_lt", toLt.toString());
-        if (archival != null) params.put("archival", archival.toString());
-        
-        Type responseType = new TypeToken<TonResponse<List<TransactionResponse>>>(){}.getType();
-        return executeGet("/getTransactions", params, responseType);
-    }
-    
-    /**
-     * Get balance (in nanotons) of a given address
-     */
-    public TonResponse<AddressBalanceResponse> getAddressBalance(String address) {
-        Map<String, String> params = new HashMap<>();
-        params.put("address", address);
-        
-        Type responseType = new TypeToken<TonResponse<AddressBalanceResponse>>(){}.getType();
-        return executeGet("/getAddressBalance", params, responseType);
-    }
-    
-    /**
-     * Get state of a given address. State can be either unitialized, active or frozen
-     */
-    public TonResponse<AddressStateResponse> getAddressState(String address) {
-        Map<String, String> params = new HashMap<>();
-        params.put("address", address);
-        
-        Type responseType = new TypeToken<TonResponse<AddressStateResponse>>(){}.getType();
-        return executeGet("/getAddressState", params, responseType);
-    }
-    
-    /**
      * Similar to getAddressInformation but tries to parse additional information for known contract types
      */
     public TonResponse<ExtendedAddressInformationResponse> getExtendedAddressInformation(String address) {
@@ -307,14 +287,41 @@ public class TonCenter {
     }
     
     /**
-     * Get NFT or Jetton information
+     * Get transaction history of a given address
      */
-    public TonResponse<Object> getTokenData(String address) {
+    public TonResponse<List<TransactionResponse>> getTransactions(String address, Integer limit, Long lt, String hash, Long toLt, Boolean archival) {
+        Map<String, String> params = new HashMap<>();
+        params.put("address", address);
+        if (limit != null) params.put("limit", limit.toString());
+        if (lt != null) params.put("lt", lt.toString());
+        if (hash != null) params.put("hash", hash);
+        if (toLt != null) params.put("to_lt", toLt.toString());
+        if (archival != null) params.put("archival", archival.toString());
+        
+        Type responseType = new TypeToken<TonResponse<List<TransactionResponse>>>(){}.getType();
+        return executeGet("/getTransactions", params, responseType);
+    }
+    
+    /**
+     * Get balance (in nanotons) of a given address
+     */
+    public TonResponse<String> getAddressBalance(String address) {
         Map<String, String> params = new HashMap<>();
         params.put("address", address);
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
-        return executeGet("/getTokenData", params, responseType);
+        Type responseType = new TypeToken<TonResponse<String>>(){}.getType();
+        return executeGet("/getAddressBalance", params, responseType);
+    }
+    
+    /**
+     * Get state of a given address. State can be either unitialized, active or frozen
+     */
+    public TonResponse<String> getAddressState(String address) {
+        Map<String, String> params = new HashMap<>();
+        params.put("address", address);
+        
+        Type responseType = new TypeToken<TonResponse<String>>(){}.getType();
+        return executeGet("/getAddressState", params, responseType);
     }
     
     /**
@@ -350,6 +357,17 @@ public class TonCenter {
         return executeGet("/detectAddress", params, responseType);
     }
     
+    /**
+     * Get NFT or Jetton information
+     */
+    public TonResponse<TokenDataResponse> getTokenData(String address) {
+        Map<String, String> params = new HashMap<>();
+        params.put("address", address);
+        
+        Type responseType = new TypeToken<TonResponse<TokenDataResponse>>(){}.getType();
+        return executeGet("/getTokenData", params, responseType);
+    }
+    
     // ========== BLOCK METHODS ==========
     
     /**
@@ -363,40 +381,40 @@ public class TonCenter {
     /**
      * Get masterchain block signatures
      */
-    public TonResponse<Object> getMasterchainBlockSignatures(Integer seqno) {
+    public TonResponse<MasterchainBlockSignaturesResponse> getMasterchainBlockSignatures(Integer seqno) {
         Map<String, String> params = new HashMap<>();
         params.put("seqno", seqno.toString());
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<MasterchainBlockSignaturesResponse>>(){}.getType();
         return executeGet("/getMasterchainBlockSignatures", params, responseType);
     }
     
     /**
      * Get merkle proof of shardchain block
      */
-    public TonResponse<Object> getShardBlockProof(Integer workchain, Long shard, Long seqno, Integer fromSeqno) {
+    public TonResponse<ShardBlockProofResponse> getShardBlockProof(Integer workchain, Long shard, Long seqno, Integer fromSeqno) {
         Map<String, String> params = new HashMap<>();
         params.put("workchain", workchain.toString());
         params.put("shard", shard.toString());
         params.put("seqno", seqno.toString());
         if (fromSeqno != null) params.put("from_seqno", fromSeqno.toString());
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<ShardBlockProofResponse>>(){}.getType();
         return executeGet("/getShardBlockProof", params, responseType);
     }
     
     /**
      * Get consensus block and its update timestamp
      */
-    public TonResponse<Object> getConsensusBlock() {
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+    public TonResponse<ConsensusBlockResponse> getConsensusBlock() {
+        Type responseType = new TypeToken<TonResponse<ConsensusBlockResponse>>(){}.getType();
         return executeGet("/getConsensusBlock", null, responseType);
     }
     
     /**
      * Look up block by either seqno, lt or unixtime
      */
-    public TonResponse<Object> lookupBlock(Integer workchain, Long shard, Integer seqno, Long lt, Integer unixtime) {
+    public TonResponse<LookupBlockResponse> lookupBlock(Integer workchain, Long shard, Integer seqno, Long lt, Integer unixtime) {
         Map<String, String> params = new HashMap<>();
         params.put("workchain", workchain.toString());
         params.put("shard", shard.toString());
@@ -404,7 +422,7 @@ public class TonCenter {
         if (lt != null) params.put("lt", lt.toString());
         if (unixtime != null) params.put("unixtime", unixtime.toString());
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<LookupBlockResponse>>(){}.getType();
         return executeGet("/lookupBlock", params, responseType);
     }
     
@@ -473,8 +491,8 @@ public class TonCenter {
     /**
      * Get info with current sizes of messages queues by shards
      */
-    public TonResponse<Object> getOutMsgQueueSizes() {
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+    public TonResponse<OutMsgQueueSizesResponse> getOutMsgQueueSizes() {
+        Type responseType = new TypeToken<TonResponse<OutMsgQueueSizesResponse>>(){}.getType();
         return executeGet("/getOutMsgQueueSizes", null, responseType);
     }
     
@@ -483,23 +501,23 @@ public class TonCenter {
     /**
      * Get config by id
      */
-    public TonResponse<Object> getConfigParam(Integer configId, Integer seqno) {
+    public TonResponse<ConfigParamResponse> getConfigParam(Integer configId, Integer seqno) {
         Map<String, String> params = new HashMap<>();
         params.put("config_id", configId.toString());
         if (seqno != null) params.put("seqno", seqno.toString());
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<ConfigParamResponse>>(){}.getType();
         return executeGet("/getConfigParam", params, responseType);
     }
     
     /**
      * Get cell with full config
      */
-    public TonResponse<Object> getConfigAll(Integer seqno) {
+    public TonResponse<ConfigAllResponse> getConfigAll(Integer seqno) {
         Map<String, String> params = new HashMap<>();
         if (seqno != null) params.put("seqno", seqno.toString());
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<ConfigAllResponse>>(){}.getType();
         return executeGet("/getConfigAll", params, responseType);
     }
     
@@ -508,40 +526,58 @@ public class TonCenter {
     /**
      * Locate outcoming transaction of destination address by incoming message
      */
-    public TonResponse<Object> tryLocateTx(String source, String destination, Long createdLt) {
+    public TonResponse<LocateTxResponse> tryLocateTx(String source, String destination, Long createdLt) {
         Map<String, String> params = new HashMap<>();
         params.put("source", source);
         params.put("destination", destination);
         params.put("created_lt", createdLt.toString());
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<LocateTxResponse>>(){}.getType();
         return executeGet("/tryLocateTx", params, responseType);
     }
     
     /**
      * Same as tryLocateTx. Locate outcoming transaction of destination address by incoming message
      */
-    public TonResponse<Object> tryLocateResultTx(String source, String destination, Long createdLt) {
+    public TonResponse<LocateTxResponse> tryLocateResultTx(String source, String destination, Long createdLt) {
         Map<String, String> params = new HashMap<>();
         params.put("source", source);
         params.put("destination", destination);
         params.put("created_lt", createdLt.toString());
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<LocateTxResponse>>(){}.getType();
         return executeGet("/tryLocateResultTx", params, responseType);
     }
     
     /**
      * Locate incoming transaction of source address by outcoming message
      */
-    public TonResponse<Object> tryLocateSourceTx(String source, String destination, Long createdLt) {
+    public TonResponse<LocateTxResponse> tryLocateSourceTx(String source, String destination, Long createdLt) {
         Map<String, String> params = new HashMap<>();
         params.put("source", source);
         params.put("destination", destination);
         params.put("created_lt", createdLt.toString());
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<LocateTxResponse>>(){}.getType();
         return executeGet("/tryLocateSourceTx", params, responseType);
+    }
+    
+    // ========== RUN METHOD ==========
+    
+    /**
+     * Run get method on smart contract
+     */
+    public TonResponse<RunGetMethodResponse> runGetMethod(String address, Object method, List<List<Object>> stack, Integer seqno) {
+        RunGetMethodRequest request = new RunGetMethodRequest(address, method, stack, seqno);
+        Type responseType = new TypeToken<TonResponse<RunGetMethodResponse>>(){}.getType();
+        return executePost("/runGetMethod", request, responseType);
+    }
+    
+    /**
+     * Run get method on smart contract (without seqno)
+     */
+    public TonResponse<RunGetMethodResponse> runGetMethod(String address, Object method, List<List<Object>> stack) {
+        return runGetMethod(address, method, stack, null);
     }
     
     // ========== SEND METHODS ==========
@@ -549,9 +585,9 @@ public class TonCenter {
     /**
      * Send serialized boc file: fully packed and serialized external message to blockchain
      */
-    public TonResponse<Object> sendBoc(String boc) {
+    public TonResponse<SendBocResponse> sendBoc(String boc) {
         SendBocRequest request = new SendBocRequest(boc);
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<SendBocResponse>>(){}.getType();
         return executePost("/sendBoc", request, responseType);
     }
     
@@ -565,25 +601,9 @@ public class TonCenter {
     }
     
     /**
-     * Run get method on smart contract
-     */
-    public TonResponse<Object> runGetMethod(String address, Object method, List<List<Object>> stack, Integer seqno) {
-        RunGetMethodRequest request = new RunGetMethodRequest(address, method, stack, seqno);
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
-        return executePost("/runGetMethod", request, responseType);
-    }
-    
-    /**
-     * Run get method on smart contract (without seqno)
-     */
-    public TonResponse<Object> runGetMethod(String address, Object method, List<List<Object>> stack) {
-        return runGetMethod(address, method, stack, null);
-    }
-    
-    /**
      * Send query - unpacked external message
      */
-    public TonResponse<Object> sendQuery(String address, String body, String initCode, String initData) {
+    public TonResponse<SendQueryResponse> sendQuery(String address, String body, String initCode, String initData) {
         Map<String, Object> requestMap = new HashMap<>();
         requestMap.put("address", address);
         requestMap.put("body", body);
@@ -594,14 +614,14 @@ public class TonCenter {
             requestMap.put("init_data", initData);
         }
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<SendQueryResponse>>(){}.getType();
         return executePost("/sendQuery", requestMap, responseType);
     }
     
     /**
      * Estimate fees required for query processing
      */
-    public TonResponse<Object> estimateFee(String address, String body, String initCode, String initData, Boolean ignoreChksig) {
+    public TonResponse<EstimateFeeResponse> estimateFee(String address, String body, String initCode, String initData, Boolean ignoreChksig) {
         Map<String, Object> requestMap = new HashMap<>();
         requestMap.put("address", address);
         requestMap.put("body", body);
@@ -615,22 +635,8 @@ public class TonCenter {
             requestMap.put("ignore_chksig", ignoreChksig);
         }
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<EstimateFeeResponse>>(){}.getType();
         return executePost("/estimateFee", requestMap, responseType);
-    }
-    
-    /**
-     * Estimate fees required for query processing (with default ignoreChksig=true)
-     */
-    public TonResponse<Object> estimateFee(String address, String body, String initCode, String initData) {
-        return estimateFee(address, body, initCode, initData, true);
-    }
-    
-    /**
-     * Estimate fees required for query processing (minimal parameters)
-     */
-    public TonResponse<Object> estimateFee(String address, String body) {
-        return estimateFee(address, body, null, null, true);
     }
     
     // ========== CONVENIENCE METHODS ==========
@@ -652,14 +658,14 @@ public class TonCenter {
     /**
      * Get config parameter without seqno
      */
-    public TonResponse<Object> getConfigParam(Integer configId) {
+    public TonResponse<ConfigParamResponse> getConfigParam(Integer configId) {
         return getConfigParam(configId, null);
     }
     
     /**
      * Get full config without seqno
      */
-    public TonResponse<Object> getConfigAll() {
+    public TonResponse<ConfigAllResponse> getConfigAll() {
         return getConfigAll(null);
     }
     
@@ -680,29 +686,43 @@ public class TonCenter {
     /**
      * Lookup block by seqno only
      */
-    public TonResponse<Object> lookupBlockBySeqno(Integer workchain, Long shard, Integer seqno) {
+    public TonResponse<LookupBlockResponse> lookupBlockBySeqno(Integer workchain, Long shard, Integer seqno) {
         return lookupBlock(workchain, shard, seqno, null, null);
     }
     
     /**
      * Lookup block by logical time only
      */
-    public TonResponse<Object> lookupBlockByLt(Integer workchain, Long shard, Long lt) {
+    public TonResponse<LookupBlockResponse> lookupBlockByLt(Integer workchain, Long shard, Long lt) {
         return lookupBlock(workchain, shard, null, lt, null);
     }
     
     /**
      * Lookup block by unix time only
      */
-    public TonResponse<Object> lookupBlockByUnixtime(Integer workchain, Long shard, Integer unixtime) {
+    public TonResponse<LookupBlockResponse> lookupBlockByUnixtime(Integer workchain, Long shard, Integer unixtime) {
         return lookupBlock(workchain, shard, null, null, unixtime);
     }
     
     /**
      * Get shard block proof with minimal parameters
      */
-    public TonResponse<Object> getShardBlockProof(Integer workchain, Long shard, Long seqno) {
+    public TonResponse<ShardBlockProofResponse> getShardBlockProof(Integer workchain, Long shard, Long seqno) {
         return getShardBlockProof(workchain, shard, seqno, null);
+    }
+    
+    /**
+     * Estimate fees required for query processing (with default ignoreChksig=true)
+     */
+    public TonResponse<EstimateFeeResponse> estimateFee(String address, String body, String initCode, String initData) {
+        return estimateFee(address, body, initCode, initData, true);
+    }
+    
+    /**
+     * Estimate fees required for query processing (minimal parameters)
+     */
+    public TonResponse<EstimateFeeResponse> estimateFee(String address, String body) {
+        return estimateFee(address, body, null, null, true);
     }
     
     /**
