@@ -265,44 +265,44 @@ public class TonCenter {
     /**
      * Get balance (in nanotons) of a given address
      */
-    public TonResponse<String> getAddressBalance(String address) {
+    public TonResponse<AddressBalanceResponse> getAddressBalance(String address) {
         Map<String, String> params = new HashMap<>();
         params.put("address", address);
         
-        Type responseType = new TypeToken<TonResponse<String>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<AddressBalanceResponse>>(){}.getType();
         return executeGet("/getAddressBalance", params, responseType);
     }
     
     /**
      * Get state of a given address. State can be either unitialized, active or frozen
      */
-    public TonResponse<String> getAddressState(String address) {
+    public TonResponse<AddressStateResponse> getAddressState(String address) {
         Map<String, String> params = new HashMap<>();
         params.put("address", address);
         
-        Type responseType = new TypeToken<TonResponse<String>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<AddressStateResponse>>(){}.getType();
         return executeGet("/getAddressState", params, responseType);
     }
     
     /**
      * Similar to getAddressInformation but tries to parse additional information for known contract types
      */
-    public TonResponse<Object> getExtendedAddressInformation(String address) {
+    public TonResponse<ExtendedAddressInformationResponse> getExtendedAddressInformation(String address) {
         Map<String, String> params = new HashMap<>();
         params.put("address", address);
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<ExtendedAddressInformationResponse>>(){}.getType();
         return executeGet("/getExtendedAddressInformation", params, responseType);
     }
     
     /**
      * Retrieve wallet information. Supports more wallet types than getExtendedAddressInformation
      */
-    public TonResponse<Object> getWalletInformation(String address) {
+    public TonResponse<WalletInformationResponse> getWalletInformation(String address) {
         Map<String, String> params = new HashMap<>();
         params.put("address", address);
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<WalletInformationResponse>>(){}.getType();
         return executeGet("/getWalletInformation", params, responseType);
     }
     
@@ -342,11 +342,11 @@ public class TonCenter {
     /**
      * Get all possible address forms
      */
-    public TonResponse<Object> detectAddress(String address) {
+    public TonResponse<DetectAddressResponse> detectAddress(String address) {
         Map<String, String> params = new HashMap<>();
         params.put("address", address);
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<DetectAddressResponse>>(){}.getType();
         return executeGet("/detectAddress", params, responseType);
     }
     
@@ -411,18 +411,18 @@ public class TonCenter {
     /**
      * Get shards information
      */
-    public TonResponse<Object> getShards(Integer seqno) {
+    public TonResponse<ShardsResponse> getShards(Integer seqno) {
         Map<String, String> params = new HashMap<>();
         params.put("seqno", seqno.toString());
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<ShardsResponse>>(){}.getType();
         return executeGet("/shards", params, responseType);
     }
     
     /**
      * Get transactions of the given block
      */
-    public TonResponse<Object> getBlockTransactions(Integer workchain, Long shard, Long seqno, String rootHash, String fileHash, Long afterLt, String afterHash, Integer count) {
+    public TonResponse<BlockTransactionsResponse> getBlockTransactions(Integer workchain, Long shard, Long seqno, String rootHash, String fileHash, Long afterLt, String afterHash, Integer count) {
         Map<String, String> params = new HashMap<>();
         params.put("workchain", workchain.toString());
         params.put("shard", shard.toString());
@@ -433,14 +433,32 @@ public class TonCenter {
         if (afterHash != null) params.put("after_hash", afterHash);
         if (count != null) params.put("count", count.toString());
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<BlockTransactionsResponse>>(){}.getType();
         return executeGet("/getBlockTransactions", params, responseType);
+    }
+    
+    /**
+     * Get transactions of the given block (extended version)
+     */
+    public TonResponse<BlockTransactionsResponse> getBlockTransactionsExt(Integer workchain, Long shard, Long seqno, String rootHash, String fileHash, Long afterLt, String afterHash, Integer count) {
+        Map<String, String> params = new HashMap<>();
+        params.put("workchain", workchain.toString());
+        params.put("shard", shard.toString());
+        params.put("seqno", seqno.toString());
+        if (rootHash != null) params.put("root_hash", rootHash);
+        if (fileHash != null) params.put("file_hash", fileHash);
+        if (afterLt != null) params.put("after_lt", afterLt.toString());
+        if (afterHash != null) params.put("after_hash", afterHash);
+        if (count != null) params.put("count", count.toString());
+        
+        Type responseType = new TypeToken<TonResponse<BlockTransactionsResponse>>(){}.getType();
+        return executeGet("/getBlockTransactionsExt", params, responseType);
     }
     
     /**
      * Get metadata of a given block
      */
-    public TonResponse<Object> getBlockHeader(Integer workchain, Long shard, Long seqno, String rootHash, String fileHash) {
+    public TonResponse<BlockHeaderResponse> getBlockHeader(Integer workchain, Long shard, Long seqno, String rootHash, String fileHash) {
         Map<String, String> params = new HashMap<>();
         params.put("workchain", workchain.toString());
         params.put("shard", shard.toString());
@@ -448,7 +466,7 @@ public class TonCenter {
         if (rootHash != null) params.put("root_hash", rootHash);
         if (fileHash != null) params.put("file_hash", fileHash);
         
-        Type responseType = new TypeToken<TonResponse<Object>>(){}.getType();
+        Type responseType = new TypeToken<TonResponse<BlockHeaderResponse>>(){}.getType();
         return executeGet("/getBlockHeader", params, responseType);
     }
     
@@ -648,14 +666,14 @@ public class TonCenter {
     /**
      * Get block transactions with minimal parameters
      */
-    public TonResponse<Object> getBlockTransactions(Integer workchain, Long shard, Long seqno) {
+    public TonResponse<BlockTransactionsResponse> getBlockTransactions(Integer workchain, Long shard, Long seqno) {
         return getBlockTransactions(workchain, shard, seqno, null, null, null, null, null);
     }
     
     /**
      * Get block header with minimal parameters
      */
-    public TonResponse<Object> getBlockHeader(Integer workchain, Long shard, Long seqno) {
+    public TonResponse<BlockHeaderResponse> getBlockHeader(Integer workchain, Long shard, Long seqno) {
         return getBlockHeader(workchain, shard, seqno, null, null);
     }
     
