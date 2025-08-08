@@ -235,7 +235,7 @@ public class TonCenter {
             TonResponse<T> tonResponse = gson.fromJson(responseBody, responseType);
             
             // Check if API returned an error
-            if (tonResponse.isError()) {
+            if (tonResponse != null && tonResponse.isError()) {
                 throw new TonCenterApiException(tonResponse.getError(), tonResponse.getCode());
             }
             
@@ -622,21 +622,21 @@ public class TonCenter {
      * Estimate fees required for query processing
      */
     public TonResponse<EstimateFeeResponse> estimateFee(String address, String body, String initCode, String initData, Boolean ignoreChksig) {
-        Map<String, Object> requestMap = new HashMap<>();
-        requestMap.put("address", address);
-        requestMap.put("body", body);
+        EstimateFeeRequest request = new EstimateFeeRequest();
+        request.setAddress(address);
+        request.setBody(body);
         if (initCode != null && !initCode.isEmpty()) {
-            requestMap.put("init_code", initCode);
+            request.setInitCode(initCode);
         }
         if (initData != null && !initData.isEmpty()) {
-            requestMap.put("init_data", initData);
+            request.setInitData(initData);
         }
         if (ignoreChksig != null) {
-            requestMap.put("ignore_chksig", ignoreChksig);
+            request.setIgnoreChksig(ignoreChksig);
         }
         
         Type responseType = new TypeToken<TonResponse<EstimateFeeResponse>>(){}.getType();
-        return executePost("/estimateFee", requestMap, responseType);
+        return executePost("/estimateFee", request, responseType);
     }
     
     // ========== CONVENIENCE METHODS ==========

@@ -13,5 +13,5 @@ public class ConsensusBlockResponse {
     private Long consensusBlock;
     
     @SerializedName("timestamp")
-    private Long timestamp;
+    private Double timestamp;
 }

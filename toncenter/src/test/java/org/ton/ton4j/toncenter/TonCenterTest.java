@@ -21,13 +21,13 @@ import static org.junit.Assert.*;
 @RunWith(JUnit4.class)
 public class TonCenterTest {
 
-  private static final String MAINNET_API_KEY = "";
+  private static final String MAINNET_API_KEY =
+      "65126352a1859d70f3dd8846213075fa030de9c0e1a3f0dcab2b9c76cb9d2a88";
   private static final Network NETWORK = Network.MAINNET;
 
   // Test addresses for different scenarios
   private static final String MAINNET_TON_FOUNDATION_WALLET =
       "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
-  private static final String WALLET_ADDRESS = "EQD7vdOGw8KvXW6_OgBR2QpBQq5-9R8N8DCo0peQJZrP_VLu";
   private static final String NFT_ADDRESS = "EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N";
 
   // Rate limiting mechanism - ensures no more than 1 test per second
