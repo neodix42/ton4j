@@ -3,12 +3,14 @@ package org.ton.ton4j.toncenter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.runners.Parameterized;
 import org.ton.ton4j.toncenter.model.*;
 import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -16,18 +18,42 @@ import static org.junit.Assert.*;
 /**
  * Comprehensive test class for TonCenter API wrapper covering all 27 endpoints Rate limited to
  * execute no more than one test per second to respect API limits
+ * Tests run against both MAINNET and TESTNET networks
  */
 @Slf4j
-@RunWith(JUnit4.class)
+@RunWith(Parameterized.class)
 public class TonCenterTest {
 
-  private static final String MAINNET_API_KEY = "";
-  private static final Network NETWORK = Network.MAINNET;
+  private static final String MAINNET_API_KEY = "65126352a1859d70f3dd8846213075fa030de9c0e1a3f0dcab2b9c76cb9d2a88";
+  private static final String TESTNET_API_KEY = "188b29e2b477d8bb95af5041f75c57b62653add1170634f148ac71d7751d0c71";
 
   // Test addresses for different scenarios
-  private static final String MAINNET_TON_FOUNDATION_WALLET =
-      "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
-  private static final String NFT_ADDRESS = "EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N";
+  private static final String MAINNET_TON_FOUNDATION_WALLET = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
+  private static final String TESTNET_TON_FOUNDATION_WALLET = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
+
+  private static final String MAINNET_NFT_ADDRESS = "EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N";
+  private static final String TESTNET_NFT_ADDRESS = "EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N";
+
+  // Parameterized test fields
+  private final Network network;
+  private final String apiKey;
+  private final String tonFoundationWallet;
+  private final String nftAddress;
+
+  @Parameterized.Parameters(name = "Network: {0}")
+  public static Collection<Object[]> data() {
+    return Arrays.asList(new Object[][] {
+      { Network.MAINNET, MAINNET_API_KEY, MAINNET_TON_FOUNDATION_WALLET, MAINNET_NFT_ADDRESS },
+      { Network.TESTNET, TESTNET_API_KEY, TESTNET_TON_FOUNDATION_WALLET, TESTNET_NFT_ADDRESS }
+    });
+  }
+
+  public TonCenterTest(Network network, String apiKey, String tonFoundationWallet, String nftAddress) {
+    this.network = network;
+    this.apiKey = apiKey;
+    this.tonFoundationWallet = tonFoundationWallet;
+    this.nftAddress = nftAddress;
+  }
 
   // Rate limiting mechanism - ensures no more than 1 test per second
   private static volatile long lastTestExecutionTime = 0;
@@ -62,7 +88,7 @@ public class TonCenterTest {
     TonCenter client =
         TonCenter.builder()
             .apiKey("test-api-key")
-            .network(NETWORK)
+            .network(network)
             .connectTimeout(Duration.ofSeconds(5))
             .readTimeout(Duration.ofSeconds(15))
             .writeTimeout(Duration.ofSeconds(15))
@@ -75,19 +101,19 @@ public class TonCenterTest {
   @Test
   public void testNetworkSelection() {
     enforceRateLimit();
-    // Test mainnet (default)
-    TonCenter mainnetClient = TonCenter.builder().apiKey("test-key").network(NETWORK).build();
-    assertNotNull(mainnetClient);
-    mainnetClient.close();
+    // Test current network
+    TonCenter networkClient = TonCenter.builder().apiKey("test-key").network(network).build();
+    assertNotNull(networkClient);
+    networkClient.close();
 
-    // Test testnet
-    TonCenter testnetClient = TonCenter.builder().apiKey("test-key").network(NETWORK).build();
+    // Test with current network again
+    TonCenter testnetClient = TonCenter.builder().apiKey("test-key").network(network).build();
     assertNotNull(testnetClient);
     testnetClient.close();
 
     // Test explicit network enum
     TonCenter explicitClient =
-        TonCenter.builder().apiKey("test-key").network(Network.MAINNET).build();
+        TonCenter.builder().apiKey("test-key").network(network).build();
     assertNotNull(explicitClient);
     explicitClient.close();
   }
@@ -105,11 +131,11 @@ public class TonCenterTest {
   @Test
   public void testGetAddressInformation() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<AddressInformationResponse> response =
-          client.getAddressInformation(MAINNET_TON_FOUNDATION_WALLET);
+          client.getAddressInformation(tonFoundationWallet);
       log.info("response {}", response);
       assertTrue("Address information should be successful", response.isSuccess());
       assertNotNull("Result should not be null", response.getResult());
@@ -123,11 +149,11 @@ public class TonCenterTest {
   @Test
   public void testGetExtendedAddressInformation() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<ExtendedAddressInformationResponse> response =
-          client.getExtendedAddressInformation(MAINNET_TON_FOUNDATION_WALLET);
+          client.getExtendedAddressInformation(tonFoundationWallet);
       log.info("response {}", response.getResult());
       assertTrue("Extended address info should be successful", response.isSuccess());
       assertNotNull("Result should not be null", response.getResult());
@@ -140,10 +166,10 @@ public class TonCenterTest {
   @Test
   public void testGetWalletInformation() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
     try {
       TonResponse<WalletInformationResponse> response =
-          client.getWalletInformation(MAINNET_TON_FOUNDATION_WALLET);
+          client.getWalletInformation(tonFoundationWallet);
       log.info("response {}", response.getResult());
       assertTrue("Wallet information should be successful", response.isSuccess());
       assertNotNull("Result should not be null", response.getResult());
@@ -156,11 +182,11 @@ public class TonCenterTest {
   @Test
   public void testGetTransactions() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<List<TransactionResponse>> response =
-          client.getTransactions(MAINNET_TON_FOUNDATION_WALLET, 5, null, null, null, false);
+          client.getTransactions(tonFoundationWallet, 5, null, null, null, false);
       log.info("response {}", response.getResult());
       assertTrue("Transactions should be successful", response.isSuccess());
       assertNotNull("Result should not be null", response.getResult());
@@ -173,10 +199,10 @@ public class TonCenterTest {
   @Test
   public void testGetAddressBalance() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      TonResponse<String> response = client.getAddressBalance(MAINNET_TON_FOUNDATION_WALLET);
+      TonResponse<String> response = client.getAddressBalance(tonFoundationWallet);
       assertTrue("Address balance should be successful", response.isSuccess());
       assertNotNull("Balance should not be null", response.getResult());
       log.info("Address balance: {}", response.getResult());
@@ -188,10 +214,10 @@ public class TonCenterTest {
   @Test
   public void testGetAddressState() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      TonResponse<String> response = client.getAddressState(MAINNET_TON_FOUNDATION_WALLET);
+      TonResponse<String> response = client.getAddressState(tonFoundationWallet);
       assertTrue("Address state should be successful", response.isSuccess());
       assertNotNull("State should not be null", response.getResult());
       log.info("Address state: {}", response.getResult());
@@ -203,7 +229,7 @@ public class TonCenterTest {
   @Test
   public void testPackAddress() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       String rawAddress = "0:83DFD552E63729B472FCBCC8C45EBCC6691702558B68EC7527E1BA403A0F31A8";
@@ -219,10 +245,10 @@ public class TonCenterTest {
   @Test
   public void testUnpackAddress() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      TonResponse<String> response = client.unpackAddress(MAINNET_TON_FOUNDATION_WALLET);
+      TonResponse<String> response = client.unpackAddress(tonFoundationWallet);
       assertTrue("Unpack address should be successful", response.isSuccess());
       assertNotNull("Unpacked address should not be null", response.getResult());
       log.info("Unpacked address: {}", response.getResult());
@@ -234,11 +260,11 @@ public class TonCenterTest {
   @Test
   public void testDetectAddress() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<DetectAddressResponse> response =
-          client.detectAddress(MAINNET_TON_FOUNDATION_WALLET);
+          client.detectAddress(tonFoundationWallet);
       log.info("response {}", response.getResult());
       assertTrue("Detect address should be successful", response.isSuccess());
       assertNotNull("Detected address forms should not be null", response.getResult());
@@ -251,10 +277,10 @@ public class TonCenterTest {
   @Test
   public void testGetTokenData() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      TonResponse<TokenDataResponse> response = client.getTokenData(NFT_ADDRESS);
+      TonResponse<TokenDataResponse> response = client.getTokenData(nftAddress);
       log.info("token data: {}", response.getResult());
       log.info("response {}", response.getResult());
       assertTrue("Token data should be successful", response.isSuccess());
@@ -282,7 +308,7 @@ public class TonCenterTest {
   @Test
   public void testGetMasterchainInfo() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<MasterchainInfoResponse> response = client.getMasterchainInfo();
@@ -298,7 +324,7 @@ public class TonCenterTest {
   @Test
   public void testGetMasterchainBlockSignatures() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<MasterchainBlockSignaturesResponse> response =
@@ -315,7 +341,7 @@ public class TonCenterTest {
   @Test
   public void testGetShardBlockProof() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<ShardBlockProofResponse> response =
@@ -332,7 +358,7 @@ public class TonCenterTest {
   @Test
   public void testGetConsensusBlock() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<ConsensusBlockResponse> response = client.getConsensusBlock();
@@ -348,7 +374,7 @@ public class TonCenterTest {
   @Test
   public void testLookupBlock() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<LookupBlockResponse> response =
@@ -365,7 +391,7 @@ public class TonCenterTest {
   @Test
   public void testGetShards() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<ShardsResponse> response = client.getShards(1000);
@@ -392,7 +418,7 @@ public class TonCenterTest {
   @Test
   public void testGetBlockTransactions() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<BlockTransactionsResponse> response =
@@ -409,7 +435,7 @@ public class TonCenterTest {
   @Test
   public void testGetBlockTransactionsExt() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<BlockTransactionsResponse> response =
@@ -427,7 +453,7 @@ public class TonCenterTest {
   @Test
   public void testGetBlockHeader() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<BlockHeaderResponse> response =
@@ -443,7 +469,7 @@ public class TonCenterTest {
   @Test
   public void testGetOutMsgQueueSizes() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<OutMsgQueueSizesResponse> response = client.getOutMsgQueueSizes();
@@ -461,7 +487,7 @@ public class TonCenterTest {
   @Test
   public void testGetConfigParam() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<ConfigParamResponse> response =
@@ -478,7 +504,7 @@ public class TonCenterTest {
   @Test
   public void testGetConfigAll() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<ConfigAllResponse> response = client.getConfigAll();
@@ -496,7 +522,7 @@ public class TonCenterTest {
   @Test
   public void testTryLocateTx() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<LocateTxResponse> response =
@@ -513,7 +539,7 @@ public class TonCenterTest {
   @Test
   public void testTryLocateResultTx() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<LocateTxResponse> response =
@@ -530,7 +556,7 @@ public class TonCenterTest {
   @Test
   public void testTryLocateSourceTx() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<LocateTxResponse> response =
@@ -550,12 +576,12 @@ public class TonCenterTest {
   @Test
   public void testRunGetMethod() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       // Test calling seqno method on a wallet
       TonResponse<RunGetMethodResponse> response =
-          client.runGetMethod(MAINNET_TON_FOUNDATION_WALLET, "seqno", new ArrayList<>());
+          client.runGetMethod(tonFoundationWallet, "seqno", new ArrayList<>());
       log.info("response {}", response.getResult());
       assertTrue("Run get method should be successful", response.isSuccess());
       assertNotNull("Method result should not be null", response.getResult());
@@ -571,7 +597,7 @@ public class TonCenterTest {
   @Test
   public void testSendBoc() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       // Using dummy BOC data - this will fail but tests the endpoint
@@ -588,7 +614,7 @@ public class TonCenterTest {
   @Test
   public void testSendBocReturnHash() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       // Using dummy BOC data - this will fail but tests the endpoint
@@ -607,13 +633,13 @@ public class TonCenterTest {
   @Test
   public void testSendQuery() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       // Using dummy data - this will fail but tests the endpoint
       TonResponse<SendQueryResponse> response =
           client.sendQuery(
-              MAINNET_TON_FOUNDATION_WALLET,
+              tonFoundationWallet,
               "te6ccgEBAgEAqgAB4YgA2ZpktQsYby0n9cV5VWOFINBjScIU2HdondFsK3lDpEAFG8W4Jpf7AeOqfzL9vZ79mX3eM6UEBxZvN6+QmpYwXBq32QOBIrP4lF5ijGgQmZbC6KDeiiptxmTNwl5f59OAGU1NGLsixYlYAAAA2AAcAQBoYgBZQOG7qXmeA/2Tw1pLX2IkcQ5h5fxWzzcBskMJbVVRsKNaTpAAAAAAAAAAAAAAAAAAAA==",
               "",
               "");
@@ -628,13 +654,13 @@ public class TonCenterTest {
   @Test
   public void testEstimateFee() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       // Using dummy data - this will fail but tests the endpoint
       TonResponse<EstimateFeeResponse> response =
           client.estimateFee(
-              MAINNET_TON_FOUNDATION_WALLET,
+              tonFoundationWallet,
               "te6ccgEBAgEAqgAB4YgA2ZpktQsYby0n9cV5VWOFINBjScIU2HdondFsK3lDpEAFG8W4Jpf7AeOqfzL9vZ79mX3eM6UEBxZvN6+QmpYwXBq32QOBIrP4lF5ijGgQmZbC6KDeiiptxmTNwl5f59OAGU1NGLsixYlYAAAA2AAcAQBoYgBZQOG7qXmeA/2Tw1pLX2IkcQ5h5fxWzzcBskMJbVVRsKNaTpAAAAAAAAAAAAAAAAAAAA==");
       log.info("Estimate fee completed: success={}", response.isSuccess());
     } finally {
@@ -647,18 +673,18 @@ public class TonCenterTest {
   @Test
   public void testConvenienceMethods() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey(MAINNET_API_KEY).network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try { // todo works with stage.toncenter
       // Test convenience method for transactions
       TonResponse<List<TransactionResponse>> response =
-          client.getTransactions(MAINNET_TON_FOUNDATION_WALLET);
+          client.getTransactions(tonFoundationWallet);
       assertTrue("Convenience method should work", response.isSuccess());
       log.info("Convenience method getTransactions() works");
 
       // Test convenience method with limit
       TonResponse<List<TransactionResponse>> response2 =
-          client.getTransactions(MAINNET_TON_FOUNDATION_WALLET, 3);
+          client.getTransactions(tonFoundationWallet, 3);
       assertTrue("Convenience method with limit should work", response2.isSuccess());
       log.info("Convenience method getTransactions(limit) works");
       log.info("response {}", response2.getResult());
@@ -694,7 +720,7 @@ public class TonCenterTest {
   @Test
   public void testApiKeyValidation() {
     enforceRateLimit();
-    TonCenter client = TonCenter.builder().apiKey("invalid-api-key").network(NETWORK).build();
+    TonCenter client = TonCenter.builder().apiKey("invalid-api-key").network(network).build();
 
     try {
       client.getMasterchainInfo();
