@@ -7,7 +7,7 @@ public enum Network {
     /**
      * TON Mainnet - production network
      */
-    MAINNET("https://stage.toncenter.com/api/v2"),
+    MAINNET("https://toncenter.com/api/v2"),
     
     /**
      * TON Testnet - test network for development

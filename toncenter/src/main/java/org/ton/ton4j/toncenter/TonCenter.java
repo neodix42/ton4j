@@ -136,7 +136,7 @@ public class TonCenter {
         // Add logging interceptor
         clientBuilder.addInterceptor(chain -> {
             Request request = chain.request();
-            log.debug("HTTP {} {}", request.method(), request.url());
+//            log.debug("HTTP {} {}", request.method(), request.url());
             
             Response response = chain.proceed(request);
             log.debug("HTTP {} {} -> {}", request.method(), request.url(), response.code());

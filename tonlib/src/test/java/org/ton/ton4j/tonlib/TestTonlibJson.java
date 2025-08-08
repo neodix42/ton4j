@@ -507,7 +507,7 @@ public class TestTonlibJson {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib(tonlibPath)
-            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+//            .pathToGlobalConfig("g:/libs/global-config-archive.json")
             .build();
     RawTransaction tx =
         tonlib.tryLocateTxByIncomingMessage(
