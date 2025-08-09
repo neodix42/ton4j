@@ -1,13 +1,15 @@
 # TonCenter API v2 Java Wrapper
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Based on TON][ton-svg]][ton]
+![GitHub last commit](https://img.shields.io/github/last-commit/neodiX42/ton4j)
+
 A comprehensive Java wrapper for the [TonCenter API v2](https://toncenter.com/api/v2/) that provides easy access to TON blockchain data and functionality.
 
 ## Features
 
 - ✅ **Complete API Coverage**: All 27 TonCenter API v2 endpoints implemented
-- ✅ **Type Safety**: Strongly typed request/response models using Gson
-- ✅ **Builder Pattern**: Fluent API for easy configuration
-- ✅ **Network Support**: Both mainnet and testnet support
+- ✅ **Network Support**: Both Mainnet and Testnet support
 - ✅ **Error Handling**: Comprehensive exception handling with detailed error messages
 - ✅ **HTTP Client**: Built on OkHttp for reliable HTTP communication
 - ✅ **Logging**: Built-in request/response logging using SLF4J
@@ -17,10 +19,23 @@ A comprehensive Java wrapper for the [TonCenter API v2](https://toncenter.com/ap
 
 Add the dependency to your `pom.xml`:
 
+## Maven [![Maven Central][maven-central-svg]][maven-central]
+
 ```xml
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>toncenter</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+## Jitpack [![jitpack][jitpack-svg]][jitpack]
+
+```xml
+
+<dependency>
+    <groupId>io.github.neodix42.ton4j</groupId>
+    <artifactId>tonlib</artifactId>
     <version>1.0.1</version>
 </dependency>
 ```
@@ -274,10 +289,6 @@ if (response.isSuccess()) {
 - **SLF4J**: Logging facade
 - **Lombok**: Code generation (compile-time only)
 
-## License
-
-This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -287,3 +298,15 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - [TonCenter API Documentation](https://toncenter.com/api/v2/)
 - [TON Documentation](https://ton.org/docs/)
 - [GitHub Issues](https://github.com/neodix42/ton4j/issues)
+
+[jitpack-svg]: https://jitpack.io/v/neodiX42/ton4j.svg
+
+[jitpack]: https://jitpack.io/#neodiX42/ton4j
+
+[ton-svg]: https://img.shields.io/badge/Based%20on-TON-blue
+
+[ton]: https://ton.org
+
+[maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/toncenter
+
+[maven-central]: https://mvnrepository.com/artifact/io.github.neodix42/toncenter
