@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class AddressStateResponse {
-    private String state;
+  private String state;
 }

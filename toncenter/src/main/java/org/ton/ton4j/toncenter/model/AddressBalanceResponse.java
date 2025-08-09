@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class AddressBalanceResponse {
-    private String balance;
+  private String balance;
 }

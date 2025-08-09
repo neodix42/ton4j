@@ -5,12 +5,12 @@ import lombok.Data;
 
 @Data
 public class SendQueryRequest {
-    private String address;
-    private String body;
-    
-    @SerializedName("init_code")
-    private String initCode = "";
-    
-    @SerializedName("init_data")
-    private String initData = "";
+  private String address;
+  private String body;
+
+  @SerializedName("init_code")
+  private String initCode = "";
+
+  @SerializedName("init_data")
+  private String initData = "";
 }
