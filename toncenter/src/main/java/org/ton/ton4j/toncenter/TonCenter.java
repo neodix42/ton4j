@@ -302,6 +302,15 @@ public class TonCenter {
     return executeGet("/getAddressBalance", params, responseType);
   }
 
+  public BigInteger getBalance(String address) {
+    Map<String, String> params = new HashMap<>();
+    params.put("address", address);
+
+    Type responseType = new TypeToken<TonResponse<String>>() {}.getType();
+    TonResponse<String> res = executeGet("/getAddressBalance", params, responseType);
+    return new BigInteger(res.getResult());
+  }
+
   /** Get state of a given address. State can be either unitialized, active or frozen */
   public TonResponse<String> getAddressState(String address) {
     Map<String, String> params = new HashMap<>();
@@ -309,6 +318,15 @@ public class TonCenter {
 
     Type responseType = new TypeToken<TonResponse<String>>() {}.getType();
     return executeGet("/getAddressState", params, responseType);
+  }
+
+  public String getState(String address) {
+    Map<String, String> params = new HashMap<>();
+    params.put("address", address);
+
+    Type responseType = new TypeToken<TonResponse<String>>() {}.getType();
+    TonResponse<String>  res = executeGet("/getAddressState", params, responseType);
+    return res.getResult();
   }
 
   /** Convert an address from raw to human-readable format */
@@ -565,15 +583,25 @@ public class TonCenter {
   public BigInteger getPublicKey(String address) {
     RunGetMethodResponse r = runGetMethod(address, "get_public_key", new ArrayList<>()).getResult();
     String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
-    log.info("pubKey {}", pubKey);
     return new BigInteger(pubKey.substring(2),16);
   }
 
   public BigInteger getPublicKey(String address, Long atSeqno) {
     RunGetMethodResponse r = runGetMethod(address, "get_public_key", new ArrayList<>(), atSeqno).getResult();
     String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
-    log.info("pubKey {}", pubKey);
     return new BigInteger(pubKey.substring(2), 16);
+  }
+
+  public long getSubWalletId(String address) {
+    RunGetMethodResponse r = runGetMethod(address, "get_subwallet_id", new ArrayList<>()).getResult();
+    String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
+    return new BigInteger(pubKey.substring(2),16).longValue();
+  }
+
+  public long getSubWalletId(String address, long atSeqno) {
+    RunGetMethodResponse r = runGetMethod(address, "get_subwallet_id", new ArrayList<>(), atSeqno).getResult();
+    String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
+    return new BigInteger(pubKey.substring(2),16).longValue();
   }
 
 

@@ -7,6 +7,7 @@ import org.junit.runners.Parameterized;
 import org.ton.ton4j.toncenter.model.*;
 import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
+import java.math.BigInteger;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -219,6 +220,20 @@ public class TonCenterTest {
   }
 
   @Test
+  public void testGetBalance() {
+    enforceRateLimit();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
+
+    try {
+      BigInteger balance = client.getBalance(tonFoundationWallet);
+      assertNotNull(balance);
+      log.info("Address balance: {}", balance);
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
   public void testGetAddressState() {
     enforceRateLimit();
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
@@ -228,6 +243,21 @@ public class TonCenterTest {
       assertTrue("Address state should be successful", response.isSuccess());
       assertNotNull("State should not be null", response.getResult());
       log.info("Address state: {}", response.getResult());
+    } finally {
+      client.close();
+    }
+  }
+
+
+  @Test
+  public void testGetState() {
+    enforceRateLimit();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
+
+    try {
+      String state = client.getState(tonFoundationWallet);
+      assertNotNull(state);
+      log.info("Address state: {}", state);
     } finally {
       client.close();
     }
@@ -613,6 +643,38 @@ public class TonCenterTest {
       assertTrue("Run get method should be successful", response.isSuccess());
       assertNotNull("Method result should not be null", response.getResult());
       log.info("Get method 'seqno' executed successfully");
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testGetSeqno() {
+    enforceRateLimit();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
+
+    try {
+      // Test calling seqno method on a wallet
+      long seqno =              client.getSeqno(tonFoundationWallet);
+      log.info("seqno {}", seqno);
+      assertTrue(seqno > 0);
+      log.info("Get method 'seqno' executed successfully");
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testGetSubWalletId() {
+    enforceRateLimit();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
+
+    try {
+      // Test calling seqno method on a wallet
+      long subWalletId = client.getSubWalletId(tonFoundationWallet);
+      log.info("subWalletId {}", subWalletId);
+      assertTrue(subWalletId >= 0);
+      log.info("Get method 'get_subwallet_id' executed successfully");
     } finally {
       client.close();
     }
