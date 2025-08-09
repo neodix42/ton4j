@@ -131,5 +131,11 @@
             <version>1.0.5</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>toncenter</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

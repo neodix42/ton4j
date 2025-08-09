@@ -417,7 +417,11 @@ public class Cell implements Serializable {
       BitString bss = new BitString(ba.length);
       bss.writeBitArray(ba);
 
-      return CellBuilder.beginCell().storeBitString(bss).endCell();
+      if (bss.length < 1024) {
+        return CellBuilder.beginCell().storeBitString(bss).endCell();
+      } else {
+        return CellBuilder.beginCell().storeSnakeString(new String(bss.toByteArray())).endCell();
+      }
     } catch (Exception e) {
       throw new Error("Cannot convert hex BitString to Cell. Error " + e.getMessage());
     }

@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
+import java.util.List;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -21,6 +23,11 @@ import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.ton4j.tl.liteserver.responses.TransactionList;
 import org.ton.ton4j.tlb.Message;
 import org.ton.ton4j.tlb.Transaction;
+import org.ton.ton4j.toncenter.Network;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.SendBocResponse;
+import org.ton.ton4j.toncenter.model.TransactionResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawMessage;
@@ -618,6 +625,191 @@ public class TestWalletV3R2Short extends CommonTest {
               msg.getInfo().getDestinationAddress(),
               Utils.formatNanoValue(msg.getInfo().getValueCoins()),
               msg.getComment());
+        }
+      }
+    }
+  }
+
+  @Test
+  public void testWalletV3R2TonCenterClient() throws Exception {
+
+    TonCenter toncenter =
+        TonCenter.builder()
+            .apiKey("188b29e2b477d8bb95af5041f75c57b62653add1170634f148ac71d7751d0c71")
+            .network(Network.TESTNET)
+            .build();
+
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    // used for faucet for top up only
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+
+    WalletV3R2 contract1 = WalletV3R2.builder().keyPair(keyPair).walletId(42).build();
+
+    String nonBounceableAddress1 = contract1.getAddress().toNonBounceable();
+    String bounceableAddress1 = contract1.getAddress().toBounceable();
+    String rawAddress1 = contract1.getAddress().toRaw();
+
+    log.info("non-bounceable address 1: {}", nonBounceableAddress1);
+    log.info("    bounceable address 1: {}", bounceableAddress1);
+    log.info("    raw address 1: {}", rawAddress1);
+    log.info("pub-key {}", Utils.bytesToHex(contract1.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract1.getKeyPair().getSecretKey()));
+
+    WalletV3R2 contract2 = WalletV3R2.builder().keyPair(keyPair).walletId(98).build();
+
+    String nonBounceableAddress2 = contract2.getAddress().toNonBounceable();
+    String bounceableAddress2 = contract2.getAddress().toBounceable();
+    String rawAddress2 = contract2.getAddress().toRaw();
+
+    log.info("non-bounceable address 2: {}", nonBounceableAddress2);
+    log.info("    bounceable address 2: {}", bounceableAddress2);
+    log.info("    raw address 2: {}", rawAddress2);
+
+    log.info("pub-key {}", Utils.bytesToHex(contract2.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract2.getKeyPair().getSecretKey()));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance1 =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress1), Utils.toNano(1));
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract1.getWalletId(),
+        contract1.getName(),
+        Utils.formatNanoValue(balance1));
+
+    BigInteger balance2 =
+        TestnetFaucet.topUpContract(
+            adnlLiteClient, Address.of(nonBounceableAddress2), Utils.toNano(1));
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract2.getWalletId(),
+        contract2.getName(),
+        Utils.formatNanoValue(balance2));
+
+    TonResponse<SendBocResponse> response =
+        toncenter.sendBoc(contract1.prepareDeployMsg().toCell().toBase64());
+    assertThat(response.isSuccess()).isTrue();
+
+    Utils.sleep(30);
+
+    response = toncenter.sendBoc(contract2.prepareDeployMsg().toCell().toBase64());
+    assertThat(response.isSuccess()).isTrue();
+
+    Utils.sleep(30);
+
+    log.info("both contracts should be deployed");
+
+    log.info("contract1 seqno {}", toncenter.getSeqno(contract1.getAddress().toBounceable()));
+
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(1)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.8))
+            .comment("testWalletV3R2-42")
+            .build();
+
+    // transfer coins from new wallet (back to faucet)
+    response = toncenter.sendBoc(contract1.prepareExternalMsg(config).toCell().toBase64());
+    assertThat(response.isSuccess()).isTrue();
+
+    Thread.sleep(30);
+
+    log.info("contract2 seqno {}", toncenter.getSeqno(contract2.getAddress().toBounceable()));
+
+    config =
+        WalletV3Config.builder()
+            .walletId(98)
+            .seqno(1)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.7))
+            .comment("testWalletV3R2-98")
+            .build();
+
+    response = toncenter.sendBoc(contract2.prepareExternalMsg(config).toCell().toBase64());
+    assertThat(response.isSuccess()).isTrue();
+
+    Thread.sleep(30);
+    // contract2.waitForBalanceChange(90);
+
+    balance1 =
+        new BigInteger(
+            toncenter.getAddressBalance(contract1.getAddress().toBounceable()).getResult());
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract1.getWalletId(),
+        contract1.getName(),
+        Utils.formatNanoValue(balance1));
+
+    balance2 =
+        new BigInteger(
+            toncenter.getAddressBalance(contract2.getAddress().toBounceable()).getResult());
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract2.getWalletId(),
+        contract2.getName(),
+        Utils.formatNanoValue(balance2));
+
+    log.info("1 seqno {}", toncenter.getSeqno(contract1.getAddress().toBounceable()));
+    log.info("1 pubkey {}", toncenter.getPublicKey(contract1.getAddress().toBounceable()));
+
+    log.info("2 seqno {}", toncenter.getSeqno(contract2.getAddress().toBounceable()));
+    log.info("2 pubkey {}", toncenter.getPublicKey(contract2.getAddress().toBounceable()));
+
+    assertThat(toncenter.getPublicKey(contract1.getAddress().toBounceable()))
+        .isEqualTo(toncenter.getPublicKey(contract2.getAddress().toBounceable()));
+
+    log.info("txs of wallet1");
+    List<TransactionResponse> responseTxs =
+        toncenter.getTransactions(contract1.getAddress().toBounceable(), 100).getResult();
+    for (TransactionResponse tx : responseTxs) {
+      if (nonNull(tx.getInMsg()) && StringUtils.isNotEmpty(tx.getInMsg().getSource())) {
+        log.info(
+            "{}, {} <<<<< {} : {}, comment: {} ",
+            Utils.toUTC(tx.getUtime()),
+            tx.getInMsg().getSource(),
+            tx.getInMsg().getDestination(),
+            Utils.formatNanoValue(tx.getInMsg().getValue()),
+            tx.getInMsg().getMessage());
+      }
+      if (nonNull(tx.getOutMsgs())) {
+        for (TransactionResponse.Message msg : tx.getOutMsgs()) {
+          log.info(
+              "{}, {} >>>>> {} : {}, comment: {}",
+              Utils.toUTC(tx.getUtime()),
+              msg.getSource(),
+              msg.getDestination(),
+              Utils.formatNanoValue(msg.getValue()),
+              msg.getMessage());
+        }
+      }
+    }
+
+    log.info("txs of wallet2");
+    responseTxs = toncenter.getTransactions(contract2.getAddress().toBounceable(), 100).getResult();
+    for (TransactionResponse tx : responseTxs) {
+      if (nonNull(tx.getInMsg()) && StringUtils.isNotEmpty(tx.getInMsg().getSource())) {
+        log.info(
+            "{}, {} <<<<< {} : {}, comment: {} ",
+            Utils.toUTC(tx.getUtime()),
+            tx.getInMsg().getSource(),
+            tx.getInMsg().getDestination(),
+            Utils.formatNanoValue(tx.getInMsg().getValue()),
+            tx.getInMsg().getMessage());
+      }
+      if (nonNull(tx.getOutMsgs())) {
+        for (TransactionResponse.Message msg : tx.getOutMsgs()) {
+          log.info(
+              "{}, {} >>>>> {} : {}, comment: {}",
+              Utils.toUTC(tx.getUtime()),
+              msg.getSource(),
+              msg.getDestination(),
+              Utils.formatNanoValue(msg.getValue()),
+              msg.getMessage());
         }
       }
     }

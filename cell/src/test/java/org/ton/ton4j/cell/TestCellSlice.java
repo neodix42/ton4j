@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.bitstring.BitString;
+import org.ton.ton4j.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -754,5 +755,14 @@ public class TestCellSlice {
       assertThat((BigInteger) entry.getValue()).isEqualTo(j);
       j++;
     }
+  }
+
+  @Test
+  public void testDecodingCommentBug() {
+    String comment = "ZXlKMWMyVnlYMmxrSWpvMk5UWTJORGd3TlRBeExDSjBiMjVmY21GMFpTSTZNeTR5T1RZeU9ERXlOaXdpY0hKdlpIVmpkRjl1WVcxbElqb2laMkZ0WlY5a1pYaGZkMkZzZEY5M1lXbDBiR2x6ZENKOS4wdXFCZEJfVmJNR2NOVEU3ODFmRjNTWEs0UUE=";
+    String commentHex = Utils.base64ToHexString(comment);
+    log.info("commentHex {}", commentHex);
+    String commentDecoded = CellSlice.beginParse(Cell.fromHex(commentHex)).loadSnakeString();
+    log.info("commentDecoded {}", commentDecoded);
   }
 }

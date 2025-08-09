@@ -657,7 +657,7 @@ public class BitString implements Serializable {
   }
 
   /**
-   * @return hex string
+   * @return bit string (zeros and ones)
    */
   public String toString() {
     return toBitString();

@@ -10,7 +10,9 @@ import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.math.BigInteger;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -549,6 +551,31 @@ public class TonCenter {
       String address, Object method, List<List<Object>> stack) {
     return runGetMethod(address, method, stack, null);
   }
+
+  public long getSeqno(String address) {
+    RunGetMethodResponse r = runGetMethod(address, "seqno", new ArrayList<>()).getResult();
+    return Long.decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
+  }
+
+  public long getSeqno(String address, Long atSeqno) {
+    RunGetMethodResponse r = runGetMethod(address, "seqno", new ArrayList<>(), atSeqno).getResult();
+    return Long.decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
+  }
+
+  public BigInteger getPublicKey(String address) {
+    RunGetMethodResponse r = runGetMethod(address, "get_public_key", new ArrayList<>()).getResult();
+    String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
+    log.info("pubKey {}", pubKey);
+    return new BigInteger(pubKey.substring(2),16);
+  }
+
+  public BigInteger getPublicKey(String address, Long atSeqno) {
+    RunGetMethodResponse r = runGetMethod(address, "get_public_key", new ArrayList<>(), atSeqno).getResult();
+    String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
+    log.info("pubKey {}", pubKey);
+    return new BigInteger(pubKey.substring(2), 16);
+  }
+
 
   // ========== SEND METHODS ==========
 
