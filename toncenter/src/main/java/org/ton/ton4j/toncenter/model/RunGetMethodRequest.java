@@ -24,7 +24,7 @@ public class RunGetMethodRequest {
     private List<List<Object>> stack;
     
     @SerializedName("seqno")
-    private Integer seqno;
+    private Long seqno;
     
     public RunGetMethodRequest(String address, Object method, List<List<Object>> stack) {
         this.address = address;

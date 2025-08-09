@@ -381,7 +381,7 @@ public class TonCenter {
     /**
      * Get masterchain block signatures
      */
-    public TonResponse<MasterchainBlockSignaturesResponse> getMasterchainBlockSignatures(Integer seqno) {
+    public TonResponse<MasterchainBlockSignaturesResponse> getMasterchainBlockSignatures(Long seqno) {
         Map<String, String> params = new HashMap<>();
         params.put("seqno", seqno.toString());
         
@@ -392,7 +392,7 @@ public class TonCenter {
     /**
      * Get merkle proof of shardchain block
      */
-    public TonResponse<ShardBlockProofResponse> getShardBlockProof(Integer workchain, Long shard, Long seqno, Integer fromSeqno) {
+    public TonResponse<ShardBlockProofResponse> getShardBlockProof(Integer workchain, Long shard, Long seqno, Long fromSeqno) {
         Map<String, String> params = new HashMap<>();
         params.put("workchain", workchain.toString());
         params.put("shard", shard.toString());
@@ -414,7 +414,7 @@ public class TonCenter {
     /**
      * Look up block by either seqno, lt or unixtime
      */
-    public TonResponse<LookupBlockResponse> lookupBlock(Integer workchain, Long shard, Integer seqno, Long lt, Integer unixtime) {
+    public TonResponse<LookupBlockResponse> lookupBlock(Integer workchain, Long shard, Long seqno, Long lt, Long unixtime) {
         Map<String, String> params = new HashMap<>();
         params.put("workchain", workchain.toString());
         params.put("shard", shard.toString());
@@ -429,7 +429,7 @@ public class TonCenter {
     /**
      * Get shards information
      */
-    public TonResponse<ShardsResponse> getShards(Integer seqno) {
+    public TonResponse<ShardsResponse> getShards(Long seqno) {
         Map<String, String> params = new HashMap<>();
         params.put("seqno", seqno.toString());
         
@@ -501,7 +501,7 @@ public class TonCenter {
     /**
      * Get config by id
      */
-    public TonResponse<ConfigParamResponse> getConfigParam(Integer configId, Integer seqno) {
+    public TonResponse<ConfigParamResponse> getConfigParam(Integer configId, Long seqno) {
         Map<String, String> params = new HashMap<>();
         params.put("config_id", configId.toString());
         if (seqno != null) params.put("seqno", seqno.toString());
@@ -513,7 +513,7 @@ public class TonCenter {
     /**
      * Get cell with full config
      */
-    public TonResponse<ConfigAllResponse> getConfigAll(Integer seqno) {
+    public TonResponse<ConfigAllResponse> getConfigAll(Long seqno) {
         Map<String, String> params = new HashMap<>();
         if (seqno != null) params.put("seqno", seqno.toString());
         
@@ -567,7 +567,7 @@ public class TonCenter {
     /**
      * Run get method on smart contract
      */
-    public TonResponse<RunGetMethodResponse> runGetMethod(String address, Object method, List<List<Object>> stack, Integer seqno) {
+    public TonResponse<RunGetMethodResponse> runGetMethod(String address, Object method, List<List<Object>> stack, Long seqno) {
         RunGetMethodRequest request = new RunGetMethodRequest(address, method, stack, seqno);
         Type responseType = new TypeToken<TonResponse<RunGetMethodResponse>>(){}.getType();
         return executePost("/runGetMethod", request, responseType);
@@ -686,7 +686,7 @@ public class TonCenter {
     /**
      * Lookup block by seqno only
      */
-    public TonResponse<LookupBlockResponse> lookupBlockBySeqno(Integer workchain, Long shard, Integer seqno) {
+    public TonResponse<LookupBlockResponse> lookupBlockBySeqno(Integer workchain, Long shard, Long seqno) {
         return lookupBlock(workchain, shard, seqno, null, null);
     }
     
@@ -700,7 +700,7 @@ public class TonCenter {
     /**
      * Lookup block by unix time only
      */
-    public TonResponse<LookupBlockResponse> lookupBlockByUnixtime(Integer workchain, Long shard, Integer unixtime) {
+    public TonResponse<LookupBlockResponse> lookupBlockByUnixtime(Integer workchain, Long shard, Long unixtime) {
         return lookupBlock(workchain, shard, null, null, unixtime);
     }
     

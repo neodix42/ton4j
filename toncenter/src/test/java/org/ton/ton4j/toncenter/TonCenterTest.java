@@ -24,15 +24,15 @@ import static org.junit.Assert.*;
 @RunWith(Parameterized.class)
 public class TonCenterTest {
 
-  private static final String MAINNET_API_KEY = "65126352a1859d70f3dd8846213075fa030de9c0e1a3f0dcab2b9c76cb9d2a88";
-  private static final String TESTNET_API_KEY = "188b29e2b477d8bb95af5041f75c57b62653add1170634f148ac71d7751d0c71";
+  private static final String MAINNET_API_KEY = "";
+  private static final String TESTNET_API_KEY = "";
 
   // Test addresses for different scenarios
   private static final String MAINNET_TON_FOUNDATION_WALLET = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
-  private static final String TESTNET_TON_FOUNDATION_WALLET = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
+  private static final String TESTNET_TON_FOUNDATION_WALLET = "0QCsMm47egxSofgw5Y-l34ZeMw6vPYUUyTIjYT3HTafpmH9O";
 
   private static final String MAINNET_NFT_ADDRESS = "EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N";
-  private static final String TESTNET_NFT_ADDRESS = "EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N";
+  private static final String TESTNET_NFT_ADDRESS = "kQBpqkbPrhSjleAQ8W9TJpZBj6K3GKijCH-Uz_6H7UnaqVTI";
 
   // Parameterized test fields
   private final Network network;
@@ -186,7 +186,7 @@ public class TonCenterTest {
 
     try {
       TonResponse<List<TransactionResponse>> response =
-          client.getTransactions(tonFoundationWallet, 5, null, null, null, false);
+          client.getTransactions(tonFoundationWallet, 5, null, null, null, true);
       log.info("response {}", response.getResult());
       assertTrue("Transactions should be successful", response.isSuccess());
       assertNotNull("Result should not be null", response.getResult());
@@ -328,7 +328,7 @@ public class TonCenterTest {
 
     try {
       TonResponse<MasterchainBlockSignaturesResponse> response =
-          client.getMasterchainBlockSignatures(50706498);
+          client.getMasterchainBlockSignatures(network==Network.MAINNET?50706498L:34098432L);
       log.info("response {}", response.getResult());
       assertTrue("Block signatures should be successful", response.isSuccess());
       assertNotNull("Block signatures should not be null", response.getResult());
@@ -345,10 +345,10 @@ public class TonCenterTest {
 
     try {
       TonResponse<ShardBlockProofResponse> response =
-          client.getShardBlockProof(-1, -9223372036854775808L, 50706498L);
+          client.getShardBlockProof(-1, -9223372036854775808L, network==Network.MAINNET?50706498L:34098432L);
       log.info("response {}", response.getResult());
       assertTrue("Shard block proof should be successful", response.isSuccess());
-      assertNotNull("Shard block proof should not be null", response.getResult());
+      assertNotNull("Shard block proof masterchainId should not be null", response.getResult().getMasterchainId());
       log.info("Shard block proof retrieved successfully");
     } finally {
       client.close();
@@ -378,7 +378,7 @@ public class TonCenterTest {
 
     try {
       TonResponse<LookupBlockResponse> response =
-          client.lookupBlockBySeqno(-1, -9223372036854775808L, 1000);
+          client.lookupBlockBySeqno(-1, -9223372036854775808L, 1000L);
       log.info("response {}", response.getResult());
       assertTrue("Lookup block should be successful", response.isSuccess());
       assertNotNull("Block lookup result should not be null", response.getResult());
@@ -394,7 +394,7 @@ public class TonCenterTest {
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      TonResponse<ShardsResponse> response = client.getShards(1000);
+      TonResponse<ShardsResponse> response = client.getShards(1000L);
       assertTrue("Get shards should be successful", response.isSuccess());
       assertNotNull("Shards list should not be null", response.getResult().getShards());
       assertTrue("Should have at least one shard", response.getResult().getShards().size() > 0);
@@ -520,16 +520,17 @@ public class TonCenterTest {
   // ========== TRANSACTION METHODS TESTS (3 endpoints) ==========
 
   @Test
-  public void testTryLocateTx() {
+  public void testTryLocateTx() { // todo fix in toncenter
     enforceRateLimit();
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
       TonResponse<LocateTxResponse> response =
           client.tryLocateTx(
-              "EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD",
-              "EQDEruSI2frAF-GdzpjDLWWBKnwREDAJmu7eIEFG6zdUlXVE",
-              26521292000002L);
+                  network==Network.MAINNET?"EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD":"0QCsMm47egxSofgw5Y-l34ZeMw6vPYUUyTIjYT3HTafpmH9O",
+                  network==Network.MAINNET?"EQDEruSI2frAF-GdzpjDLWWBKnwREDAJmu7eIEFG6zdUlXVE":"kQAykk_XYcWpo4kCzxwoDYrj4akTMqg25l03BZn1QZvncQen",
+                  network==Network.MAINNET?26521292000002L:37560648000003L);
+      log.info("response {}", response.getResult().getTransactionId());
       log.info("Try locate tx completed: success={}", response.isSuccess());
     } finally {
       client.close();
@@ -544,9 +545,10 @@ public class TonCenterTest {
     try {
       TonResponse<LocateTxResponse> response =
           client.tryLocateResultTx(
-              "EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD",
-              "EQDEruSI2frAF-GdzpjDLWWBKnwREDAJmu7eIEFG6zdUlXVE",
-              26521292000002L);
+                  network==Network.MAINNET?"EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD":"0QCsMm47egxSofgw5Y-l34ZeMw6vPYUUyTIjYT3HTafpmH9O",
+                  network==Network.MAINNET?"EQDEruSI2frAF-GdzpjDLWWBKnwREDAJmu7eIEFG6zdUlXVE":"kQAykk_XYcWpo4kCzxwoDYrj4akTMqg25l03BZn1QZvncQen",
+                  network==Network.MAINNET?26521292000002L:37560648000003L);
+      log.info("response {}", response.getResult().getTransactionId());
       log.info("Try locate result tx completed: success={}", response.isSuccess());
     } finally {
       client.close();
@@ -561,11 +563,11 @@ public class TonCenterTest {
     try {
       TonResponse<LocateTxResponse> response =
           client.tryLocateSourceTx(
-              "EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD",
-              "EQDEruSI2frAF-GdzpjDLWWBKnwREDAJmu7eIEFG6zdUlXVE",
-              26521292000002L);
-      // This might not find a transaction, but should not error
-      log.info("Try locate source tx completed: success={}", response.isSuccess());
+                  network==Network.MAINNET?"EQAuMjwyuQBaaxM6ooRJWbuUacQvBgVEWQOSSlbMERG0ljRD":"0QCsMm47egxSofgw5Y-l34ZeMw6vPYUUyTIjYT3HTafpmH9O",
+                  network==Network.MAINNET?"EQDEruSI2frAF-GdzpjDLWWBKnwREDAJmu7eIEFG6zdUlXVE":"kQAykk_XYcWpo4kCzxwoDYrj4akTMqg25l03BZn1QZvncQen",
+                  network==Network.MAINNET?26521292000002L:37560648000003L);
+      log.info("response {}", response.getResult().getTransactionId());
+       log.info("Try locate source tx completed: success={}", response.isSuccess());
     } finally {
       client.close();
     }

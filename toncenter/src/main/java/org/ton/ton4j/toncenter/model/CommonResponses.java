@@ -52,11 +52,12 @@ public class CommonResponses {
 
     /**
      * Response for tryLocateTx, tryLocateResultTx, tryLocateSourceTx endpoints
+     * The API returns the transaction data directly, not wrapped in a "transaction" field
      */
     @Data
-    public static class LocateTxResponse {
-        @SerializedName("transaction")
-        private TransactionResponse transaction;
+    public static class LocateTxResponse extends TransactionResponse {
+        // This class extends TransactionResponse directly since the API returns
+        // the transaction data at the root level of the result
     }
 
     /**

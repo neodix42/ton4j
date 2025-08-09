@@ -9,6 +9,8 @@ import lombok.Data;
 @Data
 public class TokenDataResponse {
     
+    private String address;
+    
     @SerializedName("next_item_index")
     private Long nextItemIndex;
     
@@ -18,11 +20,22 @@ public class TokenDataResponse {
     @SerializedName("contract_type")
     private String contractType;
     
+    @SerializedName("total_supply")
+    private String totalSupply;
+    
+    private Boolean mintable;
+    
+    @SerializedName("admin_address")
+    private String adminAddress;
+    
     @SerializedName("jetton_content")
     private JettonContent jettonContent;
     
     @SerializedName("jetton_wallet")
     private JettonWallet jettonWallet;
+    
+    @SerializedName("jetton_wallet_code")
+    private String jettonWalletCode;
     
     @SerializedName("nft_content")
     private NftContent nftContent;
@@ -40,6 +53,18 @@ public class TokenDataResponse {
     public static class JettonContent {
         private String type;
         private String uri;
+        private JettonContentData data;
+        
+        // Direct fields for backward compatibility
+        private String name;
+        private String description;
+        private String image;
+        private String symbol;
+        private String decimals;
+    }
+    
+    @Data
+    public static class JettonContentData {
         private String name;
         private String description;
         private String image;

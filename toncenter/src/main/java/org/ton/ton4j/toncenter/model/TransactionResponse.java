@@ -13,6 +13,9 @@ public class TransactionResponse {
     @SerializedName("@type")
     private String type;
     
+    @SerializedName("address")
+    private Address address;
+    
     @SerializedName("utime")
     private Long utime;
     
@@ -36,6 +39,15 @@ public class TransactionResponse {
     
     @SerializedName("out_msgs")
     private List<Message> outMsgs;
+    
+    @Data
+    public static class Address {
+        @SerializedName("@type")
+        private String type;
+        
+        @SerializedName("account_address")
+        private String accountAddress;
+    }
     
     @Data
     public static class TransactionId {
