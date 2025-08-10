@@ -10,6 +10,7 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
@@ -26,6 +27,7 @@ public class GenericSmartContract implements Contract {
   private Tonlib tonlib;
   private long wc;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -35,6 +37,16 @@ public class GenericSmartContract implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public org.ton.ton4j.toncenter.TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -92,7 +104,14 @@ public class GenericSmartContract implements Contract {
    * @return ExtMessageInfo
    */
   public ExtMessageInfo deploy(Cell deployMessageBody) {
-    return tonlib.sendRawMessage(prepareDeployMsg(deployMessageBody).toCell().toBase64());
+    Message msg = prepareDeployMsg(deployMessageBody);
+    if (java.util.Objects.nonNull(tonCenterClient)) {
+      return send(msg);
+    }
+    if (java.util.Objects.nonNull(adnlLiteClient)) {
+      return send(msg);
+    }
+    return tonlib.sendRawMessage(msg.toCell().toBase64());
   }
 
   /**
@@ -102,8 +121,14 @@ public class GenericSmartContract implements Contract {
    * @return ExtMessageInfo
    */
   public ExtMessageInfo deployWithoutSignature(Cell deployMessageBody) {
-    return tonlib.sendRawMessage(
-        prepareDeployMsgWithoutSignature(deployMessageBody).toCell().toBase64());
+    Message msg = prepareDeployMsgWithoutSignature(deployMessageBody);
+    if (java.util.Objects.nonNull(tonCenterClient)) {
+      return send(msg);
+    }
+    if (java.util.Objects.nonNull(adnlLiteClient)) {
+      return send(msg);
+    }
+    return tonlib.sendRawMessage(msg.toCell().toBase64());
   }
 
   /**
@@ -112,12 +137,25 @@ public class GenericSmartContract implements Contract {
    * @return ExtMessageInfo
    */
   public ExtMessageInfo deploy() {
-    return tonlib.sendRawMessage(prepareDeployMsgWithoutBody().toCell().toBase64());
+    Message msg = prepareDeployMsgWithoutBody();
+    if (java.util.Objects.nonNull(tonCenterClient)) {
+      return send(msg);
+    }
+    if (java.util.Objects.nonNull(adnlLiteClient)) {
+      return send(msg);
+    }
+    return tonlib.sendRawMessage(msg.toCell().toBase64());
   }
 
   public ExtMessageInfo deploy(Cell deployMessageBody, byte[] signedBody) {
-    return tonlib.sendRawMessage(
-        prepareDeployMsg(deployMessageBody, signedBody).toCell().toBase64());
+    Message msg = prepareDeployMsg(deployMessageBody, signedBody);
+    if (java.util.Objects.nonNull(tonCenterClient)) {
+      return send(msg);
+    }
+    if (java.util.Objects.nonNull(adnlLiteClient)) {
+      return send(msg);
+    }
+    return tonlib.sendRawMessage(msg.toCell().toBase64());
   }
 
   public Message prepareDeployMsgWithoutBody() {

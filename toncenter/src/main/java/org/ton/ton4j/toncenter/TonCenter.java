@@ -5,12 +5,21 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
+import org.ton.ton4j.address.Address;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.toncenter.model.*;
+import org.ton.ton4j.utils.Utils;
+
 import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,6 +45,11 @@ public class TonCenter {
 
   private OkHttpClient httpClient;
   private Gson gson;
+
+  private final int SNAKE_DATA_PREFIX = 0x00;
+  private final int CHUNK_DATA_PREFIX = 0x01;
+  private final int ONCHAIN_CONTENT_PREFIX = 0x00;
+  private final int OFFCHAIN_CONTENT_PREFIX = 0x01;
 
   // Private constructor for builder pattern
   private TonCenter() {}
@@ -604,6 +618,75 @@ public class TonCenter {
     return new BigInteger(pubKey.substring(2),16).longValue();
   }
 
+  /**
+   * Get jetton wallet address for a given owner
+   * @param jettonMasterAddress Jetton master contract address
+   * @param ownerAddress Owner wallet address
+   * @return Address of the jetton wallet
+   */
+  public Address getJettonWalletAddress(String jettonMasterAddress, String ownerAddress) {
+    List<List<Object>> stack = new ArrayList<>();
+    List<Object> addressParam = new ArrayList<>();
+    addressParam.add("slice");
+    addressParam.add(ownerAddress);
+    stack.add(addressParam);
+    
+    RunGetMethodResponse response = runGetMethod(jettonMasterAddress, "get_wallet_address", stack).getResult();
+    String jettonWalletAddressHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
+    return Address.of(jettonWalletAddressHex);
+  }
+
+  /**
+   * Get jetton data from a jetton master contract
+   * @param jettonMasterAddress Jetton master contract address
+   * @return JettonMinterData object containing jetton information
+   */
+  public JettonMinterData getJettonData(String jettonMasterAddress) {
+    List<List<Object>> stack = new ArrayList<>();
+    RunGetMethodResponse response = runGetMethod(jettonMasterAddress, "get_jetton_data", stack).getResult();
+    
+    // Parse total supply
+    String totalSupplyHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
+    BigInteger totalSupply = new BigInteger(totalSupplyHex.substring(2), 16);
+    
+    // Parse is_mutable flag
+    String isMutableHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
+    boolean isMutable = new BigInteger(isMutableHex.substring(2), 16).intValue() == -1;
+    
+    // Parse admin address
+    String adminAddressHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
+    Address adminAddress = Address.of(adminAddressHex);
+    
+    // Parse content cell
+    String contentCellHex = ((String) new ArrayList<>(response.getStack().get(3)).get(1));
+    Cell jettonContentCell = CellBuilder.beginCell()
+        .fromBoc(Utils.base64ToBytes(contentCellHex))
+        .endCell();
+    
+    // Parse jetton wallet code
+    String walletCodeHex = ((String) new ArrayList<>(response.getStack().get(4)).get(1));
+    Cell jettonWalletCode = CellBuilder.beginCell()
+        .fromBoc(Utils.base64ToBytes(walletCodeHex))
+        .endCell();
+    
+    // Parse content URI if possible
+    String jettonContentUri = null;
+    try {
+      jettonContentUri = parseOffChainUriCell(jettonContentCell);
+    } catch (Error e) {
+      // Ignore if can't parse URI
+    }
+    
+    return JettonMinterData.builder()
+        .totalSupply(totalSupply)
+        .isMutable(isMutable)
+        .adminAddress(adminAddress)
+        .jettonContentCell(jettonContentCell)
+        .jettonContentUri(jettonContentUri)
+        .jettonWalletCode(jettonWalletCode)
+        .build();
+  }
+
 
   // ========== SEND METHODS ==========
 
@@ -731,6 +814,27 @@ public class TonCenter {
     if (httpClient != null) {
       httpClient.dispatcher().executorService().shutdown();
       httpClient.connectionPool().evictAll();
+    }
+  }
+
+  /**
+   * @param cell Cell
+   * @return String
+   */
+  private String parseOffChainUriCell(Cell cell) {
+    if ((cell.getBits().toByteArray()[0] & 0xFF) != OFFCHAIN_CONTENT_PREFIX) {
+      throw new Error("not OFFCHAIN_CONTENT_PREFIX");
+    }
+
+    return parseUri(CellSlice.beginParse(cell).skipBits(8).loadSnakeString());
+  }
+
+  private String parseUri(String uri) {
+    try {
+      return URLDecoder.decode(uri, String.valueOf(StandardCharsets.UTF_8));
+    } catch (UnsupportedEncodingException e) {
+      log.info(e.getMessage());
+      return null;
     }
   }
 }

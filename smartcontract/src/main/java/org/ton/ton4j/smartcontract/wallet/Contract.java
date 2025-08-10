@@ -14,6 +14,7 @@ import org.ton.ton4j.smartcontract.types.WalletConfig;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R1;
 import org.ton.ton4j.tl.liteserver.responses.SendMsgStatus;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.ExtraCurrency;
@@ -26,6 +27,8 @@ public interface Contract {
 
   AdnlLiteClient getAdnlLiteClient();
 
+  TonCenter getTonCenterClient();
+
   /**
    * Used for late tonlib assignment
    *
@@ -34,6 +37,8 @@ public interface Contract {
   void setTonlib(Tonlib pTonlib);
 
   void setAdnlLiteClient(AdnlLiteClient pAdnlClient);
+
+  void setTonCenterClient(TonCenter pTonCenterClient);
 
   long getWorkchain();
 
@@ -101,6 +106,13 @@ public interface Contract {
     if (this instanceof WalletV1R1) {
       throw new Error("Wallet V1R1 does not have seqno method");
     }
+    if (nonNull(getTonCenterClient())) {
+      try {
+        return getTonCenterClient().getSeqno(getAddress().toBounceable());
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(getAdnlLiteClient())) {
       try {
         return getAdnlLiteClient().getSeqno(getAddress());
@@ -113,6 +125,14 @@ public interface Contract {
   }
 
   default boolean isDeployed() {
+    if (nonNull(getTonCenterClient())) {
+      try {
+        String state = getTonCenterClient().getState(getAddress().toBounceable());
+        return "active".equals(state);
+      } catch (Exception e) {
+        return false;
+      }
+    }
     if (nonNull(getAdnlLiteClient())) {
       try {
         return (getAdnlLiteClient().getAccount(getAddress()).getAccountStorage().getAccountState()
@@ -125,6 +145,18 @@ public interface Contract {
   }
 
   default ExtMessageInfo send(Message externalMessage) {
+    if (nonNull(getTonCenterClient())) {
+      try {
+        getTonCenterClient().sendBoc(externalMessage.toCell().toBase64());
+        return ExtMessageInfo.builder()
+            .error(TonlibError.builder().code(0).build()) // success
+            .build();
+      } catch (Exception e) {
+        return ExtMessageInfo.builder()
+            .error(TonlibError.builder().code(1).message(e.getMessage()).build())
+            .build();
+      }
+    }
     if (nonNull(getAdnlLiteClient())) {
 
       SendMsgStatus sendMsgStatus =
@@ -230,6 +262,13 @@ public interface Contract {
   }
 
   default BigInteger getBalance() {
+    if (nonNull(getTonCenterClient())) {
+      try {
+        return getTonCenterClient().getBalance(getAddress().toBounceable());
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(getAdnlLiteClient())) {
       try {
         return getAdnlLiteClient().getBalance(getAddress());

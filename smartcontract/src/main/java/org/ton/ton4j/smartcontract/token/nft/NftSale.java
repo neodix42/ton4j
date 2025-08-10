@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -56,6 +57,7 @@ public class NftSale implements Contract {
   private Tonlib tonlib;
   private long wc;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -65,6 +67,16 @@ public class NftSale implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+  
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -117,6 +129,63 @@ public class NftSale implements Contract {
    */
   public NftSaleData getData(Tonlib tonlib) {
     Address myAddress = this.getAddress();
+    
+    if (java.util.Objects.nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get sale data
+        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
+        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+            tonCenterClient.runGetMethod(myAddress.toBounceable(), "get_sale_data", stack).getResult();
+        
+        // Parse marketplace address
+        String marketplaceAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1));
+        Address marketplaceAddress = Address.of(marketplaceAddrHex);
+        
+        // Parse NFT address
+        String nftAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(1)).get(1));
+        Address nftAddress = Address.of(nftAddrHex);
+        
+        // Parse NFT owner address
+        String nftOwnerAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(2)).get(1));
+        Address nftOwnerAddress = null;
+        try {
+          nftOwnerAddress = Address.of(nftOwnerAddrHex);
+        } catch (Exception e) {
+          // Owner address might be null
+        }
+        
+        // Parse full price
+        BigInteger fullPrice = new BigInteger(((String) new java.util.ArrayList<>(response.getStack().get(3)).get(1)).substring(2), 16);
+        
+        // Parse marketplace fee
+        BigInteger marketplaceFee = new BigInteger(((String) new java.util.ArrayList<>(response.getStack().get(4)).get(1)).substring(2), 16);
+        
+        // Parse royalty address
+        String royaltyAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(5)).get(1));
+        Address royaltyAddress = Address.of(royaltyAddrHex);
+        
+        // Parse royalty amount
+        BigInteger royaltyAmount = new BigInteger(((String) new java.util.ArrayList<>(response.getStack().get(6)).get(1)).substring(2), 16);
+        
+        return NftSaleData.builder()
+            .marketplaceAddress(marketplaceAddress)
+            .nftAddress(nftAddress)
+            .nftOwnerAddress(nftOwnerAddress)
+            .fullPrice(fullPrice)
+            .marketplaceFee(marketplaceFee)
+            .royaltyAddress(royaltyAddress)
+            .royaltyAmount(royaltyAmount)
+            .build();
+      } catch (Exception e) {
+        throw new Error("Error getting NFT sale data: " + e.getMessage());
+      }
+    } else if (java.util.Objects.nonNull(adnlLiteClient)) {
+      // Implementation for AdnlLiteClient
+      // Not implemented yet
+      throw new Error("AdnlLiteClient implementation for getData not yet available");
+    }
+    
+    // Fallback to Tonlib
     RunResult result = tonlib.runMethod(myAddress, "get_sale_data");
 
     if (result.getExit_code() != 0) {

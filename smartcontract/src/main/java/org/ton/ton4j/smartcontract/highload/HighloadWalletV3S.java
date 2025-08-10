@@ -22,6 +22,7 @@ import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.ExtraCurrency;
@@ -72,6 +73,7 @@ public class HighloadWalletV3S implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -81,6 +83,16 @@ public class HighloadWalletV3S implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public org.ton.ton4j.toncenter.TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -104,7 +116,13 @@ public class HighloadWalletV3S implements Contract {
   }
 
   public String getPublicKey() {
-
+    if (nonNull(tonCenterClient)) {
+      try {
+        return Utils.bytesToHex(Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable())));
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
     }
@@ -113,6 +131,13 @@ public class HighloadWalletV3S implements Contract {
 
   /** Calls get_subwallet_id method of a contract. */
   public long getSubWalletId() {
+    if (nonNull(tonCenterClient)) {
+      try {
+        return tonCenterClient.getSubWalletId(getAddress().toBounceable());
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       return adnlLiteClient.getSubWalletId(getAddress());
     }
@@ -121,6 +146,9 @@ public class HighloadWalletV3S implements Contract {
 
   /** Calls get_last_clean_time method of a contract. */
   public long getLastCleanTime() {
+    if (nonNull(tonCenterClient)) {
+      throw new NotImplementedException("TonCenter not supported yet");
+    }
     if (nonNull(adnlLiteClient)) {
       throw new NotImplementedException("ADNL LiteClient not supported yet");
     }
@@ -136,6 +164,9 @@ public class HighloadWalletV3S implements Contract {
 
   /** Calls get_timeout method of a contract. */
   public long getTimeout() {
+    if (nonNull(tonCenterClient)) {
+      throw new NotImplementedException("TonCenter not supported yet");
+    }
     if (nonNull(adnlLiteClient)) {
       throw new NotImplementedException("ADNL LiteClient not supported yet");
     }
@@ -151,6 +182,9 @@ public class HighloadWalletV3S implements Contract {
 
   /** Calls get_timeout method of a contract. */
   public boolean isProcessed(long queryId, boolean needClean) {
+    if (nonNull(tonCenterClient)) {
+      throw new NotImplementedException("TonCenter not supported yet");
+    }
     if (nonNull(adnlLiteClient)) {
       throw new NotImplementedException("ADNL LiteClient not supported yet");
     }
@@ -248,6 +282,9 @@ public class HighloadWalletV3S implements Contract {
     SignatureWithRecovery signature =
         Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
+    if (nonNull(tonCenterClient)) {
+      return send(prepareExternalMsg(body, signature.getV()[0], signature.getSignature()));
+    }
     if (nonNull(adnlLiteClient)) {
       return send(prepareExternalMsg(body, signature.getV()[0], signature.getSignature()));
     }
@@ -267,6 +304,9 @@ public class HighloadWalletV3S implements Contract {
 
     byte v = Utils.getRecoveryId(r, s, body.hash(), publicKey);
 
+    if (nonNull(tonCenterClient)) {
+      return send(prepareExternalMsg(body, v, signedBody));
+    }
     if (nonNull(adnlLiteClient)) {
       return send(prepareExternalMsg(body, v, signedBody));
     }
@@ -284,6 +324,17 @@ public class HighloadWalletV3S implements Contract {
     SignatureWithRecovery signature =
         Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
+    if (nonNull(tonCenterClient)) {
+      try {
+        tonCenterClient.sendBoc(
+            prepareExternalMsg(body, signature.getV()[0], signature.getSignature())
+                .toCell()
+                .toBase64());
+        return null;
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       adnlLiteClient.sendRawMessageWithConfirmation(
           prepareExternalMsg(body, signature.getV()[0], signature.getSignature()), getAddress());
@@ -355,6 +406,9 @@ public class HighloadWalletV3S implements Contract {
                     .storeRef(innerMsg)
                     .endCell())
             .build();
+    if (nonNull(tonCenterClient)) {
+      return send(externalMessage);
+    }
     if (nonNull(adnlLiteClient)) {
       return send(externalMessage);
     }
@@ -386,6 +440,9 @@ public class HighloadWalletV3S implements Contract {
                     .endCell())
             .build();
 
+    if (nonNull(tonCenterClient)) {
+      return send(externalMessage);
+    }
     if (nonNull(adnlLiteClient)) {
       return send(externalMessage);
     }

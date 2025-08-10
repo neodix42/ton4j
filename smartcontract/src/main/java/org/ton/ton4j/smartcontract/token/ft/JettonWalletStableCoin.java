@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -46,6 +47,7 @@ public class JettonWalletStableCoin implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -55,6 +57,16 @@ public class JettonWalletStableCoin implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+  
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -149,8 +161,38 @@ public class JettonWalletStableCoin implements Contract {
   }
 
   public JettonWalletData getData() {
-
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get jetton wallet data
+        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
+        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_wallet_data", stack).getResult();
+        
+        // Parse the response
+        BigInteger balance = new BigInteger(((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
+        
+        // Parse owner address from stack
+        String ownerAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(1)).get(1));
+        Address ownerAddress = Address.of(ownerAddrHex);
+        
+        // Parse jetton minter address from stack
+        String minterAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(2)).get(1));
+        Address jettonMinterAddress = Address.of(minterAddrHex);
+        
+        // Parse jetton wallet code from stack
+        String codeHex = ((String) new java.util.ArrayList<>(response.getStack().get(3)).get(1));
+        Cell jettonWalletCode = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(codeHex)).endCell();
+        
+        return JettonWalletData.builder()
+            .balance(balance)
+            .ownerAddress(ownerAddress)
+            .jettonMinterAddress(jettonMinterAddress)
+            .jettonWalletCode(jettonWalletCode)
+            .build();
+      } catch (Exception e) {
+        throw new Error("Error getting jetton wallet data: " + e.getMessage());
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_wallet_data");
       BigInteger balance = runMethodResult.getIntByIndex(0);
       VmCellSlice slice = runMethodResult.getSliceByIndex(1);
@@ -206,7 +248,20 @@ public class JettonWalletStableCoin implements Contract {
   }
 
   public BigInteger getBalance() {
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get jetton wallet balance
+        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
+        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_wallet_data", stack).getResult();
+        
+        // Parse the balance from the response
+        String balanceHex = ((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1));
+        return new BigInteger(balanceHex.substring(2), 16);
+      } catch (Exception e) {
+        throw new Error("Error getting jetton wallet balance: " + e.getMessage());
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_wallet_data");
       return runMethodResult.getIntByIndex(0);
     }

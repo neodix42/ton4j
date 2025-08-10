@@ -7,6 +7,7 @@ import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinter;
 import org.ton.ton4j.smartcontract.token.ft.JettonWallet;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.utils.Utils;
 
@@ -101,6 +102,37 @@ public class ContractUtils {
 
       JettonWallet jettonWallet = jettonMinterWallet.getJettonWallet(destinationAddress);
       System.out.println("adnl - jettonWallet " + jettonWallet.getAddress().toRaw());
+      return jettonWallet.getBalance();
+    } catch (Error e) {
+      return new BigInteger("-1");
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static void waitForJettonBalanceChange(
+      TonCenter tonCenterClient, Address jettonMinter, Address address, int timeoutSeconds) {
+    log.info("Waiting for jetton balance change (up to {}s) - {}", timeoutSeconds, address.toRaw());
+    BigInteger initialBalance = getJettonBalance(tonCenterClient, jettonMinter, address);
+    int i = 0;
+    do {
+      if (++i * 2 >= timeoutSeconds) {
+        throw new Error(
+            "Balance of " + address.toRaw() + " was not changed within specified timeout.");
+      }
+      Utils.sleep(2);
+    } while (initialBalance.equals(getJettonBalance(tonCenterClient, jettonMinter, address)));
+  }
+
+  public static BigInteger getJettonBalance(
+      TonCenter tonCenterClient, Address jettonMinter, Address destinationAddress) {
+
+    try {
+      JettonMinter jettonMinterWallet =
+          JettonMinter.builder().tonCenterClient(tonCenterClient).customAddress(jettonMinter).build();
+
+      JettonWallet jettonWallet = jettonMinterWallet.getJettonWallet(destinationAddress);
+      System.out.println("toncenter - jettonWallet " + jettonWallet.getAddress().toRaw());
       return jettonWallet.getBalance();
     } catch (Error e) {
       return new BigInteger("-1");

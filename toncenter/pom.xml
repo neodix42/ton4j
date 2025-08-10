@@ -74,5 +74,21 @@
             <artifactId>concurrent-junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- TON4J dependencies -->
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>address</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>cell</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

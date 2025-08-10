@@ -135,7 +135,7 @@
             <groupId>io.github.neodix42</groupId>
             <artifactId>toncenter</artifactId>
             <version>${project.parent.version}</version>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

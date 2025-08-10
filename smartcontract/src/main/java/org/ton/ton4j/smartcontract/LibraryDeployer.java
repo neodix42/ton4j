@@ -11,6 +11,7 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 
@@ -23,6 +24,7 @@ public class LibraryDeployer implements Contract {
   Cell libraryDeployerCode;
   Cell libraryCode;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -32,6 +34,16 @@ public class LibraryDeployer implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -91,6 +103,9 @@ public class LibraryDeployer implements Contract {
   }
 
   public ExtMessageInfo deploy() {
+    if (nonNull(tonCenterClient)) {
+      return send(prepareDeployMsg());
+    }
     if (nonNull(adnlLiteClient)) {
       return send(prepareDeployMsg());
     }

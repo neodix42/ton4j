@@ -24,6 +24,7 @@ import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawTransaction;
@@ -84,6 +85,7 @@ public class LockupWalletV1 implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -93,6 +95,16 @@ public class LockupWalletV1 implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public org.ton.ton4j.toncenter.TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -238,6 +250,13 @@ public class LockupWalletV1 implements Contract {
   }
 
   public String getPublicKey() {
+    if (nonNull(tonCenterClient)) {
+      try {
+        return Utils.bytesToHex(Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable())));
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
     }
@@ -336,6 +355,9 @@ public class LockupWalletV1 implements Contract {
                     .endCell())
             .build();
 
+    if (nonNull(tonCenterClient)) {
+      return send(externalMessage);
+    }
     if (nonNull(adnlLiteClient)) {
       return send(externalMessage);
     }
@@ -343,6 +365,9 @@ public class LockupWalletV1 implements Contract {
   }
 
   public ExtMessageInfo deploy(byte[] signedBody) {
+    if (nonNull(tonCenterClient)) {
+      return send(prepareDeployMsg(signedBody));
+    }
     if (nonNull(adnlLiteClient)) {
       return send(prepareDeployMsg(signedBody));
     }
@@ -359,6 +384,9 @@ public class LockupWalletV1 implements Contract {
   }
 
   public ExtMessageInfo send(LockupWalletV1Config config, byte[] signedBodyHash) {
+    if (nonNull(tonCenterClient)) {
+      return send(prepareExternalMsg(config, signedBodyHash));
+    }
     if (nonNull(adnlLiteClient)) {
       return send(prepareExternalMsg(config, signedBodyHash));
     }
@@ -383,6 +411,9 @@ public class LockupWalletV1 implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
+    if (nonNull(tonCenterClient)) {
+      return send(externalMessage);
+    }
     if (nonNull(adnlLiteClient)) {
       return send(externalMessage);
     }
@@ -406,6 +437,14 @@ public class LockupWalletV1 implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
+    if (nonNull(tonCenterClient)) {
+      try {
+        tonCenterClient.sendBoc(externalMessage.toCell().toBase64());
+        return null;
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       send(externalMessage);
       return null;

@@ -15,6 +15,7 @@ import org.ton.ton4j.smartcontract.types.WalletV1R1Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawTransaction;
@@ -49,6 +50,7 @@ public class WalletV1R1 implements Contract {
   private Tonlib tonlib;
   private long wc;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -58,6 +60,16 @@ public class WalletV1R1 implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -143,6 +155,9 @@ public class WalletV1R1 implements Contract {
    * @param config WalletV1R1Config
    */
   public ExtMessageInfo send(WalletV1R1Config config) {
+    if (nonNull(tonCenterClient)) {
+      return send(prepareExternalMsg(config));
+    }
     if (nonNull(adnlLiteClient)) {
       return send(prepareExternalMsg(config));
     }
@@ -169,6 +184,9 @@ public class WalletV1R1 implements Contract {
   }
 
   public ExtMessageInfo deploy() {
+    if (nonNull(tonCenterClient)) {
+      return send(prepareDeployMsg());
+    }
     if (nonNull(adnlLiteClient)) {
       return send(prepareDeployMsg());
     }
@@ -176,6 +194,9 @@ public class WalletV1R1 implements Contract {
   }
 
   public ExtMessageInfo deploy(byte[] signedBody) {
+    if (nonNull(tonCenterClient)) {
+      return send(prepareDeployMsg(signedBody));
+    }
     if (nonNull(adnlLiteClient)) {
       return send(prepareDeployMsg(signedBody));
     }
@@ -192,6 +213,9 @@ public class WalletV1R1 implements Contract {
   }
 
   public ExtMessageInfo send(WalletV1R1Config config, byte[] signedBodyHash) throws Exception {
+    if (nonNull(tonCenterClient)) {
+      return send(prepareExternalMsg(config, signedBodyHash));
+    }
     if (nonNull(adnlLiteClient)) {
       return send(prepareExternalMsg(config, signedBodyHash));
     }

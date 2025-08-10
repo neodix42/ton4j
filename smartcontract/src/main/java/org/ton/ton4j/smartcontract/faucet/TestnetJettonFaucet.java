@@ -10,6 +10,7 @@ import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.ContractUtils;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
@@ -135,5 +136,75 @@ public class TestnetJettonFaucet {
     Utils.sleep(10);
     return ContractUtils.getJettonBalance(
         adnlLiteClient, Address.of(FAUCET_MASTER_ADDRESS), destinationAddress);
+  }
+
+  public static BigInteger topUpContractWithNeoj(
+      TonCenter tonCenterClient, Address destinationAddress, BigInteger jettonsAmount) {
+
+    if (jettonsAmount.compareTo(Utils.toNano(100)) > 0) {
+      throw new Error(
+          "Too many NEOJ jettons requested from the TestnetJettonFaucet, maximum amount per request is 100.");
+    }
+
+    TweetNaclFast.Signature.KeyPair keyPair =
+        TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(ADMIN_WALLET_SECRET_KEY));
+
+    WalletV3R2 adminWallet =
+        WalletV3R2.builder().tonCenterClient(tonCenterClient).walletId(42).keyPair(keyPair).build();
+
+    JettonMinter jettonMinterWallet =
+        JettonMinter.builder()
+            .tonCenterClient(tonCenterClient)
+            .customAddress(Address.of(FAUCET_MASTER_ADDRESS))
+            .build();
+
+    System.out.println("toncenter - adminWallet " + adminWallet.getAddress().toRaw());
+    JettonWallet adminJettonWallet = jettonMinterWallet.getJettonWallet(adminWallet.getAddress());
+    System.out.println("toncenter - adminJettonWallet " + adminJettonWallet.getAddress().toRaw());
+
+    WalletV3Config walletV3Config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(adminWallet.getSeqno())
+            .destination(adminJettonWallet.getAddress())
+            .amount(Utils.toNano(0.06))
+            .body(
+                JettonWallet.createTransferBody(
+                    0,
+                    jettonsAmount,
+                    destinationAddress, // recipient
+                    adminWallet.getAddress(), // response address
+                    null, // custom payload
+                    BigInteger.ONE, // forward amount
+                    MsgUtils.createTextMessageBody(
+                        "jetton top up from ton4j faucet") // forward payload
+                    ))
+            .build();
+    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
+
+    if (extMessageInfo.getError().getCode() != 0) {
+      throw new Error(extMessageInfo.getError().getMessage());
+    }
+
+    // Wait for jetton balance change
+    try {
+      BigInteger initialBalance = ContractUtils.getJettonBalance(
+          tonCenterClient, Address.of(FAUCET_MASTER_ADDRESS), adminWallet.getAddress());
+      int timeoutSeconds = 60;
+      int i = 0;
+      do {
+        if (++i * 2 >= timeoutSeconds) {
+          throw new Error("Jetton balance was not changed within specified timeout.");
+        }
+        Utils.sleep(2);
+      } while (initialBalance.equals(ContractUtils.getJettonBalance(
+          tonCenterClient, Address.of(FAUCET_MASTER_ADDRESS), adminWallet.getAddress())));
+    } catch (Exception e) {
+      throw new Error("Error waiting for jetton balance change: " + e.getMessage());
+    }
+    
+    Utils.sleep(10);
+    return ContractUtils.getJettonBalance(
+        tonCenterClient, Address.of(FAUCET_MASTER_ADDRESS), destinationAddress);
   }
 }

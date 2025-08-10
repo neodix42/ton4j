@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -33,6 +34,7 @@ public class DnsItem implements Contract {
   private Tonlib tonlib;
   private long wc;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -42,6 +44,16 @@ public class DnsItem implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+  
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -92,7 +104,70 @@ public class DnsItem implements Contract {
   /**
    * @return DnsData
    */
+  /**
+   * Get NFT data using instance methods with TonCenter client if available
+   * @return ItemData
+   */
+  public ItemData getData() {
+    if (java.util.Objects.nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get NFT data
+        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
+        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_nft_data", stack).getResult();
+        
+        // Parse is_initialized
+        boolean isInitialized = Long.parseLong(((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16) == -1;
+        
+        // Parse index
+        BigInteger index = new BigInteger(((String) new java.util.ArrayList<>(response.getStack().get(1)).get(1)).substring(2), 16);
+        
+        // Parse collection address
+        String collectionAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(2)).get(1));
+        Address collectionAddress = Address.of(collectionAddrHex);
+        
+        // Parse owner address
+        String ownerAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(3)).get(1));
+        Address ownerAddress = isInitialized ? Address.of(ownerAddrHex) : null;
+        
+        // Parse content cell
+        String contentCellHex = ((String) new java.util.ArrayList<>(response.getStack().get(4)).get(1));
+        Cell contentCell = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentCellHex)).endCell();
+        
+        return ItemData.builder()
+            .isInitialized(isInitialized)
+            .index(index)
+            .collectionAddress(collectionAddress)
+            .ownerAddress(ownerAddress)
+            .contentCell(contentCell)
+            .build();
+      } catch (Exception e) {
+        throw new Error("Error getting NFT data: " + e.getMessage());
+      }
+    }
+    
+    // Fallback to Tonlib
+    return getData(tonlib);
+  }
+  
+  /**
+   * Get NFT data using instance Tonlib
+   * @param tonlib Tonlib instance
+   * @return ItemData
+   */
+  public ItemData getData(Tonlib tonlib) {
+    return getData(tonlib, getAddress());
+  }
+  
+  /**
+   * Static method to get NFT data
+   * @param tonlib Tonlib instance
+   * @param dnsItemAddress Address of the DNS item
+   * @return ItemData
+   */
   public static ItemData getData(Tonlib tonlib, Address dnsItemAddress) {
+    // We can only use Tonlib here since we don't have access to TonCenter client
+    // in the static method context
     RunResult result = tonlib.runMethod(dnsItemAddress, "get_nft_data");
 
     if (result.getExit_code() != 0) {
@@ -177,7 +252,44 @@ public class DnsItem implements Contract {
   /**
    * @return String
    */
+  /**
+   * Get domain using instance methods with TonCenter client if available
+   * @return String
+   */
+  public String getDomain() {
+    if (java.util.Objects.nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get domain
+        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
+        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_domain", stack).getResult();
+        
+        // Parse domain
+        String domainCellHex = ((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1));
+        return new String(
+            CellBuilder.beginCell()
+                .fromBoc(Utils.base64ToBytes(domainCellHex))
+                .endCell()
+                .getBits()
+                .toByteArray());
+      } catch (Exception e) {
+        throw new Error("Error getting domain: " + e.getMessage());
+      }
+    }
+    
+    // Fallback to Tonlib
+    return getDomain(tonlib, getAddress());
+  }
+  
+  /**
+   * Static method to get domain
+   * @param tonlib Tonlib instance
+   * @param dnsItemAddress Address of the DNS item
+   * @return String
+   */
   public static String getDomain(Tonlib tonlib, Address dnsItemAddress) {
+    // We can only use Tonlib here since we don't have access to TonCenter client
+    // in the static method context
     RunResult result = tonlib.runMethod(dnsItemAddress, "get_domain");
 
     if (result.getExit_code() != 0) {

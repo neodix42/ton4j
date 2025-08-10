@@ -9,6 +9,7 @@ import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.types.WalletV1R3Config;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R3;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
@@ -142,5 +143,75 @@ public class TestnetFaucet {
 
     adnlLiteClient.waitForBalanceChange(destinationAddress, 60);
     return adnlLiteClient.getBalance(destinationAddress);
+  }
+
+  public static BigInteger topUpContract(
+      TonCenter tonCenterClient, Address destinationAddress, BigInteger amount)
+      throws Exception {
+
+    if (amount.compareTo(Utils.toNano(20)) > 0) {
+      throw new Error(
+          "Too many TONs requested from the TestnetFaucet, maximum amount per request is 20.");
+    }
+
+    TweetNaclFast.Signature.KeyPair keyPair =
+        TweetNaclFast.Signature.keyPair_fromSeed(Utils.hexToSignedBytes(SECRET_KEY));
+
+    WalletV1R3 faucet =
+        WalletV1R3.builder().tonCenterClient(tonCenterClient).keyPair(keyPair).build();
+
+    BigInteger faucetBalance = null;
+    int i = 0;
+    do {
+      try {
+        if (i++ > 10) {
+          throw new Error("Cannot get testnet faucet balance. Restart.");
+        }
+
+        faucetBalance = faucet.getBalance();
+        log.info(
+            "Testnet faucet address {}, balance {}",
+            faucet.getAddress().toBounceable(),
+            Utils.formatNanoValue(faucetBalance));
+        if (faucetBalance.compareTo(amount) < 0) {
+          throw new Error(
+              "Testnet faucet does not have that much toncoins. Faucet balance "
+                  + Utils.formatNanoValue(faucetBalance)
+                  + ", requested "
+                  + Utils.formatNanoValue(amount));
+        }
+      } catch (Exception e) {
+        log.info("Cannot get testnet faucet balance. Restarting...");
+        Utils.sleep(5, "Waiting for testnet faucet balance");
+      }
+    } while (isNull(faucetBalance));
+
+    WalletV1R3Config config =
+        WalletV1R3Config.builder()
+            .bounce(false)
+            .seqno(faucet.getSeqno())
+            .destination(destinationAddress)
+            .amount(amount)
+            .comment("top-up from ton4j faucet")
+            .build();
+
+    ExtMessageInfo extMessageInfo = faucet.send(config);
+
+    if (extMessageInfo.getError().getCode() != 0) {
+      throw new Error(extMessageInfo.getError().getMessage());
+    }
+
+    // Wait for balance change
+    BigInteger initialBalance = tonCenterClient.getBalance(destinationAddress.toBounceable());
+    int timeoutSeconds = 60;
+    int j = 0;
+    do {
+      if (++j * 2 >= timeoutSeconds) {
+        throw new Error("Balance was not changed within specified timeout.");
+      }
+      Utils.sleep(2);
+    } while (initialBalance.equals(tonCenterClient.getBalance(destinationAddress.toBounceable())));
+
+    return tonCenterClient.getBalance(destinationAddress.toBounceable());
   }
 }
