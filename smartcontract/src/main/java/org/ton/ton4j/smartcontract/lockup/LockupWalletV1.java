@@ -6,10 +6,8 @@ import static java.util.Objects.nonNull;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
+
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.java.adnl.AdnlLiteClient;
@@ -25,6 +23,8 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawTransaction;
@@ -239,6 +239,16 @@ public class LockupWalletV1 implements Contract {
    * @return long
    */
   public long getWalletId() {
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> r = tonCenterClient.runGetMethod(
+          getAddress().toBounceable(), "wallet_id", new ArrayList<>());
+      if (r.isSuccess()) {
+        String pubKey = ((String) new ArrayList<>(r.getResult().getStack().get(0)).get(1));
+        return new BigInteger(pubKey.substring(2), 16).longValue();
+      } else {
+        throw new Error("wallet_id failed, exitCode: " + r.getCode());
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "wallet_id");
       return runMethodResult.getIntByIndex(0).longValue();
@@ -252,7 +262,8 @@ public class LockupWalletV1 implements Contract {
   public String getPublicKey() {
     if (nonNull(tonCenterClient)) {
       try {
-        return Utils.bytesToHex(Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable())));
+        return Utils.bytesToHex(
+            Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable())));
       } catch (Exception e) {
         throw new Error(e);
       }
@@ -323,6 +334,16 @@ public class LockupWalletV1 implements Contract {
    *     restricted value nominal locked value
    */
   public List<BigInteger> getBalances() {
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(
+              getAddress().toBounceable(), "get_balances", new ArrayList<>());
+      if (runMethodResult.isSuccess()) {
+        return null; // todo
+      } else {
+        return null;
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_balances");
       BigInteger balance = runMethodResult.getIntByIndex(0);

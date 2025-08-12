@@ -16,6 +16,8 @@ import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.VmCellSlice;
 import org.ton.ton4j.tlb.VmStackValueInt;
 import org.ton.ton4j.tlb.VmStackValueSlice;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryCell;
@@ -218,6 +220,91 @@ public class DnsUtils {
   }
 
   private static Object dnsResolveImpl(
+      TonCenter tonCenterClient,
+      Address dnsAddress,
+      byte[] rawDomainBytes,
+      String category,
+      boolean oneStep) {
+    int len = rawDomainBytes.length * 8;
+
+    Cell domainCell = CellBuilder.beginCell().storeBytes(rawDomainBytes).endCell();
+
+    BigInteger categoryInteger = categoryToInt(category);
+
+    List<List<Object>> stack = new ArrayList<>();
+    List<Object> domainParam = new ArrayList<>();
+    domainParam.add("slice");
+    domainParam.add(domainCell.toHex(true));
+    stack.add(domainParam);
+    
+    List<Object> categoryParam = new ArrayList<>();
+    categoryParam.add("num");
+    categoryParam.add(categoryInteger.toString());
+    stack.add(categoryParam);
+
+    RunGetMethodResponse runMethodResult = tonCenterClient.runGetMethod(dnsAddress.toString(), "dnsresolve", stack).getResult();
+    if (runMethodResult.getStack().size() != 2) {
+      throw new Error("Invalid dnsresolve response");
+    }
+    
+    int resultLen = Integer.parseInt(((String) new ArrayList<>(runMethodResult.getStack().get(0)).get(1)).substring(2), 16);
+    
+    Cell cell = null;
+    String cellBase64 = (String) new ArrayList<>(runMethodResult.getStack().get(1)).get(1);
+    if (cellBase64 != null && !cellBase64.isEmpty()) {
+      cell = CellBuilder.beginCell()
+          .fromBoc(Utils.base64ToBytes(cellBase64))
+          .endCell();
+    }
+
+    if ((nonNull(cell)) && (isNull(cell.getBits()))) {
+      throw new Error("Invalid dnsresolve response");
+    }
+
+    if (resultLen == 0) {
+      return null;
+    }
+
+    if ((resultLen % 8) != 0) {
+      throw new Error("Domain split not at a component boundary");
+    }
+
+    if (resultLen > len) {
+      throw new Error("Invalid response " + resultLen + "/" + len);
+    } else if (resultLen == len) {
+      if (DNS_CATEGORY_NEXT_RESOLVER.equals(category)) {
+        return nonNull(cell) ? parseNextResolverRecord(cell) : null;
+      } else if (DNS_CATEGORY_WALLET.equals(category)) {
+        return nonNull(cell) ? parseSmartContractAddressRecord(cell) : null;
+      } else if (DNS_CATEGORY_SITE.equals(category)) {
+        return nonNull(cell) ? parseAdnlAddressRecord(cell) : null;
+      } else {
+        return null;
+      }
+    } else { // partial resolved
+      if (isNull(cell)) {
+        return null; // domain cannot be resolved
+      } else {
+        Address nextAddress = parseNextResolverRecord(cell);
+        if (oneStep) {
+          if (category.equals(DNS_CATEGORY_NEXT_RESOLVER)) {
+            return nextAddress;
+          } else {
+            return null;
+          }
+        } else {
+          return dnsResolveImpl(
+              tonCenterClient,
+              nextAddress,
+              Arrays.copyOfRange(rawDomainBytes, resultLen / 8, rawDomainBytes.length),
+              category,
+              false);
+        }
+      }
+    }
+  }
+
+  private static Object dnsResolveImpl(
       AdnlLiteClient adnlLiteClient,
       Address dnsAddress,
       byte[] rawDomainBytes,
@@ -360,5 +447,16 @@ public class DnsUtils {
     byte[] rawDomainBytes = domainToBytes(domain);
 
     return dnsResolveImpl(adnlLiteClient, rootDnsAddress, rawDomainBytes, category, oneStep);
+  }
+  
+  public static Object dnsResolve(
+      TonCenter tonCenterClient,
+      Address rootDnsAddress,
+      String domain,
+      String category,
+      boolean oneStep) {
+    byte[] rawDomainBytes = domainToBytes(domain);
+
+    return dnsResolveImpl(tonCenterClient, rootDnsAddress, rawDomainBytes, category, oneStep);
   }
 }

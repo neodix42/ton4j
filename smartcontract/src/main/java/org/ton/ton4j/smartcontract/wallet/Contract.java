@@ -4,7 +4,10 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
@@ -13,8 +16,11 @@ import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.smartcontract.types.WalletConfig;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R1;
 import org.ton.ton4j.tl.liteserver.responses.SendMsgStatus;
+import org.ton.ton4j.tl.liteserver.responses.TransactionList;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.SendBocResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.ExtraCurrency;
@@ -109,7 +115,7 @@ public interface Contract {
     if (nonNull(getTonCenterClient())) {
       try {
         return getTonCenterClient().getSeqno(getAddress().toBounceable());
-      } catch (Exception e) {
+      } catch (Throwable e) {
         throw new Error(e);
       }
     }
@@ -147,13 +153,24 @@ public interface Contract {
   default ExtMessageInfo send(Message externalMessage) {
     if (nonNull(getTonCenterClient())) {
       try {
-        getTonCenterClient().sendBoc(externalMessage.toCell().toBase64());
-        return ExtMessageInfo.builder()
-            .error(TonlibError.builder().code(0).build()) // success
-            .build();
+        TonResponse<SendBocResponse> response =
+            getTonCenterClient().sendBoc(externalMessage.toCell().toBase64());
+        if (response.isSuccess()) {
+          return ExtMessageInfo.builder()
+              .tonCenterError(TonCenterError.builder().code(0).build()) // success
+              .build();
+        } else {
+          return ExtMessageInfo.builder()
+              .tonCenterError(
+                  TonCenterError.builder()
+                      .code(response.getCode())
+                      .message(response.getError())
+                      .build())
+              .build();
+        }
       } catch (Exception e) {
         return ExtMessageInfo.builder()
-            .error(TonlibError.builder().code(1).message(e.getMessage()).build())
+            .tonCenterError(TonCenterError.builder().code(1).message(e.getMessage()).build())
             .build();
       }
     }
@@ -194,6 +211,8 @@ public interface Contract {
   default void sendWithConfirmation(Message externalMessage) throws Exception {
     if (nonNull(getAdnlLiteClient())) {
       getAdnlLiteClient().sendRawMessageWithConfirmation(externalMessage, getAddress());
+    } else if (nonNull(getTonCenterClient())) {
+      getTonCenterClient().sendRawMessageWithConfirmation(externalMessage, getAddress());
     } else {
       getTonlib().sendRawMessageWithConfirmation(externalMessage.toCell().toBase64(), getAddress());
     }
@@ -227,13 +246,18 @@ public interface Contract {
    */
   default void waitForBalanceChange(int timeoutSeconds) {
     BigInteger initialBalance = getBalance();
+    System.out.println("initialBalance: " + initialBalance);
+    BigInteger currentBalance;
     int i = 0;
     do {
       if (++i * 2 >= timeoutSeconds) {
         throw new Error("Balance was not changed within specified timeout.");
       }
       Utils.sleep(2);
-    } while (initialBalance.equals(getBalance()));
+      currentBalance = getBalance();
+      System.out.println("currentBalance: " + currentBalance);
+
+    } while (initialBalance.equals(currentBalance));
   }
 
   /**
@@ -265,7 +289,7 @@ public interface Contract {
     if (nonNull(getTonCenterClient())) {
       try {
         return getTonCenterClient().getBalance(getAddress().toBounceable());
-      } catch (Exception e) {
+      } catch (Throwable e) {
         throw new Error(e);
       }
     }

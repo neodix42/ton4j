@@ -23,6 +23,7 @@ import org.ton.ton4j.smartcontract.types.WalletV1R3Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.ton4j.tlb.Message;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.QueryFees;
 import org.ton.ton4j.utils.Utils;
@@ -286,5 +287,54 @@ public class TestWalletV1R3 extends CommonTest {
     log.info("extMessageInfo: {}", extMessageInfo);
     contract.waitForBalanceChange(120);
     Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
+  }
+
+  @Test
+  public void testWalletSignedExternallyTonCenterClient() throws Exception {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    byte[] publicKey = keyPair.getPublicKey();
+    TonCenter tonCenterClient = TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().debug().build();
+    WalletV1R3 contract =
+        WalletV1R3.builder().tonCenterClient(tonCenterClient).publicKey(publicKey).build();
+    log.info("pub key: {}", Utils.bytesToHex(publicKey));
+    log.info("address: {}", contract.getAddress().toBounceable());
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonCenterClient, contract.getAddress(), Utils.toNano(0.1), true);
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    Utils.sleep(2);
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(contract.getBalance()));
+
+    // deploy using externally signed body
+    Cell deployBody = contract.createDeployMessage();
+
+    byte[] signedDeployBodyHash =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
+
+    ExtMessageInfo extMessageInfo = contract.deploy(signedDeployBodyHash);
+    log.info("extMessageInfo {}", extMessageInfo);
+    contract.waitForDeployment();
+
+    // send toncoins
+    WalletV1R3Config config =
+        WalletV1R3Config.builder()
+            .seqno(1)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.08))
+            .comment("ton4j testWalletV1R3-signed-externally")
+            .build();
+
+    // transfer coins from new wallet (back to faucet) using externally signed body
+    Cell transferBody = contract.createTransferBody(config);
+    byte[] signedTransferBodyHash =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
+    extMessageInfo = contract.send(config, signedTransferBodyHash);
+    log.info("extMessageInfo: {}", extMessageInfo);
+    Utils.sleep(2);
+    contract.waitForBalanceChange();
+    Utils.sleep(2);
+    balance = contract.getBalance();
+    log.info("wallet {} new balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    Assertions.assertThat(balance).isLessThan(Utils.toNano(0.03));
   }
 }

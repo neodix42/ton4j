@@ -16,4 +16,5 @@ public class ExtMessageInfo implements Serializable {
   String hash_norm;
   TonlibError error;
   AdnlLiteClientError adnlLiteClientError;
+  TonCenterError tonCenterError;
 }

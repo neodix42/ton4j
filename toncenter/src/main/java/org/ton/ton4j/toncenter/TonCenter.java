@@ -9,9 +9,11 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.Message;
 import org.ton.ton4j.toncenter.model.*;
 import org.ton.ton4j.utils.Utils;
 
+import static java.util.Objects.nonNull;
 import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
 import java.io.IOException;
@@ -21,11 +23,9 @@ import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * TonCenter API v2 client wrapper using OkHttp for HTTP requests and Gson for JSON serialization.
@@ -42,7 +42,7 @@ public class TonCenter {
   private Duration connectTimeout;
   private Duration readTimeout;
   private Duration writeTimeout;
-
+  private boolean debug;
   private OkHttpClient httpClient;
   private Gson gson;
 
@@ -61,6 +61,7 @@ public class TonCenter {
     private Duration connectTimeout = Duration.ofSeconds(10);
     private Duration readTimeout = Duration.ofSeconds(30);
     private Duration writeTimeout = Duration.ofSeconds(30);
+    private boolean debug;
 
     public TonCenterBuilder apiKey(String apiKey) {
       this.apiKey = apiKey;
@@ -106,6 +107,11 @@ public class TonCenter {
       return network(Network.TESTNET);
     }
 
+    public TonCenterBuilder debug() {
+      this.debug = true;
+      return this;
+    }
+
     public TonCenter build() {
       // Ensure endpoint matches network
       if (this.network != null) {
@@ -116,6 +122,7 @@ public class TonCenter {
       tonCenter.apiKey = this.apiKey;
       tonCenter.endpoint = this.endpoint;
       tonCenter.network = this.network;
+      tonCenter.debug = this.debug;
       tonCenter.connectTimeout = this.connectTimeout;
       tonCenter.readTimeout = this.readTimeout;
       tonCenter.writeTimeout = this.writeTimeout;
@@ -153,10 +160,10 @@ public class TonCenter {
     clientBuilder.addInterceptor(
         chain -> {
           Request request = chain.request();
-          //            log.debug("HTTP {} {}", request.method(), request.url());
-
           Response response = chain.proceed(request);
-          log.debug("HTTP {} {} -> {}", request.method(), request.url(), response.code());
+          if (debug) {
+            log.info("HTTP {} {} -> {}", request.method(), request.url(), response.code());
+          }
 
           return response;
         });
@@ -322,7 +329,12 @@ public class TonCenter {
 
     Type responseType = new TypeToken<TonResponse<String>>() {}.getType();
     TonResponse<String> res = executeGet("/getAddressBalance", params, responseType);
-    return new BigInteger(res.getResult());
+    log.info(res.toString());
+    if (nonNull(res) && res.isSuccess()) {
+      return new BigInteger(res.getResult());
+    } else {
+      throw new Error(res.getError());
+    }
   }
 
   /** Get state of a given address. State can be either unitialized, active or frozen */
@@ -339,8 +351,12 @@ public class TonCenter {
     params.put("address", address);
 
     Type responseType = new TypeToken<TonResponse<String>>() {}.getType();
-    TonResponse<String>  res = executeGet("/getAddressState", params, responseType);
-    return res.getResult();
+    TonResponse<String> res = executeGet("/getAddressState", params, responseType);
+    if (nonNull(res) && res.isSuccess()) {
+      return res.getResult();
+    } else {
+      throw new Error(res.getError());
+    }
   }
 
   /** Convert an address from raw to human-readable format */
@@ -586,40 +602,69 @@ public class TonCenter {
 
   public long getSeqno(String address) {
     RunGetMethodResponse r = runGetMethod(address, "seqno", new ArrayList<>()).getResult();
-    return Long.decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
+    log.info("seqno {}", r);
+    if ((nonNull(r)) && (r.getExitCode() == 0)) {
+      return Long.decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
+    } else {
+      throw new Error("getSeqno failed, exitCode: " + r.getExitCode());
+    }
   }
 
   public long getSeqno(String address, Long atSeqno) {
     RunGetMethodResponse r = runGetMethod(address, "seqno", new ArrayList<>(), atSeqno).getResult();
-    return Long.decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
+    if ((nonNull(r)) && (r.getExitCode() == 0)) {
+      return Long.decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
+    } else {
+      throw new Error("getSeqno failed, exitCode: " + r.getExitCode());
+    }
   }
 
   public BigInteger getPublicKey(String address) {
     RunGetMethodResponse r = runGetMethod(address, "get_public_key", new ArrayList<>()).getResult();
-    String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
-    return new BigInteger(pubKey.substring(2),16);
+    if ((nonNull(r)) && (r.getExitCode() == 0)) {
+      String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
+      return new BigInteger(pubKey.substring(2), 16);
+    } else {
+      throw new Error("get_public_key failed, exitCode: " + r.getExitCode());
+    }
   }
 
   public BigInteger getPublicKey(String address, Long atSeqno) {
-    RunGetMethodResponse r = runGetMethod(address, "get_public_key", new ArrayList<>(), atSeqno).getResult();
-    String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
-    return new BigInteger(pubKey.substring(2), 16);
+    RunGetMethodResponse r =
+        runGetMethod(address, "get_public_key", new ArrayList<>(), atSeqno).getResult();
+    if ((nonNull(r)) && (r.getExitCode() == 0)) {
+      String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
+      return new BigInteger(pubKey.substring(2), 16);
+    } else {
+      throw new Error("get_public_key failed, exitCode: " + r.getExitCode());
+    }
   }
 
   public long getSubWalletId(String address) {
-    RunGetMethodResponse r = runGetMethod(address, "get_subwallet_id", new ArrayList<>()).getResult();
-    String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
-    return new BigInteger(pubKey.substring(2),16).longValue();
+    RunGetMethodResponse r =
+        runGetMethod(address, "get_subwallet_id", new ArrayList<>()).getResult();
+    if ((nonNull(r)) && (r.getExitCode() == 0)) {
+      String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
+      return new BigInteger(pubKey.substring(2), 16).longValue();
+    } else {
+      throw new Error("get_subwallet_id failed, exitCode: " + r.getExitCode());
+    }
   }
 
   public long getSubWalletId(String address, long atSeqno) {
-    RunGetMethodResponse r = runGetMethod(address, "get_subwallet_id", new ArrayList<>(), atSeqno).getResult();
-    String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
-    return new BigInteger(pubKey.substring(2),16).longValue();
+    RunGetMethodResponse r =
+        runGetMethod(address, "get_subwallet_id", new ArrayList<>(), atSeqno).getResult();
+    if ((nonNull(r)) && (r.getExitCode() == 0)) {
+      String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
+      return new BigInteger(pubKey.substring(2), 16).longValue();
+    } else {
+      throw new Error("get_subwallet_id failed, exitCode: " + r.getExitCode());
+    }
   }
 
   /**
    * Get jetton wallet address for a given owner
+   *
    * @param jettonMasterAddress Jetton master contract address
    * @param ownerAddress Owner wallet address
    * @return Address of the jetton wallet
@@ -630,45 +675,46 @@ public class TonCenter {
     addressParam.add("slice");
     addressParam.add(ownerAddress);
     stack.add(addressParam);
-    
-    RunGetMethodResponse response = runGetMethod(jettonMasterAddress, "get_wallet_address", stack).getResult();
+
+    RunGetMethodResponse response =
+        runGetMethod(jettonMasterAddress, "get_wallet_address", stack).getResult();
     String jettonWalletAddressHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
     return Address.of(jettonWalletAddressHex);
   }
 
   /**
    * Get jetton data from a jetton master contract
+   *
    * @param jettonMasterAddress Jetton master contract address
    * @return JettonMinterData object containing jetton information
    */
   public JettonMinterData getJettonData(String jettonMasterAddress) {
     List<List<Object>> stack = new ArrayList<>();
-    RunGetMethodResponse response = runGetMethod(jettonMasterAddress, "get_jetton_data", stack).getResult();
-    
+    RunGetMethodResponse response =
+        runGetMethod(jettonMasterAddress, "get_jetton_data", stack).getResult();
+
     // Parse total supply
     String totalSupplyHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
     BigInteger totalSupply = new BigInteger(totalSupplyHex.substring(2), 16);
-    
+
     // Parse is_mutable flag
     String isMutableHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
     boolean isMutable = new BigInteger(isMutableHex.substring(2), 16).intValue() == -1;
-    
+
     // Parse admin address
     String adminAddressHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
     Address adminAddress = Address.of(adminAddressHex);
-    
+
     // Parse content cell
     String contentCellHex = ((String) new ArrayList<>(response.getStack().get(3)).get(1));
-    Cell jettonContentCell = CellBuilder.beginCell()
-        .fromBoc(Utils.base64ToBytes(contentCellHex))
-        .endCell();
-    
+    Cell jettonContentCell =
+        CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentCellHex)).endCell();
+
     // Parse jetton wallet code
     String walletCodeHex = ((String) new ArrayList<>(response.getStack().get(4)).get(1));
-    Cell jettonWalletCode = CellBuilder.beginCell()
-        .fromBoc(Utils.base64ToBytes(walletCodeHex))
-        .endCell();
-    
+    Cell jettonWalletCode =
+        CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(walletCodeHex)).endCell();
+
     // Parse content URI if possible
     String jettonContentUri = null;
     try {
@@ -676,7 +722,7 @@ public class TonCenter {
     } catch (Error e) {
       // Ignore if can't parse URI
     }
-    
+
     return JettonMinterData.builder()
         .totalSupply(totalSupply)
         .isMutable(isMutable)
@@ -686,7 +732,6 @@ public class TonCenter {
         .jettonWalletCode(jettonWalletCode)
         .build();
   }
-
 
   // ========== SEND METHODS ==========
 
@@ -698,10 +743,52 @@ public class TonCenter {
   }
 
   /** Send serialized boc file and return message hash */
-  public TonResponse<String> sendBocReturnHash(String boc) {
+  public TonResponse<SendBocResponse> sendBocReturnHash(String boc) {
     SendBocRequest request = new SendBocRequest(boc);
-    Type responseType = new TypeToken<TonResponse<String>>() {}.getType();
+    Type responseType = new TypeToken<TonResponse<SendBocResponse>>() {}.getType();
     return executePost("/sendBocReturnHash", request, responseType);
+  }
+
+  /**
+   * Sends Message with deliver confirmation. After the message has been sent to the network this
+   * method looks up specified account transactions and returns true if message was found among
+   * them. Timeout 60 seconds.
+   *
+   * @param externalMessage - Message
+   * @throws TimeoutException if message not found within a timeout
+   */
+  public void sendRawMessageWithConfirmation(Message externalMessage, Address account) {
+    try {
+      TonResponse<SendBocResponse> result = sendBocReturnHash(externalMessage.toCell().toBase64());
+      if (result.isSuccess()) {
+        String hash = result.getResult().getHash();
+        String hashHex = Utils.base64ToHexString(result.getResult().getHash());
+        log.info(
+            "Message has been successfully sent. Waiting for delivery of message with hash {}",
+            hash);
+
+        for (int i = 0; i < 12; i++) {
+          TonResponse<List<TransactionResponse>> txs = getTransactions(account.toBounceable());
+          for (TransactionResponse tx : txs.getResult()) {
+            if (nonNull(tx.getInMsg())) {
+              if (hashHex.equals(Utils.base64ToHexString(tx.getInMsg().getHash()))) {
+                log.info("Message has been delivered.");
+                return;
+              }
+            }
+          }
+          Utils.sleep(5);
+        }
+      } else {
+        log.error("Error sending BoC");
+        throw new Error("Error sending BoC");
+      }
+      log.error("Timeout waiting for message hash");
+      throw new Error("Cannot find hash of the sent message");
+    } catch (Exception e) {
+      log.error("Error sending BoC", e);
+      throw new Error("Cannot find hash of the sent message, Error: " + e.getMessage());
+    }
   }
 
   /** Send query - unpacked external message */

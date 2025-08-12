@@ -139,7 +139,10 @@ public class TestnetJettonFaucet {
   }
 
   public static BigInteger topUpContractWithNeoj(
-      TonCenter tonCenterClient, Address destinationAddress, BigInteger jettonsAmount) {
+      TonCenter tonCenterClient,
+      Address destinationAddress,
+      BigInteger jettonsAmount,
+      boolean avoidRateLimit) {
 
     if (jettonsAmount.compareTo(Utils.toNano(100)) > 0) {
       throw new Error(
@@ -183,26 +186,30 @@ public class TestnetJettonFaucet {
     ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
 
     if (extMessageInfo.getError().getCode() != 0) {
-      throw new Error(extMessageInfo.getError().getMessage());
+      throw new Error(extMessageInfo.getTonCenterError().getMessage());
     }
 
     // Wait for jetton balance change
     try {
-      BigInteger initialBalance = ContractUtils.getJettonBalance(
-          tonCenterClient, Address.of(FAUCET_MASTER_ADDRESS), adminWallet.getAddress());
+      BigInteger initialBalance =
+          ContractUtils.getJettonBalance(
+              tonCenterClient, Address.of(FAUCET_MASTER_ADDRESS), adminWallet.getAddress());
       int timeoutSeconds = 60;
       int i = 0;
+      BigInteger currentBalance;
       do {
         if (++i * 2 >= timeoutSeconds) {
           throw new Error("Jetton balance was not changed within specified timeout.");
         }
         Utils.sleep(2);
-      } while (initialBalance.equals(ContractUtils.getJettonBalance(
-          tonCenterClient, Address.of(FAUCET_MASTER_ADDRESS), adminWallet.getAddress())));
+        currentBalance =
+            ContractUtils.getJettonBalance(
+                tonCenterClient, Address.of(FAUCET_MASTER_ADDRESS), adminWallet.getAddress());
+      } while (initialBalance.equals(currentBalance));
     } catch (Exception e) {
       throw new Error("Error waiting for jetton balance change: " + e.getMessage());
     }
-    
+
     Utils.sleep(10);
     return ContractUtils.getJettonBalance(
         tonCenterClient, Address.of(FAUCET_MASTER_ADDRESS), destinationAddress);

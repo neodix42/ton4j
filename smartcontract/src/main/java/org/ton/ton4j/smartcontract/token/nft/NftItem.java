@@ -101,7 +101,7 @@ public class NftItem implements Contract {
   /**
    * @return DnsData
    */
-  public ItemData getData(Tonlib tonlib) {
+  public ItemData getData() {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get NFT data

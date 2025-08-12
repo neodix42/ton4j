@@ -15,6 +15,7 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV1R1Config;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R1;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawAccountState;
 import org.ton.ton4j.utils.Utils;
@@ -201,5 +202,62 @@ public class TestWalletV1R1 extends CommonTest {
     log.info("new wallet balance: {}", Utils.formatNanoValue(balance));
 
     assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
+  }
+
+  @Test
+  public void testNewWalletV1R1TonCenterClient() throws Exception {
+
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    TonCenter tonCenterClient =
+        TonCenter.builder()
+            .apiKey(TESTNET_API_KEY)
+            .testnet()
+            .debug()
+            .build();
+
+    WalletV1R1 contract =
+        WalletV1R1.builder().tonCenterClient(tonCenterClient).wc(0).keyPair(keyPair).build();
+
+    log.info("Wallet version {}", contract.getName());
+    log.info("Wallet pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", contract.getAddress().toString(false));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            tonCenterClient, Address.of(nonBounceableAddress), Utils.toNano(0.1), true);
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    ExtMessageInfo extMessageInfo = contract.deploy();
+    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    contract.waitForDeployment(45);
+
+    balance = contract.getBalance();
+    log.info("    wallet balance: {}", Utils.formatNanoValue(balance));
+
+    WalletV1R1Config config =
+        WalletV1R1Config.builder()
+            .seqno(1)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.08))
+            .comment("ton4j testNewWalletV1R1")
+            .build();
+
+    // transfer coins from new wallet (back to faucet)
+    extMessageInfo = contract.send(contract.prepareExternalMsg(config));
+    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+
+    contract.waitForBalanceChange();
+
+    balance = contract.getBalance();
+    log.info("new wallet balance: {}", Utils.formatNanoValue(balance));
+
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.03).longValue());
   }
 }

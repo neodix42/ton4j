@@ -146,7 +146,18 @@ public class TestnetFaucet {
   }
 
   public static BigInteger topUpContract(
-      TonCenter tonCenterClient, Address destinationAddress, BigInteger amount)
+          TonCenter tonCenterClient,
+          Address destinationAddress,
+          BigInteger amount)
+          throws Exception {
+    return topUpContract(tonCenterClient, destinationAddress, Utils.toNano(20), false);
+  }
+
+  public static BigInteger topUpContract(
+      TonCenter tonCenterClient,
+      Address destinationAddress,
+      BigInteger amount,
+      boolean avoidRateLimit)
       throws Exception {
 
     if (amount.compareTo(Utils.toNano(20)) > 0) {
@@ -182,9 +193,11 @@ public class TestnetFaucet {
         }
       } catch (Exception e) {
         log.info("Cannot get testnet faucet balance. Restarting...");
-        Utils.sleep(5, "Waiting for testnet faucet balance");
+        Utils.sleep(3, "Waiting for testnet faucet balance");
       }
     } while (isNull(faucetBalance));
+
+    if (avoidRateLimit) Utils.sleep(1); // avoid rate limit
 
     WalletV1R3Config config =
         WalletV1R3Config.builder()
@@ -194,24 +207,31 @@ public class TestnetFaucet {
             .amount(amount)
             .comment("top-up from ton4j faucet")
             .build();
-
+    if (avoidRateLimit) Utils.sleep(1);
     ExtMessageInfo extMessageInfo = faucet.send(config);
-
-    if (extMessageInfo.getError().getCode() != 0) {
-      throw new Error(extMessageInfo.getError().getMessage());
+    log.info("extMessageInfo {}", extMessageInfo);
+    if (extMessageInfo.getTonCenterError().getCode() != 0) {
+      throw new Error(extMessageInfo.getTonCenterError().getMessage());
     }
 
+    if (avoidRateLimit) Utils.sleep(1);
     // Wait for balance change
     BigInteger initialBalance = tonCenterClient.getBalance(destinationAddress.toBounceable());
+    log.info(
+        "initialBalance {} balance: {}", initialBalance, Utils.formatNanoValue(initialBalance));
     int timeoutSeconds = 60;
     int j = 0;
+    BigInteger currentBalance;
     do {
       if (++j * 2 >= timeoutSeconds) {
         throw new Error("Balance was not changed within specified timeout.");
       }
       Utils.sleep(2);
-    } while (initialBalance.equals(tonCenterClient.getBalance(destinationAddress.toBounceable())));
+      currentBalance = tonCenterClient.getBalance(destinationAddress.toBounceable());
+      log.info(
+          "currentBalance {} balance: {}", currentBalance, Utils.formatNanoValue(currentBalance));
+    } while (initialBalance.equals(currentBalance));
 
-    return tonCenterClient.getBalance(destinationAddress.toBounceable());
+    return currentBalance;
   }
 }

@@ -27,6 +27,8 @@ import org.ton.ton4j.smartcontract.types.CollectionData;
 import org.ton.ton4j.smartcontract.types.ItemData;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
+import org.ton.ton4j.toncenter.Network;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
@@ -103,6 +105,48 @@ public class TestDns extends CommonTest {
             .liteServerIndex(0)
             .build();
     Dns dns = Dns.builder().adnlLiteClient(adnlLiteClient).build();
+    Address rootAddress = dns.getRootDnsAddress();
+    log.info("root DNS address = {}", rootAddress.toString(true, true, true));
+
+    Object result = dns.resolve("apple.ton", DNS_CATEGORY_NEXT_RESOLVER, true);
+    assertThat(result).isNotNull();
+    log.info("apple.ton resolved to {}", ((Address) result).toString(true, true, true));
+
+    Address addr = (Address) dns.getWalletAddress("foundation.ton");
+    log.info("foundation.ton resolved to {}", addr.toString(true, true, true));
+    assertThat(addr).isNotNull();
+  }
+  
+  @Test
+  public void testDnsResolveTestnetTonCenterClient() throws Exception {
+    TonCenter tonCenterClient =
+        TonCenter.builder()
+            .apiKey("188b29e2b477d8bb95af5041f75c57b62653add1170634f148ac71d7751d0c71")
+            .network(Network.TESTNET)
+            .build();
+            
+    Dns dns = Dns.builder().tonCenterClient(tonCenterClient).build();
+    log.info("root DNS address = {}", dns.getRootDnsAddress());
+
+    Object result = dns.resolve("apple.ton", DNS_CATEGORY_NEXT_RESOLVER, true);
+    String resolvedAddress = ((Address) result).toBounceable();
+    log.info("apple.ton resolved to {}", resolvedAddress);
+    assertThat(resolvedAddress).isNotEmpty();
+
+    Address addr =
+        (Address) dns.resolve("alice-alice-alice-9.ton", DNS_CATEGORY_NEXT_RESOLVER, true);
+    log.info("alice-alice-alice-9 resolved to {}", addr.toString(true, true, true));
+  }
+  
+  @Test
+  public void testDnsResolveMainnetTonCenterClient() throws Exception {
+    TonCenter tonCenterClient =
+        TonCenter.builder()
+            .apiKey(TESTNET_API_KEY)
+            .network(Network.MAINNET)
+            .build();
+            
+    Dns dns = Dns.builder().tonCenterClient(tonCenterClient).build();
     Address rootAddress = dns.getRootDnsAddress();
     log.info("root DNS address = {}", rootAddress.toString(true, true, true));
 

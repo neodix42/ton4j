@@ -11,6 +11,7 @@ import org.ton.ton4j.smartcontract.highload.HighloadWalletV3;
 import org.ton.ton4j.smartcontract.types.HighloadQueryId;
 import org.ton.ton4j.smartcontract.types.HighloadV3Config;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
@@ -159,6 +160,36 @@ public class GenerateWallet {
     wallet.waitForDeployment(90);
 
     // highload v3 wallet deploy - end
+    return wallet;
+  }
+
+  public static WalletV3R1 randomV3R1(TonCenter tonCenter, long initialBalanceInToncoins)
+          throws Exception {
+    log.info("generating WalletV3R1 wallet...");
+
+    WalletV3R1 wallet = WalletV3R1.builder().tonCenterClient(tonCenter).wc(0).walletId(42).build();
+
+    Address address = wallet.getAddress();
+
+    String nonBounceableAddress = address.toNonBounceable();
+    String bounceableAddress = address.toBounceable();
+    String rawAddress = address.toRaw();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", rawAddress);
+    log.info("pubKey: {}", Utils.bytesToHex(wallet.getKeyPair().getPublicKey()));
+
+    BigInteger balance =
+            TestnetFaucet.topUpContract(
+                    tonCenter, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins));
+    log.info("new wallet balance {}", Utils.formatNanoValue(balance));
+
+    // deploy new wallet
+    ExtMessageInfo extMessageInfo = wallet.deploy();
+    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    wallet.waitForDeployment();
+
     return wallet;
   }
 }

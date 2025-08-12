@@ -28,6 +28,7 @@ import org.ton.ton4j.smartcontract.types.HighloadV3Config;
 import org.ton.ton4j.smartcontract.types.HighloadV3InternalMessageBody;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.VerbosityLevel;
@@ -683,5 +684,64 @@ public class TestHighloadWalletV3 extends CommonTest {
               .build());
     }
     return result;
+  }
+
+  @Test
+  public void testBulkTransferSimplified_1000_TonCenterClient() throws Exception {
+    TonCenter tonCenter =
+            TonCenter.builder()
+                    .apiKey(TESTNET_API_KEY)
+                    .testnet()
+                    .build();
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    HighloadWalletV3 contract =
+            HighloadWalletV3.builder()
+                    .tonCenterClient(tonCenter)
+                    .keyPair(keyPair)
+                    .walletId(42)
+                    .build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+    String rawAddress = contract.getAddress().toRaw();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+            TestnetFaucet.topUpContract(
+                    tonCenter, Address.of(nonBounceableAddress), Utils.toNano(2), true);
+    Utils.sleep(30, "topping up...");
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    HighloadV3Config config =
+            HighloadV3Config.builder()
+                    .walletId(42)
+                    .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+                    .build();
+
+    ExtMessageInfo extMessageInfo = contract.deploy(config);
+    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+
+    contract.waitForDeployment();
+
+    config =
+            HighloadV3Config.builder()
+                    .walletId(42)
+                    .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+                    .body(
+                            contract.createBulkTransfer(
+                                    createDummyDestinations(1000),
+                                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+                    .build();
+
+    extMessageInfo = contract.send(config);
+    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    log.info("sent 1000 messages");
   }
 }

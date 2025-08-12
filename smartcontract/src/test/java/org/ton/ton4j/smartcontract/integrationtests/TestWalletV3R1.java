@@ -17,6 +17,10 @@ import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.ton4j.tlb.Message;
+import org.ton.ton4j.toncenter.Network;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.SendBocResponse;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawTransaction;
 import org.ton.ton4j.utils.Utils;
@@ -187,6 +191,60 @@ public class TestWalletV3R1 extends CommonTest {
     assertThat(extMessageInfo.getError().getCode()).isZero();
 
     contract.waitForBalanceChange(90);
+
+    balance = contract.getBalance();
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.2).longValue());
+  }
+
+  @Test
+  public void testWalletV3R1SendRawMessageWithConfirmationTonCenterClient() throws Exception {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    TonCenter tonCenterClient =
+        TonCenter.builder().apiKey(TESTNET_API_KEY).network(Network.TESTNET).build();
+
+    WalletV3R1 contract =
+        WalletV3R1.builder().keyPair(keyPair).tonCenterClient(tonCenterClient).walletId(42).build();
+
+    Message msg =
+        MsgUtils.createExternalMessageWithSignedBody(
+            keyPair,
+            contract.getAddress(),
+            contract.getStateInit(),
+            CellBuilder.beginCell()
+                .storeUint(42, 32) // subwallet
+                .storeUint(Instant.now().getEpochSecond() + 5 * 60L, 32) // valid-until
+                .storeUint(0, 32) // seqno
+                .endCell());
+    Address address = msg.getInit().getAddress();
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            tonCenterClient, Address.of(address.toNonBounceable()), Utils.toNano(1), true);
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    // deploy new wallet
+    TonResponse<SendBocResponse> response = tonCenterClient.sendBoc(msg.toCell().toBase64());
+    assertThat(response.isSuccess()).isTrue();
+
+    Utils.sleep(20);
+
+    // try to transfer coins from new wallet (back to faucet)
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .seqno(1)
+            .walletId(42)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.8))
+            .comment("testWalletV3R1")
+            .build();
+
+    response = tonCenterClient.sendBoc(contract.prepareExternalMsg(config).toCell().toBase64());
+    assertThat(response.isSuccess()).isTrue();
+
+    Utils.sleep(20);
 
     balance = contract.getBalance();
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));

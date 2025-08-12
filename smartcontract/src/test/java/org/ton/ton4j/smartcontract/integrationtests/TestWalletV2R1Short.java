@@ -15,6 +15,10 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV2R1Config;
 import org.ton.ton4j.smartcontract.wallet.v2.WalletV2R1;
+import org.ton.ton4j.toncenter.Network;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.SendBocResponse;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawTransaction;
 import org.ton.ton4j.utils.Utils;
@@ -165,5 +169,61 @@ public class TestWalletV2R1Short extends CommonTest {
     log.info("extMessageInfo: {}", extMessageInfo);
     contract.waitForBalanceChange(120);
     Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
+  }
+
+  @Test
+  public void testWalletSignedExternallyTonCenterClient() throws Exception {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    byte[] publicKey = keyPair.getPublicKey();
+
+    TonCenter tonCenterClient =
+        TonCenter.builder().apiKey(TESTNET_API_KEY).network(Network.TESTNET).build();
+
+    WalletV2R1 contract =
+        WalletV2R1.builder().publicKey(publicKey).tonCenterClient(tonCenterClient).build();
+    log.info("pub key: {}", Utils.bytesToHex(publicKey));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonCenterClient, contract.getAddress(), Utils.toNano(1), true);
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    // deploy using externally signed body
+    Cell deployBody = contract.createDeployMessage();
+
+    byte[] signedDeployBodyHash =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
+
+    // Deploy wallet
+    TonResponse<SendBocResponse> response =
+        tonCenterClient.sendBoc(
+            contract.prepareDeployMsg(signedDeployBodyHash).toCell().toBase64());
+    assertThat(response.isSuccess()).isTrue();
+
+    Utils.sleep(20);
+
+    // send toncoins
+    WalletV2R1Config config =
+        WalletV2R1Config.builder()
+            .seqno(1)
+            .destination1(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount1(Utils.toNano(0.8))
+            .comment("ton4j testWalletV2R1-signed-externally")
+            .build();
+
+    // transfer coins from new wallet (back to faucet) using externally signed body
+    Cell transferBody = contract.createTransferBody(config);
+    byte[] signedTransferBodyHash =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
+
+    response =
+        tonCenterClient.sendBoc(
+            contract.prepareExternalMsg(config, signedTransferBodyHash).toCell().toBase64());
+    assertThat(response.isSuccess()).isTrue();
+
+    Utils.sleep(20);
+
+    balance = contract.getBalance();
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    Assertions.assertThat(balance).isLessThan(Utils.toNano(0.3));
   }
 }

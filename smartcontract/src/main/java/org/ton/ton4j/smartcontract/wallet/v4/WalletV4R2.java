@@ -24,6 +24,8 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.utils.Utils;
@@ -395,7 +397,24 @@ public class WalletV4R2 implements Contract {
     String hashPart = new BigInteger(pluginAddress.hashPart).toString();
 
     Address myAddress = getAddress();
-    if (nonNull(adnlLiteClient)) {
+
+    if (nonNull(tonCenterClient)) {
+      List<Object> stack = new ArrayList<>();
+      stack.add("[num, " + pluginAddress.wc + "]");
+      stack.add("[num, " + hashPart + "]");
+      List<List<Object>> stackFull = new ArrayList<>();
+      stackFull.add(stack);
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(myAddress.toBounceable(), "is_plugin_installed", stackFull);
+      if (runMethodResult.isSuccess()) {
+        System.out.println("runMethodResult " + runMethodResult);
+        //        return runMethodResult.getIntByIndex(0).intValue() != 0; // todo
+        return false;
+      } else {
+        return false;
+      }
+
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
           adnlLiteClient.runMethod(
               myAddress,
@@ -423,7 +442,17 @@ public class WalletV4R2 implements Contract {
     List<String> r = new ArrayList<>();
     Address myAddress = getAddress();
     TvmStackEntryList list;
-    
+
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(
+              myAddress.toBounceable(), "get_plugin_list", new ArrayList<>());
+      if (runMethodResult.isSuccess()) {
+        //        return runMethodResult.getResult().getStack().get(0); // todo
+        return null;
+      }
+    }
+
     if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(myAddress, "get_plugin_list");
 
@@ -465,6 +494,18 @@ public class WalletV4R2 implements Contract {
    * @return TvmStackEntryList
    */
   public SubscriptionInfo getSubscriptionData(Address pluginAddress) {
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(
+              pluginAddress.toBounceable(), "get_subscription_data", new ArrayList<>());
+      if (runMethodResult.isSuccess()) {
+        return null; // todo
+      }
+      //      VmStack vmStack =
+      //
+      // VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
+      //      return parseSubscriptionDataTlb(vmStack.getStack().getTos());
+    }
     if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
           adnlLiteClient.runMethod(pluginAddress, "get_subscription_data");

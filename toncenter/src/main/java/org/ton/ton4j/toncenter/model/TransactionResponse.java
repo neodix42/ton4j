@@ -85,6 +85,12 @@ public class TransactionResponse {
     @SerializedName("body_hash")
     private String bodyHash;
 
+    @SerializedName("hash")
+    private String hash;
+
+    @SerializedName("extra_currencies")
+    private Object extraCurrencies;
+
     @SerializedName("msg_data")
     private MessageData msgData;
 

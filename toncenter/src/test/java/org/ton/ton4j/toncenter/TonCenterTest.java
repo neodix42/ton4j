@@ -711,7 +711,7 @@ public class TonCenterTest {
       String dummyBoc =
           "te6ccgEBAgEAqgAB4YgA2ZpktQsYby0n9cV5VWOFINBjScIU2HdondFsK3lDpEAFG8W4Jpf7AeOqfzL9vZ79mX3eM6UEBxZvN6+QmpYwXBq32QOBIrP4lF5ijGgQmZbC6KDeiiptxmTNwl5f59OAGU1NGLsixYlYAAAA2AAcAQBoYgBZQOG7qXmeA/2Tw1pLX2IkcQ5h5fxWzzcBskMJbVVRsKNaTpAAAAAAAAAAAAAAAAAAAA==";
 
-      TonResponse<String> response = client.sendBocReturnHash(dummyBoc);
+      TonResponse<SendBocResponse> response = client.sendBocReturnHash(dummyBoc);
       log.info("Send BOC return hash completed: success={}", response.isSuccess());
     } catch (TonCenterApiException e) {
       // expected

@@ -14,6 +14,10 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV1R3Config;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R3;
+import org.ton.ton4j.toncenter.Network;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.SendBocResponse;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
@@ -130,5 +134,75 @@ public class TestWalletV1R3Short extends CommonTest {
     log.info("seqno {}", contract.getSeqno());
     log.info("pubkey {}", contract.getPublicKey());
     log.info("transactions {}", contract.getTransactionsTlb());
+  }
+
+  @Test
+  public void testWalletV1R3TonCenterClient() throws Exception {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    TonCenter tonCenterClient =
+        TonCenter.builder()
+            .apiKey(TESTNET_API_KEY)
+            .network(Network.TESTNET)
+            .debug()
+            .build();
+
+    WalletV1R3 contract =
+        WalletV1R3.builder().keyPair(keyPair).tonCenterClient(tonCenterClient).build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    String status = tonCenterClient.getAddressState(bounceableAddress).getResult();
+    log.info("account status {}", status);
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            tonCenterClient, Address.of(nonBounceableAddress), Utils.toNano(1), true);
+    log.info("new wallet {} balance: {}", contract.getName(), formatNanoValue(balance));
+
+    TonResponse<SendBocResponse> response =
+        tonCenterClient.sendBoc(contract.prepareDeployMsg().toCell().toBase64());
+    assertThat(response.isSuccess()).isTrue();
+
+    contract.waitForDeployment();
+
+    // transfer coins from new wallet (back to faucet)
+    WalletV1R3Config config =
+        WalletV1R3Config.builder()
+            .seqno(1)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.8))
+            .comment("ton4j testNewWalletV1R2")
+            .build();
+
+    response = tonCenterClient.sendBoc(contract.prepareExternalMsg(config).toCell().toBase64());
+    assertThat(response.isSuccess()).isTrue();
+
+    contract.waitForBalanceChange();
+
+    Utils.sleep(2); // avoid rate limit error
+    balance = contract.getBalance();
+    Utils.sleep(2);
+    status = tonCenterClient.getAddressState(bounceableAddress).getResult();
+    log.info(
+        "new wallet {} with status {} and balance: {}",
+        contract.getName(),
+        status,
+        formatNanoValue(balance));
+
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.25).longValue());
+
+    Utils.sleep(2);
+    log.info("seqno {}", tonCenterClient.getSeqno(contract.getAddress().toBounceable()));
+    Utils.sleep(2);
+    log.info("pubkey {}", tonCenterClient.getPublicKey(contract.getAddress().toBounceable()));
+    Utils.sleep(2);
+    log.info(
+        "transactions {}",
+        tonCenterClient.getTransactions(contract.getAddress().toBounceable(), 10).getResult());
   }
 }

@@ -18,6 +18,9 @@ import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV4R2Config;
 import org.ton.ton4j.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.ton4j.tlb.Message;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.EstimateFeeResponse;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.QueryFees;
 import org.ton.ton4j.utils.Utils;
@@ -248,6 +251,69 @@ public class TestWalletFeesV4 extends CommonTest {
           QueryFees f =
               tonlib.estimateFees(walletB.getAddress().toBounceable(), msg.getBody().toBase64());
           log.info("fees {}", f);
+        },
+        0,
+        15,
+        TimeUnit.SECONDS);
+
+    Utils.sleep(600);
+  }
+
+  @Test
+  public void testWalletStorageFeeSpeedV4TonCenter() {
+    TonCenter tonCenterClient =
+        TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().debug().build();
+
+    TweetNaclFast.Box.KeyPair keyPairBoxA =
+        Utils.generateKeyPairFromSecretKey(
+            Utils.hexToSignedBytes(
+                "3d3015dcc3c0f3d51710bfe4894de954334bb6f44f75061109d9e7dcaf7b5a85c2ca482a19f06f63c9975fd7e679d89014ab2b4b645fc591c287a2818dabb42f"));
+    TweetNaclFast.Signature.KeyPair keyPairSignatureA =
+        Utils.generateSignatureKeyPairFromSeed(keyPairBoxA.getSecretKey());
+
+    WalletV4R2 walletA =
+        WalletV4R2.builder()
+            .keyPair(keyPairSignatureA)
+            .tonCenterClient(tonCenterClient)
+            .walletId(42)
+            .build();
+    log.info("rawAddressA {}", walletA.getAddress().toRaw());
+    log.info("bounceableA {}", walletA.getAddress().toBounceable());
+
+    TweetNaclFast.Box.KeyPair keyPairBoxB =
+        Utils.generateKeyPairFromSecretKey(
+            Utils.hexToSignedBytes(
+                "6763fd614cd1658c4f0c0b08dd82d49060f329387c4d38f1281db7ccb91f6eb3219d2acaa90c2091813785426feb5234af9027637db05b55e65ff3e54a94ad0b"));
+    TweetNaclFast.Signature.KeyPair keyPairSignatureB =
+        Utils.generateSignatureKeyPairFromSeed(keyPairBoxB.getSecretKey());
+
+    WalletV4R2 walletB =
+        WalletV4R2.builder()
+            .keyPair(keyPairSignatureB)
+            .tonCenterClient(tonCenterClient)
+            .walletId(98)
+            .build();
+
+    Utils.sleep(2);
+    WalletV4R2Config configA =
+        WalletV4R2Config.builder()
+            .walletId(42)
+            .seqno(walletA.getSeqno())
+            .destination(walletB.getAddress())
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
+            .build();
+
+    Message msg = walletA.prepareExternalMsg(configA);
+
+    ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    executorService.scheduleAtFixedRate(
+        () -> {
+          TonResponse<EstimateFeeResponse> f =
+              tonCenterClient.estimateFee(
+                  walletB.getAddress().toBounceable(), msg.getBody().toBase64());
+          if (f.isSuccess()) {
+            log.info("fees {}", f.getResult().getDestinationFees());
+          }
         },
         0,
         15,
