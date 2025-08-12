@@ -1,4 +1,4 @@
-package org.ton.java.adnl;
+package org.ton.ton4j.adnl;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

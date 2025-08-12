@@ -1,4 +1,4 @@
-package org.ton.java.adnl.globalconfig;
+package org.ton.ton4j.adnl.globalconfig;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Builder;

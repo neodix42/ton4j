@@ -2,7 +2,7 @@ package org.ton.ton4j.smartcontract.faucet;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinter;
 import org.ton.ton4j.smartcontract.token.ft.JettonWallet;

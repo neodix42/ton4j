@@ -1,13 +1,10 @@
-package org.ton.java.adnl;
+package org.ton.ton4j.adnl;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.ton.ton4j.tl.liteserver.responses.*;
-import org.ton.ton4j.tlb.*;
 
 @Slf4j
 public class AdnlClientTest {

@@ -1,6 +1,5 @@
-package org.ton.java.adnl.globalconfig;
+package org.ton.ton4j.adnl.globalconfig;
 
-import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,11 +9,13 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 @Builder
 @Setter
 @Getter
-public class StaticNodes {
-  @SerializedName(value = "@type")
-  String type;
+public class BlockInfo {
 
-  DhtNode[] nodes;
+  private String file_hash;
+  private String root_hash;
+  private long seqno;
+  private long workchain;
+  private long shard;
 
   @Override
   public String toString() {

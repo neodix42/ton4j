@@ -1,4 +1,4 @@
-package org.ton.java.adnl;
+package org.ton.ton4j.adnl;
 
 import static java.util.Objects.nonNull;
 
@@ -10,8 +10,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.ton.java.adnl.globalconfig.LiteServers;
-import org.ton.java.adnl.globalconfig.TonGlobalConfig;
+import org.ton.ton4j.adnl.globalconfig.LiteServers;
+import org.ton.ton4j.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;

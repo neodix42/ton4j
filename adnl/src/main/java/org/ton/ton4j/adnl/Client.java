@@ -1,4 +1,4 @@
-package org.ton.java.adnl;
+package org.ton.ton4j.adnl;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.security.MessageDigest;

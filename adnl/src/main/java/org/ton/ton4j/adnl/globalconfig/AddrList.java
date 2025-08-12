@@ -1,5 +1,6 @@
-package org.ton.java.adnl.globalconfig;
+package org.ton.ton4j.adnl.globalconfig;
 
+import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,13 +10,15 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 @Builder
 @Setter
 @Getter
-public class BlockInfo {
+public class AddrList {
+  @SerializedName(value = "@type")
+  String type;
 
-  private String file_hash;
-  private String root_hash;
-  private long seqno;
-  private long workchain;
-  private long shard;
+  DhtAddr[] addrs;
+  long version;
+  long reinit_date;
+  long priority;
+  long expire_at;
 
   @Override
   public String toString() {

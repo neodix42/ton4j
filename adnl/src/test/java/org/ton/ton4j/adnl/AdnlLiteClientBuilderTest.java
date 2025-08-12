@@ -1,10 +1,10 @@
-package org.ton.java.adnl;
+package org.ton.ton4j.adnl;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.ton.java.adnl.globalconfig.TonGlobalConfig;
+import org.ton.ton4j.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.tl.liteserver.responses.*;
 
 @Slf4j

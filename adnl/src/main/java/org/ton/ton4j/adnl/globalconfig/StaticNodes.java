@@ -1,4 +1,4 @@
-package org.ton.java.adnl.globalconfig;
+package org.ton.ton4j.adnl.globalconfig;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
@@ -10,11 +10,11 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 @Builder
 @Setter
 @Getter
-public class LiteServerId {
+public class StaticNodes {
   @SerializedName(value = "@type")
   String type;
 
-  String key;
+  DhtNode[] nodes;
 
   @Override
   public String toString() {
