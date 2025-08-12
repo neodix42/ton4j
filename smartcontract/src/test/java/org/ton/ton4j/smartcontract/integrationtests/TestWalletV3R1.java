@@ -12,6 +12,7 @@ import org.junit.runners.JUnit4;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
@@ -86,8 +87,8 @@ public class TestWalletV3R1 extends CommonTest {
             .comment("testWalletV3R1")
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(90);
 
@@ -136,8 +137,8 @@ public class TestWalletV3R1 extends CommonTest {
             .comment("testWalletV3R1")
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(90);
 
@@ -187,8 +188,8 @@ public class TestWalletV3R1 extends CommonTest {
             .comment("testWalletV3R1")
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(90);
 

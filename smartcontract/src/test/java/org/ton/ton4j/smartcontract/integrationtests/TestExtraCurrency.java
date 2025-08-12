@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWalletV3;
 import org.ton.ton4j.smartcontract.types.Destination;
@@ -58,8 +59,8 @@ public class TestExtraCurrency {
         TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress1), Utils.toNano(4));
     log.info("topped up {}", Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForDeployment();
 
     WalletV3Config config =
@@ -71,8 +72,8 @@ public class TestExtraCurrency {
             .build();
 
     //  receive test extra-currency (ECHIDNA)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange();
 
@@ -104,8 +105,8 @@ public class TestExtraCurrency {
                     ExtraCurrency.builder().id(100).amount(BigInteger.valueOf(600000000)).build()))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange();
 
@@ -194,8 +195,8 @@ public class TestExtraCurrency {
     log.info("topped up {}", Utils.formatNanoValue(balance));
 
     // deploy WalletV3R2 code
-    ExtMessageInfo extMessageInfo = wallet.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     wallet.waitForDeployment();
     log.info("wallet {} deployed", rawAddress);
     return wallet;
@@ -233,8 +234,8 @@ public class TestExtraCurrency {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForDeployment();
 
     config =
@@ -252,8 +253,8 @@ public class TestExtraCurrency {
             .build();
 
     //  receive test extra-currency (ECHIDNA)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1 message with request to get 3.7 ECHIDNA extra-currency");
 
     contract.waitForBalanceChange();
@@ -286,8 +287,8 @@ public class TestExtraCurrency {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(2).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
 
     contract.waitForBalanceChange();
@@ -333,8 +334,8 @@ public class TestExtraCurrency {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForDeployment();
 
     config =
@@ -352,8 +353,8 @@ public class TestExtraCurrency {
             .build();
 
     //  receive test extra-currency (ECHIDNA)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1 message with request to get 3.7 ECHIDNA extra-currency");
 
     contract.waitForBalanceChange();
@@ -395,8 +396,8 @@ public class TestExtraCurrency {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(2).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
 
     //    contract.waitForBalanceChange();
@@ -442,8 +443,8 @@ public class TestExtraCurrency {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForDeployment();
 
     config =
@@ -461,8 +462,8 @@ public class TestExtraCurrency {
             .build();
 
     //  receive test extra-currency (ECHIDNA)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1 message with request to get 3.7 ECHIDNA extra-currency");
 
     contract.waitForBalanceChange();
@@ -498,8 +499,8 @@ public class TestExtraCurrency {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(2).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
   }
 

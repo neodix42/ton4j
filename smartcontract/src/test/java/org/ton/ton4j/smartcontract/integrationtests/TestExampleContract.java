@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.CustomContractConfig;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
@@ -50,8 +51,8 @@ public class TestExampleContract extends CommonTest {
         TestnetFaucet.topUpContract(tonlib, Address.of(address.toString(true)), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = exampleContract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = exampleContract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     exampleContract.waitForDeployment(45);
 
@@ -78,8 +79,8 @@ public class TestExampleContract extends CommonTest {
             .comment("no-way")
             .build();
 
-    extMessageInfo = exampleContract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = exampleContract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     exampleContract.waitForBalanceChange(45);
 
@@ -121,8 +122,8 @@ public class TestExampleContract extends CommonTest {
             adnlLiteClient, Address.of(address.toString(true)), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = exampleContract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = exampleContract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     exampleContract.waitForDeployment(45);
 
@@ -146,8 +147,8 @@ public class TestExampleContract extends CommonTest {
             .comment("no-way")
             .build();
 
-    extMessageInfo = exampleContract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = exampleContract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     exampleContract.waitForBalanceChange(45);
 
@@ -179,8 +180,8 @@ public class TestExampleContract extends CommonTest {
             tonCenter, Address.of(address.toString(true)), Utils.toNano(0.1), true);
     log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = exampleContract.deploy();
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    SendResponse sendResponse = exampleContract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     exampleContract.waitForDeployment();
 
@@ -212,8 +213,8 @@ public class TestExampleContract extends CommonTest {
             .comment("no-way")
             .build();
 
-    extMessageInfo = exampleContract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = exampleContract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     exampleContract.waitForBalanceChange(45);
 

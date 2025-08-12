@@ -42,8 +42,8 @@ public class GenerateWallet {
     log.info("new wallet balance {}", Utils.formatNanoValue(balance));
 
     // deploy new wallet
-    ExtMessageInfo extMessageInfo = wallet.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     wallet.waitForDeployment(90);
 
     return wallet;
@@ -79,8 +79,8 @@ public class GenerateWallet {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = wallet.deploy(highloadV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy(highloadV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     wallet.waitForDeployment(90);
 
@@ -114,8 +114,8 @@ public class GenerateWallet {
     log.info("new wallet balance {}", Utils.formatNanoValue(balance));
 
     // deploy new wallet
-    ExtMessageInfo extMessageInfo = wallet.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     wallet.waitForDeployment(90);
 
     return wallet;
@@ -154,8 +154,8 @@ public class GenerateWallet {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = wallet.deploy(highloadV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy(highloadV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     wallet.waitForDeployment(90);
 
@@ -186,8 +186,8 @@ public class GenerateWallet {
     log.info("new wallet balance {}", Utils.formatNanoValue(balance));
 
     // deploy new wallet
-    ExtMessageInfo extMessageInfo = wallet.deploy();
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     wallet.waitForDeployment();
 
     return wallet;

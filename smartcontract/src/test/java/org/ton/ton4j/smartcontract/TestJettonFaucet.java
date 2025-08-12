@@ -108,8 +108,8 @@ public class TestJettonFaucet {
             tonlib, Address.of(adminWallet.getAddress().toNonBounceable()), Utils.toNano(10));
     Utils.sleep(30, "topping up...");
 
-    ExtMessageInfo extMessageInfo = adminWallet.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test
@@ -147,8 +147,8 @@ public class TestJettonFaucet {
             .comment("deploy minter")
             .build();
 
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test
@@ -180,8 +180,8 @@ public class TestJettonFaucet {
                     MsgUtils.createTextMessageBody("minting")))
             .build();
 
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test

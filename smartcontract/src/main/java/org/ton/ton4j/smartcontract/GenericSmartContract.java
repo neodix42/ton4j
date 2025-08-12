@@ -103,15 +103,8 @@ public class GenericSmartContract implements Contract {
    * @param deployMessageBody usually stands for internal message
    * @return ExtMessageInfo
    */
-  public ExtMessageInfo deploy(Cell deployMessageBody) {
-    Message msg = prepareDeployMsg(deployMessageBody);
-    if (java.util.Objects.nonNull(tonCenterClient)) {
-      return send(msg);
-    }
-    if (java.util.Objects.nonNull(adnlLiteClient)) {
-      return send(msg);
-    }
-    return tonlib.sendRawMessage(msg.toCell().toBase64());
+  public SendResponse deploy(Cell deployMessageBody) {
+    return send(prepareDeployMsg(deployMessageBody));
   }
 
   /**
@@ -120,15 +113,8 @@ public class GenericSmartContract implements Contract {
    * @param deployMessageBody usually stands for internal message
    * @return ExtMessageInfo
    */
-  public ExtMessageInfo deployWithoutSignature(Cell deployMessageBody) {
-    Message msg = prepareDeployMsgWithoutSignature(deployMessageBody);
-    if (java.util.Objects.nonNull(tonCenterClient)) {
-      return send(msg);
-    }
-    if (java.util.Objects.nonNull(adnlLiteClient)) {
-      return send(msg);
-    }
-    return tonlib.sendRawMessage(msg.toCell().toBase64());
+  public SendResponse deployWithoutSignature(Cell deployMessageBody) {
+    return send(prepareDeployMsgWithoutSignature(deployMessageBody));
   }
 
   /**
@@ -136,26 +122,12 @@ public class GenericSmartContract implements Contract {
    *
    * @return ExtMessageInfo
    */
-  public ExtMessageInfo deploy() {
-    Message msg = prepareDeployMsgWithoutBody();
-    if (java.util.Objects.nonNull(tonCenterClient)) {
-      return send(msg);
-    }
-    if (java.util.Objects.nonNull(adnlLiteClient)) {
-      return send(msg);
-    }
-    return tonlib.sendRawMessage(msg.toCell().toBase64());
+  public SendResponse deploy() {
+    return send(prepareDeployMsgWithoutBody());
   }
 
-  public ExtMessageInfo deploy(Cell deployMessageBody, byte[] signedBody) {
-    Message msg = prepareDeployMsg(deployMessageBody, signedBody);
-    if (java.util.Objects.nonNull(tonCenterClient)) {
-      return send(msg);
-    }
-    if (java.util.Objects.nonNull(adnlLiteClient)) {
-      return send(msg);
-    }
-    return tonlib.sendRawMessage(msg.toCell().toBase64());
+  public SendResponse deploy(Cell deployMessageBody, byte[] signedBody) {
+    return send(prepareDeployMsg(deployMessageBody, signedBody));
   }
 
   public Message prepareDeployMsgWithoutBody() {

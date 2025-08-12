@@ -17,6 +17,7 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.faucet.TestnetJettonFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWalletV3;
@@ -70,8 +71,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             // .timeOut(60) //default timeout = 5 minutes
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -99,8 +100,8 @@ public class TestHighloadWalletV3 extends CommonTest {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 2 messages");
   }
 
@@ -135,8 +136,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -150,8 +151,8 @@ public class TestHighloadWalletV3 extends CommonTest {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
   }
 
@@ -194,8 +195,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -209,8 +210,8 @@ public class TestHighloadWalletV3 extends CommonTest {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
   }
 
@@ -245,8 +246,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -260,8 +261,8 @@ public class TestHighloadWalletV3 extends CommonTest {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
   }
 
@@ -299,8 +300,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             // .timeOut(60) //default timeout = 5 minutes
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -323,8 +324,8 @@ public class TestHighloadWalletV3 extends CommonTest {
                     CellBuilder.beginCell().endCell()))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent single message");
   }
 
@@ -364,8 +365,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -383,8 +384,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent {} messages", numberOfRecipients);
   }
 
@@ -419,8 +420,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -438,8 +439,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent {} messages", numberOfRecipients);
   }
 
@@ -470,8 +471,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -488,8 +489,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent {} messages", 1000);
   }
 
@@ -615,8 +616,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = myHighLoadWalletV3.deploy(config);
-    Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myHighLoadWalletV3.deploy(config);
+    Assertions.assertThat(sendResponse.getCode()).isZero();
 
     myHighLoadWalletV3.waitForDeployment(60);
 
@@ -656,8 +657,8 @@ public class TestHighloadWalletV3 extends CommonTest {
             .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
 
-    extMessageInfo = myHighLoadWalletV3.send(config);
-    Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = myHighLoadWalletV3.send(config);
+    Assertions.assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(60, "sending jettons...");
 
@@ -725,8 +726,8 @@ public class TestHighloadWalletV3 extends CommonTest {
                     .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
                     .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment();
 
@@ -740,8 +741,8 @@ public class TestHighloadWalletV3 extends CommonTest {
                                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
                     .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
   }
 }

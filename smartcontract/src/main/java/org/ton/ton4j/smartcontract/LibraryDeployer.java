@@ -102,13 +102,7 @@ public class LibraryDeployer implements Contract {
         .build();
   }
 
-  public ExtMessageInfo deploy() {
-    if (nonNull(tonCenterClient)) {
+  public SendResponse deploy() {
       return send(prepareDeployMsg());
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareDeployMsg());
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
   }
 }

@@ -3,6 +3,9 @@ package org.ton.ton4j.smartcontract.token.nft;
 import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
@@ -105,27 +108,27 @@ public class NftItem implements Contract {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get NFT data
-        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
+        List<List<Object>> stack = new ArrayList<>();
         org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
             tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_nft_data", stack).getResult();
         
         // Parse the response
-        boolean isInitialized = "0xffffffffffffffff".equals(((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1)));
+        boolean isInitialized = "0xffffffffffffffff".equals(((String) new ArrayList<>(response.getStack().get(0)).get(1)));
         
         // Parse index
-        String indexHex = ((String) new java.util.ArrayList<>(response.getStack().get(1)).get(1));
+        String indexHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
         BigInteger index = new BigInteger(indexHex.substring(2), 16);
         
         // Parse collection address
-        String collectionAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(2)).get(1));
+        String collectionAddrHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
         Address collectionAddress = Address.of(collectionAddrHex);
         
         // Parse owner address
-        String ownerAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(3)).get(1));
+        String ownerAddrHex = ((String) new ArrayList<>(response.getStack().get(3)).get(1));
         Address ownerAddress = isInitialized ? Address.of(ownerAddrHex) : null;
         
         // Parse content cell
-        String contentCellHex = ((String) new java.util.ArrayList<>(response.getStack().get(4)).get(1));
+        String contentCellHex = ((String) new ArrayList<>(response.getStack().get(4)).get(1));
         Cell cell = CellBuilder.beginCell().fromBoc(org.ton.ton4j.utils.Utils.base64ToBytes(contentCellHex)).endCell();
         
         String contentUri = null;
@@ -250,18 +253,18 @@ public class NftItem implements Contract {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get royalty params
-        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
+        List<List<Object>> stack = new ArrayList<>();
         org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
             tonCenterClient.runGetMethod(myAddress.toBounceable(), "royalty_params", stack).getResult();
         
         // Parse royalty numerator
-        long royaltyNumerator = Long.parseLong(((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
+        long royaltyNumerator = Long.parseLong(((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
         
         // Parse royalty denominator
-        long royaltyDenominator = Long.parseLong(((String) new java.util.ArrayList<>(response.getStack().get(1)).get(1)).substring(2), 16);
+        long royaltyDenominator = Long.parseLong(((String) new ArrayList<>(response.getStack().get(1)).get(1)).substring(2), 16);
         
         // Parse royalty address
-        String royaltyAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(2)).get(1));
+        String royaltyAddrHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
         Address royaltyAddress = Address.of(royaltyAddrHex);
         
         return Royalty.builder()

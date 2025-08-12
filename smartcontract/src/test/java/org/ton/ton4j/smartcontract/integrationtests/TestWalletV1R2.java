@@ -12,6 +12,7 @@ import org.junit.runners.JUnit4;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV1R2Config;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R2;
@@ -40,8 +41,8 @@ public class TestWalletV1R2 extends CommonTest {
         TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -56,8 +57,8 @@ public class TestWalletV1R2 extends CommonTest {
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(45);
 
@@ -85,8 +86,8 @@ public class TestWalletV1R2 extends CommonTest {
     byte[] signedDeployBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
 
-    ExtMessageInfo extMessageInfo = contract.deploy(signedDeployBodyHash);
-    log.info("extMessageInfo {}", extMessageInfo);
+    SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
+    log.info("extMessageInfo {}", sendResponse);
     contract.waitForDeployment(120);
 
     // send toncoins
@@ -102,8 +103,8 @@ public class TestWalletV1R2 extends CommonTest {
     Cell transferBody = contract.createTransferBody(config);
     byte[] signedTransferBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
-    extMessageInfo = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", extMessageInfo);
+    sendResponse = contract.send(config, signedTransferBodyHash);
+    log.info("extMessageInfo: {}", sendResponse);
     contract.waitForBalanceChange(120);
     Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
   }
@@ -131,8 +132,8 @@ public class TestWalletV1R2 extends CommonTest {
             adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -147,8 +148,8 @@ public class TestWalletV1R2 extends CommonTest {
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(45);
 
@@ -181,8 +182,8 @@ public class TestWalletV1R2 extends CommonTest {
             adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -224,8 +225,8 @@ public class TestWalletV1R2 extends CommonTest {
             tonCenterClient, Address.of(nonBounceableAddress), Utils.toNano(0.1), true);
     log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -240,8 +241,8 @@ public class TestWalletV1R2 extends CommonTest {
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(45);
 
@@ -274,8 +275,8 @@ public class TestWalletV1R2 extends CommonTest {
             tonCenterClient, Address.of(nonBounceableAddress), Utils.toNano(0.1), true);
     log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment();
 

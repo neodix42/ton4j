@@ -12,6 +12,7 @@ import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.multisig.MultiSigWalletV2;
 import org.ton.ton4j.smartcontract.types.*;
@@ -1254,8 +1255,8 @@ public class TestWalletMultiSigV2 extends CommonTest {
         wallet.getName(),
         Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = wallet.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     wallet.waitForDeployment();
     log.info("deployed {} {}", wallet.getWalletId(), wallet.getName());
@@ -1274,8 +1275,8 @@ public class TestWalletMultiSigV2 extends CommonTest {
         wallet.getName(),
         Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = wallet.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     wallet.waitForDeployment();
     log.info("deployed {} {}", wallet.getWalletId(), wallet.getName());

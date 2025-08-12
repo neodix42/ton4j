@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV1R3Config;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R3;
@@ -45,8 +46,8 @@ public class TestWalletV1R3Short extends CommonTest {
         TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(20);
 
@@ -59,8 +60,8 @@ public class TestWalletV1R3Short extends CommonTest {
             .comment("testNewWalletV1R2")
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(30);
 
@@ -102,8 +103,8 @@ public class TestWalletV1R3Short extends CommonTest {
             adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(20);
 
@@ -116,8 +117,8 @@ public class TestWalletV1R3Short extends CommonTest {
             .comment("testNewWalletV1R2")
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(30);
 

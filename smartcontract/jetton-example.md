@@ -32,8 +32,8 @@ WalletV3Config walletV3Config = WalletV3Config.builder()
         .comment("deploy minter")
         .build();
 
-ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
-assertThat(extMessageInfo.getError().getCode()).isZero();
+SendResponse sendResponse = adminWallet.send(walletV3Config);
+assertThat(sendResponse.getCode()).isZero();
 log.info("deploying minter");
 minter.waitForDeployment(60);
 
@@ -59,7 +59,7 @@ walletV3Config = WalletV3Config.builder()
         ).build();
 
 extMessageInfo = adminWallet.send(walletV3Config);
-assertThat(extMessageInfo.getError().getCode()).isZero();
+assertThat(sendResponse.getCode()).isZero();
 
 Utils.sleep(45, "minting...");
 
@@ -88,7 +88,7 @@ walletV3Config = WalletV3Config.builder()
         )
         .build();
 extMessageInfo = adminWallet.send(walletV3Config);
-assertThat(extMessageInfo.getError().getCode()).isZero();
+assertThat(sendResponse.getCode()).isZero();
 ```
 
 More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/ton4j/smartcontract) can be

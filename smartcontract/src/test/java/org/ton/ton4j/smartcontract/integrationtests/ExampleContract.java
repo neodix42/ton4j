@@ -11,6 +11,7 @@ import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.CustomContractConfig;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
@@ -147,7 +148,7 @@ public class ExampleContract implements Contract {
         .endCell();
   }
 
-  public ExtMessageInfo deploy() {
+  public SendResponse deploy() {
     Cell body = createDeployMessage();
 
     Message externalMessage =
@@ -162,14 +163,10 @@ public class ExampleContract implements Contract {
                     .endCell())
             .build();
 
-    if (nonNull(adnlLiteClient)) {
       return send(externalMessage);
-    }
-
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 
-  public ExtMessageInfo send(CustomContractConfig config) {
+  public SendResponse send(CustomContractConfig config) {
     Cell body = createTransferBody(config);
     Message externalMessage =
         Message.builder()
@@ -181,9 +178,6 @@ public class ExampleContract implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
-    if (nonNull(adnlLiteClient)) {
       return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 }

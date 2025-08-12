@@ -17,6 +17,7 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.GenerateWallet;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.dns.Dns;
 import org.ton.ton4j.smartcontract.dns.DnsCollection;
 import org.ton.ton4j.smartcontract.dns.DnsItem;
@@ -116,7 +117,7 @@ public class TestDns extends CommonTest {
     log.info("foundation.ton resolved to {}", addr.toString(true, true, true));
     assertThat(addr).isNotNull();
   }
-  
+
   @Test
   public void testDnsResolveTestnetTonCenterClient() throws Exception {
     TonCenter tonCenterClient =
@@ -124,7 +125,7 @@ public class TestDns extends CommonTest {
             .apiKey("188b29e2b477d8bb95af5041f75c57b62653add1170634f148ac71d7751d0c71")
             .network(Network.TESTNET)
             .build();
-            
+
     Dns dns = Dns.builder().tonCenterClient(tonCenterClient).build();
     log.info("root DNS address = {}", dns.getRootDnsAddress());
 
@@ -137,15 +138,12 @@ public class TestDns extends CommonTest {
         (Address) dns.resolve("alice-alice-alice-9.ton", DNS_CATEGORY_NEXT_RESOLVER, true);
     log.info("alice-alice-alice-9 resolved to {}", addr.toString(true, true, true));
   }
-  
+
   @Test
   public void testDnsResolveMainnetTonCenterClient() throws Exception {
     TonCenter tonCenterClient =
-        TonCenter.builder()
-            .apiKey(TESTNET_API_KEY)
-            .network(Network.MAINNET)
-            .build();
-            
+        TonCenter.builder().apiKey(TESTNET_API_KEY).network(Network.MAINNET).build();
+
     Dns dns = Dns.builder().tonCenterClient(tonCenterClient).build();
     Address rootAddress = dns.getRootDnsAddress();
     log.info("root DNS address = {}", rootAddress.toString(true, true, true));
@@ -184,8 +182,8 @@ public class TestDns extends CommonTest {
             .stateInit(dnsRootContract.getStateInit())
             .build();
 
-    ExtMessageInfo extMessageInfo = adminWallet.send(adminWalletConfig);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(adminWalletConfig);
+    assertThat(sendResponse.getCode()).isZero();
 
     dnsRootContract.waitForDeployment(45);
 
@@ -236,8 +234,8 @@ public class TestDns extends CommonTest {
             .build();
 
     // deploy
-    ExtMessageInfo extMessageInfo = adminWallet.send(adminWalletConfig);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(adminWalletConfig);
+    assertThat(sendResponse.getCode()).isZero();
     dnsCollection.waitForDeployment(60);
 
     getDnsCollectionInfo(tonlib, dnsCollection.getAddress());
@@ -259,9 +257,9 @@ public class TestDns extends CommonTest {
                     .storeRef(CellBuilder.beginCell().storeString(dnsItem1DomainName).endCell())
                     .endCell())
             .build();
-    extMessageInfo = adminWallet.send(adminWalletConfig);
+    sendResponse = adminWallet.send(adminWalletConfig);
 
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
 
     adminWallet.waitForBalanceChange(45);
 
@@ -284,8 +282,8 @@ public class TestDns extends CommonTest {
             .amount(Utils.toNano(13))
             .build();
 
-    extMessageInfo = buyerWallet.send(buyerConfig);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = buyerWallet.send(buyerConfig);
+    assertThat(sendResponse.getCode()).isZero();
     buyerWallet.waitForBalanceChange(45);
 
     Address dnsItem1Editor = DnsItem.getEditor(tonlib, dnsItem1Address);
@@ -296,13 +294,13 @@ public class TestDns extends CommonTest {
     getDnsItemInfo(tonlib, dnsItem1Address);
 
     // claim your domain by doing any action with it
-    extMessageInfo = getStaticData(adminWallet, dnsItem1Address);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = getStaticData(adminWallet, dnsItem1Address);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(30, "Claim DNS item " + dnsItem1DomainName);
 
     // or assign your wallet to it, so it could resolve your wallet address to your-domain.ton
-    extMessageInfo = changeDnsRecord(buyerWallet, dnsItem1Address, buyerWallet.getAddress());
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = changeDnsRecord(buyerWallet, dnsItem1Address, buyerWallet.getAddress());
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(30, "Assign wallet to domain " + dnsItem1DomainName);
 
     getDnsItemInfo(tonlib, dnsItem1Address);
@@ -311,23 +309,23 @@ public class TestDns extends CommonTest {
         "dnsItem1 editor {}",
         nonNull(dnsItem1Editor) ? dnsItem1Editor.toString(true, true, true) : null);
 
-    extMessageInfo = governDnsItem(buyerWallet, dnsItem1Address);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = governDnsItem(buyerWallet, dnsItem1Address);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(30, "govern dns item");
 
-    extMessageInfo =
+    sendResponse =
         transferDnsItem(
             buyerWallet, dnsItem1Address, "EQBCMRzsJBTMDqF5JW8Mbq9Ap7b88qKxkwktlZEChtLbiFIH");
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(30, "transferring domain to other user");
 
     // release of domain is possible if either one year has passed and auction has ended;
     // also msg_value >= min_price and obviously only the owner can release domain name;
     // once it is released the owner changed to null and auction starts again
-    extMessageInfo =
+    sendResponse =
         releaseDnsItem(
             buyerWallet, dnsItem1Address, Utils.toNano(15)); // will fail with error code 414
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(30);
 
     getDnsItemInfo(tonlib, dnsItem1Address);
@@ -361,8 +359,8 @@ public class TestDns extends CommonTest {
                     .storeRef(CellBuilder.beginCell().storeString(dnsItem1DomainName).endCell())
                     .endCell())
             .build();
-    ExtMessageInfo extMessageInfo = adminWallet.send(adminWalletConfig);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(adminWalletConfig);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(30, "deploying DNS item " + dnsItem1DomainName);
 
     Address dnsItem1Address =
@@ -376,12 +374,12 @@ public class TestDns extends CommonTest {
     getDnsItemInfo(tonlib, dnsItem1Address);
 
     // claim your domain by doing any action with it
-    extMessageInfo = getStaticData(adminWallet, dnsItem1Address);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = getStaticData(adminWallet, dnsItem1Address);
+    assertThat(sendResponse.getCode()).isZero();
 
     // assign your wallet to domain name
-    extMessageInfo = changeDnsRecord(adminWallet, dnsItem1Address, adminWallet.getAddress());
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = changeDnsRecord(adminWallet, dnsItem1Address, adminWallet.getAddress());
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(25);
 
@@ -504,7 +502,7 @@ public class TestDns extends CommonTest {
     log.info("lastFillUpTime {}, {}", lastFillUpTime, Utils.toUTC(lastFillUpTime));
   }
 
-  private ExtMessageInfo changeDnsRecord(
+  private SendResponse changeDnsRecord(
       WalletV3R1 ownerWallet, Address dnsItemAddress, Address newSmartContract) {
     Cell body =
         DnsItem.createChangeContentEntryBody(
@@ -522,7 +520,7 @@ public class TestDns extends CommonTest {
     return ownerWallet.send(ownerWalletConfig);
   }
 
-  private ExtMessageInfo transferDnsItem(
+  private SendResponse transferDnsItem(
       WalletV3R1 ownerWallet, Address dnsItemAddress, String newOwner) {
     WalletV3Config ownerWalletConfig =
         WalletV3Config.builder()
@@ -542,7 +540,7 @@ public class TestDns extends CommonTest {
     return ownerWallet.send(ownerWalletConfig);
   }
 
-  private ExtMessageInfo releaseDnsItem(
+  private SendResponse releaseDnsItem(
       WalletV3R1 ownerWallet, Address dnsItemAddress, BigInteger amount) {
     Cell body =
         CellBuilder.beginCell()
@@ -561,7 +559,7 @@ public class TestDns extends CommonTest {
     return ownerWallet.send(ownerWalletConfig);
   }
 
-  private static ExtMessageInfo governDnsItem(WalletV3R1 ownerWallet, Address dnsItemAddress) {
+  private static SendResponse governDnsItem(WalletV3R1 ownerWallet, Address dnsItemAddress) {
     Cell body =
         CellBuilder.beginCell()
             .storeUint(0x44beae41, 32) // op::process_governance_decision = 0x44beae41;
@@ -579,7 +577,7 @@ public class TestDns extends CommonTest {
     return ownerWallet.send(ownerWalletConfig);
   }
 
-  private static ExtMessageInfo getStaticData(WalletV3R1 ownerWallet, Address dnsItem1Address) {
+  private static SendResponse getStaticData(WalletV3R1 ownerWallet, Address dnsItem1Address) {
     WalletV3Config ownerWalletConfig =
         WalletV3Config.builder()
             .walletId(42)

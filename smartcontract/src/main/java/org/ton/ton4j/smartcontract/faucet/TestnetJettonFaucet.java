@@ -4,6 +4,7 @@ import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinter;
 import org.ton.ton4j.smartcontract.token.ft.JettonWallet;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
@@ -70,10 +71,10 @@ public class TestnetJettonFaucet {
                         "jetton top up from ton4j faucet") // forward payload
                     ))
             .build();
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
 
-    if (extMessageInfo.getError().getCode() != 0) {
-      throw new Error(extMessageInfo.getError().getMessage());
+    if (sendResponse.getCode() != 0) {
+      throw new Error(sendResponse.getMessage());
     }
 
     ContractUtils.waitForJettonBalanceChange(
@@ -125,10 +126,10 @@ public class TestnetJettonFaucet {
                         "jetton top up from ton4j faucet") // forward payload
                     ))
             .build();
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
 
-    if (extMessageInfo.getError().getCode() != 0) {
-      throw new Error(extMessageInfo.getError().getMessage());
+    if (sendResponse.getCode() != 0) {
+      throw new Error(sendResponse.getMessage());
     }
 
     ContractUtils.waitForJettonBalanceChange(
@@ -183,10 +184,11 @@ public class TestnetJettonFaucet {
                         "jetton top up from ton4j faucet") // forward payload
                     ))
             .build();
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
 
-    if (extMessageInfo.getError().getCode() != 0) {
-      throw new Error(extMessageInfo.getTonCenterError().getMessage());
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+
+    if (sendResponse.getCode() != 0) {
+      throw new Error(sendResponse.getMessage());
     }
 
     // Wait for jetton balance change

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.*;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
@@ -105,7 +106,7 @@ public class MultiSigWalletV2 implements Contract {
     return CellBuilder.beginCell().fromBoc(WalletCodes.multisigV2.getValue()).endCell();
   }
 
-  public ExtMessageInfo deploy() {
+  public SendResponse deploy() {
 
     Message externalMessage =
         Message.builder()
@@ -113,13 +114,7 @@ public class MultiSigWalletV2 implements Contract {
             .init(getStateInit())
             .build();
 
-    if (nonNull(tonCenterClient)) {
-      return send(externalMessage);
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 
   private static TonHashMapE convertExtraCurrenciesToMap(List<ExtraCurrency> extraCurrencies) {
@@ -230,7 +225,9 @@ public class MultiSigWalletV2 implements Contract {
 
   public Address getOrderAddress(BigInteger orderSeqno) {
     Cell orderAddrCell;
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      return null; // todo
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
           adnlLiteClient.runMethod(
               getAddress(),
@@ -238,15 +235,18 @@ public class MultiSigWalletV2 implements Contract {
               VmStackValueInt.builder().value(orderSeqno).build());
       VmCellSlice slice = runMethodResult.getSliceByIndex(0);
       return CellSlice.beginParse(slice.getCell()).skipBits(slice.getStBits()).loadAddress();
-    } else {
+    } else if (nonNull(tonlib)) {
+
       Deque<String> stackData = new ArrayDeque<>();
       stackData.offer("[num, " + orderSeqno + "]");
       RunResult runResult = tonlib.runMethod(getAddress(), "get_order_address", stackData);
       TvmStackEntrySlice orderAddrCellT = (TvmStackEntrySlice) runResult.getStack().get(0);
       orderAddrCell = Cell.fromBocBase64(orderAddrCellT.getSlice().getBytes());
-    }
 
-    return MsgAddressInt.deserialize(CellSlice.beginParse(orderAddrCell)).toAddress();
+      return MsgAddressInt.deserialize(CellSlice.beginParse(orderAddrCell)).toAddress();
+    } else {
+      throw new Error("Provider not set");
+    }
   }
 
   public MultiSigV2OrderData getOrderData(BigInteger orderSeqno) {

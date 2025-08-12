@@ -14,6 +14,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV4R2Config;
 import org.ton.ton4j.smartcontract.wallet.v4.WalletV4R2;
@@ -77,13 +78,13 @@ public class TestWalletFeesV4 extends CommonTest {
         walletB.getName(),
         Utils.formatNanoValue(balance2));
 
-    ExtMessageInfo extMessageInfo = walletA.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = walletA.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     walletA.waitForDeployment(30);
 
-    extMessageInfo = walletB.deploy();
-    AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = walletB.deploy();
+    AssertionsForClassTypes.assertThat(sendResponse.getCode()).isZero();
 
     walletB.waitForDeployment(30);
 

@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.lockup.LockupWalletV1;
 import org.ton.ton4j.smartcontract.types.LockupConfig;
@@ -65,8 +66,8 @@ public class TestLockupWallet extends CommonTest {
         TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
     log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -105,8 +106,8 @@ public class TestLockupWallet extends CommonTest {
             .comment("send-to-allowed-1")
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(50);
 
@@ -123,8 +124,8 @@ public class TestLockupWallet extends CommonTest {
             .amount(Utils.toNano(1.5))
             .comment("send-to-prohibited-1")
             .build();
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(50);
 
     log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance()));
@@ -144,8 +145,8 @@ public class TestLockupWallet extends CommonTest {
             .amount(Utils.toNano(1.6))
             .comment("send-to-prohibited-2")
             .build();
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(50);
 
     log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance()));
@@ -166,8 +167,8 @@ public class TestLockupWallet extends CommonTest {
             .destination(Address.of("kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
             .amount(Utils.toNano(0.5))
             .build();
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(50);
 
     log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance()));
@@ -223,8 +224,8 @@ public class TestLockupWallet extends CommonTest {
         TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(5));
     log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -279,8 +280,8 @@ public class TestLockupWallet extends CommonTest {
             adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(5));
     log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -318,8 +319,8 @@ public class TestLockupWallet extends CommonTest {
             .comment("send-to-allowed-1")
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(50);
 
@@ -336,8 +337,8 @@ public class TestLockupWallet extends CommonTest {
             .amount(Utils.toNano(1.5))
             .comment("send-to-prohibited-1")
             .build();
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(50);
 
     log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance()));
@@ -357,8 +358,8 @@ public class TestLockupWallet extends CommonTest {
             .amount(Utils.toNano(1.6))
             .comment("send-to-prohibited-2")
             .build();
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(50);
 
     log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance()));
@@ -379,8 +380,8 @@ public class TestLockupWallet extends CommonTest {
             .destination(Address.of("kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
             .amount(Utils.toNano(0.5))
             .build();
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(50);
 
     log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance()));
@@ -439,8 +440,8 @@ public class TestLockupWallet extends CommonTest {
             tonCenter, Address.of(nonBounceableAddress), Utils.toNano(5));
     log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment();
 
@@ -480,8 +481,8 @@ public class TestLockupWallet extends CommonTest {
             .comment("send-to-allowed-1")
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(50);
 
@@ -498,8 +499,8 @@ public class TestLockupWallet extends CommonTest {
             .amount(Utils.toNano(1.5))
             .comment("send-to-prohibited-1")
             .build();
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(50);
 
     log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance()));
@@ -519,8 +520,8 @@ public class TestLockupWallet extends CommonTest {
             .amount(Utils.toNano(1.6))
             .comment("send-to-prohibited-2")
             .build();
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(50);
 
     log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance()));
@@ -541,8 +542,8 @@ public class TestLockupWallet extends CommonTest {
             .destination(Address.of("kf_YRLxA4Oe_e3FwvJ8CJgK9YDgeUprNQW3Or3B8ksegmjbj"))
             .amount(Utils.toNano(0.5))
             .build();
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(50);
 
     log.info("liquid balance {}", Utils.formatNanoValue(contract.getLiquidBalance()));

@@ -18,6 +18,7 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.wallet.Contract;
@@ -140,7 +141,8 @@ public class HighloadWalletV3 implements Contract {
   public String getPublicKey() {
     if (nonNull(tonCenterClient)) {
       try {
-        return Utils.bytesToHex(Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable())));
+        return Utils.bytesToHex(
+            Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable())));
       } catch (Exception e) {
         throw new Error(e);
       }
@@ -195,7 +197,7 @@ public class HighloadWalletV3 implements Contract {
   /**
    * @param highloadConfig HighloadV3Config
    */
-  public ExtMessageInfo send(HighloadV3Config highloadConfig) {
+  public SendResponse send(HighloadV3Config highloadConfig) {
     Address ownAddress = getAddress();
 
     Cell body = createTransferMessage(highloadConfig);
@@ -217,13 +219,7 @@ public class HighloadWalletV3 implements Contract {
                     .storeRef(body)
                     .endCell())
             .build();
-    if (nonNull(tonCenterClient)) {
-      return send(externalMessage);
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 
   /**
@@ -270,7 +266,7 @@ public class HighloadWalletV3 implements Contract {
     }
   }
 
-  public ExtMessageInfo deploy(HighloadV3Config highloadConfig) {
+  public SendResponse deploy(HighloadV3Config highloadConfig) {
     Address ownAddress = getAddress();
 
     if (isNull(highloadConfig.getBody())) {
@@ -315,13 +311,7 @@ public class HighloadWalletV3 implements Contract {
                     .endCell())
             .build();
 
-    if (nonNull(tonCenterClient)) {
-      return send(externalMessage);
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 
   public Cell createSingleTransfer(

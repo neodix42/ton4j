@@ -15,6 +15,7 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.TonPfxHashMapE;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.LockupConfig;
 import org.ton.ton4j.smartcontract.types.LockupWalletV1Config;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
@@ -240,8 +241,8 @@ public class LockupWalletV1 implements Contract {
    */
   public long getWalletId() {
     if (nonNull(tonCenterClient)) {
-      TonResponse<RunGetMethodResponse> r = tonCenterClient.runGetMethod(
-          getAddress().toBounceable(), "wallet_id", new ArrayList<>());
+      TonResponse<RunGetMethodResponse> r =
+          tonCenterClient.runGetMethod(getAddress().toBounceable(), "wallet_id", new ArrayList<>());
       if (r.isSuccess()) {
         String pubKey = ((String) new ArrayList<>(r.getResult().getStack().get(0)).get(1));
         return new BigInteger(pubKey.substring(2), 16).longValue();
@@ -361,7 +362,7 @@ public class LockupWalletV1 implements Contract {
     return Arrays.asList(balance.getNumber(), restrictedValue.getNumber(), lockedValue.getNumber());
   }
 
-  public ExtMessageInfo deploy() {
+  public SendResponse deploy() {
     Cell body = createDeployMessage();
 
     Message externalMessage =
@@ -376,23 +377,11 @@ public class LockupWalletV1 implements Contract {
                     .endCell())
             .build();
 
-    if (nonNull(tonCenterClient)) {
-      return send(externalMessage);
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 
-  public ExtMessageInfo deploy(byte[] signedBody) {
-    if (nonNull(tonCenterClient)) {
-      return send(prepareDeployMsg(signedBody));
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareDeployMsg(signedBody));
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
+  public SendResponse deploy(byte[] signedBody) {
+    return send(prepareDeployMsg(signedBody));
   }
 
   public Message prepareDeployMsg(byte[] signedBodyHash) {
@@ -404,14 +393,8 @@ public class LockupWalletV1 implements Contract {
         .build();
   }
 
-  public ExtMessageInfo send(LockupWalletV1Config config, byte[] signedBodyHash) {
-    if (nonNull(tonCenterClient)) {
-      return send(prepareExternalMsg(config, signedBodyHash));
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(config, signedBodyHash));
-    }
-    return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
+  public SendResponse send(LockupWalletV1Config config, byte[] signedBodyHash) {
+    return send(prepareExternalMsg(config, signedBodyHash));
   }
 
   public Message prepareExternalMsg(LockupWalletV1Config config, byte[] signedBodyHash) {
@@ -419,7 +402,7 @@ public class LockupWalletV1 implements Contract {
     return MsgUtils.createExternalMessageWithSignedBody(signedBodyHash, getAddress(), null, body);
   }
 
-  public ExtMessageInfo send(LockupWalletV1Config config) {
+  public SendResponse send(LockupWalletV1Config config) {
     Cell body = createTransferBody(config);
 
     Message externalMessage =
@@ -432,13 +415,7 @@ public class LockupWalletV1 implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
-    if (nonNull(tonCenterClient)) {
-      return send(externalMessage);
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 
   /**

@@ -19,6 +19,7 @@ import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.TonHashMapE;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.multisig.MultiSigWallet;
 import org.ton.ton4j.smartcontract.types.MultiSigConfig;
@@ -105,8 +106,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30); // with empty ext-msg
 
@@ -158,8 +159,8 @@ public class TestWalletMultiSig extends CommonTest {
     signedOrder.toFile("signedOrder.boc", false);
 
     // submitter keypair must come from User3 or User4, otherwise you get error 34
-    extMessageInfo = contract.sendOrder(keyPair5, pubkey5Index, signedOrder);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(keyPair5, pubkey5Index, signedOrder);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(30);
 
@@ -238,8 +239,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45); // with empty ext-msg
 
@@ -269,8 +270,8 @@ public class TestWalletMultiSig extends CommonTest {
     byte[] orderSignatureUser4 = MultiSigWallet.signOrder(keyPair4, order);
     byte[] orderSignatureUser5 = MultiSigWallet.signOrder(keyPair5, order);
 
-    extMessageInfo = contract.sendOrder(ownerKeyPair, rootIndex, order);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(ownerKeyPair, rootIndex, order);
+    assertThat(sendResponse.getCode()).isZero();
     //        Utils.sleep(30, "processing 1st query");
     contract.waitForBalanceChange(30);
 
@@ -298,8 +299,8 @@ public class TestWalletMultiSig extends CommonTest {
     signedOrder.toFile("signedOrder.boc", false);
 
     // submitter keypair must come from User3 or User4, otherwise you get error 34
-    extMessageInfo = contract.sendOrder(keyPair3, pubkey3Index, signedOrder);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(keyPair3, pubkey3Index, signedOrder);
+    assertThat(sendResponse.getCode()).isZero();
     //        Utils.sleep(20, "processing 1st query");
     contract.waitForBalanceChange(30);
 
@@ -425,8 +426,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45); // with empty ext msg
 
@@ -496,8 +497,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45); // with empty ext msg
 
@@ -513,8 +514,8 @@ public class TestWalletMultiSig extends CommonTest {
     byte[] order1Signature3 = MultiSigWallet.signCell(keyPair3, order1);
 
     // send order-1 signed by 3rd owner (root index 2)
-    extMessageInfo = contract.sendOrder(keyPair3, 2, order1); // root index 2
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(keyPair3, 2, order1); // root index 2
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForBalanceChange(30);
 
     Pair<Long, Long> queryState = contract.getQueryState(queryId1);
@@ -530,8 +531,8 @@ public class TestWalletMultiSig extends CommonTest {
     Cell order2 = MultiSigWallet.createOrder(walletId, queryId2, msg2);
 
     // send order-2 signed by 2nd owner (root index 1)
-    extMessageInfo = contract.sendOrder(keyPair2, 1, order2);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(keyPair2, 1, order2);
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForBalanceChange(30);
 
     queryState = contract.getQueryState(queryId2);
@@ -542,8 +543,8 @@ public class TestWalletMultiSig extends CommonTest {
         queryState.getRight());
 
     // send order-2 signed by 3rd owner (root index 2)
-    extMessageInfo = contract.sendOrder(keyPair3, 2, order2);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(keyPair3, 2, order2);
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForBalanceChange(30);
 
     queryState = contract.getQueryState(queryId2);
@@ -611,8 +612,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45); // with empty ext msg
 
@@ -627,8 +628,8 @@ public class TestWalletMultiSig extends CommonTest {
     Cell order = MultiSigWallet.createOrder(walletId, queryId, txMsg1);
 
     // send order-1 signed by 1st owner (root index 0)
-    extMessageInfo = contract.sendOrder(ownerKeyPair.getSecretKey(), 0, order); // root index 0
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(ownerKeyPair.getSecretKey(), 0, order); // root index 0
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForBalanceChange(30);
 
     showMessagesInfo(contract.getMessagesUnsignedByIndex(0), "MessagesUnsignedByIndex-" + 0);
@@ -642,8 +643,8 @@ public class TestWalletMultiSig extends CommonTest {
         queryState.getRight());
 
     // send order-1 signed by 2nd owner (root index 1)
-    extMessageInfo = contract.sendOrder(keyPair2.getSecretKey(), 1, order); // root index 1
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(keyPair2.getSecretKey(), 1, order); // root index 1
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForBalanceChange(30);
 
     queryState = contract.getQueryState(queryId);
@@ -740,8 +741,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45); // with empty ext msg
 
@@ -767,8 +768,8 @@ public class TestWalletMultiSig extends CommonTest {
     showMessagesInfo(
         contract.getMessagesUnsignedByIndex(rootIndex), "Messages-UnsignedByIndex-" + rootIndex);
 
-    extMessageInfo = contract.sendOrder(keyPair3.getSecretKey(), pubkey3Index, order1);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(keyPair3.getSecretKey(), pubkey3Index, order1);
+    assertThat(sendResponse.getCode()).isZero();
     //        Utils.sleep(30, "processing query");
     contract.waitForBalanceChange(30);
 
@@ -846,8 +847,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45); // with empty ext msg
 
@@ -1006,8 +1007,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30); // with empty ext-msg
 
@@ -1059,8 +1060,8 @@ public class TestWalletMultiSig extends CommonTest {
     signedOrder.toFile("signedOrder.boc", false);
 
     // submitter keypair must come from User3 or User4, otherwise you get error 34
-    extMessageInfo = contract.sendOrder(keyPair5, pubkey5Index, signedOrder);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(keyPair5, pubkey5Index, signedOrder);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(30);
 
@@ -1139,8 +1140,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30); // with empty ext-msg
 
@@ -1192,8 +1193,8 @@ public class TestWalletMultiSig extends CommonTest {
     signedOrder.toFile("signedOrder.boc", false);
 
     // submitter keypair must come from User3 or User4, otherwise you get error 34
-    extMessageInfo = contract.sendOrder(keyPair5, pubkey5Index, signedOrder);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.sendOrder(keyPair5, pubkey5Index, signedOrder);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(30);
 
@@ -1273,8 +1274,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45); // with empty ext msg
 
@@ -1392,8 +1393,8 @@ public class TestWalletMultiSig extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45); // with empty ext msg
 

@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.smartcontract.GenerateWallet;
 import org.ton.ton4j.smartcontract.payments.PaymentChannel;
@@ -120,8 +121,8 @@ public class TestPayments extends CommonTest {
             .body(PaymentsUtils.createTopUpBalance(Utils.toNano(0), Utils.toNano(0)))
             .build();
 
-    ExtMessageInfo extMessageInfo = walletA.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = walletA.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(35, "deploying channel A");
 
     log.info("channel A state {}", channelA.getChannelState());
@@ -146,8 +147,8 @@ public class TestPayments extends CommonTest {
             .body(PaymentsUtils.createTopUpBalance(channelInitState.getBalanceA(), BigInteger.ZERO))
             .build();
 
-    extMessageInfo = walletA.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = walletA.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     walletA.waitForBalanceChange(45);
 
@@ -163,8 +164,8 @@ public class TestPayments extends CommonTest {
             .body(PaymentsUtils.createTopUpBalance(BigInteger.ZERO, channelInitState.getBalanceB()))
             .build();
 
-    extMessageInfo = walletB.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = walletB.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(40, "topping up from wallet B...");
 
     ChannelData channelData = channelA.getData();
@@ -188,8 +189,8 @@ public class TestPayments extends CommonTest {
                     channelInitState.getBalanceA(), channelInitState.getBalanceB()))
             .build();
 
-    extMessageInfo = walletA.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = walletA.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(45, "initializing channel...");
 
     BigInteger channelAState = channelA.getChannelState();
@@ -309,9 +310,9 @@ public class TestPayments extends CommonTest {
             .body(channelA.createCooperativeCloseChannel(signatureCloseB, channelState3).getCell())
             .build();
 
-    extMessageInfo = walletA.send(config);
+    sendResponse = walletA.send(config);
     log.info("channel B address {}", channelB.getAddress());
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
 
     walletA.waitForBalanceChange(45);
   }
@@ -413,8 +414,8 @@ public class TestPayments extends CommonTest {
             .body(PaymentsUtils.createTopUpBalance(Utils.toNano(0), Utils.toNano(0)))
             .build();
 
-    ExtMessageInfo extMessageInfo = walletA.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = walletA.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(35, "deploying channel A");
 
     log.info("channel A state {}", channelA.getChannelState());
@@ -439,8 +440,8 @@ public class TestPayments extends CommonTest {
             .body(PaymentsUtils.createTopUpBalance(channelInitState.getBalanceA(), BigInteger.ZERO))
             .build();
 
-    extMessageInfo = walletA.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = walletA.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     walletA.waitForBalanceChange(45);
 
@@ -456,8 +457,8 @@ public class TestPayments extends CommonTest {
             .body(PaymentsUtils.createTopUpBalance(BigInteger.ZERO, channelInitState.getBalanceB()))
             .build();
 
-    extMessageInfo = walletB.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = walletB.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(40, "topping up from wallet B...");
 
     ChannelData channelData = channelA.getData();
@@ -481,8 +482,8 @@ public class TestPayments extends CommonTest {
                     channelInitState.getBalanceA(), channelInitState.getBalanceB()))
             .build();
 
-    extMessageInfo = walletA.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = walletA.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(45, "initializing channel...");
 
     BigInteger channelAState = channelA.getChannelState();
@@ -602,9 +603,9 @@ public class TestPayments extends CommonTest {
             .body(channelA.createCooperativeCloseChannel(signatureCloseB, channelState3).getCell())
             .build();
 
-    extMessageInfo = walletA.send(config);
+    sendResponse = walletA.send(config);
     log.info("channel B address {}", channelB.getAddress());
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
 
     walletA.waitForBalanceChange(45);
   }

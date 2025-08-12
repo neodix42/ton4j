@@ -10,6 +10,7 @@ import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
@@ -169,24 +170,13 @@ public class WalletV3R1 implements Contract {
         .endCell();
   }
 
-  public ExtMessageInfo deploy() {
-    if (nonNull(tonCenterClient)) {
+  public SendResponse deploy() {
       return send(prepareDeployMsg());
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareDeployMsg());
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
   }
 
-  public ExtMessageInfo deploy(byte[] signedBody) {
-    if (nonNull(tonCenterClient)) {
+  public SendResponse deploy(byte[] signedBody) {
       return send(prepareDeployMsg(signedBody));
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareDeployMsg(signedBody));
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
+
   }
 
   public Message prepareDeployMsg(byte[] signedBodyHash) {
@@ -198,14 +188,8 @@ public class WalletV3R1 implements Contract {
         .build();
   }
 
-  public ExtMessageInfo send(WalletV3Config config, byte[] signedBodyHash) {
-    if (nonNull(tonCenterClient)) {
+  public SendResponse send(WalletV3Config config, byte[] signedBodyHash) {
       return send(prepareExternalMsg(config, signedBodyHash));
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(config, signedBodyHash));
-    }
-    return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
   }
 
   public Message prepareExternalMsg(WalletV3Config config, byte[] signedBodyHash) {
@@ -229,29 +213,23 @@ public class WalletV3R1 implements Contract {
         .build();
   }
 
-  public ExtMessageInfo send(WalletV3Config config) {
-    if (nonNull(tonCenterClient)) {
+  public SendResponse send(WalletV3Config config) {
       return send(prepareExternalMsg(config));
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(config));
-    }
-    return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
   }
 
   /**
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
-  public RawTransaction sendWithConfirmation(WalletV3Config config) throws Exception {
-    if (nonNull(adnlLiteClient)) {
-      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
-      return null;
-    } else {
-      return tonlib.sendRawMessageWithConfirmation(
-          prepareExternalMsg(config).toCell().toBase64(), getAddress());
-    }
-  }
+//  public RawTransaction sendWithConfirmation(WalletV3Config config) throws Exception {
+//    if (nonNull(adnlLiteClient)) {
+//      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+//      return null;
+//    } else {
+//      return tonlib.sendRawMessageWithConfirmation(
+//          prepareExternalMsg(config).toCell().toBase64(), getAddress());
+//    }
+//  }
 
   public Message prepareExternalMsg(WalletV3Config config) {
     Cell body = createTransferBody(config);

@@ -10,6 +10,7 @@ import org.junit.runners.JUnit4;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.GenerateWallet;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinterStableCoin;
 import org.ton.ton4j.smartcontract.token.ft.JettonWalletStableCoin;
 import org.ton.ton4j.smartcontract.token.nft.NftUtils;
@@ -73,8 +74,8 @@ public class TestJettonStableCoin {
                 )
             .build();
 
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(60, "minting...");
 
@@ -106,8 +107,8 @@ public class TestJettonStableCoin {
                     MsgUtils.createTextMessageBody("gift") // forward payload
                     ))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "transferring 200 jettons from adminWallet to wallet2...");
 
@@ -142,8 +143,8 @@ public class TestJettonStableCoin {
                     ))
             .build();
 
-    extMessageInfo = wallet2.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = wallet2.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "transferring 100 jettons from wallet2 to adminWallet...");
 
@@ -174,8 +175,8 @@ public class TestJettonStableCoin {
                     JettonWalletStableCoin.createStatusBody(0, 3) // cant send and receive
                     ))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "locking jettons in jettonWallet2");
 
@@ -200,8 +201,8 @@ public class TestJettonStableCoin {
                 )
             .build();
 
-    extMessageInfo = wallet2.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = wallet2.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "transferring 50 jettons after lock from wallet2 to adminWallet...");
 
@@ -266,8 +267,8 @@ public class TestJettonStableCoin {
                 )
             .build();
 
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(60, "minting...");
 
@@ -299,8 +300,8 @@ public class TestJettonStableCoin {
                     MsgUtils.createTextMessageBody("gift") // forward payload
                     ))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "transferring 200 jettons from adminWallet to wallet2...");
 
@@ -335,8 +336,8 @@ public class TestJettonStableCoin {
                     ))
             .build();
 
-    extMessageInfo = wallet2.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = wallet2.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "transferring 100 jettons from wallet2 to adminWallet...");
 
@@ -367,8 +368,8 @@ public class TestJettonStableCoin {
                     JettonWalletStableCoin.createStatusBody(0, 3) // cant send and receive
                     ))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "locking jettons in jettonWallet2");
 
@@ -393,8 +394,8 @@ public class TestJettonStableCoin {
                 )
             .build();
 
-    extMessageInfo = wallet2.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = wallet2.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "transferring 50 jettons after lock from wallet2 to adminWallet...");
 

@@ -14,6 +14,7 @@ import java.util.Deque;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
@@ -481,7 +482,7 @@ public class NftCollection implements Contract {
   }
 
 
-  public ExtMessageInfo deploy(NftCollectionConfig config) {
+  public SendResponse deploy(NftCollectionConfig config) {
     long seqno = getSeqno();
     config.setSeqno(seqno);
     Address ownAddress = getAddress();
@@ -500,26 +501,22 @@ public class NftCollection implements Contract {
             .init(getStateInit())
             .build();
 
-    if (nonNull(tonCenterClient)) {
-      try {
-        // Send via TonCenter and return a success message
-        tonCenterClient.sendBoc(externalMessage.toCell().toBase64());
-        return ExtMessageInfo.builder()
-            .error(TonlibError.builder().code(0).build()) // success
-            .build();
-      } catch (Exception e) {
-        throw new Error("Error deploying NFT collection: " + e.getMessage());
-      }
-    } else if (nonNull(adnlLiteClient)) {
-      // This is a placeholder - actual implementation would depend on AdnlLiteClient's API
-      throw new Error("AdnlLiteClient implementation for deploy not yet available");
-    }
-    
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-  }
-  
-  public ExtMessageInfo deploy(Tonlib tonlib, NftCollectionConfig config) {
-
-    return deploy(config);
+    return send(externalMessage);
+//    if (nonNull(tonCenterClient)) {
+//      try {
+//        // Send via TonCenter and return a success message
+//        tonCenterClient.sendBoc(externalMessage.toCell().toBase64());
+//        return ExtMessageInfo.builder()
+//            .error(TonlibError.builder().code(0).build()) // success
+//            .build();
+//      } catch (Exception e) {
+//        throw new Error("Error deploying NFT collection: " + e.getMessage());
+//      }
+//    } else if (nonNull(adnlLiteClient)) {
+//      // This is a placeholder - actual implementation would depend on AdnlLiteClient's API
+//      throw new Error("AdnlLiteClient implementation for deploy not yet available");
+//    }
+//
+//    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 }

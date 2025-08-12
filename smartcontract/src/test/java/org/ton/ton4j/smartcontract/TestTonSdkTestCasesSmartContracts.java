@@ -659,8 +659,8 @@ public class TestTonSdkTestCasesSmartContracts {
                     forwardAmountNanocoins, // forward amount
                     MsgUtils.createTextMessageBody(forwardComment)))
             .build();
-    ExtMessageInfo extMessageInfo = myWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(
         90, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());
@@ -783,8 +783,8 @@ public class TestTonSdkTestCasesSmartContracts {
                     null) // forward payload
                 )
             .build();
-    ExtMessageInfo extMessageInfo = myWallet.send(walletV4Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myWallet.send(walletV4Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(
         90, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());
@@ -859,8 +859,8 @@ public class TestTonSdkTestCasesSmartContracts {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -879,8 +879,8 @@ public class TestTonSdkTestCasesSmartContracts {
             .sendMode(SendMode.valueOfInt(sendMode))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(60, "sending toncoins...");
 
@@ -941,8 +941,8 @@ public class TestTonSdkTestCasesSmartContracts {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -959,8 +959,8 @@ public class TestTonSdkTestCasesSmartContracts {
             .sendMode(SendMode.valueOfInt(sendMode))
             .build();
 
-    extMessageInfo = contract.send(config);
-    AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    AssertionsForClassTypes.assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(120, "sending toncoins...");
 
@@ -1048,8 +1048,8 @@ public class TestTonSdkTestCasesSmartContracts {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = highloadWalletV3.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = highloadWalletV3.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     highloadWalletV3.waitForDeployment(60);
 
@@ -1090,8 +1090,8 @@ public class TestTonSdkTestCasesSmartContracts {
             .sendMode(SendMode.valueOfInt(sendMode))
             .build();
 
-    extMessageInfo = highloadWalletV3.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = highloadWalletV3.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(60, "sending jettons...");
 
@@ -1165,8 +1165,8 @@ public class TestTonSdkTestCasesSmartContracts {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = highloadWalletV3.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = highloadWalletV3.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     highloadWalletV3.waitForDeployment(60);
 
@@ -1200,8 +1200,8 @@ public class TestTonSdkTestCasesSmartContracts {
             .sendMode(SendMode.valueOfInt(sendMode))
             .build();
 
-    extMessageInfo = highloadWalletV3.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = highloadWalletV3.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(2 * 60, "bulk sending jettons...");
 

@@ -28,8 +28,8 @@ WalletV3Config adminWalletConfig = WalletV3Config.builder()
         .stateInit(nftCollection.getStateInit())
         .build();
 
-ExtMessageInfo extMessageInfo = adminWallet.send(adminWalletConfig);
-assertThat(extMessageInfo.getError().getCode()).isZero();
+SendResponse sendResponse = adminWallet.send(adminWalletConfig);
+assertThat(sendResponse.getCode()).isZero();
 log.info("deploying NFT collection");
 ```
 
@@ -73,8 +73,8 @@ adminWalletConfig = WalletV3Config.builder()
         .body(body)
         .build();
 
-extMessageInfo = adminWallet.send(adminWalletConfig);
-assertThat(extMessageInfo.getError().getCode()).isZero();
+sendResponse = adminWallet.send(adminWalletConfig);
+assertThat(sendResponse.getCode()).isZero();
 log.info("deploying NFT item #1");
 }
 ```
@@ -113,8 +113,8 @@ adminWalletConfig = WalletV3Config.builder()
         .body(body)
         .build();
 
-extMessageInfo = adminWallet.send(adminWalletConfig);
-assertThat(extMessageInfo.getError().getCode()).isZero();
+sendResponse = adminWallet.send(adminWalletConfig);
+assertThat(sendResponse.getCode()).isZero();
 log.inf("deploying NFT sale smart-contract for nft item #1");
 ```
 
@@ -134,7 +134,7 @@ WalletV3Config walletV3Config = WalletV3Config.builder()
                 responseAddress))
         .build();
 ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
-assertThat(extMessageInfo.getError().getCode()).isZero();
+assertThat(sendResponse.getCode()).isZero();
 ```
 
 More examples on how to work with [smart-contracts](../smartcontract/src/main/java/org/ton/ton4j/smartcontract) can be

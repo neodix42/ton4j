@@ -84,8 +84,8 @@ public class TestFaucet {
     log.info("Raw address: {}", contract.getAddress().toString(false));
 
     //        Message msg = contract.createExternalMessage(contract.getAddress(), true, null);
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test

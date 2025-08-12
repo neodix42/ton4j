@@ -1,7 +1,12 @@
 package org.ton.ton4j.smartcontract;
 
-public interface SendResponse {
+import lombok.Builder;
+import lombok.Getter;
 
-    long getErrorCode();
-    String getErrorMessage();
+@Builder
+@Getter
+public class SendResponse {
+
+    long code;
+    String message;
 }

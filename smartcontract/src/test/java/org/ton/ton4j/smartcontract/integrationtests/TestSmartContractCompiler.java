@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.GenericSmartContract;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.SmartContractCompiler;
 import org.ton.ton4j.smartcontract.faucet.MyLocalTonFaucet;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
@@ -61,11 +62,11 @@ public class TestSmartContractCompiler extends CommonTest {
     BigInteger balance = TestnetFaucet.topUpContract(tonlib, address, Utils.toNano(0.1));
     log.info("balance genericSmartContract: {}", Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo =
+    SendResponse sendResponse =
         genericSmartContract.deployWithoutSignature(
             CellBuilder.beginCell().storeUint(4, 32).endCell());
-    log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    log.info("extMessageInfo {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
 
     tonlib.waitForDeployment(address, 60);
     RunResult runResult = tonlib.runMethod(address, "currentCounter");
@@ -115,11 +116,11 @@ public class TestSmartContractCompiler extends CommonTest {
     BigInteger balance = MyLocalTonFaucet.topUpContract(tonlib, address, Utils.toNano(0.1));
     log.info("balance genericSmartContract: {}", Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo =
+    SendResponse sendResponse =
         genericSmartContract.deployWithoutSignature(
             CellBuilder.beginCell().storeUint(6, 32).endCell());
-    log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    log.info("extMessageInfo {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
 
     tonlib.waitForDeployment(address, 60);
     RunResult runResult = tonlib.runMethod(address, "currentCounter");

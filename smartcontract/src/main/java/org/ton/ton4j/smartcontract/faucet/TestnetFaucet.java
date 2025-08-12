@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.WalletV1R3Config;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.ton4j.toncenter.TonCenter;
@@ -74,10 +75,10 @@ public class TestnetFaucet {
             .comment("top-up from ton4j faucet")
             .build();
 
-    ExtMessageInfo extMessageInfo = faucet.send(config);
+    SendResponse sendResponse = faucet.send(config);
 
-    if (extMessageInfo.getError().getCode() != 0) {
-      throw new Error(extMessageInfo.getError().getMessage());
+    if (sendResponse.getCode() != 0) {
+      throw new Error(sendResponse.getMessage());
     }
 
     tonlib.waitForBalanceChange(destinationAddress, 60);
@@ -135,10 +136,10 @@ public class TestnetFaucet {
             .comment("top-up from ton4j faucet")
             .build();
 
-    ExtMessageInfo extMessageInfo = faucet.send(config);
+    SendResponse sendResponse = faucet.send(config);
 
-    if (extMessageInfo.getError().getCode() != 0) {
-      throw new Error(extMessageInfo.getError().getMessage());
+    if (sendResponse.getCode() != 0) {
+      throw new Error(sendResponse.getMessage());
     }
 
     adnlLiteClient.waitForBalanceChange(destinationAddress, 60);
@@ -208,10 +209,11 @@ public class TestnetFaucet {
             .comment("top-up from ton4j faucet")
             .build();
     if (avoidRateLimit) Utils.sleep(1);
-    ExtMessageInfo extMessageInfo = faucet.send(config);
-    log.info("extMessageInfo {}", extMessageInfo);
-    if (extMessageInfo.getTonCenterError().getCode() != 0) {
-      throw new Error(extMessageInfo.getTonCenterError().getMessage());
+
+    SendResponse sendResponse = faucet.send(config);
+
+    if (sendResponse.getCode() != 0) {
+      throw new Error(sendResponse.getMessage());
     }
 
     if (avoidRateLimit) Utils.sleep(1);

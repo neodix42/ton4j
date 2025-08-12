@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.SendMode;
@@ -51,8 +52,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
         TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test
@@ -76,8 +77,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
 
     log.info("contract balance {}", Utils.formatNanoValue(contract.getBalance()));
     // deploy wallet-v4
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -130,8 +131,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
                     .build())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(45);
 
@@ -167,7 +168,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
                 contract.getKeyPair(), pluginAddress, null, null)
             .toCell();
 
-    extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
+    ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
     log.info("extMessageInfo {}", extMessageInfo);
     assertThat(extMessageInfo.getError().getCode()).isZero();
 
@@ -200,7 +201,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .toCell();
     extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
     log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
 
     tonlib.waitForDeployment(subscriptionInfo.getBeneficiary(), 90);
     Utils.sleep(10);
@@ -237,9 +238,9 @@ public class TestWalletV4R2Plugins extends CommonTest {
                     .build())
             .build();
 
-    extMessageInfo = contract.uninstallPlugin(config);
+    sendResponse = contract.uninstallPlugin(config);
     Utils.sleep(30, "sent uninstall request");
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
 
     // uninstall plugin -- end
 
@@ -257,8 +258,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .amount(Utils.toNano(0.331))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test
@@ -281,8 +282,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v4
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -331,8 +332,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
     byte[] signedDeployBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
 
-    ExtMessageInfo extMessageInfo = contract.deploy(signedDeployBodyHash);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForDeployment(30);
 
     long walletCurrentSeqno = contract.getSeqno();
@@ -356,8 +357,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
     Cell transferBody = contract.createTransferBody(config);
     byte[] signedTransferBodyHash =
         Utils.signData(pubKey, keyPair.getSecretKey(), transferBody.hash());
-    extMessageInfo = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", extMessageInfo);
+    sendResponse = contract.send(config, signedTransferBodyHash);
+    log.info("extMessageInfo: {}", sendResponse);
     contract.waitForBalanceChange();
     assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.7));
   }
@@ -390,8 +391,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
     log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v4
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -444,8 +445,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
                     .build())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(45);
 
@@ -481,8 +482,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
             contract.getKeyPair(), pluginAddress, null, null);
 
     adnlLiteClient.sendMessage(extMessage);
-    log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    log.info("extMessageInfo {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
 
     adnlLiteClient.waitForDeployment(beneficiaryAddress, 90);
     //    ContractUtils.waitForDeployment(tonlib, beneficiaryAddress, 90); // no need?
@@ -546,9 +547,9 @@ public class TestWalletV4R2Plugins extends CommonTest {
                     .build())
             .build();
 
-    extMessageInfo = contract.uninstallPlugin(config);
+    sendResponse = contract.uninstallPlugin(config);
     Utils.sleep(30, "sent uninstall request");
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
 
     // uninstall plugin -- end
 
@@ -566,20 +567,16 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .amount(Utils.toNano(0.331))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
   }
-  
+
   @Test
   public void testPluginsTonCenterClient() throws Exception {
 
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-    TonCenter tonCenter =
-        TonCenter.builder()
-            .apiKey("your_api_key")
-            .testnet()
-            .build();
+    TonCenter tonCenter = TonCenter.builder().apiKey("your_api_key").testnet().build();
 
     WalletV4R2 contract =
         WalletV4R2.builder().tonCenterClient(tonCenter).keyPair(keyPair).walletId(42).build();
@@ -598,8 +595,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
     log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v4
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment();
 
@@ -661,8 +658,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
                     .build())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(20);
 
@@ -700,8 +697,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
             contract.getKeyPair(), pluginAddress, null, null);
 
     tonCenter.sendBoc(extMessage.toCell().toBase64());
-    log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    log.info("extMessageInfo {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
 
     // Wait for deployment - custom implementation since TonCenter doesn't have waitForDeployment
     int timeoutSeconds = 90;
@@ -747,11 +744,13 @@ public class TestWalletV4R2Plugins extends CommonTest {
         throw new Error("Can't deploy contract within specified timeout.");
       }
       Utils.sleep(2);
-    } while (!"active".equals(tonCenter.getState(subscriptionInfo.getBeneficiary().toBounceable())));
+    } while (!"active"
+        .equals(tonCenter.getState(subscriptionInfo.getBeneficiary().toBounceable())));
 
     log.info(
         "beneficiaryWallet balance {}",
-        Utils.formatNanoValue(tonCenter.getBalance(subscriptionInfo.getBeneficiary().toBounceable())));
+        Utils.formatNanoValue(
+            tonCenter.getBalance(subscriptionInfo.getBeneficiary().toBounceable())));
 
     Utils.sleep(30);
 
@@ -781,9 +780,9 @@ public class TestWalletV4R2Plugins extends CommonTest {
                     .build())
             .build();
 
-    extMessageInfo = contract.uninstallPlugin(config);
+    sendResponse = contract.uninstallPlugin(config);
     Utils.sleep(30, "sent uninstall request");
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
 
     // uninstall plugin -- end
 
@@ -801,7 +800,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .amount(Utils.toNano(0.331))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getTonCenterError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 }

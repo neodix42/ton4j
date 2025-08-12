@@ -24,8 +24,8 @@ BigInteger balance = TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceabl
 log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
 // deploy wallet-v4
-ExtMessageInfo extMessageInfo = contract.deploy();
-assertThat(extMessageInfo.getError().getCode()).isZero();
+SendResponse sendResponse = contract.deploy();
+assertThat(sendResponse.getCode()).isZero();
 
 // list plugins
 log.info("pluginsList: {}", contract.getPluginsList(tonlib));
@@ -67,8 +67,8 @@ WalletV4R1Config config = WalletV4R1Config.builder()
                 .build())
         .build();
 
-extMessageInfo = contract.send(config);
-assertThat(extMessageInfo.getError().getCode()).isZero();
+sendResponse = contract.send(config);
+assertThat(sendResponse.getCode()).isZero();
 ```
 
 ### Get subscription info
@@ -122,7 +122,7 @@ config = WalletV4R1Config.builder()
 
 extMessageInfo = contract.uninstallPlugin(config);
 Utils.sleep(30, "sent uninstall request");
-assertThat(extMessageInfo.getError().getCode()).isZero();
+assertThat(sendResponse.getCode()).isZero();
 
 ```
 

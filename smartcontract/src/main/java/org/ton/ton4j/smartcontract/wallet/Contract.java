@@ -11,6 +11,7 @@ import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.TonHashMapE;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.WalletConfig;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R1;
 import org.ton.ton4j.tl.liteserver.responses.SendMsgStatus;
@@ -135,74 +136,63 @@ public interface Contract {
       } catch (Exception e) {
         return false;
       }
-    }
-    if (nonNull(getAdnlLiteClient())) {
+    } else if (nonNull(getAdnlLiteClient())) {
       try {
         return (getAdnlLiteClient().getAccount(getAddress()).getAccountStorage().getAccountState()
             instanceof AccountStateActive);
       } catch (Exception e) {
         return false;
       }
+    } else if (nonNull(getTonlib())) {
+      try {
+        return StringUtils.isNotEmpty(getTonlib().getRawAccountState(getAddress()).getCode());
+      } catch (Exception e) {
+        return false;
+      }
+    } else {
+      throw new Error("Provided not set");
     }
-    return StringUtils.isNotEmpty(getTonlib().getRawAccountState(getAddress()).getCode());
   }
 
-  default ExtMessageInfo send(Message externalMessage) {
+  default SendResponse send(Message externalMessage) {
     if (nonNull(getTonCenterClient())) {
       try {
         TonResponse<SendBocResponse> response =
             getTonCenterClient().sendBoc(externalMessage.toCell().toBase64());
         if (response.isSuccess()) {
-          return ExtMessageInfo.builder()
-              .tonCenterError(TonCenterError.builder().code(0).build()) // success
-              .build();
+          return SendResponse.builder().code(0).build();
         } else {
-          return ExtMessageInfo.builder()
-              .tonCenterError(
-                  TonCenterError.builder()
-                      .code(response.getCode())
-                      .message(response.getError())
-                      .build())
+          return SendResponse.builder()
+              .code(response.getCode())
+              .message(response.getError())
               .build();
         }
       } catch (Exception e) {
-        return ExtMessageInfo.builder()
-            .tonCenterError(TonCenterError.builder().code(1).message(e.getMessage()).build())
-            .build();
+        return SendResponse.builder().code(1).message(e.getMessage()).build();
       }
-    }
-    if (nonNull(getAdnlLiteClient())) {
-
+    } else if (nonNull(getAdnlLiteClient())) {
       SendMsgStatus sendMsgStatus =
           getAdnlLiteClient()
               .sendMessage(
                   externalMessage); // raw boc // prepareExternalMsg(config).toCell().toBoc()
       if (StringUtils.isEmpty(sendMsgStatus.getResponseMessage())) {
-        return ExtMessageInfo.builder()
-            .error(
-                TonlibError.builder()
-                    .code(0)
-                    .build()) // compatibility, if user checks tonlib error when using adnl client
-            .adnlLiteClientError(
-                AdnlLiteClientError.builder().code(sendMsgStatus.getStatus()).build())
-            .build();
+        return SendResponse.builder().code(0).build();
       } else {
-        return ExtMessageInfo.builder()
-            .error(
-                TonlibError.builder()
-                    .code(
-                        sendMsgStatus.getResponseCode() == 0 ? 1 : sendMsgStatus.getResponseCode())
-                    .build()) // if user checks tonlib error when using adnl client
-            .adnlLiteClientError(
-                AdnlLiteClientError.builder()
-                    .code(
-                        sendMsgStatus.getResponseCode() == 0 ? 1 : sendMsgStatus.getResponseCode())
-                    .message(sendMsgStatus.getResponseMessage())
-                    .build())
+        return SendResponse.builder()
+            .code(sendMsgStatus.getResponseCode() == 0 ? 1 : sendMsgStatus.getResponseCode())
+            .message(sendMsgStatus.getResponseMessage())
             .build();
       }
+    } else if (nonNull(getTonlib())) {
+      ExtMessageInfo extMessageInfo =
+          getTonlib().sendRawMessage(externalMessage.toCell().toBase64());
+      return SendResponse.builder()
+          .code(extMessageInfo.getError().getCode())
+          .message(extMessageInfo.getError().getMessage())
+          .build();
+    } else {
+      throw new Error("Provided not set");
     }
-    return getTonlib().sendRawMessage(externalMessage.toCell().toBase64()); // base64
   }
 
   default void sendWithConfirmation(Message externalMessage) throws Exception {
@@ -210,8 +200,10 @@ public interface Contract {
       getAdnlLiteClient().sendRawMessageWithConfirmation(externalMessage, getAddress());
     } else if (nonNull(getTonCenterClient())) {
       getTonCenterClient().sendRawMessageWithConfirmation(externalMessage, getAddress());
-    } else {
+    } else if (nonNull(getTonlib())) {
       getTonlib().sendRawMessageWithConfirmation(externalMessage.toCell().toBase64(), getAddress());
+    } else {
+      throw new Error("Provided not set");
     }
   }
 
@@ -289,15 +281,21 @@ public interface Contract {
       } catch (Throwable e) {
         throw new Error(e);
       }
-    }
-    if (nonNull(getAdnlLiteClient())) {
+    } else if (nonNull(getAdnlLiteClient())) {
       try {
         return getAdnlLiteClient().getBalance(getAddress());
       } catch (Exception e) {
         throw new Error(e);
       }
+    } else if (nonNull(getTonlib())) {
+      try {
+        return new BigInteger(getTonlib().getRawAccountState(getAddress()).getBalance());
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    } else {
+      throw new Error("Provided not set");
     }
-    return new BigInteger(getTonlib().getRawAccountState(getAddress()).getBalance());
   }
 
   default List<RawTransaction> getTransactions(int historyLimit) {

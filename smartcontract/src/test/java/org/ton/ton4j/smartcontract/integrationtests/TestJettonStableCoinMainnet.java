@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinterStableCoin;
 import org.ton.ton4j.smartcontract.token.ft.JettonWalletStableCoin;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
@@ -111,8 +112,8 @@ public class TestJettonStableCoinMainnet {
                     MsgUtils.createTextMessageBody("gift")) // forward payload
                 )
             .build();
-    ExtMessageInfo extMessageInfo = myWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(
         90, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());
@@ -211,8 +212,8 @@ public class TestJettonStableCoinMainnet {
                     null) // forward payload
                 )
             .build();
-    ExtMessageInfo extMessageInfo = myWallet.send(walletV4Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myWallet.send(walletV4Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(
         120, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());
@@ -312,8 +313,8 @@ public class TestJettonStableCoinMainnet {
                     null) // forward payload
                 )
             .build();
-    ExtMessageInfo extMessageInfo = myWallet.send(walletV4Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myWallet.send(walletV4Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(
         120, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());

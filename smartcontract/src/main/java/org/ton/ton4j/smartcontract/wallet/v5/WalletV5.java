@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.*;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.wallet.Contract;
@@ -171,49 +172,31 @@ public class WalletV5 implements Contract {
         .build();
   }
 
-  public ExtMessageInfo send(WalletV5Config config) {
-    if (nonNull(tonCenterClient)) {
+  public SendResponse send(WalletV5Config config) {
       return send(prepareExternalMsg(config));
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(config));
-    }
-    return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
   }
 
   /**
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
-  public RawTransaction sendWithConfirmation(WalletV5Config config) throws Exception {
-    if (nonNull(adnlLiteClient)) {
-      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
-      return null;
-    } else {
-      return tonlib.sendRawMessageWithConfirmation(
-          prepareExternalMsg(config).toCell().toBase64(), getAddress());
-    }
-  }
+//  public RawTransaction sendWithConfirmation(WalletV5Config config) throws Exception {
+//    if (nonNull(adnlLiteClient)) {
+//      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+//      return null;
+//    } else {
+//      return tonlib.sendRawMessageWithConfirmation(
+//          prepareExternalMsg(config).toCell().toBase64(), getAddress());
+//    }
+//  }
 
   /** Deploy wallet without any extensions. One can be installed later into the wallet. */
-  public ExtMessageInfo deploy() {
-    if (nonNull(tonCenterClient)) {
+  public SendResponse deploy() {
       return send(prepareDeployMsg());
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareDeployMsg());
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
   }
 
-  public ExtMessageInfo deploy(byte[] signedBody) {
-    if (nonNull(tonCenterClient)) {
+  public SendResponse deploy(byte[] signedBody) {
       return send(prepareDeployMsg(signedBody));
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareDeployMsg(signedBody));
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
   }
 
   public Message prepareDeployMsg(byte[] signedBodyHash) {
@@ -225,14 +208,8 @@ public class WalletV5 implements Contract {
         .build();
   }
 
-  public ExtMessageInfo send(WalletV5Config config, byte[] signedBodyHash) {
-    if (nonNull(tonCenterClient)) {
+  public SendResponse send(WalletV5Config config, byte[] signedBodyHash) {
       return send(prepareExternalMsg(config, signedBodyHash));
-    }
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(config, signedBodyHash));
-    }
-    return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
   }
 
   public Message prepareExternalMsg(WalletV5Config config, byte[] signedBodyHash) {
