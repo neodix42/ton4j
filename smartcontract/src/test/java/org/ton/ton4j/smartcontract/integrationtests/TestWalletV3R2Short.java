@@ -708,7 +708,7 @@ public class TestWalletV3R2Short extends CommonTest {
             .seqno(1)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(0.8))
-            .comment("testWalletV3R2-42")
+            .comment("ton4j testWalletV3R2-42")
             .build();
 
     Utils.sleep(2);
@@ -728,7 +728,7 @@ public class TestWalletV3R2Short extends CommonTest {
             .seqno(1)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(0.7))
-            .comment("testWalletV3R2-98")
+            .comment("ton4j testWalletV3R2-98")
             .build();
 
     response = toncenter.sendBoc(contract2.prepareExternalMsg(config).toCell().toBase64());

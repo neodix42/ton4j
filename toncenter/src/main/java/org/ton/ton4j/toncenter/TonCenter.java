@@ -177,14 +177,14 @@ public class TonCenter {
     HttpUrl.Builder urlBuilder = HttpUrl.parse(endpoint + path).newBuilder();
 
     // Add query parameters
-    if (params != null) {
+    if (nonNull(params)) {
       for (Map.Entry<String, String> entry : params.entrySet()) {
         urlBuilder.addQueryParameter(entry.getKey(), entry.getValue());
       }
     }
 
     // Add API key as query parameter if not using header
-    if (apiKey != null && !apiKey.trim().isEmpty()) {
+    if (nonNull(apiKey) && !apiKey.trim().isEmpty()) {
       urlBuilder.addQueryParameter("api_key", apiKey);
     }
 
@@ -201,7 +201,7 @@ public class TonCenter {
     HttpUrl.Builder urlBuilder = HttpUrl.parse(endpoint + path).newBuilder();
 
     // Add API key as query parameter if not using header
-    if (apiKey != null && !apiKey.trim().isEmpty()) {
+    if (nonNull(apiKey) && !apiKey.trim().isEmpty()) {
       urlBuilder.addQueryParameter("api_key", apiKey);
     }
 
@@ -237,9 +237,9 @@ public class TonCenter {
 
         // Fallback to basic HTTP error with response body if available
         String errorMessage = "HTTP error: " + response.code();
-        if (responseBody != null && !responseBody.trim().isEmpty()) {
+        if (nonNull(responseBody) && !responseBody.trim().isEmpty()) {
           errorMessage += " - " + responseBody;
-        } else if (response.message() != null) {
+        } else if (nonNull(response.message())) {
           errorMessage += " " + response.message();
         }
         throw new TonCenterException(errorMessage);
@@ -304,11 +304,11 @@ public class TonCenter {
       String address, Integer limit, Long lt, String hash, Long toLt, Boolean archival) {
     Map<String, String> params = new HashMap<>();
     params.put("address", address);
-    if (limit != null) params.put("limit", limit.toString());
-    if (lt != null) params.put("lt", lt.toString());
-    if (hash != null) params.put("hash", hash);
-    if (toLt != null) params.put("to_lt", toLt.toString());
-    if (archival != null) params.put("archival", archival.toString());
+    if (nonNull(limit)) params.put("limit", limit.toString());
+    if (nonNull(lt)) params.put("lt", lt.toString());
+    if (nonNull(hash)) params.put("hash", hash);
+    if (nonNull(toLt)) params.put("to_lt", toLt.toString());
+    if (nonNull(archival)) params.put("archival", archival.toString());
 
     Type responseType = new TypeToken<TonResponse<List<TransactionResponse>>>() {}.getType();
     return executeGet("/getTransactions", params, responseType);
@@ -329,7 +329,7 @@ public class TonCenter {
 
     Type responseType = new TypeToken<TonResponse<String>>() {}.getType();
     TonResponse<String> res = executeGet("/getAddressBalance", params, responseType);
-    log.info(res.toString());
+    //    log.info(res.toString());
     if (nonNull(res) && res.isSuccess()) {
       return new BigInteger(res.getResult());
     } else {
@@ -602,7 +602,7 @@ public class TonCenter {
 
   public long getSeqno(String address) {
     RunGetMethodResponse r = runGetMethod(address, "seqno", new ArrayList<>()).getResult();
-    log.info("seqno {}", r);
+    //    log.info("seqno {}", r);
     if ((nonNull(r)) && (r.getExitCode() == 0)) {
       return Long.decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
     } else {

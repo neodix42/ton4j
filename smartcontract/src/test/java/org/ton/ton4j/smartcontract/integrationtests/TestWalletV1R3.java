@@ -100,14 +100,14 @@ public class TestWalletV1R3 extends CommonTest {
     List<String> mnemonic = Mnemonic.generate(24);
     Pair keyPair = Mnemonic.toKeyPair(mnemonic);
 
-    log.info("pubkey " + Utils.bytesToHex(keyPair.getPublicKey()));
-    log.info("seckey " + Utils.bytesToHex(keyPair.getSecretKey()));
+    log.info("pubkey {}", Utils.bytesToHex(keyPair.getPublicKey()));
+    log.info("seckey {}", Utils.bytesToHex(keyPair.getSecretKey()));
 
     TweetNaclFast.Signature.KeyPair keyPairSig =
         TweetNaclFast.Signature.keyPair_fromSeed(keyPair.getSecretKey());
 
-    log.info("pubkey " + Utils.bytesToHex(keyPairSig.getPublicKey()));
-    log.info("seckey " + Utils.bytesToHex(keyPairSig.getSecretKey()));
+    log.info("pubkey {}", Utils.bytesToHex(keyPairSig.getPublicKey()));
+    log.info("seckey {}", Utils.bytesToHex(keyPairSig.getSecretKey()));
 
     WalletV1R3 contract = WalletV1R3.builder().tonlib(tonlib).keyPair(keyPairSig).build();
 
@@ -173,14 +173,14 @@ public class TestWalletV1R3 extends CommonTest {
     List<String> mnemonic = Mnemonic.generate(24);
     Pair keyPair = Mnemonic.toKeyPair(mnemonic);
 
-    log.info("pubkey " + Utils.bytesToHex(keyPair.getPublicKey()));
-    log.info("seckey " + Utils.bytesToHex(keyPair.getSecretKey()));
+    log.info("pubkey {}", Utils.bytesToHex(keyPair.getPublicKey()));
+    log.info("seckey {}", Utils.bytesToHex(keyPair.getSecretKey()));
 
     TweetNaclFast.Signature.KeyPair keyPairSig =
         TweetNaclFast.Signature.keyPair_fromSeed(keyPair.getSecretKey());
 
-    log.info("pubkey " + Utils.bytesToHex(keyPairSig.getPublicKey()));
-    log.info("seckey " + Utils.bytesToHex(keyPairSig.getSecretKey()));
+    log.info("pubkey {}", Utils.bytesToHex(keyPairSig.getPublicKey()));
+    log.info("seckey {}", Utils.bytesToHex(keyPairSig.getSecretKey()));
 
     WalletV1R3 contract = WalletV1R3.builder().keyPair(keyPairSig).build();
 
@@ -318,7 +318,7 @@ public class TestWalletV1R3 extends CommonTest {
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
 
     SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
-    log.info("extMessageInfo {}", sendResponse);
+    log.info("sendResponse {}", sendResponse);
     contract.waitForDeployment();
 
     // send toncoins
@@ -335,7 +335,7 @@ public class TestWalletV1R3 extends CommonTest {
     byte[] signedTransferBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
     sendResponse = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", sendResponse);
+    log.info("sendResponse: {}", sendResponse);
     Utils.sleep(2);
     contract.waitForBalanceChange();
     Utils.sleep(2);

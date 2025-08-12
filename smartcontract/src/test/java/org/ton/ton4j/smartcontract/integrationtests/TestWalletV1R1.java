@@ -128,7 +128,7 @@ public class TestWalletV1R1 extends CommonTest {
 
     SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
     log.info("extMessageInfo {}", sendResponse);
-    contract.waitForDeployment(120);
+    contract.waitForDeployment();
 
     // send toncoins
     WalletV1R1Config config =
@@ -145,7 +145,7 @@ public class TestWalletV1R1 extends CommonTest {
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
     sendResponse = contract.send(config, signedTransferBodyHash);
     log.info("extMessageInfo: {}", sendResponse);
-    contract.waitForBalanceChange(120);
+    contract.waitForBalanceChange();
     Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
   }
 
@@ -210,7 +210,7 @@ public class TestWalletV1R1 extends CommonTest {
 
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
     TonCenter tonCenterClient =
-        TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().debug().build();
+        TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().build();
 
     WalletV1R1 contract =
         WalletV1R1.builder().tonCenterClient(tonCenterClient).wc(0).keyPair(keyPair).build();

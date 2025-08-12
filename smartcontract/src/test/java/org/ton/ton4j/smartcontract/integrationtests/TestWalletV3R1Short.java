@@ -164,7 +164,7 @@ public class TestWalletV3R1Short extends CommonTest {
         tonCenterClient.sendBoc(contract.prepareDeployMsg().toCell().toBase64());
     assertThat(response.isSuccess()).isTrue();
 
-    Utils.sleep(20);
+    contract.waitForDeployment();
 
     // send toncoins
     WalletV3Config config =
@@ -180,7 +180,7 @@ public class TestWalletV3R1Short extends CommonTest {
     response = tonCenterClient.sendBoc(contract.prepareExternalMsg(config).toCell().toBase64());
     assertThat(response.isSuccess()).isTrue();
 
-    Utils.sleep(20);
+    contract.waitForBalanceChange();
 
     balance = contract.getBalance();
     log.info(
@@ -188,7 +188,7 @@ public class TestWalletV3R1Short extends CommonTest {
         contract.getWalletId(),
         contract.getName(),
         Utils.formatNanoValue(balance));
-    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.25).longValue());
 
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.25).longValue());
   }
 }

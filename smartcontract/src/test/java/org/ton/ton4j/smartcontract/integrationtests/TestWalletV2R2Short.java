@@ -156,7 +156,7 @@ public class TestWalletV2R2Short extends CommonTest {
     SendResponse sendResponse = contract.deploy();
     assertThat(sendResponse.getCode()).isZero();
 
-    contract.waitForDeployment(20);
+    contract.waitForDeployment();
 
     // transfer coins from new wallet (back to faucet)
     WalletV2R2Config config =
@@ -170,7 +170,7 @@ public class TestWalletV2R2Short extends CommonTest {
     assertThat(sendResponse.getCode()).isZero();
 
     log.info("sending to one destination");
-    contract.waitForBalanceChange(90);
+    contract.waitForBalanceChange();
 
     // multi send
     config =
@@ -227,7 +227,7 @@ public class TestWalletV2R2Short extends CommonTest {
             tonCenterClient.sendBoc(contract.prepareDeployMsg().toCell().toBase64());
     assertThat(response.isSuccess()).isTrue();
 
-    Utils.sleep(20);
+   contract.waitForDeployment();
 
     // transfer coins from new wallet (back to faucet)
     WalletV2R2Config config =
@@ -241,7 +241,7 @@ public class TestWalletV2R2Short extends CommonTest {
     assertThat(response.isSuccess()).isTrue();
 
     log.info("sending to one destination");
-    Utils.sleep(20);
+    contract.waitForBalanceChange();
 
     // multi send
     config =
@@ -261,7 +261,7 @@ public class TestWalletV2R2Short extends CommonTest {
     assertThat(response.isSuccess()).isTrue();
 
     log.info("sending to four destinations");
-    Utils.sleep(20);
+    contract.waitForBalanceChange();
 
     balance = new BigInteger(
         tonCenterClient.getAddressBalance(contract.getAddress().toBounceable()).getResult());

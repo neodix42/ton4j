@@ -219,8 +219,7 @@ public class TestnetFaucet {
     if (avoidRateLimit) Utils.sleep(1);
     // Wait for balance change
     BigInteger initialBalance = tonCenterClient.getBalance(destinationAddress.toBounceable());
-    log.info(
-        "initialBalance {} balance: {}", initialBalance, Utils.formatNanoValue(initialBalance));
+//    log.info("initialBalance balance: {}", Utils.formatNanoValue(initialBalance));
     int timeoutSeconds = 60;
     int j = 0;
     BigInteger currentBalance;
@@ -230,8 +229,7 @@ public class TestnetFaucet {
       }
       Utils.sleep(2);
       currentBalance = tonCenterClient.getBalance(destinationAddress.toBounceable());
-      log.info(
-          "currentBalance {} balance: {}", currentBalance, Utils.formatNanoValue(currentBalance));
+//      log.info("currentBalance balance: {}", Utils.formatNanoValue(currentBalance));
     } while (initialBalance.equals(currentBalance));
 
     return currentBalance;

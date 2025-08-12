@@ -200,7 +200,7 @@ public class TestWalletV2R1Short extends CommonTest {
             contract.prepareDeployMsg(signedDeployBodyHash).toCell().toBase64());
     assertThat(response.isSuccess()).isTrue();
 
-    Utils.sleep(20);
+    contract.waitForDeployment();
 
     // send toncoins
     WalletV2R1Config config =
@@ -221,7 +221,7 @@ public class TestWalletV2R1Short extends CommonTest {
             contract.prepareExternalMsg(config, signedTransferBodyHash).toCell().toBase64());
     assertThat(response.isSuccess()).isTrue();
 
-    Utils.sleep(20);
+    contract.waitForBalanceChange();
 
     balance = contract.getBalance();
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));

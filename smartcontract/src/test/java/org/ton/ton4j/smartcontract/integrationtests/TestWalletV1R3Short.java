@@ -145,7 +145,6 @@ public class TestWalletV1R3Short extends CommonTest {
         TonCenter.builder()
             .apiKey(TESTNET_API_KEY)
             .network(Network.TESTNET)
-            .debug()
             .build();
 
     WalletV1R3 contract =
@@ -185,9 +184,9 @@ public class TestWalletV1R3Short extends CommonTest {
 
     contract.waitForBalanceChange();
 
-    Utils.sleep(2); // avoid rate limit error
+//    Utils.sleep(2); // avoid rate limit error
     balance = contract.getBalance();
-    Utils.sleep(2);
+//    Utils.sleep(2);
     status = tonCenterClient.getAddressState(bounceableAddress).getResult();
     log.info(
         "new wallet {} with status {} and balance: {}",
@@ -197,11 +196,11 @@ public class TestWalletV1R3Short extends CommonTest {
 
     assertThat(balance.longValue()).isLessThan(Utils.toNano(0.25).longValue());
 
-    Utils.sleep(2);
+//    Utils.sleep(2);
     log.info("seqno {}", tonCenterClient.getSeqno(contract.getAddress().toBounceable()));
-    Utils.sleep(2);
+//    Utils.sleep(2);
     log.info("pubkey {}", tonCenterClient.getPublicKey(contract.getAddress().toBounceable()));
-    Utils.sleep(2);
+//    Utils.sleep(2);
     log.info(
         "transactions {}",
         tonCenterClient.getTransactions(contract.getAddress().toBounceable(), 10).getResult());
