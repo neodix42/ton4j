@@ -178,8 +178,6 @@ public class TestTonlibJsonTestnet {
     log.info("totalTx in block {}", blockTransactions.getTransactions().size());
 
     for (ShortTxId txi : blockTransactions.getTransactions()) {
-      //      Transaction tx =
-      // Transaction.deserialize(CellSlice.beginParse(Cell.fromBocBase64(txi.ge())));
       log.info(
           "tx {} {} {}",
           Long.toHexString(lastBlock.getLast().getShard()),

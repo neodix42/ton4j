@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.UUID;
 
 /**
  * TonCenter API v2 client wrapper using OkHttp for HTTP requests and Gson for JSON serialization.
@@ -43,6 +44,7 @@ public class TonCenter {
   private Duration readTimeout;
   private Duration writeTimeout;
   private boolean debug;
+  private boolean uniqueRequests;
   private OkHttpClient httpClient;
   private Gson gson;
 
@@ -62,6 +64,7 @@ public class TonCenter {
     private Duration readTimeout = Duration.ofSeconds(30);
     private Duration writeTimeout = Duration.ofSeconds(30);
     private boolean debug;
+    private boolean uniqueRequests;
 
     public TonCenterBuilder apiKey(String apiKey) {
       this.apiKey = apiKey;
@@ -107,8 +110,21 @@ public class TonCenter {
       return network(Network.TESTNET);
     }
 
+    /**
+     * when set prints GET or POST URLs
+     * @return TonCenterBuilder
+     */
     public TonCenterBuilder debug() {
       this.debug = true;
+      return this;
+    }
+
+    /**
+     * when set appends each GET or POST request with a random parameter t=UUID
+     * @return TonCenterBuilder
+     */
+    public TonCenterBuilder uniqueRequests() {
+      this.uniqueRequests = true;
       return this;
     }
 
@@ -123,6 +139,7 @@ public class TonCenter {
       tonCenter.endpoint = this.endpoint;
       tonCenter.network = this.network;
       tonCenter.debug = this.debug;
+      tonCenter.uniqueRequests = this.uniqueRequests;
       tonCenter.connectTimeout = this.connectTimeout;
       tonCenter.readTimeout = this.readTimeout;
       tonCenter.writeTimeout = this.writeTimeout;
@@ -187,6 +204,11 @@ public class TonCenter {
     if (nonNull(apiKey) && !apiKey.trim().isEmpty()) {
       urlBuilder.addQueryParameter("api_key", apiKey);
     }
+    
+    // Add random parameter for unique requests if enabled
+    if (uniqueRequests) {
+      urlBuilder.addQueryParameter("t", UUID.randomUUID().toString());
+    }
 
     Request request = new Request.Builder().url(urlBuilder.build()).get().build();
 
@@ -203,6 +225,11 @@ public class TonCenter {
     // Add API key as query parameter if not using header
     if (nonNull(apiKey) && !apiKey.trim().isEmpty()) {
       urlBuilder.addQueryParameter("api_key", apiKey);
+    }
+    
+    // Add random parameter for unique requests if enabled
+    if (uniqueRequests) {
+      urlBuilder.addQueryParameter("t", UUID.randomUUID().toString());
     }
 
     Request request = new Request.Builder().url(urlBuilder.build()).post(body).build();
