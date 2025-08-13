@@ -100,6 +100,7 @@ public class TestWalletFeesV3 extends CommonTest {
             .seqno(walletA.getSeqno())
             .destination(walletB.getAddress())
             .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
+                // no amount, will be set below
             .build();
 
     Message msg = walletA.prepareExternalMsg(configA);
@@ -361,13 +362,15 @@ public class TestWalletFeesV3 extends CommonTest {
     TonResponse<EstimateFeeResponse> fees =
         tonCenterClient.estimateFee(walletB.getAddress().toBounceable(), msg.getBody().toBase64());
 
+    log.info("fees {}", fees);
+
     // adjust amount by including storage fee
     configA.setAmount(
         Utils.toNano(0.1)
             .add(walletA.getGasFees())
-            .add(BigInteger.valueOf(fees.getResult().getDestinationFees().get(0).getStorageFee()))); // todo
+            .add(BigInteger.valueOf(fees.getResult().getSourceFees().getStorageFee())));
 
-    log.info("fees on walletB with msg body from A: {}", fees);
+    log.info("fees on walletB with msg body from A: {}", fees.getResult().getSourceFees().getStorageFee());
     log.info("sending {}", Utils.formatNanoValue(configA.getAmount()));
 
     walletA.send(configA);

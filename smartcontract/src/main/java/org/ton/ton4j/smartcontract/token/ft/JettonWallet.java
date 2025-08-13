@@ -146,10 +146,11 @@ public class JettonWallet implements Contract {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get jetton wallet data
-        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
-            tonCenterClient.runGetMethod(address.toBounceable(), "get_wallet_data", stack).getResult();
-        
+        RunGetMethodResponse response =
+            tonCenterClient
+                .runGetMethod(address.toBounceable(), "get_wallet_data", new ArrayList<>())
+                .getResult();
+
         // Parse the response
         BigInteger balance = new BigInteger(((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
         
@@ -233,10 +234,11 @@ public class JettonWallet implements Contract {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get jetton wallet balance
-        List<List<Object>> stack = new ArrayList<>();
         RunGetMethodResponse response =
-            tonCenterClient.runGetMethod(address.toBounceable(), "get_wallet_data", stack).getResult();
-        
+            tonCenterClient
+                .runGetMethod(address.toBounceable(), "get_wallet_data", new ArrayList<>())
+                .getResult();
+
         // Parse the balance from the response
         String balanceHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
         return new BigInteger(balanceHex.substring(2), 16);

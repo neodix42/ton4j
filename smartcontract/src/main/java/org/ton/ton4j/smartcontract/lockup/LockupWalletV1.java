@@ -99,12 +99,12 @@ public class LockupWalletV1 implements Contract {
   }
 
   @Override
-  public org.ton.ton4j.toncenter.TonCenter getTonCenterClient() {
+  public TonCenter getTonCenterClient() {
     return tonCenterClient;
   }
 
   @Override
-  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
     tonCenterClient = pTonCenterClient;
   }
 
@@ -280,8 +280,22 @@ public class LockupWalletV1 implements Contract {
 
   public boolean check_destination(String destination) {
     Cell cellAddr = CellBuilder.beginCell().storeAddress(Address.of(destination)).endCell();
-    if (nonNull(adnlLiteClient)) {
-
+    if (nonNull(tonCenterClient)) {
+      List<List<Object>> stack = new ArrayList<>();
+      List<Object> cellDest = new ArrayList<>();
+      cellDest.add("cell");
+      cellDest.add(cellAddr.toBase64());
+      stack.add(cellDest);
+      TonResponse<RunGetMethodResponse> r =
+              tonCenterClient.runGetMethod(getAddress().toBounceable(), "check_destination", stack);
+      if (r.isSuccess()) {
+        return Long.decode(r.getResult().getStack().get(0).get(1).toString())
+                != 0;
+        }
+      else {
+        throw new Error("check_destination failed, exitCode: " + r.getCode());
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
           adnlLiteClient.runMethod(
               getAddress(),
@@ -294,16 +308,15 @@ public class LockupWalletV1 implements Contract {
             "method check_destination, returned an exit code " + runMethodResult.getExitCode());
       }
       return runMethodResult.getIntByIndex(0).intValue() == -1;
+    } else if (nonNull(tonlib)) {
+      Deque<String> stack = new ArrayDeque<>();
+      stack.offer("[slice, " + cellAddr.toHex(true) + "]");
+      RunResult result = tonlib.runMethod(getAddress(), "check_destination", stack);
+      TvmStackEntryNumber found = (TvmStackEntryNumber) result.getStack().get(0);
+      return (found.getNumber().intValue() == -1);
+    } else {
+      throw new Error("provider not set");
     }
-
-    Deque<String> stack = new ArrayDeque<>();
-
-    stack.offer("[slice, " + cellAddr.toHex(true) + "]");
-
-    RunResult result = tonlib.runMethod(getAddress(), "check_destination", stack);
-    TvmStackEntryNumber found = (TvmStackEntryNumber) result.getStack().get(0);
-
-    return (found.getNumber().intValue() == -1);
   }
 
   /**
@@ -340,26 +353,38 @@ public class LockupWalletV1 implements Contract {
           tonCenterClient.runGetMethod(
               getAddress().toBounceable(), "get_balances", new ArrayList<>());
       if (runMethodResult.isSuccess()) {
-        return null; // todo
+        BigInteger tonBalance =
+            BigInteger.valueOf(
+                Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString()));
+        BigInteger totalRestrictedValue =
+            BigInteger.valueOf(
+                Long.decode(runMethodResult.getResult().getStack().get(1).get(1).toString()));
+        BigInteger totalLockedValue =
+            BigInteger.valueOf(
+                Long.decode(runMethodResult.getResult().getStack().get(2).get(1).toString()));
+        return Arrays.asList(tonBalance, totalRestrictedValue, totalLockedValue);
       } else {
-        return null;
+        throw new Error("get_balances failed, exitCode: " + runMethodResult.getCode());
       }
-    }
-    if (nonNull(adnlLiteClient)) {
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_balances");
       BigInteger balance = runMethodResult.getIntByIndex(0);
       BigInteger restrictedValue = runMethodResult.getIntByIndex(1);
       BigInteger lockedValue = runMethodResult.getIntByIndex(2);
       return Arrays.asList(balance, restrictedValue, lockedValue);
-    }
-    RunResult result = tonlib.runMethod(getAddress(), "get_balances");
-    TvmStackEntryNumber balance = (TvmStackEntryNumber) result.getStack().get(0); // ton balance
-    TvmStackEntryNumber restrictedValue =
-        (TvmStackEntryNumber) result.getStack().get(1); // total_restricted_value
-    TvmStackEntryNumber lockedValue =
-        (TvmStackEntryNumber) result.getStack().get(2); // total_locked_value
+    } else if (nonNull(tonlib)) {
+      RunResult result = tonlib.runMethod(getAddress(), "get_balances");
+      TvmStackEntryNumber balance = (TvmStackEntryNumber) result.getStack().get(0); // ton balance
+      TvmStackEntryNumber restrictedValue =
+          (TvmStackEntryNumber) result.getStack().get(1); // total_restricted_value
+      TvmStackEntryNumber lockedValue =
+          (TvmStackEntryNumber) result.getStack().get(2); // total_locked_value
 
-    return Arrays.asList(balance.getNumber(), restrictedValue.getNumber(), lockedValue.getNumber());
+      return Arrays.asList(
+          balance.getNumber(), restrictedValue.getNumber(), lockedValue.getNumber());
+    } else {
+      throw new Error("provider not set");
+    }
   }
 
   public SendResponse deploy() {

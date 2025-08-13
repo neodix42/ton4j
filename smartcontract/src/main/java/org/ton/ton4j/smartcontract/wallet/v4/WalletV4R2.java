@@ -381,11 +381,10 @@ public class WalletV4R2 implements Contract {
       TonResponse<RunGetMethodResponse> runMethodResult =
           tonCenterClient.runGetMethod(myAddress.toBounceable(), "is_plugin_installed", stack);
       if (runMethodResult.isSuccess()) {
-        System.out.println("runMethodResult " + runMethodResult);
         return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString())
             != 0;
       } else {
-        return false;
+        throw new Error("failed to execute "+runMethodResult.getError());
       }
 
     } else if (nonNull(adnlLiteClient)) {

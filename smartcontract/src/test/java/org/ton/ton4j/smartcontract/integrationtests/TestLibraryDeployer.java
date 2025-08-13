@@ -186,7 +186,7 @@ public class TestLibraryDeployer extends CommonTest {
   public void testIfLibraryHasBeenDeployedTonCenterClient() throws Exception {
     TonCenter tonCenter =
         TonCenter.builder()
-            .apiKey("your_api_key")
+            .apiKey(TESTNET_API_KEY)
             .testnet()
             .build();
     Cell walletV5Code = CellBuilder.beginCell().fromBoc(WalletCodes.V5R1.getValue()).endCell();

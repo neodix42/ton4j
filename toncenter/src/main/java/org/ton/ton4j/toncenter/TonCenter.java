@@ -112,6 +112,7 @@ public class TonCenter {
 
     /**
      * when set prints GET or POST URLs
+     *
      * @return TonCenterBuilder
      */
     public TonCenterBuilder debug() {
@@ -121,6 +122,7 @@ public class TonCenter {
 
     /**
      * when set appends each GET or POST request with a random parameter t=UUID
+     *
      * @return TonCenterBuilder
      */
     public TonCenterBuilder uniqueRequests() {
@@ -204,7 +206,7 @@ public class TonCenter {
     if (nonNull(apiKey) && !apiKey.trim().isEmpty()) {
       urlBuilder.addQueryParameter("api_key", apiKey);
     }
-    
+
     // Add random parameter for unique requests if enabled
     if (uniqueRequests) {
       urlBuilder.addQueryParameter("t", UUID.randomUUID().toString());
@@ -226,7 +228,7 @@ public class TonCenter {
     if (nonNull(apiKey) && !apiKey.trim().isEmpty()) {
       urlBuilder.addQueryParameter("api_key", apiKey);
     }
-    
+
     // Add random parameter for unique requests if enabled
     if (uniqueRequests) {
       urlBuilder.addQueryParameter("t", UUID.randomUUID().toString());
@@ -650,7 +652,11 @@ public class TonCenter {
     RunGetMethodResponse r = runGetMethod(address, "get_public_key", new ArrayList<>()).getResult();
     if ((nonNull(r)) && (r.getExitCode() == 0)) {
       String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
-      return new BigInteger(pubKey.substring(2), 16);
+      System.out.println("pubKey: " + pubKey);
+      pubKey = pubKey.replace("0x", "");
+      return new BigInteger(pubKey, 16);
+
+//      return BigInteger.valueOf(Long.decode(pubKey.substring(2)));
     } else {
       throw new Error("get_public_key failed, exitCode: " + r.getExitCode());
     }
@@ -841,13 +847,13 @@ public class TonCenter {
     EstimateFeeRequest request = new EstimateFeeRequest();
     request.setAddress(address);
     request.setBody(body);
-    if (initCode != null && !initCode.isEmpty()) {
+    if (nonNull(initCode) && !initCode.isEmpty()) {
       request.setInitCode(initCode);
     }
-    if (initData != null && !initData.isEmpty()) {
+    if (nonNull(initData) && !initData.isEmpty()) {
       request.setInitData(initData);
     }
-    if (ignoreChksig != null) {
+    if (nonNull(ignoreChksig)) {
       request.setIgnoreChksig(ignoreChksig);
     }
 
@@ -953,7 +959,7 @@ public class TonCenter {
   }
 
   public void waitForDeployment(Address wallet) {
-    waitForDeployment(wallet,60);
+    waitForDeployment(wallet, 60);
   }
 
   /** Checks every 2 seconds for timeoutSeconds if account state was deployed at address */
@@ -987,7 +993,7 @@ public class TonCenter {
    */
   public void waitForBalanceChange(Address wallet, int timeoutSeconds) {
     BigInteger initialBalance = getBalance(wallet.toBounceable());
-//    System.out.println("tc initialBalance: " + initialBalance);
+    //    System.out.println("tc initialBalance: " + initialBalance);
     BigInteger currentBalance;
     int i = 0;
     do {
@@ -996,7 +1002,7 @@ public class TonCenter {
       }
       Utils.sleep(2);
       currentBalance = getBalance(wallet.toBounceable());
-//      System.out.println("tc currentBalance: " + currentBalance);
+      //      System.out.println("tc currentBalance: " + currentBalance);
 
     } while (initialBalance.equals(currentBalance));
   }

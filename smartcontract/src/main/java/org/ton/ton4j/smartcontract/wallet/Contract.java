@@ -244,7 +244,6 @@ public interface Contract {
       }
       Utils.sleep(2);
       currentBalance = getBalance();
-      System.out.println("currentBalance: " + currentBalance);
 
     } while (initialBalance.equals(currentBalance));
   }

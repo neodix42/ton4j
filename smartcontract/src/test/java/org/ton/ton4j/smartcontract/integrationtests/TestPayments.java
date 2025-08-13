@@ -614,7 +614,7 @@ public class TestPayments extends CommonTest {
   public void testPaymentsTonCenterClient() throws Exception {
     TonCenter tonCenter =
         TonCenter.builder()
-            .apiKey("your_api_key")
+            .apiKey(TESTNET_API_KEY)
             .testnet()
             .build();
     // PARTIES

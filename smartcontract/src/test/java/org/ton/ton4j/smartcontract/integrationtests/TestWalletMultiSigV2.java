@@ -955,10 +955,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
 
   @Test
   public void testMultiSigV2UpdateParamsTonCenterClient() throws Exception {
-    TonCenter tonCenterClient =
-        TonCenter.builder()
-            .testnet()
-            .build();
+    TonCenter tonCenterClient = TonCenter.builder().testnet().build();
 
     WalletV3R2 deployer =
         WalletV3R2.builder()
@@ -1109,10 +1106,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
 
   @Test
   public void testMultiSigV2DeploymentAnd2out3ApprovalsTonCenterClient() throws Exception {
-    TonCenter tonCenterClient =
-        TonCenter.builder()
-            .testnet()
-            .build();
+    TonCenter tonCenterClient = TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().build();
     WalletV3R2 deployer =
         WalletV3R2.builder()
             .tonCenterClient(tonCenterClient)
@@ -1138,8 +1132,8 @@ public class TestWalletMultiSigV2 extends CommonTest {
     log.info("recipient1 {}", dummyRecipient1.toRaw());
     log.info("recipient2 {}", dummyRecipient2.toRaw());
 
-    topUpAndDeploy(deployer);
-    topUpAndDeploy(signer2);
+    topUpAndDeploy(tonCenterClient, deployer);
+    topUpAndDeploy(tonCenterClient, signer2);
     log.info("deployer seqno {}", deployer.getSeqno());
     log.info("signer2 seqno {}", signer2.getSeqno());
     //    topUpAndDeploy(signer3);
@@ -1173,7 +1167,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
             .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
     deployer.send(config);
-    deployer.waitForDeployment(30);
+    deployer.waitForDeployment();
     Utils.sleep(10, "pause");
 
     // send external msg to admin wallet that sends internal msg to multisig with body to create
@@ -1226,6 +1220,7 @@ public class TestWalletMultiSigV2 extends CommonTest {
             .amount(Utils.toNano(0.05))
             .body(MultiSigWalletV2.approve(0, 1))
             .build();
+
     signer2.send(config);
     signer2.waitForBalanceChange();
 
@@ -1239,6 +1234,27 @@ public class TestWalletMultiSigV2 extends CommonTest {
 
     assertThat(balanceRecipient1).isGreaterThan(BigInteger.ZERO);
     assertThat(balanceRecipient2).isGreaterThan(BigInteger.ZERO);
+  }
+
+  private void topUpAndDeploy(TonCenter tonCenter, WalletV3R2 wallet) throws Exception {
+
+    String nonBounceableAddress = wallet.getAddress().toNonBounceable();
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+            TestnetFaucet.topUpContract(
+                    tonCenter, Address.of(nonBounceableAddress), Utils.toNano(1));
+    log.info(
+            "new wallet (id={} {}) balance: {}",
+            wallet.getWalletId(),
+            wallet.getName(),
+            Utils.formatNanoValue(balance));
+
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
+
+    wallet.waitForDeployment();
+    log.info("deployed {} {}", wallet.getWalletId(), wallet.getName());
   }
 
   private void topUpAndDeploy(AdnlLiteClient adnlLiteClient, WalletV3R2 wallet) throws Exception {

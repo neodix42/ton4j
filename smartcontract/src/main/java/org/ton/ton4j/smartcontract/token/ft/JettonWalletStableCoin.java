@@ -3,6 +3,9 @@ package org.ton.ton4j.smartcontract.token.ft;
 import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
@@ -17,6 +20,7 @@ import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.VmCellSlice;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryCell;
@@ -164,23 +168,22 @@ public class JettonWalletStableCoin implements Contract {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get jetton wallet data
-        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
-            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_wallet_data", stack).getResult();
+        RunGetMethodResponse response =
+            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_wallet_data", new ArrayList<>()).getResult();
         
         // Parse the response
-        BigInteger balance = new BigInteger(((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
+        BigInteger balance = new BigInteger(((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
         
         // Parse owner address from stack
-        String ownerAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(1)).get(1));
+        String ownerAddrHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
         Address ownerAddress = Address.of(ownerAddrHex);
         
         // Parse jetton minter address from stack
-        String minterAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(2)).get(1));
+        String minterAddrHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
         Address jettonMinterAddress = Address.of(minterAddrHex);
         
         // Parse jetton wallet code from stack
-        String codeHex = ((String) new java.util.ArrayList<>(response.getStack().get(3)).get(1));
+        String codeHex = ((String) new ArrayList<>(response.getStack().get(3)).get(1));
         Cell jettonWalletCode = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(codeHex)).endCell();
         
         return JettonWalletData.builder()
@@ -251,9 +254,8 @@ public class JettonWalletStableCoin implements Contract {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get jetton wallet balance
-        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
-            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_wallet_data", stack).getResult();
+        RunGetMethodResponse response =
+            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_wallet_data", new ArrayList<>()).getResult();
         
         // Parse the balance from the response
         String balanceHex = ((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1));

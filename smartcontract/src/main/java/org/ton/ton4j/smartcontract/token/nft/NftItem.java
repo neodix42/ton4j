@@ -17,6 +17,7 @@ import org.ton.ton4j.smartcontract.types.ItemData;
 import org.ton.ton4j.smartcontract.types.Royalty;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryNumber;
@@ -108,9 +109,8 @@ public class NftItem implements Contract {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get NFT data
-        List<List<Object>> stack = new ArrayList<>();
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
-            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_nft_data", stack).getResult();
+        RunGetMethodResponse response =
+            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_nft_data", new ArrayList<>()).getResult();
         
         // Parse the response
         boolean isInitialized = "0xffffffffffffffff".equals(((String) new ArrayList<>(response.getStack().get(0)).get(1)));
