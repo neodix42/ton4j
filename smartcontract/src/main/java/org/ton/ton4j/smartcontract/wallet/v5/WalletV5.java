@@ -3,6 +3,7 @@ package org.ton.ton4j.smartcontract.wallet.v5;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import com.google.gson.internal.LinkedTreeMap;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -14,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.*;
+import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.types.Destination;
@@ -21,6 +23,8 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.utils.Utils;
@@ -173,30 +177,30 @@ public class WalletV5 implements Contract {
   }
 
   public SendResponse send(WalletV5Config config) {
-      return send(prepareExternalMsg(config));
+    return send(prepareExternalMsg(config));
   }
 
   /**
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
-//  public RawTransaction sendWithConfirmation(WalletV5Config config) throws Exception {
-//    if (nonNull(adnlLiteClient)) {
-//      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
-//      return null;
-//    } else {
-//      return tonlib.sendRawMessageWithConfirmation(
-//          prepareExternalMsg(config).toCell().toBase64(), getAddress());
-//    }
-//  }
+  //  public RawTransaction sendWithConfirmation(WalletV5Config config) throws Exception {
+  //    if (nonNull(adnlLiteClient)) {
+  //      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+  //      return null;
+  //    } else {
+  //      return tonlib.sendRawMessageWithConfirmation(
+  //          prepareExternalMsg(config).toCell().toBase64(), getAddress());
+  //    }
+  //  }
 
   /** Deploy wallet without any extensions. One can be installed later into the wallet. */
   public SendResponse deploy() {
-      return send(prepareDeployMsg());
+    return send(prepareDeployMsg());
   }
 
   public SendResponse deploy(byte[] signedBody) {
-      return send(prepareDeployMsg(signedBody));
+    return send(prepareDeployMsg(signedBody));
   }
 
   public Message prepareDeployMsg(byte[] signedBodyHash) {
@@ -209,7 +213,7 @@ public class WalletV5 implements Contract {
   }
 
   public SendResponse send(WalletV5Config config, byte[] signedBodyHash) {
-      return send(prepareExternalMsg(config, signedBodyHash));
+    return send(prepareExternalMsg(config, signedBodyHash));
   }
 
   public Message prepareExternalMsg(WalletV5Config config, byte[] signedBodyHash) {
@@ -486,43 +490,82 @@ public class WalletV5 implements Contract {
       } catch (Exception e) {
         throw new Error(e);
       }
-    }
-    if (nonNull(adnlLiteClient)) {
+    } else if (nonNull(adnlLiteClient)) {
       return Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress()));
+    } else if (nonNull(tonlib)) {
+      return Utils.to32ByteArray(tonlib.getPublicKey(getAddress()));
+    } else {
+      throw new Error("Provider not set");
     }
-    return Utils.to32ByteArray(tonlib.getPublicKey(getAddress()));
   }
 
   public boolean getIsSignatureAuthAllowed() {
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(
+              getAddress().toBounceable(), "is_signature_allowed", new ArrayList<>());
+      if (runMethodResult.isSuccess()) {
+        try {
+          List<Object> elements = runMethodResult.getResult().getStack().get(0);
+          return Long.decode(String.valueOf(elements.get(1))) == -1;
+        } catch (Throwable e) {
+          throw new Error("Error getting isSignatureAuthAllowed", e);
+        }
+      } else {
+        throw new Error("Error getting isSignatureAuthAllowed " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
           adnlLiteClient.runMethod(getAddress(), "is_signature_allowed");
       BigInteger signatureAllowed = runMethodResult.getIntByIndex(0);
       return signatureAllowed.longValue() != 0;
+    } else if (nonNull(tonlib)) {
+      RunResult result =
+          tonlib.runMethod(getAddress(), Utils.calculateMethodId("is_signature_allowed"));
+      TvmStackEntryNumber signatureAllowed = (TvmStackEntryNumber) result.getStack().get(0);
+      return signatureAllowed.getNumber().longValue() != 0;
+    } else {
+      throw new Error("Provider not set");
     }
-    RunResult result =
-        tonlib.runMethod(getAddress(), Utils.calculateMethodId("is_signature_allowed"));
-    TvmStackEntryNumber signatureAllowed = (TvmStackEntryNumber) result.getStack().get(0);
-    return signatureAllowed.getNumber().longValue() != 0;
   }
 
   public TonHashMap getRawExtensions() {
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(
+              getAddress().toBounceable(), "get_extensions", new ArrayList<>());
+      if (runMethodResult.isSuccess()) {
+        try {
+          List<Object> elements = new ArrayList<>(runMethodResult.getResult().getStack().get(0));
+          LinkedTreeMap<String, String> t = (LinkedTreeMap<String, String>) elements.get(1);
+          CellSlice cs = CellSlice.beginParse(Cell.fromBoc(Utils.base64ToBytes(t.get("bytes"))));
+          return cs.loadDict(256, k -> k.readUint(256), v -> v);
+        } catch (Throwable e) {
+          throw new Error("Error executing getRawExtensions", e);
+        }
+      } else {
+        return new TonHashMap(256);
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_extensions");
       Cell cellExtensions = runMethodResult.getCellByIndex(0);
       CellSlice cs = CellSlice.beginParse(cellExtensions);
 
       return cs.loadDict(256, k -> k.readUint(256), v -> v);
-    }
-    RunResult result = tonlib.runMethod(getAddress(), Utils.calculateMethodId("get_extensions"));
-    if (result.getStack().get(0) instanceof TvmStackEntryList) {
-      return new TonHashMap(256);
-    }
-    TvmStackEntryCell tvmStackEntryCell = (TvmStackEntryCell) result.getStack().get(0);
+    } else if (nonNull(tonlib)) {
 
-    String base64Msg = tvmStackEntryCell.getCell().getBytes();
-    CellSlice cs = CellSlice.beginParse(Cell.fromBocBase64(base64Msg));
+      RunResult result = tonlib.runMethod(getAddress(), Utils.calculateMethodId("get_extensions"));
+      if (result.getStack().get(0) instanceof TvmStackEntryList) {
+        return new TonHashMap(256);
+      }
+      TvmStackEntryCell tvmStackEntryCell = (TvmStackEntryCell) result.getStack().get(0);
 
-    return cs.loadDict(256, k -> k.readUint(256), v -> v);
+      String base64Msg = tvmStackEntryCell.getCell().getBytes();
+      CellSlice cs = CellSlice.beginParse(Cell.fromBocBase64(base64Msg));
+
+      return cs.loadDict(256, k -> k.readUint(256), v -> v);
+    } else {
+      throw new Error("Provider not set");
+    }
   }
 }

@@ -3,8 +3,8 @@ package org.ton.ton4j.smartcontract.dns;
 import static java.util.Objects.isNull;
 
 import java.math.BigInteger;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.*;
+
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
@@ -17,6 +17,7 @@ import org.ton.ton4j.smartcontract.types.CollectionData;
 import org.ton.ton4j.smartcontract.types.ItemData;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryCell;
@@ -126,15 +127,15 @@ public class DnsCollection implements Contract {
     if (java.util.Objects.nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get collection data
-        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+        List<List<Object>> stack = new java.util.ArrayList<>();
+        RunGetMethodResponse response =
             tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_collection_data", stack).getResult();
         
         // Parse next item index
-        long nextItemIndex = Long.parseLong(((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
+        long nextItemIndex = Long.parseLong(((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
         
         // Parse collection content
-        String contentCellHex = ((String) new java.util.ArrayList<>(response.getStack().get(1)).get(1));
+        String contentCellHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
         Cell collectionContent = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentCellHex)).endCell();
         String collectionContentUri = NftUtils.parseOffChainUriCell(collectionContent);
         
@@ -219,13 +220,13 @@ public class DnsCollection implements Contract {
    * @return Address
    */
   public Address getNftItemAddressByIndex(BigInteger index) {
-    if (java.util.Objects.nonNull(tonCenterClient)) {
+    if (Objects.nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get NFT address by index
-        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
-        stack.add(java.util.Arrays.asList("num", "0x" + index.toString(16)));
+        List<List<Object>> stack = new ArrayList<>();
+        stack.add(Arrays.asList("num", "0x" + index.toString(16)));
         
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+        RunGetMethodResponse response =
             tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_nft_address_by_index", stack).getResult();
         
         // Parse address

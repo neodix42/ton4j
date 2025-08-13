@@ -230,7 +230,7 @@ public class TestWalletV3R1 extends CommonTest {
     TonResponse<SendBocResponse> response = tonCenterClient.sendBoc(msg.toCell().toBase64());
     assertThat(response.isSuccess()).isTrue();
 
-    Utils.sleep(20);
+    contract.waitForDeployment();
 
     // try to transfer coins from new wallet (back to faucet)
     WalletV3Config config =
@@ -239,13 +239,13 @@ public class TestWalletV3R1 extends CommonTest {
             .walletId(42)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(0.8))
-            .comment("testWalletV3R1")
+            .comment("ton4j testWalletV3R1")
             .build();
 
     response = tonCenterClient.sendBoc(contract.prepareExternalMsg(config).toCell().toBase64());
     assertThat(response.isSuccess()).isTrue();
 
-    Utils.sleep(20);
+    contract.waitForBalanceChange();
 
     balance = contract.getBalance();
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));

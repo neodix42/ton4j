@@ -3,6 +3,9 @@ package org.ton.ton4j.smartcontract.dns;
 import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
@@ -15,6 +18,7 @@ import org.ton.ton4j.smartcontract.types.AuctionInfo;
 import org.ton.ton4j.smartcontract.types.ItemData;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryCell;
@@ -112,15 +116,15 @@ public class DnsItem implements Contract {
     if (java.util.Objects.nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get NFT data
-        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+        List<List<Object>> stack = new ArrayList<>();
+        RunGetMethodResponse response =
             tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_nft_data", stack).getResult();
         
         // Parse is_initialized
-        boolean isInitialized = Long.parseLong(((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16) == -1;
+        boolean isInitialized = Long.parseLong(((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16) == -1;
         
         // Parse index
-        BigInteger index = new BigInteger(((String) new java.util.ArrayList<>(response.getStack().get(1)).get(1)).substring(2), 16);
+        BigInteger index = new BigInteger(((String) new  ArrayList<>(response.getStack().get(1)).get(1)).substring(2), 16);
         
         // Parse collection address
         String collectionAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(2)).get(1));
@@ -257,15 +261,15 @@ public class DnsItem implements Contract {
    * @return String
    */
   public String getDomain() {
-    if (java.util.Objects.nonNull(tonCenterClient)) {
+    if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get domain
-        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+        List<List<Object>> stack = new ArrayList<>();
+        RunGetMethodResponse response =
             tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_domain", stack).getResult();
         
         // Parse domain
-        String domainCellHex = ((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1));
+        String domainCellHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
         return new String(
             CellBuilder.beginCell()
                 .fromBoc(Utils.base64ToBytes(domainCellHex))

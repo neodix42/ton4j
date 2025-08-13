@@ -3,6 +3,9 @@ package org.ton.ton4j.smartcontract.token.ft;
 import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
@@ -17,6 +20,7 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.VmCellSlice;
 import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryCell;
@@ -229,12 +233,12 @@ public class JettonWallet implements Contract {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get jetton wallet balance
-        java.util.List<java.util.List<Object>> stack = new java.util.ArrayList<>();
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+        List<List<Object>> stack = new ArrayList<>();
+        RunGetMethodResponse response =
             tonCenterClient.runGetMethod(address.toBounceable(), "get_wallet_data", stack).getResult();
         
         // Parse the balance from the response
-        String balanceHex = ((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1));
+        String balanceHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
         return new BigInteger(balanceHex.substring(2), 16);
       } catch (Exception e) {
         throw new Error("Error getting jetton wallet balance: " + e.getMessage());

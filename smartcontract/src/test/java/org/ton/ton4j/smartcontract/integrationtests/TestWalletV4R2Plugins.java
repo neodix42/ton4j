@@ -23,6 +23,8 @@ import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.ton4j.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.ton4j.tlb.Message;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.SendBocResponse;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
@@ -154,10 +156,6 @@ public class TestWalletV4R2Plugins extends CommonTest {
     subscriptionInfo = contract.getSubscriptionData(pluginAddress);
 
     log.info("{}", subscriptionInfo);
-    log.info(
-        "plugin hash: int {}, hex {}",
-        new BigInteger(pluginAddress.hashPart),
-        Utils.bytesToHex(pluginAddress.hashPart));
 
     log.info("plugin {} installed {}", pluginAddress, contract.isPluginInstalled(pluginAddress));
 
@@ -173,7 +171,6 @@ public class TestWalletV4R2Plugins extends CommonTest {
     assertThat(extMessageInfo.getError().getCode()).isZero();
 
     tonlib.waitForDeployment(beneficiaryAddress, 90);
-    //    ContractUtils.waitForDeployment(tonlib, beneficiaryAddress, 90); // no need?
 
     log.info(
         "beneficiaryWallet balance {}",
@@ -468,10 +465,6 @@ public class TestWalletV4R2Plugins extends CommonTest {
     subscriptionInfo = contract.getSubscriptionData(pluginAddress);
 
     log.info("{}", subscriptionInfo);
-    log.info(
-        "plugin hash: int {}, hex {}",
-        new BigInteger(pluginAddress.hashPart),
-        Utils.bytesToHex(pluginAddress.hashPart));
 
     log.info("plugin {} installed {}", pluginAddress, contract.isPluginInstalled(pluginAddress));
 
@@ -482,8 +475,6 @@ public class TestWalletV4R2Plugins extends CommonTest {
             contract.getKeyPair(), pluginAddress, null, null);
 
     adnlLiteClient.sendMessage(extMessage);
-    log.info("extMessageInfo {}", sendResponse);
-    assertThat(sendResponse.getCode()).isZero();
 
     adnlLiteClient.waitForDeployment(beneficiaryAddress, 90);
     //    ContractUtils.waitForDeployment(tonlib, beneficiaryAddress, 90); // no need?
@@ -576,7 +567,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
 
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-    TonCenter tonCenter = TonCenter.builder().apiKey("your_api_key").testnet().build();
+    TonCenter tonCenter = TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().uniqueRequests().build();
 
     WalletV4R2 contract =
         WalletV4R2.builder().tonCenterClient(tonCenter).keyPair(keyPair).walletId(42).build();
@@ -630,7 +621,9 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .subscriptionId(12345)
             .build();
 
-    Utils.sleep(20);
+    tonCenter.waitForDeployment(beneficiaryAddress);
+
+//    Utils.sleep(20);
 
     log.info(
         "beneficiaryWallet balance {}",
@@ -661,6 +654,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
     sendResponse = contract.send(config);
     assertThat(sendResponse.getCode()).isZero();
 
+//    tonCenter.waitForBalanceChange(beneficiaryAddress);
+
     Utils.sleep(20);
 
     log.info(
@@ -682,10 +677,6 @@ public class TestWalletV4R2Plugins extends CommonTest {
     subscriptionInfo = contract.getSubscriptionData(pluginAddress);
 
     log.info("{}", subscriptionInfo);
-    log.info(
-        "plugin hash: int {}, hex {}",
-        new BigInteger(pluginAddress.hashPart),
-        Utils.bytesToHex(pluginAddress.hashPart));
 
     Utils.sleep(2);
     log.info("plugin {} installed {}", pluginAddress, contract.isPluginInstalled(pluginAddress));
@@ -696,20 +687,12 @@ public class TestWalletV4R2Plugins extends CommonTest {
         MsgUtils.createExternalMessageWithSignedBody(
             contract.getKeyPair(), pluginAddress, null, null);
 
-    tonCenter.sendBoc(extMessage.toCell().toBase64());
-    log.info("extMessageInfo {}", sendResponse);
+    sendResponse = contract.send(extMessage);
     assertThat(sendResponse.getCode()).isZero();
 
-    // Wait for deployment - custom implementation since TonCenter doesn't have waitForDeployment
-    int timeoutSeconds = 90;
-    int i = 0;
-    do {
-      if (++i * 2 >= timeoutSeconds) {
-        throw new Error("Can't deploy contract within specified timeout.");
-      }
-      Utils.sleep(2);
-    } while (!"active".equals(tonCenter.getState(beneficiaryAddress.toBounceable())));
-    //    ContractUtils.waitForDeployment(tonlib, beneficiaryAddress, 90); // no need?
+    tonCenter.waitForDeployment(beneficiaryAddress, 90);
+
+    Utils.sleep(20);
 
     log.info(
         "beneficiaryWallet balance {}",
@@ -734,18 +717,11 @@ public class TestWalletV4R2Plugins extends CommonTest {
     extMessage =
         MsgUtils.createExternalMessageWithSignedBody(
             contract.getKeyPair(), pluginAddress, null, null);
-    tonCenter.sendBoc(extMessage.toCell().toBase64());
+    sendResponse = contract.send(extMessage);
+    assertThat(sendResponse.getCode()).isZero();
 
-    // Wait for deployment - custom implementation since TonCenter doesn't have waitForDeployment
-    timeoutSeconds = 90;
-    i = 0;
-    do {
-      if (++i * 2 >= timeoutSeconds) {
-        throw new Error("Can't deploy contract within specified timeout.");
-      }
-      Utils.sleep(2);
-    } while (!"active"
-        .equals(tonCenter.getState(subscriptionInfo.getBeneficiary().toBounceable())));
+    tonCenter.waitForDeployment(subscriptionInfo.getBeneficiary());
+    Utils.sleep(20);
 
     log.info(
         "beneficiaryWallet balance {}",
@@ -781,8 +757,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .build();
 
     sendResponse = contract.uninstallPlugin(config);
-    Utils.sleep(30, "sent uninstall request");
     assertThat(sendResponse.getCode()).isZero();
+    Utils.sleep(30, "sent uninstall request");
 
     // uninstall plugin -- end
 

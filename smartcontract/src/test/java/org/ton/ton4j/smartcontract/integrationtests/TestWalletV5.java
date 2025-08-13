@@ -1591,6 +1591,9 @@ public class TestWalletV5 extends CommonTest {
 
     contract.waitForDeployment();
 
+    Utils.sleep(2);
+    log.info("isSignatureAllowed {}", contract.getIsSignatureAuthAllowed());
+
     Utils.sleep(2); // avoid rate limit error
     long newSeq = contract.getSeqno();
     assertThat(newSeq).isEqualTo(1);

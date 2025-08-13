@@ -175,8 +175,8 @@ public class TestWalletsV1 {
   public void testNewWalletV1R2() {
     WalletV1R2 contract = WalletV1R2.builder().wc(0).build();
     assertThat(contract.getAddress()).isNotNull();
-    log.info("pubKey " + Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
-    log.info("secKey " + Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+    log.info("pubKey {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("secKey {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
   }
 
   @Test
@@ -184,8 +184,8 @@ public class TestWalletsV1 {
     List<String> mnemonic = Mnemonic.generate(24);
     Pair keyPair = Mnemonic.toKeyPair(mnemonic);
 
-    log.info("pubKey " + Utils.bytesToHex(keyPair.getPublicKey()));
-    log.info("secKey " + Utils.bytesToHex(keyPair.getSecretKey()));
+    log.info("pubKey {}", Utils.bytesToHex(keyPair.getPublicKey()));
+    log.info("secKey {}", Utils.bytesToHex(keyPair.getSecretKey()));
 
     TweetNaclFast.Signature.KeyPair keyPairSig =
         TweetNaclFast.Signature.keyPair_fromSeed(keyPair.getSecretKey());
@@ -209,8 +209,8 @@ public class TestWalletsV1 {
     log.info(mnemonic.toString());
     Pair keyPair = Mnemonic.toKeyPair(mnemonic);
 
-    log.info("pubKey " + Utils.bytesToHex(keyPair.getPublicKey()));
-    log.info("secKey " + Utils.bytesToHex(keyPair.getSecretKey()));
+    log.info("pubKey {}", Utils.bytesToHex(keyPair.getPublicKey()));
+    log.info("secKey {}", Utils.bytesToHex(keyPair.getSecretKey()));
 
     Files.write(new File("2.ok").toPath(), keyPair.getSecretKey());
   }
@@ -221,8 +221,8 @@ public class TestWalletsV1 {
         Mnemonic.toKeyPair(
             "cement frequent produce tattoo casino tired road seat emotion nominee gloom busy father poet jealous all mail return one planet frozen over earth move");
 
-    log.info("pubKey " + Utils.bytesToHex(pair.getPublicKey()));
-    log.info("secKey " + Utils.bytesToHex(pair.getSecretKey()));
+    log.info("pubKey {}", Utils.bytesToHex(pair.getPublicKey()));
+    log.info("secKey {}", Utils.bytesToHex(pair.getSecretKey()));
 
     TweetNaclFast.Signature.KeyPair keyPair =
         TweetNaclFast.Signature.keyPair_fromSeed(pair.getSecretKey());

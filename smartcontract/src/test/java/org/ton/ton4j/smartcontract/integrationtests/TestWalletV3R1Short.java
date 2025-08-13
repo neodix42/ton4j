@@ -160,9 +160,8 @@ public class TestWalletV3R1Short extends CommonTest {
         contract.getName(),
         Utils.formatNanoValue(balance));
 
-    TonResponse<SendBocResponse> response =
-        tonCenterClient.sendBoc(contract.prepareDeployMsg().toCell().toBase64());
-    assertThat(response.isSuccess()).isTrue();
+    SendResponse response = contract.deploy();
+    assertThat(response.getCode()).isZero();
 
     contract.waitForDeployment();
 
@@ -174,13 +173,13 @@ public class TestWalletV3R1Short extends CommonTest {
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .amount(Utils.toNano(0.8))
-            .comment("testWalletV3R1")
+            .comment("ton4j testWalletV3R1")
             .build();
 
-    response = tonCenterClient.sendBoc(contract.prepareExternalMsg(config).toCell().toBase64());
-    assertThat(response.isSuccess()).isTrue();
+    response = contract.send(config);
+    assertThat(response.getCode()).isZero();
 
-    contract.waitForBalanceChange();
+    contract.waitForBalanceChangeWithTolerance(30, Utils.toNano(0.5));
 
     balance = contract.getBalance();
     log.info(

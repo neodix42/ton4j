@@ -3,13 +3,14 @@ package org.ton.ton4j.smartcontract.wallet.v4;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
+
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
@@ -39,6 +40,9 @@ public class WalletV4R2 implements Contract {
   long walletId;
   long initialSeqno;
   byte[] publicKey;
+
+  private static final Gson gson =
+      new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
 
   public static class WalletV4R2Builder {}
 
@@ -205,11 +209,11 @@ public class WalletV4R2 implements Contract {
    * the wallet. See installPlugin().
    */
   public SendResponse deploy() {
-      return send(prepareDeployMsg());
+    return send(prepareDeployMsg());
   }
 
   public SendResponse deploy(byte[] signedBody) {
-      return send(prepareDeployMsg(signedBody));
+    return send(prepareDeployMsg(signedBody));
   }
 
   public Message prepareDeployMsg(byte[] signedBodyHash) {
@@ -222,7 +226,7 @@ public class WalletV4R2 implements Contract {
   }
 
   public SendResponse send(WalletV4R2Config config, byte[] signedBodyHash) {
-      return send(prepareExternalMsg(config, signedBodyHash));
+    return send(prepareExternalMsg(config, signedBodyHash));
   }
 
   public Message prepareExternalMsg(WalletV4R2Config config, byte[] signedBodyHash) {
@@ -237,7 +241,7 @@ public class WalletV4R2 implements Contract {
    * @param config WalletV4R2Config
    */
   public SendResponse send(WalletV4R2Config config) {
-      return send(prepareExternalMsg(config));
+    return send(prepareExternalMsg(config));
   }
 
   public Message prepareExternalMsg(WalletV4R2Config config) {
@@ -309,8 +313,7 @@ public class WalletV4R2 implements Contract {
     Message message =
         MsgUtils.createExternalMessageWithSignedBody(keyPair, ownAddress, getStateInit(), body);
 
-      return send(message);
-
+    return send(message);
   }
 
   public SendResponse uninstallPlugin(WalletV4R2Config config) {
@@ -320,7 +323,7 @@ public class WalletV4R2 implements Contract {
     Cell body = createTransferBody(config); // seqno only needed
     Message message =
         MsgUtils.createExternalMessageWithSignedBody(keyPair, ownAddress, getStateInit(), body);
-      return send(message);
+    return send(message);
   }
 
   /**
@@ -364,17 +367,23 @@ public class WalletV4R2 implements Contract {
     Address myAddress = getAddress();
 
     if (nonNull(tonCenterClient)) {
-      List<Object> stack = new ArrayList<>();
-      stack.add("[num, " + pluginAddress.wc + "]");
-      stack.add("[num, " + hashPart + "]");
-      List<List<Object>> stackFull = new ArrayList<>();
-      stackFull.add(stack);
+
+      List<List<Object>> stack = new ArrayList<>();
+      List<Object> wc = new ArrayList<>();
+      wc.add("num");
+      wc.add(pluginAddress.wc);
+      stack.add(wc);
+      List<Object> hash = new ArrayList<>();
+      hash.add("num");
+      hash.add(hashPart);
+      stack.add(hash);
+
       TonResponse<RunGetMethodResponse> runMethodResult =
-          tonCenterClient.runGetMethod(myAddress.toBounceable(), "is_plugin_installed", stackFull);
+          tonCenterClient.runGetMethod(myAddress.toBounceable(), "is_plugin_installed", stack);
       if (runMethodResult.isSuccess()) {
         System.out.println("runMethodResult " + runMethodResult);
-        //        return runMethodResult.getIntByIndex(0).intValue() != 0; // todo
-        return false;
+        return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString())
+            != 0;
       } else {
         return false;
       }
@@ -413,8 +422,22 @@ public class WalletV4R2 implements Contract {
           tonCenterClient.runGetMethod(
               myAddress.toBounceable(), "get_plugin_list", new ArrayList<>());
       if (runMethodResult.isSuccess()) {
-        //        return runMethodResult.getResult().getStack().get(0); // todo
-        return null;
+        //        System.out.println("runMethodResult " + runMethodResult);
+        List<Object> elements = new ArrayList<>(runMethodResult.getResult().getStack().get(0));
+        //        System.out.println("elements " + elements);
+        TvmList l = gson.fromJson(elements.get(1).toString(), TvmList.class);
+        for (Object o : l.getElements()) {
+          TvmStackEntryTuple t = gson.fromJson(o.toString(), TvmStackEntryTuple.class);
+          TvmTuple tuple = t.getTuple();
+          TvmStackEntryNumber wc =
+              gson.fromJson(
+                  tuple.getElements().get(0).toString(), TvmStackEntryNumber.class); // 1 byte
+          TvmStackEntryNumber addr =
+              gson.fromJson(
+                  tuple.getElements().get(1).toString(), TvmStackEntryNumber.class); // 32 bytes
+          r.add(wc.getNumber() + ":" + addr.getNumber().toString(16).toUpperCase());
+        }
+        return r;
       }
     }
 
@@ -464,12 +487,11 @@ public class WalletV4R2 implements Contract {
           tonCenterClient.runGetMethod(
               pluginAddress.toBounceable(), "get_subscription_data", new ArrayList<>());
       if (runMethodResult.isSuccess()) {
-        return null; // todo
+        System.out.println("getSubscriptionData "+runMethodResult.getResult());
+        return parseSubscriptionDataTonCenter(runMethodResult.getResult().getStack());
+      } else {
+        throw new Error("Error executing get_subscription_data. Exit code " + runMethodResult.getCode());
       }
-      //      VmStack vmStack =
-      //
-      // VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(runMethodResult.result)));
-      //      return parseSubscriptionDataTlb(vmStack.getStack().getTos());
     }
     if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
@@ -502,13 +524,13 @@ public class WalletV4R2 implements Contract {
         .storeAddress(wallet)
         .storeAddress(beneficiary)
         .storeCoins(amount)
-        .storeUint(BigInteger.valueOf(period), 32)
-        .storeUint(BigInteger.valueOf(startTime), 32)
-        .storeUint(BigInteger.valueOf(timeOut), 32)
-        .storeUint(BigInteger.valueOf(lastPaymentTime), 32)
-        .storeUint(BigInteger.valueOf(lastRequestTime), 32)
-        .storeUint(BigInteger.valueOf(failedAttempts), 8)
-        .storeUint(BigInteger.valueOf(subscriptionId), 32)
+        .storeUint(period, 32)
+        .storeUint(startTime, 32)
+        .storeUint(timeOut, 32)
+        .storeUint(lastPaymentTime, 32)
+        .storeUint(lastRequestTime, 32)
+        .storeUint(failedAttempts, 8)
+        .storeUint(subscriptionId, 32)
         .endCell();
   }
 
@@ -595,6 +617,51 @@ public class WalletV4R2 implements Contract {
         .isPaymentReady(paymentReady)
         .failedAttempts(failedAttempts.getValue().longValue())
         .subscriptionId(subscriptionId.getValue().longValue())
+        .build();
+  }
+  private SubscriptionInfo parseSubscriptionDataTonCenter(List<List<Object>> subscriptionData) {
+    List<Object> elements = new ArrayList<>(subscriptionData.get(0));
+    TvmTuple walletAddr = gson.fromJson(elements.get(1).toString(), TvmTuple.class);
+    TvmStackEntryNumber wc = gson.fromJson(walletAddr.getElements().get(0).toString(), TvmStackEntryNumber.class);
+    TvmStackEntryNumber hash = gson.fromJson(walletAddr.getElements().get(1).toString(), TvmStackEntryNumber.class);
+
+    elements = new ArrayList<>(subscriptionData.get(1));
+
+    TvmTuple beneficiaryAddr = gson.fromJson(elements.get(1).toString(), TvmTuple.class);
+    TvmStackEntryNumber beneficiaryAddrWc = gson.fromJson(beneficiaryAddr.getElements().get(0).toString(), TvmStackEntryNumber.class);
+    TvmStackEntryNumber beneficiaryAddrHash = gson.fromJson(beneficiaryAddr.getElements().get(1).toString(), TvmStackEntryNumber.class);
+
+    BigInteger amount = BigInteger.valueOf(Long.decode(subscriptionData.get(2).get(1).toString()));
+    long period = Long.decode(subscriptionData.get(3).get(1).toString());
+    long startTime = Long.decode(subscriptionData.get(4).get(1).toString());
+    long timeOut = Long.decode(subscriptionData.get(5).get(1).toString());
+    long lastPaymentTime = Long.decode(subscriptionData.get(6).get(1).toString());
+    long lastRequestTime = Long.decode(subscriptionData.get(7).get(1).toString());
+
+    long now = System.currentTimeMillis() / 1000;
+    boolean isPaid =
+        ((now - lastPaymentTime) < period);
+    boolean paymentReady =
+        !isPaid & ((now - lastRequestTime) > timeOut);
+
+    long failedAttempts = Long.decode(subscriptionData.get(8).get(1).toString());
+    long subscriptionId = Long.decode(subscriptionData.get(9).get(1).toString());
+
+    return SubscriptionInfo.builder()
+        .walletAddress(Address.of(wc.getNumber() + ":" + hash.getNumber().toString(16)))
+        .beneficiary(
+            Address.of(
+                beneficiaryAddrWc.getNumber() + ":" + beneficiaryAddrHash.getNumber().toString(16)))
+        .subscriptionFee(amount)
+        .period(period)
+        .startTime(startTime)
+        .timeOut(timeOut)
+        .lastPaymentTime(lastPaymentTime)
+        .lastRequestTime(lastRequestTime)
+        .isPaid(isPaid)
+        .isPaymentReady(paymentReady)
+        .failedAttempts(failedAttempts)
+        .subscriptionId(subscriptionId)
         .build();
   }
 

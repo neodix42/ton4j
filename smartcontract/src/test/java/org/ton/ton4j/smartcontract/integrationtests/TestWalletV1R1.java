@@ -228,7 +228,7 @@ public class TestWalletV1R1 extends CommonTest {
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
         TestnetFaucet.topUpContract(
-            tonCenterClient, Address.of(nonBounceableAddress), Utils.toNano(0.1), true);
+            tonCenterClient, Address.of(nonBounceableAddress), Utils.toNano(1), true);
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     SendResponse sendResponse = contract.deploy();
@@ -242,7 +242,7 @@ public class TestWalletV1R1 extends CommonTest {
         WalletV1R1Config.builder()
             .seqno(1)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
-            .amount(Utils.toNano(0.08))
+            .amount(Utils.toNano(0.8))
             .comment("ton4j testNewWalletV1R1")
             .build();
 
@@ -255,6 +255,6 @@ public class TestWalletV1R1 extends CommonTest {
     balance = contract.getBalance();
     log.info("new wallet balance: {}", Utils.formatNanoValue(balance));
 
-    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.03).longValue());
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.3).longValue());
   }
 }

@@ -48,23 +48,11 @@ public class TestAdnlAddress {
         String input4 = "f5c9e40d2a1b0c4d7e8f9a0b1c2d3e4f567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
         String input5 = null;
 
-        assertThrows(Error.class, () -> {
-            AdnlAddress.of(input1);
-        });
-        assertThrows(Error.class, () -> {
-            AdnlAddress.of(input2);
-        });
-        assertThrows(Error.class, () -> {
-            AdnlAddress.of(input3);
-        });
-        assertThrows(Error.class, () -> {
-            AdnlAddress.of(input4);
-        });
-        assertThrows(Error.class, () -> {
-            AdnlAddress.of(input5);
-        });
-        assertThrows(Error.class, () -> {
-            AdnlAddress.of(AdnlAddress.of(""));
-        });
+        assertThrows(Error.class, () -> AdnlAddress.of(input1));
+        assertThrows(Error.class, () -> AdnlAddress.of(input2));
+        assertThrows(Error.class, () -> AdnlAddress.of(input3));
+        assertThrows(Error.class, () -> AdnlAddress.of(input4));
+        assertThrows(Error.class, () -> AdnlAddress.of(input5));
+        assertThrows(Error.class, () -> AdnlAddress.of(AdnlAddress.of("")));
     }
 }

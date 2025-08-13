@@ -635,15 +635,12 @@ public class TestWalletV3R2Short extends CommonTest {
   public void testWalletV3R2TonCenterClient() throws Exception {
 
     TonCenter toncenter =
-        TonCenter.builder()
-            .apiKey(TESTNET_API_KEY)
-            .network(Network.TESTNET)
-            .build();
+        TonCenter.builder().apiKey(TESTNET_API_KEY).network(Network.TESTNET).build();
 
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
-
-    WalletV3R2 contract1 = WalletV3R2.builder().keyPair(keyPair).tonCenterClient(toncenter).walletId(42).build();
+    WalletV3R2 contract1 =
+        WalletV3R2.builder().keyPair(keyPair).tonCenterClient(toncenter).walletId(42).build();
 
     String nonBounceableAddress1 = contract1.getAddress().toNonBounceable();
     String bounceableAddress1 = contract1.getAddress().toBounceable();
@@ -652,10 +649,11 @@ public class TestWalletV3R2Short extends CommonTest {
     log.info("non-bounceable address 1: {}", nonBounceableAddress1);
     log.info("    bounceable address 1: {}", bounceableAddress1);
     log.info("    raw address 1: {}", rawAddress1);
-    log.info("pub-key {}", Utils.bytesToHex(contract1.getKeyPair().getPublicKey()));
-    log.info("prv-key {}", Utils.bytesToHex(contract1.getKeyPair().getSecretKey()));
+    log.info("pub-key 1 {}", Utils.bytesToHex(contract1.getKeyPair().getPublicKey()));
+    log.info("prv-key 1 {}", Utils.bytesToHex(contract1.getKeyPair().getSecretKey()));
 
-    WalletV3R2 contract2 = WalletV3R2.builder().keyPair(keyPair).tonCenterClient(toncenter).walletId(98).build();
+    WalletV3R2 contract2 =
+        WalletV3R2.builder().keyPair(keyPair).tonCenterClient(toncenter).walletId(98).build();
 
     String nonBounceableAddress2 = contract2.getAddress().toNonBounceable();
     String bounceableAddress2 = contract2.getAddress().toBounceable();
@@ -665,8 +663,8 @@ public class TestWalletV3R2Short extends CommonTest {
     log.info("    bounceable address 2: {}", bounceableAddress2);
     log.info("    raw address 2: {}", rawAddress2);
 
-    log.info("pub-key {}", Utils.bytesToHex(contract2.getKeyPair().getPublicKey()));
-    log.info("prv-key {}", Utils.bytesToHex(contract2.getKeyPair().getSecretKey()));
+    log.info("pub-key 2 {}", Utils.bytesToHex(contract2.getKeyPair().getPublicKey()));
+    log.info("prv-key 2 {}", Utils.bytesToHex(contract2.getKeyPair().getSecretKey()));
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance1 =
@@ -687,25 +685,23 @@ public class TestWalletV3R2Short extends CommonTest {
         contract2.getName(),
         Utils.formatNanoValue(balance2));
 
-    TonResponse<SendBocResponse> response =
-        toncenter.sendBoc(contract1.prepareDeployMsg().toCell().toBase64());
-    assertThat(response.isSuccess()).isTrue();
+    SendResponse response = contract1.deploy();
+    assertThat(response.getCode()).isZero();
+    contract1.waitForDeployment();
 
-    Utils.sleep(20);
-
-    response = toncenter.sendBoc(contract2.prepareDeployMsg().toCell().toBase64());
-    assertThat(response.isSuccess()).isTrue();
-
-    Utils.sleep(20);
+    response = contract2.deploy();
+    assertThat(response.getCode()).isZero();
+    contract2.waitForDeployment();
 
     log.info("both contracts should be deployed");
 
-    log.info("contract1 seqno {}", toncenter.getSeqno(contract1.getAddress().toBounceable()));
+    long seqno1 = toncenter.getSeqno(contract1.getAddress().toBounceable());
+    log.info("contract1 seqno {}", seqno1);
 
     WalletV3Config config =
         WalletV3Config.builder()
             .walletId(42)
-            .seqno(1)
+            .seqno(seqno1)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(0.8))
             .comment("ton4j testWalletV3R2-42")
@@ -713,29 +709,26 @@ public class TestWalletV3R2Short extends CommonTest {
 
     Utils.sleep(2);
     // transfer coins from new wallet (back to faucet)
-    response = toncenter.sendBoc(contract1.prepareExternalMsg(config).toCell().toBase64());
-    assertThat(response.isSuccess()).isTrue();
+    response = contract1.send(config);
+    assertThat(response.getCode()).isZero();
+    contract1.waitForBalanceChangeWithTolerance(30, Utils.toNano(0.5));
 
-    Thread.sleep(20);
-    // contract1.waitForBalanceChange();
-
-    log.info("contract2 seqno {}", toncenter.getSeqno(contract2.getAddress().toBounceable()));
+    long seqno2 = toncenter.getSeqno(contract2.getAddress().toBounceable());
+    log.info("contract2 seqno {}", seqno2);
 
     Utils.sleep(2);
     config =
         WalletV3Config.builder()
             .walletId(98)
-            .seqno(1)
+            .seqno(seqno2)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(0.7))
             .comment("ton4j testWalletV3R2-98")
             .build();
 
-    response = toncenter.sendBoc(contract2.prepareExternalMsg(config).toCell().toBase64());
-    assertThat(response.isSuccess()).isTrue();
-
-    Thread.sleep(20);
-    // contract2.waitForBalanceChange();
+    contract2.sendWithConfirmation(contract2.prepareExternalMsg(config));
+    //    assertThat(response.getCode()).isZero();
+    //    contract2.waitForBalanceChangeWithTolerance(30, Utils.toNano(0.5));
 
     balance1 = contract1.getBalance();
     log.info(

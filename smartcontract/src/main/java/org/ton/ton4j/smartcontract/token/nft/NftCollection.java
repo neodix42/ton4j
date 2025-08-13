@@ -22,6 +22,7 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.utils.Utils;
@@ -247,7 +248,7 @@ public class NftCollection implements Contract {
       try {
         // Use TonCenter API to get collection data
         List<List<Object>> stack = new ArrayList<>();
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+        RunGetMethodResponse response =
             tonCenterClient.runGetMethod(myAddress.toBounceable(), "get_collection_data", stack).getResult();
         
         // Parse the response

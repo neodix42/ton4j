@@ -951,4 +951,53 @@ public class TonCenter {
       return null;
     }
   }
+
+  public void waitForDeployment(Address wallet) {
+    waitForDeployment(wallet,60);
+  }
+
+  /** Checks every 2 seconds for timeoutSeconds if account state was deployed at address */
+  public void waitForDeployment(Address wallet, int timeoutSeconds) {
+    int i = 0;
+    do {
+      if (++i * 2 >= timeoutSeconds) {
+        throw new Error("Can't deploy contract within specified timeout.");
+      }
+      Utils.sleep(2);
+    } while (!isDeployed(wallet));
+  }
+
+  public boolean isDeployed(Address wallet) {
+    try {
+      String state = getState(wallet.toBounceable());
+      return "active".equals(state);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  public void waitForBalanceChange(Address wallet) {
+    waitForBalanceChange(wallet, 60);
+  }
+
+  /**
+   * Checks every 2 seconds for timeoutSeconds if account balance was changed. Notice, storage fee
+   * changes often by 1 nanocoin with few seconds, if you need to tolerate that consider using
+   * waitForBalanceChangeWithTolerance().
+   */
+  public void waitForBalanceChange(Address wallet, int timeoutSeconds) {
+    BigInteger initialBalance = getBalance(wallet.toBounceable());
+//    System.out.println("tc initialBalance: " + initialBalance);
+    BigInteger currentBalance;
+    int i = 0;
+    do {
+      if (++i * 2 >= timeoutSeconds) {
+        throw new Error("Balance was not changed within specified timeout.");
+      }
+      Utils.sleep(2);
+      currentBalance = getBalance(wallet.toBounceable());
+//      System.out.println("tc currentBalance: " + currentBalance);
+
+    } while (initialBalance.equals(currentBalance));
+  }
 }
