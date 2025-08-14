@@ -2,6 +2,7 @@ package org.ton.ton4j.toncenter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -652,7 +653,7 @@ public class TonCenter {
     RunGetMethodResponse r = runGetMethod(address, "get_public_key", new ArrayList<>()).getResult();
     if ((nonNull(r)) && (r.getExitCode() == 0)) {
       String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
-      System.out.println("pubKey: " + pubKey);
+//      System.out.println("pubKey: " + pubKey);
       pubKey = pubKey.replace("0x", "");
       return new BigInteger(pubKey, 16);
 
@@ -703,16 +704,21 @@ public class TonCenter {
    * @return Address of the jetton wallet
    */
   public Address getJettonWalletAddress(String jettonMasterAddress, String ownerAddress) {
+//    Cell cellJettonMasterAddr = CellBuilder.beginCell().storeAddress(Address.of(jettonMasterAddress)).endCell();
+    Cell cellOwnerAddr = CellBuilder.beginCell().storeAddress(Address.of(ownerAddress)).endCell();
+
     List<List<Object>> stack = new ArrayList<>();
     List<Object> addressParam = new ArrayList<>();
-    addressParam.add("slice");
-    addressParam.add(ownerAddress);
+    addressParam.add("tvm.Slice");
+    addressParam.add(cellOwnerAddr.toBase64());
     stack.add(addressParam);
 
     RunGetMethodResponse response =
         runGetMethod(jettonMasterAddress, "get_wallet_address", stack).getResult();
-    String jettonWalletAddressHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
-    return Address.of(jettonWalletAddressHex);
+    List<Object> elements = new ArrayList<>(response.getStack().get(0));
+    LinkedTreeMap<String, String> t = (LinkedTreeMap<String, String>) elements.get(1);
+    Cell c = Cell.fromBocBase64(t.get("bytes"));
+    return CellSlice.beginParse(c).loadAddress();
   }
 
   /**

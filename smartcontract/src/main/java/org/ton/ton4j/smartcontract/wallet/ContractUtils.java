@@ -69,7 +69,6 @@ public class ContractUtils {
           JettonMinter.builder().tonlib(tonlib).customAddress(jettonMinter).build();
 
       JettonWallet jettonWallet = jettonMinterWallet.getJettonWallet(destinationAddress);
-      System.out.println("tonlib - jettonWallet " + jettonWallet.getAddress().toRaw());
 
       return jettonWallet.getBalance();
     } catch (Error e) {
@@ -101,7 +100,6 @@ public class ContractUtils {
           JettonMinter.builder().adnlLiteClient(adnlLiteClient).customAddress(jettonMinter).build();
 
       JettonWallet jettonWallet = jettonMinterWallet.getJettonWallet(destinationAddress);
-      System.out.println("adnl - jettonWallet " + jettonWallet.getAddress().toRaw());
       return jettonWallet.getBalance();
     } catch (Error e) {
       return new BigInteger("-1");
@@ -132,7 +130,6 @@ public class ContractUtils {
           JettonMinter.builder().tonCenterClient(tonCenterClient).customAddress(jettonMinter).build();
 
       JettonWallet jettonWallet = jettonMinterWallet.getJettonWallet(destinationAddress);
-      System.out.println("toncenter - jettonWallet " + jettonWallet.getAddress().toRaw());
       return jettonWallet.getBalance();
     } catch (Error e) {
       return new BigInteger("-1");

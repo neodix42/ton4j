@@ -5,6 +5,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -222,6 +223,8 @@ public class TestExampleContract extends CommonTest {
 
     log.info("extra_field: {}", result.getResult().getStack().get(0));
 
-    assertThat(Long.parseLong(result.getResult().getStack().get(0).toString())).isEqualTo(42);
+    List<Object> elements = result.getResult().getStack().get(0);
+
+    assertThat(Long.decode(elements.get(1).toString())).isEqualTo(42);
   }
 }

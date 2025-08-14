@@ -909,10 +909,6 @@ public class TestHighloadWalletV3S extends CommonTest {
         Utils.formatNanoValue(balance));
 
     // top up new wallet with NEOJ using test-jetton-faucet-wallet
-
-    balance =
-        TestnetJettonFaucet.topUpContractWithNeoj(
-            tonlib, Address.of(nonBounceableAddress), BigInteger.valueOf(100));
     balance =
         TestnetJettonFaucet.topUpContractWithNeoj(
             adnlLiteClient, Address.of(nonBounceableAddress), BigInteger.valueOf(100));
@@ -1020,10 +1016,6 @@ public class TestHighloadWalletV3S extends CommonTest {
             Utils.formatNanoValue(balance));
 
     // top up new wallet with NEOJ using test-jetton-faucet-wallet
-
-    balance =
-            TestnetJettonFaucet.topUpContractWithNeoj(
-                    tonCenter, Address.of(nonBounceableAddress), BigInteger.valueOf(100), true);
     balance =
             TestnetJettonFaucet.topUpContractWithNeoj(
                     tonCenter, Address.of(nonBounceableAddress), BigInteger.valueOf(100), true);
@@ -1173,7 +1165,7 @@ public class TestHighloadWalletV3S extends CommonTest {
     long subWalletId = contract.getSubWalletId();
     log.info("subWalletId key {}", subWalletId);
     Utils.sleep(2);
-    long lastCleanTime = contract.getLastCleanTime(); // todo
+    long lastCleanTime = contract.getLastCleanTime();
     log.info("lastCleanTime {}", lastCleanTime);
     Utils.sleep(2);
     long timeout = contract.getTimeout();

@@ -283,14 +283,14 @@ public class LockupWalletV1 implements Contract {
     if (nonNull(tonCenterClient)) {
       List<List<Object>> stack = new ArrayList<>();
       List<Object> cellDest = new ArrayList<>();
-      cellDest.add("cell");
+      cellDest.add("tvm.Slice");
       cellDest.add(cellAddr.toBase64());
       stack.add(cellDest);
       TonResponse<RunGetMethodResponse> r =
               tonCenterClient.runGetMethod(getAddress().toBounceable(), "check_destination", stack);
       if (r.isSuccess()) {
         return Long.decode(r.getResult().getStack().get(0).get(1).toString())
-                != 0;
+                == -1;
         }
       else {
         throw new Error("check_destination failed, exitCode: " + r.getCode());
@@ -321,6 +321,7 @@ public class LockupWalletV1 implements Contract {
 
   /**
    * @return BigInteger Amount of nano-coins that can be spent immediately.
+   * Calculated as liquidBalance=totalBalance-restrictedBalance-timeLockedBalance
    */
   public BigInteger getLiquidBalance() {
     List<BigInteger> balances = getBalances();
@@ -354,14 +355,13 @@ public class LockupWalletV1 implements Contract {
               getAddress().toBounceable(), "get_balances", new ArrayList<>());
       if (runMethodResult.isSuccess()) {
         BigInteger tonBalance =
-            BigInteger.valueOf(
-                Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString()));
+            new BigInteger(runMethodResult.getResult().getStack().get(0).get(1).toString().substring(2),16);
         BigInteger totalRestrictedValue =
-            BigInteger.valueOf(
-                Long.decode(runMethodResult.getResult().getStack().get(1).get(1).toString()));
+                new BigInteger(runMethodResult.getResult().getStack().get(1).get(1).toString().substring(2),16);
+
         BigInteger totalLockedValue =
-            BigInteger.valueOf(
-                Long.decode(runMethodResult.getResult().getStack().get(2).get(1).toString()));
+                new BigInteger(runMethodResult.getResult().getStack().get(2).get(1).toString().substring(2),16);
+
         return Arrays.asList(tonBalance, totalRestrictedValue, totalLockedValue);
       } else {
         throw new Error("get_balances failed, exitCode: " + runMethodResult.getCode());

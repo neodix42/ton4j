@@ -393,14 +393,11 @@ public class TestLockupWallet extends CommonTest {
     log.info("new lockup wallet balance: {}", Utils.formatNanoValue(balance));
     assertThat(balance.longValue()).isLessThan(Utils.toNano(0.7).longValue());
   }
-  
+
   @Test
   public void testNewWalletLockupTonCenterClient() throws Exception {
     TonCenter tonCenter =
-        TonCenter.builder()
-            .apiKey(TESTNET_API_KEY)
-            .testnet()
-            .build();
+        TonCenter.builder().apiKey(TESTNET_API_KEY).uniqueRequests().testnet().build();
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
     LockupWalletV1 contract =
@@ -436,8 +433,7 @@ public class TestLockupWallet extends CommonTest {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
-        TestnetFaucet.topUpContract(
-            tonCenter, Address.of(nonBounceableAddress), Utils.toNano(5));
+        TestnetFaucet.topUpContract(tonCenter, Address.of(nonBounceableAddress), Utils.toNano(5));
     log.info("new {} wallet balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     SendResponse sendResponse = contract.deploy();
@@ -478,7 +474,7 @@ public class TestLockupWallet extends CommonTest {
             .walletId(42)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
             .amount(Utils.toNano(4))
-            .comment("send-to-allowed-1")
+            .comment("ton4j send-to-allowed-1")
             .build();
 
     sendResponse = contract.send(config);

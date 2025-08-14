@@ -151,7 +151,7 @@ public class TestnetFaucet {
           Address destinationAddress,
           BigInteger amount)
           throws Exception {
-    return topUpContract(tonCenterClient, destinationAddress, Utils.toNano(20), false);
+    return topUpContract(tonCenterClient, destinationAddress, amount, false);
   }
 
   public static BigInteger topUpContract(

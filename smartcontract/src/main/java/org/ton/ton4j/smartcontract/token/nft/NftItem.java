@@ -254,7 +254,7 @@ public class NftItem implements Contract {
       try {
         // Use TonCenter API to get royalty params
         List<List<Object>> stack = new ArrayList<>();
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response = 
+        RunGetMethodResponse response =
             tonCenterClient.runGetMethod(myAddress.toBounceable(), "royalty_params", stack).getResult();
         
         // Parse royalty numerator

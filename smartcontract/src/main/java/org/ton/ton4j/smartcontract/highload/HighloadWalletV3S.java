@@ -5,10 +5,8 @@ import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
+
 import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.NotImplementedException;
@@ -22,8 +20,11 @@ import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.ExtraCurrency;
@@ -119,8 +120,7 @@ public class HighloadWalletV3S implements Contract {
   public String getPublicKey() {
     if (nonNull(tonCenterClient)) {
       try {
-        return Utils.bytesToHex(
-            Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable())));
+        return tonCenterClient.getPublicKey(getAddress().toBounceable()).toString(16);
       } catch (Exception e) {
         throw new Error(e);
       }
@@ -148,61 +148,101 @@ public class HighloadWalletV3S implements Contract {
 
   /** Calls get_last_clean_time method of a contract. */
   public long getLastCleanTime() {
-    if (nonNull(tonCenterClient)) {
-      throw new NotImplementedException("TonCenter not supported yet");
-    }
-    if (nonNull(adnlLiteClient)) {
-      throw new NotImplementedException("ADNL LiteClient not supported yet");
-    }
     Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_last_clean_time");
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_last_clean_time returned an exit code " + result.getExit_code());
-    }
+    if (nonNull(tonCenterClient)) {
+      List<List<Object>> stack = new ArrayList<>();
 
-    TvmStackEntryNumber lastCleanTime = (TvmStackEntryNumber) result.getStack().get(0);
-    return lastCleanTime.getNumber().longValue();
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(myAddress.toBounceable(), "get_last_clean_time", stack);
+      if (runMethodResult.isSuccess()) {
+        return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString());
+      } else {
+        throw new Error("failed to execute " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(myAddress, "get_last_clean_time");
+      return runMethodResult.getIntByIndex(0).longValue();
+    } else if (nonNull(tonlib)) {
+      RunResult result = tonlib.runMethod(myAddress, "get_last_clean_time");
+      if (result.getExit_code() != 0) {
+        throw new Error(
+            "method get_last_clean_time returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntryNumber lastCleanTime = (TvmStackEntryNumber) result.getStack().get(0);
+      return lastCleanTime.getNumber().longValue();
+    } else {
+      throw new Error("provider not set");
+    }
   }
 
   /** Calls get_timeout method of a contract. */
   public long getTimeout() {
-    if (nonNull(tonCenterClient)) {
-      throw new NotImplementedException("TonCenter not supported yet");
-    }
-    if (nonNull(adnlLiteClient)) {
-      throw new NotImplementedException("ADNL LiteClient not supported yet");
-    }
     Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_timeout");
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_timeout returned an exit code " + result.getExit_code());
-    }
+    if (nonNull(tonCenterClient)) {
+      List<List<Object>> stack = new ArrayList<>();
 
-    TvmStackEntryNumber timeout = (TvmStackEntryNumber) result.getStack().get(0);
-    return timeout.getNumber().longValue();
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(myAddress.toBounceable(), "get_timeout", stack);
+      if (runMethodResult.isSuccess()) {
+        return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString());
+      } else {
+        throw new Error("failed to execute " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(myAddress, "get_timeout");
+      return runMethodResult.getIntByIndex(0).longValue();
+    } else if (nonNull(tonlib)) {
+      RunResult result = tonlib.runMethod(myAddress, "get_timeout");
+      if (result.getExit_code() != 0) {
+        throw new Error("method get_timeout returned an exit code " + result.getExit_code());
+      }
+      TvmStackEntryNumber timeout = (TvmStackEntryNumber) result.getStack().get(0);
+      return timeout.getNumber().longValue();
+    } else {
+      throw new Error("provider not set");
+    }
   }
 
   /** Calls get_timeout method of a contract. */
   public boolean isProcessed(long queryId, boolean needClean) {
-    if (nonNull(tonCenterClient)) {
-      throw new NotImplementedException("TonCenter not supported yet");
-    }
-    if (nonNull(adnlLiteClient)) {
-      throw new NotImplementedException("ADNL LiteClient not supported yet");
-    }
     Address myAddress = this.getAddress();
-    Deque<String> stack = new ArrayDeque<>();
 
-    int needCleanInt = needClean ? -1 : 0;
-    stack.offer("[num, " + queryId + "]");
-    stack.offer("[num, " + needCleanInt + "]");
-    RunResult result = tonlib.runMethod(myAddress, "processed?", stack);
-    if (result.getExit_code() != 0) {
-      throw new Error("method processed? returned an exit code " + result.getExit_code());
+    if (nonNull(tonCenterClient)) {
+      List<List<Object>> stack = new ArrayList<>();
+      stack.add(Arrays.asList("num", queryId));
+      stack.add(Arrays.asList("num", needClean ? -1 : 0));
+
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(myAddress.toBounceable(), "processed?", stack);
+      if (runMethodResult.isSuccess()) {
+        return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString()) != 0;
+      } else {
+        throw new Error("failed to execute " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              myAddress,
+              "processed?",
+              VmStackValueInt.builder().value(BigInteger.valueOf(queryId)).build(),
+              VmStackValueInt.builder().value(BigInteger.valueOf(needClean ? -1 : 0)).build());
+
+      return runMethodResult.getIntByIndex(0).intValue() != 0;
+    } else if (nonNull(tonlib)) {
+      Deque<String> stack = new ArrayDeque<>();
+      int needCleanInt = needClean ? -1 : 0;
+      stack.offer("[num, " + queryId + "]");
+      stack.offer("[num, " + needCleanInt + "]");
+      RunResult result = tonlib.runMethod(myAddress, "processed?", stack);
+      if (result.getExit_code() != 0) {
+        throw new Error("method processed? returned an exit code " + result.getExit_code());
+      }
+      TvmStackEntryNumber timeout = (TvmStackEntryNumber) result.getStack().get(0);
+      return timeout.getNumber().longValue() == -1;
+    } else {
+      throw new Error("provider not set");
     }
-
-    TvmStackEntryNumber timeout = (TvmStackEntryNumber) result.getStack().get(0);
-    return timeout.getNumber().longValue() == -1;
   }
 
   /**
