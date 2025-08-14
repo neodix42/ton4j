@@ -5,10 +5,13 @@ import static java.util.Objects.nonNull;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import com.google.gson.internal.LinkedTreeMap;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
+import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
@@ -18,6 +21,7 @@ import org.ton.ton4j.smartcontract.types.AuctionInfo;
 import org.ton.ton4j.smartcontract.types.ItemData;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.toncenter.TonResponse;
 import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
@@ -49,7 +53,7 @@ public class DnsItem implements Contract {
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
   }
-  
+
   @Override
   public TonCenter getTonCenterClient() {
     return tonCenterClient;
@@ -110,6 +114,7 @@ public class DnsItem implements Contract {
    */
   /**
    * Get NFT data using instance methods with TonCenter client if available
+   *
    * @return ItemData
    */
   public ItemData getData() {
@@ -118,26 +123,37 @@ public class DnsItem implements Contract {
         // Use TonCenter API to get NFT data
         List<List<Object>> stack = new ArrayList<>();
         RunGetMethodResponse response =
-            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_nft_data", stack).getResult();
-        
+            tonCenterClient
+                .runGetMethod(getAddress().toBounceable(), "get_nft_data", stack)
+                .getResult();
+
         // Parse is_initialized
-        boolean isInitialized = Long.parseLong(((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16) == -1;
-        
+        boolean isInitialized =
+            Long.parseLong(
+                    ((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16)
+                == -1;
+
         // Parse index
-        BigInteger index = new BigInteger(((String) new  ArrayList<>(response.getStack().get(1)).get(1)).substring(2), 16);
-        
+        BigInteger index =
+            new BigInteger(
+                ((String) new ArrayList<>(response.getStack().get(1)).get(1)).substring(2), 16);
+
         // Parse collection address
-        String collectionAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(2)).get(1));
+        String collectionAddrHex =
+            ((String) new java.util.ArrayList<>(response.getStack().get(2)).get(1));
         Address collectionAddress = Address.of(collectionAddrHex);
-        
+
         // Parse owner address
-        String ownerAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(3)).get(1));
+        String ownerAddrHex =
+            ((String) new java.util.ArrayList<>(response.getStack().get(3)).get(1));
         Address ownerAddress = isInitialized ? Address.of(ownerAddrHex) : null;
-        
+
         // Parse content cell
-        String contentCellHex = ((String) new java.util.ArrayList<>(response.getStack().get(4)).get(1));
-        Cell contentCell = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentCellHex)).endCell();
-        
+        String contentCellHex =
+            ((String) new java.util.ArrayList<>(response.getStack().get(4)).get(1));
+        Cell contentCell =
+            CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentCellHex)).endCell();
+
         return ItemData.builder()
             .isInitialized(isInitialized)
             .index(index)
@@ -149,22 +165,24 @@ public class DnsItem implements Contract {
         throw new Error("Error getting NFT data: " + e.getMessage());
       }
     }
-    
+
     // Fallback to Tonlib
     return getData(tonlib);
   }
-  
+
   /**
    * Get NFT data using instance Tonlib
+   *
    * @param tonlib Tonlib instance
    * @return ItemData
    */
   public ItemData getData(Tonlib tonlib) {
     return getData(tonlib, getAddress());
   }
-  
+
   /**
    * Static method to get NFT data
+   *
    * @param tonlib Tonlib instance
    * @param dnsItemAddress Address of the DNS item
    * @return ItemData
@@ -204,6 +222,46 @@ public class DnsItem implements Contract {
         CellBuilder.beginCell()
             .fromBoc(Utils.base64ToBytes(contentC.getCell().getBytes()))
             .endCell();
+
+    return ItemData.builder()
+        .isInitialized(isInitialized)
+        .index(index)
+        .collectionAddress(collectionAddress)
+        .ownerAddress(ownerAddress)
+        .contentCell(contentCell)
+        .build();
+  }
+
+  public static ItemData getData(TonCenter tonCenter, Address dnsItemAddress) {
+    TonResponse<RunGetMethodResponse> result =
+        tonCenter.runGetMethod(dnsItemAddress.toBounceable(), "get_nft_data", new ArrayList<>());
+
+    if (!result.isSuccess()) {
+      throw new Error("method get_nft_data, returned an exit code " + result.getCode());
+    }
+
+    boolean isInitialized =
+        Long.decode(result.getResult().getStack().get(0).get(1).toString()) == -1;
+    BigInteger index =
+        BigInteger.valueOf(Long.decode(result.getResult().getStack().get(0).get(1).toString()));
+
+    List<Object> elements = new ArrayList<>(result.getResult().getStack().get(2));
+    LinkedTreeMap<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+    Address collectionAddress =
+        NftUtils.parseAddress(
+            CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(l.get("bytes"))).endCell());
+
+    elements = new ArrayList<>(result.getResult().getStack().get(3));
+    l = (LinkedTreeMap<String, String>) elements.get(1);
+    Address ownerAddress =
+        isInitialized
+            ? NftUtils.parseAddress(
+                CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(l.get("bytes"))).endCell())
+            : null;
+
+    elements = new ArrayList<>(result.getResult().getStack().get(4));
+    l = (LinkedTreeMap<String, String>) elements.get(1);
+    Cell contentCell = Cell.fromBocBase64(l.get("bytes"));
 
     return ItemData.builder()
         .isInitialized(isInitialized)
@@ -254,20 +312,19 @@ public class DnsItem implements Contract {
   }
 
   /**
-   * @return String
-   */
-  /**
    * Get domain using instance methods with TonCenter client if available
+   *
    * @return String
    */
   public String getDomain() {
     if (nonNull(tonCenterClient)) {
       try {
         // Use TonCenter API to get domain
-        List<List<Object>> stack = new ArrayList<>();
         RunGetMethodResponse response =
-            tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_domain", stack).getResult();
-        
+            tonCenterClient
+                .runGetMethod(getAddress().toBounceable(), "get_domain", new ArrayList<>())
+                .getResult();
+
         // Parse domain
         String domainCellHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
         return new String(
@@ -280,13 +337,14 @@ public class DnsItem implements Contract {
         throw new Error("Error getting domain: " + e.getMessage());
       }
     }
-    
+
     // Fallback to Tonlib
     return getDomain(tonlib, getAddress());
   }
-  
+
   /**
    * Static method to get domain
+   *
    * @param tonlib Tonlib instance
    * @param dnsItemAddress Address of the DNS item
    * @return String
@@ -309,6 +367,28 @@ public class DnsItem implements Contract {
             .toByteArray());
   }
 
+  public static String getDomain(TonCenter tonCenter, Address dnsItemAddress) {
+
+    TonResponse<RunGetMethodResponse> result =
+        tonCenter.runGetMethod(dnsItemAddress.toBounceable(), "get_domain", new ArrayList<>());
+
+    if (!result.isSuccess()) {
+      throw new Error("method get_domain, returned an exit code " + result.getCode());
+    }
+
+    List<Object> elements = new ArrayList<>(result.getResult().getStack().get(0));
+    Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+    Cell c = Cell.fromBocBase64(l.get("bytes"));
+
+    //    TvmStackEntrySlice domainCell = (TvmStackEntrySlice) result.getStack().get(0);
+    return new String(
+        CellBuilder.beginCell()
+            .fromBoc(Utils.base64ToBytes(l.get("bytes")))
+            .endCell()
+            .getBits()
+            .toByteArray());
+  }
+
   public static Address getEditor(Tonlib tonlib, Address dnsItemAddress) {
     RunResult result = tonlib.runMethod(dnsItemAddress, "get_editor");
 
@@ -321,6 +401,21 @@ public class DnsItem implements Contract {
         CellBuilder.beginCell()
             .fromBoc(Utils.base64ToBytes(editorCell.getSlice().getBytes()))
             .endCell());
+  }
+
+  public static Address getEditor(TonCenter tonCenter, Address dnsItemAddress) {
+    TonResponse<RunGetMethodResponse> result =
+        tonCenter.runGetMethod(dnsItemAddress.toBounceable(), "get_editor", new ArrayList<>());
+
+    if (!result.isSuccess()) {
+      throw new Error("method get_editor, returned an exit code " + result.getCode());
+    }
+
+    List<Object> elements = new ArrayList<>(result.getResult().getStack().get(0));
+    Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+    Cell c = Cell.fromBocBase64(l.get("bytes"));
+
+    return CellSlice.beginParse(c).loadAddress();
   }
 
   /**
@@ -353,6 +448,30 @@ public class DnsItem implements Contract {
         .build();
   }
 
+  public static AuctionInfo getAuctionInfo(TonCenter tonCenter, Address dnsItemAddress) {
+    TonResponse<RunGetMethodResponse> result =
+        tonCenter.runGetMethod(
+            dnsItemAddress.toBounceable(), "get_auction_info", new ArrayList<>());
+
+    if (!result.isSuccess()) {
+      throw new Error("method get_auction_info, returned an exit code " + result.getCode());
+    }
+
+    List<Object> elements = new ArrayList<>(result.getResult().getStack().get(0));
+    Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+    Cell c = Cell.fromBocBase64(l.get("bytes"));
+    Address maxBidAddress = CellSlice.beginParse(c).loadAddress();
+    BigInteger maxBidAmount =
+        BigInteger.valueOf(Long.decode(result.getResult().getStack().get(1).get(1).toString()));
+    long auctionEndTime = Long.decode(result.getResult().getStack().get(2).get(1).toString());
+
+    return AuctionInfo.builder()
+        .maxBidAddress(maxBidAddress)
+        .maxBidAmount(maxBidAmount)
+        .auctionEndTime(auctionEndTime)
+        .build();
+  }
+
   public static long getLastFillUpTime(Tonlib tonlib, Address dnsItemAddress) {
     RunResult result = tonlib.runMethod(dnsItemAddress, "get_last_fill_up_time");
 
@@ -363,6 +482,18 @@ public class DnsItem implements Contract {
 
     TvmStackEntryNumber time = (TvmStackEntryNumber) result.getStack().get(0);
     return time.getNumber().longValue();
+  }
+
+  public static long getLastFillUpTime(TonCenter tonCenter, Address dnsItemAddress) {
+    TonResponse<RunGetMethodResponse> result =
+        tonCenter.runGetMethod(
+            dnsItemAddress.toBounceable(), "get_last_fill_up_time", new ArrayList<>());
+
+    if (!result.isSuccess()) {
+      throw new Error("method get_last_fill_up_time, returned an exit code " + result.getCode());
+    }
+
+    return Long.decode(result.getResult().getStack().get(0).get(1).toString());
   }
 
   /**

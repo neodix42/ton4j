@@ -24,13 +24,9 @@ public class Dns {
   private TonCenter tonCenterClient;
 
   public Address getRootDnsAddress() {
-    if (nonNull(adnlLiteClient)) {
-      return Address.of("-1:" + adnlLiteClient.getConfigParam4().getDnsRootAddr());
-    }
-    
     if (nonNull(tonCenterClient)) {
       Map<String, Object> config = tonCenterClient.getConfigParam(4, null).getResult().getConfig();
-      String cellBase64 = (String) config.get("cell");
+      String cellBase64 = (String) config.get("bytes");
       Cell cell = Cell.fromBoc(Utils.base64ToBytes(cellBase64));
       byte[] byteArray = cell.getBits().toByteArray();
       if (byteArray.length != 256 / 8) {
@@ -38,15 +34,19 @@ public class Dns {
       }
       String hex = Utils.bytesToHex(byteArray);
       return Address.of("-1:" + hex);
+    } else if (nonNull(adnlLiteClient)) {
+      return Address.of("-1:" + adnlLiteClient.getConfigParam4().getDnsRootAddr());
+    } else if (nonNull(tonlib)) {
+      Cell cell = tonlib.getConfigParam(tonlib.getLast().getLast(), 4);
+      byte[] byteArray = cell.getBits().toByteArray();
+      if (byteArray.length != 256 / 8) {
+        throw new Error("Invalid ConfigParam 4 length " + byteArray.length);
+      }
+      String hex = Utils.bytesToHex(byteArray);
+      return Address.of("-1:" + hex);
+    } else {
+      throw new Error("provider not set");
     }
-
-    Cell cell = tonlib.getConfigParam(tonlib.getLast().getLast(), 4);
-    byte[] byteArray = cell.getBits().toByteArray();
-    if (byteArray.length != 256 / 8) {
-      throw new Error("Invalid ConfigParam 4 length " + byteArray.length);
-    }
-    String hex = Utils.bytesToHex(byteArray);
-    return Address.of("-1:" + hex);
   }
 
   public Object resolve(String domain, String category, boolean oneStep) {

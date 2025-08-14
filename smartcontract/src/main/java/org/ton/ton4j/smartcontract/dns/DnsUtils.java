@@ -5,6 +5,8 @@ import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.util.*;
+
+import com.google.gson.internal.LinkedTreeMap;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
@@ -233,8 +235,8 @@ public class DnsUtils {
 
     List<List<Object>> stack = new ArrayList<>();
     List<Object> domainParam = new ArrayList<>();
-    domainParam.add("slice");
-    domainParam.add(domainCell.toHex(true));
+    domainParam.add("tvm.Slice");
+    domainParam.add(domainCell.toBase64());
     stack.add(domainParam);
     
     List<Object> categoryParam = new ArrayList<>();
@@ -242,7 +244,7 @@ public class DnsUtils {
     categoryParam.add(categoryInteger.toString());
     stack.add(categoryParam);
 
-    RunGetMethodResponse runMethodResult = tonCenterClient.runGetMethod(dnsAddress.toString(), "dnsresolve", stack).getResult();
+    RunGetMethodResponse runMethodResult = tonCenterClient.runGetMethod(dnsAddress.toBounceable(), "dnsresolve", stack).getResult();
     if (runMethodResult.getStack().size() != 2) {
       throw new Error("Invalid dnsresolve response");
     }
@@ -250,8 +252,10 @@ public class DnsUtils {
     int resultLen = Integer.parseInt(((String) new ArrayList<>(runMethodResult.getStack().get(0)).get(1)).substring(2), 16);
     
     Cell cell = null;
-    String cellBase64 = (String) new ArrayList<>(runMethodResult.getStack().get(1)).get(1);
-    if (cellBase64 != null && !cellBase64.isEmpty()) {
+    List<Object> elements = new ArrayList<>(runMethodResult.getStack().get(1));
+    LinkedTreeMap<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+    String cellBase64 = l.get("bytes");
+    if (nonNull(cellBase64) && !cellBase64.isEmpty()) {
       cell = CellBuilder.beginCell()
           .fromBoc(Utils.base64ToBytes(cellBase64))
           .endCell();

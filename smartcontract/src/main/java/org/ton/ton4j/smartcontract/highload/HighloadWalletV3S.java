@@ -180,10 +180,8 @@ public class HighloadWalletV3S implements Contract {
   public long getTimeout() {
     Address myAddress = this.getAddress();
     if (nonNull(tonCenterClient)) {
-      List<List<Object>> stack = new ArrayList<>();
-
       TonResponse<RunGetMethodResponse> runMethodResult =
-          tonCenterClient.runGetMethod(myAddress.toBounceable(), "get_timeout", stack);
+          tonCenterClient.runGetMethod(myAddress.toBounceable(), "get_timeout", new ArrayList<>());
       if (runMethodResult.isSuccess()) {
         return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString());
       } else {

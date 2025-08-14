@@ -419,7 +419,7 @@ public class NftCollection implements Contract {
         List<List<Object>> stack = new ArrayList<>();
         stack.add(Arrays.asList("num", index.toString(10)));
 
-        org.ton.ton4j.toncenter.model.RunGetMethodResponse response =
+        RunGetMethodResponse response =
             tonCenterClient
                 .runGetMethod(myAddress.toBounceable(), "get_nft_address_by_index", stack)
                 .getResult();

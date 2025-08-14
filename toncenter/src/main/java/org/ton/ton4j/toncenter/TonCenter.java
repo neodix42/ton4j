@@ -559,16 +559,16 @@ public class TonCenter {
   public TonResponse<ConfigParamResponse> getConfigParam(Integer configId, Long seqno) {
     Map<String, String> params = new HashMap<>();
     params.put("config_id", configId.toString());
-    if (seqno != null) params.put("seqno", seqno.toString());
+    if (nonNull(seqno)) params.put("seqno", seqno.toString());
 
     Type responseType = new TypeToken<TonResponse<ConfigParamResponse>>() {}.getType();
     return executeGet("/getConfigParam", params, responseType);
   }
 
-  /** Get cell with full config */
+  /** Get cell with full config at specific seqno*/
   public TonResponse<ConfigAllResponse> getConfigAll(Long seqno) {
     Map<String, String> params = new HashMap<>();
-    if (seqno != null) params.put("seqno", seqno.toString());
+    if (nonNull(seqno)) params.put("seqno", seqno.toString());
 
     Type responseType = new TypeToken<TonResponse<ConfigAllResponse>>() {}.getType();
     return executeGet("/getConfigAll", params, responseType);
@@ -653,11 +653,11 @@ public class TonCenter {
     RunGetMethodResponse r = runGetMethod(address, "get_public_key", new ArrayList<>()).getResult();
     if ((nonNull(r)) && (r.getExitCode() == 0)) {
       String pubKey = ((String) new ArrayList<>(r.getStack().get(0)).get(1));
-//      System.out.println("pubKey: " + pubKey);
+      //      System.out.println("pubKey: " + pubKey);
       pubKey = pubKey.replace("0x", "");
       return new BigInteger(pubKey, 16);
 
-//      return BigInteger.valueOf(Long.decode(pubKey.substring(2)));
+      //      return BigInteger.valueOf(Long.decode(pubKey.substring(2)));
     } else {
       throw new Error("get_public_key failed, exitCode: " + r.getExitCode());
     }
@@ -704,7 +704,8 @@ public class TonCenter {
    * @return Address of the jetton wallet
    */
   public Address getJettonWalletAddress(String jettonMasterAddress, String ownerAddress) {
-//    Cell cellJettonMasterAddr = CellBuilder.beginCell().storeAddress(Address.of(jettonMasterAddress)).endCell();
+    //    Cell cellJettonMasterAddr =
+    // CellBuilder.beginCell().storeAddress(Address.of(jettonMasterAddress)).endCell();
     Cell cellOwnerAddr = CellBuilder.beginCell().storeAddress(Address.of(ownerAddress)).endCell();
 
     List<List<Object>> stack = new ArrayList<>();
