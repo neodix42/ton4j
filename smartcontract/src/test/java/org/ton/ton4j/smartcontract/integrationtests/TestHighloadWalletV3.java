@@ -31,7 +31,6 @@ import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.VerbosityLevel;
 import org.ton.ton4j.utils.Utils;
 

@@ -187,7 +187,10 @@ public class WalletV1R3 implements Contract {
    * account's transactions
    */
   public RawTransaction sendWithConfirmation(WalletV1R3Config config) throws Exception {
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      tonCenterClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else if (nonNull(adnlLiteClient)) {
       adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
       return null;
     } else {

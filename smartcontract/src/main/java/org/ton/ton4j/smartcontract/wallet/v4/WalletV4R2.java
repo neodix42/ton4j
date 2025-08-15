@@ -381,10 +381,9 @@ public class WalletV4R2 implements Contract {
       TonResponse<RunGetMethodResponse> runMethodResult =
           tonCenterClient.runGetMethod(myAddress.toBounceable(), "is_plugin_installed", stack);
       if (runMethodResult.isSuccess()) {
-        return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString())
-            != 0;
+        return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString()) != 0;
       } else {
-        throw new Error("failed to execute "+runMethodResult.getError());
+        throw new Error("failed to execute isPluginInstalled, " + runMethodResult.getError());
       }
 
     } else if (nonNull(adnlLiteClient)) {
@@ -486,10 +485,11 @@ public class WalletV4R2 implements Contract {
           tonCenterClient.runGetMethod(
               pluginAddress.toBounceable(), "get_subscription_data", new ArrayList<>());
       if (runMethodResult.isSuccess()) {
-        System.out.println("getSubscriptionData "+runMethodResult.getResult());
+        System.out.println("getSubscriptionData " + runMethodResult.getResult());
         return parseSubscriptionDataTonCenter(runMethodResult.getResult().getStack());
       } else {
-        throw new Error("Error executing get_subscription_data. Exit code " + runMethodResult.getCode());
+        throw new Error(
+            "Error executing get_subscription_data. Exit code " + runMethodResult.getCode());
       }
     }
     if (nonNull(adnlLiteClient)) {
@@ -618,17 +618,22 @@ public class WalletV4R2 implements Contract {
         .subscriptionId(subscriptionId.getValue().longValue())
         .build();
   }
+
   private SubscriptionInfo parseSubscriptionDataTonCenter(List<List<Object>> subscriptionData) {
     List<Object> elements = new ArrayList<>(subscriptionData.get(0));
     TvmTuple walletAddr = gson.fromJson(elements.get(1).toString(), TvmTuple.class);
-    TvmStackEntryNumber wc = gson.fromJson(walletAddr.getElements().get(0).toString(), TvmStackEntryNumber.class);
-    TvmStackEntryNumber hash = gson.fromJson(walletAddr.getElements().get(1).toString(), TvmStackEntryNumber.class);
+    TvmStackEntryNumber wc =
+        gson.fromJson(walletAddr.getElements().get(0).toString(), TvmStackEntryNumber.class);
+    TvmStackEntryNumber hash =
+        gson.fromJson(walletAddr.getElements().get(1).toString(), TvmStackEntryNumber.class);
 
     elements = new ArrayList<>(subscriptionData.get(1));
 
     TvmTuple beneficiaryAddr = gson.fromJson(elements.get(1).toString(), TvmTuple.class);
-    TvmStackEntryNumber beneficiaryAddrWc = gson.fromJson(beneficiaryAddr.getElements().get(0).toString(), TvmStackEntryNumber.class);
-    TvmStackEntryNumber beneficiaryAddrHash = gson.fromJson(beneficiaryAddr.getElements().get(1).toString(), TvmStackEntryNumber.class);
+    TvmStackEntryNumber beneficiaryAddrWc =
+        gson.fromJson(beneficiaryAddr.getElements().get(0).toString(), TvmStackEntryNumber.class);
+    TvmStackEntryNumber beneficiaryAddrHash =
+        gson.fromJson(beneficiaryAddr.getElements().get(1).toString(), TvmStackEntryNumber.class);
 
     BigInteger amount = BigInteger.valueOf(Long.decode(subscriptionData.get(2).get(1).toString()));
     long period = Long.decode(subscriptionData.get(3).get(1).toString());
@@ -638,10 +643,8 @@ public class WalletV4R2 implements Contract {
     long lastRequestTime = Long.decode(subscriptionData.get(7).get(1).toString());
 
     long now = System.currentTimeMillis() / 1000;
-    boolean isPaid =
-        ((now - lastPaymentTime) < period);
-    boolean paymentReady =
-        !isPaid & ((now - lastRequestTime) > timeOut);
+    boolean isPaid = ((now - lastPaymentTime) < period);
+    boolean paymentReady = !isPaid & ((now - lastRequestTime) > timeOut);
 
     long failedAttempts = Long.decode(subscriptionData.get(8).get(1).toString());
     long subscriptionId = Long.decode(subscriptionData.get(9).get(1).toString());
@@ -669,7 +672,10 @@ public class WalletV4R2 implements Contract {
    * account's transactions
    */
   public RawTransaction sendWithConfirmation(WalletV4R2Config config) throws Exception {
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      tonCenterClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else if (nonNull(adnlLiteClient)) {
       adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
       return null;
     } else {

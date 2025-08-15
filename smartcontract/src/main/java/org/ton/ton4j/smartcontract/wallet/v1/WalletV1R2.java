@@ -18,7 +18,6 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawTransaction;
 import org.ton.ton4j.utils.Utils;
 
@@ -163,7 +162,10 @@ public class WalletV1R2 implements Contract {
    * account's transactions
    */
   public RawTransaction sendWithConfirmation(WalletV1R2Config config) throws Exception {
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      tonCenterClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else if (nonNull(adnlLiteClient)) {
       adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
     }
     return tonlib.sendRawMessageWithConfirmation(

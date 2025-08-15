@@ -29,7 +29,6 @@ import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.Network;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.VerbosityLevel;
 import org.ton.ton4j.utils.Secp256k1KeyPair;
 import org.ton.ton4j.utils.Utils;
@@ -70,7 +69,7 @@ public class TestHighloadWalletV3S extends CommonTest {
             .build();
 
     SendResponse sendResponse = contract.deploy(config);
-    log.info("extMessageInfo {}", sendResponse);
+    log.info("sendResponse {}", sendResponse);
     assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
@@ -102,7 +101,7 @@ public class TestHighloadWalletV3S extends CommonTest {
             .build();
 
     sendResponse = contract.send(config);
-    log.info("extMessageInfo {}", sendResponse);
+    log.info("sendResponse {}", sendResponse);
     assertThat(sendResponse.getCode()).isZero();
     log.info("sent 2 messages");
 
@@ -167,7 +166,7 @@ public class TestHighloadWalletV3S extends CommonTest {
         Utils.signDataSecp256k1(deployBody.hash(), keyPair.getPrivateKey(), pubKey).getSignature();
 
     SendResponse sendResponse = contract.deploy(config, signedDeployBody);
-    log.info("extMessageInfo {}", sendResponse);
+    log.info("sendResponse {}", sendResponse);
     assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
@@ -207,7 +206,7 @@ public class TestHighloadWalletV3S extends CommonTest {
             .getSignature();
 
     sendResponse = contract.send(config, signedTransferBody);
-    log.info("extMessageInfo {}", sendResponse);
+    log.info("sendResponse {}", sendResponse);
     assertThat(sendResponse.getCode()).isZero();
     log.info("sent 2 messages");
 

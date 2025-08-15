@@ -19,7 +19,6 @@ import org.ton.ton4j.smartcontract.highload.HighloadWallet;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.types.HighloadConfig;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Deprecated

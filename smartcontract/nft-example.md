@@ -133,7 +133,7 @@ WalletV3Config walletV3Config = WalletV3Config.builder()
                 forwardPayload,
                 responseAddress))
         .build();
-ExtMessageInfo extMessageInfo = wallet.send(walletV3Config);
+SendResponse sendResponse = wallet.send(walletV3Config);
 assertThat(sendResponse.getCode()).isZero();
 ```
 

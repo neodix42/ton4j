@@ -12,7 +12,6 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
@@ -101,7 +100,7 @@ public class GenericSmartContract implements Contract {
    * Deploy with body
    *
    * @param deployMessageBody usually stands for internal message
-   * @return ExtMessageInfo
+   * @return SendResponse
    */
   public SendResponse deploy(Cell deployMessageBody) {
     return send(prepareDeployMsg(deployMessageBody));
@@ -111,7 +110,7 @@ public class GenericSmartContract implements Contract {
    * Deploy with body without signing it.
    *
    * @param deployMessageBody usually stands for internal message
-   * @return ExtMessageInfo
+   * @return SendResponse
    */
   public SendResponse deployWithoutSignature(Cell deployMessageBody) {
     return send(prepareDeployMsgWithoutSignature(deployMessageBody));
@@ -120,7 +119,7 @@ public class GenericSmartContract implements Contract {
   /**
    * Deploy without body
    *
-   * @return ExtMessageInfo
+   * @return SendResponse
    */
   public SendResponse deploy() {
     return send(prepareDeployMsgWithoutBody());

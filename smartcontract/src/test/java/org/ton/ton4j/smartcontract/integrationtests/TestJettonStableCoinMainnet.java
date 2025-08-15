@@ -19,7 +19,6 @@ import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.ton4j.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j

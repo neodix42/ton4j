@@ -35,7 +35,7 @@ WalletV3Config walletV3Config = WalletV3Config.builder()
 SendResponse sendResponse = adminWallet.send(walletV3Config);
 assertThat(sendResponse.getCode()).isZero();
 log.info("deploying minter");
-minter.waitForDeployment(60);
+minter.waitForDeployment();
 
 getMinterInfo(minter); // nothing minted, so zero returned
 ```
@@ -87,7 +87,7 @@ walletV3Config = WalletV3Config.builder()
                 )
         )
         .build();
-extMessageInfo = adminWallet.send(walletV3Config);
+sendResponse = adminWallet.send(walletV3Config);
 assertThat(sendResponse.getCode()).isZero();
 ```
 

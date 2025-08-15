@@ -18,7 +18,6 @@ import org.ton.ton4j.smartcontract.lockup.LockupWalletV1;
 import org.ton.ton4j.smartcontract.types.LockupConfig;
 import org.ton.ton4j.smartcontract.types.LockupWalletV1Config;
 import org.ton.ton4j.toncenter.TonCenter;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j

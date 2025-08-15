@@ -16,9 +16,6 @@ import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.ton4j.toncenter.Network;
 import org.ton.ton4j.toncenter.TonCenter;
-import org.ton.ton4j.toncenter.TonResponse;
-import org.ton.ton4j.toncenter.model.SendBocResponse;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -84,7 +81,7 @@ public class TestWalletV3R1Short extends CommonTest {
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
 
     SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
-    log.info("extMessageInfo {}", sendResponse);
+    log.info("sendResponse {}", sendResponse);
     contract.waitForDeployment(120);
 
     // send toncoins
@@ -102,7 +99,7 @@ public class TestWalletV3R1Short extends CommonTest {
     byte[] signedTransferBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
     sendResponse = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", sendResponse);
+    log.info("sendResponse: {}", sendResponse);
     contract.waitForBalanceChange(120);
     assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
   }

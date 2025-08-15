@@ -19,7 +19,6 @@ import org.ton.ton4j.toncenter.Network;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.toncenter.TonResponse;
 import org.ton.ton4j.toncenter.model.SendBocResponse;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j

@@ -20,7 +20,6 @@ import org.ton.ton4j.toncenter.Network;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.toncenter.TonResponse;
 import org.ton.ton4j.toncenter.model.SendBocResponse;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawTransaction;
 import org.ton.ton4j.utils.Utils;
 
@@ -107,7 +106,7 @@ public class TestWalletV2R1Short extends CommonTest {
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
 
     SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
-    log.info("extMessageInfo {}", sendResponse);
+    log.info("sendResponse {}", sendResponse);
     contract.waitForDeployment(120);
 
     // send toncoins
@@ -124,7 +123,7 @@ public class TestWalletV2R1Short extends CommonTest {
     byte[] signedTransferBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
     sendResponse = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", sendResponse);
+    log.info("sendResponse: {}", sendResponse);
     contract.waitForBalanceChange(120);
     Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
   }
@@ -150,7 +149,7 @@ public class TestWalletV2R1Short extends CommonTest {
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
 
     SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
-    log.info("extMessageInfo {}", sendResponse);
+    log.info("sendResponse {}", sendResponse);
     contract.waitForDeployment(120);
 
     // send toncoins
@@ -167,7 +166,7 @@ public class TestWalletV2R1Short extends CommonTest {
     byte[] signedTransferBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
     sendResponse = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", sendResponse);
+    log.info("sendResponse: {}", sendResponse);
     contract.waitForBalanceChange(120);
     Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
   }

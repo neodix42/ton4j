@@ -99,7 +99,7 @@ public class SubscriptionInfo {
 ```java
 // dummy external message, only destination address is relevant
 Cell extMessage = MsgUtils.createExternalMessageWithSignedBody(contract.getKeyPair(), pluginAddress, null, null).toCell();
-extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
+sendResponse = tonlib.sendRawMessage(extMessage.toBase64());
 ```
 
 ### Uninstall plugin
@@ -120,7 +120,7 @@ config = WalletV4R1Config.builder()
                 .build())
         .build();
 
-extMessageInfo = contract.uninstallPlugin(config);
+sendResponse = contract.uninstallPlugin(config);
 Utils.sleep(30, "sent uninstall request");
 assertThat(sendResponse.getCode()).isZero();
 

@@ -1,7 +1,6 @@
 package org.ton.ton4j.smartcontract.integrationtests;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
@@ -17,7 +16,6 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Builder

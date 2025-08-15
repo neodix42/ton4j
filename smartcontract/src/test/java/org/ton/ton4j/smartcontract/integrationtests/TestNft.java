@@ -24,7 +24,6 @@ import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.ton4j.toncenter.TonCenter;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j

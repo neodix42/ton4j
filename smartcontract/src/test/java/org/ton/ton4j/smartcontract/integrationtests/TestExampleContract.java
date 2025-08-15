@@ -20,7 +20,6 @@ import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.toncenter.TonResponse;
 import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryNumber;
 import org.ton.ton4j.utils.Utils;

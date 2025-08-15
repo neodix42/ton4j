@@ -18,7 +18,6 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawTransaction;
 import org.ton.ton4j.utils.Utils;
 
@@ -186,6 +185,23 @@ public class WalletV3R1 implements Contract {
         .init(getStateInit())
         .body(CellBuilder.beginCell().storeBytes(signedBodyHash).storeCell(body).endCell())
         .build();
+  }
+
+  /**
+   * Sends amount of nano toncoins to destination address and waits till message found among
+   * account's transactions
+   */
+  public RawTransaction sendWithConfirmation(WalletV3Config config) {
+    if (nonNull(tonCenterClient)) {
+      tonCenterClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else if (nonNull(adnlLiteClient)) {
+      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else {
+      return tonlib.sendRawMessageWithConfirmation(
+              prepareExternalMsg(config).toCell().toBase64(), getAddress());
+    }
   }
 
   public SendResponse send(WalletV3Config config, byte[] signedBodyHash) {

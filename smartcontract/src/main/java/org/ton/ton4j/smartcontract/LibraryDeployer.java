@@ -1,7 +1,6 @@
 package org.ton.ton4j.smartcontract;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +12,6 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 
 @Builder
 @Data

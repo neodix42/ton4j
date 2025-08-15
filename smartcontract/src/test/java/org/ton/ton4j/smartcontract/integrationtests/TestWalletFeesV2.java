@@ -19,7 +19,6 @@ import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV2R2Config;
 import org.ton.ton4j.smartcontract.wallet.v2.WalletV2R2;
 import org.ton.ton4j.tlb.Message;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.QueryFees;
 import org.ton.ton4j.utils.Utils;
 
