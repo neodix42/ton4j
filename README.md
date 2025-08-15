@@ -50,6 +50,7 @@ You can use each submodule individually. Click the module below to get more deta
 * [Mnemonic](mnemonic/README.md) - helpful methods for generating deterministic keys for TON blockchain.
 * [Emulator](emulator/README.md) - wrapper for using with external precompiled emulator shared library.
 * [Liteclient](liteclient/README.md) - wrapper for using with external precompiled lite-client binary.
+* [TonCenter Client](toncenter/README.md) - wrapper used to send REST calls towards [TonCenter API v2](https://toncenter.com/api/v2/) .
 * [Fift](fift/README.md) - wrapper for using external precompiled fift binary.
 * [Func](func/README.md) - wrapper for using external precompiled func binary.
 * [Tolk](tolk/README.md) - wrapper for using external precompiled tolk binary.
@@ -64,22 +65,15 @@ You can use each submodule individually. Click the module below to get more deta
 * ✅ Cells serialization / deserialization
 * ✅ TL-B serialization / deserialization
 * ✅ Cell builder and cell slicer (reader)
-* ✅ Tonlib wrapper
-* ✅ Lite-client wrapper
-* ✅ Fift wrapper
-* ✅ Func wrapper
-* ✅ Tolk wrapper
-* ✅ TVM and Tx emulator wrapper
-* ✅ Transaction emulator wrapper
+* ✅ Tonlib, Lite-client, TVM/TX, Fift, Func and Tolk wrappers
 * ✅ TonConnect
+* ✅ TonCenter V2 wrapper
 * ✅ BoC disassembler
 * ✅ Extra-currency support and examples
 * ✅ Support num, cell and slice as arguments for runMethod
 * ✅ Render List, Tuple, Slice, Cell and Number results from runMethod
 * ✅ Generate or import private key, sign, encrypt and decrypt using Tonlib
 * ✅ Encrypt/decrypt with mnemonic
-* ✅ Send external message
-* ✅ Get block transactions
 * ✅ Deploy contracts and send external messages using Tonlib
 * ✅ Wallets - Simple (V1), V2, V3, V4 (plugins), V5, Lockup, ~~Highload~~/Highload-V3, Highload-V3S (Secp256k1), DNS,
   Jetton, StableCoin, NFT,
