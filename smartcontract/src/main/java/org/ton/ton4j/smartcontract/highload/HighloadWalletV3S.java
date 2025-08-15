@@ -157,7 +157,7 @@ public class HighloadWalletV3S implements Contract {
       if (runMethodResult.isSuccess()) {
         return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString());
       } else {
-        throw new Error("failed to execute " + runMethodResult.getError());
+        throw new Error("failed to execute get_last_clean_time, " + runMethodResult.getError());
       }
     } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(myAddress, "get_last_clean_time");
@@ -185,7 +185,7 @@ public class HighloadWalletV3S implements Contract {
       if (runMethodResult.isSuccess()) {
         return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString());
       } else {
-        throw new Error("failed to execute " + runMethodResult.getError());
+        throw new Error("failed to execute get_timeout, " + runMethodResult.getError());
       }
     } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(myAddress, "get_timeout");
@@ -216,7 +216,7 @@ public class HighloadWalletV3S implements Contract {
       if (runMethodResult.isSuccess()) {
         return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString()) != 0;
       } else {
-        throw new Error("failed to execute " + runMethodResult.getError());
+        throw new Error("failed to execute processed?, " + runMethodResult.getError());
       }
     } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
