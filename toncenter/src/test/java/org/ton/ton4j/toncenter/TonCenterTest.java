@@ -31,9 +31,9 @@ public class TonCenterTest {
       "188b29e2b477d8bb95af5041f75c57b62653add1170634f148ac71d7751d0c71";
 
   // Test addresses for different scenarios
-  public static final String MAINNET_TON_FOUNDATION_WALLET =
+  public static final String MAINNET_WALLET =
       "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N";
-  public static final String TESTNET_TON_FOUNDATION_WALLET =
+  public static final String TESTNET_WALLET =
       "0QCsMm47egxSofgw5Y-l34ZeMw6vPYUUyTIjYT3HTafpmH9O";
 
   private static final String MAINNET_NFT_ADDRESS =
@@ -44,23 +44,23 @@ public class TonCenterTest {
   // Parameterized test fields
   private final Network network;
   private final String apiKey;
-  private final String tonFoundationWallet;
+  private final String tonWallet;
   private final String nftAddress;
 
   @Parameterized.Parameters(name = "Network: {0}")
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          {Network.MAINNET, MAINNET_API_KEY, MAINNET_TON_FOUNDATION_WALLET, MAINNET_NFT_ADDRESS},
-          {Network.TESTNET, TESTNET_API_KEY, TESTNET_TON_FOUNDATION_WALLET, TESTNET_NFT_ADDRESS}
+          {Network.MAINNET, MAINNET_API_KEY, MAINNET_WALLET, MAINNET_NFT_ADDRESS},
+          {Network.TESTNET, TESTNET_API_KEY, TESTNET_WALLET, TESTNET_NFT_ADDRESS}
         });
   }
 
   public TonCenterTest(
-      Network network, String apiKey, String tonFoundationWallet, String nftAddress) {
+          Network network, String apiKey, String tonWallet, String nftAddress) {
     this.network = network;
     this.apiKey = apiKey;
-    this.tonFoundationWallet = tonFoundationWallet;
+    this.tonWallet = tonWallet;
     this.nftAddress = nftAddress;
   }
 
@@ -143,7 +143,7 @@ public class TonCenterTest {
 
     try {
       TonResponse<AddressInformationResponse> response =
-          client.getAddressInformation(tonFoundationWallet);
+          client.getAddressInformation(tonWallet);
       log.info("response {}", response);
       assertTrue("Address information should be successful", response.isSuccess());
       assertNotNull("Result should not be null", response.getResult());
@@ -161,7 +161,7 @@ public class TonCenterTest {
 
     try {
       TonResponse<ExtendedAddressInformationResponse> response =
-          client.getExtendedAddressInformation(tonFoundationWallet);
+          client.getExtendedAddressInformation(tonWallet);
       log.info("response {}", response.getResult());
       assertTrue("Extended address info should be successful", response.isSuccess());
       assertNotNull("Result should not be null", response.getResult());
@@ -177,7 +177,7 @@ public class TonCenterTest {
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
     try {
       TonResponse<WalletInformationResponse> response =
-          client.getWalletInformation(tonFoundationWallet);
+          client.getWalletInformation(tonWallet);
       log.info("response {}", response.getResult());
       assertTrue("Wallet information should be successful", response.isSuccess());
       assertNotNull("Result should not be null", response.getResult());
@@ -194,7 +194,7 @@ public class TonCenterTest {
 
     try {
       TonResponse<List<TransactionResponse>> response =
-          client.getTransactions(tonFoundationWallet, 5, null, null, null, true);
+          client.getTransactions(tonWallet, 5, null, null, null, true);
       log.info("response {}", response.getResult());
       assertTrue("Transactions should be successful", response.isSuccess());
       assertNotNull("Result should not be null", response.getResult());
@@ -210,7 +210,7 @@ public class TonCenterTest {
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      TonResponse<String> response = client.getAddressBalance(tonFoundationWallet);
+      TonResponse<String> response = client.getAddressBalance(tonWallet);
       assertTrue("Address balance should be successful", response.isSuccess());
       assertNotNull("Balance should not be null", response.getResult());
       log.info("Address balance: {}", response.getResult());
@@ -225,7 +225,7 @@ public class TonCenterTest {
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      BigInteger balance = client.getBalance(tonFoundationWallet);
+      BigInteger balance = client.getBalance(tonWallet);
       assertNotNull(balance);
       log.info("Address balance: {}", balance);
     } finally {
@@ -239,7 +239,7 @@ public class TonCenterTest {
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      TonResponse<String> response = client.getAddressState(tonFoundationWallet);
+      TonResponse<String> response = client.getAddressState(tonWallet);
       assertTrue("Address state should be successful", response.isSuccess());
       assertNotNull("State should not be null", response.getResult());
       log.info("Address state: {}", response.getResult());
@@ -255,7 +255,7 @@ public class TonCenterTest {
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      String state = client.getState(tonFoundationWallet);
+      String state = client.getState(tonWallet);
       assertNotNull(state);
       log.info("Address state: {}", state);
     } finally {
@@ -285,7 +285,7 @@ public class TonCenterTest {
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      TonResponse<String> response = client.unpackAddress(tonFoundationWallet);
+      TonResponse<String> response = client.unpackAddress(tonWallet);
       assertTrue("Unpack address should be successful", response.isSuccess());
       assertNotNull("Unpacked address should not be null", response.getResult());
       log.info("Unpacked address: {}", response.getResult());
@@ -300,7 +300,7 @@ public class TonCenterTest {
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-      TonResponse<DetectAddressResponse> response = client.detectAddress(tonFoundationWallet);
+      TonResponse<DetectAddressResponse> response = client.detectAddress(tonWallet);
       log.info("response {}", response.getResult());
       assertTrue("Detect address should be successful", response.isSuccess());
       assertNotNull("Detected address forms should not be null", response.getResult());
@@ -638,7 +638,7 @@ public class TonCenterTest {
     try {
       // Test calling seqno method on a wallet
       TonResponse<RunGetMethodResponse> response =
-          client.runGetMethod(tonFoundationWallet, "seqno", new ArrayList<>());
+          client.runGetMethod(tonWallet, "seqno", new ArrayList<>());
       log.info("response {}", response.getResult());
       assertTrue("Run get method should be successful", response.isSuccess());
       assertNotNull("Method result should not be null", response.getResult());
@@ -655,7 +655,7 @@ public class TonCenterTest {
 
     try {
       // Test calling seqno method on a wallet
-      long seqno =              client.getSeqno(tonFoundationWallet);
+      long seqno =              client.getSeqno(tonWallet);
       log.info("seqno {}", seqno);
       assertTrue(seqno > 0);
       log.info("Get method 'seqno' executed successfully");
@@ -671,7 +671,7 @@ public class TonCenterTest {
 
     try {
       // Test calling seqno method on a wallet
-      long subWalletId = client.getSubWalletId(tonFoundationWallet);
+      long subWalletId = client.getSubWalletId(tonWallet);
       log.info("subWalletId {}", subWalletId);
       assertTrue(subWalletId >= 0);
       log.info("Get method 'get_subwallet_id' executed successfully");
@@ -729,7 +729,7 @@ public class TonCenterTest {
       // Using dummy data - this will fail but tests the endpoint
       TonResponse<SendQueryResponse> response =
           client.sendQuery(
-              tonFoundationWallet,
+                  tonWallet,
               "te6ccgEBAgEAqgAB4YgA2ZpktQsYby0n9cV5VWOFINBjScIU2HdondFsK3lDpEAFG8W4Jpf7AeOqfzL9vZ79mX3eM6UEBxZvN6+QmpYwXBq32QOBIrP4lF5ijGgQmZbC6KDeiiptxmTNwl5f59OAGU1NGLsixYlYAAAA2AAcAQBoYgBZQOG7qXmeA/2Tw1pLX2IkcQ5h5fxWzzcBskMJbVVRsKNaTpAAAAAAAAAAAAAAAAAAAA==",
               "",
               "");
@@ -750,7 +750,7 @@ public class TonCenterTest {
       // Using dummy data - this will fail but tests the endpoint
       TonResponse<EstimateFeeResponse> response =
           client.estimateFee(
-              tonFoundationWallet,
+                  tonWallet,
               "te6ccgEBAgEAqgAB4YgA2ZpktQsYby0n9cV5VWOFINBjScIU2HdondFsK3lDpEAFG8W4Jpf7AeOqfzL9vZ79mX3eM6UEBxZvN6+QmpYwXBq32QOBIrP4lF5ijGgQmZbC6KDeiiptxmTNwl5f59OAGU1NGLsixYlYAAAA2AAcAQBoYgBZQOG7qXmeA/2Tw1pLX2IkcQ5h5fxWzzcBskMJbVVRsKNaTpAAAAAAAAAAAAAAAAAAAA==");
       log.info("Estimate fee completed: success={}", response.isSuccess());
     } finally {
@@ -767,13 +767,13 @@ public class TonCenterTest {
 
     try { // todo works with stage.toncenter
       // Test convenience method for transactions
-      TonResponse<List<TransactionResponse>> response = client.getTransactions(tonFoundationWallet);
+      TonResponse<List<TransactionResponse>> response = client.getTransactions(tonWallet);
       assertTrue("Convenience method should work", response.isSuccess());
       log.info("Convenience method getTransactions() works");
 
       // Test convenience method with limit
       TonResponse<List<TransactionResponse>> response2 =
-          client.getTransactions(tonFoundationWallet, 3);
+          client.getTransactions(tonWallet, 3);
       assertTrue("Convenience method with limit should work", response2.isSuccess());
       log.info("Convenience method getTransactions(limit) works");
       log.info("response {}", response2.getResult());

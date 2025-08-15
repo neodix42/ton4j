@@ -19,9 +19,31 @@ public class CommonResponses {
 
     @Data
     public static class ShardQueueSize {
-      private Integer workchain;
-      private Long shard;
+      @SerializedName("id")
+      private BlockIdExt id;
       private Long size;
+
+      @Data
+      public static class BlockIdExt {
+        @SerializedName("@type")
+        private String type;
+        private Integer workchain;
+        private String shard;  // API returns as string
+        private Long seqno;
+        @SerializedName("root_hash")
+        private String rootHash;
+        @SerializedName("file_hash")
+        private String fileHash;
+      }
+      
+      // Convenience methods to access workchain and shard directly
+      public Integer getWorkchain() {
+        return id != null ? id.getWorkchain() : null;
+      }
+      
+      public Long getShard() {
+        return id != null && id.getShard() != null ? Long.parseLong(id.getShard()) : null;
+      }
     }
   }
 

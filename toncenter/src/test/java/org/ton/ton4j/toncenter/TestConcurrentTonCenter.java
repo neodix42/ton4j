@@ -25,7 +25,7 @@ public class TestConcurrentTonCenter {
 
     try {
       TonResponse<WalletInformationResponse> response =
-              tonCenter.getWalletInformation(TonCenterTest.TESTNET_TON_FOUNDATION_WALLET);
+              tonCenter.getWalletInformation(TonCenterTest.TESTNET_WALLET);
       log.info("response {}", response.getResult());
       assertTrue("Wallet information should be successful", response.isSuccess());
       assertNotNull("Result should not be null", response.getResult());

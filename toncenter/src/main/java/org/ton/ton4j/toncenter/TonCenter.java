@@ -50,12 +50,7 @@ public class TonCenter {
   private OkHttpClient httpClient;
   private Gson gson;
 
-  private final int SNAKE_DATA_PREFIX = 0x00;
-  private final int CHUNK_DATA_PREFIX = 0x01;
-  private final int ONCHAIN_CONTENT_PREFIX = 0x00;
-  private final int OFFCHAIN_CONTENT_PREFIX = 0x01;
-
-  // Private constructor for builder pattern
+    // Private constructor for builder pattern
   private TonCenter() {}
 
   public static class TonCenterBuilder {
@@ -134,7 +129,7 @@ public class TonCenter {
 
     public TonCenter build() {
       // Ensure endpoint matches network
-      if (this.network != null) {
+      if (nonNull(this.network)) {
         this.endpoint = this.network.getEndpoint();
       }
 
@@ -168,7 +163,7 @@ public class TonCenter {
             .writeTimeout(writeTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
     // Add API key interceptor if provided
-    if (apiKey != null && !apiKey.trim().isEmpty()) {
+    if (nonNull(apiKey) && !apiKey.trim().isEmpty()) {
       clientBuilder.addInterceptor(
           chain -> {
             Request original = chain.request();
@@ -252,10 +247,10 @@ public class TonCenter {
           Type errorResponseType = new TypeToken<TonResponse<Object>>() {}.getType();
           TonResponse<Object> errorResponse = gson.fromJson(responseBody, errorResponseType);
 
-          if (errorResponse != null && errorResponse.getError() != null) {
+          if (nonNull(errorResponse) && nonNull(errorResponse.getError())) {
             // API returned structured error - use the error code from the response if available
             Integer errorCode =
-                errorResponse.getCode() != null ? errorResponse.getCode() : response.code();
+                nonNull(errorResponse.getCode()) ? errorResponse.getCode() : response.code();
             throw new TonCenterApiException(errorResponse.getError(), errorCode);
           }
         } catch (TonCenterApiException e) {
@@ -280,7 +275,7 @@ public class TonCenter {
       TonResponse<T> tonResponse = gson.fromJson(responseBody, responseType);
 
       // Check if API returned an error
-      if (tonResponse != null && tonResponse.isError()) {
+      if (nonNull(tonResponse) && tonResponse.isError()) {
         throw new TonCenterApiException(tonResponse.getError(), tonResponse.getCode());
       }
 
@@ -451,7 +446,7 @@ public class TonCenter {
     params.put("workchain", workchain.toString());
     params.put("shard", shard.toString());
     params.put("seqno", seqno.toString());
-    if (fromSeqno != null) params.put("from_seqno", fromSeqno.toString());
+    if (nonNull(fromSeqno)) params.put("from_seqno", fromSeqno.toString());
 
     Type responseType = new TypeToken<TonResponse<ShardBlockProofResponse>>() {}.getType();
     return executeGet("/getShardBlockProof", params, responseType);
@@ -469,9 +464,9 @@ public class TonCenter {
     Map<String, String> params = new HashMap<>();
     params.put("workchain", workchain.toString());
     params.put("shard", shard.toString());
-    if (seqno != null) params.put("seqno", seqno.toString());
-    if (lt != null) params.put("lt", lt.toString());
-    if (unixtime != null) params.put("unixtime", unixtime.toString());
+    if (nonNull(seqno)) params.put("seqno", seqno.toString());
+    if (nonNull(lt)) params.put("lt", lt.toString());
+    if (nonNull(unixtime)) params.put("unixtime", unixtime.toString());
 
     Type responseType = new TypeToken<TonResponse<LookupBlockResponse>>() {}.getType();
     return executeGet("/lookupBlock", params, responseType);
@@ -500,11 +495,11 @@ public class TonCenter {
     params.put("workchain", workchain.toString());
     params.put("shard", shard.toString());
     params.put("seqno", seqno.toString());
-    if (rootHash != null) params.put("root_hash", rootHash);
-    if (fileHash != null) params.put("file_hash", fileHash);
-    if (afterLt != null) params.put("after_lt", afterLt.toString());
-    if (afterHash != null) params.put("after_hash", afterHash);
-    if (count != null) params.put("count", count.toString());
+    if (nonNull(rootHash)) params.put("root_hash", rootHash);
+    if (nonNull(fileHash)) params.put("file_hash", fileHash);
+    if (nonNull(afterLt)) params.put("after_lt", afterLt.toString());
+    if (nonNull(afterHash)) params.put("after_hash", afterHash);
+    if (nonNull(count)) params.put("count", count.toString());
 
     Type responseType = new TypeToken<TonResponse<BlockTransactionsResponse>>() {}.getType();
     return executeGet("/getBlockTransactions", params, responseType);
@@ -524,11 +519,11 @@ public class TonCenter {
     params.put("workchain", workchain.toString());
     params.put("shard", shard.toString());
     params.put("seqno", seqno.toString());
-    if (rootHash != null) params.put("root_hash", rootHash);
-    if (fileHash != null) params.put("file_hash", fileHash);
-    if (afterLt != null) params.put("after_lt", afterLt.toString());
-    if (afterHash != null) params.put("after_hash", afterHash);
-    if (count != null) params.put("count", count.toString());
+    if (nonNull(rootHash)) params.put("root_hash", rootHash);
+    if (nonNull(fileHash)) params.put("file_hash", fileHash);
+    if (nonNull(afterLt)) params.put("after_lt", afterLt.toString());
+    if (nonNull(afterHash)) params.put("after_hash", afterHash);
+    if (nonNull(count)) params.put("count", count.toString());
 
     Type responseType = new TypeToken<TonResponse<BlockTransactionsResponse>>() {}.getType();
     return executeGet("/getBlockTransactionsExt", params, responseType);
@@ -541,8 +536,8 @@ public class TonCenter {
     params.put("workchain", workchain.toString());
     params.put("shard", shard.toString());
     params.put("seqno", seqno.toString());
-    if (rootHash != null) params.put("root_hash", rootHash);
-    if (fileHash != null) params.put("file_hash", fileHash);
+    if (nonNull(rootHash)) params.put("root_hash", rootHash);
+    if (nonNull(fileHash)) params.put("file_hash", fileHash);
 
     Type responseType = new TypeToken<TonResponse<BlockHeaderResponse>>() {}.getType();
     return executeGet("/getBlockHeader", params, responseType);
@@ -835,10 +830,10 @@ public class TonCenter {
     Map<String, Object> requestMap = new HashMap<>();
     requestMap.put("address", address);
     requestMap.put("body", body);
-    if (initCode != null && !initCode.isEmpty()) {
+    if (nonNull(initCode) && !initCode.isEmpty()) {
       requestMap.put("init_code", initCode);
     }
-    if (initData != null && !initData.isEmpty()) {
+    if (nonNull(initData) && !initData.isEmpty()) {
       requestMap.put("init_data", initData);
     }
 
@@ -936,7 +931,7 @@ public class TonCenter {
 
   /** Close the HTTP client and release resources */
   public void close() {
-    if (httpClient != null) {
+    if (nonNull(httpClient)) {
       httpClient.dispatcher().executorService().shutdown();
       httpClient.connectionPool().evictAll();
     }
@@ -947,7 +942,8 @@ public class TonCenter {
    * @return String
    */
   private String parseOffChainUriCell(Cell cell) {
-    if ((cell.getBits().toByteArray()[0] & 0xFF) != OFFCHAIN_CONTENT_PREFIX) {
+      int OFFCHAIN_CONTENT_PREFIX = 0x01;
+      if ((cell.getBits().toByteArray()[0] & 0xFF) != OFFCHAIN_CONTENT_PREFIX) {
       throw new Error("not OFFCHAIN_CONTENT_PREFIX");
     }
 

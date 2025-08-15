@@ -10,7 +10,6 @@ A comprehensive Java wrapper for the [TonCenter API v2](https://toncenter.com/ap
 
 - ✅ **Complete API Coverage**: All 27 TonCenter API v2 endpoints implemented
 - ✅ **Network Support**: Both Mainnet and Testnet support
-- ✅ **Error Handling**: Comprehensive exception handling with detailed error messages
 - ✅ **HTTP Client**: Built on OkHttp for reliable HTTP communication
 - ✅ **Logging**: Built-in request/response logging using SLF4J
 - ✅ **Resource Management**: Proper cleanup with close() method
@@ -83,7 +82,7 @@ try {
 ```java
 TonCenter client = TonCenter.builder()
     .apiKey("your-api-key")                    // Optional: API key for higher rate limits
-    .network(Network.MAINNET)                  // MAINNET or TESTNET
+    .mainnet()                                 // MAINNET or TESTNET
     .connectTimeout(Duration.ofSeconds(10))    // Connection timeout
     .readTimeout(Duration.ofSeconds(30))       // Read timeout  
     .writeTimeout(Duration.ofSeconds(30))      // Write timeout
@@ -175,11 +174,19 @@ public class TonResponse<T> {
 TonCenter mainnet = TonCenter.builder()
     .network(Network.MAINNET)
     .build();
+//or
+TonCenter mainnet = TonCenter.builder()
+        .mainnet()
+        .build();
 
 // Testnet
 TonCenter testnet = TonCenter.builder()
     .network(Network.TESTNET)
     .build();
+//or
+TonCenter mainnet = TonCenter.builder()
+        .testnet()
+        .build();
 ```
 
 ## Convenience Methods
@@ -201,6 +208,23 @@ client.lookupBlockBySeqno(workchain, shard, seqno);
 
 // Estimate fees with default parameters
 client.estimateFee(address, body);
+
+getSeqno(address);
+
+getPublicKey(address);
+
+getSeqno(address, atSeqno);
+
+getPublicKey(address);
+
+getSubWalletId(address);
+
+getSubWalletId(address, atSeqno);
+
+getJettonWalletAddress(jettonMasterAddress, ownerAddress);
+
+JettonMinterData getJettonData(jettonMasterAddress);
+
 ```
 
 ## Logging
