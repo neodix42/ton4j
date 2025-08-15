@@ -17,9 +17,13 @@ import org.ton.ton4j.tl.liteserver.queries.PingQuery;
 import org.ton.ton4j.tl.liteserver.responses.*;
 import org.ton.ton4j.utils.Utils;
 
+import static java.util.Objects.nonNull;
+
 /**
  * TCP-based ADNL transport implementation for lite-server communication Based on the ADNL-TCP
  * specification and Go reference implementation
+ * 
+ * Thread-safe implementation that supports multiple concurrent queries from different threads.
  */
 @Slf4j
 public class AdnlTcpTransport {
@@ -38,6 +42,10 @@ public class AdnlTcpTransport {
   private final ConcurrentHashMap<Long, CompletableFuture<TcpPong>> activePings =
       new ConcurrentHashMap<>();
   private final ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(2);
+  
+  // Synchronization objects for thread-safe cipher operations
+  private final Object readCipherLock = new Object();
+  private final Object writeCipherLock = new Object();
 
   private Thread listenerThread;
   private boolean authenticated = false;
@@ -201,8 +209,10 @@ public class AdnlTcpTransport {
           break; // Connection closed
         }
 
-        // Decrypt size in-place to maintain cipher state
-        CryptoUtils.aesCtrTransformInPlace(readCipher, sizeBytes);
+        // Decrypt size in-place to maintain cipher state (thread-safe)
+        synchronized (readCipherLock) {
+          CryptoUtils.aesCtrTransformInPlace(readCipher, sizeBytes);
+        }
 
         // Read as unsigned integer and handle properly
         long packetSizeLong =
@@ -221,8 +231,10 @@ public class AdnlTcpTransport {
           break; // Connection closed
         }
 
-        // Decrypt packet data in-place to maintain cipher state
-        CryptoUtils.aesCtrTransformInPlace(readCipher, packetData);
+        // Decrypt packet data in-place to maintain cipher state (thread-safe)
+        synchronized (readCipherLock) {
+          CryptoUtils.aesCtrTransformInPlace(readCipher, packetData);
+        }
 
         // Process packet
         processIncomingPacket(packetData);
@@ -322,13 +334,15 @@ public class AdnlTcpTransport {
             TcpPong tcpPong = TcpPong.deserialize(queryBody);
             //            log.debug("received adnl tcp.pong {}", tcpPong.getRandomId());
             CompletableFuture<TcpPong> future = activePings.remove(tcpPong.getRandomId());
-            future.complete(tcpPong);
+            if (nonNull(future)) {
+              future.complete(tcpPong);
+            }
           } else if (Integer.reverseBytes(constructor) == AdnlMessagePart.constructorId) {
             log.info("AdnlMessagePart");
           } else if (Integer.reverseBytes(constructor) == AdnlMessageAnswer.constructorId) {
             //            log.info("AdnlMessageAnswer");
 
-            //            byte[] queryId = Arrays.copyOfRange(payload, 4, 36);
+            byte[] queryId = Arrays.copyOfRange(payload, 4, 36);
             byte[] queryBody = Utils.fromBytes(Arrays.copyOfRange(payload, 36, payload.length));
 
             byte[] queryBodyConstructorId = Arrays.copyOfRange(queryBody, 0, 4);
@@ -337,140 +351,85 @@ public class AdnlTcpTransport {
 
             //            log.info("received queryId: {}", CryptoUtils.hex(queryId));
 
-            if (!activeQueries.isEmpty()) {
+            // Thread-safe response handling: use the actual query ID from the response
+            String queryIdStr = CryptoUtils.hex(queryId);
+            CompletableFuture<LiteServerAnswer> future = activeQueries.remove(queryIdStr);
+            if (future != null) {
+              // Try to deserialize as liteServer response
+              try {
+                LiteServerAnswer result = null;
 
-              String queryIdStr = activeQueries.keySet().iterator().next();
-              CompletableFuture<LiteServerAnswer> future = activeQueries.remove(queryIdStr);
-              if (future != null) {
-                // Try to deserialize as liteServer.masterchainInfo
-                try {
-                  LiteServerAnswer result = null;
-
-                  int id = Integer.reverseBytes(constructorBody);
-                  if (id == LiteServerError.constructorId) {
-                    result = LiteServerError.deserialize(queryBodyPayload);
-                    //                    log.error("Result {}", result);
-                  } else if (id == MasterchainInfo.constructorId) {
-                    result = MasterchainInfo.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.masterchainInfo response");
-                  } else if (id == MasterchainInfoExt.constructorId) {
-                    result = MasterchainInfoExt.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.masterchainInfoExt response");
-                  } else if (id == CurrentTime.constructorId) {
-                    result = CurrentTime.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.currentTime response");
-                  } else if (id == Version.constructorId) {
-                    result = Version.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized liteServer.version
-                    // response");
-                  } else if (id == BlockData.constructorId) {
-                    result = BlockData.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized liteServer.blockData
-                    // response");
-                  } else if (id == BlockState.constructorId) {
-                    result = BlockState.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized liteServer.blockState
-                    // response");
-                  } else if (id == BlockHeader.constructorId) {
-                    result = BlockHeader.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.blockHeader response");
-                  } else if (id == LookupBlockResult.constructorId) {
-                    result = LookupBlockResult.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.lookupBlockResult response");
-                  } else if (id == SendMsgStatus.constructorId) {
-                    result = SendMsgStatus.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.sendMsgStatus response");
-                  } else if (id == AccountState.constructorId) {
-                    result = AccountState.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.accountState response");
-                  } else if (id == ConfigInfo.constructorId) {
-                    result = ConfigInfo.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.accountState response");
-                  } else if (id == ShardInfo.constructorId) {
-                    result = ShardInfo.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized liteServer.shardInfo
-                    // response");
-                  } else if (id == AllShardsInfo.constructorId) {
-                    result = AllShardsInfo.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.allShardsInfo response");
-                  } else if (id == TransactionList.constructorId) {
-                    result = TransactionList.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.transactionList response");
-                  } else if (id == TransactionInfo.constructorId) {
-                    result = TransactionInfo.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.transactionInfo response");
-                  } else if (id == BlockTransactions.constructorId) {
-                    result = BlockTransactions.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.blockTransactions response");
-                  } else if (id == BlockTransactionsExt.constructorId) {
-                    result = BlockTransactionsExt.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.blockTransactionsExt response");
-                  } else if (id == RunMethodResult.constructorId) {
-                    result = RunMethodResult.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.runMethodResult response");
-                  } else if (id == ValidatorStats.constructorId) {
-                    result = ValidatorStats.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.runMethodResult response");
-                  } else if (id == PartialBlockProof.constructorId) {
-                    result = PartialBlockProof.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.partialBlockProof response");
-                  } else if (id == ShardBlockProof.constructorId) {
-                    result = ShardBlockProof.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.shardBlockProof response");
-                  } else if (id == DispatchQueueInfo.constructorId) {
-                    result = DispatchQueueInfo.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.dispatchQueueInfo response");
-                  } else if (id == DispatchQueueMessages.constructorId) {
-                    result = DispatchQueueMessages.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.dispatchQueueMessages response");
-                  } else if (id == LibraryResult.constructorId) {
-                    result = LibraryResult.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.librariesQuery response");
-                  } else if (id == LibraryResultWithProof.constructorId) {
-                    result = LibraryResultWithProof.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.libraryResultWithProof response");
-                  } else if (id == OutMsgQueueSizes.constructorId) {
-                    result = OutMsgQueueSizes.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.librariesQuery response");
-                  } else if (id == BlockOutMsgQueueSize.constructorId) {
-                    result = BlockOutMsgQueueSize.deserialize(queryBodyPayload);
-                    //                    log.debug("Successfully deserialized
-                    // liteServer.blockOutMsgQueueSize response");
-                  } else {
-                    log.error("unknown adnl.query id {}", id);
-                  }
-
-                  future.complete(result);
-                } catch (Exception e) {
-                  log.error(
-                      "Could not deserialize constructor {} completing with raw bytes: ",
-                      constructorBody,
-                      e);
-                  future.complete(null);
+                int id = Integer.reverseBytes(constructorBody);
+                if (id == LiteServerError.constructorId) {
+                  result = LiteServerError.deserialize(queryBodyPayload);
+                } else if (id == MasterchainInfo.constructorId) {
+                  result = MasterchainInfo.deserialize(queryBodyPayload);
+                } else if (id == MasterchainInfoExt.constructorId) {
+                  result = MasterchainInfoExt.deserialize(queryBodyPayload);
+                } else if (id == CurrentTime.constructorId) {
+                  result = CurrentTime.deserialize(queryBodyPayload);
+                } else if (id == Version.constructorId) {
+                  result = Version.deserialize(queryBodyPayload);
+                } else if (id == BlockData.constructorId) {
+                  result = BlockData.deserialize(queryBodyPayload);
+                } else if (id == BlockState.constructorId) {
+                  result = BlockState.deserialize(queryBodyPayload);
+                } else if (id == BlockHeader.constructorId) {
+                  result = BlockHeader.deserialize(queryBodyPayload);
+                } else if (id == LookupBlockResult.constructorId) {
+                  result = LookupBlockResult.deserialize(queryBodyPayload);
+                } else if (id == SendMsgStatus.constructorId) {
+                  result = SendMsgStatus.deserialize(queryBodyPayload);
+                } else if (id == AccountState.constructorId) {
+                  result = AccountState.deserialize(queryBodyPayload);
+                } else if (id == ConfigInfo.constructorId) {
+                  result = ConfigInfo.deserialize(queryBodyPayload);
+                } else if (id == ShardInfo.constructorId) {
+                  result = ShardInfo.deserialize(queryBodyPayload);
+                } else if (id == AllShardsInfo.constructorId) {
+                  result = AllShardsInfo.deserialize(queryBodyPayload);
+                } else if (id == TransactionList.constructorId) {
+                  result = TransactionList.deserialize(queryBodyPayload);
+                } else if (id == TransactionInfo.constructorId) {
+                  result = TransactionInfo.deserialize(queryBodyPayload);
+                } else if (id == BlockTransactions.constructorId) {
+                  result = BlockTransactions.deserialize(queryBodyPayload);
+                } else if (id == BlockTransactionsExt.constructorId) {
+                  result = BlockTransactionsExt.deserialize(queryBodyPayload);
+                } else if (id == RunMethodResult.constructorId) {
+                  result = RunMethodResult.deserialize(queryBodyPayload);
+                } else if (id == ValidatorStats.constructorId) {
+                  result = ValidatorStats.deserialize(queryBodyPayload);
+                } else if (id == PartialBlockProof.constructorId) {
+                  result = PartialBlockProof.deserialize(queryBodyPayload);
+                } else if (id == ShardBlockProof.constructorId) {
+                  result = ShardBlockProof.deserialize(queryBodyPayload);
+                } else if (id == DispatchQueueInfo.constructorId) {
+                  result = DispatchQueueInfo.deserialize(queryBodyPayload);
+                } else if (id == DispatchQueueMessages.constructorId) {
+                  result = DispatchQueueMessages.deserialize(queryBodyPayload);
+                } else if (id == LibraryResult.constructorId) {
+                  result = LibraryResult.deserialize(queryBodyPayload);
+                } else if (id == LibraryResultWithProof.constructorId) {
+                  result = LibraryResultWithProof.deserialize(queryBodyPayload);
+                } else if (id == OutMsgQueueSizes.constructorId) {
+                  result = OutMsgQueueSizes.deserialize(queryBodyPayload);
+                } else if (id == BlockOutMsgQueueSize.constructorId) {
+                  result = BlockOutMsgQueueSize.deserialize(queryBodyPayload);
+                } else {
+                  log.error("unknown adnl.query id {}", id);
                 }
+
+                future.complete(result);
+              } catch (Exception e) {
+                log.error(
+                    "Could not deserialize constructor {} completing with raw bytes: ",
+                    constructorBody,
+                    e);
+                future.complete(null);
               }
+            } else {
+              log.warn("Received response for unknown query ID: {}", queryIdStr);
             }
           } else {
             log.info("unknown adnl.message id {}", Integer.reverseBytes(constructor));
@@ -518,12 +477,15 @@ public class AdnlTcpTransport {
     // Encrypt and send
     byte[] packetData = packet.array();
 
-    // Encrypt in-place to maintain cipher state (matching Go implementation)
-    CryptoUtils.aesCtrTransformInPlace(writeCipher, packetData);
-
-    synchronized (output) {
-      output.write(packetData);
-      output.flush();
+    // Encrypt in-place to maintain cipher state (thread-safe)
+    synchronized (writeCipherLock) {
+      CryptoUtils.aesCtrTransformInPlace(writeCipher, packetData);
+      
+      // Send immediately after encryption to maintain proper ordering
+      synchronized (output) {
+        output.write(packetData);
+        output.flush();
+      }
     }
   }
 
