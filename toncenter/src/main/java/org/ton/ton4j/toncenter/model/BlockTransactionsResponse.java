@@ -2,6 +2,7 @@ package org.ton.ton4j.toncenter.model;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
+import java.math.BigInteger;
 import java.util.List;
 
 @Data
@@ -12,7 +13,7 @@ public class BlockTransactionsResponse {
   private BlockIdExt id;
 
   @SerializedName("req_count")
-  private Double reqCount;
+  private Long reqCount;
 
   private Boolean incomplete;
 
@@ -23,15 +24,27 @@ public class BlockTransactionsResponse {
     @SerializedName("@type")
     private String type;
 
-    private Double workchain;
-    private Long shard;
-    private Double seqno;
+    private Long workchain;
+    private BigInteger shard;
+    private Long seqno;
 
     @SerializedName("root_hash")
     private String rootHash;
 
     @SerializedName("file_hash")
     private String fileHash;
+    
+    @Override
+    public String toString() {
+      return "BlockIdExt{" +
+          "type='" + type + '\'' +
+          ", workchain=" + workchain +
+          ", shard=0x" + (shard != null ? shard.toString(16) : "null") +
+          ", seqno=" + seqno +
+          ", rootHash='" + rootHash + '\'' +
+          ", fileHash='" + fileHash + '\'' +
+          '}';
+    }
   }
 
   @Data
@@ -39,85 +52,10 @@ public class BlockTransactionsResponse {
     @SerializedName("@type")
     private String type;
 
-    private AccountAddress address;
-    private Double utime;
-    private String data;
-
-    @SerializedName("transaction_id")
-    private TransactionId transactionId;
-
-    private Long fee;
-
-    @SerializedName("storage_fee")
-    private Long storageFee;
-
-    @SerializedName("other_fee")
-    private Long otherFee;
-
-    @SerializedName("in_msg")
-    private RawMessage inMsg;
-
-    @SerializedName("out_msgs")
-    private List<RawMessage> outMsgs;
-
     private String account;
-  }
-
-  @Data
-  public static class AccountAddress {
-    @SerializedName("@type")
-    private String type;
-
-    @SerializedName("account_address")
-    private String accountAddress;
-  }
-
-  @Data
-  public static class TransactionId {
-    @SerializedName("@type")
-    private String type;
-
+    private Integer mode;
     private String lt;
     private String hash;
   }
 
-  @Data
-  public static class RawMessage {
-    @SerializedName("@type")
-    private String type;
-
-    private String hash;
-    private AccountAddress source;
-    private AccountAddress destination;
-    private Long value;
-
-    @SerializedName("extra_currencies")
-    private List<Object> extraCurrencies;
-
-    @SerializedName("fwd_fee")
-    private Long fwdFee;
-
-    @SerializedName("ihr_fee")
-    private Long ihrFee;
-
-    @SerializedName("created_lt")
-    private Long createdLt;
-
-    @SerializedName("body_hash")
-    private String bodyHash;
-
-    @SerializedName("msg_data")
-    private MessageData msgData;
-  }
-
-  @Data
-  public static class MessageData {
-    @SerializedName("@type")
-    private String type;
-
-    private String body;
-
-    @SerializedName("init_state")
-    private String initState;
-  }
 }

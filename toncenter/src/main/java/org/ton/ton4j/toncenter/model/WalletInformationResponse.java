@@ -14,7 +14,7 @@ public class WalletInformationResponse {
   @SerializedName("wallet_type")
   private String walletType;
 
-  private Integer seqno;
+  private Long seqno;
 
   @SerializedName("wallet_id")
   private Long walletId;

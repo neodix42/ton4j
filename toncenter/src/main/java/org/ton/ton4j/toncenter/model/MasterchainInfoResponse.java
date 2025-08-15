@@ -2,6 +2,7 @@ package org.ton.ton4j.toncenter.model;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
+import java.math.BigInteger;
 
 /** Response model for getMasterchainInfo endpoint */
 @Data
@@ -25,10 +26,10 @@ public class MasterchainInfoResponse {
     private String type;
 
     @SerializedName("workchain")
-    private Integer workchain;
+    private Long workchain;
 
     @SerializedName("shard")
-    private String shard;
+    private BigInteger shard;
 
     @SerializedName("seqno")
     private Long seqno;
@@ -38,5 +39,17 @@ public class MasterchainInfoResponse {
 
     @SerializedName("file_hash")
     private String fileHash;
+    
+    @Override
+    public String toString() {
+      return "BlockId{" +
+          "type='" + type + '\'' +
+          ", workchain=" + workchain +
+          ", shard=0x" + (shard != null ? shard.toString(16) : "null") +
+          ", seqno=" + seqno +
+          ", rootHash='" + rootHash + '\'' +
+          ", fileHash='" + fileHash + '\'' +
+          '}';
+    }
   }
 }

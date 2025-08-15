@@ -2,6 +2,7 @@ package org.ton.ton4j.toncenter.model;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
@@ -27,22 +28,34 @@ public class CommonResponses {
       public static class BlockIdExt {
         @SerializedName("@type")
         private String type;
-        private Integer workchain;
-        private String shard;  // API returns as string
+        private Long workchain;
+        private BigInteger shard;
         private Long seqno;
         @SerializedName("root_hash")
         private String rootHash;
         @SerializedName("file_hash")
         private String fileHash;
+        
+        @Override
+        public String toString() {
+          return "BlockIdExt{" +
+              "type='" + type + '\'' +
+              ", workchain=" + workchain +
+              ", shard=0x" + (shard != null ? shard.toString(16) : "null") +
+              ", seqno=" + seqno +
+              ", rootHash='" + rootHash + '\'' +
+              ", fileHash='" + fileHash + '\'' +
+              '}';
+        }
       }
       
       // Convenience methods to access workchain and shard directly
-      public Integer getWorkchain() {
+      public Long getWorkchain() {
         return id != null ? id.getWorkchain() : null;
       }
       
-      public Long getShard() {
-        return id != null && id.getShard() != null ? Long.parseLong(id.getShard()) : null;
+      public BigInteger getShard() {
+        return id != null ? id.getShard() : null;
       }
     }
   }

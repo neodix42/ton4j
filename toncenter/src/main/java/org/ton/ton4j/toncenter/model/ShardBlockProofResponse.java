@@ -2,6 +2,7 @@ package org.ton.ton4j.toncenter.model;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
+import java.math.BigInteger;
 import java.util.List;
 
 /** Response for getShardBlockProof endpoint */
@@ -25,8 +26,8 @@ public class ShardBlockProofResponse {
     @SerializedName("@type")
     private String type;
 
-    private Integer workchain;
-    private String shard; // Changed to String as it can be "-9223372036854775808"
+    private Long workchain;
+    private BigInteger shard;
     private Long seqno;
 
     @SerializedName("root_hash")
@@ -34,6 +35,18 @@ public class ShardBlockProofResponse {
 
     @SerializedName("file_hash")
     private String fileHash;
+    
+    @Override
+    public String toString() {
+      return "BlockIdExt{" +
+          "type='" + type + '\'' +
+          ", workchain=" + workchain +
+          ", shard=0x" + (shard != null ? shard.toString(16) : "null") +
+          ", seqno=" + seqno +
+          ", rootHash='" + rootHash + '\'' +
+          ", fileHash='" + fileHash + '\'' +
+          '}';
+    }
   }
 
   @Data
