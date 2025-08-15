@@ -22,7 +22,7 @@ You can get the latest tonlib library by:
 <dependency>
     <groupId>io.github.neodix42</groupId>
     <artifactId>tonlib</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
@@ -33,7 +33,7 @@ You can get the latest tonlib library by:
 <dependency>
     <groupId>io.github.neodix42.ton4j</groupId>
     <artifactId>tonlib</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
