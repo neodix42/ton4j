@@ -38,7 +38,7 @@ public class BlockIdExt implements Serializable {
   }
 
   public String getShard() {
-    return Long.toHexString(shard);
+    return Long.toUnsignedString(shard, 16);
   }
 
   public Cell toCell() {

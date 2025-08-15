@@ -61,7 +61,7 @@ public class BlockIdExt implements Serializable, LiteServerAnswer {
   }
 
   public String getShard() {
-    return Long.toHexString(shard);
+    return Long.toUnsignedString(shard, 16);
   }
 
   public BlockId getBlockId() {

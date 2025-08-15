@@ -3,6 +3,7 @@ package org.ton.ton4j.toncenter.model;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import java.math.BigInteger;
+import org.ton.ton4j.utils.Utils;
 
 /** Response for lookupBlock endpoint */
 @Data
@@ -22,7 +23,7 @@ public class LookupBlockResponse {
   public String toString() {
     return "LookupBlockResponse{" +
         "workchain=" + workchain +
-        ", shard=0x" + (shard != null ? shard.toString(16) : "null") +
+        ", shard=0x" + Utils.bigIntegerToUnsignedHex(shard) +
         ", seqno=" + seqno +
         ", rootHash='" + rootHash + '\'' +
         ", fileHash='" + fileHash + '\'' +

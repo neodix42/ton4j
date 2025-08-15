@@ -1554,6 +1554,15 @@ public class Utils {
     return b;
   }
 
+  public static String bigIntegerToUnsignedHex(BigInteger value) {
+    if (isNull(value)) return "null";
+    // If the BigInteger represents a negative signed 64-bit value, convert to unsigned
+    if (value.compareTo(BigInteger.ZERO) < 0) {
+      value = value.add(BigInteger.ONE.shiftLeft(64));
+    }
+    return value.toString(16);
+  }
+
   public static String getResourceAbsoluteDirectory(ClassLoader cl, String resource) {
     try {
       URL res = cl.getResource(resource);

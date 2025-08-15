@@ -19,7 +19,7 @@ public class BlockId implements Serializable {
   }
 
   public String getShard() {
-    return Long.toHexString(shard);
+    return Long.toUnsignedString(shard, 16);
   }
 
   //  public String getShard() {

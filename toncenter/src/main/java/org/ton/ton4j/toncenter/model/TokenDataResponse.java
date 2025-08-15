@@ -52,13 +52,6 @@ public class TokenDataResponse {
     private String type;
     private String uri;
     private JettonContentData data;
-
-    // Direct fields for backward compatibility
-    private String name;
-    private String description;
-    private String image;
-    private String symbol;
-    private String decimals;
   }
 
   @Data

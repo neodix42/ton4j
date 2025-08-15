@@ -3,6 +3,7 @@ package org.ton.ton4j.toncenter.model;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import java.math.BigInteger;
+import org.ton.ton4j.utils.Utils;
 
 /** Response model for getMasterchainInfo endpoint */
 @Data
@@ -45,7 +46,7 @@ public class MasterchainInfoResponse {
       return "BlockId{" +
           "type='" + type + '\'' +
           ", workchain=" + workchain +
-          ", shard=0x" + (shard != null ? shard.toString(16) : "null") +
+          ", shard=0x" + Utils.bigIntegerToUnsignedHex(shard) +
           ", seqno=" + seqno +
           ", rootHash='" + rootHash + '\'' +
           ", fileHash='" + fileHash + '\'' +

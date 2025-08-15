@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import java.math.BigInteger;
 import java.util.List;
+import org.ton.ton4j.utils.Utils;
 
 @Data
 public class BlockHeaderResponse {
@@ -80,7 +81,7 @@ public class BlockHeaderResponse {
       return "BlockIdExt{" +
           "type='" + type + '\'' +
           ", workchain=" + workchain +
-          ", shard=0x" + (shard != null ? shard.toString(16) : "null") +
+          ", shard=0x" + Utils.bigIntegerToUnsignedHex(shard) +
           ", seqno=" + seqno +
           ", rootHash='" + rootHash + '\'' +
           ", fileHash='" + fileHash + '\'' +
