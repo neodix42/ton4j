@@ -202,24 +202,22 @@ public class JettonMinter implements Contract {
    */
   public JettonMinterData getJettonData() {
     if (nonNull(tonCenterClient)) {
-      try {
-        org.ton.ton4j.toncenter.model.JettonMinterData data;
-        if (nonNull(customAddress)) {
-          data = tonCenterClient.getJettonData(customAddress.toBounceable());
-        } else {
-          data = tonCenterClient.getJettonData(getAddress().toBounceable());
-        }
-        return JettonMinterData.builder()
-                .adminAddress(data.getAdminAddress())
-                .isMutable(data.isMutable())
-                .jettonContentCell(data.getJettonContentCell())
-                .jettonContentUri(data.getJettonContentUri())
-                .jettonWalletCode(data.getJettonWalletCode())
-                .totalSupply(data.getTotalSupply())
-                .build();
-      } catch (Exception e) {
-        throw new Error("Error getting jetton data: " + e.getMessage());
+
+      org.ton.ton4j.toncenter.model.JettonMinterData data;
+      if (nonNull(customAddress)) {
+        data = tonCenterClient.getJettonData(customAddress.toBounceable());
+      } else {
+        data = tonCenterClient.getJettonData(getAddress().toBounceable());
       }
+      return JettonMinterData.builder()
+          .adminAddress(data.getAdminAddress())
+          .isMutable(data.isMutable())
+          .jettonContentCell(data.getJettonContentCell())
+          .jettonContentUri(data.getJettonContentUri())
+          .jettonWalletCode(data.getJettonWalletCode())
+          .totalSupply(data.getTotalSupply())
+          .build();
+
     } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult;
       if (nonNull(customAddress)) {
@@ -351,11 +349,15 @@ public class JettonMinter implements Contract {
       try {
         Address jettonWalletAddress;
         if (nonNull(customAddress)) {
-          jettonWalletAddress = tonCenterClient.getJettonWalletAddress(customAddress.toBounceable(), ownerAddress.toBounceable());
+          jettonWalletAddress =
+              tonCenterClient.getJettonWalletAddress(
+                  customAddress.toBounceable(), ownerAddress.toBounceable());
         } else {
-          jettonWalletAddress = tonCenterClient.getJettonWalletAddress(getAddress().toBounceable(), ownerAddress.toBounceable());
+          jettonWalletAddress =
+              tonCenterClient.getJettonWalletAddress(
+                  getAddress().toBounceable(), ownerAddress.toBounceable());
         }
-        
+
         return JettonWallet.builder()
             .tonCenterClient(tonCenterClient)
             .address(jettonWalletAddress)

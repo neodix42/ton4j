@@ -470,7 +470,7 @@ public class TestJetton {
 
     getMinterInfo(minter);
   }
-  
+
   @Test
   public void testJettonMinterTonCenterClient() throws Exception {
 
@@ -478,9 +478,11 @@ public class TestJetton {
         TonCenter.builder()
             .apiKey(TESTNET_API_KEY)
             .network(Network.TESTNET)
+            .uniqueRequests()
             .build();
 
     adminWallet = GenerateWallet.randomV3R1(tonCenter, 2);
+    Utils.sleep(2);
     wallet2 = GenerateWallet.randomV3R1(tonCenter, 1);
 
     log.info("admin wallet address {}", adminWallet.getAddress());
@@ -516,7 +518,7 @@ public class TestJetton {
     assertThat(sendResponse.getCode()).isZero();
     log.info("deploying minter");
     minter.waitForDeployment(60);
-
+    Utils.sleep(2);
     getMinterInfo(minter); // nothing minted, so zero returned
 
     // MINT JETTONS
@@ -576,6 +578,7 @@ public class TestJetton {
             .amount(Utils.toNano(0.056))
             .body(minter.createChangeAdminBody(0, Address.of(NEW_ADMIN2)))
             .build();
+    Utils.sleep(2);
     sendResponse = adminWallet.send(walletV3Config);
     assertThat(sendResponse.getCode()).isZero();
 
@@ -583,16 +586,17 @@ public class TestJetton {
 
     getMinterInfo(minter);
 
-    Utils.sleep(45);
+    Utils.sleep(30);
 
     log.info("adminWallet balance: {}", Utils.formatNanoValue(adminWallet.getBalance()));
     log.info("    wallet2 balance: {}", Utils.formatNanoValue(wallet2.getBalance()));
-
+    Utils.sleep(2);
     JettonWallet adminJettonWallet = minter.getJettonWallet(adminWallet.getAddress());
     log.info("adminJettonWallet {}", adminJettonWallet.getAddress());
 
     // transfer from admin to WALLET2_ADDRESS by sending transfer request to admin's jetton wallet
 
+    Utils.sleep(2);
     walletV3Config =
         WalletV3Config.builder()
             .walletId(42)
@@ -610,10 +614,11 @@ public class TestJetton {
                     MsgUtils.createTextMessageBody("gift") // forward payload
                     ))
             .build();
+    Utils.sleep(2);
     sendResponse = adminWallet.send(walletV3Config);
     assertThat(sendResponse.getCode()).isZero();
 
-    Utils.sleep(60, "transferring 444 jettons...");
+    Utils.sleep(30, "transferring 444 jettons...");
     log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
 
     // wallet 2, after received jettons, can use JettonWallet
@@ -630,12 +635,13 @@ public class TestJetton {
             .amount(Utils.toNano(0.05))
             .body(JettonWallet.createBurnBody(0, Utils.toNano(111), adminWallet.getAddress()))
             .build();
+    Utils.sleep(2);
     sendResponse = adminWallet.send(walletV3Config);
     assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "burning 111 jettons in admin wallet");
     log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
-
+    Utils.sleep(2);
     getMinterInfo(minter);
   }
 
@@ -646,8 +652,7 @@ public class TestJetton {
     log.info("minter jetton uri {}", data.getJettonContentUri());
   }
 
-  List<Destination> createDummyDestinations(int count, JettonWallet jettonWallet)
-      throws NoSuchAlgorithmException {
+  List<Destination> createDummyDestinations(int count, JettonWallet jettonWallet) {
     List<Destination> result = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       String dstDummyAddress = Utils.generateRandomAddress(0);

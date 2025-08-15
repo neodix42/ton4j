@@ -217,20 +217,6 @@ public class WalletV3R1 implements Contract {
       return send(prepareExternalMsg(config));
   }
 
-  /**
-   * Sends amount of nano toncoins to destination address and waits till message found among
-   * account's transactions
-   */
-//  public RawTransaction sendWithConfirmation(WalletV3Config config) throws Exception {
-//    if (nonNull(adnlLiteClient)) {
-//      adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
-//      return null;
-//    } else {
-//      return tonlib.sendRawMessageWithConfirmation(
-//          prepareExternalMsg(config).toCell().toBase64(), getAddress());
-//    }
-//  }
-
   public Message prepareExternalMsg(WalletV3Config config) {
     Cell body = createTransferBody(config);
     return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);

@@ -182,7 +182,7 @@ public class GenerateWallet {
 
     BigInteger balance =
             TestnetFaucet.topUpContract(
-                    tonCenter, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins));
+                    tonCenter, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins), true);
     log.info("new wallet balance {}", Utils.formatNanoValue(balance));
 
     // deploy new wallet

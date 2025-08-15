@@ -14,6 +14,7 @@ import org.ton.ton4j.tlb.Message;
 import org.ton.ton4j.toncenter.model.*;
 import org.ton.ton4j.utils.Utils;
 
+import static java.lang.Long.decode;
 import static java.util.Objects.nonNull;
 import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
@@ -565,7 +566,7 @@ public class TonCenter {
     return executeGet("/getConfigParam", params, responseType);
   }
 
-  /** Get cell with full config at specific seqno*/
+  /** Get cell with full config at specific seqno */
   public TonResponse<ConfigAllResponse> getConfigAll(Long seqno) {
     Map<String, String> params = new HashMap<>();
     if (nonNull(seqno)) params.put("seqno", seqno.toString());
@@ -634,7 +635,7 @@ public class TonCenter {
     RunGetMethodResponse r = runGetMethod(address, "seqno", new ArrayList<>()).getResult();
     //    log.info("seqno {}", r);
     if ((nonNull(r)) && (r.getExitCode() == 0)) {
-      return Long.decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
+      return decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
     } else {
       throw new Error("getSeqno failed, exitCode: " + r.getExitCode());
     }
@@ -643,7 +644,7 @@ public class TonCenter {
   public long getSeqno(String address, Long atSeqno) {
     RunGetMethodResponse r = runGetMethod(address, "seqno", new ArrayList<>(), atSeqno).getResult();
     if ((nonNull(r)) && (r.getExitCode() == 0)) {
-      return Long.decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
+      return decode((String) new ArrayList<>(r.getStack().get(0)).get(1));
     } else {
       throw new Error("getSeqno failed, exitCode: " + r.getExitCode());
     }
@@ -729,31 +730,28 @@ public class TonCenter {
    * @return JettonMinterData object containing jetton information
    */
   public JettonMinterData getJettonData(String jettonMasterAddress) {
-    List<List<Object>> stack = new ArrayList<>();
     RunGetMethodResponse response =
-        runGetMethod(jettonMasterAddress, "get_jetton_data", stack).getResult();
+        runGetMethod(jettonMasterAddress, "get_jetton_data", new ArrayList<>()).getResult();
 
     // Parse total supply
-    String totalSupplyHex = ((String) new ArrayList<>(response.getStack().get(0)).get(1));
-    BigInteger totalSupply = new BigInteger(totalSupplyHex.substring(2), 16);
+    BigInteger totalSupply =
+        BigInteger.valueOf(
+            Long.decode((String) new ArrayList<>(response.getStack().get(0)).get(1)));
 
-    // Parse is_mutable flag
-    String isMutableHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
-    boolean isMutable = new BigInteger(isMutableHex.substring(2), 16).intValue() == -1;
+    boolean isMutable = Long.decode(response.getStack().get(1).get(1).toString()) == -1;
 
-    // Parse admin address
-    String adminAddressHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
-    Address adminAddress = Address.of(adminAddressHex);
+    List<Object> elements = new ArrayList<>(response.getStack().get(2));
+    Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+    Cell c = Cell.fromBocBase64(l.get("bytes"));
+    Address adminAddress = CellSlice.beginParse(c).loadAddress();
 
-    // Parse content cell
-    String contentCellHex = ((String) new ArrayList<>(response.getStack().get(3)).get(1));
-    Cell jettonContentCell =
-        CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentCellHex)).endCell();
+    elements = new ArrayList<>(response.getStack().get(3));
+    l = (LinkedTreeMap<String, String>) elements.get(1);
+    Cell jettonContentCell = Cell.fromBocBase64(l.get("bytes"));
 
-    // Parse jetton wallet code
-    String walletCodeHex = ((String) new ArrayList<>(response.getStack().get(4)).get(1));
-    Cell jettonWalletCode =
-        CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(walletCodeHex)).endCell();
+    elements = new ArrayList<>(response.getStack().get(4));
+    l = (LinkedTreeMap<String, String>) elements.get(1);
+    Cell jettonWalletCode = Cell.fromBocBase64(l.get("bytes"));
 
     // Parse content URI if possible
     String jettonContentUri = null;

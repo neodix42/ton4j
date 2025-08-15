@@ -152,18 +152,18 @@ public class JettonWallet implements Contract {
                 .getResult();
 
         // Parse the response
-        BigInteger balance = new BigInteger(((String) new java.util.ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
+        BigInteger balance = new BigInteger(((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
         
         // Parse owner address from stack
-        String ownerAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(1)).get(1));
+        String ownerAddrHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
         Address ownerAddress = Address.of(ownerAddrHex);
         
         // Parse jetton minter address from stack
-        String minterAddrHex = ((String) new java.util.ArrayList<>(response.getStack().get(2)).get(1));
+        String minterAddrHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
         Address jettonMinterAddress = Address.of(minterAddrHex);
         
         // Parse jetton wallet code from stack
-        String codeHex = ((String) new java.util.ArrayList<>(response.getStack().get(3)).get(1));
+        String codeHex = ((String) new ArrayList<>(response.getStack().get(3)).get(1));
         Cell jettonWalletCode = CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(codeHex)).endCell();
         
         return JettonWalletData.builder()

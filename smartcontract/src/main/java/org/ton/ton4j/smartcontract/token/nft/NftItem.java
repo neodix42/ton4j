@@ -5,10 +5,13 @@ import static java.util.Objects.nonNull;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import com.google.gson.internal.LinkedTreeMap;
 import lombok.Builder;
 import lombok.Getter;
 import org.ton.ton4j.adnl.AdnlLiteClient;
+import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
@@ -116,20 +119,30 @@ public class NftItem implements Contract {
         boolean isInitialized = "0xffffffffffffffff".equals(((String) new ArrayList<>(response.getStack().get(0)).get(1)));
         
         // Parse index
-        String indexHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
-        BigInteger index = new BigInteger(indexHex.substring(2), 16);
+//        String indexHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
+        BigInteger index = BigInteger.valueOf(Long.decode(response.getStack().get(0).get(1).toString()));
         
         // Parse collection address
-        String collectionAddrHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
-        Address collectionAddress = Address.of(collectionAddrHex);
-        
+        List<Object> elements = new ArrayList<>(response.getStack().get(2));
+        Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+        Cell c = Cell.fromBocBase64(l.get("bytes"));
+//        String collectionAddrHex = ((String) new ArrayList<>(response.getStack().get(2)).get(1));
+        Address collectionAddress = CellSlice.beginParse(c).loadAddress();
+//
         // Parse owner address
-        String ownerAddrHex = ((String) new ArrayList<>(response.getStack().get(3)).get(1));
-        Address ownerAddress = isInitialized ? Address.of(ownerAddrHex) : null;
+        elements = new ArrayList<>(response.getStack().get(3));
+        l = (LinkedTreeMap<String, String>) elements.get(1);
+        c = Cell.fromBocBase64(l.get("bytes"));
+        Address ownerAddress = CellSlice.beginParse(c).loadAddress();
+//        String ownerAddrHex = ((String) new ArrayList<>(response.getStack().get(3)).get(1));
+//        Address ownerAddress = isInitialized ? Address.of(ownerAddrHex) : null;
         
         // Parse content cell
-        String contentCellHex = ((String) new ArrayList<>(response.getStack().get(4)).get(1));
-        Cell cell = CellBuilder.beginCell().fromBoc(org.ton.ton4j.utils.Utils.base64ToBytes(contentCellHex)).endCell();
+        elements = new ArrayList<>(response.getStack().get(4));
+        l = (LinkedTreeMap<String, String>) elements.get(1);
+        Cell cell = Cell.fromBocBase64(l.get("bytes"));
+//        String contentCellHex = ((String) new ArrayList<>(response.getStack().get(4)).get(1));
+//        Cell cell = CellBuilder.beginCell().fromBoc(org.ton.ton4j.utils.Utils.base64ToBytes(contentCellHex)).endCell();
         
         String contentUri = null;
         try {
