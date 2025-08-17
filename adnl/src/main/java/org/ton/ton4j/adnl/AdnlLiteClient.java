@@ -36,6 +36,9 @@ import org.ton.ton4j.utils.Utils;
 @Slf4j
 public class AdnlLiteClient {
 
+  public static final Address ELECTION_ADDRESS =
+      Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333");
+
   /**
    * Create a new builder
    *
@@ -1990,5 +1993,43 @@ public class AdnlLiteClient {
     } catch (Exception e) {
       throw new Error("Cannot execute query", e);
     }
+  }
+
+  public List<Participant> getElectionParticipants() {
+    List<Participant> participants = new ArrayList<>();
+    RunMethodResult result = runMethod(ELECTION_ADDRESS, "participant_list");
+    VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result.result)));
+    for (VmStackValue l : vmStack.getStack().getTos()) {
+      VmStackValueTuple tuple = VmStackValueTuple.deserialize(CellSlice.beginParse(l.toCell()));
+      BigInteger addr = tuple.getData().getIntByIndex(0);
+      BigInteger stake = tuple.getData().getIntByIndex(1);
+      participants.add(Participant.builder().address(addr).stake(stake).build());
+    }
+    return participants;
+  }
+
+  public BigInteger getElectionId() {
+    RunMethodResult result = runMethod(ELECTION_ADDRESS, "active_election_id");
+    if (result.getExitCode() != 0) {
+      throw new Error("method seqno returned an exit code " + result.getExitCode());
+    }
+    VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result.result)));
+    return VmStackValueTinyInt.deserialize(
+            CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
+        .getValue();
+  }
+
+  public BigInteger getReturnedStake(String validatorWalletHex) {
+    RunMethodResult result =
+        runMethod(
+            ELECTION_ADDRESS,
+            "compute_returned_stake",
+            VmStackValueInt.builder()
+                .value(new BigInteger(validatorWalletHex.toLowerCase(), 16))
+                .build());
+    VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result.result)));
+    return VmStackValueTinyInt.deserialize(
+            CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
+        .getValue();
   }
 }

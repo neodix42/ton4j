@@ -4,20 +4,21 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+
+import lombok.Builder;
+import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 
+@Builder
+@Data
 public class BinTree implements Serializable {
   ShardDescr value;
   BinTree left;
   BinTree right;
 
   public BinTree() {}
-
-  public BinTree(ShardDescr value) {
-    this.value = value;
-  }
 
   public BinTree(ShardDescr value, BinTree left, BinTree right) {
     this.value = value;

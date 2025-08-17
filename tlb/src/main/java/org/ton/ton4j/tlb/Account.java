@@ -1,6 +1,8 @@
 package org.ton.ton4j.tlb;
 
 import java.io.Serializable;
+import java.math.BigInteger;
+
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
@@ -40,5 +42,13 @@ public class Account implements Serializable {
         .storageInfo(StorageInfo.deserialize(cs))
         .accountStorage(AccountStorage.deserialize(cs))
         .build();
+  }
+
+  public StateInit getStateInit() {
+    return ((AccountStateActive) accountStorage.getAccountState()).getStateInit();
+  }
+
+  public BigInteger getBalance() {
+    return accountStorage.getBalance().getCoins();
   }
 }

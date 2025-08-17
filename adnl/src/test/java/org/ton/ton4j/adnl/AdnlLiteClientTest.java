@@ -675,6 +675,7 @@ public class AdnlLiteClientTest {
 
     log.info("allShardInfo {}", allShardInfo);
     log.info("allShardInfo.shardHashes {}", allShardInfo.getShardHashes());
+    log.info("allShardInfo.shards {}", allShardInfo.getShards());
   }
 
   @Test

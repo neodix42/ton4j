@@ -27,7 +27,7 @@ public class ShardHashes implements Serializable {
         .storeDict(
             shardHashes.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 32).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeCell(((BinTree) v).toCell()).endCell()))
+                v -> CellBuilder.beginCell().storeRef(((BinTree) v).toCell()).endCell()))
         .endCell();
   }
 
@@ -35,7 +35,9 @@ public class ShardHashes implements Serializable {
     return ShardHashes.builder()
         .shardHashes(
             cs.loadDictE(
-                32, k -> k.readUint(32), v -> BinTree.deserialize(CellSlice.beginParse(v))))
+                32,
+                k -> k.readUint(32),
+                v -> BinTree.deserialize(CellSlice.beginParse(CellSlice.beginParse(v).loadRef()))))
         .build();
   }
 }
