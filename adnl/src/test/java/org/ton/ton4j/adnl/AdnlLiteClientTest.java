@@ -167,27 +167,6 @@ public class AdnlLiteClientTest {
     log.info("accountObject: {} ", accountState.getAccount());
   }
 
-  //  @Test
-  //  void testConnectionPool() throws Exception {
-  //    log.info("Testing connection pool");
-  //    TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromPath(CONFIG_PATH);
-
-  //
-  //    pool = new LiteClientConnectionPool();
-  //    pool.addConnection(
-  //        Utils.int2ip(tonGlobalConfig.getLiteservers()[0].getIp()),
-  //        (int) tonGlobalConfig.getLiteservers()[0].getPort(),
-  //        tonGlobalConfig.getLiteservers()[0].getId().getKey());
-  //
-  //    assertEquals(1, pool.getTotalConnectionCount(), "Should have 1 connection");
-  //    assertEquals(1, pool.getActiveConnectionCount(), "Should have 1 active connection");
-  //
-  //    // Test query through pool
-  //    //    MasterchainInfo info = pool.getMasterchainInfo();
-  //    //    assertNotNull(info, "Masterchain info should not be null");
-  //    //    log.info("Pool query successful - Last block seqno: " + info.getLast().getSeqno());
-  //  }
-
   @Test
   void testGetTime() throws Exception {
     log.info("Testing getTime query");
@@ -675,7 +654,9 @@ public class AdnlLiteClientTest {
 
     log.info("allShardInfo {}", allShardInfo);
     log.info("allShardInfo.shardHashes {}", allShardInfo.getShardHashes());
-    log.info("allShardInfo.shards {}", allShardInfo.getShards());
+    for (ShardDescr shardDescr : allShardInfo.getShards()) {
+      log.info("shard {}", shardDescr);
+    }
   }
 
   @Test

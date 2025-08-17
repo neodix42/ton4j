@@ -91,6 +91,10 @@ public class ShardDescr implements Serializable {
     return fileHash.toString(16);
   }
 
+  private String getNextValidatorShard() {
+    return nextValidatorShard.toString(16);
+  }
+
   public Cell toCell() {
     if (magic == 0xB) {
       return CellBuilder.beginCell()

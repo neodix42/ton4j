@@ -40,9 +40,9 @@ public class TestTonlibJson {
 
   Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-  //  String tonlibPath = Utils.getTonlibGithubUrl();
-  static String tonlibPath =
-      Utils.getArtifactGithubUrl("tonlibjson", "v2025.03", "neodix42", "ton");
+    String tonlibPath = Utils.getTonlibGithubUrl();
+//  static String tonlibPath =
+//      Utils.getArtifactGithubUrl("tonlibjson", "v2025.03", "neodix42", "ton");
 
   @Test
   public void testTonlibRunMethodActiveElectionId() {
@@ -256,11 +256,20 @@ public class TestTonlibJson {
 
     BlockHeader header = tonlib.getBlockHeader(masterChainInfo.getLast());
     log.info(header.toString());
+  }
 
+  @Test
+  public void testTonlibGetShards() {
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
+    MasterChainInfo masterChainInfo = tonlib.getLast();
+    log.info(masterChainInfo.toString());
     Shards shards = tonlib.getShards(masterChainInfo.getLast()); // only seqno also ok?
-    log.info(shards.toString());
+    log.info(shards.getShards().toString());
     tonlib.destroy();
     assertThat(shards.getShards()).isNotNull();
+    for (BlockIdExt shard : shards.getShards()) {
+      log.info("shard {}", shard);
+    }
   }
 
   @Test

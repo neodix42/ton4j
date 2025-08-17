@@ -69,24 +69,18 @@ public class BinTree implements Serializable {
       return null;
     }
 
-    BinTree root = new BinTree();
+    BinTree tree = new BinTree();
     if (cs.loadBit()) {
       if (cs.getRefsCount() != 0) {
-        CellSlice internalCs = CellSlice.beginParse(cs.loadRef());
-        if (!internalCs.loadBit()) {
-          root.value = ShardDescr.deserialize(internalCs);
-        }
+        tree.left = deserialize(CellSlice.beginParse(cs.loadRef()));
       }
       if (cs.getRefsCount() != 0) {
-        root.left = deserialize(CellSlice.beginParse(cs.loadRef()));
+        tree.right = deserialize(CellSlice.beginParse(cs.loadRef()));
       }
-      if (cs.getRefsCount() != 0) {
-        root.right = deserialize(CellSlice.beginParse(cs.loadRef()));
-      }
-      return root;
+      return tree;
     } else {
-      root.value = ShardDescr.deserialize(cs);
-      return root;
+      tree.value = ShardDescr.deserialize(cs);
+      return tree;
     }
   }
 
