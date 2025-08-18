@@ -9,6 +9,8 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 
+import static java.util.Objects.isNull;
+
 @Builder
 @Data
 public class Account implements Serializable {
@@ -45,10 +47,33 @@ public class Account implements Serializable {
   }
 
   public StateInit getStateInit() {
+    if (isNull(accountStorage)) {
+      return null;
+    }
     return ((AccountStateActive) accountStorage.getAccountState()).getStateInit();
   }
 
   public BigInteger getBalance() {
+    if (isNull(accountStorage)) {
+      return null;
+    }
     return accountStorage.getBalance().getCoins();
+  }
+
+  public String getAccountState() {
+    if (isNull(accountStorage) || isNull(accountStorage.getAccountState())) {
+      return "uninitialized";
+    }
+    if (accountStorage.getAccountState() instanceof AccountStateActive) {
+      return "active";
+    }
+    if (accountStorage.getAccountState() instanceof AccountStateFrozen) {
+      return "frozen";
+    }
+    if (accountStorage.getAccountState() instanceof AccountStateUninit) {
+      return "uninitialized";
+    } else {
+      return "unknown";
+    }
   }
 }

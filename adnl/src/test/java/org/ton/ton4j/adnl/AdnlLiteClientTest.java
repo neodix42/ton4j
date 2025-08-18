@@ -974,6 +974,16 @@ public class AdnlLiteClientTest {
   }
 
   @Test
+  void testRunSmcMethodParticipantsListMethod() {
+    log.info("Testing runSmcMethod participant_list query");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    List<Participant> participants = client.getElectionParticipants();
+
+    log.info("runMethodResult {}", participants);
+  }
+
+  @Test
   void testRunSmcMethodSeqno() {
     log.info("Testing runSmcMethod seqno query");
     assertTrue(client.isConnected(), "Client should be connected");

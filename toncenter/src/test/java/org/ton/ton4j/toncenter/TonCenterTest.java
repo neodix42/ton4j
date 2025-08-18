@@ -1,12 +1,15 @@
 package org.ton.ton4j.toncenter;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.DecoderException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.toncenter.model.*;
+import org.ton.ton4j.utils.Utils;
+
 import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
 import java.math.BigInteger;
@@ -563,21 +566,22 @@ public class TonCenterTest {
   }
 
   @Test
-  public void testGetLibraries() {
+  public void testGetLibraries() throws DecoderException {
+    List<String> libraryHashes;
     if (network == Network.MAINNET) {
-      log.info("Not yet implemented in MAINNET");
-      return;
+      libraryHashes = Arrays.asList(
+              Utils.hexStringToBase64("459BAABBCDD21981E937B0FFE73F9D52837F84ED3C117AD1260D535EC162800A")
+      );
+    }
+    else {
+      libraryHashes = Arrays.asList(
+              "IINLe3KxEhR+Gy+0V7hOdNGjDwT3N9T2KmaOlVLSty8="
+      );
     }
     enforceRateLimit();
     TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
 
     try {
-
-      // Test with some example library hashes (these may not exist, but tests the endpoint structure)
-      List<String> libraryHashes = Arrays.asList(
-          "IINLe3KxEhR+Gy+0V7hOdNGjDwT3N9T2KmaOlVLSty8=" // in testnet only
-//          "20834b7b72b112147e1b2fb457b84e74d1a30f04f737d4f62a668e9552d2b72f" // in testnet only
-      );
       
       TonResponse<GetLibrariesResponse> response = client.getLibraries(libraryHashes);
       log.info("response {}", response.getResult());

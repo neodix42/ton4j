@@ -1995,15 +1995,48 @@ public class AdnlLiteClient {
     }
   }
 
+  public void flatValues(VmTuple tuple, List<VmStackValue> result) {
+    for (VmStackValue vmStackValue : tuple.getValues()) {
+      if (vmStackValue instanceof VmTuple) {
+        flatValues((VmTuple) vmStackValue, result);
+      }
+      else {
+        result.add(vmStackValue);
+      }
+    }
+  }
+
   public List<Participant> getElectionParticipants() {
     List<Participant> participants = new ArrayList<>();
     RunMethodResult result = runMethod(ELECTION_ADDRESS, "participant_list");
     VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result.result)));
+
+    List<VmStackValue> flatValues = new ArrayList<>();
+//    List<VmTuple> res = new ArrayList<>();
+
     for (VmStackValue l : vmStack.getStack().getTos()) {
-      VmStackValueTuple tuple = VmStackValueTuple.deserialize(CellSlice.beginParse(l.toCell()));
-      BigInteger addr = tuple.getData().getIntByIndex(0);
-      BigInteger stake = tuple.getData().getIntByIndex(1);
-      participants.add(Participant.builder().address(addr).stake(stake).build());
+      if (l instanceof VmStackValueNull) {
+        continue;
+      }
+      if (l instanceof VmTuple) {
+        flatValues((VmTuple) l, flatValues);
+      }
+    }
+    BigInteger addr = null;
+    BigInteger stake = null;
+    for (VmStackValue genericValue : flatValues) {
+
+      if (genericValue instanceof VmStackValueInt) {
+        addr = ((VmStackValueInt) genericValue).getValue();
+      }
+      if (genericValue instanceof VmStackValueTinyInt) {
+        stake = ((VmStackValueTinyInt) genericValue).getValue();
+      }
+      if (nonNull(addr) && nonNull(stake)) {
+        participants.add(Participant.builder().address(addr).stake(stake).build());
+        addr = null;
+        stake = null;
+      }
     }
     return participants;
   }

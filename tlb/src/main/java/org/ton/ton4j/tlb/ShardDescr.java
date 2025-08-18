@@ -83,15 +83,15 @@ public class ShardDescr implements Serializable {
     return Long.toHexString(magic);
   }
 
-  private String getRootHash() {
+  public String getRootHash() {
     return rootHash.toString(16);
   }
 
-  private String getFileHash() {
+  public String getFileHash() {
     return fileHash.toString(16);
   }
 
-  private String getNextValidatorShard() {
+  public String getNextValidatorShard() {
     return nextValidatorShard.toString(16);
   }
 

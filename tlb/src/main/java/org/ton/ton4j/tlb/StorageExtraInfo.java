@@ -3,7 +3,9 @@ package org.ton.ton4j.tlb;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
 
-public interface StorageExtraInfo {
+import java.io.Serializable;
+
+public interface StorageExtraInfo extends Serializable {
 
   Cell toCell();
 
