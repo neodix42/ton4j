@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.toncenter.model.*;
 import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
@@ -560,6 +562,38 @@ public class TonCenterTest {
     }
   }
 
+  @Test
+  public void testGetLibraries() {
+    if (network == Network.MAINNET) {
+      log.info("Not yet implemented in MAINNET");
+      return;
+    }
+    enforceRateLimit();
+    TonCenter client = TonCenter.builder().apiKey(apiKey).network(network).build();
+
+    try {
+
+      // Test with some example library hashes (these may not exist, but tests the endpoint structure)
+      List<String> libraryHashes = Arrays.asList(
+          "IINLe3KxEhR+Gy+0V7hOdNGjDwT3N9T2KmaOlVLSty8=" // in testnet only
+//          "20834b7b72b112147e1b2fb457b84e74d1a30f04f737d4f62a668e9552d2b72f" // in testnet only
+      );
+      
+      TonResponse<GetLibrariesResponse> response = client.getLibraries(libraryHashes);
+      log.info("response {}", response.getResult());
+      
+      // The response should be successful even if libraries don't exist
+      assertTrue("Get libraries should be successful", response.isSuccess());
+      assertNotNull("Libraries response should not be null", response.getResult());
+      log.info("Libraries retrieved successfully");
+    } catch (TonCenterApiException e) {
+      // This is expected if the library hashes don't exist
+      log.info("Libraries not found (expected): {}", e.getMessage());
+    } finally {
+      client.close();
+    }
+  }
+
   // ========== TRANSACTION METHODS TESTS (3 endpoints) ==========
 
   @Test
@@ -826,7 +860,7 @@ public class TonCenterTest {
   @Test
   public void testAllEndpointsCount() {
     enforceRateLimit();
-    // This test verifies that all 27 endpoints are implemented
+    // This test verifies that all 28 endpoints are implemented
 
     TonCenter client = TonCenter.builder().build();
 
@@ -859,9 +893,10 @@ public class TonCenterTest {
     assertNotNull("getBlockHeader should exist", getMethod(client, "getBlockHeader"));
     assertNotNull("getOutMsgQueueSizes should exist", getMethod(client, "getOutMsgQueueSizes"));
 
-    // Config methods (2)
+    // Config methods (3)
     assertNotNull("getConfigParam should exist", getMethod(client, "getConfigParam"));
     assertNotNull("getConfigAll should exist", getMethod(client, "getConfigAll"));
+    assertNotNull("getLibraries should exist", getMethod(client, "getLibraries"));
 
     // Transaction methods (3)
     assertNotNull("tryLocateTx should exist", getMethod(client, "tryLocateTx"));
@@ -877,7 +912,7 @@ public class TonCenterTest {
     assertNotNull("sendQuery should exist", getMethod(client, "sendQuery"));
     assertNotNull("estimateFee should exist", getMethod(client, "estimateFee"));
 
-    log.info("✅ All 27 TonCenter API endpoints are implemented!");
+    log.info("✅ All 28 TonCenter API endpoints are implemented!");
     client.close();
   }
 

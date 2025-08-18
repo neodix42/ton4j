@@ -570,6 +570,18 @@ public class TonCenter {
     return executeGet("/getConfigAll", params, responseType);
   }
 
+  /** Get libraries codes */
+  public TonResponse<GetLibrariesResponse> getLibraries(List<String> libraries) {
+    Map<String, String> params = new HashMap<>();
+    if (nonNull(libraries) && !libraries.isEmpty()) {
+      // Join libraries with comma as the API expects array parameter
+      params.put("libraries", String.join(",", libraries));
+    }
+
+    Type responseType = new TypeToken<TonResponse<GetLibrariesResponse>>() {}.getType();
+    return executeGet("/getLibraries", params, responseType);
+  }
+
   // ========== TRANSACTION METHODS ==========
 
   /** Locate outcoming transaction of destination address by incoming message */

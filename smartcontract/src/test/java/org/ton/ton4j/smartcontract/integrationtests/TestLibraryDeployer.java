@@ -2,6 +2,8 @@ package org.ton.ton4j.smartcontract.integrationtests;
 
 import java.math.BigInteger;
 import java.util.Collections;
+import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,9 +18,14 @@ import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.tl.liteserver.responses.LibraryEntry;
 import org.ton.ton4j.tl.liteserver.responses.LibraryResult;
 import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.GetLibrariesResponse;
 import org.ton.ton4j.tonlib.types.SmcLibraryEntry;
 import org.ton.ton4j.tonlib.types.SmcLibraryResult;
 import org.ton.ton4j.utils.Utils;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -52,6 +59,8 @@ public class TestLibraryDeployer extends CommonTest {
         10,
         "Deployment of LibraryDeployer will never happen. Lite-server will return an error, but the library will be deployed");
 
+    log.info("walletV5Code library hash(b64) in testnet {}", Utils.bytesToBase64(walletV5Code.getHash()));
+
     SmcLibraryResult smcLibraryResult =
         tonlib.getLibraries(
             Collections.singletonList(
@@ -70,6 +79,8 @@ public class TestLibraryDeployer extends CommonTest {
   @Test
   public void testIfLibraryHasBeenDeployed() {
     Cell walletV5Code = CellBuilder.beginCell().fromBoc(WalletCodes.V5R1.getValue()).endCell();
+    log.info("walletV5Code library hash(hex) in testnet {}", Utils.bytesToHex(walletV5Code.getHash()));
+    log.info("walletV5Code library hash(b64) in testnet {}", Utils.bytesToBase64(walletV5Code.getHash()));
     SmcLibraryResult smcLibraryResult =
         tonlib.getLibraries(Collections.singletonList(Utils.bytesToBase64(walletV5Code.getHash())));
     //                "IINLe3KxEhR+Gy+0V7hOdNGjDwT3N9T2KmaOlVLSty8="));
@@ -157,10 +168,22 @@ public class TestLibraryDeployer extends CommonTest {
         10,
         "Deployment of LibraryDeployer will never happen. Lite-server will return an error, but the library will be deployed");
 
-    // Note: TonCenter API doesn't provide a direct getLibraries method like AdnlLiteClient
-    // To verify library deployment, you would need to use other methods or check through
-    // a block explorer or other means
-    log.info("Library should be deployed at this point. Verify through other means if needed.");
+    TonResponse<GetLibrariesResponse> smcLibraryResult =
+            tonCenter.getLibraries(
+                    Collections.singletonList(
+                            Utils.bytesToHex(walletV5Code.getHash())
+                    ));
+    log.info("response {}", smcLibraryResult.getResult());
+
+    // The response should be successful even if libraries don't exist
+    assertTrue("Get libraries should be successful", smcLibraryResult.isSuccess());
+    assertNotNull("Libraries response should not be null", smcLibraryResult.getResult());
+
+    for (Map.Entry<String, String> entry : smcLibraryResult.getResult().getLibraries().entrySet()) {
+
+      Cell libCell = Cell.fromBoc(entry.getValue());
+      log.info("cell lib {}", libCell.toHex());
+    }
   }
 
   @Test
@@ -180,20 +203,5 @@ public class TestLibraryDeployer extends CommonTest {
       Cell libCell = Cell.fromBoc(lib.data);
       log.info("cell lib {}", libCell.toHex());
     }
-  }
-  
-  @Test
-  public void testIfLibraryHasBeenDeployedTonCenterClient() throws Exception {
-    TonCenter tonCenter =
-        TonCenter.builder()
-            .apiKey(TESTNET_API_KEY)
-            .testnet()
-            .build();
-    Cell walletV5Code = CellBuilder.beginCell().fromBoc(WalletCodes.V5R1.getValue()).endCell();
-
-    // Note: TonCenter API doesn't provide a direct getLibraries method like AdnlLiteClient
-    // This test is a placeholder to maintain consistency with the AdnlLiteClient version
-    log.info("Library hash: {}", Utils.bytesToBase64(walletV5Code.getHash()));
-    log.info("To check if the library has been deployed, use other methods or external tools");
   }
 }
