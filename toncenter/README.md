@@ -8,7 +8,7 @@ A comprehensive Java wrapper for the [TonCenter API v2](https://toncenter.com/ap
 
 ## Features
 
-- ✅ **Complete API Coverage**: All 27 TonCenter API v2 endpoints implemented
+- ✅ **Complete API Coverage**: All 28 TonCenter API v2 endpoints implemented
 - ✅ **Network Support**: Both Mainnet and Testnet support
 - ✅ **HTTP Client**: Built on OkHttp for reliable HTTP communication
 - ✅ **Logging**: Built-in request/response logging using SLF4J
@@ -102,6 +102,7 @@ TonCenter client = TonCenter.builder()
 - `unpackAddress(address)` - Convert user-friendly to raw format
 - `detectAddress(address)` - Get all address forms
 - `getTokenData(address)` - NFT/Jetton information
+- `getLibraries([]hash)` - retrieve libraries by hash
 
 ### Block Methods (9 endpoints)
 - `getMasterchainInfo()` - Current masterchain state
@@ -195,19 +196,19 @@ The wrapper includes convenience methods for common operations:
 
 ```java
 // Get transactions with default limit (10)
-client.getTransactions(address);
+getTransactions(address);
 
 // Get transactions with custom limit
-client.getTransactions(address, 20);
+getTransactions(address, 20);
 
 // Get config parameter without seqno
-client.getConfigParam(0);
+getConfigParam(0);
 
 // Lookup block by seqno only
-client.lookupBlockBySeqno(workchain, shard, seqno);
+lookupBlockBySeqno(workchain, shard, seqno);
 
 // Estimate fees with default parameters
-client.estimateFee(address, body);
+estimateFee(address, body);
 
 getSeqno(address);
 
@@ -238,8 +239,7 @@ The wrapper uses SLF4J for logging. HTTP requests and responses are logged at DE
 
 ## Thread Safety
 
-The `TonCenter` client is thread-safe and can be shared across multiple threads. However, each client should be properly closed when no longer needed.
-
+The `TonCenter` client is thread-safe and can be shared across multiple threads, as well as used as one instance in multiple threads.
 ## Resource Management
 
 Always close the client to release HTTP connection resources:
@@ -255,7 +255,7 @@ try {
 
 Or use try-with-resources pattern if you implement AutoCloseable.
 
-## API Rate Limits
+## TON Center API Rate Limits
 
 - Without API key: 1 request per second
 - With API key: Higher limits (check TonCenter documentation)

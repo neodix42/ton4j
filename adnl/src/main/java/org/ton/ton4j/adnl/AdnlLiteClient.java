@@ -1101,13 +1101,11 @@ public class AdnlLiteClient {
   public RunMethodResult runMethod(Address accountAddress, String methodName) {
     try {
       return runMethod(
-          getMasterchainInfo().getLast(),
-          4,
           accountAddress,
-          Utils.calculateMethodId(methodName),
-          new byte[0]);
+          methodName,
+          new VmStackValue[0]);
     } catch (Exception e) {
-      throw new Error("cannot execute runMethod on " + methodName);
+      throw new Error("cannot execute runMethod on " + methodName, e);
     }
   }
 
@@ -1129,7 +1127,6 @@ public class AdnlLiteClient {
       Address accountAddress, String methodName, VmStackValue... params) {
     try {
       List<VmStackValue> vmStackValuesReversed = Arrays.asList(params);
-      //      Collections.reverse(vmStackValuesReversed);
       VmStack vmStackParams =
           VmStack.builder()
               .depth(vmStackValuesReversed.size())
@@ -2012,7 +2009,6 @@ public class AdnlLiteClient {
     VmStack vmStack = VmStack.deserialize(CellSlice.beginParse(Cell.fromBoc(result.result)));
 
     List<VmStackValue> flatValues = new ArrayList<>();
-//    List<VmTuple> res = new ArrayList<>();
 
     for (VmStackValue l : vmStack.getStack().getTos()) {
       if (l instanceof VmStackValueNull) {
