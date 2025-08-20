@@ -191,7 +191,7 @@ public interface Contract {
           .message(extMessageInfo.getError().getMessage())
           .build();
     } else {
-      throw new Error("Provided not set");
+      throw new Error("Provider not set");
     }
   }
 
