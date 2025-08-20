@@ -104,6 +104,83 @@ public class TestHighloadWalletV3 extends CommonTest {
     log.info("sent 2 messages");
   }
 
+  @Test
+  public void testBulkTransferSimplified_2_SignedExternally() throws Exception {
+
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    HighloadWalletV3 contract =
+        HighloadWalletV3.builder()
+            .tonlib(tonlib)
+            .publicKey(keyPair.getPublicKey())
+            .walletId(42)
+            .build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceableTestnet();
+    String bounceableAddress = contract.getAddress().toBounceableTestnet();
+    String rawAddress = contract.getAddress().toRaw();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(keyPair.getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(keyPair.getSecretKey()));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    HighloadV3Config config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            //                .createdAt(createdAt) // default = now - 60 seconds
+            // .timeOut(60) //default timeout = 5 minutes
+            .build();
+
+    Cell deployBody = contract.createDeployMessage(config);
+    byte[] signedDeployBody =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
+
+    SendResponse sendResponse = contract.deploy(config, signedDeployBody);
+    assertThat(sendResponse.getCode()).isZero();
+
+    contract.waitForDeployment();
+
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+            .body(
+                contract.createBulkTransfer(
+                    Arrays.asList(
+                        Destination.builder()
+                            .address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO")
+                            .amount(Utils.toNano(0.022))
+                            .body(
+                                CellBuilder.beginCell()
+                                    .storeUint(0, 32)
+                                    .storeString("test-comment-1")
+                                    .endCell())
+                            .build(),
+                        Destination.builder()
+                            .address("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G")
+                            .amount(Utils.toNano(0.033))
+                            .comment("test-comment-2")
+                            .build()),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+            .build();
+
+    Cell body = contract.createTransferMessage(config);
+
+    byte[] signedBody = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
+
+    contract.sendWithConfirmation(config, signedBody);
+//    contract.send(config, signedBody);
+    log.info("sent 2 messages");
+  }
+
   /** Sends 1000 messages with values without comment/memo field */
   @Test
   public void testBulkTransferSimplified_1000() throws InterruptedException {
@@ -686,19 +763,14 @@ public class TestHighloadWalletV3 extends CommonTest {
     return result;
   }
 
-
   @Test
   public void testBulkJettonTransferTonCenter() throws Exception {
-    TonCenter tonCenter =
-            TonCenter.builder()
-                    .apiKey(TESTNET_API_KEY)
-                    .testnet()
-                    .build();
+    TonCenter tonCenter = TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().build();
 
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
     HighloadWalletV3 myHighLoadWalletV3 =
-            HighloadWalletV3.builder().tonCenterClient(tonCenter).keyPair(keyPair).walletId(42).build();
+        HighloadWalletV3.builder().tonCenterClient(tonCenter).keyPair(keyPair).walletId(42).build();
 
     String nonBounceableAddress = myHighLoadWalletV3.getAddress().toNonBounceable();
     String bounceableAddress = myHighLoadWalletV3.getAddress().toBounceable();
@@ -712,26 +784,26 @@ public class TestHighloadWalletV3 extends CommonTest {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
-            TestnetFaucet.topUpContract(tonCenter, Address.of(nonBounceableAddress), Utils.toNano(1));
+        TestnetFaucet.topUpContract(tonCenter, Address.of(nonBounceableAddress), Utils.toNano(1));
     log.info(
-            "new wallet {} toncoins balance: {}",
-            myHighLoadWalletV3.getName(),
-            Utils.formatNanoValue(balance));
+        "new wallet {} toncoins balance: {}",
+        myHighLoadWalletV3.getName(),
+        Utils.formatNanoValue(balance));
 
     // top up new wallet with NEOJ using test-jetton-faucet-wallet
     balance =
-            TestnetJettonFaucet.topUpContractWithNeoj(
-                    tonCenter, Address.of(nonBounceableAddress), BigInteger.valueOf(100), true);
+        TestnetJettonFaucet.topUpContractWithNeoj(
+            tonCenter, Address.of(nonBounceableAddress), BigInteger.valueOf(100), true);
     log.info(
-            "new wallet {} jetton balance: {}",
-            myHighLoadWalletV3.getName(),
-            Utils.formatJettonValue(balance, 2, 2));
+        "new wallet {} jetton balance: {}",
+        myHighLoadWalletV3.getName(),
+        Utils.formatJettonValue(balance, 2, 2));
 
     HighloadV3Config config =
-            HighloadV3Config.builder()
-                    .walletId(42)
-                    .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
-                    .build();
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            .build();
 
     SendResponse sendResponse = myHighLoadWalletV3.deploy(config);
     Assertions.assertThat(sendResponse.getCode()).isZero();
@@ -741,68 +813,59 @@ public class TestHighloadWalletV3 extends CommonTest {
     String singleRandomAddress = Utils.generateRandomAddress(0);
 
     JettonMinter jettonMinterWallet =
-            JettonMinter.builder()
-                    .tonCenterClient(tonCenter)
-                    .customAddress(Address.of("kQAN6TAGauShFKDQvZCwNb_EeTUIjQDwRZ9t6GOn4FBzfg9Y"))
-                    .build();
+        JettonMinter.builder()
+            .tonCenterClient(tonCenter)
+            .customAddress(Address.of("kQAN6TAGauShFKDQvZCwNb_EeTUIjQDwRZ9t6GOn4FBzfg9Y"))
+            .build();
 
     JettonWallet myJettonHighLoadWallet =
-            jettonMinterWallet.getJettonWallet(myHighLoadWalletV3.getAddress());
+        jettonMinterWallet.getJettonWallet(myHighLoadWalletV3.getAddress());
 
     config =
-            HighloadV3Config.builder()
-                    .walletId(42)
-                    .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
-                    .body(
-                            myHighLoadWalletV3.createBulkTransfer(
-                                    Collections.singletonList(
-                                            Destination.builder()
-                                                    .address(myJettonHighLoadWallet.getAddress().toBounceable())
-                                                    .amount(Utils.toNano(0.07))
-                                                    .body(
-                                                            JettonWallet.createTransferBody(
-                                                                    0,
-                                                                    BigInteger.valueOf(100),
-                                                                    Address.of(singleRandomAddress), // recipient
-                                                                    myJettonHighLoadWallet.getAddress(), // response address
-                                                                    null, // custom payload
-                                                                    BigInteger.ONE, // forward amount
-                                                                    MsgUtils.createTextMessageBody("test sdk") // forward payload
-                                                            ))
-                                                    .build()),
-                                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
-                    .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
-                    .build();
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+            .body(
+                myHighLoadWalletV3.createBulkTransfer(
+                    Collections.singletonList(
+                        Destination.builder()
+                            .address(myJettonHighLoadWallet.getAddress().toBounceable())
+                            .amount(Utils.toNano(0.07))
+                            .body(
+                                JettonWallet.createTransferBody(
+                                    0,
+                                    BigInteger.valueOf(100),
+                                    Address.of(singleRandomAddress), // recipient
+                                    myJettonHighLoadWallet.getAddress(), // response address
+                                    null, // custom payload
+                                    BigInteger.ONE, // forward amount
+                                    MsgUtils.createTextMessageBody("test sdk") // forward payload
+                                    ))
+                            .build()),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
+            .build();
 
     sendResponse = myHighLoadWalletV3.send(config);
     assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(60, "sending jettons...");
 
-    BigInteger balanceOfDestinationWallet =
-            tonCenter.getBalance(singleRandomAddress);
+    BigInteger balanceOfDestinationWallet = tonCenter.getBalance(singleRandomAddress);
     log.info("balanceOfDestinationWallet in nanocoins: {}", balanceOfDestinationWallet);
 
     JettonWallet randomJettonWallet =
-            jettonMinterWallet.getJettonWallet(Address.of(singleRandomAddress));
+        jettonMinterWallet.getJettonWallet(Address.of(singleRandomAddress));
     log.info("balanceOfDestinationWallet in jettons: {}", randomJettonWallet.getBalance());
   }
 
   @Test
   public void testBulkTransferSimplified_1000_TonCenterClient() throws Exception {
-    TonCenter tonCenter =
-            TonCenter.builder()
-                    .apiKey(TESTNET_API_KEY)
-                    .testnet()
-                    .build();
+    TonCenter tonCenter = TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().build();
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
     HighloadWalletV3 contract =
-            HighloadWalletV3.builder()
-                    .tonCenterClient(tonCenter)
-                    .keyPair(keyPair)
-                    .walletId(42)
-                    .build();
+        HighloadWalletV3.builder().tonCenterClient(tonCenter).keyPair(keyPair).walletId(42).build();
 
     String nonBounceableAddress = contract.getAddress().toNonBounceable();
     String bounceableAddress = contract.getAddress().toBounceable();
@@ -816,15 +879,15 @@ public class TestHighloadWalletV3 extends CommonTest {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
-            TestnetFaucet.topUpContract(
-                    tonCenter, Address.of(nonBounceableAddress), Utils.toNano(2), true);
+        TestnetFaucet.topUpContract(
+            tonCenter, Address.of(nonBounceableAddress), Utils.toNano(2), true);
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     HighloadV3Config config =
-            HighloadV3Config.builder()
-                    .walletId(42)
-                    .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
-                    .build();
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            .build();
 
     SendResponse sendResponse = contract.deploy(config);
     assertThat(sendResponse.getCode()).isZero();
@@ -832,14 +895,14 @@ public class TestHighloadWalletV3 extends CommonTest {
     contract.waitForDeployment();
 
     config =
-            HighloadV3Config.builder()
-                    .walletId(42)
-                    .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
-                    .body(
-                            contract.createBulkTransfer(
-                                    createDummyDestinations(1000),
-                                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
-                    .build();
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+            .body(
+                contract.createBulkTransfer(
+                    createDummyDestinations(1000),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+            .build();
 
     sendResponse = contract.send(config);
     assertThat(sendResponse.getCode()).isZero();
