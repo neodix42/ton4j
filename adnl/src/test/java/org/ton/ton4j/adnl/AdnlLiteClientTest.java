@@ -1417,6 +1417,21 @@ public class AdnlLiteClientTest {
     log.info("balance {}", adnlLiteClient.getBalance(beneficiaryAddress));
   }
 
+  @Test
+  public void testUpdateInitBlock() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+            AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+    adnlLiteClient.persistGlobalConfig();
+    log.info(adnlLiteClient.getPersistedGlobalConfigPath());
+    adnlLiteClient.updateInitBlock();
+  }
+  @Test
+  public void testUpdateInitBlockByPath() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+            AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+    adnlLiteClient.updateInitBlock("path/to/global.config.json");
+  }
+
   //  @Test
   //  public void testAccountBalanceTonlib() throws Exception {
   //    Address beneficiaryAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");

@@ -28,6 +28,10 @@ public class BlockData implements Serializable, LiteServerAnswer {
     return Block.deserialize(CellSlice.beginParse(Cell.fromBoc(data)));
   }
 
+  public Block getBlockWithoutMerkleUpdate() {
+    return Block.deserializeWithoutMerkleUpdate(CellSlice.beginParse(Cell.fromBoc(data)));
+  }
+
   // 0x6ced74a5
   public static final int constructorId = BLOCK_DATA_ANSWER;
 

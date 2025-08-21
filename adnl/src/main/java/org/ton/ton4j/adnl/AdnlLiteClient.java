@@ -3,11 +3,19 @@ package org.ton.ton4j.adnl;
 import static java.util.Objects.nonNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.ton.ton4j.adnl.globalconfig.LiteServers;
@@ -56,6 +64,7 @@ public class AdnlLiteClient {
   private final boolean useServerRotation;
   private final int maxRetries;
   private final int queryTimeout;
+  private String persistedGlobalConfigPath;
   private final AtomicInteger currentServerIndex = new AtomicInteger(0);
 
   private AdnlLiteClient(Builder builder) {
@@ -1100,10 +1109,7 @@ public class AdnlLiteClient {
 
   public RunMethodResult runMethod(Address accountAddress, String methodName) {
     try {
-      return runMethod(
-          accountAddress,
-          methodName,
-          new VmStackValue[0]);
+      return runMethod(accountAddress, methodName, new VmStackValue[0]);
     } catch (Exception e) {
       throw new Error("cannot execute runMethod on " + methodName, e);
     }
@@ -1996,8 +2002,7 @@ public class AdnlLiteClient {
     for (VmStackValue vmStackValue : tuple.getValues()) {
       if (vmStackValue instanceof VmTuple) {
         flatValues((VmTuple) vmStackValue, result);
-      }
-      else {
+      } else {
         result.add(vmStackValue);
       }
     }
@@ -2060,5 +2065,82 @@ public class AdnlLiteClient {
     return VmStackValueTinyInt.deserialize(
             CellSlice.beginParse(vmStack.getStack().getTos().get(0).toCell()))
         .getValue();
+  }
+
+  public boolean updateInitBlock() {
+    if (StringUtils.isNotEmpty(persistedGlobalConfigPath)) {
+      return updateInitBlock(persistedGlobalConfigPath);
+    } else {
+      log.error("persistedGlobalConfigPath is not set. use persistGlobalConfig() first");
+      return false;
+    }
+  }
+
+  public boolean updateInitBlock(String pathToGlobalConfig) {
+
+    try {
+      if (Files.exists(new File(pathToGlobalConfig).toPath())) {
+        MasterchainInfo masterChainInfo = getMasterchainInfo();
+        Block block = getBlock(masterChainInfo.getLast()).getBlockWithoutMerkleUpdate();
+
+        BlockId blockId =
+            BlockId.builder()
+                .seqno((int) block.getBlockInfo().getPrevKeyBlockSeqno())
+                .workchain(-1)
+                .shard(-9223372036854775808L)
+                .build();
+
+        BlockHeader blockHeader = lookupBlock(blockId, 1, 0, 0);
+
+        String content =
+            FileUtils.readFileToString(new File(pathToGlobalConfig), StandardCharsets.UTF_8);
+
+        TonGlobalConfig tonGlobalConfig = new Gson().fromJson(content, TonGlobalConfig.class);
+
+        tonGlobalConfig.getValidator().getInit_block().setSeqno(blockHeader.getId().getSeqno());
+        tonGlobalConfig.getValidator().getInit_block().setShard(blockHeader.getId().shard);
+        tonGlobalConfig
+            .getValidator()
+            .getInit_block()
+            .setWorkchain(blockHeader.getId().getWorkchain());
+        tonGlobalConfig
+            .getValidator()
+            .getInit_block()
+            .setFile_hash(blockHeader.getId().getFileHashBase64());
+        tonGlobalConfig
+            .getValidator()
+            .getInit_block()
+            .setRoot_hash(blockHeader.getId().getRootHashBase64());
+        Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+        FileUtils.writeStringToFile(
+            new File(pathToGlobalConfig), gs.toJson(tonGlobalConfig), Charset.defaultCharset());
+        log.info("init-block updated");
+        return true;
+      } else {
+        log.error("file {} does not exist", pathToGlobalConfig);
+        return false;
+      }
+    } catch (Exception e) {
+      log.error("cannot update init-block in {}, {}", pathToGlobalConfig, e.getMessage());
+      return false;
+    }
+  }
+
+  public void persistGlobalConfig(String saveAs) throws IOException {
+    Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    persistedGlobalConfigPath = saveAs;
+    FileUtils.writeStringToFile(
+        new File(saveAs), gs.toJson(globalConfig), Charset.defaultCharset());
+  }
+
+  public void persistGlobalConfig() throws IOException {
+    Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    persistedGlobalConfigPath = System.getProperty("user.dir") + "/global.config.json";
+    FileUtils.writeStringToFile(
+        new File(persistedGlobalConfigPath), gs.toJson(globalConfig), Charset.defaultCharset());
+  }
+
+  public String getPersistedGlobalConfigPath() {
+    return persistedGlobalConfigPath;
   }
 }
