@@ -13,8 +13,8 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.SendMode;
@@ -423,12 +423,7 @@ public class HighloadWalletV3 implements Contract {
                 .value(CurrencyCollection.builder().coins(amount).build())
                 .build())
         .init(stateInit)
-        .body(
-            CellBuilder.beginCell()
-                .storeBytes(
-                    Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                .storeRef(body)
-                .endCell())
+        .body(body)
         .build()
         .toCell();
   }
@@ -458,12 +453,7 @@ public class HighloadWalletV3 implements Contract {
                         .build())
                 .build())
         .init(stateInit)
-        .body(
-            CellBuilder.beginCell()
-                .storeBytes(
-                    Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                .storeRef(body)
-                .endCell())
+        .body(body)
         .build()
         .toCell();
   }

@@ -12,8 +12,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.SendMode;
@@ -177,7 +177,7 @@ public class TestHighloadWalletV3 extends CommonTest {
     byte[] signedBody = Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash());
 
     contract.sendWithConfirmation(config, signedBody);
-//    contract.send(config, signedBody);
+    //    contract.send(config, signedBody);
     log.info("sent 2 messages");
   }
 
@@ -396,7 +396,7 @@ public class TestHighloadWalletV3 extends CommonTest {
                     //                            .build()),
                     true,
                     null,
-                    // MsgUtils.createTextMessageBody("ton4j")
+                    //                    MsgUtils.createTextMessageBody("ton4j-single-msg-hwv3")
                     CellBuilder.beginCell().endCell()))
             .build();
 
