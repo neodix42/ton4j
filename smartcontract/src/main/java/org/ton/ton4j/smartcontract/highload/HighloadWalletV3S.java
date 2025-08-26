@@ -6,13 +6,11 @@ import static java.util.Objects.nonNull;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
-
 import lombok.Builder;
 import lombok.Getter;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.SendMode;
@@ -465,9 +463,6 @@ public class HighloadWalletV3S implements Contract {
   public Cell createSingleTransfer(
       Address destAddress, BigInteger amount, Boolean bounce, StateInit stateInit, Cell body) {
 
-    SignatureWithRecovery signature =
-        Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
-
     return MessageRelaxed.builder()
         .info(
             InternalMessageInfoRelaxed.builder()
@@ -481,13 +476,7 @@ public class HighloadWalletV3S implements Contract {
                 .value(CurrencyCollection.builder().coins(amount).build())
                 .build())
         .init(stateInit)
-        .body(
-            CellBuilder.beginCell()
-                .storeBit((signature.getV()[0] & 1) == 1)
-                .storeBytes(signature.getR())
-                .storeBytes(signature.getS())
-                .storeRef(body)
-                .endCell())
+        .body(body)
         .build()
         .toCell();
   }
@@ -499,9 +488,6 @@ public class HighloadWalletV3S implements Contract {
       Boolean bounce,
       StateInit stateInit,
       Cell body) {
-
-    SignatureWithRecovery signature =
-        Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
     return MessageRelaxed.builder()
         .info(
@@ -520,13 +506,7 @@ public class HighloadWalletV3S implements Contract {
                         .build())
                 .build())
         .init(stateInit)
-        .body(
-            CellBuilder.beginCell()
-                .storeBit((signature.getV()[0] & 1) == 1)
-                .storeBytes(signature.getR())
-                .storeBytes(signature.getS())
-                .storeRef(body)
-                .endCell())
+        .body(body)
         .build()
         .toCell();
   }

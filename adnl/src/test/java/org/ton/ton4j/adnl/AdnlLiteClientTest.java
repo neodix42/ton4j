@@ -9,8 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.ton.ton4j.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.tl.liteserver.responses.*;
@@ -59,6 +59,21 @@ public class AdnlLiteClientTest {
       return MAINNET_ADDRESS;
     }
     return TESTNET_ADDRESS;
+  }
+
+  @Test
+  void testMasterchainInfoWithLiteServerContainerOnMyLocalTonDocker() throws Exception {
+    TonGlobalConfig tonGlobalConfig =
+        TonGlobalConfig.loadFromUrl(
+            "http://localhost:8000/lite-server-localhost.global.config.json");
+
+    AdnlLiteClient client = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).build();
+
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    MasterchainInfo info = client.getMasterchainInfo();
+    assertNotNull(info, "Masterchain info should not be null");
+    log.info("Masterchain info: {}", info);
   }
 
   @Test
@@ -1415,6 +1430,22 @@ public class AdnlLiteClientTest {
     AdnlLiteClient adnlLiteClient =
         AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
     log.info("balance {}", adnlLiteClient.getBalance(beneficiaryAddress));
+  }
+
+  @Test
+  public void testUpdateInitBlock() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+    adnlLiteClient.persistGlobalConfig();
+    log.info(adnlLiteClient.getPersistedGlobalConfigPath());
+    adnlLiteClient.updateInitBlock();
+  }
+
+  @Test
+  public void testUpdateInitBlockByPath() throws Exception {
+    AdnlLiteClient adnlLiteClient =
+        AdnlLiteClient.builder().configUrl(Utils.getGlobalConfigUrlTestnetGithub()).build();
+    adnlLiteClient.updateInitBlock("path/to/global.config.json");
   }
 
   //  @Test

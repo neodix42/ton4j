@@ -66,6 +66,27 @@ public class Block implements Serializable {
     return block;
   }
 
+  public static Block deserializeWithoutMerkleUpdate(CellSlice cs) {
+
+    long magic = cs.loadUint(32).longValue();
+    assert (magic == 0x11ef55aaL)
+            : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
+
+    Block block =
+            Block.builder()
+                    .magic(0x11ef55aaL)
+                    .globalId(cs.loadInt(32).intValue())
+                    .blockInfo(BlockInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
+                    .build();
+
+    block.setValueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())));
+
+    block.setStateUpdate(null);
+    block.setExtra(BlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())));
+
+    return block;
+  }
+
   public List<Transaction> getAllTransactions() {
     List<Transaction> result = new ArrayList<>();
     Block block = this;
