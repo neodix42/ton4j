@@ -7,15 +7,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.tlb.BlockInfo;
 
 /**
  * Main entry point for reading TON RocksDB files. This class provides access to various specialized
  * readers for different TON database types.
  */
+@Slf4j
 public class DbReader implements Closeable {
-  private static final Logger log = Logger.getLogger(DbReader.class.getName());
 
   private final String dbRootPath;
   private final Map<String, RocksDbWrapper> openDbs = new HashMap<>();
@@ -40,7 +40,7 @@ public class DbReader implements Closeable {
       throw new IOException("Database root path is not a directory: " + dbRootPath);
     }
 
-    log.info("Initialized DbReader for TON database at: " + dbRootPath);
+    log.info("Initialized DbReader for TON database at: {}", dbRootPath);
   }
 
   /**

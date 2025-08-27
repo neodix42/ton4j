@@ -11,10 +11,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.cell.ByteReader;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -23,8 +23,8 @@ import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockInfo;
 
 /** Specialized reader for TON archive database. */
+@Slf4j
 public class ArchiveDbReader implements Closeable {
-  private static final Logger log = Logger.getLogger(ArchiveDbReader.class.getName());
 
   private final String dbPath;
   private final Map<String, RocksDbWrapper> indexDbs = new HashMap<>();
@@ -52,7 +52,7 @@ public class ArchiveDbReader implements Closeable {
   private void discoverArchives() throws IOException {
     Path packagesPath = Paths.get(dbPath, "packages");
     if (!Files.exists(packagesPath)) {
-      log.warning("Packages directory not found: " + packagesPath);
+      log.warn("Packages directory not found: {}", packagesPath);
       return;
     }
 
@@ -114,7 +114,7 @@ public class ArchiveDbReader implements Closeable {
                     }
                   }
                 } catch (IOException e) {
-                  log.severe("Error discovering archives in " + archDir + ": " + e.getMessage());
+                  log.error("Error discovering archives in {}:{}", archDir, e.getMessage());
                 }
               }
             });
@@ -161,34 +161,26 @@ public class ArchiveDbReader implements Closeable {
               if (offsetBytes.length >= 8) {
                 offset = ByteBuffer.wrap(offsetBytes).order(ByteOrder.LITTLE_ENDIAN).getLong();
               } else {
-                log.warning(
-                    "Value too short for binary parsing for key "
-                        + hash
-                        + " in archive "
-                        + archiveKey);
+                //                log.warn(
+                //                    "Value too short for binary parsing for key {} in archive {}
+                // ",
+                //                    hash,
+                //                    archiveKey);
                 continue;
               }
             }
           } catch (Exception e) {
-            log.warning(
-                "Error parsing offset for key "
-                    + hash
-                    + " from archive "
-                    + archiveKey
-                    + ": "
-                    + e.getMessage());
+            log.warn(
+                "Error parsing offset for key {} from archive {}:{} ",
+                hash,
+                archiveKey,
+                e.getMessage());
             continue;
           }
 
           // Validate the offset
           if (offset < 0) {
-            log.warning(
-                "Negative seek offset "
-                    + offset
-                    + " for key "
-                    + hash
-                    + " in archive "
-                    + archiveKey);
+            log.warn("Negative seek offset {} for key {} in archive {} ", offset, hash, archiveKey);
             continue;
           }
 
@@ -201,8 +193,7 @@ public class ArchiveDbReader implements Closeable {
           return entry.getData();
         }
       } catch (IOException e) {
-        log.warning(
-            "Error reading block " + hash + " from archive " + archiveKey + ": " + e.getMessage());
+        log.warn("Error reading block {} from archive {}:{} ", hash, archiveKey, e.getMessage());
       }
     }
 
@@ -259,7 +250,7 @@ public class ArchiveDbReader implements Closeable {
           // return Block.builder().build();
         }
       } catch (Throwable e) {
-        log.info("Error parsing block info");
+        log.error("Error parsing block {}", e.getMessage());
         // return Block.builder().build();
       }
     }
@@ -291,18 +282,17 @@ public class ArchiveDbReader implements Closeable {
                 // Skip keys that are not valid hex strings (likely system or metadata keys)
                 String hash = new String(key);
                 if (!isValidHexString(hash) && !hash.equals("status")) {
-                  log.fine("Skipping non-hex key: " + hash + " in archive " + archiveKey);
+                  //                  log.debug("Skipping non-hex key: {} in archive {}", hash,
+                  // archiveKey);
                   return;
                 }
 
                 // Validate the value before parsing
                 if (value == null || value.length == 0) {
-                  log.warning(
-                      "Invalid value for key "
-                          + hash
-                          + " in archive "
-                          + archiveKey
-                          + ": value is null or empty");
+                  log.warn(
+                      "Invalid value for key {} in archive {}:: value is null or empty ",
+                      hash,
+                      archiveKey);
                   return;
                 }
 
@@ -317,34 +307,30 @@ public class ArchiveDbReader implements Closeable {
                     if (value.length >= 8) {
                       offset = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN).getLong();
                     } else {
-                      log.warning(
-                          "Value too short for binary parsing for key "
-                              + hash
-                              + " in archive "
-                              + archiveKey);
+                      //                      log.warn(
+                      //                          "Value too short for binary parsing for key {} in
+                      // archive {}",
+                      //                          hash,
+                      //                          archiveKey);
                       return;
                     }
                   }
                 } catch (Exception e) {
-                  log.warning(
-                      "Error parsing offset for key "
-                          + hash
-                          + " in archive "
-                          + archiveKey
-                          + ": "
-                          + e.getMessage());
+                  log.warn(
+                      "Error parsing offset for key {} in archive {}:{} ",
+                      hash,
+                      archiveKey,
+                      e.getMessage());
                   return;
                 }
 
                 // Validate the offset
                 if (offset < 0) {
-                  log.warning(
-                      "Negative seek offset "
-                          + offset
-                          + " for key "
-                          + hash
-                          + " in archive "
-                          + archiveKey);
+                  log.warn(
+                      "Negative seek offset {} for key in archive {}:{} ",
+                      offset,
+                      hash,
+                      archiveKey);
                   return;
                 }
 
@@ -359,24 +345,19 @@ public class ArchiveDbReader implements Closeable {
                   if (packageEntry != null) {
                     blocks.put(hash, packageEntry.getData());
                   } else {
-                    log.warning(
-                        "Null package entry for key "
-                            + hash
-                            + " at offset "
-                            + offset
-                            + " in archive "
-                            + archiveKey);
+                    log.warn(
+                        "Null package entry for key {} at offset {} in archive {} ",
+                        hash,
+                        offset,
+                        archiveKey);
                   }
                 } catch (IOException e) {
                   //                  log.warning("Error reading block from archive " + archiveKey +
                   // ": " + e.getMessage());
                 }
               } catch (Exception e) {
-                log.warning(
-                    "Unexpected error processing key in archive "
-                        + archiveKey
-                        + ": "
-                        + e.getMessage());
+                log.warn(
+                    "Unexpected error processing key in archive {}:{}", archiveKey, e.getMessage());
               }
             });
       } catch (IOException e) {
@@ -405,28 +386,6 @@ public class ArchiveDbReader implements Closeable {
       Block block = getBlock(data);
 
       blockInfos.put(hash, block.getBlockInfo());
-
-      //      try {
-      //        ByteReader reader = new ByteReader(data);
-      //        byte[] magicBytes = new byte[4];
-      //        System.arraycopy(data, 0, magicBytes, 0, 4);
-      //        String magicId = bytesToHex(magicBytes);
-      //
-      //        if (magicId.equals("27e7c64a")) { // db.block.info#4ac6e727
-      //          ByteReader valueReader = new ByteReader(data);
-      //          int[] bytesArray = valueReader.readBytes();
-      //          byte[] signedBytes = new byte[bytesArray.length];
-      //          for (int i = 0; i < bytesArray.length; i++) {
-      //            signedBytes[i] = (byte) bytesArray[i];
-      //          }
-      //          ByteBuffer buffer = ByteBuffer.wrap(signedBytes);
-      //          BlockInfo blockInfo = BlockInfo.deserialize(buffer);
-      //
-      //          blockInfos.put(hash, blockInfo);
-      //        }
-      //      } catch (Exception e) {
-      //        log.warning("Error parsing block info for hash " + hash + ": " + e.getMessage());
-      //      }
     }
 
     return blockInfos;
@@ -445,7 +404,7 @@ public class ArchiveDbReader implements Closeable {
         return Block.builder().build();
       }
     } catch (Exception e) {
-      log.warning("Error parsing block info");
+      log.warn("Error parsing block info");
       return Block.builder().build();
     }
   }
