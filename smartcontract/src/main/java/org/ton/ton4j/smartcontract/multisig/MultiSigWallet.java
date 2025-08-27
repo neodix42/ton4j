@@ -10,13 +10,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.*;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.ExtraCurrency;
@@ -62,6 +64,7 @@ public class MultiSigWallet implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -71,6 +74,16 @@ public class MultiSigWallet implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public org.ton.ton4j.toncenter.TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -242,7 +255,7 @@ public class MultiSigWallet implements Contract {
    *
    * @param keyPair TweetNaclFast.Signature.KeyPair
    */
-  public ExtMessageInfo sendOrder(
+  public SendResponse sendOrder(
       TweetNaclFast.Signature.KeyPair keyPair, int pubkeyIndex, Cell order) {
 
     Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
@@ -260,11 +273,7 @@ public class MultiSigWallet implements Contract {
                     .storeCell(signingMessageBody)
                     .endCell())
             .build();
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    } else {
-      return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-    }
+    return send(externalMessage);
   }
 
   /**
@@ -273,7 +282,7 @@ public class MultiSigWallet implements Contract {
    *
    * @param secretKey byte[]
    */
-  public ExtMessageInfo sendOrder(byte[] secretKey, int pubkeyIndex, Cell order) {
+  public SendResponse sendOrder(byte[] secretKey, int pubkeyIndex, Cell order) {
     Cell signingMessageBody = createSigningMessageInternal(pubkeyIndex, order);
 
     Message externalMessage =
@@ -287,11 +296,7 @@ public class MultiSigWallet implements Contract {
                     .storeCell(signingMessageBody)
                     .endCell())
             .build();
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    } else {
-      return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-    }
+    return send(externalMessage);
   }
 
   /**
@@ -427,18 +432,14 @@ public class MultiSigWallet implements Contract {
     return query.endCell();
   }
 
-  public ExtMessageInfo deploy() {
+  public SendResponse deploy() {
 
     Message externalMessage =
         Message.builder()
             .info(ExternalMessageInInfo.builder().dstAddr(getAddressIntStd()).build())
             .init(getStateInit())
             .build();
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    } else {
-      return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
-    }
+    return send(externalMessage);
   }
 
   /**

@@ -10,7 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -22,6 +22,7 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.VmCellSlice;
 import org.ton.ton4j.tlb.VmStackValueSlice;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryCell;
@@ -56,6 +57,7 @@ public class JettonMinter implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -65,6 +67,16 @@ public class JettonMinter implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -189,8 +201,24 @@ public class JettonMinter implements Contract {
    * @return JettonData
    */
   public JettonMinterData getJettonData() {
+    if (nonNull(tonCenterClient)) {
 
-    if (nonNull(adnlLiteClient)) {
+      org.ton.ton4j.toncenter.model.JettonMinterData data;
+      if (nonNull(customAddress)) {
+        data = tonCenterClient.getJettonData(customAddress.toBounceable());
+      } else {
+        data = tonCenterClient.getJettonData(getAddress().toBounceable());
+      }
+      return JettonMinterData.builder()
+          .adminAddress(data.getAdminAddress())
+          .isMutable(data.isMutable())
+          .jettonContentCell(data.getJettonContentCell())
+          .jettonContentUri(data.getJettonContentUri())
+          .jettonWalletCode(data.getJettonWalletCode())
+          .totalSupply(data.getTotalSupply())
+          .build();
+
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult;
       if (nonNull(customAddress)) {
         runMethodResult = adnlLiteClient.runMethod(customAddress, "get_jetton_data");
@@ -277,7 +305,17 @@ public class JettonMinter implements Contract {
   }
 
   public BigInteger getTotalSupply() {
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      try {
+        if (nonNull(customAddress)) {
+          return tonCenterClient.getJettonData(customAddress.toBounceable()).getTotalSupply();
+        } else {
+          return tonCenterClient.getJettonData(getAddress().toBounceable()).getTotalSupply();
+        }
+      } catch (Exception e) {
+        throw new Error("Error getting total supply: " + e.getMessage());
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult;
       if (nonNull(customAddress)) {
         runMethodResult = adnlLiteClient.runMethod(customAddress, "get_jetton_data");
@@ -307,7 +345,27 @@ public class JettonMinter implements Contract {
    */
   public JettonWallet getJettonWallet(Address ownerAddress) {
     Cell cellAddr = CellBuilder.beginCell().storeAddress(ownerAddress).endCell();
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      try {
+        Address jettonWalletAddress;
+        if (nonNull(customAddress)) {
+          jettonWalletAddress =
+              tonCenterClient.getJettonWalletAddress(
+                  customAddress.toBounceable(), ownerAddress.toBounceable());
+        } else {
+          jettonWalletAddress =
+              tonCenterClient.getJettonWalletAddress(
+                  getAddress().toBounceable(), ownerAddress.toBounceable());
+        }
+
+        return JettonWallet.builder()
+            .tonCenterClient(tonCenterClient)
+            .address(jettonWalletAddress)
+            .build();
+      } catch (Exception e) {
+        throw new Error("Error getting jetton wallet address: " + e.getMessage());
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult;
       if (nonNull(customAddress)) {
         runMethodResult =

@@ -1,20 +1,26 @@
 package org.ton.ton4j.smartcontract.token.nft;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.*;
+
+import com.google.gson.internal.LinkedTreeMap;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.smartcontract.SendResponse;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.utils.Utils;
@@ -67,6 +73,7 @@ public class NftCollection implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -76,6 +83,16 @@ public class NftCollection implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -222,107 +239,273 @@ public class NftCollection implements Contract {
   /**
    * @return CollectionData
    */
-  public CollectionData getCollectionData(Tonlib tonlib) {
+  public CollectionData getCollectionData() {
     Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_collection_data");
 
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_collection_data, returned an exit code " + result.getExit_code());
-    }
+    if (nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get collection data
+        RunGetMethodResponse response =
+            tonCenterClient
+                .runGetMethod(myAddress.toBounceable(), "get_collection_data", new ArrayList<>())
+                .getResult();
 
-    TvmStackEntryNumber itemsCountNumber = (TvmStackEntryNumber) result.getStack().get(0);
-    long nextItemIndex = itemsCountNumber.getNumber().longValue();
+        // Parse the response
+        long nextItemIndex = Long.decode(response.getStack().get(0).get(1).toString());
 
-    TvmStackEntryCell collectionContent = (TvmStackEntryCell) result.getStack().get(1);
-    Cell collectionContentCell =
-        CellBuilder.beginCell()
-            .fromBoc(Utils.base64ToBytes(collectionContent.getCell().getBytes()))
-            .endCell();
+        // Parse collection content cell
+        List<Object> elements = new ArrayList<>(response.getStack().get(1));
+        Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+        Cell collectionContentCell = Cell.fromBocBase64(l.get("bytes"));
 
-    String collectionContentUri = null;
-    try {
-      collectionContentUri = NftUtils.parseOffChainUriCell(collectionContentCell);
-    } catch (Error e) {
-      // todo
-    }
+        String collectionContentUri = null;
+        try {
+          collectionContentUri = NftUtils.parseOffChainUriCell(collectionContentCell);
+        } catch (Error e) {
+          // todo
+        }
 
-    TvmStackEntrySlice ownerAddressCell = (TvmStackEntrySlice) result.getStack().get(2);
-    Address ownerAddress =
-        NftUtils.parseAddress(
-            CellBuilder.beginCell()
-                .fromBoc(Utils.base64ToBytes(ownerAddressCell.getSlice().getBytes()))
-                .endCell());
+        // Parse owner address
+        elements = new ArrayList<>(response.getStack().get(2));
+        l = (LinkedTreeMap<String, String>) elements.get(1);
+        Cell c = Cell.fromBocBase64(l.get("bytes"));
+        Address ownerAddress = CellSlice.beginParse(c).loadAddress();
 
-    return CollectionData.builder()
-        .nextItemIndex(nextItemIndex)
-        .ownerAddress(ownerAddress)
-        .collectionContentCell(collectionContentCell)
-        .collectionContentUri(collectionContentUri)
-        .build();
-  }
+        return CollectionData.builder()
+            .nextItemIndex(nextItemIndex)
+            .ownerAddress(ownerAddress)
+            .collectionContentCell(collectionContentCell)
+            .collectionContentUri(collectionContentUri)
+            .build();
+      } catch (Exception e) {
+        throw new Error("Error getting collection data: " + e.getMessage());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      // Implementation for AdnlLiteClient
+      // This would be similar to the TonCenter implementation but using adnlLiteClient.runMethod
+      // Not implemented yet
+      throw new Error("AdnlLiteClient implementation for getCollectionData not yet available");
+    } else if (nonNull(tonlib)) {
 
-  /**
-   * @return DnsData
-   */
-  public ItemData getNftItemContent(Tonlib tonlib, NftItem nftItem) {
-    ItemData nftData = nftItem.getData(tonlib);
-
-    if (nftData.isInitialized()) {
-      Deque<String> stack = new ArrayDeque<>();
-      stack.offer("[num, " + nftData.getIndex() + "]");
-      stack.offer("[slice, " + nftData.getContentCell().toHex(true) + "]");
-
-      RunResult result = tonlib.runMethod(getAddress(), "get_nft_content", stack);
+      // Fallback to Tonlib
+      RunResult result = tonlib.runMethod(myAddress, "get_collection_data");
 
       if (result.getExit_code() != 0) {
-        throw new Error("method get_nft_content, returned an exit code " + result.getExit_code());
+        throw new Error(
+            "method get_collection_data, returned an exit code " + result.getExit_code());
       }
 
-      TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStack().get(2);
-      Cell content =
+      TvmStackEntryNumber itemsCountNumber = (TvmStackEntryNumber) result.getStack().get(0);
+      long nextItemIndex = itemsCountNumber.getNumber().longValue();
+
+      TvmStackEntryCell collectionContent = (TvmStackEntryCell) result.getStack().get(1);
+      Cell collectionContentCell =
           CellBuilder.beginCell()
-              .fromBoc(Utils.base64ToBytes(contentCell.getCell().getBytes()))
+              .fromBoc(Utils.base64ToBytes(collectionContent.getCell().getBytes()))
               .endCell();
 
+      String collectionContentUri = null;
       try {
-        nftData.setContentUri(NftUtils.parseOffChainUriCell(content));
+        collectionContentUri = NftUtils.parseOffChainUriCell(collectionContentCell);
       } catch (Error e) {
         // todo
+      }
+
+      TvmStackEntrySlice ownerAddressCell = (TvmStackEntrySlice) result.getStack().get(2);
+      Address ownerAddress =
+          NftUtils.parseAddress(
+              CellBuilder.beginCell()
+                  .fromBoc(Utils.base64ToBytes(ownerAddressCell.getSlice().getBytes()))
+                  .endCell());
+
+      return CollectionData.builder()
+          .nextItemIndex(nextItemIndex)
+          .ownerAddress(ownerAddress)
+          .collectionContentCell(collectionContentCell)
+          .collectionContentUri(collectionContentUri)
+          .build();
+    } else {
+      throw new Error("provider not set");
+    }
+  }
+
+  public ItemData getNftItemContent(NftItem nftItem) {
+    ItemData nftData;
+
+    if (nonNull(tonCenterClient)) {
+      try {
+        // For now, we'll use tonlib since getData(TonCenter) is not implemented
+        nftData = nftItem.getData();
+      } catch (Exception e) {
+        throw new Error("Error getting NFT data: " + e.getMessage());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      // For now, we'll use tonlib since getData(AdnlLiteClient) is not implemented
+      nftData = nftItem.getData(); // todo
+    } else {
+      nftData = nftItem.getData();
+    }
+
+    if (nftData.isInitialized()) {
+      if (nonNull(tonCenterClient)) {
+        try {
+          // Use TonCenter API to get NFT content
+          List<List<Object>> stack = new ArrayList<>();
+          stack.add(Arrays.asList("num", nftData.getIndex().toString()));
+
+          // Convert content cell to hex and add to stack
+          List<Object> contentCellParam = new ArrayList<>();
+          contentCellParam.add("slice");
+          contentCellParam.add(nftData.getContentCell().toHex(true));
+          stack.add(contentCellParam);
+
+          RunGetMethodResponse response =
+              tonCenterClient
+                  .runGetMethod(getAddress().toBounceable(), "get_nft_content", stack)
+                  .getResult();
+
+          // Parse content cell from response
+          List<Object> elements = new ArrayList<>(response.getStack().get(2));
+          Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+          Cell content = Cell.fromBocBase64(l.get("bytes"));
+          try {
+            nftData.setContentUri(NftUtils.parseOffChainUriCell(content));
+          } catch (Error e) {
+            // todo
+          }
+
+          return nftData;
+        } catch (Exception e) {
+          throw new Error("Error getting NFT content: " + e.getMessage());
+        }
+      } else if (nonNull(adnlLiteClient)) {
+        // Implementation for AdnlLiteClient
+        // Not implemented yet
+        throw new Error("AdnlLiteClient implementation for getNftItemContent not yet available");
+      } else if (nonNull(tonlib)) {
+        // Fallback to Tonlib
+        Deque<String> stack = new ArrayDeque<>();
+        stack.offer("[num, " + nftData.getIndex() + "]");
+        stack.offer("[slice, " + nftData.getContentCell().toHex(true) + "]");
+
+        RunResult result = tonlib.runMethod(getAddress(), "get_nft_content", stack);
+
+        if (result.getExit_code() != 0) {
+          throw new Error("method get_nft_content, returned an exit code " + result.getExit_code());
+        }
+
+        TvmStackEntryCell contentCell = (TvmStackEntryCell) result.getStack().get(2);
+        Cell content =
+            CellBuilder.beginCell()
+                .fromBoc(Utils.base64ToBytes(contentCell.getCell().getBytes()))
+                .endCell();
+
+        try {
+          nftData.setContentUri(NftUtils.parseOffChainUriCell(content));
+        } catch (Error e) {
+          // todo
+        }
+      } else {
+        throw new Error("provider not set");
       }
     }
 
     return nftData;
   }
 
-  /**
-   * @return DnsData
-   */
-  public Address getNftItemAddressByIndex(Tonlib tonlib, BigInteger index) {
+  public Address getNftItemAddressByIndex(BigInteger index) {
     Address myAddress = this.getAddress();
-    Deque<String> stack = new ArrayDeque<>();
 
-    stack.offer("[num, " + index.toString(10) + "]");
-    RunResult result = tonlib.runMethod(myAddress, "get_nft_address_by_index", stack);
+    if (nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get NFT address by index
+        List<List<Object>> stack = new ArrayList<>();
+        stack.add(Arrays.asList("num", index.toString(10)));
 
-    if (result.getExit_code() != 0) {
+        RunGetMethodResponse response =
+            tonCenterClient
+                .runGetMethod(myAddress.toBounceable(), "get_nft_address_by_index", stack)
+                .getResult();
+        List<Object> elements = new ArrayList<>(response.getStack().get(0));
+        Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+        Cell c = Cell.fromBocBase64(l.get("bytes"));
+        return CellSlice.beginParse(c).loadAddress();
+
+      } catch (Exception e) {
+        throw new Error("Error getting NFT address by index: " + e.getMessage());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      // Implementation for AdnlLiteClient
+      // Not implemented yet
       throw new Error(
-          "method get_nft_address_by_index, returned an exit code " + result.getExit_code());
+          "AdnlLiteClient implementation for getNftItemAddressByIndex not yet available");
+    } else if (nonNull(tonlib)) {
+      // Fallback to Tonlib
+      Deque<String> stack = new ArrayDeque<>();
+      stack.offer("[num, " + index.toString(10) + "]");
+      RunResult result = tonlib.runMethod(myAddress, "get_nft_address_by_index", stack);
+
+      if (result.getExit_code() != 0) {
+        throw new Error(
+            "method get_nft_address_by_index, returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntrySlice addrCell = (TvmStackEntrySlice) result.getStack().get(0);
+      return NftUtils.parseAddress(
+          CellBuilder.beginCell()
+              .fromBoc(Utils.base64ToBytes(addrCell.getSlice().getBytes()))
+              .endCell());
+    } else {
+      throw new Error("provider not set");
     }
-
-    TvmStackEntrySlice addrCell = (TvmStackEntrySlice) result.getStack().get(0);
-    return NftUtils.parseAddress(
-        CellBuilder.beginCell()
-            .fromBoc(Utils.base64ToBytes(addrCell.getSlice().getBytes()))
-            .endCell());
   }
 
-  public Royalty getRoyaltyParams(Tonlib tonlib) {
+  public Royalty getRoyaltyParams() {
     Address myAddress = this.getAddress();
-    return NftUtils.getRoyaltyParams(tonlib, myAddress);
+
+    if (nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get royalty params
+        List<List<Object>> stack = new ArrayList<>();
+        RunGetMethodResponse response =
+            tonCenterClient
+                .runGetMethod(myAddress.toBounceable(), "royalty_params", stack)
+                .getResult();
+
+        // Parse royalty numerator
+        long royaltyNumerator = Long.decode(response.getStack().get(0).get(1).toString());
+
+        // Parse royalty denominator
+        long royaltyDenominator = Long.decode(response.getStack().get(1).get(1).toString());
+
+        // Parse royalty address
+        List<Object> elements = new ArrayList<>(response.getStack().get(2));
+        Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+        Cell c = Cell.fromBocBase64(l.get("bytes"));
+        Address royaltyAddress = CellSlice.beginParse(c).loadAddress();
+
+        return Royalty.builder()
+            .royaltyFactor(BigInteger.valueOf(royaltyNumerator))
+            .royaltyBase(BigInteger.valueOf(royaltyDenominator))
+            .royaltyAddress(royaltyAddress)
+            .build();
+      } catch (Exception e) {
+        throw new Error("Error getting royalty params: " + e.getMessage());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      // Implementation for AdnlLiteClient
+      // Not implemented yet
+      throw new Error("AdnlLiteClient implementation for getRoyaltyParams not yet available");
+    } else if (nonNull(tonlib)) {
+
+      // Fallback to Tonlib
+      return NftUtils.getRoyaltyParams(tonlib, myAddress);
+    } else {
+      throw new Error("provider not set");
+    }
   }
 
-  public ExtMessageInfo deploy(Tonlib tonlib, NftCollectionConfig config) {
-
+  public SendResponse deploy(NftCollectionConfig config) {
     long seqno = getSeqno();
     config.setSeqno(seqno);
     Address ownAddress = getAddress();
@@ -341,6 +524,6 @@ public class NftCollection implements Contract {
             .init(getStateInit())
             .build();
 
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 }

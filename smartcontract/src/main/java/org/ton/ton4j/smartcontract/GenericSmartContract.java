@@ -5,13 +5,13 @@ import static java.util.Objects.isNull;
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.Data;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
@@ -26,6 +26,7 @@ public class GenericSmartContract implements Contract {
   private Tonlib tonlib;
   private long wc;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -35,6 +36,16 @@ public class GenericSmartContract implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public org.ton.ton4j.toncenter.TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -89,35 +100,33 @@ public class GenericSmartContract implements Contract {
    * Deploy with body
    *
    * @param deployMessageBody usually stands for internal message
-   * @return ExtMessageInfo
+   * @return SendResponse
    */
-  public ExtMessageInfo deploy(Cell deployMessageBody) {
-    return tonlib.sendRawMessage(prepareDeployMsg(deployMessageBody).toCell().toBase64());
+  public SendResponse deploy(Cell deployMessageBody) {
+    return send(prepareDeployMsg(deployMessageBody));
   }
 
   /**
    * Deploy with body without signing it.
    *
    * @param deployMessageBody usually stands for internal message
-   * @return ExtMessageInfo
+   * @return SendResponse
    */
-  public ExtMessageInfo deployWithoutSignature(Cell deployMessageBody) {
-    return tonlib.sendRawMessage(
-        prepareDeployMsgWithoutSignature(deployMessageBody).toCell().toBase64());
+  public SendResponse deployWithoutSignature(Cell deployMessageBody) {
+    return send(prepareDeployMsgWithoutSignature(deployMessageBody));
   }
 
   /**
    * Deploy without body
    *
-   * @return ExtMessageInfo
+   * @return SendResponse
    */
-  public ExtMessageInfo deploy() {
-    return tonlib.sendRawMessage(prepareDeployMsgWithoutBody().toCell().toBase64());
+  public SendResponse deploy() {
+    return send(prepareDeployMsgWithoutBody());
   }
 
-  public ExtMessageInfo deploy(Cell deployMessageBody, byte[] signedBody) {
-    return tonlib.sendRawMessage(
-        prepareDeployMsg(deployMessageBody, signedBody).toCell().toBase64());
+  public SendResponse deploy(Cell deployMessageBody, byte[] signedBody) {
+    return send(prepareDeployMsg(deployMessageBody, signedBody));
   }
 
   public Message prepareDeployMsgWithoutBody() {

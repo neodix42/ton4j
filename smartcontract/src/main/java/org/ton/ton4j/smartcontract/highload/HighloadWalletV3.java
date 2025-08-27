@@ -13,15 +13,17 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.ExtraCurrency;
@@ -34,6 +36,7 @@ public class HighloadWalletV3 implements Contract {
   TweetNaclFast.Signature.KeyPair keyPair;
   long walletId;
   long timeout;
+  byte[] publicKey;
 
   /**
    * interface to <a
@@ -51,8 +54,10 @@ public class HighloadWalletV3 implements Contract {
   private static class CustomHighloadWalletV3Builder extends HighloadWalletV3Builder {
     @Override
     public HighloadWalletV3 build() {
-      if (isNull(super.keyPair)) {
-        super.keyPair = Utils.generateSignatureKeyPair();
+      if (isNull(super.publicKey)) {
+        if (isNull(super.keyPair)) {
+          super.keyPair = Utils.generateSignatureKeyPair();
+        }
       }
       return super.build();
     }
@@ -62,6 +67,7 @@ public class HighloadWalletV3 implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -71,6 +77,16 @@ public class HighloadWalletV3 implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -111,7 +127,7 @@ public class HighloadWalletV3 implements Contract {
   @Override
   public Cell createDataCell() {
     return CellBuilder.beginCell()
-        .storeBytes(keyPair.getPublicKey())
+        .storeBytes(isNull(keyPair) ? publicKey : keyPair.getPublicKey())
         .storeUint(walletId, 32)
         .storeBit(false) // old queries
         .storeBit(false) // queries
@@ -126,6 +142,14 @@ public class HighloadWalletV3 implements Contract {
   }
 
   public String getPublicKey() {
+    if (nonNull(tonCenterClient)) {
+      try {
+        return Utils.bytesToHex(
+            Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable())));
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
     }
@@ -176,7 +200,7 @@ public class HighloadWalletV3 implements Contract {
   /**
    * @param highloadConfig HighloadV3Config
    */
-  public ExtMessageInfo send(HighloadV3Config highloadConfig) {
+  public SendResponse send(HighloadV3Config highloadConfig) {
     Address ownAddress = getAddress();
 
     Cell body = createTransferMessage(highloadConfig);
@@ -198,10 +222,27 @@ public class HighloadWalletV3 implements Contract {
                     .storeRef(body)
                     .endCell())
             .build();
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
+  }
+
+  public SendResponse send(HighloadV3Config highloadConfig, byte[] signedBody) {
+    Address ownAddress = getAddress();
+
+    Cell body = createTransferMessage(highloadConfig);
+
+    Message externalMessage =
+        Message.builder()
+            .info(
+                ExternalMessageInInfo.builder()
+                    .dstAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId(ownAddress.wc)
+                            .address(ownAddress.toBigInteger())
+                            .build())
+                    .build())
+            .body(CellBuilder.beginCell().storeBytes(signedBody).storeRef(body).endCell())
+            .build();
+    return send(externalMessage);
   }
 
   /**
@@ -231,6 +272,14 @@ public class HighloadWalletV3 implements Contract {
                     .endCell())
             .build();
 
+    if (nonNull(tonCenterClient)) {
+      try {
+        tonCenterClient.sendBoc(externalMessage.toCell().toBase64());
+        return null;
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       adnlLiteClient.sendRawMessageWithConfirmation(externalMessage, getAddress());
       return null;
@@ -240,27 +289,71 @@ public class HighloadWalletV3 implements Contract {
     }
   }
 
-  public ExtMessageInfo deploy(HighloadV3Config highloadConfig) {
+  public RawTransaction sendWithConfirmation(HighloadV3Config highloadConfig, byte[] signedBody)
+      throws Exception {
+    Address ownAddress = getAddress();
+
+    Cell body = createTransferMessage(highloadConfig);
+
+    Message externalMessage =
+        Message.builder()
+            .info(
+                ExternalMessageInInfo.builder()
+                    .dstAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId(ownAddress.wc)
+                            .address(ownAddress.toBigInteger())
+                            .build())
+                    .build())
+            .body(CellBuilder.beginCell().storeBytes(signedBody).storeRef(body).endCell())
+            .build();
+
+    if (nonNull(tonCenterClient)) {
+      try {
+        tonCenterClient.sendBoc(externalMessage.toCell().toBase64());
+        return null;
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
+    if (nonNull(adnlLiteClient)) {
+      adnlLiteClient.sendRawMessageWithConfirmation(externalMessage, getAddress());
+      return null;
+    } else {
+      return tonlib.sendRawMessageWithConfirmation(
+          externalMessage.toCell().toBase64(), getAddress());
+    }
+  }
+
+  private Cell createDeployMessageTemp(HighloadV3Config highloadConfig) {
+    return MessageRelaxed.builder()
+        .info(
+            InternalMessageInfoRelaxed.builder()
+                .dstAddr(getAddressIntStd())
+                .createdAt(
+                    (highloadConfig.getCreatedAt() == 0)
+                        ? Instant.now().getEpochSecond() - 60
+                        : highloadConfig.getCreatedAt())
+                .build())
+        .build()
+        .toCell();
+  }
+
+  public Cell createDeployMessage(HighloadV3Config highloadConfig) {
+    if (isNull(highloadConfig.getBody())) {
+      // dummy deploy msg
+      highloadConfig.setBody(createDeployMessageTemp(highloadConfig));
+    }
+
+    return createTransferMessage(highloadConfig);
+  }
+
+  public SendResponse deploy(HighloadV3Config highloadConfig) {
     Address ownAddress = getAddress();
 
     if (isNull(highloadConfig.getBody())) {
       // dummy deploy msg
-      highloadConfig.setBody(
-          MessageRelaxed.builder()
-              .info(
-                  InternalMessageInfoRelaxed.builder()
-                      .dstAddr(
-                          MsgAddressIntStd.builder()
-                              .workchainId(ownAddress.wc)
-                              .address(ownAddress.toBigInteger())
-                              .build())
-                      .createdAt(
-                          (highloadConfig.getCreatedAt() == 0)
-                              ? Instant.now().getEpochSecond() - 60
-                              : highloadConfig.getCreatedAt())
-                      .build())
-              .build()
-              .toCell());
+      highloadConfig.setBody(createDeployMessageTemp(highloadConfig));
     }
 
     Cell innerMsg = createTransferMessage(highloadConfig);
@@ -285,10 +378,33 @@ public class HighloadWalletV3 implements Contract {
                     .endCell())
             .build();
 
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
+    return send(externalMessage);
+  }
+
+  public SendResponse deploy(HighloadV3Config highloadConfig, byte[] signedBody) {
+    Address ownAddress = getAddress();
+
+    if (isNull(highloadConfig.getBody())) {
+      // dummy deploy msg
+      highloadConfig.setBody(createDeployMessageTemp(highloadConfig));
     }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    Cell innerMsg = createTransferMessage(highloadConfig);
+
+    Message externalMessage =
+        Message.builder()
+            .info(
+                ExternalMessageInInfo.builder()
+                    .dstAddr(
+                        MsgAddressIntStd.builder()
+                            .workchainId(ownAddress.wc)
+                            .address(ownAddress.toBigInteger())
+                            .build())
+                    .build())
+            .init(getStateInit())
+            .body(CellBuilder.beginCell().storeBytes(signedBody).storeRef(innerMsg).endCell())
+            .build();
+
+    return send(externalMessage);
   }
 
   public Cell createSingleTransfer(
@@ -307,12 +423,7 @@ public class HighloadWalletV3 implements Contract {
                 .value(CurrencyCollection.builder().coins(amount).build())
                 .build())
         .init(stateInit)
-        .body(
-            CellBuilder.beginCell()
-                .storeBytes(
-                    Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                .storeRef(body)
-                .endCell())
+        .body(body)
         .build()
         .toCell();
   }
@@ -342,12 +453,7 @@ public class HighloadWalletV3 implements Contract {
                         .build())
                 .build())
         .init(stateInit)
-        .body(
-            CellBuilder.beginCell()
-                .storeBytes(
-                    Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), body.hash()))
-                .storeRef(body)
-                .endCell())
+        .body(body)
         .build()
         .toCell();
   }
@@ -534,6 +640,13 @@ public class HighloadWalletV3 implements Contract {
 
   /** Calls get_subwallet_id method of a contract. */
   public long getSubWalletId() {
+    if (nonNull(tonCenterClient)) {
+      try {
+        return tonCenterClient.getSubWalletId(getAddress().toBounceable());
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     Address myAddress = this.getAddress();
     RunResult result = tonlib.runMethod(myAddress, "get_subwallet_id");
     if (result.getExit_code() != 0) {

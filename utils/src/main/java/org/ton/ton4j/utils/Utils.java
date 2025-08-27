@@ -1126,9 +1126,17 @@ public class Utils {
         new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP));
   }
 
+  public static String formatNanoValueStripZeros(BigInteger nanoCoins) {
+    checkToncoinsOverflow(nanoCoins);
+    return new BigDecimal(nanoCoins)
+        .divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP)
+        .stripTrailingZeros()
+        .toPlainString();
+  }
+
   public static String formatNanoValueZero(BigInteger nanoCoins) {
     if (isNull(nanoCoins)) {
-      return "N/A";
+      return "";
     }
     checkToncoinsOverflow(nanoCoins);
     if (nanoCoins.compareTo(BigInteger.ZERO) == 0) {
@@ -1137,6 +1145,21 @@ public class Utils {
       return String.format(
           "%,.9f",
           new BigDecimal(nanoCoins).divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP));
+    }
+  }
+
+  public static String formatNanoValueZeroStripZeros(BigInteger nanoCoins) {
+    if (isNull(nanoCoins)) {
+      return "";
+    }
+    checkToncoinsOverflow(nanoCoins);
+    if (nanoCoins.compareTo(BigInteger.ZERO) == 0) {
+      return "0";
+    } else {
+      return new BigDecimal(nanoCoins)
+          .divide(BigDecimal.valueOf(BLN1), 9, RoundingMode.HALF_UP)
+          .stripTrailingZeros()
+          .toPlainString();
     }
   }
 
@@ -1552,6 +1575,15 @@ public class Utils {
     BigInteger b = new BigInteger(num);
     if (b.compareTo(BigInteger.ZERO) < 0) b = b.add(BigInteger.ONE.shiftLeft(64));
     return b;
+  }
+
+  public static String bigIntegerToUnsignedHex(BigInteger value) {
+    if (isNull(value)) return "null";
+    // If the BigInteger represents a negative signed 64-bit value, convert to unsigned
+    if (value.compareTo(BigInteger.ZERO) < 0) {
+      value = value.add(BigInteger.ONE.shiftLeft(64));
+    }
+    return value.toString(16);
   }
 
   public static String getResourceAbsoluteDirectory(ClassLoader cl, String resource) {

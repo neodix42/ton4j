@@ -286,7 +286,7 @@ public class ExampleContract implements Contract {
           .endCell();
     }
 
-    public ExtMessageInfo deploy() {
+    public SendResponse deploy() {
         Cell body = createDeployMessage();
 
         Message externalMessage = Message.builder()
@@ -303,7 +303,7 @@ public class ExampleContract implements Contract {
         return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
     }
 
-    public ExtMessageInfo send(CustomContractConfig config) {
+    public SendResponse send(CustomContractConfig config) {
         Cell body = createTransferBody(config);
         Message externalMessage = Message.builder()
                 .info(ExternalMessageInfo.builder()
@@ -348,10 +348,10 @@ log.info("contract address {}", address);
 BigInteger balance = TestnetFaucet.topUpContract(tonlib, Address.of(address.toString(true)), Utils.toNano(0.1));
 log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
-ExtMessageInfo extMessageInfo = exampleContract.deploy();
-assertThat(extMessageInfo.getError().getCode()).isZero();
+SendResponse sendResponse = exampleContract.deploy();
+assertThat(sendResponse.getCode()).isZero();
 
-exampleContract.waitForDeployment(45);
+exampleContract.waitForDeployment();
 
 log.info("seqno: {}", exampleContract.getSeqno());
 
@@ -375,10 +375,10 @@ CustomContractConfig config = CustomContractConfig.builder()
         .comment("no-way")
         .build();
 
-extMessageInfo = exampleContract.send(config);
-assertThat(extMessageInfo.getError().getCode()).isZero();
+sendResponse = exampleContract.send(config);
+assertThat(sendResponse.getCode()).isZero();
 
-exampleContract.waitForBalanceChange(45);
+exampleContract.waitForBalanceChange();
 
 result = tonlib.runMethod(address, "get_extra_field");
 log.info("gas_used {}, exit_code {} ", result.getGas_used(), result.getExit_code());

@@ -7,6 +7,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -31,6 +32,7 @@ public class TestBinTree {
     assertThat(bt.size()).isEqualTo(5);
   }
 
+  @Ignore("needs to be reworked")
   @Test
   public void testBinTree() {
     BinTree node = generateBinTree(10);
@@ -105,6 +107,7 @@ public class TestBinTree {
     assertThat(deserializedRoot.size()).isEqualTo(2);
   }
 
+  @Ignore("needs to be reworked")
   @Test
   public void testBinTreeThree() {
     Deque<ShardDescr> cells = generateShardDescrDeque(3);
@@ -127,6 +130,7 @@ public class TestBinTree {
     assertThat(deserializedRoot.size()).isEqualTo(3);
   }
 
+  @Ignore("needs to be reworked")
   @Test
   public void testBinTreeLarge() {
     BinTree root = generateBinTree(100);

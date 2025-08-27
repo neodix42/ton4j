@@ -5,11 +5,12 @@ import static java.util.Objects.isNull;
 import com.iwebpp.crypto.TweetNaclFast;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.utils.Utils;
 
@@ -41,6 +42,12 @@ public class DnsRoot implements Contract {
   private Tonlib tonlib;
   private long wc;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
+
+  @Override
+  public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
+    adnlLiteClient = pAdnlLiteClient;
+  }
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -48,8 +55,13 @@ public class DnsRoot implements Contract {
   }
 
   @Override
-  public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
-    adnlLiteClient = pAdnlLiteClient;
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
   }
 
   @Override

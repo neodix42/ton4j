@@ -1,21 +1,21 @@
 package org.ton.ton4j.smartcontract.integrationtests;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.CustomContractConfig;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
@@ -46,6 +46,7 @@ public class ExampleContract implements Contract {
   private Tonlib tonlib;
   private long wc;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -55,6 +56,16 @@ public class ExampleContract implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -135,7 +146,7 @@ public class ExampleContract implements Contract {
         .endCell();
   }
 
-  public ExtMessageInfo deploy() {
+  public SendResponse deploy() {
     Cell body = createDeployMessage();
 
     Message externalMessage =
@@ -150,14 +161,10 @@ public class ExampleContract implements Contract {
                     .endCell())
             .build();
 
-    if (nonNull(adnlLiteClient)) {
       return send(externalMessage);
-    }
-
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 
-  public ExtMessageInfo send(CustomContractConfig config) {
+  public SendResponse send(CustomContractConfig config) {
     Cell body = createTransferBody(config);
     Message externalMessage =
         Message.builder()
@@ -169,9 +176,6 @@ public class ExampleContract implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
-    if (nonNull(adnlLiteClient)) {
       return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
   }
 }

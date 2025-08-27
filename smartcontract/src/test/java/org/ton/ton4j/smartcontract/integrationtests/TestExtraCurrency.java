@@ -1,6 +1,7 @@
 package org.ton.ton4j.smartcontract.integrationtests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.ton.ton4j.smartcontract.integrationtests.CommonTest.TESTNET_API_KEY;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
@@ -9,8 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWalletV3;
 import org.ton.ton4j.smartcontract.types.Destination;
@@ -21,6 +23,9 @@ import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.ton4j.tl.liteserver.responses.TransactionList;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Transaction;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.model.AddressInformationResponse;
+import org.ton.ton4j.toncenter.model.TransactionResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.utils.Utils;
@@ -54,8 +59,8 @@ public class TestExtraCurrency {
         TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress1), Utils.toNano(4));
     log.info("topped up {}", Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForDeployment();
 
     WalletV3Config config =
@@ -67,8 +72,8 @@ public class TestExtraCurrency {
             .build();
 
     //  receive test extra-currency (ECHIDNA)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange();
 
@@ -100,8 +105,8 @@ public class TestExtraCurrency {
                     ExtraCurrency.builder().id(100).amount(BigInteger.valueOf(600000000)).build()))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange();
 
@@ -190,8 +195,8 @@ public class TestExtraCurrency {
     log.info("topped up {}", Utils.formatNanoValue(balance));
 
     // deploy WalletV3R2 code
-    ExtMessageInfo extMessageInfo = wallet.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     wallet.waitForDeployment();
     log.info("wallet {} deployed", rawAddress);
     return wallet;
@@ -229,8 +234,8 @@ public class TestExtraCurrency {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForDeployment();
 
     config =
@@ -248,8 +253,8 @@ public class TestExtraCurrency {
             .build();
 
     //  receive test extra-currency (ECHIDNA)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1 message with request to get 3.7 ECHIDNA extra-currency");
 
     contract.waitForBalanceChange();
@@ -282,8 +287,8 @@ public class TestExtraCurrency {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(2).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
 
     contract.waitForBalanceChange();
@@ -329,8 +334,8 @@ public class TestExtraCurrency {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForDeployment();
 
     config =
@@ -348,8 +353,8 @@ public class TestExtraCurrency {
             .build();
 
     //  receive test extra-currency (ECHIDNA)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1 message with request to get 3.7 ECHIDNA extra-currency");
 
     contract.waitForBalanceChange();
@@ -391,8 +396,8 @@ public class TestExtraCurrency {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(2).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
 
     //    contract.waitForBalanceChange();
@@ -402,6 +407,101 @@ public class TestExtraCurrency {
     //    log.info("state {}", accountState);
     //    rawAccountState = tonlib.getRawAccountState(Address.of(rawAddress));
     //    log.info("rawState {}", rawAccountState);
+  }
+  
+  @Test
+  public void testExtraCurrencyHighloadWalletV3TonCenterClient() throws Exception {
+    TonCenter tonCenter =
+        TonCenter.builder()
+            .apiKey(TESTNET_API_KEY)
+            .testnet()
+            .build();
+
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    HighloadWalletV3 contract =
+        HighloadWalletV3.builder()
+            .tonCenterClient(tonCenter)
+            .keyPair(keyPair)
+            .walletId(42)
+            .build();
+
+    String nonBounceableAddress1 = contract.getAddress().toNonBounceable();
+    String rawAddress = contract.getAddress().toRaw();
+
+    log.info("    raw address: {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            tonCenter, Address.of(nonBounceableAddress1), Utils.toNano(4));
+    log.info("topped up {}", Utils.formatNanoValue(balance));
+
+    HighloadV3Config config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            .build();
+
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
+    contract.waitForDeployment();
+
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+            .body(
+                contract.createBulkTransfer(
+                    Collections.singletonList(
+                        Destination.builder()
+                            .address(ecSwapAddress)
+                            .amount(Utils.toNano(3.7))
+                            .build()),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+            .build();
+
+    //  receive test extra-currency (ECHIDNA)
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
+    log.info("sent 1 message with request to get 3.7 ECHIDNA extra-currency");
+
+    contract.waitForBalanceChange();
+
+    Utils.sleep(30);
+
+    // Get account information using TonCenter API
+    AddressInformationResponse accountInfo = 
+        tonCenter.getAddressInformation(rawAddress).getResult();
+    log.info("Account info: {}", accountInfo);
+    
+    // Get transactions using TonCenter API
+    List<TransactionResponse> txs = 
+        tonCenter.getTransactions(rawAddress, 10).getResult();
+    for (TransactionResponse tx : txs) {
+      log.info("tx {}", tx);
+    }
+
+    // Note: TonCenter API might not directly expose extra currencies in the same way
+    // as AdnlLiteClient, so we're logging what information is available
+    log.info("Account balance: {}", Utils.formatNanoValue(new BigInteger(accountInfo.getBalance())));
+    
+    // For extra currencies, you might need to use runGetMethod to query the contract directly
+    
+    // bulk send 0.001 ECHIDNA to random 900 addresses
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(2).getQueryId())
+            .body(
+                contract.createBulkTransfer(
+                    createDummyDestinationsWithEc(1000),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(2).getQueryId())))
+            .build();
+
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
+    log.info("sent 1000 messages");
   }
 
   List<Destination> createDummyDestinationsWithEc(int count) {

@@ -5,15 +5,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWallet;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
@@ -21,8 +23,10 @@ import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.ton4j.tl.liteserver.responses.TransactionList;
 import org.ton.ton4j.tlb.Message;
 import org.ton.ton4j.tlb.Transaction;
+import org.ton.ton4j.toncenter.Network;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.model.TransactionResponse;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawMessage;
 import org.ton.ton4j.tonlib.types.RawTransaction;
 import org.ton.ton4j.tonlib.types.RawTransactions;
@@ -91,13 +95,13 @@ public class TestWalletV3R2Short extends CommonTest {
         contract2.getName(),
         Utils.formatNanoValue(balance2));
 
-    ExtMessageInfo extMessageInfo = contract1.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract1.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract1.waitForDeployment(30);
 
-    extMessageInfo = contract2.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract2.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract2.waitForDeployment(30);
 
@@ -111,8 +115,8 @@ public class TestWalletV3R2Short extends CommonTest {
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    extMessageInfo = contract1.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract1.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract1.waitForBalanceChange(90);
 
@@ -125,8 +129,8 @@ public class TestWalletV3R2Short extends CommonTest {
             .comment("testWalletV3R2-98")
             .build();
 
-    extMessageInfo = contract2.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract2.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract2.waitForBalanceChange(90);
 
@@ -202,6 +206,11 @@ public class TestWalletV3R2Short extends CommonTest {
         }
       }
     }
+
+    log.info("txs of wallet1");
+    tonlib.printAccountTransactions(contract1.getAddress());
+    log.info("msgs of wallet2");
+    tonlib.printAccountMessages(contract2.getAddress());
   }
 
   /*
@@ -451,8 +460,8 @@ public class TestWalletV3R2Short extends CommonTest {
     Cell transferBody = contract.createTransferBody(config);
     byte[] signedTransferBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
-    ExtMessageInfo extMessageInfo = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", extMessageInfo);
+    SendResponse sendResponse = contract.send(config, signedTransferBodyHash);
+    log.info("extMessageInfo: {}", sendResponse);
     contract.waitForBalanceChange();
     assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
   }
@@ -509,13 +518,13 @@ public class TestWalletV3R2Short extends CommonTest {
         contract2.getName(),
         Utils.formatNanoValue(balance2));
 
-    ExtMessageInfo extMessageInfo = contract1.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract1.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract1.waitForDeployment(30);
 
-    extMessageInfo = contract2.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract2.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract2.waitForDeployment(30);
 
@@ -529,8 +538,8 @@ public class TestWalletV3R2Short extends CommonTest {
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    extMessageInfo = contract1.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract1.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract1.waitForBalanceChange(90);
 
@@ -543,8 +552,8 @@ public class TestWalletV3R2Short extends CommonTest {
             .comment("testWalletV3R2-98")
             .build();
 
-    extMessageInfo = contract2.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract2.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract2.waitForBalanceChange(90);
 
@@ -621,5 +630,193 @@ public class TestWalletV3R2Short extends CommonTest {
         }
       }
     }
+    contract1.printTransactions();
+    contract2.printMessages();
+  }
+
+  @Test
+  public void testWalletV3R2TonCenterClient() throws Exception {
+
+    TonCenter toncenter =
+        TonCenter.builder().apiKey(TESTNET_API_KEY).network(Network.TESTNET).build();
+
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    WalletV3R2 contract1 =
+        WalletV3R2.builder().keyPair(keyPair).tonCenterClient(toncenter).walletId(42).build();
+
+    String nonBounceableAddress1 = contract1.getAddress().toNonBounceable();
+    String bounceableAddress1 = contract1.getAddress().toBounceable();
+    String rawAddress1 = contract1.getAddress().toRaw();
+
+    log.info("non-bounceable address 1: {}", nonBounceableAddress1);
+    log.info("    bounceable address 1: {}", bounceableAddress1);
+    log.info("    raw address 1: {}", rawAddress1);
+    log.info("pub-key 1 {}", Utils.bytesToHex(contract1.getKeyPair().getPublicKey()));
+    log.info("prv-key 1 {}", Utils.bytesToHex(contract1.getKeyPair().getSecretKey()));
+
+    WalletV3R2 contract2 =
+        WalletV3R2.builder().keyPair(keyPair).tonCenterClient(toncenter).walletId(98).build();
+
+    String nonBounceableAddress2 = contract2.getAddress().toNonBounceable();
+    String bounceableAddress2 = contract2.getAddress().toBounceable();
+    String rawAddress2 = contract2.getAddress().toRaw();
+
+    log.info("non-bounceable address 2: {}", nonBounceableAddress2);
+    log.info("    bounceable address 2: {}", bounceableAddress2);
+    log.info("    raw address 2: {}", rawAddress2);
+
+    log.info("pub-key 2 {}", Utils.bytesToHex(contract2.getKeyPair().getPublicKey()));
+    log.info("prv-key 2 {}", Utils.bytesToHex(contract2.getKeyPair().getSecretKey()));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance1 =
+        TestnetFaucet.topUpContract(
+            toncenter, Address.of(nonBounceableAddress1), Utils.toNano(1), true);
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract1.getWalletId(),
+        contract1.getName(),
+        Utils.formatNanoValue(balance1));
+
+    BigInteger balance2 =
+        TestnetFaucet.topUpContract(
+            toncenter, Address.of(nonBounceableAddress2), Utils.toNano(1), true);
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract2.getWalletId(),
+        contract2.getName(),
+        Utils.formatNanoValue(balance2));
+
+    SendResponse response = contract1.deploy();
+    assertThat(response.getCode()).isZero();
+    contract1.waitForDeployment();
+
+    response = contract2.deploy();
+    assertThat(response.getCode()).isZero();
+    contract2.waitForDeployment();
+
+    log.info("both contracts should be deployed");
+
+    long seqno1 = toncenter.getSeqno(contract1.getAddress().toBounceable());
+    log.info("contract1 seqno {}", seqno1);
+
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(seqno1)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.8))
+            .comment("ton4j testWalletV3R2-42")
+            .build();
+
+    Utils.sleep(2);
+    // transfer coins from new wallet (back to faucet)
+    response = contract1.send(config);
+    assertThat(response.getCode()).isZero();
+    contract1.waitForBalanceChangeWithTolerance(30, Utils.toNano(0.5));
+
+    long seqno2 = toncenter.getSeqno(contract2.getAddress().toBounceable());
+    log.info("contract2 seqno {}", seqno2);
+
+    Utils.sleep(2);
+    config =
+        WalletV3Config.builder()
+            .walletId(98)
+            .seqno(seqno2)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.7))
+            .comment("ton4j testWalletV3R2-98")
+            .build();
+
+    contract2.sendWithConfirmation(contract2.prepareExternalMsg(config));
+    //    assertThat(response.getCode()).isZero();
+    //    contract2.waitForBalanceChangeWithTolerance(30, Utils.toNano(0.5));
+
+    balance1 = contract1.getBalance();
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract1.getWalletId(),
+        contract1.getName(),
+        Utils.formatNanoValue(balance1));
+
+    Utils.sleep(2);
+
+    balance2 = contract2.getBalance();
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract2.getWalletId(),
+        contract2.getName(),
+        Utils.formatNanoValue(balance2));
+
+    Utils.sleep(2);
+    log.info("1 seqno {}", toncenter.getSeqno(contract1.getAddress().toBounceable()));
+    Utils.sleep(2);
+    BigInteger pubKey1 = toncenter.getPublicKey(contract1.getAddress().toBounceable());
+    log.info("1 pubkey {}", pubKey1);
+    Utils.sleep(2);
+    log.info("2 seqno {}", toncenter.getSeqno(contract2.getAddress().toBounceable()));
+    Utils.sleep(2);
+    BigInteger pubKey2 = toncenter.getPublicKey(contract2.getAddress().toBounceable());
+    log.info("2 pubkey {}", pubKey2);
+
+    Utils.sleep(2);
+    assertThat(pubKey1).isEqualTo(pubKey2);
+
+    Utils.sleep(2);
+    log.info("txs of wallet1");
+    List<TransactionResponse> responseTxs =
+        toncenter.getTransactions(contract1.getAddress().toBounceable(), 100).getResult();
+    for (TransactionResponse tx : responseTxs) {
+      if (nonNull(tx.getInMsg()) && StringUtils.isNotEmpty(tx.getInMsg().getSource())) {
+        log.info(
+            "{}, {} <<<<< {} : {}, comment: {} ",
+            Utils.toUTC(tx.getUtime()),
+            tx.getInMsg().getSource(),
+            tx.getInMsg().getDestination(),
+            Utils.formatNanoValue(tx.getInMsg().getValue()),
+            tx.getInMsg().getMessage());
+      }
+      if (nonNull(tx.getOutMsgs())) {
+        for (TransactionResponse.Message msg : tx.getOutMsgs()) {
+          log.info(
+              "{}, {} >>>>> {} : {}, comment: {}",
+              Utils.toUTC(tx.getUtime()),
+              msg.getSource(),
+              msg.getDestination(),
+              Utils.formatNanoValue(msg.getValue()),
+              msg.getMessage());
+        }
+      }
+    }
+
+    Utils.sleep(2);
+    log.info("txs of wallet2");
+    responseTxs = toncenter.getTransactions(contract2.getAddress().toBounceable(), 100).getResult();
+    for (TransactionResponse tx : responseTxs) {
+      if (nonNull(tx.getInMsg()) && StringUtils.isNotEmpty(tx.getInMsg().getSource())) {
+        log.info(
+            "{}, {} <<<<< {} : {}, comment: {} ",
+            Utils.toUTC(tx.getUtime()),
+            tx.getInMsg().getSource(),
+            tx.getInMsg().getDestination(),
+            Utils.formatNanoValue(tx.getInMsg().getValue()),
+            tx.getInMsg().getMessage());
+      }
+      if (nonNull(tx.getOutMsgs())) {
+        for (TransactionResponse.Message msg : tx.getOutMsgs()) {
+          log.info(
+              "{}, {} >>>>> {} : {}, comment: {}",
+              Utils.toUTC(tx.getUtime()),
+              msg.getSource(),
+              msg.getDestination(),
+              Utils.formatNanoValue(msg.getValue()),
+              msg.getMessage());
+        }
+      }
+    }
+
+    contract1.printTransactions(true);
+    contract2.printMessages();
   }
 }

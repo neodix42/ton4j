@@ -12,17 +12,19 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.mnemonic.Mnemonic;
 import org.ton.ton4j.mnemonic.Pair;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV1R3Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.ton4j.tlb.Message;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.QueryFees;
 import org.ton.ton4j.utils.Utils;
@@ -79,8 +81,8 @@ public class TestWalletV1R3 extends CommonTest {
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(30);
 
@@ -98,14 +100,14 @@ public class TestWalletV1R3 extends CommonTest {
     List<String> mnemonic = Mnemonic.generate(24);
     Pair keyPair = Mnemonic.toKeyPair(mnemonic);
 
-    log.info("pubkey " + Utils.bytesToHex(keyPair.getPublicKey()));
-    log.info("seckey " + Utils.bytesToHex(keyPair.getSecretKey()));
+    log.info("pubkey {}", Utils.bytesToHex(keyPair.getPublicKey()));
+    log.info("seckey {}", Utils.bytesToHex(keyPair.getSecretKey()));
 
     TweetNaclFast.Signature.KeyPair keyPairSig =
         TweetNaclFast.Signature.keyPair_fromSeed(keyPair.getSecretKey());
 
-    log.info("pubkey " + Utils.bytesToHex(keyPairSig.getPublicKey()));
-    log.info("seckey " + Utils.bytesToHex(keyPairSig.getSecretKey()));
+    log.info("pubkey {}", Utils.bytesToHex(keyPairSig.getPublicKey()));
+    log.info("seckey {}", Utils.bytesToHex(keyPairSig.getSecretKey()));
 
     WalletV1R3 contract = WalletV1R3.builder().tonlib(tonlib).keyPair(keyPairSig).build();
 
@@ -153,8 +155,8 @@ public class TestWalletV1R3 extends CommonTest {
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForBalanceChange(30);
 
@@ -171,14 +173,14 @@ public class TestWalletV1R3 extends CommonTest {
     List<String> mnemonic = Mnemonic.generate(24);
     Pair keyPair = Mnemonic.toKeyPair(mnemonic);
 
-    log.info("pubkey " + Utils.bytesToHex(keyPair.getPublicKey()));
-    log.info("seckey " + Utils.bytesToHex(keyPair.getSecretKey()));
+    log.info("pubkey {}", Utils.bytesToHex(keyPair.getPublicKey()));
+    log.info("seckey {}", Utils.bytesToHex(keyPair.getSecretKey()));
 
     TweetNaclFast.Signature.KeyPair keyPairSig =
         TweetNaclFast.Signature.keyPair_fromSeed(keyPair.getSecretKey());
 
-    log.info("pubkey " + Utils.bytesToHex(keyPairSig.getPublicKey()));
-    log.info("seckey " + Utils.bytesToHex(keyPairSig.getSecretKey()));
+    log.info("pubkey {}", Utils.bytesToHex(keyPairSig.getPublicKey()));
+    log.info("seckey {}", Utils.bytesToHex(keyPairSig.getSecretKey()));
 
     WalletV1R3 contract = WalletV1R3.builder().keyPair(keyPairSig).build();
 
@@ -222,8 +224,8 @@ public class TestWalletV1R3 extends CommonTest {
     byte[] signedDeployBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
 
-    ExtMessageInfo extMessageInfo = contract.deploy(signedDeployBodyHash);
-    log.info("extMessageInfo {}", extMessageInfo);
+    SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
+    log.info("extMessageInfo {}", sendResponse);
     contract.waitForDeployment(120);
 
     // send toncoins
@@ -239,8 +241,8 @@ public class TestWalletV1R3 extends CommonTest {
     Cell transferBody = contract.createTransferBody(config);
     byte[] signedTransferBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
-    extMessageInfo = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", extMessageInfo);
+    sendResponse = contract.send(config, signedTransferBodyHash);
+    log.info("extMessageInfo: {}", sendResponse);
     contract.waitForBalanceChange(120);
     Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
   }
@@ -265,8 +267,8 @@ public class TestWalletV1R3 extends CommonTest {
     byte[] signedDeployBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
 
-    ExtMessageInfo extMessageInfo = contract.deploy(signedDeployBodyHash);
-    log.info("extMessageInfo {}", extMessageInfo);
+    SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
+    log.info("extMessageInfo {}", sendResponse);
     contract.waitForDeployment(120);
 
     // send toncoins
@@ -282,9 +284,68 @@ public class TestWalletV1R3 extends CommonTest {
     Cell transferBody = contract.createTransferBody(config);
     byte[] signedTransferBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
-    extMessageInfo = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", extMessageInfo);
+    sendResponse = contract.send(config, signedTransferBodyHash);
+    log.info("extMessageInfo: {}", sendResponse);
     contract.waitForBalanceChange(120);
     Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
+  }
+
+  @Test
+  public void testWalletSignedExternallyTonCenterClient() throws Exception {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+    byte[] publicKey = keyPair.getPublicKey();
+    TonCenter tonCenterClient =
+        TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().debug().build();
+    WalletV1R3 contract =
+        WalletV1R3.builder().tonCenterClient(tonCenterClient).publicKey(publicKey).build();
+    log.info("pub key: {}", Utils.bytesToHex(publicKey));
+    log.info("address: {}", contract.getAddress().toBounceable());
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonCenterClient, contract.getAddress(), Utils.toNano(1), true);
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    Utils.sleep(2);
+    log.info(
+        "new wallet {} balance: {}",
+        contract.getName(),
+        Utils.formatNanoValue(contract.getBalance()));
+
+    // deploy using externally signed body
+    Cell deployBody = contract.createDeployMessage();
+
+    byte[] signedDeployBodyHash =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
+
+    SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
+    log.info("sendResponse {}", sendResponse);
+    contract.waitForDeployment();
+
+    // send toncoins
+    WalletV1R3Config config =
+        WalletV1R3Config.builder()
+            .seqno(1)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .amount(Utils.toNano(0.8))
+            .comment("ton4j testWalletV1R3-signed-externally")
+            .build();
+
+    // transfer coins from new wallet (back to faucet) using externally signed body
+    Cell transferBody = contract.createTransferBody(config);
+    byte[] signedTransferBodyHash =
+        Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
+    sendResponse = contract.send(config, signedTransferBodyHash);
+    log.info("sendResponse: {}", sendResponse);
+    Utils.sleep(2);
+    contract.waitForBalanceChange();
+    Utils.sleep(2);
+    balance = contract.getBalance();
+    log.info("wallet {} new balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.3).longValue());
+
+    contract.printTransactions();
+    // or
+    tonCenterClient.printAccountTransactions(contract.getAddress());
+
+    tonCenterClient.printAccountMessages(contract.getAddress());
   }
 }

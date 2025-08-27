@@ -20,7 +20,6 @@ import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.ContractUtils;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawAccountState;
 import org.ton.ton4j.utils.Utils;
 
@@ -108,8 +107,8 @@ public class TestJettonFaucet {
             tonlib, Address.of(adminWallet.getAddress().toNonBounceable()), Utils.toNano(10));
     Utils.sleep(30, "topping up...");
 
-    ExtMessageInfo extMessageInfo = adminWallet.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test
@@ -147,8 +146,8 @@ public class TestJettonFaucet {
             .comment("deploy minter")
             .build();
 
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test
@@ -180,8 +179,8 @@ public class TestJettonFaucet {
                     MsgUtils.createTextMessageBody("minting")))
             .build();
 
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test

@@ -34,14 +34,7 @@ public class TestTonlibJsonTestnet {
 
   Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-  //  static String tonlibPath = Utils.getTonlibGithubUrl();
-  static String tonlibPath =
-      Utils.getArtifactGithubUrl("tonlibjson", "v2025.03", "neodix42", "ton");
-
-  //  Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
-  //  Tonlib tonlib = null;
-
-  //  String tonlibPath = "tonlibjson.dll";
+  static String tonlibPath = Utils.getTonlibGithubUrl();
 
   @Test
   public void testGetLiteServerVersion() {
@@ -171,6 +164,59 @@ public class TestTonlibJsonTestnet {
       }
       Utils.sleep(10, "wait for next block");
     }
+    tonlib.destroy();
+  }
+
+  @Test
+  public void testTonlibGetBlockTransactionsPaginated() {
+
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(false).build();
+
+    MasterChainInfo lastBlock = tonlib.getLast();
+
+    BlockTransactions blockTransactions = tonlib.getBlockTransactions(lastBlock.getLast(), 3, null);
+    log.info("totalTx in block {}", blockTransactions.getTransactions().size());
+
+    for (ShortTxId txi : blockTransactions.getTransactions()) {
+      log.info(
+          "tx {} {} {}",
+          Long.toHexString(lastBlock.getLast().getShard()),
+          txi.getLt(),
+          txi.getAccount());
+    }
+
+    log.info("paginated 2 + rest");
+
+    // now fetch first tx and use its lt as input to fetch other txs
+
+    blockTransactions = tonlib.getBlockTransactions(lastBlock.getLast(), 2, null);
+
+    for (ShortTxId txi : blockTransactions.getTransactions()) {
+      log.info(
+              "tx {} {} {}",
+              Long.toHexString(lastBlock.getLast().getShard()),
+              txi.getLt(),
+              txi.getAccount());
+    }
+
+
+    //take the last tx from the list
+    ShortTxId txi = blockTransactions.getTransactions().get(blockTransactions.getTransactions().size() - 1);
+
+    blockTransactions =
+        tonlib.getBlockTransactions(
+            lastBlock.getLast(),
+            2,
+            AccountTransactionId.builder().account(txi.getAccount()).lt(txi.getLt()).build());
+
+    for (ShortTxId txii : blockTransactions.getTransactions()) {
+      log.info(
+              "tx {} {} {}",
+              Long.toHexString(lastBlock.getLast().getShard()),
+              txii.getLt(),
+              txii.getAccount());
+    }
+
     tonlib.destroy();
   }
 
@@ -634,11 +680,11 @@ public class TestTonlibJsonTestnet {
   }
 
   @Test
-  public void testTonlibGetConfig1s() {
+  public void testTonlibGetConfigSingle() {
 
-    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(false).build();
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).testnet(true).build();
 
-    log.info("config0 {}", tonlib.getConfigParam25());
+    log.info("config12 {}", tonlib.getConfigParam12());
   }
 
   @Test

@@ -19,6 +19,28 @@ public class BlockIdExt implements Serializable {
   String root_hash;
   String file_hash;
 
+  @Override
+  public String toString() {
+    return "BlockId{"
+        + "type="
+        + type
+        + ", workchain="
+        + workchain
+        + ", shard=0x"
+        + Utils.bigIntegerToUnsignedHex(Utils.longToUnsignedBigInteger(shard))
+        + ", seqno="
+        + seqno
+        + ", rootHash="
+        + root_hash
+        + ", fileHash="
+        + file_hash
+        + '}';
+  }
+
+  public String getShardAsHex() {
+    return "0x" + Utils.bigIntegerToUnsignedHex(Utils.longToUnsignedBigInteger(shard));
+  }
+
   public String getShortBlockSeqno() {
     return String.format(
         "(%d,%s,%d)", workchain, Utils.longToUnsignedBigInteger(shard).toString(16), seqno);

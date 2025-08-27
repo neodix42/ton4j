@@ -1,18 +1,17 @@
 package org.ton.ton4j.smartcontract;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 import lombok.Builder;
 import lombok.Data;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 
 @Builder
 @Data
@@ -23,6 +22,7 @@ public class LibraryDeployer implements Contract {
   Cell libraryDeployerCode;
   Cell libraryCode;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -32,6 +32,16 @@ public class LibraryDeployer implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -90,10 +100,7 @@ public class LibraryDeployer implements Contract {
         .build();
   }
 
-  public ExtMessageInfo deploy() {
-    if (nonNull(adnlLiteClient)) {
+  public SendResponse deploy() {
       return send(prepareDeployMsg());
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
   }
 }

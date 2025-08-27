@@ -6,14 +6,16 @@ import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
+import org.ton.ton4j.toncenter.Network;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -38,8 +40,8 @@ public class TestWalletV3R1Short extends CommonTest {
         contract.getName(),
         Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    log.info(extMessageInfo.toString());
+    SendResponse sendResponse = contract.deploy();
+    log.info(sendResponse.toString());
     contract.waitForDeployment(60);
     // send toncoins
     WalletV3Config config =
@@ -51,8 +53,8 @@ public class TestWalletV3R1Short extends CommonTest {
             .amount(Utils.toNano(0.08))
             .comment("testWalletV3R1")
             .build();
-    extMessageInfo = contract.send(config);
-    log.info(extMessageInfo.toString());
+    sendResponse = contract.send(config);
+    log.info("sendResponse {}", sendResponse);
   }
 
   @Test
@@ -78,8 +80,8 @@ public class TestWalletV3R1Short extends CommonTest {
     byte[] signedDeployBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
 
-    ExtMessageInfo extMessageInfo = contract.deploy(signedDeployBodyHash);
-    log.info("extMessageInfo {}", extMessageInfo);
+    SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
+    log.info("sendResponse {}", sendResponse);
     contract.waitForDeployment(120);
 
     // send toncoins
@@ -96,8 +98,8 @@ public class TestWalletV3R1Short extends CommonTest {
     Cell transferBody = contract.createTransferBody(config);
     byte[] signedTransferBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
-    extMessageInfo = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", extMessageInfo);
+    sendResponse = contract.send(config, signedTransferBodyHash);
+    log.info("sendResponse: {}", sendResponse);
     contract.waitForBalanceChange(120);
     assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
   }
@@ -118,8 +120,8 @@ public class TestWalletV3R1Short extends CommonTest {
         contract.getName(),
         Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    log.info(extMessageInfo.toString());
+    SendResponse sendResponse = contract.deploy();
+    log.info("sendResponse {}", sendResponse);
     contract.waitForDeployment(60);
     // send toncoins
     WalletV3Config config =
@@ -131,7 +133,58 @@ public class TestWalletV3R1Short extends CommonTest {
             .amount(Utils.toNano(0.08))
             .comment("testWalletV3R1")
             .build();
-    extMessageInfo = contract.send(config);
-    log.info(extMessageInfo.toString());
+    sendResponse = contract.send(config);
+    log.info("sendResponse {}", sendResponse);
+  }
+
+  @Test
+  public void testWalletV3R1TonCenterClient() throws Exception {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    TonCenter tonCenterClient =
+        TonCenter.builder().apiKey(TESTNET_API_KEY).network(Network.TESTNET).build();
+
+    WalletV3R1 contract =
+        WalletV3R1.builder().keyPair(keyPair).tonCenterClient(tonCenterClient).walletId(42).build();
+    log.info("pub key: {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv key: {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonCenterClient, contract.getAddress(), Utils.toNano(1), true);
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract.getWalletId(),
+        contract.getName(),
+        Utils.formatNanoValue(balance));
+
+    SendResponse response = contract.deploy();
+    assertThat(response.getCode()).isZero();
+
+    contract.waitForDeployment();
+
+    // send toncoins
+    WalletV3Config config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(1)
+            .destination(Address.of(TestnetFaucet.BOUNCEABLE))
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
+            .amount(Utils.toNano(0.8))
+            .comment("ton4j testWalletV3R1")
+            .build();
+
+    response = contract.send(config);
+    assertThat(response.getCode()).isZero();
+
+    contract.waitForBalanceChangeWithTolerance(30, Utils.toNano(0.5));
+
+    balance = contract.getBalance();
+    log.info(
+        "walletId {} new wallet {} balance: {}",
+        contract.getWalletId(),
+        contract.getName(),
+        Utils.formatNanoValue(balance));
+
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.25).longValue());
   }
 }

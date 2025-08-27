@@ -1,14 +1,23 @@
 package org.ton.ton4j.smartcontract.token.nft;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import com.google.gson.internal.LinkedTreeMap;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.types.NftSaleData;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryNumber;
@@ -56,6 +65,7 @@ public class NftSale implements Contract {
   private Tonlib tonlib;
   private long wc;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -65,6 +75,16 @@ public class NftSale implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -115,65 +135,150 @@ public class NftSale implements Contract {
    *
    * @return NftSaleData
    */
-  public NftSaleData getData(Tonlib tonlib) {
+  public NftSaleData getData() {
     Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_sale_data");
 
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_sale_data, returned an exit code " + result.getExit_code());
-    }
+    if (Objects.nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get sale data
+        List<List<Object>> stack = new ArrayList<>();
+        RunGetMethodResponse response =
+            tonCenterClient
+                .runGetMethod(myAddress.toBounceable(), "get_sale_data", stack)
+                .getResult();
 
-    TvmStackEntrySlice marketplaceAddressCell = (TvmStackEntrySlice) result.getStack().get(0);
-    Address marketplaceAddress =
-        NftUtils.parseAddress(
-            CellBuilder.beginCell()
-                .fromBoc(Utils.base64ToBytes(marketplaceAddressCell.getSlice().getBytes()))
-                .endCell());
+        // Parse marketplace address
+        List<Object> elements = new ArrayList<>(response.getStack().get(0));
+        Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+        Cell c = Cell.fromBocBase64(l.get("bytes"));
+        Address marketplaceAddress = CellSlice.beginParse(c).loadAddress();
 
-    TvmStackEntrySlice nftAddressCell = (TvmStackEntrySlice) result.getStack().get(1);
-    Address nftAddress =
-        NftUtils.parseAddress(
-            CellBuilder.beginCell()
-                .fromBoc(Utils.base64ToBytes(nftAddressCell.getSlice().getBytes()))
-                .endCell());
+        //        String marketplaceAddrHex = ((String) new
+        // ArrayList<>(response.getStack().get(0)).get(1));
+        //        Address marketplaceAddress = Address.of(marketplaceAddrHex);
 
-    TvmStackEntrySlice nftOwnerAddressCell = (TvmStackEntrySlice) result.getStack().get(2);
-    Address nftOwnerAddress = null;
-    try {
-      nftOwnerAddress =
+        // Parse NFT address
+        elements = new ArrayList<>(response.getStack().get(1));
+        l = (LinkedTreeMap<String, String>) elements.get(1);
+        c = Cell.fromBocBase64(l.get("bytes"));
+        Address nftAddress = CellSlice.beginParse(c).loadAddress();
+        //        String nftAddrHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
+        //        Address nftAddress = Address.of(nftAddrHex);
+
+        // Parse NFT owner address
+        elements = new ArrayList<>(response.getStack().get(2));
+        l = (LinkedTreeMap<String, String>) elements.get(1);
+        c = Cell.fromBocBase64(l.get("bytes"));
+        //        Address nftAddress = CellSlice.beginParse(c).loadAddress();
+        //        String nftOwnerAddrHex = ((String) new
+        // ArrayList<>(response.getStack().get(2)).get(1));
+        Address nftOwnerAddress = null;
+        try {
+          nftOwnerAddress = CellSlice.beginParse(c).loadAddress();
+        } catch (Exception e) {
+          // Owner address might be null
+        }
+
+        // Parse full price
+        BigInteger fullPrice =
+            BigInteger.valueOf(Long.decode(response.getStack().get(3).get(1).toString()));
+
+        // Parse marketplace fee
+        BigInteger marketplaceFee =
+            BigInteger.valueOf(Long.decode(response.getStack().get(4).get(1).toString()));
+
+        // Parse royalty
+        elements = new ArrayList<>(response.getStack().get(5));
+        l = (LinkedTreeMap<String, String>) elements.get(1);
+        c = Cell.fromBocBase64(l.get("bytes"));
+        Address royaltyAddress = CellSlice.beginParse(c).loadAddress();
+        //        String royaltyAddrHex = ((String) new
+        // ArrayList<>(response.getStack().get(5)).get(1));
+        //        Address royaltyAddress = Address.of(royaltyAddrHex);
+
+        // Parse royalty amount
+        BigInteger royaltyAmount =
+            BigInteger.valueOf(Long.decode(response.getStack().get(6).get(1).toString()));
+
+        return NftSaleData.builder()
+            .marketplaceAddress(marketplaceAddress)
+            .nftAddress(nftAddress)
+            .nftOwnerAddress(nftOwnerAddress)
+            .fullPrice(fullPrice)
+            .marketplaceFee(marketplaceFee)
+            .royaltyAddress(royaltyAddress)
+            .royaltyAmount(royaltyAmount)
+            .build();
+      } catch (Exception e) {
+        throw new Error("Error getting NFT sale data: " + e.getMessage());
+      }
+    } else if (Objects.nonNull(adnlLiteClient)) {
+      // Implementation for AdnlLiteClient
+      // Not implemented yet
+      throw new Error("AdnlLiteClient implementation for getData not yet available");
+
+    } else if (Objects.nonNull(tonlib)) {
+      // Fallback to Tonlib
+      RunResult result = tonlib.runMethod(myAddress, "get_sale_data");
+
+      if (result.getExit_code() != 0) {
+        throw new Error("method get_sale_data, returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntrySlice marketplaceAddressCell = (TvmStackEntrySlice) result.getStack().get(0);
+      Address marketplaceAddress =
           NftUtils.parseAddress(
               CellBuilder.beginCell()
-                  .fromBoc(Utils.base64ToBytes(nftOwnerAddressCell.getSlice().getBytes()))
+                  .fromBoc(Utils.base64ToBytes(marketplaceAddressCell.getSlice().getBytes()))
                   .endCell());
-    } catch (Exception e) {
-      // todo
+
+      TvmStackEntrySlice nftAddressCell = (TvmStackEntrySlice) result.getStack().get(1);
+      Address nftAddress =
+          NftUtils.parseAddress(
+              CellBuilder.beginCell()
+                  .fromBoc(Utils.base64ToBytes(nftAddressCell.getSlice().getBytes()))
+                  .endCell());
+
+      TvmStackEntrySlice nftOwnerAddressCell = (TvmStackEntrySlice) result.getStack().get(2);
+      Address nftOwnerAddress = null;
+      try {
+        nftOwnerAddress =
+            NftUtils.parseAddress(
+                CellBuilder.beginCell()
+                    .fromBoc(Utils.base64ToBytes(nftOwnerAddressCell.getSlice().getBytes()))
+                    .endCell());
+      } catch (Exception e) {
+        // todo
+      }
+
+      TvmStackEntryNumber fullPriceNumber = (TvmStackEntryNumber) result.getStack().get(3);
+      BigInteger fullPrice = fullPriceNumber.getNumber();
+
+      TvmStackEntryNumber marketplaceFeeNumber = (TvmStackEntryNumber) result.getStack().get(4);
+      BigInteger marketplaceFee = marketplaceFeeNumber.getNumber();
+
+      TvmStackEntrySlice royaltyAddressCell = (TvmStackEntrySlice) result.getStack().get(5);
+      Address royaltyAddress =
+          NftUtils.parseAddress(
+              CellBuilder.beginCell()
+                  .fromBoc(Utils.base64ToBytes(royaltyAddressCell.getSlice().getBytes()))
+                  .endCell());
+
+      TvmStackEntryNumber royaltyAmountNumber = (TvmStackEntryNumber) result.getStack().get(6);
+      BigInteger royaltyAmount = royaltyAmountNumber.getNumber();
+
+      return NftSaleData.builder()
+          .marketplaceAddress(marketplaceAddress)
+          .nftAddress(nftAddress)
+          .nftOwnerAddress(nftOwnerAddress)
+          .fullPrice(fullPrice)
+          .marketplaceFee(marketplaceFee)
+          .royaltyAddress(royaltyAddress)
+          .royaltyAmount(royaltyAmount)
+          .build();
+    } else {
+      throw new Error("provider not set");
     }
-
-    TvmStackEntryNumber fullPriceNumber = (TvmStackEntryNumber) result.getStack().get(3);
-    BigInteger fullPrice = fullPriceNumber.getNumber();
-
-    TvmStackEntryNumber marketplaceFeeNumber = (TvmStackEntryNumber) result.getStack().get(4);
-    BigInteger marketplaceFee = marketplaceFeeNumber.getNumber();
-
-    TvmStackEntrySlice royaltyAddressCell = (TvmStackEntrySlice) result.getStack().get(5);
-    Address royaltyAddress =
-        NftUtils.parseAddress(
-            CellBuilder.beginCell()
-                .fromBoc(Utils.base64ToBytes(royaltyAddressCell.getSlice().getBytes()))
-                .endCell());
-
-    TvmStackEntryNumber royaltyAmountNumber = (TvmStackEntryNumber) result.getStack().get(6);
-    BigInteger royaltyAmount = royaltyAmountNumber.getNumber();
-
-    return NftSaleData.builder()
-        .marketplaceAddress(marketplaceAddress)
-        .nftAddress(nftAddress)
-        .nftOwnerAddress(nftOwnerAddress)
-        .fullPrice(fullPrice)
-        .marketplaceFee(marketplaceFee)
-        .royaltyAddress(royaltyAddress)
-        .royaltyAmount(royaltyAmount)
-        .build();
   }
 
   public static Cell createCancelBody(long queryId) {

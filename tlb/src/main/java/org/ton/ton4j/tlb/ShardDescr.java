@@ -78,30 +78,33 @@ public class ShardDescr implements Serializable {
   FutureSplitMerge splitMergeAt;
   CurrencyCollection feesCollected;
   CurrencyCollection fundsCreated;
-  Cell refInfoA;
 
   private String getMagic() {
     return Long.toHexString(magic);
   }
 
-  private String getRootHash() {
+  public String getRootHash() {
     return rootHash.toString(16);
   }
 
-  private String getFileHash() {
+  public String getFileHash() {
     return fileHash.toString(16);
+  }
+
+  public String getNextValidatorShard() {
+    return nextValidatorShard.toString(16);
   }
 
   public Cell toCell() {
     if (magic == 0xB) {
       return CellBuilder.beginCell()
-          .storeUint(0xB, 8)
+          .storeUint(0xB, 4)
           .storeUint(seqNo, 32)
           .storeUint(regMcSeqno, 32)
           .storeUint(startLt, 64)
           .storeUint(endLt, 64)
-          .storeUint(rootHash, 64)
-          .storeUint(fileHash, 64)
+          .storeUint(rootHash, 256)
+          .storeUint(fileHash, 256)
           .storeBit(beforeSplit)
           .storeBit(beforeMerge)
           .storeBit(wantSplit)
@@ -118,13 +121,13 @@ public class ShardDescr implements Serializable {
           .endCell();
     } else if (magic == 0xA) {
       return CellBuilder.beginCell()
-          .storeUint(0xB, 8)
+          .storeUint(0xB, 4)
           .storeUint(seqNo, 32)
           .storeUint(regMcSeqno, 32)
           .storeUint(startLt, 64)
           .storeUint(endLt, 64)
-          .storeUint(rootHash, 64)
-          .storeUint(fileHash, 64)
+          .storeUint(rootHash, 256)
+          .storeUint(fileHash, 256)
           .storeBit(beforeSplit)
           .storeBit(beforeMerge)
           .storeBit(wantSplit)
@@ -149,7 +152,7 @@ public class ShardDescr implements Serializable {
   }
 
   public static ShardDescr deserialize(CellSlice cs) {
-    long magic = cs.loadUint(8).intValue();
+    long magic = cs.loadUint(4).intValue();
     if (magic == 0xB) {
       return ShardDescr.builder()
           .magic(0xb)
@@ -157,8 +160,8 @@ public class ShardDescr implements Serializable {
           .regMcSeqno(cs.loadUint(32).longValue())
           .startLt(cs.loadUint(64))
           .endLt(cs.loadUint(64))
-          .rootHash(cs.loadUint(64))
-          .fileHash(cs.loadUint(64))
+          .rootHash(cs.loadUint(256))
+          .fileHash(cs.loadUint(256))
           .beforeSplit(cs.loadBit())
           .beforeMerge(cs.loadBit())
           .wantSplit(cs.loadBit())
@@ -175,27 +178,34 @@ public class ShardDescr implements Serializable {
           .build();
     }
     if (magic == 0xA) {
-      return ShardDescr.builder()
-          .magic(0xb)
-          .seqNo(cs.loadUint(32).longValue())
-          .regMcSeqno(cs.loadUint(32).longValue())
-          .startLt(cs.loadUint(64))
-          .endLt(cs.loadUint(64))
-          .rootHash(cs.loadUint(64))
-          .fileHash(cs.loadUint(64))
-          .beforeSplit(cs.loadBit())
-          .beforeMerge(cs.loadBit())
-          .wantSplit(cs.loadBit())
-          .wantMerge(cs.loadBit())
-          .nXCCUpdated(cs.loadBit())
-          .flags(cs.loadUint(3).intValue())
-          .nextCatchainSeqNo(cs.loadUint(32).longValue())
-          .nextValidatorShard(cs.loadUint(64))
-          .minRefMcSeqNo(cs.loadUint(32).longValue())
-          .genUTime(cs.loadUint(32).longValue())
-          .splitMergeAt(FutureSplitMerge.deserialize(cs))
-          .refInfoA(cs.loadRef()) // minor todo
-          .build();
+      ShardDescr shardDescr =
+          ShardDescr.builder()
+              .magic(0xb)
+              .seqNo(cs.loadUint(32).longValue())
+              .regMcSeqno(cs.loadUint(32).longValue())
+              .startLt(cs.loadUint(64))
+              .endLt(cs.loadUint(64))
+              .rootHash(cs.loadUint(256))
+              .fileHash(cs.loadUint(256))
+              .beforeSplit(cs.loadBit())
+              .beforeMerge(cs.loadBit())
+              .wantSplit(cs.loadBit())
+              .wantMerge(cs.loadBit())
+              .nXCCUpdated(cs.loadBit())
+              .flags(cs.loadUint(3).intValue())
+              .nextCatchainSeqNo(cs.loadUint(32).longValue())
+              .nextValidatorShard(cs.loadUint(64))
+              .minRefMcSeqNo(cs.loadUint(32).longValue())
+              .genUTime(cs.loadUint(32).longValue())
+              .splitMergeAt(FutureSplitMerge.deserialize(cs))
+              .build();
+      CellSlice cellSlice = CellSlice.beginParse(cs.loadRef());
+      CurrencyCollection feesCollected = CurrencyCollection.deserialize(cellSlice);
+      CurrencyCollection fundsCreated = CurrencyCollection.deserialize(cellSlice);
+      shardDescr.setFeesCollected(feesCollected);
+      shardDescr.setFundsCreated(fundsCreated);
+      return shardDescr;
+
     } else {
       throw new Error(
           "ShardDescr: magic neither equal to 0xA nor 0xB, found 0x" + Long.toHexString(magic));

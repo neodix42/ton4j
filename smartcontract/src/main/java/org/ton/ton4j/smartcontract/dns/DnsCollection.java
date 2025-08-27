@@ -1,13 +1,16 @@
 package org.ton.ton4j.smartcontract.dns;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.*;
+
+import com.google.gson.internal.LinkedTreeMap;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -16,6 +19,8 @@ import org.ton.ton4j.smartcontract.types.CollectionData;
 import org.ton.ton4j.smartcontract.types.ItemData;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryCell;
@@ -39,6 +44,7 @@ public class DnsCollection implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -48,6 +54,16 @@ public class DnsCollection implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -107,10 +123,78 @@ public class DnsCollection implements Contract {
   }
 
   /**
-   * @return CollectionInfo
+   * Get collection data using TonCenter client if available, otherwise use Tonlib
+   *
+   * @return CollectionData
+   */
+  public CollectionData getCollectionData() {
+    if (nonNull(tonCenterClient)) {
+      try {
+        // Use TonCenter API to get collection data
+        List<List<Object>> stack = new java.util.ArrayList<>();
+        RunGetMethodResponse response =
+            tonCenterClient
+                .runGetMethod(getAddress().toBounceable(), "get_collection_data", stack)
+                .getResult();
+
+        // Parse next item index
+        long nextItemIndex =
+            Long.parseLong(
+                ((String) new ArrayList<>(response.getStack().get(0)).get(1)).substring(2), 16);
+
+        // Parse collection content
+        String contentCellHex = ((String) new ArrayList<>(response.getStack().get(1)).get(1));
+        Cell collectionContent =
+            CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(contentCellHex)).endCell();
+        String collectionContentUri = NftUtils.parseOffChainUriCell(collectionContent);
+
+        return CollectionData.builder()
+            .collectionContentUri(collectionContentUri)
+            .collectionContentCell(collectionContent)
+            .ownerAddress(null)
+            .nextItemIndex(nextItemIndex) // always -1
+            .build();
+      } catch (Exception e) {
+        throw new Error("Error getting DNS collection data: " + e.getMessage());
+      }
+    }
+
+    // Fallback to Tonlib
+    RunResult result = tonlib.runMethod(getAddress(), "get_collection_data");
+
+    if (result.getExit_code() != 0) {
+      throw new Error("method get_collection_data, returned an exit code " + result.getExit_code());
+    }
+
+    TvmStackEntryNumber nextItemIndexResult = (TvmStackEntryNumber) result.getStack().get(0);
+    long nextItemIndex = nextItemIndexResult.getNumber().longValue();
+
+    TvmStackEntryCell collectionContentResult =
+        (TvmStackEntryCell) result.getStack().get(1); // cell or slice
+    Cell collectionContent =
+        CellBuilder.beginCell()
+            .fromBoc(Utils.base64ToBytes(collectionContentResult.getCell().getBytes()))
+            .endCell();
+    String collectionContentUri = NftUtils.parseOffChainUriCell(collectionContent);
+
+    return CollectionData.builder()
+        .collectionContentUri(collectionContentUri)
+        .collectionContentCell(collectionContent)
+        .ownerAddress(null)
+        .nextItemIndex(nextItemIndex) // always -1
+        .build();
+  }
+
+  /**
+   * Static method to get collection data
+   *
+   * @param tonlib Tonlib instance
+   * @param dnsCollectionAddress Address of the DNS collection
+   * @return CollectionData
    */
   public static CollectionData getCollectionData(Tonlib tonlib, Address dnsCollectionAddress) {
-    // todo
+    // We can only use Tonlib here since we don't have access to TonCenter client
+    // in the static method context
     RunResult result = tonlib.runMethod(dnsCollectionAddress, "get_collection_data");
 
     if (result.getExit_code() != 0) {
@@ -136,19 +220,102 @@ public class DnsCollection implements Contract {
         .build();
   }
 
+  public static CollectionData getCollectionData(
+      TonCenter tonCenter, Address dnsCollectionAddress) {
+
+    TonResponse<RunGetMethodResponse> result =
+        tonCenter.runGetMethod(
+            String.valueOf(dnsCollectionAddress), "get_collection_data", new ArrayList<>());
+
+    if (!result.isSuccess()) {
+      throw new Error("method get_collection_data, returned an exit code " + result.getCode());
+    }
+
+    long nextItemIndex = Long.decode(result.getResult().getStack().get(0).get(1).toString());
+
+    List<Object> elements = new ArrayList<>(result.getResult().getStack().get(1));
+    Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+    Cell collectionContent =
+        CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(l.get("bytes"))).endCell();
+    String collectionContentUri = NftUtils.parseOffChainUriCell(collectionContent);
+
+    return CollectionData.builder()
+        .collectionContentUri(collectionContentUri)
+        .collectionContentCell(collectionContent)
+        .ownerAddress(null)
+        .nextItemIndex(nextItemIndex) // always -1
+        .build();
+  }
+
   public static ItemData getNftItemContent(Tonlib tonlib, Address dnsItemAddress) {
     return DnsItem.getData(tonlib, dnsItemAddress);
   }
 
+  public static ItemData getNftItemContent(TonCenter tonCenter, Address dnsItemAddress) {
+    return DnsItem.getData(tonCenter, dnsItemAddress);
+  }
+
   /**
+   * Get NFT item address by index using TonCenter client if available, otherwise use Tonlib
+   *
+   * @param index BigInteger
+   * @return Address
+   */
+  public Address getNftItemAddressByIndex(BigInteger index) {
+    if (nonNull(tonCenterClient)) {
+      List<List<Object>> stack = new ArrayList<>();
+      stack.add(Arrays.asList("num", index.toString(10)));
+      TonResponse<RunGetMethodResponse> result =
+          tonCenterClient.runGetMethod(
+              getAddress().toBounceable(), "get_nft_address_by_index", stack);
+
+      if (!result.isSuccess()) {
+        throw new Error(
+            "method get_nft_address_by_index, returned an exit code " + result.getCode());
+      }
+
+      List<Object> elements = new ArrayList<>(result.getResult().getStack().get(0));
+      Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+      return NftUtils.parseAddress(
+          CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(l.get("bytes"))).endCell());
+
+    } else if (nonNull(adnlLiteClient)) {
+      // Implementation for AdnlLiteClient
+      throw new Error(
+          "AdnlLiteClient implementation for getNftItemAddressByIndex not yet available");
+    } else if (nonNull(tonlib)) {
+
+      // Fallback to Tonlib
+      Deque<String> stack = new ArrayDeque<>();
+      stack.offer("[num, " + index.toString() + "]");
+      RunResult result = tonlib.runMethod(getAddress(), "get_nft_address_by_index", stack);
+
+      if (result.getExit_code() != 0) {
+        throw new Error(
+            "method get_nft_address_by_index, returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntrySlice addr = (TvmStackEntrySlice) result.getStack().get(0);
+      return NftUtils.parseAddress(
+          CellBuilder.beginCell()
+              .fromBoc(Utils.base64ToBytes(addr.getSlice().getBytes()))
+              .endCell());
+    } else {
+      throw new Error("provider not set");
+    }
+  }
+
+  /**
+   * Static method to get NFT item address by index
+   *
+   * @param tonlib Tonlib instance
+   * @param collectionAddress Address of the collection
    * @param index BigInteger
    * @return Address
    */
   public static Address getNftItemAddressByIndex(
       Tonlib tonlib, Address collectionAddress, BigInteger index) {
-    // todo
     Deque<String> stack = new ArrayDeque<>();
-
     stack.offer("[num, " + index.toString() + "]");
     RunResult result = tonlib.runMethod(collectionAddress, "get_nft_address_by_index", stack);
 
@@ -162,12 +329,36 @@ public class DnsCollection implements Contract {
         CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(addr.getSlice().getBytes())).endCell());
   }
 
+  public static Address getNftItemAddressByIndex(
+      TonCenter tonCenter, Address collectionAddress, BigInteger index) {
+
+    List<List<Object>> stack = new ArrayList<>();
+    stack.add(Arrays.asList("num", index.toString(10)));
+    TonResponse<RunGetMethodResponse> result =
+        tonCenter.runGetMethod(collectionAddress.toBounceable(), "get_nft_address_by_index", stack);
+
+    if (!result.isSuccess()) {
+      throw new Error("method get_nft_address_by_index, returned an exit code " + result.getCode());
+    }
+
+    List<Object> elements = new ArrayList<>(result.getResult().getStack().get(0));
+    Map<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+    return NftUtils.parseAddress(
+        CellBuilder.beginCell().fromBoc(Utils.base64ToBytes(l.get("bytes"))).endCell());
+  }
+
   public static Address getNftItemAddressByDomain(
       Tonlib tonlib, Address dnsCollectionAddress, String domain) {
-    // todo
     Cell cell = CellBuilder.beginCell().storeString(domain).endCell();
     String cellHash = Utils.bytesToHex(cell.hash());
     return getNftItemAddressByIndex(tonlib, dnsCollectionAddress, new BigInteger(cellHash, 16));
+  }
+
+  public static Address getNftItemAddressByDomain(
+      TonCenter tonCenter, Address dnsCollectionAddress, String domain) {
+    Cell cell = CellBuilder.beginCell().storeString(domain).endCell();
+    String cellHash = Utils.bytesToHex(cell.hash());
+    return getNftItemAddressByIndex(tonCenter, dnsCollectionAddress, new BigInteger(cellHash, 16));
   }
 
   /**

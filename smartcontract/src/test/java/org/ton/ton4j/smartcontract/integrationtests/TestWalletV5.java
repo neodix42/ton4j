@@ -9,12 +9,14 @@ import java.time.Instant;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.cell.TonHashMap;
 import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.faucet.TestnetJettonFaucet;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinter;
@@ -28,7 +30,7 @@ import org.ton.ton4j.smartcontract.wallet.ContractUtils;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.ton4j.smartcontract.wallet.v5.WalletV5;
 import org.ton.ton4j.tlb.*;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -69,8 +71,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -112,8 +114,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -143,8 +145,10 @@ public class TestWalletV5 extends CommonTest {
     Message msg = contract.prepareExternalMsg(walletV5Config);
     log.info("msg {}", msg.toCell().toHex());
 
-    extMessageInfo = contract.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
+
+    contract.printTransactions(true);
   }
 
   /**
@@ -175,8 +179,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -188,8 +192,8 @@ public class TestWalletV5 extends CommonTest {
     WalletV5Config walletV5Config =
         WalletV5Config.builder().seqno(newSeq).walletId(42).body(extMsg).build();
 
-    extMessageInfo = contract.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   /** Transfer to 0 recipient. Without Library and Without Extensions and without OtherActions. */
@@ -217,8 +221,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -232,8 +236,8 @@ public class TestWalletV5 extends CommonTest {
             .body(contract.createBulkTransfer(Collections.emptyList()).toCell())
             .build();
 
-    extMessageInfo = contract.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   /** Deploy without extension and then add an extension. */
@@ -261,8 +265,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -287,8 +291,8 @@ public class TestWalletV5 extends CommonTest {
                     .toCell())
             .build();
 
-    extMessageInfo = contract.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(15);
     log.info("extensions {}", contract.getRawExtensions());
     assertThat(contract.getRawExtensions().elements.size()).isEqualTo(1);
@@ -319,8 +323,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -353,8 +357,8 @@ public class TestWalletV5 extends CommonTest {
     WalletV5Config walletV5Config =
         WalletV5Config.builder().seqno(newSeq).walletId(42).body(extensions).build();
 
-    extMessageInfo = contract.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(15);
     log.info("extensions {}", contract.getRawExtensions());
     assertThat(contract.getRawExtensions().elements.size()).isEqualTo(2);
@@ -400,8 +404,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -446,8 +450,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -492,8 +496,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -522,8 +526,8 @@ public class TestWalletV5 extends CommonTest {
     WalletV5Config walletV5Config =
         WalletV5Config.builder().seqno(1).walletId(42).body(extensionsToRemove).build();
 
-    extMessageInfo = contract.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(15);
 
     log.info("extensions {}", contract.getRawExtensions());
@@ -572,8 +576,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -612,8 +616,8 @@ public class TestWalletV5 extends CommonTest {
     WalletV5Config walletV5Config =
         WalletV5Config.builder().seqno(1).walletId(42).body(transferAndManageExtensions).build();
 
-    extMessageInfo = contract.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(15);
 
     log.info("extensions {}", contract.getRawExtensions());
@@ -648,8 +652,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -679,8 +683,8 @@ public class TestWalletV5 extends CommonTest {
                     .toCell())
             .build();
 
-    extMessageInfo = contract.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(15);
 
     log.info("walletId {}", contract.getWalletId());
@@ -722,8 +726,8 @@ public class TestWalletV5 extends CommonTest {
         Utils.formatNanoValue(balance));
 
     // deploy wallet v3
-    ExtMessageInfo extMessageInfo = contractV3.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contractV3.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     contractV3.waitForDeployment(60);
 
     // create wallet v5
@@ -749,8 +753,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet v5 {} balance: {}", contractV5.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet v5
-    extMessageInfo = contractV5.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contractV5.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contractV5.waitForDeployment(60);
 
@@ -785,8 +789,8 @@ public class TestWalletV5 extends CommonTest {
             .body(contractV5.createInternalSignedBody(walletV5Config))
             .build();
 
-    extMessageInfo = contractV3.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contractV3.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   /**
@@ -819,8 +823,8 @@ public class TestWalletV5 extends CommonTest {
         Utils.formatNanoValue(balance));
 
     // deploy wallet v3
-    ExtMessageInfo extMessageInfo = contractV3.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contractV3.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     contractV3.waitForDeployment(60);
 
     // create wallet v5 with initial extension (which is v3r1 wallet)
@@ -850,8 +854,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet v5 {} balance: {}", contractV5.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet v5
-    extMessageInfo = contractV5.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contractV5.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contractV5.waitForDeployment(60);
     assertThat(contractV5.getRawExtensions().elements.size()).isEqualTo(1);
@@ -883,8 +887,8 @@ public class TestWalletV5 extends CommonTest {
                         .toCell()))
             .build();
 
-    extMessageInfo = contractV3.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contractV3.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   /** Test removal of extensions from other extension. */
@@ -912,8 +916,8 @@ public class TestWalletV5 extends CommonTest {
         Utils.formatNanoValue(balance));
 
     // deploy wallet v3
-    ExtMessageInfo extMessageInfo = contractV3.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contractV3.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     contractV3.waitForDeployment(60);
 
     // create wallet v5 with initial extension (which is v3r1 wallet)
@@ -945,8 +949,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet v5 {} balance: {}", contractV5.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet v5
-    extMessageInfo = contractV5.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contractV5.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contractV5.waitForDeployment(60);
     log.info("extensions {}", contractV5.getRawExtensions());
@@ -976,8 +980,8 @@ public class TestWalletV5 extends CommonTest {
                         .toCell()))
             .build();
 
-    extMessageInfo = contractV3.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contractV3.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(20);
     log.info("extensions {}", contractV5.getRawExtensions());
     assertThat(contractV5.getRawExtensions().elements.size()).isEqualTo(2);
@@ -1010,8 +1014,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
   }
@@ -1042,8 +1046,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(15, "takes longer...");
     assertThat(contract.getSeqno()).isEqualTo(1);
 
@@ -1079,8 +1083,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -1103,8 +1107,8 @@ public class TestWalletV5 extends CommonTest {
                     .toCell())
             .build();
 
-    extMessageInfo = contract.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test
@@ -1133,8 +1137,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", walletV5.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = walletV5.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = walletV5.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     walletV5.waitForDeployment(60);
 
@@ -1202,8 +1206,8 @@ public class TestWalletV5 extends CommonTest {
                     .toCell())
             .build();
 
-    extMessageInfo = walletV5.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = walletV5.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(20);
     log.info(
@@ -1241,9 +1245,9 @@ public class TestWalletV5 extends CommonTest {
     Cell deployBody = contract.createDeployMsg();
     byte[] signedDeployBodyHash = Utils.signData(pubKey, keyPair.getSecretKey(), deployBody.hash());
 
-    ExtMessageInfo extMessageInfo = contract.deploy(signedDeployBodyHash);
-    log.info("extMessageInfo: {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
+    log.info("extMessageInfo: {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -1272,8 +1276,8 @@ public class TestWalletV5 extends CommonTest {
     Cell transferBody = contract.createExternalTransferBody(walletV5Config);
     byte[] signedTransferBodyHash =
         Utils.signData(pubKey, keyPair.getSecretKey(), transferBody.hash());
-    extMessageInfo = contract.send(walletV5Config, signedTransferBodyHash);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config, signedTransferBodyHash);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   List<Destination> createDummyDestinations(int count) throws NoSuchAlgorithmException {
@@ -1322,8 +1326,8 @@ public class TestWalletV5 extends CommonTest {
         Utils.formatNanoValue(balance));
 
     // deploy wallet v3
-    ExtMessageInfo extMessageInfo = contractV3.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contractV3.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     contractV3.waitForDeployment(60);
 
     // create wallet v5
@@ -1350,8 +1354,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet v5 {} balance: {}", contractV5.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet v5
-    extMessageInfo = contractV5.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contractV5.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contractV5.waitForDeployment(60);
 
@@ -1386,8 +1390,8 @@ public class TestWalletV5 extends CommonTest {
             .body(contractV5.createInternalSignedBody(walletV5Config))
             .build();
 
-    extMessageInfo = contractV3.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contractV3.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test
@@ -1420,8 +1424,8 @@ public class TestWalletV5 extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v5
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -1454,10 +1458,179 @@ public class TestWalletV5 extends CommonTest {
     WalletV5Config walletV5Config =
         WalletV5Config.builder().seqno(newSeq).walletId(42).body(extensions).build();
 
-    extMessageInfo = contract.send(walletV5Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
     Utils.sleep(15);
     log.info("extensions {}", contract.getRawExtensions());
     assertThat(contract.getRawExtensions().elements.size()).isEqualTo(2);
+  }
+
+  @Test
+  public void testWalletV5InternalTransferTonCenterClient() throws Exception {
+
+    // create user wallet that sends an internal message to wallet v5
+    TonCenter tonCenterClient = TonCenter.builder().testnet().build();
+    WalletV3R1 contractV3 =
+        WalletV3R1.builder().tonCenterClient(tonCenterClient).walletId(43).build();
+
+    Address walletAddressV3 = contractV3.getAddress();
+
+    String nonBounceableAddress = walletAddressV3.toNonBounceable();
+    String bounceableAddress = walletAddressV3.toBounceable();
+    log.info("bounceableAddress v3: {}", bounceableAddress);
+    log.info("pub key: {}", Utils.bytesToHex(contractV3.getKeyPair().getPublicKey()));
+    log.info("prv key: {}", Utils.bytesToHex(contractV3.getKeyPair().getSecretKey()));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            tonCenterClient, Address.of(nonBounceableAddress), Utils.toNano(0.2), true);
+    log.info(
+        "walletId {} new wallet v3 {} balance: {}",
+        contractV3.getWalletId(),
+        contractV3.getName(),
+        Utils.formatNanoValue(balance));
+
+    // deploy wallet v3
+    SendResponse sendResponse = contractV3.deploy();
+    assertThat(sendResponse.getCode()).isZero();
+    contractV3.waitForDeployment();
+
+    // create wallet v5
+    TweetNaclFast.Signature.KeyPair keyPairV5 = Utils.generateSignatureKeyPair();
+    WalletV5 contractV5 =
+        WalletV5.builder()
+            .tonCenterClient(tonCenterClient)
+            .walletId(42)
+            .keyPair(keyPairV5)
+            .isSigAuthAllowed(true)
+            .build();
+
+    Address walletAddressV5 = contractV5.getAddress();
+
+    nonBounceableAddress = walletAddressV5.toNonBounceable();
+    bounceableAddress = walletAddressV5.toBounceable();
+    log.info("bounceableAddress v5: {}", bounceableAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contractV5.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contractV5.getKeyPair().getSecretKey()));
+
+    balance =
+        TestnetFaucet.topUpContract(
+            tonCenterClient, Address.of(nonBounceableAddress), Utils.toNano(0.2), true);
+    log.info("new wallet v5 {} balance: {}", contractV5.getName(), Utils.formatNanoValue(balance));
+
+    // deploy wallet v5
+    sendResponse = contractV5.deploy();
+    assertThat(sendResponse.getCode()).isZero();
+
+    contractV5.waitForDeployment(60);
+
+    // internal payload for wallet v5
+    WalletV5Config walletV5Config =
+        WalletV5Config.builder()
+            .seqno(1)
+            .walletId(42)
+            .body(
+                contractV5
+                    .createBulkTransfer(
+                        Arrays.asList(
+                            Destination.builder()
+                                .bounce(false)
+                                .address(addr1.toNonBounceable())
+                                .amount(Utils.toNano(0.013))
+                                .build(),
+                            Destination.builder()
+                                .bounce(false)
+                                .address(addr2.toNonBounceable())
+                                .amount(Utils.toNano(0.015))
+                                .build()))
+                    .toCell())
+            .build();
+
+    WalletV3Config walletV3Config =
+        WalletV3Config.builder()
+            .seqno(1)
+            .walletId(43)
+            .destination(contractV5.getAddress())
+            .amount(Utils.toNano(0.017))
+            .body(contractV5.createInternalSignedBody(walletV5Config))
+            .build();
+
+    sendResponse = contractV3.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
+  }
+
+  @Test
+  public void testWalletV5DeployTwoExtensionsTonCenterClient() throws Exception {
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    TonCenter tonCenterClient = TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().build();
+
+    WalletV5 contract =
+        WalletV5.builder()
+            .tonCenterClient(tonCenterClient)
+            .walletId(42)
+            .keyPair(keyPair)
+            .isSigAuthAllowed(true)
+            .build();
+
+    Address walletAddress = contract.getAddress();
+
+    String nonBounceableAddress = walletAddress.toNonBounceable();
+    String bounceableAddress = walletAddress.toBounceable();
+    log.info("bounceableAddress: {}", bounceableAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            tonCenterClient, Address.of(nonBounceableAddress), Utils.toNano(0.1), true);
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    // deploy wallet-v5
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
+
+    contract.waitForDeployment();
+
+    Utils.sleep(2);
+    log.info("isSignatureAllowed {}", contract.getIsSignatureAuthAllowed());
+
+    Utils.sleep(2); // avoid rate limit error
+    long newSeq = contract.getSeqno();
+    assertThat(newSeq).isEqualTo(1);
+
+    Cell extensions =
+        contract
+            .manageExtensions(
+                ActionList.builder()
+                    .actions(
+                        Arrays.asList(
+                            ExtendedAction.builder()
+                                .actionType(ExtendedActionType.ADD_EXTENSION)
+                                .address(Address.of(addr2))
+                                .build(),
+                            ExtendedAction.builder()
+                                .actionType(ExtendedActionType.ADD_EXTENSION)
+                                .address(Address.of(addr3))
+                                .build()))
+                    .build())
+            .toCell();
+
+    // test WalletV5InnerRequest de/serialization
+    WalletV5InnerRequest walletV5InnerRequest =
+        WalletV5InnerRequest.deserialize(CellSlice.beginParse(extensions));
+    log.info("walletV5InnerRequest (deserialized) {}", walletV5InnerRequest);
+    log.info("walletV5InnerRequest (serialized)   {}", walletV5InnerRequest.toCell().toHex());
+
+    WalletV5Config walletV5Config =
+        WalletV5Config.builder().seqno(newSeq).walletId(42).body(extensions).build();
+    Utils.sleep(2);
+    sendResponse = contract.send(walletV5Config);
+    assertThat(sendResponse.getCode()).isZero();
+    Utils.sleep(15);
+    TonHashMap rawExtensions = contract.getRawExtensions();
+    log.info("extensions {}", rawExtensions);
+    assertThat(rawExtensions.elements.size()).isEqualTo(2);
+    contract.printTransactions(true);
   }
 }

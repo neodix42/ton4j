@@ -426,16 +426,9 @@ public class BitString implements Serializable {
    * @param valueBits int size of length field in bits
    */
   public void writeVarUint(BigInteger value, int valueBits) {
-    if (value.compareTo(BigInteger.ZERO) == 0) {
-      writeUint(BigInteger.ZERO, valueBits);
-    } else {
       int bytesSize = (value.bitLength() + 7) / 8;
-      //      if (bytesSize > bitLength) {
-      //        throw new Error("Amount is too big. Should fit in " + bitLength + " bits");
-      //      }
       writeUint(BigInteger.valueOf(bytesSize), BigInteger.valueOf(valueBits - 1).bitLength());
       writeUint(value, bytesSize * 8);
-    }
   }
 
   /**
@@ -664,7 +657,7 @@ public class BitString implements Serializable {
   }
 
   /**
-   * @return hex string
+   * @return bit string (zeros and ones)
    */
   public String toString() {
     return toBitString();

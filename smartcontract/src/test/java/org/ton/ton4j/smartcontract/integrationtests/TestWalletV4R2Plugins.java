@@ -9,8 +9,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
@@ -21,6 +23,8 @@ import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.v4.SubscriptionInfo;
 import org.ton.ton4j.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.ton4j.tlb.Message;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.SendBocResponse;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
@@ -50,8 +54,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
         TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test
@@ -75,8 +79,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
 
     log.info("contract balance {}", Utils.formatNanoValue(contract.getBalance()));
     // deploy wallet-v4
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -129,8 +133,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
                     .build())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(45);
 
@@ -152,10 +156,6 @@ public class TestWalletV4R2Plugins extends CommonTest {
     subscriptionInfo = contract.getSubscriptionData(pluginAddress);
 
     log.info("{}", subscriptionInfo);
-    log.info(
-        "plugin hash: int {}, hex {}",
-        new BigInteger(pluginAddress.hashPart),
-        Utils.bytesToHex(pluginAddress.hashPart));
 
     log.info("plugin {} installed {}", pluginAddress, contract.isPluginInstalled(pluginAddress));
 
@@ -166,12 +166,11 @@ public class TestWalletV4R2Plugins extends CommonTest {
                 contract.getKeyPair(), pluginAddress, null, null)
             .toCell();
 
-    extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
+    ExtMessageInfo extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
     log.info("extMessageInfo {}", extMessageInfo);
     assertThat(extMessageInfo.getError().getCode()).isZero();
 
     tonlib.waitForDeployment(beneficiaryAddress, 90);
-    //    ContractUtils.waitForDeployment(tonlib, beneficiaryAddress, 90); // no need?
 
     log.info(
         "beneficiaryWallet balance {}",
@@ -199,7 +198,7 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .toCell();
     extMessageInfo = tonlib.sendRawMessage(extMessage.toBase64());
     log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
 
     tonlib.waitForDeployment(subscriptionInfo.getBeneficiary(), 90);
     Utils.sleep(10);
@@ -236,9 +235,9 @@ public class TestWalletV4R2Plugins extends CommonTest {
                     .build())
             .build();
 
-    extMessageInfo = contract.uninstallPlugin(config);
+    sendResponse = contract.uninstallPlugin(config);
     Utils.sleep(30, "sent uninstall request");
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
 
     // uninstall plugin -- end
 
@@ -256,8 +255,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .amount(Utils.toNano(0.331))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   @Test
@@ -280,8 +279,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v4
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -330,8 +329,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
     byte[] signedDeployBodyHash =
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), deployBody.hash());
 
-    ExtMessageInfo extMessageInfo = contract.deploy(signedDeployBodyHash);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
+    assertThat(sendResponse.getCode()).isZero();
     contract.waitForDeployment(30);
 
     long walletCurrentSeqno = contract.getSeqno();
@@ -355,8 +354,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
     Cell transferBody = contract.createTransferBody(config);
     byte[] signedTransferBodyHash =
         Utils.signData(pubKey, keyPair.getSecretKey(), transferBody.hash());
-    extMessageInfo = contract.send(config, signedTransferBodyHash);
-    log.info("extMessageInfo: {}", extMessageInfo);
+    sendResponse = contract.send(config, signedTransferBodyHash);
+    log.info("extMessageInfo: {}", sendResponse);
     contract.waitForBalanceChange();
     assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.7));
   }
@@ -389,8 +388,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
     log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy wallet-v4
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -443,8 +442,8 @@ public class TestWalletV4R2Plugins extends CommonTest {
                     .build())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(45);
 
@@ -466,10 +465,6 @@ public class TestWalletV4R2Plugins extends CommonTest {
     subscriptionInfo = contract.getSubscriptionData(pluginAddress);
 
     log.info("{}", subscriptionInfo);
-    log.info(
-        "plugin hash: int {}, hex {}",
-        new BigInteger(pluginAddress.hashPart),
-        Utils.bytesToHex(pluginAddress.hashPart));
 
     log.info("plugin {} installed {}", pluginAddress, contract.isPluginInstalled(pluginAddress));
 
@@ -480,8 +475,6 @@ public class TestWalletV4R2Plugins extends CommonTest {
             contract.getKeyPair(), pluginAddress, null, null);
 
     adnlLiteClient.sendMessage(extMessage);
-    log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
 
     adnlLiteClient.waitForDeployment(beneficiaryAddress, 90);
     //    ContractUtils.waitForDeployment(tonlib, beneficiaryAddress, 90); // no need?
@@ -545,9 +538,9 @@ public class TestWalletV4R2Plugins extends CommonTest {
                     .build())
             .build();
 
-    extMessageInfo = contract.uninstallPlugin(config);
+    sendResponse = contract.uninstallPlugin(config);
     Utils.sleep(30, "sent uninstall request");
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    assertThat(sendResponse.getCode()).isZero();
 
     // uninstall plugin -- end
 
@@ -565,7 +558,225 @@ public class TestWalletV4R2Plugins extends CommonTest {
             .amount(Utils.toNano(0.331))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
+  }
+
+  @Test
+  public void testPluginsTonCenterClient() throws Exception {
+
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    TonCenter tonCenter = TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().uniqueRequests().build();
+
+    WalletV4R2 contract =
+        WalletV4R2.builder().tonCenterClient(tonCenter).keyPair(keyPair).walletId(42).build();
+
+    Address walletAddress = contract.getAddress();
+
+    String nonBounceableAddress = walletAddress.toNonBounceable();
+    String bounceableAddress = walletAddress.toBounceable();
+    log.info("bounceableAddress: {}", bounceableAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getSecretKey()));
+
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            tonCenter, Address.of(nonBounceableAddress), Utils.toNano(7), true);
+    log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    // deploy wallet-v4
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
+
+    contract.waitForDeployment();
+
+    long walletCurrentSeqno = contract.getSeqno();
+    log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
+    log.info("seqno: {}", walletCurrentSeqno);
+    Utils.sleep(2);
+    log.info("walletId: {}", contract.getWalletId());
+    Utils.sleep(2);
+    log.info("pubKey: {}", Utils.bytesToHex(contract.getPublicKey()));
+    Utils.sleep(2);
+    log.info("pluginsList: {}", contract.getPluginsList());
+    Utils.sleep(2);
+    assertThat(contract.getPluginsList().isEmpty()).isTrue();
+
+    // create and deploy plugin -- start
+
+    Address beneficiaryAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+    log.info("beneficiaryAddress: {}", beneficiaryAddress.toBounceable());
+
+    SubscriptionInfo subscriptionInfo =
+        SubscriptionInfo.builder()
+            .beneficiary(beneficiaryAddress)
+            .subscriptionFee(Utils.toNano(2))
+            .period(60)
+            .startTime(0)
+            .timeOut(30)
+            .lastPaymentTime(0)
+            .lastRequestTime(0)
+            .failedAttempts(0)
+            .subscriptionId(12345)
+            .build();
+
+    tonCenter.waitForDeployment(beneficiaryAddress);
+
+//    Utils.sleep(20);
+
+    log.info(
+        "beneficiaryWallet balance {}",
+        Utils.formatNanoValue(tonCenter.getBalance(beneficiaryAddress.toBounceable())));
+
+    long seqno = contract.getSeqno();
+    Utils.sleep(2);
+    long wc = contract.getWc();
+    Utils.sleep(2);
+
+    WalletV4R2Config config =
+        WalletV4R2Config.builder()
+            .seqno(seqno)
+            .operation(1) // deploy and install plugin
+            .walletId(42)
+            .newPlugin(
+                NewPlugin.builder()
+                    .secretKey(keyPair.getSecretKey())
+                    .seqno(walletCurrentSeqno)
+                    .pluginWc(wc) // reuse wc of the wallet
+                    .amount(
+                        Utils.toNano(0.1)) // initial plugin balance, will be taken from wallet-v4
+                    .stateInit(contract.createPluginStateInit(subscriptionInfo))
+                    .body(contract.createPluginBody())
+                    .build())
+            .build();
+
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
+
+//    tonCenter.waitForBalanceChange(beneficiaryAddress);
+
+    Utils.sleep(20);
+
+    log.info(
+        "beneficiaryWallet balance {}",
+        Utils.formatNanoValue(tonCenter.getBalance(beneficiaryAddress.toBounceable())));
+
+    // create and deploy plugin -- end
+    Utils.sleep(2);
+    // get plugin list
+    List<String> plugins = contract.getPluginsList();
+    log.info("pluginsList: {}", plugins);
+
+    assertThat(plugins.isEmpty()).isFalse();
+
+    Address pluginAddress = Address.of(plugins.get(0));
+    log.info("pluginAddress {}", pluginAddress.toString(false));
+
+    Utils.sleep(2);
+    subscriptionInfo = contract.getSubscriptionData(pluginAddress);
+
+    log.info("{}", subscriptionInfo);
+
+    Utils.sleep(2);
+    log.info("plugin {} installed {}", pluginAddress, contract.isPluginInstalled(pluginAddress));
+
+    log.info("collect fee - first time");
+
+    Message extMessage =
+        MsgUtils.createExternalMessageWithSignedBody(
+            contract.getKeyPair(), pluginAddress, null, null);
+
+    sendResponse = contract.send(extMessage);
+    assertThat(sendResponse.getCode()).isZero();
+
+    tonCenter.waitForDeployment(beneficiaryAddress, 90);
+
+    Utils.sleep(20);
+
+    log.info(
+        "beneficiaryWallet balance {}",
+        Utils.formatNanoValue(tonCenter.getBalance(beneficiaryAddress.toBounceable())));
+
+    Utils.sleep(30, "wait for seqno update");
+
+    log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
+
+    subscriptionInfo = contract.getSubscriptionData(pluginAddress);
+    log.info("{}", subscriptionInfo);
+
+    assertThat(subscriptionInfo.getLastPaymentTime()).isNotEqualTo(0);
+
+    log.info("collect fee - second time");
+
+    Utils.sleep(180, "wait for timeout");
+
+    subscriptionInfo = contract.getSubscriptionData(pluginAddress);
+    log.info("{}", subscriptionInfo);
+
+    extMessage =
+        MsgUtils.createExternalMessageWithSignedBody(
+            contract.getKeyPair(), pluginAddress, null, null);
+    sendResponse = contract.send(extMessage);
+    assertThat(sendResponse.getCode()).isZero();
+
+    tonCenter.waitForDeployment(subscriptionInfo.getBeneficiary());
+    Utils.sleep(20);
+
+    log.info(
+        "beneficiaryWallet balance {}",
+        Utils.formatNanoValue(
+            tonCenter.getBalance(subscriptionInfo.getBeneficiary().toBounceable())));
+
+    Utils.sleep(30);
+
+    log.info("walletV4 balance: {}", Utils.formatNanoValue(contract.getBalance()));
+
+    subscriptionInfo = contract.getSubscriptionData(pluginAddress);
+    log.info("{}", subscriptionInfo);
+
+    // uninstall/remove plugin from the wallet -- start
+
+    log.info("Uninstalling plugin {}", Address.of(contract.getPluginsList().get(0)));
+
+    walletCurrentSeqno = contract.getSeqno();
+
+    config =
+        WalletV4R2Config.builder()
+            .seqno(contract.getSeqno())
+            .walletId(config.getWalletId())
+            .operation(3) // uninstall plugin
+            .deployedPlugin(
+                DeployedPlugin.builder()
+                    .seqno(walletCurrentSeqno)
+                    .amount(Utils.toNano(0.1))
+                    .pluginAddress(Address.of(contract.getPluginsList().get(0)))
+                    .secretKey(keyPair.getSecretKey())
+                    .queryId(0)
+                    .build())
+            .build();
+
+    sendResponse = contract.uninstallPlugin(config);
+    assertThat(sendResponse.getCode()).isZero();
+    Utils.sleep(30, "sent uninstall request");
+
+    // uninstall plugin -- end
+
+    Utils.sleep(60);
+    List<String> list = contract.getPluginsList();
+    log.info("pluginsList: {}", list);
+    assertThat(list.isEmpty()).isTrue();
+
+    config =
+        WalletV4R2Config.builder()
+            .operation(0)
+            .walletId(contract.getWalletId())
+            .seqno(contract.getSeqno())
+            .destination(Address.of(FAUCET_ADDRESS_RAW))
+            .amount(Utils.toNano(0.331))
+            .build();
+
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
   }
 }

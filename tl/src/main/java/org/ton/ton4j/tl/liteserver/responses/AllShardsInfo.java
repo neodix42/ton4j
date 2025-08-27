@@ -2,10 +2,17 @@ package org.ton.ton4j.tl.liteserver.responses;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.cell.TonHashMapE;
+import org.ton.ton4j.tlb.BinTree;
+import org.ton.ton4j.tlb.ShardDescr;
 import org.ton.ton4j.tlb.ShardHashes;
 import org.ton.ton4j.utils.Utils;
 
@@ -40,6 +47,17 @@ public class AllShardsInfo implements Serializable, LiteServerAnswer {
       return null;
     }
     return ShardHashes.deserialize(CellSlice.beginParse(Cell.fromBoc(data)));
+  }
+
+  public List<ShardDescr> getShards() {
+    List<ShardDescr> result = new ArrayList<>();
+    TonHashMapE shardHashes = getShardHashes().getShardHashes();
+
+    for (Map.Entry<Object, Object> entry : shardHashes.elements.entrySet()) {
+      BinTree binTree = (BinTree) entry.getValue();
+      result.addAll(binTree.toList());
+    }
+    return result;
   }
 
   public static final int constructorId = ALL_SHARDS_INFO_ANSWER;

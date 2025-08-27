@@ -25,8 +25,8 @@ BigInteger balance = TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceabl
 log.info("wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
 
-ExtMessageInfo extMessageInfo = contract.deploy();
-assertThat(extMessageInfo.getError().getCode()).isZero();
+SendResponse sendResponse = contract.deploy();
+assertThat(sendResponse.getCode()).isZero();
 
 contract.waitForDeployment(45);
 
@@ -40,8 +40,8 @@ WalletV1R2Config config = WalletV1R2Config.builder()
         .build();
 
 // transfer coins from new wallet (back to faucet)
-extMessageInfo = contract.send(config);
-assertThat(extMessageInfo.getError().getCode()).isZero();
+sendResponse = contract.send(config);
+assertThat(sendResponse.getCode()).isZero();
 
 contract.waitForBalanceChange(45);
 

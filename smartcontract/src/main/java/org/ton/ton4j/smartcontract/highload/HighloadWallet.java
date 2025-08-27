@@ -7,17 +7,19 @@ import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.TonHashMap;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.types.HighloadConfig;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
@@ -56,6 +58,7 @@ public class HighloadWallet implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -65,6 +68,16 @@ public class HighloadWallet implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public org.ton.ton4j.toncenter.TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -163,6 +176,14 @@ public class HighloadWallet implements Contract {
   //    }
 
   public String getPublicKey() throws Exception {
+    if (nonNull(tonCenterClient)) {
+      try {
+        return Utils.bytesToHex(
+            Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable())));
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
     }
@@ -174,7 +195,7 @@ public class HighloadWallet implements Contract {
    *
    * @param highloadConfig HighloadConfig
    */
-  public ExtMessageInfo send(HighloadConfig highloadConfig) {
+  public SendResponse send(HighloadConfig highloadConfig) {
     Cell body = createTransferBody(highloadConfig);
 
     Message externalMessage =
@@ -187,10 +208,7 @@ public class HighloadWallet implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 
   private Cell createDict(HighloadConfig config) {
@@ -299,7 +317,7 @@ public class HighloadWallet implements Contract {
     return cellDict;
   }
 
-  public ExtMessageInfo deploy() {
+  public SendResponse deploy() {
 
     Cell body = createDeployMessage();
 
@@ -314,9 +332,6 @@ public class HighloadWallet implements Contract {
                     .storeCell(body)
                     .endCell())
             .build();
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 }

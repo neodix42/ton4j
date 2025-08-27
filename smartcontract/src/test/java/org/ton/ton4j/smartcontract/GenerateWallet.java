@@ -4,15 +4,15 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWalletV3;
 import org.ton.ton4j.smartcontract.types.HighloadQueryId;
 import org.ton.ton4j.smartcontract.types.HighloadV3Config;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -41,8 +41,8 @@ public class GenerateWallet {
     log.info("new wallet balance {}", Utils.formatNanoValue(balance));
 
     // deploy new wallet
-    ExtMessageInfo extMessageInfo = wallet.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     wallet.waitForDeployment(90);
 
     return wallet;
@@ -78,8 +78,8 @@ public class GenerateWallet {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = wallet.deploy(highloadV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy(highloadV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     wallet.waitForDeployment(90);
 
@@ -113,8 +113,8 @@ public class GenerateWallet {
     log.info("new wallet balance {}", Utils.formatNanoValue(balance));
 
     // deploy new wallet
-    ExtMessageInfo extMessageInfo = wallet.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
     wallet.waitForDeployment(90);
 
     return wallet;
@@ -153,12 +153,42 @@ public class GenerateWallet {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = wallet.deploy(highloadV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = wallet.deploy(highloadV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     wallet.waitForDeployment(90);
 
     // highload v3 wallet deploy - end
+    return wallet;
+  }
+
+  public static WalletV3R1 randomV3R1(TonCenter tonCenter, long initialBalanceInToncoins)
+          throws Exception {
+    log.info("generating WalletV3R1 wallet...");
+
+    WalletV3R1 wallet = WalletV3R1.builder().tonCenterClient(tonCenter).wc(0).walletId(42).build();
+
+    Address address = wallet.getAddress();
+
+    String nonBounceableAddress = address.toNonBounceable();
+    String bounceableAddress = address.toBounceable();
+    String rawAddress = address.toRaw();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", rawAddress);
+    log.info("pubKey: {}", Utils.bytesToHex(wallet.getKeyPair().getPublicKey()));
+
+    BigInteger balance =
+            TestnetFaucet.topUpContract(
+                    tonCenter, Address.of(nonBounceableAddress), Utils.toNano(initialBalanceInToncoins), true);
+    log.info("new wallet balance {}", Utils.formatNanoValue(balance));
+
+    // deploy new wallet
+    SendResponse sendResponse = wallet.deploy();
+    assertThat(sendResponse.getCode()).isZero();
+    wallet.waitForDeployment();
+
     return wallet;
   }
 }

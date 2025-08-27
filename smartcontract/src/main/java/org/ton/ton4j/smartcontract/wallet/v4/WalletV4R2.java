@@ -3,26 +3,31 @@ package org.ton.ton4j.smartcontract.wallet.v4;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
+
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.types.WalletV4R2Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.utils.Utils;
@@ -35,6 +40,9 @@ public class WalletV4R2 implements Contract {
   long walletId;
   long initialSeqno;
   byte[] publicKey;
+
+  private static final Gson gson =
+      new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.BIG_DECIMAL).create();
 
   public static class WalletV4R2Builder {}
 
@@ -57,6 +65,7 @@ public class WalletV4R2 implements Contract {
   private Tonlib tonlib;
   private long wc;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -66,6 +75,16 @@ public class WalletV4R2 implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -189,18 +208,12 @@ public class WalletV4R2 implements Contract {
    * Deploy wallet without any plugins. One can also deploy plugin separately and later install into
    * the wallet. See installPlugin().
    */
-  public ExtMessageInfo deploy() {
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareDeployMsg());
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+  public SendResponse deploy() {
+    return send(prepareDeployMsg());
   }
 
-  public ExtMessageInfo deploy(byte[] signedBody) {
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareDeployMsg(signedBody));
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
+  public SendResponse deploy(byte[] signedBody) {
+    return send(prepareDeployMsg(signedBody));
   }
 
   public Message prepareDeployMsg(byte[] signedBodyHash) {
@@ -212,11 +225,8 @@ public class WalletV4R2 implements Contract {
         .build();
   }
 
-  public ExtMessageInfo send(WalletV4R2Config config, byte[] signedBodyHash) {
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(config, signedBodyHash));
-    }
-    return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
+  public SendResponse send(WalletV4R2Config config, byte[] signedBodyHash) {
+    return send(prepareExternalMsg(config, signedBodyHash));
   }
 
   public Message prepareExternalMsg(WalletV4R2Config config, byte[] signedBodyHash) {
@@ -230,11 +240,8 @@ public class WalletV4R2 implements Contract {
    *
    * @param config WalletV4R2Config
    */
-  public ExtMessageInfo send(WalletV4R2Config config) {
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(config));
-    }
-    return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
+  public SendResponse send(WalletV4R2Config config) {
+    return send(prepareExternalMsg(config));
   }
 
   public Message prepareExternalMsg(WalletV4R2Config config) {
@@ -298,7 +305,7 @@ public class WalletV4R2 implements Contract {
     return CellBuilder.beginCell().storeUint(0x64737472, 32).endCell();
   }
 
-  public ExtMessageInfo installPlugin(Tonlib tonlib, WalletV4R2Config config) {
+  public SendResponse installPlugin(Tonlib tonlib, WalletV4R2Config config) {
 
     Address ownAddress = getAddress();
     config.setOperation(2);
@@ -306,30 +313,30 @@ public class WalletV4R2 implements Contract {
     Message message =
         MsgUtils.createExternalMessageWithSignedBody(keyPair, ownAddress, getStateInit(), body);
 
-    if (nonNull(adnlLiteClient)) {
-      return send(message);
-    }
-
-    return tonlib.sendRawMessage(message.toCell().toBase64());
+    return send(message);
   }
 
-  public ExtMessageInfo uninstallPlugin(WalletV4R2Config config) {
+  public SendResponse uninstallPlugin(WalletV4R2Config config) {
 
     Address ownAddress = getAddress();
     config.setOperation(3);
     Cell body = createTransferBody(config); // seqno only needed
     Message message =
         MsgUtils.createExternalMessageWithSignedBody(keyPair, ownAddress, getStateInit(), body);
-    if (nonNull(adnlLiteClient)) {
-      return send(message);
-    }
-    return tonlib.sendRawMessage(message.toCell().toBase64());
+    return send(message);
   }
 
   /**
    * @return subwallet-id long
    */
   public long getWalletId() {
+    if (nonNull(tonCenterClient)) {
+      try {
+        return tonCenterClient.getSubWalletId(getAddress().toBounceable());
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       return adnlLiteClient.getSubWalletId(getAddress());
     }
@@ -337,6 +344,13 @@ public class WalletV4R2 implements Contract {
   }
 
   public byte[] getPublicKey() {
+    if (nonNull(tonCenterClient)) {
+      try {
+        return Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable()));
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       return Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress()));
     }
@@ -351,7 +365,28 @@ public class WalletV4R2 implements Contract {
     String hashPart = new BigInteger(pluginAddress.hashPart).toString();
 
     Address myAddress = getAddress();
-    if (nonNull(adnlLiteClient)) {
+
+    if (nonNull(tonCenterClient)) {
+
+      List<List<Object>> stack = new ArrayList<>();
+      List<Object> wc = new ArrayList<>();
+      wc.add("num");
+      wc.add(pluginAddress.wc);
+      stack.add(wc);
+      List<Object> hash = new ArrayList<>();
+      hash.add("num");
+      hash.add(hashPart);
+      stack.add(hash);
+
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(myAddress.toBounceable(), "is_plugin_installed", stack);
+      if (runMethodResult.isSuccess()) {
+        return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString()) != 0;
+      } else {
+        throw new Error("failed to execute isPluginInstalled, " + runMethodResult.getError());
+      }
+
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
           adnlLiteClient.runMethod(
               myAddress,
@@ -379,6 +414,31 @@ public class WalletV4R2 implements Contract {
     List<String> r = new ArrayList<>();
     Address myAddress = getAddress();
     TvmStackEntryList list;
+
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(
+              myAddress.toBounceable(), "get_plugin_list", new ArrayList<>());
+      if (runMethodResult.isSuccess()) {
+        //        System.out.println("runMethodResult " + runMethodResult);
+        List<Object> elements = new ArrayList<>(runMethodResult.getResult().getStack().get(0));
+        //        System.out.println("elements " + elements);
+        TvmList l = gson.fromJson(elements.get(1).toString(), TvmList.class);
+        for (Object o : l.getElements()) {
+          TvmStackEntryTuple t = gson.fromJson(o.toString(), TvmStackEntryTuple.class);
+          TvmTuple tuple = t.getTuple();
+          TvmStackEntryNumber wc =
+              gson.fromJson(
+                  tuple.getElements().get(0).toString(), TvmStackEntryNumber.class); // 1 byte
+          TvmStackEntryNumber addr =
+              gson.fromJson(
+                  tuple.getElements().get(1).toString(), TvmStackEntryNumber.class); // 32 bytes
+          r.add(wc.getNumber() + ":" + addr.getNumber().toString(16).toUpperCase());
+        }
+        return r;
+      }
+    }
+
     if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(myAddress, "get_plugin_list");
 
@@ -420,6 +480,18 @@ public class WalletV4R2 implements Contract {
    * @return TvmStackEntryList
    */
   public SubscriptionInfo getSubscriptionData(Address pluginAddress) {
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(
+              pluginAddress.toBounceable(), "get_subscription_data", new ArrayList<>());
+      if (runMethodResult.isSuccess()) {
+        System.out.println("getSubscriptionData " + runMethodResult.getResult());
+        return parseSubscriptionDataTonCenter(runMethodResult.getResult().getStack());
+      } else {
+        throw new Error(
+            "Error executing get_subscription_data. Exit code " + runMethodResult.getCode());
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
           adnlLiteClient.runMethod(pluginAddress, "get_subscription_data");
@@ -451,13 +523,13 @@ public class WalletV4R2 implements Contract {
         .storeAddress(wallet)
         .storeAddress(beneficiary)
         .storeCoins(amount)
-        .storeUint(BigInteger.valueOf(period), 32)
-        .storeUint(BigInteger.valueOf(startTime), 32)
-        .storeUint(BigInteger.valueOf(timeOut), 32)
-        .storeUint(BigInteger.valueOf(lastPaymentTime), 32)
-        .storeUint(BigInteger.valueOf(lastRequestTime), 32)
-        .storeUint(BigInteger.valueOf(failedAttempts), 8)
-        .storeUint(BigInteger.valueOf(subscriptionId), 32)
+        .storeUint(period, 32)
+        .storeUint(startTime, 32)
+        .storeUint(timeOut, 32)
+        .storeUint(lastPaymentTime, 32)
+        .storeUint(lastRequestTime, 32)
+        .storeUint(failedAttempts, 8)
+        .storeUint(subscriptionId, 32)
         .endCell();
   }
 
@@ -547,12 +619,63 @@ public class WalletV4R2 implements Contract {
         .build();
   }
 
+  private SubscriptionInfo parseSubscriptionDataTonCenter(List<List<Object>> subscriptionData) {
+    List<Object> elements = new ArrayList<>(subscriptionData.get(0));
+    TvmTuple walletAddr = gson.fromJson(elements.get(1).toString(), TvmTuple.class);
+    TvmStackEntryNumber wc =
+        gson.fromJson(walletAddr.getElements().get(0).toString(), TvmStackEntryNumber.class);
+    TvmStackEntryNumber hash =
+        gson.fromJson(walletAddr.getElements().get(1).toString(), TvmStackEntryNumber.class);
+
+    elements = new ArrayList<>(subscriptionData.get(1));
+
+    TvmTuple beneficiaryAddr = gson.fromJson(elements.get(1).toString(), TvmTuple.class);
+    TvmStackEntryNumber beneficiaryAddrWc =
+        gson.fromJson(beneficiaryAddr.getElements().get(0).toString(), TvmStackEntryNumber.class);
+    TvmStackEntryNumber beneficiaryAddrHash =
+        gson.fromJson(beneficiaryAddr.getElements().get(1).toString(), TvmStackEntryNumber.class);
+
+    BigInteger amount = BigInteger.valueOf(Long.decode(subscriptionData.get(2).get(1).toString()));
+    long period = Long.decode(subscriptionData.get(3).get(1).toString());
+    long startTime = Long.decode(subscriptionData.get(4).get(1).toString());
+    long timeOut = Long.decode(subscriptionData.get(5).get(1).toString());
+    long lastPaymentTime = Long.decode(subscriptionData.get(6).get(1).toString());
+    long lastRequestTime = Long.decode(subscriptionData.get(7).get(1).toString());
+
+    long now = System.currentTimeMillis() / 1000;
+    boolean isPaid = ((now - lastPaymentTime) < period);
+    boolean paymentReady = !isPaid & ((now - lastRequestTime) > timeOut);
+
+    long failedAttempts = Long.decode(subscriptionData.get(8).get(1).toString());
+    long subscriptionId = Long.decode(subscriptionData.get(9).get(1).toString());
+
+    return SubscriptionInfo.builder()
+        .walletAddress(Address.of(wc.getNumber() + ":" + hash.getNumber().toString(16)))
+        .beneficiary(
+            Address.of(
+                beneficiaryAddrWc.getNumber() + ":" + beneficiaryAddrHash.getNumber().toString(16)))
+        .subscriptionFee(amount)
+        .period(period)
+        .startTime(startTime)
+        .timeOut(timeOut)
+        .lastPaymentTime(lastPaymentTime)
+        .lastRequestTime(lastRequestTime)
+        .isPaid(isPaid)
+        .isPaymentReady(paymentReady)
+        .failedAttempts(failedAttempts)
+        .subscriptionId(subscriptionId)
+        .build();
+  }
+
   /**
    * Sends amount of nano toncoins to destination address and waits till message found among
    * account's transactions
    */
   public RawTransaction sendWithConfirmation(WalletV4R2Config config) throws Exception {
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      tonCenterClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else if (nonNull(adnlLiteClient)) {
       adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
       return null;
     } else {

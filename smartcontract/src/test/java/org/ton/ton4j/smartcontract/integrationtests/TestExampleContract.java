@@ -4,16 +4,22 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.CustomContractConfig;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryNumber;
 import org.ton.ton4j.utils.Utils;
@@ -45,8 +51,8 @@ public class TestExampleContract extends CommonTest {
         TestnetFaucet.topUpContract(tonlib, Address.of(address.toString(true)), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = exampleContract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = exampleContract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     exampleContract.waitForDeployment(45);
 
@@ -73,8 +79,8 @@ public class TestExampleContract extends CommonTest {
             .comment("no-way")
             .build();
 
-    extMessageInfo = exampleContract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = exampleContract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     exampleContract.waitForBalanceChange(45);
 
@@ -116,8 +122,8 @@ public class TestExampleContract extends CommonTest {
             adnlLiteClient, Address.of(address.toString(true)), Utils.toNano(0.1));
     log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = exampleContract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = exampleContract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     exampleContract.waitForDeployment(45);
 
@@ -141,8 +147,8 @@ public class TestExampleContract extends CommonTest {
             .comment("no-way")
             .build();
 
-    extMessageInfo = exampleContract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = exampleContract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     exampleContract.waitForBalanceChange(45);
 
@@ -151,5 +157,73 @@ public class TestExampleContract extends CommonTest {
     log.info("extra_field: {}", result.getIntByIndex(0));
 
     assertThat(result.getIntByIndex(0).longValue()).isEqualTo(42);
+  }
+
+  @Test
+  public void testExampleContractTonCenterClient() throws Exception {
+
+    TonCenter tonCenter = TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().build();
+
+    TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
+
+    ExampleContract exampleContract =
+        ExampleContract.builder().tonCenterClient(tonCenter).keyPair(keyPair).build();
+
+    log.info("pubkey {}", Utils.bytesToHex(exampleContract.getKeyPair().getPublicKey()));
+
+    Address address = exampleContract.getAddress();
+    log.info("contract address {}", address);
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            tonCenter, Address.of(address.toString(true)), Utils.toNano(0.1), true);
+    log.info("new wallet {} balance: {}", address.toString(true), Utils.formatNanoValue(balance));
+
+    SendResponse sendResponse = exampleContract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
+
+    exampleContract.waitForDeployment();
+
+    log.info("seqno: {}", exampleContract.getSeqno());
+
+    Utils.sleep(2);
+    TonResponse<RunGetMethodResponse> result =
+        tonCenter.runGetMethod(address.toBounceable(), "get_x_data", new ArrayList<>());
+
+    if (result.isSuccess()) {
+      log.info("x_data: {}", result.getResult().getStack().get(0));
+    }
+    Utils.sleep(2);
+    result = tonCenter.runGetMethod(address.toBounceable(), "get_extra_field", new ArrayList<>());
+    if (result.isSuccess()) {
+
+      log.info("extra_field: {}", result.getResult().getStack().get(0));
+    }
+
+    Address destinationAddress = Address.of("kf_sPxv06KagKaRmOOKxeDQwApCx3i8IQOwv507XD51JOLka");
+
+    Utils.sleep(2);
+    CustomContractConfig config =
+        CustomContractConfig.builder()
+            .seqno(exampleContract.getSeqno())
+            .destination(destinationAddress)
+            .amount(Utils.toNano(0.05))
+            .extraField(42)
+            .comment("no-way")
+            .build();
+
+    sendResponse = exampleContract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
+
+    exampleContract.waitForBalanceChange(45);
+
+    result = tonCenter.runGetMethod(address.toBounceable(), "get_extra_field", new ArrayList<>());
+
+    log.info("extra_field: {}", result.getResult().getStack().get(0));
+
+    List<Object> elements = result.getResult().getStack().get(0);
+
+    assertThat(Long.decode(elements.get(1).toString())).isEqualTo(42);
   }
 }

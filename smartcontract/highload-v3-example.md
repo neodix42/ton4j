@@ -28,8 +28,8 @@ HighloadWalletV3 contract=HighloadWalletV3.builder()
         .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
         .build();
 
-        ExtMessageInfo extMessageInfo=contract.deploy(config);
-        assertThat(extMessageInfo.getError().getCode()).isZero();
+        SendResponse sendResponse=contract.deploy(config);
+        assertThat(sendResponse.getCode()).isZero();
 
         contract.waitForDeployment(45);
 
@@ -41,8 +41,8 @@ HighloadWalletV3 contract=HighloadWalletV3.builder()
         BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
         .build();
 
-        extMessageInfo=contract.send(config);
-        assertThat(extMessageInfo.getError().getCode()).isZero();
+        sendResponse=contract.send(config);
+        assertThat(sendResponse.getCode()).isZero();
         log.info("sent 1000 messages");
 
 // help method

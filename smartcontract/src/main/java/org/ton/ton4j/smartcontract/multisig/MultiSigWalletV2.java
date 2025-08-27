@@ -5,16 +5,22 @@ import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.util.*;
+
+import com.google.gson.internal.LinkedTreeMap;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.*;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.ExtraCurrency;
@@ -45,6 +51,7 @@ public class MultiSigWalletV2 implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -54,6 +61,16 @@ public class MultiSigWalletV2 implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public org.ton.ton4j.toncenter.TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -93,7 +110,7 @@ public class MultiSigWalletV2 implements Contract {
     return CellBuilder.beginCell().fromBoc(WalletCodes.multisigV2.getValue()).endCell();
   }
 
-  public ExtMessageInfo deploy() {
+  public SendResponse deploy() {
 
     Message externalMessage =
         Message.builder()
@@ -101,7 +118,7 @@ public class MultiSigWalletV2 implements Contract {
             .init(getStateInit())
             .build();
 
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 
   private static TonHashMapE convertExtraCurrenciesToMap(List<ExtraCurrency> extraCurrencies) {
@@ -212,7 +229,20 @@ public class MultiSigWalletV2 implements Contract {
 
   public Address getOrderAddress(BigInteger orderSeqno) {
     Cell orderAddrCell;
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      List<List<Object>> stack = new ArrayList<>();
+      stack.add(Arrays.asList("num", orderSeqno));
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_order_address", stack);
+      if (runMethodResult.isSuccess()) {
+        List<Object> elements = new ArrayList<>(runMethodResult.getResult().getStack().get(0));
+        LinkedTreeMap<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+        Cell c = Cell.fromBocBase64(l.get("bytes"));
+        return CellSlice.beginParse(c).loadAddress();
+      } else {
+        throw new Error("Cannot execute getOrderAddress " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
           adnlLiteClient.runMethod(
               getAddress(),
@@ -220,15 +250,16 @@ public class MultiSigWalletV2 implements Contract {
               VmStackValueInt.builder().value(orderSeqno).build());
       VmCellSlice slice = runMethodResult.getSliceByIndex(0);
       return CellSlice.beginParse(slice.getCell()).skipBits(slice.getStBits()).loadAddress();
-    } else {
+    } else if (nonNull(tonlib)) {
       Deque<String> stackData = new ArrayDeque<>();
       stackData.offer("[num, " + orderSeqno + "]");
       RunResult runResult = tonlib.runMethod(getAddress(), "get_order_address", stackData);
       TvmStackEntrySlice orderAddrCellT = (TvmStackEntrySlice) runResult.getStack().get(0);
       orderAddrCell = Cell.fromBocBase64(orderAddrCellT.getSlice().getBytes());
+      return MsgAddressInt.deserialize(CellSlice.beginParse(orderAddrCell)).toAddress();
+    } else {
+      throw new Error("Provider not set");
     }
-
-    return MsgAddressInt.deserialize(CellSlice.beginParse(orderAddrCell)).toAddress();
   }
 
   public MultiSigV2OrderData getOrderData(BigInteger orderSeqno) {
@@ -242,7 +273,46 @@ public class MultiSigWalletV2 implements Contract {
     BigInteger numberOfApprovals;
     BigInteger expirationDate;
     Cell order;
-    if (nonNull(adnlLiteClient)) {
+
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(
+              orderAddress.toBounceable(), "get_order_data", new ArrayList<>());
+      if (runMethodResult.isSuccess()) {
+        List<Object> elements = new ArrayList<>(runMethodResult.getResult().getStack().get(0));
+        System.out.println(elements);
+        LinkedTreeMap<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+        Cell c = Cell.fromBocBase64(l.get("bytes"));
+        multiSigAddressCell = CellSlice.beginParse(c).loadAddress();
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(1));
+        orderSeqNo = BigInteger.valueOf(Long.decode(elements.get(1).toString()));
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(2));
+        threshold = BigInteger.valueOf(Long.decode(elements.get(1).toString()));
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(3));
+        sentForExecution = BigInteger.valueOf(Long.decode(elements.get(1).toString()));
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(4));
+        l = (LinkedTreeMap<String, String>) elements.get(1);
+        c = Cell.fromBocBase64(l.get("bytes"));
+        signers =
+            CellSlice.beginParse(c)
+                .loadDict(
+                    8,
+                    k -> k.readUint(8),
+                    v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(5));
+        approvalsMask = BigInteger.valueOf(Long.decode(elements.get(1).toString()));
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(6));
+        numberOfApprovals = BigInteger.valueOf(Long.decode(elements.get(1).toString()));
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(7));
+        expirationDate = BigInteger.valueOf(Long.decode(elements.get(1).toString()));
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(8));
+        l = (LinkedTreeMap<String, String>) elements.get(1);
+        c = Cell.fromBocBase64(l.get("bytes"));
+        order = c;
+      } else {
+        throw new Error("Error executing getOrderData " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(orderAddress, "get_order_data");
       if (runMethodResult.getExitCode() == 0) {
         VmCellSlice slice = runMethodResult.getSliceByIndex(0);
@@ -266,8 +336,7 @@ public class MultiSigWalletV2 implements Contract {
       } else {
         throw new Error("Error retrieving order data. Exit code: " + runMethodResult.getExitCode());
       }
-
-    } else {
+    } else if (nonNull(tonlib)) {
 
       RunResult runResult = tonlib.runMethod(orderAddress, "get_order_data");
       TvmSlice multiSigAddressSlice = ((TvmStackEntrySlice) runResult.getStack().get(0)).getSlice();
@@ -290,10 +359,11 @@ public class MultiSigWalletV2 implements Contract {
       expirationDate = ((TvmStackEntryNumber) runResult.getStack().get(7)).getNumber();
       TvmCell orderT = ((TvmStackEntryCell) runResult.getStack().get(8)).getCell();
       order = Cell.fromBocBase64(orderT.getBytes());
+    } else {
+      throw new Error("Provider not set");
     }
     return MultiSigV2OrderData.builder()
-        .multiSigAddress(
-            MsgAddressInt.deserialize(CellSlice.beginParse(multiSigAddressCell)).toAddress())
+        .multiSigAddress(multiSigAddressCell)
         .orderSeqno(orderSeqNo)
         .threshold(threshold.longValue())
         .sentForExecution(sentForExecution.longValue() == -1)
@@ -306,7 +376,19 @@ public class MultiSigWalletV2 implements Contract {
   }
 
   public BigInteger getOrderEstimate(Cell order, long expirationDate) {
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      List<List<Object>> stack = new ArrayList<>();
+      stack.add(Arrays.asList("cell", order.toBase64()));
+      stack.add(Arrays.asList("num", expirationDate));
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(getAddress().toBounceable(), "get_order_estimate", stack);
+      if (runMethodResult.isSuccess()) {
+        List<Object> elements = new ArrayList<>(runMethodResult.getResult().getStack().get(0));
+        return BigInteger.valueOf(Long.decode(elements.get(1).toString()));
+      } else {
+        throw new Error("Error getting order estimate " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult =
           adnlLiteClient.runMethod(
               getAddress(),
@@ -314,14 +396,16 @@ public class MultiSigWalletV2 implements Contract {
               VmStackValueCell.builder().cell(Cell.fromBoc(order.toHex())).build(),
               VmStackValueInt.builder().value(BigInteger.valueOf(expirationDate)).build());
       return runMethodResult.getIntByIndex(0);
+    } else if (nonNull(tonlib)) {
+      Deque<String> stackData = new ArrayDeque<>();
+      stackData.offer("[cell, " + order.toHex() + "]");
+      stackData.offer("[num, " + expirationDate + "]");
+      RunResult runResult = tonlib.runMethod(getAddress(), "get_order_estimate", stackData);
+      TvmStackEntryNumber estimatedGas = (TvmStackEntryNumber) runResult.getStack().get(0);
+      return estimatedGas.getNumber();
+    } else {
+      throw new Error("provider not set");
     }
-
-    Deque<String> stackData = new ArrayDeque<>();
-    stackData.offer("[cell, " + order.toHex() + "]");
-    stackData.offer("[num, " + expirationDate + "]");
-    RunResult runResult = tonlib.runMethod(getAddress(), "get_order_estimate", stackData);
-    TvmStackEntryNumber estimatedGas = (TvmStackEntryNumber) runResult.getStack().get(0);
-    return estimatedGas.getNumber();
   }
 
   public MultiSigV2Data getMultiSigData() {
@@ -330,7 +414,37 @@ public class MultiSigWalletV2 implements Contract {
     TonHashMap signers;
     TonHashMap proposers;
 
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(
+              getAddress().toBounceable(), "get_multisig_data", new ArrayList<>());
+      if (runMethodResult.isSuccess()) {
+        List<Object> elements = new ArrayList<>(runMethodResult.getResult().getStack().get(0));
+        nextOrderSeqno = BigInteger.valueOf(Long.decode(elements.get(1).toString()));
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(1));
+        threshold = BigInteger.valueOf(Long.decode(elements.get(1).toString()));
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(2));
+        LinkedTreeMap<String, String> l = (LinkedTreeMap<String, String>) elements.get(1);
+        Cell c = Cell.fromBocBase64(l.get("bytes"));
+        signers =
+            CellSlice.beginParse(c)
+                .loadDict(
+                    8,
+                    k -> k.readUint(8),
+                    v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+        elements = new ArrayList<>(runMethodResult.getResult().getStack().get(3));
+        l = (LinkedTreeMap<String, String>) elements.get(1);
+        c = Cell.fromBocBase64(l.get("bytes"));
+        proposers =
+            CellSlice.beginParse(c)
+                .loadDict(
+                    8,
+                    k -> k.readUint(8),
+                    v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+      } else {
+        throw new Error("Cannot getMultiSigData " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
       RunMethodResult runMethodResult = adnlLiteClient.runMethod(getAddress(), "get_multisig_data");
       nextOrderSeqno = runMethodResult.getIntByIndex(0);
       threshold = runMethodResult.getIntByIndex(1);
@@ -348,7 +462,7 @@ public class MultiSigWalletV2 implements Contract {
                   8,
                   k -> k.readUint(8),
                   v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
-    } else {
+    } else if (nonNull(tonlib)) {
       RunResult runResult = tonlib.runMethod(getAddress(), "get_multisig_data");
       nextOrderSeqno = ((TvmStackEntryNumber) runResult.getStack().get(0)).getNumber();
 
@@ -371,6 +485,8 @@ public class MultiSigWalletV2 implements Contract {
                   8,
                   k -> k.readUint(8),
                   v -> MsgAddressIntStd.deserialize(CellSlice.beginParse(v)));
+    } else {
+      throw new Error("Provider not set");
     }
     return MultiSigV2Data.builder()
         .nextOrderSeqno(nextOrderSeqno)

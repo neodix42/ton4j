@@ -1,6 +1,7 @@
 package org.ton.ton4j.smartcontract.integrationtests;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.ton.ton4j.smartcontract.integrationtests.CommonTest.TESTNET_API_KEY;
 
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
@@ -11,8 +12,11 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
+import org.ton.ton4j.toncenter.Network;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.smartcontract.GenerateWallet;
 import org.ton.ton4j.smartcontract.highload.HighloadWalletV3;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinter;
@@ -22,7 +26,6 @@ import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R1;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -70,8 +73,8 @@ public class TestJetton {
             .comment("deploy minter")
             .build();
 
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("deploying minter");
     minter.waitForDeployment(60);
 
@@ -97,8 +100,8 @@ public class TestJetton {
                     MsgUtils.createTextMessageBody("minting")))
             .build();
 
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(45, "minting...");
 
@@ -116,8 +119,8 @@ public class TestJetton {
                 minter.createEditContentBody(
                     "http://localhost/nft-marketplace/my_collection_1.json", 0))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "edit minter content, OP 4");
 
@@ -134,8 +137,8 @@ public class TestJetton {
             .amount(Utils.toNano(0.056))
             .body(minter.createChangeAdminBody(0, Address.of(NEW_ADMIN2)))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "change minter admin, OP 3");
 
@@ -168,8 +171,8 @@ public class TestJetton {
                     MsgUtils.createTextMessageBody("gift") // forward payload
                     ))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "transferring 444 jettons...");
     log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
@@ -188,8 +191,8 @@ public class TestJetton {
             .amount(Utils.toNano(0.05))
             .body(JettonWallet.createBurnBody(0, Utils.toNano(111), adminWallet.getAddress()))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "burning 111 jettons in admin wallet");
     log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
@@ -238,8 +241,8 @@ public class TestJetton {
                     BigInteger.ONE, // fwd amount
                     MsgUtils.createTextMessageBody("minting"))) // forward payload
             .build();
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("deploying minter and minting...");
     minter.waitForDeployment(60);
     Utils.sleep(15);
@@ -273,8 +276,8 @@ public class TestJetton {
                     BigInteger.ONE, // forward amount
                     MsgUtils.createTextMessageBody("gift"))) // forward payload
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    Assertions.assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "transferring 2000 jettons from adminWallet to highloadWallet2...");
 
@@ -292,8 +295,8 @@ public class TestJetton {
                     createDummyDestinations(50, highloadJettonWallet2),
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
             .build();
-    extMessageInfo = highloadWallet2.send(highloadV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = highloadWallet2.send(highloadV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "transferring to 50 recipients 2 jettons...");
     log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
@@ -340,8 +343,8 @@ public class TestJetton {
             .comment("deploy minter")
             .build();
 
-    ExtMessageInfo extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("deploying minter");
     minter.waitForDeployment(60);
 
@@ -367,8 +370,8 @@ public class TestJetton {
                     MsgUtils.createTextMessageBody("minting")))
             .build();
 
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(45, "minting...");
 
@@ -386,8 +389,8 @@ public class TestJetton {
                 minter.createEditContentBody(
                     "http://localhost/nft-marketplace/my_collection_1.json", 0))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "edit minter content, OP 4");
 
@@ -404,8 +407,8 @@ public class TestJetton {
             .amount(Utils.toNano(0.056))
             .body(minter.createChangeAdminBody(0, Address.of(NEW_ADMIN2)))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "change minter admin, OP 3");
 
@@ -438,8 +441,8 @@ public class TestJetton {
                     MsgUtils.createTextMessageBody("gift") // forward payload
                     ))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(60, "transferring 444 jettons...");
     log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
@@ -458,12 +461,186 @@ public class TestJetton {
             .amount(Utils.toNano(0.05))
             .body(JettonWallet.createBurnBody(0, Utils.toNano(111), adminWallet.getAddress()))
             .build();
-    extMessageInfo = adminWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(30, "burning 111 jettons in admin wallet");
     log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
 
+    getMinterInfo(minter);
+  }
+
+  @Test
+  public void testJettonMinterTonCenterClient() throws Exception {
+
+    TonCenter tonCenter =
+        TonCenter.builder()
+            .apiKey(TESTNET_API_KEY)
+            .network(Network.TESTNET)
+            .uniqueRequests()
+            .build();
+
+    adminWallet = GenerateWallet.randomV3R1(tonCenter, 2);
+    Utils.sleep(2);
+    wallet2 = GenerateWallet.randomV3R1(tonCenter, 1);
+
+    log.info("admin wallet address {}", adminWallet.getAddress());
+    log.info("second wallet address {}", wallet2.getAddress());
+
+    JettonMinter minter =
+        JettonMinter.builder()
+            .tonCenterClient(tonCenter)
+            .adminAddress(adminWallet.getAddress())
+            .content(
+                NftUtils.createOffChainUriCell(
+                    "https://raw.githubusercontent.com/neodix42/ton4j/main/1-media/neo-jetton.json"))
+            .jettonWalletCodeHex(WalletCodes.jettonWallet.getValue())
+            .build();
+
+    log.info("jetton minter address {}", minter.getAddress());
+
+    // DEPLOY MINTER
+
+    WalletV3Config walletV3Config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(adminWallet.getSeqno())
+            .destination(minter.getAddress())
+            .amount(Utils.toNano(0.2))
+            .stateInit(minter.getStateInit())
+            .comment("deploy minter")
+            .build();
+
+    Utils.sleep(2);
+
+    SendResponse sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
+    log.info("deploying minter");
+    minter.waitForDeployment(60);
+    Utils.sleep(2);
+    getMinterInfo(minter); // nothing minted, so zero returned
+
+    // MINT JETTONS
+    Utils.sleep(2);
+    walletV3Config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(adminWallet.getSeqno())
+            .destination(minter.getAddress())
+            .amount(Utils.toNano(0.07))
+            .body(
+                JettonMinter.createMintBody(
+                    0,
+                    adminWallet.getAddress(),
+                    Utils.toNano(0.07),
+                    Utils.toNano(100500),
+                    null,
+                    null,
+                    BigInteger.ONE,
+                    MsgUtils.createTextMessageBody("minting")))
+            .build();
+
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
+
+    Utils.sleep(45, "minting...");
+
+    getMinterInfo(minter);
+
+    // EDIT MINTER'S JETTON CONTENT
+    Utils.sleep(2);
+    walletV3Config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(adminWallet.getSeqno())
+            .destination(minter.getAddress())
+            .amount(Utils.toNano(0.055))
+            .body(
+                minter.createEditContentBody(
+                    "http://localhost/nft-marketplace/my_collection_1.json", 0))
+            .build();
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
+
+    Utils.sleep(30, "edit minter content, OP 4");
+
+    getMinterInfo(minter);
+
+    // CHANGE MINTER ADMIN
+    log.info("newAdmin {}", Address.of(NEW_ADMIN2));
+
+    walletV3Config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(adminWallet.getSeqno())
+            .destination(minter.getAddress())
+            .amount(Utils.toNano(0.056))
+            .body(minter.createChangeAdminBody(0, Address.of(NEW_ADMIN2)))
+            .build();
+    Utils.sleep(2);
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
+
+    Utils.sleep(30, "change minter admin, OP 3");
+
+    getMinterInfo(minter);
+
+    Utils.sleep(30);
+
+    log.info("adminWallet balance: {}", Utils.formatNanoValue(adminWallet.getBalance()));
+    log.info("    wallet2 balance: {}", Utils.formatNanoValue(wallet2.getBalance()));
+    Utils.sleep(2);
+    JettonWallet adminJettonWallet = minter.getJettonWallet(adminWallet.getAddress());
+    log.info("adminJettonWallet {}", adminJettonWallet.getAddress());
+
+    // transfer from admin to WALLET2_ADDRESS by sending transfer request to admin's jetton wallet
+
+    Utils.sleep(2);
+    walletV3Config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(adminWallet.getSeqno())
+            .destination(adminJettonWallet.getAddress())
+            .amount(Utils.toNano(0.057))
+            .body(
+                JettonWallet.createTransferBody(
+                    0,
+                    Utils.toNano(444),
+                    wallet2.getAddress(), // recipient
+                    null, // response address TODO does not work if filled
+                    null, // custom payload
+                    BigInteger.ONE, // forward amount
+                    MsgUtils.createTextMessageBody("gift") // forward payload
+                    ))
+            .build();
+    Utils.sleep(2);
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
+
+    Utils.sleep(30, "transferring 444 jettons...");
+    log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
+
+    // wallet 2, after received jettons, can use JettonWallet
+    JettonWallet jettonWallet2 = minter.getJettonWallet(wallet2.getAddress());
+    log.info("wallet2 balance {}", Utils.formatNanoValue(jettonWallet2.getBalance()));
+
+    // BURN JETTONS in ADMIN WALLET
+    Utils.sleep(2);
+    walletV3Config =
+        WalletV3Config.builder()
+            .walletId(42)
+            .seqno(adminWallet.getSeqno())
+            .destination(adminJettonWallet.getAddress())
+            .amount(Utils.toNano(0.05))
+            .body(JettonWallet.createBurnBody(0, Utils.toNano(111), adminWallet.getAddress()))
+            .build();
+    Utils.sleep(2);
+    sendResponse = adminWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
+
+    Utils.sleep(30, "burning 111 jettons in admin wallet");
+    log.info("admin balance {}", Utils.formatNanoValue(adminJettonWallet.getBalance()));
+    Utils.sleep(2);
     getMinterInfo(minter);
   }
 
@@ -474,8 +651,7 @@ public class TestJetton {
     log.info("minter jetton uri {}", data.getJettonContentUri());
   }
 
-  List<Destination> createDummyDestinations(int count, JettonWallet jettonWallet)
-      throws NoSuchAlgorithmException {
+  List<Destination> createDummyDestinations(int count, JettonWallet jettonWallet) {
     List<Destination> result = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       String dstDummyAddress = Utils.generateRandomAddress(0);

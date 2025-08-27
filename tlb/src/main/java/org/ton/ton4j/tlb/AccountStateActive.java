@@ -6,9 +6,11 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 
+import java.io.Serializable;
+
 @Builder
 @Data
-public class AccountStateActive implements AccountState {
+public class AccountStateActive implements AccountState, Serializable {
   int magic;
   StateInit stateInit;
 

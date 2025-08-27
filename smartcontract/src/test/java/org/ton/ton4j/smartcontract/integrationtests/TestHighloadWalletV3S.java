@@ -9,11 +9,12 @@ import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
-import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.faucet.TestnetJettonFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWalletV3S;
@@ -25,8 +26,9 @@ import org.ton.ton4j.smartcontract.types.HighloadV3Config;
 import org.ton.ton4j.smartcontract.types.HighloadV3InternalMessageBody;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.Network;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.VerbosityLevel;
 import org.ton.ton4j.utils.Secp256k1KeyPair;
 import org.ton.ton4j.utils.Utils;
@@ -66,9 +68,9 @@ public class TestHighloadWalletV3S extends CommonTest {
             // .timeOut(60) //default timeout = 5 minutes
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    log.info("sendResponse {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
     log.info("deployed");
@@ -98,9 +100,9 @@ public class TestHighloadWalletV3S extends CommonTest {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    log.info("sendResponse {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 2 messages");
 
     String publicKey = contract.getPublicKey();
@@ -163,9 +165,9 @@ public class TestHighloadWalletV3S extends CommonTest {
     byte[] signedDeployBody =
         Utils.signDataSecp256k1(deployBody.hash(), keyPair.getPrivateKey(), pubKey).getSignature();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config, signedDeployBody);
-    log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config, signedDeployBody);
+    log.info("sendResponse {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
     log.info("deployed");
@@ -203,9 +205,9 @@ public class TestHighloadWalletV3S extends CommonTest {
                 transferBody.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey())
             .getSignature();
 
-    extMessageInfo = contract.send(config, signedTransferBody);
-    log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config, signedTransferBody);
+    log.info("sendResponse {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 2 messages");
 
     String publicKey = contract.getPublicKey();
@@ -258,8 +260,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -273,8 +275,8 @@ public class TestHighloadWalletV3S extends CommonTest {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
   }
 
@@ -310,8 +312,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -325,8 +327,8 @@ public class TestHighloadWalletV3S extends CommonTest {
                     BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent 1000 messages");
   }
 
@@ -379,9 +381,9 @@ public class TestHighloadWalletV3S extends CommonTest {
                     MsgUtils.createTextMessageBody("ton4j test")))
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.send(config);
-    log.info("extMessageInfo {}", extMessageInfo);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.send(config);
+    log.info("extMessageInfo {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent single message");
 
     publicKey = contract.getPublicKey();
@@ -425,8 +427,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             // .timeOut(60) //default timeout = 5 minutes
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(45);
 
@@ -443,8 +445,8 @@ public class TestHighloadWalletV3S extends CommonTest {
                     MsgUtils.createTextMessageBody("ton4j test")))
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent single message");
   }
 
@@ -484,8 +486,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -503,8 +505,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent {} messages", numberOfRecipients);
   }
 
@@ -539,8 +541,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -558,8 +560,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent {} messages", numberOfRecipients);
   }
 
@@ -604,8 +606,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -623,8 +625,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent {} messages", numberOfRecipients);
   }
 
@@ -655,8 +657,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = contract.deploy(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -673,8 +675,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
             .build();
 
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
     log.info("sent {} messages", 1000);
   }
 
@@ -798,8 +800,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = myHighLoadWalletV3.deploy(config);
-    Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myHighLoadWalletV3.deploy(config);
+    Assertions.assertThat(sendResponse.getCode()).isZero();
 
     myHighLoadWalletV3.waitForDeployment(60);
 
@@ -839,8 +841,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
 
-    extMessageInfo = myHighLoadWalletV3.send(config);
-    Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = myHighLoadWalletV3.send(config);
+    Assertions.assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(60, "sending jettons...");
 
@@ -906,10 +908,6 @@ public class TestHighloadWalletV3S extends CommonTest {
         Utils.formatNanoValue(balance));
 
     // top up new wallet with NEOJ using test-jetton-faucet-wallet
-
-    balance =
-        TestnetJettonFaucet.topUpContractWithNeoj(
-            tonlib, Address.of(nonBounceableAddress), BigInteger.valueOf(100));
     balance =
         TestnetJettonFaucet.topUpContractWithNeoj(
             adnlLiteClient, Address.of(nonBounceableAddress), BigInteger.valueOf(100));
@@ -924,8 +922,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
             .build();
 
-    ExtMessageInfo extMessageInfo = myHighLoadWalletV3.deploy(config);
-    Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myHighLoadWalletV3.deploy(config);
+    Assertions.assertThat(sendResponse.getCode()).isZero();
 
     myHighLoadWalletV3.waitForDeployment(60);
 
@@ -965,8 +963,8 @@ public class TestHighloadWalletV3S extends CommonTest {
             .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
             .build();
 
-    extMessageInfo = myHighLoadWalletV3.send(config);
-    Assertions.assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = myHighLoadWalletV3.send(config);
+    Assertions.assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(60, "sending jettons...");
 
@@ -977,5 +975,201 @@ public class TestHighloadWalletV3S extends CommonTest {
     JettonWallet randomJettonWallet =
         jettonMinterWallet.getJettonWallet(Address.of(singleRandomAddress));
     log.info("balanceOfDestinationWallet in jettons: {}", randomJettonWallet.getBalance());
+  }
+
+  @Test
+  public void testBulkJettonTransferTonCenterClient() throws Exception {
+    TonCenter tonCenter = TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().build();
+
+    Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
+
+    HighloadWalletV3S myHighLoadWalletV3 =
+        HighloadWalletV3S.builder()
+            .tonCenterClient(tonCenter)
+            .keyPair(keyPair)
+            .walletId(42)
+            .build();
+
+    String nonBounceableAddress = myHighLoadWalletV3.getAddress().toNonBounceable();
+    String bounceableAddress = myHighLoadWalletV3.getAddress().toBounceable();
+    String rawAddress = myHighLoadWalletV3.getAddress().toRaw();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(myHighLoadWalletV3.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(myHighLoadWalletV3.getKeyPair().getPrivateKey()));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(
+            tonCenter, Address.of(nonBounceableAddress), Utils.toNano(1), true);
+    log.info(
+        "new wallet {} toncoins balance: {}",
+        myHighLoadWalletV3.getName(),
+        Utils.formatNanoValue(balance));
+
+    // top up new wallet with NEOJ using test-jetton-faucet-wallet
+    balance =
+        TestnetJettonFaucet.topUpContractWithNeoj(
+            tonCenter, Address.of(nonBounceableAddress), BigInteger.valueOf(100), true);
+    log.info(
+        "new wallet {} jetton balance: {}",
+        myHighLoadWalletV3.getName(),
+        Utils.formatJettonValue(balance, 2, 2));
+
+    HighloadV3Config config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            .build();
+
+    SendResponse sendResponse = myHighLoadWalletV3.deploy(config);
+    Assertions.assertThat(sendResponse.getCode()).isZero();
+
+    myHighLoadWalletV3.waitForDeployment(60);
+
+    String singleRandomAddress = Utils.generateRandomAddress(0);
+
+    JettonMinter jettonMinterWallet =
+        JettonMinter.builder()
+            .tonCenterClient(tonCenter)
+            .customAddress(Address.of("kQAN6TAGauShFKDQvZCwNb_EeTUIjQDwRZ9t6GOn4FBzfg9Y"))
+            .build();
+
+    JettonWallet myJettonHighLoadWallet =
+        jettonMinterWallet.getJettonWallet(myHighLoadWalletV3.getAddress());
+
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(1).getQueryId())
+            .body(
+                myHighLoadWalletV3.createBulkTransfer(
+                    Collections.singletonList(
+                        Destination.builder()
+                            .address(myJettonHighLoadWallet.getAddress().toBounceable())
+                            .amount(Utils.toNano(0.07))
+                            .body(
+                                JettonWallet.createTransferBody(
+                                    0,
+                                    BigInteger.valueOf(100),
+                                    Address.of(singleRandomAddress), // recipient
+                                    myJettonHighLoadWallet.getAddress(), // response address
+                                    null, // custom payload
+                                    BigInteger.ONE, // forward amount
+                                    MsgUtils.createTextMessageBody("test sdk") // forward payload
+                                    ))
+                            .build()),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
+            .build();
+
+    sendResponse = myHighLoadWalletV3.send(config);
+    Assertions.assertThat(sendResponse.getCode()).isZero();
+
+    Utils.sleep(60, "sending jettons...");
+
+    BigInteger balanceOfDestinationWallet =
+        tonCenter.getBalance(Address.of(singleRandomAddress).toBounceable());
+    log.info("balanceOfDestinationWallet in nanocoins: {}", balanceOfDestinationWallet);
+
+    JettonWallet randomJettonWallet =
+        jettonMinterWallet.getJettonWallet(Address.of(singleRandomAddress));
+    log.info("balanceOfDestinationWallet in jettons: {}", randomJettonWallet.getBalance());
+  }
+
+  @Test
+  public void testBulkTransferSimplified_TwoDestinationsTonCenter() throws Exception {
+    TonCenter tonCenter =
+        TonCenter.builder().apiKey(TESTNET_API_KEY).network(Network.TESTNET).build();
+    Secp256k1KeyPair keyPair = Utils.generateSecp256k1SignatureKeyPair();
+
+    HighloadWalletV3S contract =
+        HighloadWalletV3S.builder()
+            .tonCenterClient(tonCenter)
+            .keyPair(keyPair)
+            .walletId(42)
+            .build();
+
+    String nonBounceableAddress = contract.getAddress().toNonBounceable();
+    String bounceableAddress = contract.getAddress().toBounceable();
+    String rawAddress = contract.getAddress().toRaw();
+
+    log.info("non-bounceable address {}", nonBounceableAddress);
+    log.info("    bounceable address {}", bounceableAddress);
+    log.info("           raw address {}", rawAddress);
+    log.info("pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(contract.getKeyPair().getPrivateKey()));
+
+    // top up new wallet using test-faucet-wallet
+    BigInteger balance =
+        TestnetFaucet.topUpContract(tonCenter, Address.of(nonBounceableAddress), Utils.toNano(0.5));
+    Utils.sleep(30, "topping up...");
+    log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
+
+    HighloadV3Config config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(HighloadQueryId.fromSeqno(0).getQueryId())
+            // .createdAt(createdAt) // default = now - 60 seconds
+            // .timeOut(60) //default timeout = 5 minutes
+            .build();
+
+    SendResponse sendResponse = contract.deploy(config);
+    log.info("extMessageInfo {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
+
+    contract.waitForDeployment(45);
+    log.info("deployed");
+
+    int queryId = HighloadQueryId.fromSeqno(1).getQueryId();
+    config =
+        HighloadV3Config.builder()
+            .walletId(42)
+            .queryId(queryId)
+            .body(
+                contract.createBulkTransfer(
+                    Arrays.asList(
+                        Destination.builder()
+                            .address("0QAs9VlT6S776tq3unJcP5Ogsj-ELLunLXuOb1EKcOQi4-QO")
+                            .amount(Utils.toNano(0.12))
+                            .body(
+                                CellBuilder.beginCell()
+                                    .storeUint(0, 32)
+                                    .storeString("test-comment-1")
+                                    .endCell())
+                            .build(),
+                        Destination.builder()
+                            .address("EQAyjRKDnEpTBNfRHqYdnzGEQjdY4KG3gxgqiG3DpDY46u8G")
+                            .amount(Utils.toNano(0.11))
+                            .comment("test-comment-2")
+                            .build()),
+                    BigInteger.valueOf(HighloadQueryId.fromSeqno(1).getQueryId())))
+            .build();
+
+    sendResponse = contract.send(config);
+    log.info("extMessageInfo {}", sendResponse);
+    assertThat(sendResponse.getCode()).isZero();
+    log.info("sent 2 messages");
+    Utils.sleep(2);
+    String publicKey = contract.getPublicKey();
+    log.info("public key {}", publicKey);
+
+    Utils.sleep(2);
+    long subWalletId = contract.getSubWalletId();
+    log.info("subWalletId key {}", subWalletId);
+    Utils.sleep(2);
+    long lastCleanTime = contract.getLastCleanTime();
+    log.info("lastCleanTime {}", lastCleanTime);
+    Utils.sleep(2);
+    long timeout = contract.getTimeout();
+    log.info("timeout {}", timeout);
+    Utils.sleep(2);
+    boolean isProcessed = contract.isProcessed(queryId, true);
+    log.info("isProcessed with clean {}", isProcessed);
+    Utils.sleep(2);
+    isProcessed = contract.isProcessed(queryId, false);
+    log.info("isProcessed without clean {}", isProcessed);
   }
 }

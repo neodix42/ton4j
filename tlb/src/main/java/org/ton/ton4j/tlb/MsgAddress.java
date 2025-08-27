@@ -3,6 +3,8 @@ package org.ton.ton4j.tlb;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
 
+import java.io.Serializable;
+
 /**
  *
  *
@@ -23,7 +25,7 @@ import org.ton.ton4j.cell.CellSlice;
  * _ _:MsgAddressExt = MsgAddress;
  * }</pre>
  */
-public interface MsgAddress {
+public interface MsgAddress extends Serializable {
   Cell toCell();
 
   static MsgAddress deserialize(CellSlice cs) {

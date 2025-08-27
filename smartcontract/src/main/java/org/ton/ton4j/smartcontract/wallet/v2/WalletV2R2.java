@@ -8,17 +8,18 @@ import java.math.BigInteger;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.WalletCodes;
 import org.ton.ton4j.smartcontract.types.WalletV2R2Config;
 import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.Contract;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawTransaction;
 import org.ton.ton4j.tonlib.types.RunResult;
 import org.ton.ton4j.tonlib.types.TvmStackEntryNumber;
@@ -53,6 +54,7 @@ public class WalletV2R2 implements Contract {
   private Tonlib tonlib;
   private long wc;
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -62,6 +64,16 @@ public class WalletV2R2 implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -90,7 +102,14 @@ public class WalletV2R2 implements Contract {
   }
 
   public String getPublicKey() {
-
+    if (nonNull(tonCenterClient)) {
+      try {
+        return Utils.bytesToHex(
+            Utils.to32ByteArray(tonCenterClient.getPublicKey(getAddress().toBounceable())));
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
     }
@@ -199,11 +218,8 @@ public class WalletV2R2 implements Contract {
     return message.endCell();
   }
 
-  public ExtMessageInfo send(WalletV2R2Config config) {
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(config));
-    }
-    return tonlib.sendRawMessage(prepareExternalMsg(config).toCell().toBase64());
+  public SendResponse send(WalletV2R2Config config) {
+    return send(prepareExternalMsg(config));
   }
 
   /**
@@ -211,7 +227,10 @@ public class WalletV2R2 implements Contract {
    * account's transactions
    */
   public RawTransaction sendWithConfirmation(WalletV2R2Config config) throws Exception {
-    if (nonNull(adnlLiteClient)) {
+    if (nonNull(tonCenterClient)) {
+      tonCenterClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
+      return null;
+    } else if (nonNull(adnlLiteClient)) {
       adnlLiteClient.sendRawMessageWithConfirmation(prepareExternalMsg(config), getAddress());
       return null;
     } else {
@@ -225,18 +244,12 @@ public class WalletV2R2 implements Contract {
     return MsgUtils.createExternalMessageWithSignedBody(keyPair, getAddress(), null, body);
   }
 
-  public ExtMessageInfo deploy() {
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareDeployMsg());
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg().toCell().toBase64());
+  public SendResponse deploy() {
+    return send(prepareDeployMsg());
   }
 
-  public ExtMessageInfo deploy(byte[] signedBody) {
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareDeployMsg(signedBody));
-    }
-    return tonlib.sendRawMessage(prepareDeployMsg(signedBody).toCell().toBase64());
+  public SendResponse deploy(byte[] signedBody) {
+    return send(prepareDeployMsg(signedBody));
   }
 
   public Message prepareDeployMsg(byte[] signedBodyHash) {
@@ -248,11 +261,8 @@ public class WalletV2R2 implements Contract {
         .build();
   }
 
-  public ExtMessageInfo send(WalletV2R2Config config, byte[] signedBodyHash) {
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(config, signedBodyHash));
-    }
-    return tonlib.sendRawMessage(prepareExternalMsg(config, signedBodyHash).toCell().toBase64());
+  public SendResponse send(WalletV2R2Config config, byte[] signedBodyHash) {
+    return send(prepareExternalMsg(config, signedBodyHash));
   }
 
   public Message prepareExternalMsg(WalletV2R2Config config, byte[] signedBodyHash) {

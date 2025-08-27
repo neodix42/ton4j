@@ -14,11 +14,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
+import org.ton.ton4j.smartcontract.faucet.MyLocalTonFaucet;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV1R3Config;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R3;
 import org.ton.ton4j.tlb.Message;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
+import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.QueryFees;
 import org.ton.ton4j.utils.Utils;
 
@@ -62,15 +64,15 @@ public class TestWalletFeesV1 extends CommonTest {
         TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddrWalletB), Utils.toNano(1));
     log.info("balance walletB: {} ", Utils.formatNanoValue(balance2));
 
-    ExtMessageInfo extMessageInfo = walletA.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = walletA.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
-    walletA.waitForDeployment(30);
+    walletA.waitForDeployment();
 
-    extMessageInfo = walletB.deploy();
-    AssertionsForClassTypes.assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = walletB.deploy();
+    AssertionsForClassTypes.assertThat(sendResponse.getCode()).isZero();
 
-    walletB.waitForDeployment(30);
+    walletB.waitForDeployment();
 
     // transfer 0.1 from walletA to walletB where B receives exact amount i.e. 0.1
     BigInteger balanceAbefore = walletA.getBalance();
@@ -106,6 +108,117 @@ public class TestWalletFeesV1 extends CommonTest {
     BigInteger balanceAafter = walletA.getBalance();
     BigInteger balanceBafter = walletB.getBalance();
     log.info("walletA balance after: {}", Utils.formatNanoValue(balanceAafter));
+    log.info("walletB balance after: {}", Utils.formatNanoValue(balanceBafter));
+
+    log.info(
+        "diff walletA (debited): -{}",
+        Utils.formatNanoValue(balanceAbefore.subtract(balanceAafter)));
+    log.info(
+        "diff walletB (credited): +{}, missing value {}",
+        Utils.formatNanoValue(balanceBafter.subtract(balanceBbefore)),
+        Utils.formatNanoValue(Utils.toNano(0.1).subtract(balanceBafter.subtract(balanceBbefore))));
+
+    assertThat(Utils.toNano(0.1).subtract(balanceBafter.subtract(balanceBbefore)))
+        .isEqualTo(BigInteger.ZERO);
+  }
+
+  @Test
+  public void testWalletFeesV1MyLocalTonDocker() throws InterruptedException {
+
+    tonlib =
+        Tonlib.builder()
+            .pathToGlobalConfig("http://localhost:8000/localhost.global.config.json")
+            .pathToTonlibSharedLib(Utils.getTonlibGithubUrl())
+            .build();
+
+    TweetNaclFast.Signature.KeyPair keyPairA = Utils.generateSignatureKeyPair();
+
+    WalletV1R3 walletA = WalletV1R3.builder().tonlib(tonlib).keyPair(keyPairA).build();
+
+    String nonBounceableAddrWalletA = walletA.getAddress().toNonBounceable();
+    String rawAddrWalletA = walletA.getAddress().toRaw();
+
+    log.info("rawAddressA: {}", rawAddrWalletA);
+    log.info("pub-key {}", Utils.bytesToHex(walletA.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(walletA.getKeyPair().getSecretKey()));
+
+    TweetNaclFast.Signature.KeyPair keyPairB = Utils.generateSignatureKeyPair();
+
+    WalletV1R3 walletB = WalletV1R3.builder().tonlib(tonlib).keyPair(keyPairB).build();
+
+    String nonBounceableAddrWalletB = walletB.getAddress().toNonBounceable();
+    String rawAddrWalletB = walletB.getAddress().toRaw();
+
+    log.info("rawAddressB: {}", rawAddrWalletB);
+
+    log.info("pub-key {}", Utils.bytesToHex(walletB.getKeyPair().getPublicKey()));
+    log.info("prv-key {}", Utils.bytesToHex(walletB.getKeyPair().getSecretKey()));
+
+    // top up new walletA using test-faucet-wallet
+    BigInteger balance1 =
+        MyLocalTonFaucet.topUpContract(
+            tonlib, Address.of(nonBounceableAddrWalletA), Utils.toNano(1));
+    log.info("balance walletA: {}", Utils.formatNanoValue(balance1));
+
+    // top up new walletB using test-faucet-wallet
+    BigInteger balance2 =
+        MyLocalTonFaucet.topUpContract(
+            tonlib, Address.of(nonBounceableAddrWalletB), Utils.toNano(1));
+    log.info("balance walletB: {}", Utils.formatNanoValue(balance2));
+
+    SendResponse sendResponse = walletA.deploy();
+    assertThat(sendResponse.getCode()).isZero();
+
+    walletA.waitForDeployment();
+
+    sendResponse = walletB.deploy();
+    assertThat(sendResponse.getCode()).isZero();
+
+    walletB.waitForDeployment();
+
+    // transfer 0.1 from walletA to walletB where B receives exact amount i.e. 0.1
+    BigInteger balanceAbefore = walletA.getBalance();
+    BigInteger balanceBbefore = walletB.getBalance();
+    log.info(
+        "walletA balance before: {}, deployment used {}",
+        Utils.formatNanoValue(balanceAbefore),
+        Utils.formatNanoValue(Utils.toNano(1).subtract(balanceAbefore)));
+    log.info(
+        "walletB balance before: {}, deployment used {}",
+        Utils.formatNanoValue(balanceBbefore),
+        Utils.formatNanoValue(Utils.toNano(1).subtract(balanceBbefore)));
+
+    WalletV1R3Config configA =
+        WalletV1R3Config.builder()
+            .seqno(walletA.getSeqno())
+            .destination(walletB.getAddress())
+            .sendMode(SendMode.PAY_GAS_SEPARATELY_AND_IGNORE_ERRORS)
+            .build();
+
+    Message msg = walletA.prepareExternalMsg(configA);
+
+    QueryFees fees =
+        tonlib.estimateFees(walletB.getAddress().toBounceable(), msg.getBody().toBase64());
+
+    // adjust amount by including storage fee
+    configA.setAmount(
+        Utils.toNano(0.1)
+            .add(BigInteger.valueOf(fees.getSource_fees().getStorage_fee()))
+            .add(BigInteger.valueOf(fees.getSource_fees().getFwd_fee())));
+
+    log.info("estimate fees on walletB with msg body from A: {}", fees);
+    log.info("sending {}", Utils.formatNanoValue(configA.getAmount()));
+
+    walletA.send(configA);
+
+    walletB.waitForBalanceChange();
+
+    BigInteger balanceAafter = walletA.getBalance();
+    BigInteger balanceBafter = walletB.getBalance();
+    log.info(
+        "walletA balance after sending: {}, send operation took {} excluding sending value 0.1",
+        Utils.formatNanoValue(balanceAafter),
+        Utils.formatNanoValue(balanceAbefore.subtract(balanceAafter).subtract(Utils.toNano(0.1))));
     log.info("walletB balance after: {}", Utils.formatNanoValue(balanceBafter));
 
     log.info(

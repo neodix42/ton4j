@@ -13,12 +13,12 @@ import org.junit.Test;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.highload.HighloadWallet;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.types.HighloadConfig;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Deprecated
@@ -56,8 +56,8 @@ public class TestHighloadWalletV2 extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(30);
 
@@ -117,8 +117,8 @@ public class TestHighloadWalletV2 extends CommonTest {
             .build();
 
     // transfer coins to multiple destination as specified in options
-    extMessageInfo = contract.send(config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(config);
+    assertThat(sendResponse.getCode()).isZero();
 
     log.info("sending to 10 destinations");
     contract.waitForBalanceChange(90);
@@ -160,8 +160,8 @@ public class TestHighloadWalletV2 extends CommonTest {
     Utils.sleep(30, "topping up...");
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
-    ExtMessageInfo extMessageInfo = contract.deploy();
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = contract.deploy();
+    assertThat(sendResponse.getCode()).isZero();
 
     contract.waitForDeployment(60);
 
@@ -174,8 +174,8 @@ public class TestHighloadWalletV2 extends CommonTest {
             .destinations(destinations)
             .build();
 
-    extMessageInfo = contract.send(highloadConfig);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    sendResponse = contract.send(highloadConfig);
+    assertThat(sendResponse.getCode()).isZero();
   }
 
   private List<Destination> generateTargetsWithSameAmountAndSendMode(int count) {

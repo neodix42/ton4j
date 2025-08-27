@@ -5,23 +5,24 @@ import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 import lombok.Builder;
 import lombok.Getter;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-import org.ton.java.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.*;
 import org.ton.ton4j.smartcontract.types.Destination;
 import org.ton.ton4j.smartcontract.wallet.Contract;
+import org.ton.ton4j.tl.liteserver.responses.RunMethodResult;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.toncenter.TonCenter;
+import org.ton.ton4j.toncenter.TonResponse;
+import org.ton.ton4j.toncenter.model.RunGetMethodResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.ExtraCurrency;
@@ -72,6 +73,7 @@ public class HighloadWalletV3S implements Contract {
   private long wc;
 
   private AdnlLiteClient adnlLiteClient;
+  private TonCenter tonCenterClient;
 
   @Override
   public AdnlLiteClient getAdnlLiteClient() {
@@ -81,6 +83,16 @@ public class HighloadWalletV3S implements Contract {
   @Override
   public void setAdnlLiteClient(AdnlLiteClient pAdnlLiteClient) {
     adnlLiteClient = pAdnlLiteClient;
+  }
+
+  @Override
+  public org.ton.ton4j.toncenter.TonCenter getTonCenterClient() {
+    return tonCenterClient;
+  }
+
+  @Override
+  public void setTonCenterClient(org.ton.ton4j.toncenter.TonCenter pTonCenterClient) {
+    tonCenterClient = pTonCenterClient;
   }
 
   @Override
@@ -104,7 +116,13 @@ public class HighloadWalletV3S implements Contract {
   }
 
   public String getPublicKey() {
-
+    if (nonNull(tonCenterClient)) {
+      try {
+        return tonCenterClient.getPublicKey(getAddress().toBounceable()).toString(16);
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       return Utils.bytesToHex(Utils.to32ByteArray(adnlLiteClient.getPublicKey(getAddress())));
     }
@@ -113,6 +131,13 @@ public class HighloadWalletV3S implements Contract {
 
   /** Calls get_subwallet_id method of a contract. */
   public long getSubWalletId() {
+    if (nonNull(tonCenterClient)) {
+      try {
+        return tonCenterClient.getSubWalletId(getAddress().toBounceable());
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       return adnlLiteClient.getSubWalletId(getAddress());
     }
@@ -121,52 +146,99 @@ public class HighloadWalletV3S implements Contract {
 
   /** Calls get_last_clean_time method of a contract. */
   public long getLastCleanTime() {
-    if (nonNull(adnlLiteClient)) {
-      throw new NotImplementedException("ADNL LiteClient not supported yet");
-    }
     Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_last_clean_time");
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_last_clean_time returned an exit code " + result.getExit_code());
-    }
+    if (nonNull(tonCenterClient)) {
+      List<List<Object>> stack = new ArrayList<>();
 
-    TvmStackEntryNumber lastCleanTime = (TvmStackEntryNumber) result.getStack().get(0);
-    return lastCleanTime.getNumber().longValue();
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(myAddress.toBounceable(), "get_last_clean_time", stack);
+      if (runMethodResult.isSuccess()) {
+        return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString());
+      } else {
+        throw new Error("failed to execute get_last_clean_time, " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(myAddress, "get_last_clean_time");
+      return runMethodResult.getIntByIndex(0).longValue();
+    } else if (nonNull(tonlib)) {
+      RunResult result = tonlib.runMethod(myAddress, "get_last_clean_time");
+      if (result.getExit_code() != 0) {
+        throw new Error(
+            "method get_last_clean_time returned an exit code " + result.getExit_code());
+      }
+
+      TvmStackEntryNumber lastCleanTime = (TvmStackEntryNumber) result.getStack().get(0);
+      return lastCleanTime.getNumber().longValue();
+    } else {
+      throw new Error("provider not set");
+    }
   }
 
   /** Calls get_timeout method of a contract. */
   public long getTimeout() {
-    if (nonNull(adnlLiteClient)) {
-      throw new NotImplementedException("ADNL LiteClient not supported yet");
-    }
     Address myAddress = this.getAddress();
-    RunResult result = tonlib.runMethod(myAddress, "get_timeout");
-    if (result.getExit_code() != 0) {
-      throw new Error("method get_timeout returned an exit code " + result.getExit_code());
+    if (nonNull(tonCenterClient)) {
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(myAddress.toBounceable(), "get_timeout", new ArrayList<>());
+      if (runMethodResult.isSuccess()) {
+        return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString());
+      } else {
+        throw new Error("failed to execute get_timeout, " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult = adnlLiteClient.runMethod(myAddress, "get_timeout");
+      return runMethodResult.getIntByIndex(0).longValue();
+    } else if (nonNull(tonlib)) {
+      RunResult result = tonlib.runMethod(myAddress, "get_timeout");
+      if (result.getExit_code() != 0) {
+        throw new Error("method get_timeout returned an exit code " + result.getExit_code());
+      }
+      TvmStackEntryNumber timeout = (TvmStackEntryNumber) result.getStack().get(0);
+      return timeout.getNumber().longValue();
+    } else {
+      throw new Error("provider not set");
     }
-
-    TvmStackEntryNumber timeout = (TvmStackEntryNumber) result.getStack().get(0);
-    return timeout.getNumber().longValue();
   }
 
   /** Calls get_timeout method of a contract. */
   public boolean isProcessed(long queryId, boolean needClean) {
-    if (nonNull(adnlLiteClient)) {
-      throw new NotImplementedException("ADNL LiteClient not supported yet");
-    }
     Address myAddress = this.getAddress();
-    Deque<String> stack = new ArrayDeque<>();
 
-    int needCleanInt = needClean ? -1 : 0;
-    stack.offer("[num, " + queryId + "]");
-    stack.offer("[num, " + needCleanInt + "]");
-    RunResult result = tonlib.runMethod(myAddress, "processed?", stack);
-    if (result.getExit_code() != 0) {
-      throw new Error("method processed? returned an exit code " + result.getExit_code());
+    if (nonNull(tonCenterClient)) {
+      List<List<Object>> stack = new ArrayList<>();
+      stack.add(Arrays.asList("num", queryId));
+      stack.add(Arrays.asList("num", needClean ? -1 : 0));
+
+      TonResponse<RunGetMethodResponse> runMethodResult =
+          tonCenterClient.runGetMethod(myAddress.toBounceable(), "processed?", stack);
+      if (runMethodResult.isSuccess()) {
+        return Long.decode(runMethodResult.getResult().getStack().get(0).get(1).toString()) != 0;
+      } else {
+        throw new Error("failed to execute processed?, " + runMethodResult.getError());
+      }
+    } else if (nonNull(adnlLiteClient)) {
+      RunMethodResult runMethodResult =
+          adnlLiteClient.runMethod(
+              myAddress,
+              "processed?",
+              VmStackValueInt.builder().value(BigInteger.valueOf(queryId)).build(),
+              VmStackValueInt.builder().value(BigInteger.valueOf(needClean ? -1 : 0)).build());
+
+      return runMethodResult.getIntByIndex(0).intValue() != 0;
+    } else if (nonNull(tonlib)) {
+      Deque<String> stack = new ArrayDeque<>();
+      int needCleanInt = needClean ? -1 : 0;
+      stack.offer("[num, " + queryId + "]");
+      stack.offer("[num, " + needCleanInt + "]");
+      RunResult result = tonlib.runMethod(myAddress, "processed?", stack);
+      if (result.getExit_code() != 0) {
+        throw new Error("method processed? returned an exit code " + result.getExit_code());
+      }
+      TvmStackEntryNumber timeout = (TvmStackEntryNumber) result.getStack().get(0);
+      return timeout.getNumber().longValue() == -1;
+    } else {
+      throw new Error("provider not set");
     }
-
-    TvmStackEntryNumber timeout = (TvmStackEntryNumber) result.getStack().get(0);
-    return timeout.getNumber().longValue() == -1;
   }
 
   /**
@@ -242,35 +314,26 @@ public class HighloadWalletV3S implements Contract {
   /**
    * @param highloadConfig HighloadV3Config
    */
-  public ExtMessageInfo send(HighloadV3Config highloadConfig) {
+  public SendResponse send(HighloadV3Config highloadConfig) {
     Cell body = createTransferMessage(highloadConfig);
 
     SignatureWithRecovery signature =
         Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(body, signature.getV()[0], signature.getSignature()));
-    }
-    return tonlib.sendRawMessage(
-        prepareExternalMsg(body, signature.getV()[0], signature.getSignature())
-            .toCell()
-            .toBase64());
+    return send(prepareExternalMsg(body, signature.getV()[0], signature.getSignature()));
   }
 
   /**
    * @param highloadConfig HighloadV3Config
    */
-  public ExtMessageInfo send(HighloadV3Config highloadConfig, byte[] signedBody) {
+  public SendResponse send(HighloadV3Config highloadConfig, byte[] signedBody) {
     Cell body = createTransferMessage(highloadConfig);
     byte[] r = Utils.slice(signedBody, 0, 32);
     byte[] s = Utils.slice(signedBody, 32, 32);
 
     byte v = Utils.getRecoveryId(r, s, body.hash(), publicKey);
 
-    if (nonNull(adnlLiteClient)) {
-      return send(prepareExternalMsg(body, v, signedBody));
-    }
-    return tonlib.sendRawMessage(prepareExternalMsg(body, v, signedBody).toCell().toBase64());
+    return send(prepareExternalMsg(body, v, signedBody));
   }
 
   /**
@@ -284,6 +347,17 @@ public class HighloadWalletV3S implements Contract {
     SignatureWithRecovery signature =
         Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
+    if (nonNull(tonCenterClient)) {
+      try {
+        tonCenterClient.sendBoc(
+            prepareExternalMsg(body, signature.getV()[0], signature.getSignature())
+                .toCell()
+                .toBase64());
+        return null;
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    }
     if (nonNull(adnlLiteClient)) {
       adnlLiteClient.sendRawMessageWithConfirmation(
           prepareExternalMsg(body, signature.getV()[0], signature.getSignature()), getAddress());
@@ -332,7 +406,7 @@ public class HighloadWalletV3S implements Contract {
     return createTransferMessage(highloadConfig);
   }
 
-  public ExtMessageInfo deploy(HighloadV3Config highloadConfig) {
+  public SendResponse deploy(HighloadV3Config highloadConfig) {
     if (isNull(highloadConfig.getBody())) {
       // dummy deploy msg
       highloadConfig.setBody(createDeployMessageTemp(highloadConfig));
@@ -355,13 +429,10 @@ public class HighloadWalletV3S implements Contract {
                     .storeRef(innerMsg)
                     .endCell())
             .build();
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 
-  public ExtMessageInfo deploy(HighloadV3Config highloadConfig, byte[] signedBody) {
+  public SendResponse deploy(HighloadV3Config highloadConfig, byte[] signedBody) {
     if (isNull(highloadConfig.getBody())) {
       // dummy deploy msg
       highloadConfig.setBody(createDeployMessageTemp(highloadConfig));
@@ -386,17 +457,11 @@ public class HighloadWalletV3S implements Contract {
                     .endCell())
             .build();
 
-    if (nonNull(adnlLiteClient)) {
-      return send(externalMessage);
-    }
-    return tonlib.sendRawMessage(externalMessage.toCell().toBase64());
+    return send(externalMessage);
   }
 
   public Cell createSingleTransfer(
       Address destAddress, BigInteger amount, Boolean bounce, StateInit stateInit, Cell body) {
-
-    SignatureWithRecovery signature =
-        Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
     return MessageRelaxed.builder()
         .info(
@@ -411,13 +476,7 @@ public class HighloadWalletV3S implements Contract {
                 .value(CurrencyCollection.builder().coins(amount).build())
                 .build())
         .init(stateInit)
-        .body(
-            CellBuilder.beginCell()
-                .storeBit((signature.getV()[0] & 1) == 1)
-                .storeBytes(signature.getR())
-                .storeBytes(signature.getS())
-                .storeRef(body)
-                .endCell())
+        .body(body)
         .build()
         .toCell();
   }
@@ -429,9 +488,6 @@ public class HighloadWalletV3S implements Contract {
       Boolean bounce,
       StateInit stateInit,
       Cell body) {
-
-    SignatureWithRecovery signature =
-        Utils.signDataSecp256k1(body.hash(), keyPair.getPrivateKey(), keyPair.getPublicKey());
 
     return MessageRelaxed.builder()
         .info(
@@ -450,13 +506,7 @@ public class HighloadWalletV3S implements Contract {
                         .build())
                 .build())
         .init(stateInit)
-        .body(
-            CellBuilder.beginCell()
-                .storeBit((signature.getV()[0] & 1) == 1)
-                .storeBytes(signature.getR())
-                .storeBytes(signature.getS())
-                .storeRef(body)
-                .endCell())
+        .body(body)
         .build()
         .toCell();
   }

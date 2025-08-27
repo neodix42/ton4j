@@ -8,8 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.java.adnl.AdnlLiteClient;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.token.ft.JettonMinterStableCoin;
 import org.ton.ton4j.smartcontract.token.ft.JettonWalletStableCoin;
 import org.ton.ton4j.smartcontract.types.WalletV3Config;
@@ -18,7 +19,6 @@ import org.ton.ton4j.smartcontract.utils.MsgUtils;
 import org.ton.ton4j.smartcontract.wallet.v3.WalletV3R2;
 import org.ton.ton4j.smartcontract.wallet.v4.WalletV4R2;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -111,8 +111,8 @@ public class TestJettonStableCoinMainnet {
                     MsgUtils.createTextMessageBody("gift")) // forward payload
                 )
             .build();
-    ExtMessageInfo extMessageInfo = myWallet.send(walletV3Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myWallet.send(walletV3Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(
         90, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());
@@ -211,8 +211,8 @@ public class TestJettonStableCoinMainnet {
                     null) // forward payload
                 )
             .build();
-    ExtMessageInfo extMessageInfo = myWallet.send(walletV4Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myWallet.send(walletV4Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(
         120, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());
@@ -312,8 +312,8 @@ public class TestJettonStableCoinMainnet {
                     null) // forward payload
                 )
             .build();
-    ExtMessageInfo extMessageInfo = myWallet.send(walletV4Config);
-    assertThat(extMessageInfo.getError().getCode()).isZero();
+    SendResponse sendResponse = myWallet.send(walletV4Config);
+    assertThat(sendResponse.getCode()).isZero();
 
     Utils.sleep(
         120, "transferring 0.02 USDT jettons to wallet " + randomDestinationWallet.getAddress());

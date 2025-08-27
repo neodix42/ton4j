@@ -4,20 +4,21 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+
+import lombok.Builder;
+import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 
+@Builder
+@Data
 public class BinTree implements Serializable {
   ShardDescr value;
   BinTree left;
   BinTree right;
 
   public BinTree() {}
-
-  public BinTree(ShardDescr value) {
-    this.value = value;
-  }
 
   public BinTree(ShardDescr value, BinTree left, BinTree right) {
     this.value = value;
@@ -68,24 +69,18 @@ public class BinTree implements Serializable {
       return null;
     }
 
-    BinTree root = new BinTree();
+    BinTree tree = new BinTree();
     if (cs.loadBit()) {
       if (cs.getRefsCount() != 0) {
-        CellSlice internalCs = CellSlice.beginParse(cs.loadRef());
-        if (!internalCs.loadBit()) {
-          root.value = ShardDescr.deserialize(internalCs);
-        }
+        tree.left = deserialize(CellSlice.beginParse(cs.loadRef()));
       }
       if (cs.getRefsCount() != 0) {
-        root.left = deserialize(CellSlice.beginParse(cs.loadRef()));
+        tree.right = deserialize(CellSlice.beginParse(cs.loadRef()));
       }
-      if (cs.getRefsCount() != 0) {
-        root.right = deserialize(CellSlice.beginParse(cs.loadRef()));
-      }
-      return root;
+      return tree;
     } else {
-      root.value = ShardDescr.deserialize(cs);
-      return root;
+      tree.value = ShardDescr.deserialize(cs);
+      return tree;
     }
   }
 

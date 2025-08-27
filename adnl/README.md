@@ -2,7 +2,7 @@
 
 This module provides a complete implementation of the ADNL (Abstract Datagram Network Layer) protocol for TON blockchain, including a lite client that can communicate directly with TON liteservers.
 
-[AdnlLiteClient](src/main/java/org/ton/java/adnl/AdnlLiteClient.java) is not thread safe, which means a new instance of it should be created in each thread.
+[AdnlLiteClient](src/main/java/org/ton/ton4j/adnl/AdnlLiteClient.java) is not thread safe, which means a new instance of it should be created in each thread.
 
 ## Usage
 
