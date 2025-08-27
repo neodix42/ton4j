@@ -38,7 +38,7 @@ public class TestDbReader {
 
   /** Test reading archive database. */
   @Test
-  public void testReadArchiveDb() throws IOException {
+  public void testReadAllBlocksFromArchiveDb() throws IOException {
     ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
 
     // Get all available archive keys
@@ -69,12 +69,43 @@ public class TestDbReader {
     }
   }
 
+  /** Test reading archive database. */
+  @Test
+  public void testReadAllBlocksAndTheirHashesFromArchiveDb() throws IOException {
+    ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
+
+    // Get all available archive keys
+    List<String> archiveKeys = archiveDbReader.getArchiveKeys();
+    log.info("Available archive keys: {}", archiveKeys);
+
+    Map<String, Block> entries = archiveDbReader.getAllBlocksWithHashes();
+
+    log.info("All entries: {}", entries.size());
+    for (Map.Entry<String, Block> entry : entries.entrySet()) {
+      Block block = entry.getValue();
+      String hash = entry.getKey();
+
+      List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
+      List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
+      log.info("InMsgs: {}, OutMsgs: {}", inMsgs.size(), outMsgs.size());
+      log.info(
+          "hash {} ({},{},{}), {} {}",
+          hash,
+          block.getBlockInfo().getShard().getWorkchain(),
+          block.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
+          block.getBlockInfo().getSeqno(),
+          block.getBlockInfo().getPrevRef().getPrev1().getRootHash(),
+          block.getBlockInfo().getPrevRef().getPrev1().getFileHash());
+      //      BlockPrintInfo.printAllTransactions(block);
+    }
+  }
+
   @Test
   public void testReadArchiveDbBlockByHash() throws IOException {
     ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
     byte[] blockBytes =
         archiveDbReader.readBlock(
-            "23c7e98640c2f3aa002fe66e7b785b68bd7ddfe70a1f4b354dfa9f5e10261b27");
+            "09B3F0637E3A5A5AB6B9BA5D89D61B669CEDD3632516629664B16757ADA16854");
 
     try {
       Cell c = CellBuilder.beginCell().fromBoc(blockBytes).endCell();
@@ -110,7 +141,6 @@ public class TestDbReader {
               log.info("deserialized blockProof: {}", blockProof);
             } else if (c.getBits().preReadUint(32).longValue() == 0x11ef55aa) {
               //              Cell blockCell = getFirstCellWithBlock(c);
-
               //              Block block = Block.deserialize(CellSlice.beginParse(c));
               //              log.info("deserialized block: {}", block);
             }

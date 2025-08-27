@@ -235,7 +235,7 @@ public class ArchiveDbReader implements Closeable {
   }
 
   public List<Block> getAllBlocks() throws IOException {
-    ArrayList<Block> blocks = new ArrayList<>();
+    List<Block> blocks = new ArrayList<>();
     Map<String, byte[]> entries = getAllEntries();
     for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
       try {
@@ -245,6 +245,29 @@ public class ArchiveDbReader implements Closeable {
         if (magic == 0x11ef55aaL) { // block
           Block block = Block.deserialize(CellSlice.beginParse(c));
           blocks.add(block);
+        } else {
+          //          log.info("not a block");
+          // return Block.builder().build();
+        }
+      } catch (Throwable e) {
+        log.error("Error parsing block {}", e.getMessage());
+        // return Block.builder().build();
+      }
+    }
+    return blocks;
+  }
+
+  public Map<String, Block> getAllBlocksWithHashes() throws IOException {
+    Map<String, Block> blocks = new HashMap<>();
+    Map<String, byte[]> entries = getAllEntries();
+    for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
+      try {
+        //        log.info("key " + entry.getKey());
+        Cell c = CellBuilder.beginCell().fromBoc(entry.getValue()).endCell();
+        long magic = c.getBits().preReadUint(32).longValue();
+        if (magic == 0x11ef55aaL) { // block
+          Block block = Block.deserialize(CellSlice.beginParse(c));
+          blocks.put(entry.getKey(), block);
         } else {
           //          log.info("not a block");
           // return Block.builder().build();
