@@ -52,12 +52,9 @@ public class TestDbReader {
           return Long.compare(o2.getBlockInfo().getSeqno(), o1.getBlockInfo().getSeqno());
         });
     for (Block block : blocks1) {
-      //      List<ShardDescr> shardDescrs =
-      // block.getExtra().getMcBlockExtra().getShardHashes().getShardDescriptionsAsList();
-      //      log.info("Shard shardDescrs: {}", shardDescrs.size());
-      List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
-      List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
-      log.info("InMsgs: {}, OutMsgs: {}", inMsgs.size(), outMsgs.size());
+      //      List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
+      //      List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
+      //      log.info("InMsgs: {}, OutMsgs: {}", inMsgs.size(), outMsgs.size());
       log.info(
           "({},{},{}), {} {}",
           block.getBlockInfo().getShard().getWorkchain(),
