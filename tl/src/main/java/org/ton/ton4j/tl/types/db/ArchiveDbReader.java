@@ -56,19 +56,24 @@ public class ArchiveDbReader implements Closeable {
       return;
     }
 
-    // Find all archive folders (arch0000, arch0001, etc.)
+    // Find all archive folders (arch0000, arch0001, etc.) and key folders (key000, key001, etc.)
     Pattern archPattern = Pattern.compile("arch(\\d+)");
+    Pattern keyPattern = Pattern.compile("key(\\d+)");
 
     Files.list(packagesPath)
         .filter(Files::isDirectory)
         .forEach(
             archDir -> {
               String dirName = archDir.getFileName().toString();
-              Matcher matcher = archPattern.matcher(dirName);
+              Matcher archMatcher = archPattern.matcher(dirName);
+              Matcher keyMatcher = keyPattern.matcher(dirName);
 
-              if (matcher.matches()) {
+              if (archMatcher.matches() || keyMatcher.matches()) {
                 try {
-                  int archiveId = Integer.parseInt(matcher.group(1));
+                  // Get the archive ID from whichever matcher matched
+                  int archiveId = archMatcher.matches() ? 
+                      Integer.parseInt(archMatcher.group(1)) : 
+                      Integer.parseInt(keyMatcher.group(1));
 
                   // Find all index files in this directory
                   List<Path> indexFiles =
@@ -87,18 +92,22 @@ public class ArchiveDbReader implements Closeable {
                     String indexName = indexFile.getFileName().toString();
                     String baseName = indexName.substring(0, indexName.lastIndexOf('.'));
 
-                    // Find matching package file
-                    Path packageFile =
+                    // Find ALL matching package files for this index
+                    List<Path> matchingPackageFiles =
                         packageFiles.stream()
                             .filter(
                                 path ->
                                     path.getFileName().toString().startsWith(baseName)
                                         && path.getFileName().toString().endsWith(".pack"))
-                            .findFirst()
-                            .orElse(null);
+                            .collect(Collectors.toList());
 
-                    if (packageFile != null) {
-                      String archiveKey = dirName + "/" + baseName;
+                    // Create separate archive entries for each package file
+                    for (Path packageFile : matchingPackageFiles) {
+                      String packageName = packageFile.getFileName().toString();
+                      // Remove .pack extension to get the full package identifier
+                      String packageBaseName = packageName.substring(0, packageName.lastIndexOf('.'));
+                      String archiveKey = dirName + "/" + packageBaseName;
+                      
                       archiveInfos.put(
                           archiveKey,
                           new ArchiveInfo(archiveId, indexFile.toString(), packageFile.toString()));
