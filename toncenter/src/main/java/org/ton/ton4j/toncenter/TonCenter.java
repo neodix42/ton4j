@@ -1,23 +1,13 @@
 package org.ton.ton4j.toncenter;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.internal.LinkedTreeMap;
-import com.google.gson.reflect.TypeToken;
-import lombok.extern.slf4j.Slf4j;
-import okhttp3.*;
-import org.ton.ton4j.address.Address;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.tlb.Message;
-import org.ton.ton4j.toncenter.model.*;
-import org.ton.ton4j.utils.Utils;
-
 import static java.lang.Long.decode;
 import static java.util.Objects.nonNull;
 import static org.ton.ton4j.toncenter.model.CommonResponses.*;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
@@ -26,9 +16,21 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.*;
+import org.ton.ton4j.address.Address;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.Message;
+import org.ton.ton4j.tlb.Transaction;
+import org.ton.ton4j.tlb.print.MessagePrintInfo;
+import org.ton.ton4j.tlb.print.TransactionPrintInfo;
+import org.ton.ton4j.toncenter.model.*;
+import org.ton.ton4j.utils.Utils;
 
 /**
  * TonCenter API v2 client wrapper using OkHttp for HTTP requests and Gson for JSON serialization.
@@ -50,7 +52,7 @@ public class TonCenter {
   private OkHttpClient httpClient;
   private Gson gson;
 
-    // Private constructor for builder pattern
+  // Private constructor for builder pattern
   private TonCenter() {}
 
   public static class TonCenterBuilder {
@@ -954,8 +956,8 @@ public class TonCenter {
    * @return String
    */
   private String parseOffChainUriCell(Cell cell) {
-      int OFFCHAIN_CONTENT_PREFIX = 0x01;
-      if ((cell.getBits().toByteArray()[0] & 0xFF) != OFFCHAIN_CONTENT_PREFIX) {
+    int OFFCHAIN_CONTENT_PREFIX = 0x01;
+    if ((cell.getBits().toByteArray()[0] & 0xFF) != OFFCHAIN_CONTENT_PREFIX) {
       throw new Error("not OFFCHAIN_CONTENT_PREFIX");
     }
 
@@ -1018,5 +1020,71 @@ public class TonCenter {
       //      System.out.println("tc currentBalance: " + currentBalance);
 
     } while (initialBalance.equals(currentBalance));
+  }
+
+  /** prints messages of account's last 20 transactions */
+  public void printAccountTransactions(Address account) {
+    printAccountTransactions(account, 20, false);
+  }
+
+  /** prints messages of account's last historyLimit transactions */
+  public void printAccountTransactions(Address account, int historyLimit) {
+    printAccountTransactions(account, historyLimit, false);
+  }
+
+  /** prints messages of account's last historyLimit transactions with messages optionally */
+  public void printAccountTransactions(Address account, int historyLimit, boolean withMessages) {
+    try {
+      boolean first = true;
+
+      List<TransactionResponse> response =
+          getTransactions(account.toBounceable(), historyLimit).getResult();
+      List<Transaction> result = new ArrayList<>();
+      for (TransactionResponse transactionResponse : response) {
+        result.add(
+            Transaction.deserialize(
+                CellSlice.beginParse(Cell.fromBocBase64(transactionResponse.getData()))));
+      }
+
+      TransactionPrintInfo.printTxHeader();
+      for (Transaction tx : result) {
+        TransactionPrintInfo.printTransactionInfo(tx);
+        if (withMessages) {
+          TransactionPrintInfo.printAllMessages(tx, first, true);
+        }
+      }
+      TransactionPrintInfo.printTxFooter();
+
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /** prints messages of account's last 20 transactions */
+  public void printAccountMessages(Address account) {
+    printAccountMessages(account, 20);
+  }
+
+  /** prints messages of account's last historyLimit transactions */
+  public void printAccountMessages(Address account, int historyLimit) {
+    try {
+      boolean first = true;
+      List<TransactionResponse> response =
+          getTransactions(account.toBounceable(), historyLimit).getResult();
+      List<Transaction> result = new ArrayList<>();
+      for (TransactionResponse transactionResponse : response) {
+        result.add(
+            Transaction.deserialize(
+                CellSlice.beginParse(Cell.fromBocBase64(transactionResponse.getData()))));
+      }
+      for (Transaction tx : result) {
+        TransactionPrintInfo.printAllMessages(tx, first, false);
+        first = false;
+      }
+      MessagePrintInfo.printMessageInfoFooter();
+
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }

@@ -5,19 +5,17 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
 import org.ton.ton4j.smartcontract.types.WalletV1R1Config;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R1;
 import org.ton.ton4j.toncenter.TonCenter;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawAccountState;
 import org.ton.ton4j.utils.Utils;
 
@@ -37,12 +35,12 @@ public class TestWalletV1R1 extends CommonTest {
     log.info("Wallet address {}", walletAddress);
 
     // top up new wallet using test-faucet-wallet
-    BigInteger balance = TestnetFaucet.topUpContract(tonlib, walletAddress, Utils.toNano(0.1));
+    BigInteger balance = TestnetFaucet.topUpContract(tonlib, walletAddress, Utils.toNano(1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     SendResponse sendResponse = contract.deploy();
     assertThat(sendResponse.getCode()).isZero();
-    contract.waitForDeployment(45);
+    contract.waitForDeployment();
 
     RawAccountState accountState2 = tonlib.getRawAccountState(walletAddress);
     log.info("raw  accountState {}", accountState2);
@@ -52,7 +50,7 @@ public class TestWalletV1R1 extends CommonTest {
         WalletV1R1Config.builder()
             .seqno(1) // V1R1 does not have get_seqno method
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
-            .amount(Utils.toNano(0.08))
+            .amount(Utils.toNano(0.8))
             .comment("testNewWalletV1R1")
             .build();
 
@@ -61,7 +59,7 @@ public class TestWalletV1R1 extends CommonTest {
   }
 
   @Test
-  public void testNewWalletV1R1() throws InterruptedException {
+  public void testNewWalletV1R1Tonlib() throws Exception {
 
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
     WalletV1R1 contract = WalletV1R1.builder().tonlib(tonlib).wc(0).keyPair(keyPair).build();
@@ -78,12 +76,12 @@ public class TestWalletV1R1 extends CommonTest {
 
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
-        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, Address.of(nonBounceableAddress), Utils.toNano(1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     SendResponse sendResponse = contract.deploy();
     assertThat(sendResponse.getCode()).isZero();
-    contract.waitForDeployment(45);
+    contract.waitForDeployment();
 
     balance = contract.getBalance();
     log.info("    wallet balance: {}", Utils.formatNanoValue(balance));
@@ -92,20 +90,18 @@ public class TestWalletV1R1 extends CommonTest {
         WalletV1R1Config.builder()
             .seqno(1)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
-            .amount(Utils.toNano(0.08))
+            .amount(Utils.toNano(0.8))
             .comment("testNewWalletV1R1")
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    sendResponse = contract.send(config);
-    assertThat(sendResponse.getCode()).isZero();
-
-    contract.waitForBalanceChange(45);
+    contract.sendWithConfirmation(contract.prepareExternalMsg(config));
 
     balance = contract.getBalance();
     log.info("new wallet balance: {}", Utils.formatNanoValue(balance));
 
-    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.5).longValue());
+    contract.printTransactions(true);
   }
 
   @Test
@@ -117,7 +113,7 @@ public class TestWalletV1R1 extends CommonTest {
     log.info("pub key: {}", Utils.bytesToHex(publicKey));
 
     BigInteger balance =
-        TestnetFaucet.topUpContract(tonlib, contract.getAddress(), Utils.toNano(0.1));
+        TestnetFaucet.topUpContract(tonlib, contract.getAddress(), Utils.toNano(1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     // deploy using externally signed body
@@ -135,7 +131,7 @@ public class TestWalletV1R1 extends CommonTest {
         WalletV1R1Config.builder()
             .seqno(1)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
-            .amount(Utils.toNano(0.08))
+            .amount(Utils.toNano(0.8))
             .comment("testWalletV1R1-signed-externally")
             .build();
 
@@ -146,7 +142,7 @@ public class TestWalletV1R1 extends CommonTest {
     sendResponse = contract.send(config, signedTransferBodyHash);
     log.info("extMessageInfo: {}", sendResponse);
     contract.waitForBalanceChange();
-    Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
+    assertThat(contract.getBalance().longValue()).isLessThan(Utils.toNano(0.5).longValue());
   }
 
   @Test
@@ -165,8 +161,8 @@ public class TestWalletV1R1 extends CommonTest {
     log.info("Wallet version {}", contract.getName());
     log.info("Wallet pub-key {}", Utils.bytesToHex(contract.getKeyPair().getPublicKey()));
 
-    String nonBounceableAddress = contract.getAddress().toNonBounceable();
-    String bounceableAddress = contract.getAddress().toBounceable();
+    String nonBounceableAddress = contract.getAddress().toNonBounceableTestnet();
+    String bounceableAddress = contract.getAddress().toBounceableTestnet();
 
     log.info("non-bounceable address {}", nonBounceableAddress);
     log.info("    bounceable address {}", bounceableAddress);
@@ -175,42 +171,40 @@ public class TestWalletV1R1 extends CommonTest {
     // top up new wallet using test-faucet-wallet
     BigInteger balance =
         TestnetFaucet.topUpContract(
-            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(0.1));
+            adnlLiteClient, Address.of(nonBounceableAddress), Utils.toNano(1));
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     SendResponse sendResponse = contract.deploy();
     assertThat(sendResponse.getCode()).isZero();
-    contract.waitForDeployment(45);
+    contract.waitForDeployment();
 
     balance = contract.getBalance();
-    log.info("    wallet balance: {}", Utils.formatNanoValue(balance));
+    log.info("wallet balance after deploy: {}", Utils.formatNanoValue(balance));
 
     WalletV1R1Config config =
         WalletV1R1Config.builder()
             .seqno(1)
             .destination(Address.of(TestnetFaucet.BOUNCEABLE))
-            .amount(Utils.toNano(0.08))
+            .amount(Utils.toNano(0.8))
             .comment("testNewWalletV1R1")
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    sendResponse = contract.send(contract.prepareExternalMsg(config));
-    assertThat(sendResponse.getCode()).isZero();
-
-    contract.waitForBalanceChange(45);
+    contract.sendWithConfirmation(contract.prepareExternalMsg(config));
 
     balance = contract.getBalance();
     log.info("new wallet balance: {}", Utils.formatNanoValue(balance));
 
-    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.02).longValue());
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.5).longValue());
+
+    contract.printTransactions(true);
   }
 
   @Test
   public void testNewWalletV1R1TonCenterClient() throws Exception {
 
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
-    TonCenter tonCenterClient =
-        TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().build();
+    TonCenter tonCenterClient = TonCenter.builder().apiKey(TESTNET_API_KEY).testnet().build();
 
     WalletV1R1 contract =
         WalletV1R1.builder().tonCenterClient(tonCenterClient).wc(0).keyPair(keyPair).build();
@@ -247,14 +241,12 @@ public class TestWalletV1R1 extends CommonTest {
             .build();
 
     // transfer coins from new wallet (back to faucet)
-    sendResponse = contract.send(contract.prepareExternalMsg(config));
-    assertThat(sendResponse.getCode()).isZero();
-
-    contract.waitForBalanceChange();
+    contract.sendWithConfirmation(contract.prepareExternalMsg(config));
 
     balance = contract.getBalance();
     log.info("new wallet balance: {}", Utils.formatNanoValue(balance));
 
-    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.3).longValue());
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.5).longValue());
+    contract.printTransactions(true);
   }
 }

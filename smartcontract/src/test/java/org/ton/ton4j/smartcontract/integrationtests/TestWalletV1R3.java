@@ -12,8 +12,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.mnemonic.Mnemonic;
@@ -302,8 +302,7 @@ public class TestWalletV1R3 extends CommonTest {
     log.info("address: {}", contract.getAddress().toBounceable());
 
     BigInteger balance =
-        TestnetFaucet.topUpContract(
-            tonCenterClient, contract.getAddress(), Utils.toNano(1), true);
+        TestnetFaucet.topUpContract(tonCenterClient, contract.getAddress(), Utils.toNano(1), true);
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
     Utils.sleep(2);
     log.info(
@@ -341,6 +340,12 @@ public class TestWalletV1R3 extends CommonTest {
     Utils.sleep(2);
     balance = contract.getBalance();
     log.info("wallet {} new balance: {}", contract.getName(), Utils.formatNanoValue(balance));
-    Assertions.assertThat(balance).isLessThan(Utils.toNano(0.3));
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.3).longValue());
+
+    contract.printTransactions();
+    // or
+    tonCenterClient.printAccountTransactions(contract.getAddress());
+
+    tonCenterClient.printAccountMessages(contract.getAddress());
   }
 }

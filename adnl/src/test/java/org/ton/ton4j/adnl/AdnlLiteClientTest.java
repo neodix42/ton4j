@@ -19,6 +19,7 @@ import org.ton.ton4j.tl.liteserver.responses.AllShardsInfo;
 import org.ton.ton4j.tl.liteserver.responses.BlockData;
 import org.ton.ton4j.tl.liteserver.responses.BlockHeader;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.tlb.print.TransactionPrintInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -113,12 +114,28 @@ public class AdnlLiteClientTest {
   }
 
   @Test
-  void testGetBalance() throws Exception {
+  void testGetBalance() {
     log.info("Testing getBalance");
     assertTrue(client.isConnected(), "Client should be connected");
 
     log.info(
         "account balance: {} ", Utils.formatNanoValue(client.getBalance(Address.of(getAddress()))));
+  }
+
+  @Test
+  void testPrintTransactions() {
+    log.info("Testing print transactions");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    client.printAccountTransactions(Address.of(getAddress()), true);
+  }
+
+  @Test
+  void testPrintMessages() {
+    log.info("Testing print messages");
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    client.printAccountMessages(Address.of(getAddress()), 20);
   }
 
   @Test
@@ -884,9 +901,21 @@ public class AdnlLiteClientTest {
     BlockTransactionsExt blockTransactionsExt =
         client.listBlockTransactionsExt(masterchainInfo.getLast(), 0, 10, null, false, false);
     log.info("listBlockTransactionsExt {}", blockTransactionsExt);
+    TransactionPrintInfo.printTxHeader();
     for (Transaction tx : blockTransactionsExt.getTransactionsParsed()) {
-      log.info("transaction tl-b {}", tx);
+      TransactionPrintInfo.printTransactionInfo(tx);
+      TransactionPrintInfo.printAllMessages(tx, true, true);
     }
+    TransactionPrintInfo.printTxFooter();
+  }
+
+  @Test
+  void testPrintBlockTransactionsMode0() throws Exception {
+    log.info("Testing listBlockTransactionsExt query");
+    assertTrue(client.isConnected(), "Client should be connected");
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+
+    client.printBlockTransactions(masterchainInfo.getLast(), 0, 10, null, false, true);
   }
 
   @Test

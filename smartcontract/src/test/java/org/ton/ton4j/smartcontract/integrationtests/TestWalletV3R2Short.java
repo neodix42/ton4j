@@ -6,14 +6,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.iwebpp.crypto.TweetNaclFast;
 import java.math.BigInteger;
 import java.util.List;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.smartcontract.SendResponse;
@@ -26,11 +25,8 @@ import org.ton.ton4j.tlb.Message;
 import org.ton.ton4j.tlb.Transaction;
 import org.ton.ton4j.toncenter.Network;
 import org.ton.ton4j.toncenter.TonCenter;
-import org.ton.ton4j.toncenter.TonResponse;
-import org.ton.ton4j.toncenter.model.SendBocResponse;
 import org.ton.ton4j.toncenter.model.TransactionResponse;
 import org.ton.ton4j.tonlib.Tonlib;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.tonlib.types.RawMessage;
 import org.ton.ton4j.tonlib.types.RawTransaction;
 import org.ton.ton4j.tonlib.types.RawTransactions;
@@ -210,6 +206,11 @@ public class TestWalletV3R2Short extends CommonTest {
         }
       }
     }
+
+    log.info("txs of wallet1");
+    tonlib.printAccountTransactions(contract1.getAddress());
+    log.info("msgs of wallet2");
+    tonlib.printAccountMessages(contract2.getAddress());
   }
 
   /*
@@ -629,6 +630,8 @@ public class TestWalletV3R2Short extends CommonTest {
         }
       }
     }
+    contract1.printTransactions();
+    contract2.printMessages();
   }
 
   @Test
@@ -812,5 +815,8 @@ public class TestWalletV3R2Short extends CommonTest {
         }
       }
     }
+
+    contract1.printTransactions(true);
+    contract2.printMessages();
   }
 }

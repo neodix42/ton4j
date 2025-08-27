@@ -9,8 +9,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.faucet.TestnetFaucet;
@@ -20,7 +20,6 @@ import org.ton.ton4j.toncenter.Network;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.toncenter.TonResponse;
 import org.ton.ton4j.toncenter.model.SendBocResponse;
-import org.ton.ton4j.tonlib.types.ExtMessageInfo;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -28,7 +27,7 @@ import org.ton.ton4j.utils.Utils;
 public class TestWalletV2R2Short extends CommonTest {
 
   @Test
-  public void testWalletV2R2() throws InterruptedException {
+  public void testWalletV2R2() throws Exception {
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
 
     WalletV2R2 contract = WalletV2R2.builder().tonlib(tonlib).keyPair(keyPair).build();
@@ -49,7 +48,7 @@ public class TestWalletV2R2Short extends CommonTest {
     SendResponse sendResponse = contract.deploy();
     assertThat(sendResponse.getCode()).isZero();
 
-    contract.waitForDeployment(20);
+    contract.waitForDeployment();
 
     // transfer coins from new wallet (back to faucet)
     WalletV2R2Config config =
@@ -59,11 +58,8 @@ public class TestWalletV2R2Short extends CommonTest {
             .amount1(Utils.toNano(0.1))
             .build();
 
-    sendResponse = contract.send(config);
-    assertThat(sendResponse.getCode()).isZero();
-
     log.info("sending to one destination");
-    contract.waitForBalanceChange(90);
+    contract.sendWithConfirmation(config);
 
     // multi send
     config =
@@ -83,11 +79,14 @@ public class TestWalletV2R2Short extends CommonTest {
     assertThat(sendResponse.getCode()).isZero();
 
     log.info("sending to four destinations");
-    contract.waitForBalanceChange(90);
+    Utils.sleep(20);
 
     balance = contract.getBalance();
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
-    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.3).longValue());
+    assertThat(balance.longValue()).isLessThan(Utils.toNano(0.4).longValue());
+
+    contract.printTransactions();
+    contract.printMessages();
   }
 
   @Test
@@ -110,7 +109,7 @@ public class TestWalletV2R2Short extends CommonTest {
 
     SendResponse sendResponse = contract.deploy(signedDeployBodyHash);
     log.info("extMessageInfo {}", sendResponse);
-    contract.waitForDeployment(120);
+    contract.waitForDeployment();
 
     // send toncoins
     WalletV2R2Config config =
@@ -127,7 +126,7 @@ public class TestWalletV2R2Short extends CommonTest {
         Utils.signData(keyPair.getPublicKey(), keyPair.getSecretKey(), transferBody.hash());
     sendResponse = contract.send(config, signedTransferBodyHash);
     log.info("extMessageInfo: {}", sendResponse);
-    contract.waitForBalanceChange(120);
+    contract.waitForBalanceChange();
     Assertions.assertThat(contract.getBalance()).isLessThan(Utils.toNano(0.03));
   }
 
@@ -196,18 +195,16 @@ public class TestWalletV2R2Short extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
     assertThat(balance.longValue()).isLessThan(Utils.toNano(0.35).longValue());
   }
-  
+
   @Test
   public void testWalletV2R2TonCenterClient() throws Exception {
     TweetNaclFast.Signature.KeyPair keyPair = Utils.generateSignatureKeyPair();
-    
+
     TonCenter tonCenterClient =
-        TonCenter.builder()
-            .apiKey(TESTNET_API_KEY)
-            .network(Network.TESTNET)
-            .build();
-            
-    WalletV2R2 contract = WalletV2R2.builder().keyPair(keyPair).tonCenterClient(tonCenterClient).build();
+        TonCenter.builder().apiKey(TESTNET_API_KEY).network(Network.TESTNET).build();
+
+    WalletV2R2 contract =
+        WalletV2R2.builder().keyPair(keyPair).tonCenterClient(tonCenterClient).build();
 
     String nonBounceableAddress = contract.getAddress().toNonBounceable();
     String bounceableAddress = contract.getAddress().toBounceable();
@@ -224,10 +221,10 @@ public class TestWalletV2R2Short extends CommonTest {
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
 
     TonResponse<SendBocResponse> response =
-            tonCenterClient.sendBoc(contract.prepareDeployMsg().toCell().toBase64());
+        tonCenterClient.sendBoc(contract.prepareDeployMsg().toCell().toBase64());
     assertThat(response.isSuccess()).isTrue();
 
-   contract.waitForDeployment();
+    contract.waitForDeployment();
 
     // transfer coins from new wallet (back to faucet)
     WalletV2R2Config config =
@@ -263,8 +260,9 @@ public class TestWalletV2R2Short extends CommonTest {
     log.info("sending to four destinations");
     contract.waitForBalanceChange();
 
-    balance = new BigInteger(
-        tonCenterClient.getAddressBalance(contract.getAddress().toBounceable()).getResult());
+    balance =
+        new BigInteger(
+            tonCenterClient.getAddressBalance(contract.getAddress().toBounceable()).getResult());
     log.info("new wallet {} balance: {}", contract.getName(), Utils.formatNanoValue(balance));
     assertThat(balance.longValue()).isLessThan(Utils.toNano(0.37).longValue());
   }

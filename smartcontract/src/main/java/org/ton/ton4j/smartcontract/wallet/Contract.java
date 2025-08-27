@@ -4,21 +4,25 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.WalletConfig;
 import org.ton.ton4j.smartcontract.wallet.v1.WalletV1R1;
 import org.ton.ton4j.tl.liteserver.responses.SendMsgStatus;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.tlb.print.MessagePrintInfo;
+import org.ton.ton4j.tlb.print.TransactionPrintInfo;
 import org.ton.ton4j.toncenter.TonCenter;
 import org.ton.ton4j.toncenter.TonResponse;
 import org.ton.ton4j.toncenter.model.SendBocResponse;
+import org.ton.ton4j.toncenter.model.TransactionResponse;
 import org.ton.ton4j.tonlib.Tonlib;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.ExtraCurrency;
@@ -150,7 +154,7 @@ public interface Contract {
         return false;
       }
     } else {
-      throw new Error("Provided not set");
+      throw new Error("Provider not set");
     }
   }
 
@@ -203,7 +207,7 @@ public interface Contract {
     } else if (nonNull(getTonlib())) {
       getTonlib().sendRawMessageWithConfirmation(externalMessage.toCell().toBase64(), getAddress());
     } else {
-      throw new Error("Provided not set");
+      throw new Error("Provider not set");
     }
   }
 
@@ -235,7 +239,6 @@ public interface Contract {
    */
   default void waitForBalanceChange(int timeoutSeconds) {
     BigInteger initialBalance = getBalance();
-    System.out.println("initialBalance: " + initialBalance);
     BigInteger currentBalance;
     int i = 0;
     do {
@@ -246,6 +249,16 @@ public interface Contract {
       currentBalance = getBalance();
 
     } while (initialBalance.equals(currentBalance));
+  }
+
+  /**
+   * returns if balance has changed by +/- tolerateNanoCoins within 60 seconds, otherwise throws an
+   * error.
+   *
+   * @param tolerateNanoCoins tolerate value
+   */
+  default void waitForBalanceChangeWithTolerance(BigInteger tolerateNanoCoins) {
+    waitForBalanceChangeWithTolerance(60, tolerateNanoCoins);
   }
 
   /**
@@ -293,8 +306,43 @@ public interface Contract {
         throw new Error(e);
       }
     } else {
-      throw new Error("Provided not set");
+      throw new Error("Provider not set");
     }
+  }
+
+  default void printTransactions() {
+    printTransactions(20, false);
+  }
+
+  default void printTransactions(int historyLimit) {
+    printTransactions(20, false);
+  }
+
+  /**
+   * prints last 20 transactions and their messages if withMessages = true
+   *
+   * @param withMessages whether to print messages too
+   */
+  default void printTransactions(boolean withMessages) {
+    printTransactions(20, withMessages);
+  }
+
+  /**
+   * prints last historyLimit transactions and their messages if withMessages = true
+   *
+   * @param historyLimit amount of tx to show
+   * @param withMessages whether to print messages too
+   */
+  default void printTransactions(int historyLimit, boolean withMessages) {
+    List<Transaction> txs = getTransactionsTlb(0, historyLimit);
+    TransactionPrintInfo.printTxHeader();
+    for (Transaction tx : txs) {
+      TransactionPrintInfo.printTransactionInfo(tx);
+      if (withMessages) {
+        TransactionPrintInfo.printAllMessages(tx, true, true);
+      }
+    }
+    TransactionPrintInfo.printTxFooter();
   }
 
   default List<RawTransaction> getTransactions(int historyLimit) {
@@ -309,50 +357,72 @@ public interface Contract {
         .getTransactions();
   }
 
-  default List<Transaction> getTransactionsTlb() {
-    if (isNull(getAdnlLiteClient())) {
-      throw new Error("ADNL lite client not initialized");
-    }
-    try {
-      return getAdnlLiteClient().getTransactions(getAddress(), 0, null, 20).getTransactionsParsed();
-    } catch (Exception e) {
-      throw new Error(e);
+  default List<Transaction> getTransactionsTlb(int lt, byte[] hash, int historyLimit) {
+    if (nonNull(getAdnlLiteClient())) {
+      try {
+        return getAdnlLiteClient()
+            .getTransactions(getAddress(), lt, hash, historyLimit)
+            .getTransactionsParsed();
+      } catch (Exception e) {
+        throw new Error(e);
+      }
+    } else if (nonNull(getTonCenterClient())) {
+      List<TransactionResponse> response =
+          getTonCenterClient()
+              .getTransactions(getAddress().toBounceable(), historyLimit)
+              .getResult();
+      List<Transaction> result = new ArrayList<>();
+      for (TransactionResponse transactionResponse : response) {
+        result.add(
+            Transaction.deserialize(
+                CellSlice.beginParse(Cell.fromBocBase64(transactionResponse.getData()))));
+      }
+      return result;
+    } else if (nonNull(getTonlib())) {
+      List<RawTransaction> response =
+          getTonlib()
+              .getRawTransactionsV2(getAddress().toBounceable(), null, null, historyLimit, false)
+              .getTransactions();
+      List<Transaction> result = new ArrayList<>();
+      for (RawTransaction tx : response) {
+        result.add(Transaction.deserialize(CellSlice.beginParse(Cell.fromBocBase64(tx.getData()))));
+      }
+      return result;
+    } else {
+      throw new Error("Provider not set");
     }
   }
 
   default List<Transaction> getTransactionsTlb(int lt, int historyLimit) {
-    if (isNull(getAdnlLiteClient())) {
-      throw new Error("ADNL lite client not initialized");
-    }
-    try {
-      return getTransactionsTlb(lt, null, historyLimit);
-    } catch (Exception e) {
-      throw new Error(e);
-    }
-  }
-
-  default List<Transaction> getTransactionsTlb(int lt, byte[] hash, int historyLimit) {
-    if (isNull(getAdnlLiteClient())) {
-      throw new Error("ADNL lite client not initialized");
-    }
-    try {
-      return getAdnlLiteClient()
-          .getTransactions(getAddress(), lt, hash, historyLimit)
-          .getTransactionsParsed();
-    } catch (Exception e) {
-      throw new Error(e);
-    }
+    return getTransactionsTlb(lt, null, historyLimit);
   }
 
   default List<Transaction> getTransactionsTlb(int historyLimit) {
-    if (isNull(getAdnlLiteClient())) {
-      throw new Error("ADNL lite client not initialized");
+    return getTransactionsTlb(0, null, historyLimit);
+  }
+
+  default List<Transaction> getTransactionsTlb() {
+    return getTransactionsTlb(0, null, 20);
+  }
+
+  /** prints messages of last 20 transactions */
+  default void printMessages() {
+    printMessages(20);
+  }
+
+  /**
+   * prints messages of last historyLimit transactions
+   *
+   * @param historyLimit amount of txs to print
+   */
+  default void printMessages(int historyLimit) {
+    List<Transaction> txs = getTransactionsTlb(historyLimit);
+    boolean first = true;
+    for (Transaction tx : txs) {
+      TransactionPrintInfo.printAllMessages(tx, first, false);
+      first = false;
     }
-    try {
-      return getTransactionsTlb(0, new byte[32], historyLimit);
-    } catch (Exception e) {
-      throw new Error(e);
-    }
+    MessagePrintInfo.printMessageInfoFooter();
   }
 
   default Message prepareDeployMsg() {

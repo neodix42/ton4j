@@ -9,8 +9,8 @@ import java.time.Instant;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.cell.TonHashMap;
@@ -147,6 +147,8 @@ public class TestWalletV5 extends CommonTest {
 
     sendResponse = contract.send(walletV5Config);
     assertThat(sendResponse.getCode()).isZero();
+
+    contract.printTransactions(true);
   }
 
   /**
@@ -1629,5 +1631,6 @@ public class TestWalletV5 extends CommonTest {
     TonHashMap rawExtensions = contract.getRawExtensions();
     log.info("extensions {}", rawExtensions);
     assertThat(rawExtensions.elements.size()).isEqualTo(2);
+    contract.printTransactions(true);
   }
 }

@@ -40,9 +40,10 @@ public class TestTonlibJson {
 
   Gson gs = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-    String tonlibPath = Utils.getTonlibGithubUrl();
-//  static String tonlibPath =
-//      Utils.getArtifactGithubUrl("tonlibjson", "v2025.03", "neodix42", "ton");
+  String tonlibPath = Utils.getTonlibGithubUrl();
+
+  //  static String tonlibPath =
+  //      Utils.getArtifactGithubUrl("tonlibjson", "v2025.03", "neodix42", "ton");
 
   @Test
   public void testTonlibRunMethodActiveElectionId() {
@@ -282,6 +283,18 @@ public class TestTonlibJson {
   }
 
   @Test
+  public void testTonlibPrintMessages() {
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).build();
+    tonlib.printAccountMessages(Address.of(TON_FOUNDATION), 20);
+  }
+
+  @Test
+  public void testTonlibPrintTransactions() {
+    Tonlib tonlib = Tonlib.builder().pathToTonlibSharedLib(tonlibPath).build();
+    tonlib.printAccountTransactions(Address.of(TON_FOUNDATION), 20, true);
+  }
+
+  @Test
   public void testTonlibGetAllTxsByAddressSmallHistoryLimit() {
     Tonlib tonlib =
         Tonlib.builder()
@@ -516,7 +529,7 @@ public class TestTonlibJson {
     Tonlib tonlib =
         Tonlib.builder()
             .pathToTonlibSharedLib(tonlibPath)
-//            .pathToGlobalConfig("g:/libs/global-config-archive.json")
+            //            .pathToGlobalConfig("g:/libs/global-config-archive.json")
             .build();
     RawTransaction tx =
         tonlib.tryLocateTxByIncomingMessage(

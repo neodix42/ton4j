@@ -28,6 +28,8 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.tlb.print.MessagePrintInfo;
+import org.ton.ton4j.tlb.print.TransactionPrintInfo;
 import org.ton.ton4j.tonlib.queries.*;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.BlockHeader;
@@ -855,6 +857,71 @@ public class Tonlib {
       totalTxs.put(address + "|" + tx.getLt(), rawTransactions);
     }
     return totalTxs;
+  }
+
+  public void printAccountMessages(Address account) {
+    printAccountMessages(account, 20);
+  }
+
+  /** prints messages of account's last historyLimit transactions */
+  public void printAccountMessages(Address account, int historyLimit) {
+    try {
+      boolean first = true;
+
+      List<RawTransaction> response =
+          getRawTransactionsV2(account.toBounceable(), null, null, historyLimit, false)
+              .getTransactions();
+      List<Transaction> result = new ArrayList<>();
+      for (RawTransaction tx : response) {
+        result.add(Transaction.deserialize(CellSlice.beginParse(Cell.fromBocBase64(tx.getData()))));
+      }
+
+      for (Transaction tx : result) {
+        TransactionPrintInfo.printAllMessages(tx, first, false);
+        first = false;
+      }
+      MessagePrintInfo.printMessageInfoFooter();
+
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /** prints messages of account's last 20 transactions */
+  public void printAccountTransactions(Address account) {
+    printAccountTransactions(account, 20, false);
+  }
+
+  /** prints messages of account's last historyLimit transactions */
+  public void printAccountTransactions(Address account, int historyLimit) {
+    printAccountTransactions(account, historyLimit, false);
+  }
+
+  /** prints messages of account's last historyLimit transactions with messages optionally */
+  public void printAccountTransactions(Address account, int historyLimit, boolean withMessages) {
+    try {
+      boolean first = true;
+
+      List<RawTransaction> response =
+          getRawTransactionsV2(account.toBounceable(), null, null, historyLimit, false)
+              .getTransactions();
+      List<Transaction> result = new ArrayList<>();
+      for (RawTransaction tx : response) {
+        result.add(Transaction.deserialize(CellSlice.beginParse(Cell.fromBocBase64(tx.getData()))));
+      }
+
+      TransactionPrintInfo.printTxHeader();
+      for (Transaction tx : result) {
+        TransactionPrintInfo.printTransactionInfo(tx);
+        if (withMessages) {
+          TransactionPrintInfo.printAllMessages(tx, first, true);
+        }
+      }
+      TransactionPrintInfo.printTxFooter();
+
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**

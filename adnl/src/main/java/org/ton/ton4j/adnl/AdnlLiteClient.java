@@ -2,6 +2,8 @@ package org.ton.ton4j.adnl;
 
 import static java.util.Objects.nonNull;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -11,16 +13,13 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.ton.ton4j.address.Address;
 import org.ton.ton4j.adnl.globalconfig.LiteServers;
 import org.ton.ton4j.adnl.globalconfig.TonGlobalConfig;
-import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.cell.TonHashMapE;
@@ -35,6 +34,8 @@ import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tlb.JettonBridgeParamsV1;
 import org.ton.ton4j.tlb.OracleBridgeParams;
 import org.ton.ton4j.tlb.Validators;
+import org.ton.ton4j.tlb.print.MessagePrintInfo;
+import org.ton.ton4j.tlb.print.TransactionPrintInfo;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -1274,7 +1275,8 @@ public class AdnlLiteClient {
             if ((account.getShardAccounts() != null) && (!account.getShardAccounts().isEmpty())) {
               tempLt = account.getShardAccounts().get(0).getLastTransLt().longValue();
               tempHash = Utils.to32ByteArray(account.getShardAccounts().get(0).lastTransHash);
-              log.info("found latest LT {}, hash {}", tempLt, Utils.bytesToHex(tempHash));
+              //              log.info("found latest LT {}, hash {}", tempLt,
+              // Utils.bytesToHex(tempHash));
             }
           }
 
@@ -1383,6 +1385,27 @@ public class AdnlLiteClient {
             throw e;
           }
         });
+  }
+
+  public void printBlockTransactions(
+      BlockIdExt id,
+      int mode,
+      int count,
+      TransactionId3 after,
+      boolean reverseOrder,
+      boolean withMessages)
+      throws Exception {
+
+    BlockTransactionsExt blockTransactionsExt =
+        listBlockTransactionsExt(id, mode, count, after, reverseOrder, false);
+    TransactionPrintInfo.printTxHeader();
+    for (Transaction tx : blockTransactionsExt.getTransactionsParsed()) {
+      TransactionPrintInfo.printTransactionInfo(tx);
+      if (withMessages) {
+        TransactionPrintInfo.printAllMessages(tx, true, true);
+      }
+    }
+    TransactionPrintInfo.printTxFooter();
   }
 
   public BlockTransactionsExt listBlockTransactionsExt(
@@ -1943,8 +1966,9 @@ public class AdnlLiteClient {
     try {
       SendMsgStatus sendMsgStatus = sendMessage(externalMessage);
       log.info(
-          "Message has been successfully sent. Waiting for delivery of message with hash {}",
-          Utils.bytesToHex(externalMessage.getNormalizedHash()));
+          "Message has been successfully sent. Waiting for delivery of message with hash {} ({})",
+          Utils.bytesToHex(externalMessage.getNormalizedHash()),
+          Utils.bytesToBase64(externalMessage.getNormalizedHash()));
 
       TransactionList rawTransactions;
       for (int i = 0; i < 12; i++) {
@@ -1964,6 +1988,61 @@ public class AdnlLiteClient {
     } catch (Exception e) {
       log.error("Timeout waiting for message hash");
       throw new Error("Cannot find hash of the sent message");
+    }
+  }
+
+  /** prints account's last 20 transactions */
+  public void printAccountTransactions(Address account) {
+    printAccountTransactions(account, 20, false);
+  }
+
+  /** prints account's last historyLimit transactions */
+  public void printAccountTransactions(Address account, boolean withMessages) {
+    printAccountTransactions(account, 20, withMessages);
+  }
+
+  /** prints account's last historyLimit transactions */
+  public void printAccountTransactions(Address account, int historyLimit) {
+    printAccountTransactions(account, historyLimit, false);
+  }
+
+  /** prints account's last historyLimit transactions with their messages */
+  public void printAccountTransactions(Address account, int historyLimit, boolean withMessages) {
+    try {
+      List<Transaction> rawTransactions =
+          getTransactions(account, 0, null, historyLimit).getTransactionsParsed();
+      TransactionPrintInfo.printTxHeader();
+      for (Transaction tx : rawTransactions) {
+        TransactionPrintInfo.printTransactionInfo(tx);
+        if (withMessages) {
+          TransactionPrintInfo.printAllMessages(tx, true, true);
+        }
+      }
+      TransactionPrintInfo.printTxFooter();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /** prints messages of account's last 20 transactions */
+  public void printAccountMessages(Address account) {
+    printAccountMessages(account, 20);
+  }
+
+  /** prints messages of account's last historyLimit transactions */
+  public void printAccountMessages(Address account, int historyLimit) {
+    try {
+      boolean first = true;
+      List<Transaction> rawTransactions =
+          getTransactions(account, 0, null, historyLimit).getTransactionsParsed();
+      for (Transaction tx : rawTransactions) {
+        TransactionPrintInfo.printAllMessages(tx, first, false);
+        first = false;
+      }
+      MessagePrintInfo.printMessageInfoFooter();
+
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 
