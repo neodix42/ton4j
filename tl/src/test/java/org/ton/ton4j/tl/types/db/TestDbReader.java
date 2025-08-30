@@ -102,19 +102,34 @@ public class TestDbReader {
     ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
     byte[] blockBytes =
         archiveDbReader.readBlock(
-            "15FFB3DAE34BFD36CF220A0C6FAAEC7187047FFF002B478638CEAE7339F361B7");
+            "E298281AEF17D50504F8E56BDBA0F9CF6E6EBDE04CAD82AB5CC7EFC799E8CEDB");
+
+    if (blockBytes == null) {
+      log.error("Block not found!");
+      return;
+    }
+
+    log.info("Block found, size: {} bytes", blockBytes.length);
 
     try {
       Cell c = CellBuilder.beginCell().fromBoc(blockBytes).endCell();
       long magic = c.getBits().preReadUint(32).longValue();
+      log.info("Magic number: 0x{}", Long.toHexString(magic));
+
       if (magic == 0x11ef55aaL) { // block
         Block block = Block.deserialize(CellSlice.beginParse(c));
-        log.info("Block: {}", block);
+        log.info("Successfully parsed Block: {}", block);
+      } else if ((magic & 0xFF000000L) == 0xc3000000L) { // BlockProof (starts with 0xc3)
+        log.info("Found BlockProof, extracting block from it...");
+        BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c));
+        log.info("Successfully parsed BlockProof: {}", blockProof);
       } else {
-        log.info("not a block");
+        log.info(
+            "Unknown data type, magic is 0x{} (expected 0x11ef55aa for Block or 0xc3xxxxxx for BlockProof)",
+            Long.toHexString(magic));
       }
     } catch (Throwable e) {
-      log.error("Error parsing block {}", e.getMessage());
+      log.error("Error parsing block: {}", e.getMessage());
     }
   }
 
@@ -146,15 +161,20 @@ public class TestDbReader {
   }
 
   private Cell getFirstCellWithBlock(Cell c) {
-
-    long blockMagic = c.getBits().preReadUint(32).longValue();
-    if (blockMagic == 0x11ef55aa) {
-      return c;
+    // Check if this cell itself is a block
+    if (c.getBits().getUsedBits() >= 32) {
+      long blockMagic = c.getBits().preReadUint(32).longValue();
+      if (blockMagic == 0x11ef55aa) {
+        return c;
+      }
     }
 
-    int i = 0;
+    // Recursively search in all references
     for (Cell ref : c.getRefs()) {
-      return getFirstCellWithBlock(ref);
+      Cell result = getFirstCellWithBlock(ref);
+      if (result != null) {
+        return result;
+      }
     }
 
     return null;

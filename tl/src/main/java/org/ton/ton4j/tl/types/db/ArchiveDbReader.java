@@ -432,23 +432,31 @@ public class ArchiveDbReader implements Closeable {
    * @throws IOException If an I/O error occurs
    */
   public byte[] readBlock(String hash) throws IOException {
+    log.info("Looking for block with hash: {}", hash);
+    
     // Try to find the block in any archive
     for (Map.Entry<String, ArchiveInfo> archiveEntry : archiveInfos.entrySet()) {
       String archiveKey = archiveEntry.getKey();
       ArchiveInfo archiveInfo = archiveEntry.getValue();
 
+      log.debug("Checking archive: {}", archiveKey);
+      
       try {
         // Check if this is a Files database package (indicated by null indexPath)
         if (archiveInfo.indexPath == null) {
           // This is a Files database package, use global index
+          log.debug("Checking Files database package: {}", archiveKey);
           byte[] data = readBlockFromFilesPackage(hash, archiveKey, archiveInfo);
           if (data != null) {
+            log.info("Found block {} in Files database package: {}", hash, archiveKey);
             return data;
           }
         } else {
           // This is a traditional archive package with its own index
+          log.debug("Checking traditional archive package: {}", archiveKey);
           byte[] data = readBlockFromTraditionalArchive(hash, archiveKey, archiveInfo);
           if (data != null) {
+            log.info("Found block {} in traditional archive: {}", hash, archiveKey);
             return data;
           }
         }
@@ -458,6 +466,7 @@ public class ArchiveDbReader implements Closeable {
     }
 
     // Block not found in any archive
+    log.warn("Block {} not found in any archive", hash);
     return null;
   }
 
