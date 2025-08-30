@@ -44,28 +44,26 @@ public class ArchiveDbReader implements Closeable {
 
     // Discover all archive folders
     discoverArchives();
-    
+
     // Initialize Files database global index
     initializeFilesDatabase();
   }
 
   /**
-   * Discovers all archive folders and their associated index and package files.
-   * Also discovers packages referenced in the Files database global index.
+   * Discovers all archive folders and their associated index and package files. Also discovers
+   * packages referenced in the Files database global index.
    *
    * @throws IOException If an I/O error occurs
    */
   private void discoverArchives() throws IOException {
     // First, discover traditional archive packages
     discoverTraditionalArchives();
-    
+
     // Then, discover packages from Files database global index
     discoverFilesArchives();
   }
 
-  /**
-   * Discovers traditional archive folders in the packages directory.
-   */
+  /** Discovers traditional archive folders in the packages directory. */
   private void discoverTraditionalArchives() throws IOException {
     Path packagesPath = Paths.get(dbPath, "packages");
     if (!Files.exists(packagesPath)) {
@@ -88,9 +86,10 @@ public class ArchiveDbReader implements Closeable {
               if (archMatcher.matches() || keyMatcher.matches()) {
                 try {
                   // Get the archive ID from whichever matcher matched
-                  int archiveId = archMatcher.matches() ? 
-                      Integer.parseInt(archMatcher.group(1)) : 
-                      Integer.parseInt(keyMatcher.group(1));
+                  int archiveId =
+                      archMatcher.matches()
+                          ? Integer.parseInt(archMatcher.group(1))
+                          : Integer.parseInt(keyMatcher.group(1));
 
                   // Find all index files in this directory
                   List<Path> indexFiles =
@@ -122,9 +121,10 @@ public class ArchiveDbReader implements Closeable {
                     for (Path packageFile : matchingPackageFiles) {
                       String packageName = packageFile.getFileName().toString();
                       // Remove .pack extension to get the full package identifier
-                      String packageBaseName = packageName.substring(0, packageName.lastIndexOf('.'));
+                      String packageBaseName =
+                          packageName.substring(0, packageName.lastIndexOf('.'));
                       String archiveKey = dirName + "/" + packageBaseName;
-                      
+
                       archiveInfos.put(
                           archiveKey,
                           new ArchiveInfo(archiveId, indexFile.toString(), packageFile.toString()));
@@ -147,73 +147,75 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /**
-   * Discovers packages referenced in the Files database global index.
-   * This includes both Files database packages and traditional archive packages without .index files.
+   * Discovers packages referenced in the Files database global index. This includes both Files
+   * database packages and traditional archive packages without .index files.
    */
   private void discoverFilesArchives() throws IOException {
     // Initialize Files database first if not already done
     if (globalIndexDb == null) {
       initializeFilesDatabase();
     }
-    
+
     if (globalIndexDb == null) {
       return; // No Files database available
     }
 
     // Discover packages that are indexed in the Files database global index
-    // This includes both Files database packages and traditional archive packages without .index files
+    // This includes both Files database packages and traditional archive packages without .index
+    // files
     Map<String, String> discoveredPackages = new HashMap<>();
-    
-    globalIndexDb.forEach((key, value) -> {
-      try {
-        String hash = new String(key);
-        if (!isValidHexString(hash)) {
-          return; // Skip non-hex keys
-        }
 
-        // The value format varies, but we need to extract package information
-        // Try to parse as package reference
-        if (value.length >= 4) {
-          // This could be a reference to a traditional archive package
-          // The value might contain package name or path information
-          String valueStr = new String(value);
-          
-          // Check if this references a traditional archive package
-          if (valueStr.contains("archive.")) {
-            // Extract package name from the value
-            String packageName = extractPackageNameFromValue(valueStr);
-            if (packageName != null) {
-              // Find the actual package file
-              Path packagePath = findArchivePackage(packageName);
-              if (packagePath != null && Files.exists(packagePath)) {
-                discoveredPackages.put(packageName, packagePath.toString());
-              }
+    globalIndexDb.forEach(
+        (key, value) -> {
+          try {
+            String hash = new String(key);
+            if (!isValidHexString(hash)) {
+              return; // Skip non-hex keys
             }
-          } else {
-            // This might be a Files database package reference
-            try {
-              if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
-                ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-                long packageId = buffer.getLong();
-                
-                // Construct Files database package file name
-                String packageFileName = String.format("%010d.pack", packageId);
-                Path filesPackagesPath = Paths.get(dbPath, "..", "files", "packages");
-                Path packagePath = filesPackagesPath.resolve(packageFileName);
-                
-                if (Files.exists(packagePath)) {
-                  discoveredPackages.put(packageFileName, packagePath.toString());
+
+            // The value format varies, but we need to extract package information
+            // Try to parse as package reference
+            if (value.length >= 4) {
+              // This could be a reference to a traditional archive package
+              // The value might contain package name or path information
+              String valueStr = new String(value);
+
+              // Check if this references a traditional archive package
+              if (valueStr.contains("archive.")) {
+                // Extract package name from the value
+                String packageName = extractPackageNameFromValue(valueStr);
+                if (packageName != null) {
+                  // Find the actual package file
+                  Path packagePath = findArchivePackage(packageName);
+                  if (packagePath != null && Files.exists(packagePath)) {
+                    discoveredPackages.put(packageName, packagePath.toString());
+                  }
+                }
+              } else {
+                // This might be a Files database package reference
+                try {
+                  if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
+                    ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+                    long packageId = buffer.getLong();
+
+                    // Construct Files database package file name
+                    String packageFileName = String.format("%010d.pack", packageId);
+                    Path filesPackagesPath = Paths.get(dbPath, "..", "files", "packages");
+                    Path packagePath = filesPackagesPath.resolve(packageFileName);
+
+                    if (Files.exists(packagePath)) {
+                      discoveredPackages.put(packageFileName, packagePath.toString());
+                    }
+                  }
+                } catch (Exception e) {
+                  // Silently skip if not a Files database reference
                 }
               }
-            } catch (Exception e) {
-              // Silently skip if not a Files database reference
             }
+          } catch (Exception e) {
+            // Silently skip errors for individual entries
           }
-        }
-      } catch (Exception e) {
-        // Silently skip errors for individual entries
-      }
-    });
+        });
 
     // Also discover traditional archive packages that don't have .index files
     discoverOrphanedArchivePackages(discoveredPackages);
@@ -222,18 +224,18 @@ public class ArchiveDbReader implements Closeable {
     for (Map.Entry<String, String> entry : discoveredPackages.entrySet()) {
       String packageFileName = entry.getKey();
       String packagePath = entry.getValue();
-      
+
       // Extract package ID from filename (remove .pack extension)
       String packageBaseName = packageFileName.substring(0, packageFileName.lastIndexOf('.'));
       String archiveKey;
-      
+
       if (packagePath.contains("/files/packages/")) {
         archiveKey = "files/" + packageBaseName;
       } else {
         // This is a traditional archive package without .index file
         archiveKey = "orphaned/" + packageBaseName;
       }
-      
+
       // For Files database packages, we don't have separate index files
       // The global index serves as the index for all packages
       archiveInfos.put(
@@ -245,10 +247,11 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /**
-   * Discovers traditional archive packages that don't have corresponding .index files.
-   * These packages should be accessible through the Files database global index.
+   * Discovers traditional archive packages that don't have corresponding .index files. These
+   * packages should be accessible through the Files database global index.
    */
-  private void discoverOrphanedArchivePackages(Map<String, String> discoveredPackages) throws IOException {
+  private void discoverOrphanedArchivePackages(Map<String, String> discoveredPackages)
+      throws IOException {
     Path packagesPath = Paths.get(dbPath, "packages");
     if (!Files.exists(packagesPath)) {
       return;
@@ -259,39 +262,107 @@ public class ArchiveDbReader implements Closeable {
 
     Files.list(packagesPath)
         .filter(Files::isDirectory)
-        .forEach(archDir -> {
-          String dirName = archDir.getFileName().toString();
-          Matcher archMatcher = archPattern.matcher(dirName);
+        .forEach(
+            archDir -> {
+              String dirName = archDir.getFileName().toString();
+              Matcher archMatcher = archPattern.matcher(dirName);
 
-          if (archMatcher.matches()) {
-            try {
-              // Find all package files in this directory
-              List<Path> packageFiles = Files.list(archDir)
-                  .filter(path -> path.toString().endsWith(".pack"))
-                  .collect(Collectors.toList());
+              if (archMatcher.matches()) {
+                try {
+                  // Find all package files in this directory
+                  List<Path> packageFiles =
+                      Files.list(archDir)
+                          .filter(path -> path.toString().endsWith(".pack"))
+                          .collect(Collectors.toList());
 
-              for (Path packageFile : packageFiles) {
-                String packageName = packageFile.getFileName().toString();
-                String baseName = packageName.substring(0, packageName.lastIndexOf('.'));
-                
-                // Check if this package has a corresponding .index file
-                Path indexFile = archDir.resolve(baseName + ".index");
-                if (!Files.exists(indexFile)) {
-                  // This is an orphaned package - add it to discovered packages
-                  discoveredPackages.put(packageName, packageFile.toString());
-                  log.info("Found orphaned archive package: {} (no .index file)", packageFile);
+                  for (Path packageFile : packageFiles) {
+                    String packageName = packageFile.getFileName().toString();
+                    String baseName = packageName.substring(0, packageName.lastIndexOf('.'));
+
+                    // Check if this package has a corresponding .index file
+                    Path indexFile = archDir.resolve(baseName + ".index");
+                    if (!Files.exists(indexFile)) {
+                      // Also check if this package was already discovered as a traditional archive
+                      // by checking if any existing archive info uses this package path
+                      boolean alreadyDiscovered = archiveInfos.values().stream()
+                          .anyMatch(info -> packageFile.toString().equals(info.packagePath));
+                      
+                      if (!alreadyDiscovered) {
+                        // Additional check: see if there's a traditional archive that covers the same content
+                        // This prevents reading the same blocks from multiple sources
+                        boolean hasRelatedTraditionalArchive = isPackageCoveredByTraditionalArchive(packageName, dirName);
+                        
+                        if (!hasRelatedTraditionalArchive) {
+                          // This is truly an orphaned package - add it to discovered packages
+                          discoveredPackages.put(packageName, packageFile.toString());
+                          log.info("Found orphaned archive package: {} (no .index file)", packageFile);
+                        } else {
+                          log.debug("Skipping orphaned package {} - already covered by traditional archive", packageFile);
+                        }
+                      }
+                    }
+                  }
+                } catch (IOException e) {
+                  log.error(
+                      "Error discovering orphaned packages in {}: {}", archDir, e.getMessage());
                 }
               }
-            } catch (IOException e) {
-              log.error("Error discovering orphaned packages in {}: {}", archDir, e.getMessage());
-            }
-          }
-        });
+            });
   }
 
   /**
-   * Extracts package name from a Files database value string.
+   * Checks if an orphaned package is already covered by a traditional archive.
+   * This prevents reading the same blocks from multiple sources.
    */
+  private boolean isPackageCoveredByTraditionalArchive(String packageName, String dirName) {
+    // Extract the base name from the package (e.g., "archive.00479.0:8000000000000000.pack" -> "archive.00479")
+    String baseName = packageName.substring(0, packageName.lastIndexOf('.'));
+    
+    // Handle shard-specific packages using regex to match any shard pattern
+    // Pattern: archive.XXXXX.workchain:shard or archive.XXXXX:shard
+    // Examples: "archive.00479.0:8000000000000000", "archive.00479:-1:8000000000000000", etc.
+    Pattern shardPattern = Pattern.compile("^(.+?)(?:\\.[^:]*)?:([0-9a-fA-F]+)$");
+    Matcher matcher = shardPattern.matcher(baseName);
+    
+    String baseArchiveName;
+    String shardId = null;
+    
+    if (matcher.matches()) {
+      // This is a shard-specific package
+      baseArchiveName = matcher.group(1);
+      shardId = matcher.group(2);
+      log.debug("Detected shard-specific package: {} -> base: {}, shard: {}", 
+                packageName, baseArchiveName, shardId);
+    } else {
+      // This is not a shard-specific package
+      baseArchiveName = baseName;
+    }
+    
+    // Check if there's a traditional archive with this base name
+    String traditionalArchiveKey = dirName + "/" + baseArchiveName;
+    boolean hasTraditional = archiveInfos.containsKey(traditionalArchiveKey);
+    
+    // If we found a shard-specific package, also check for the exact shard-specific traditional archive
+    boolean hasShardSpecific = false;
+    if (shardId != null) {
+      String shardSpecificKey = dirName + "/" + baseName;
+      hasShardSpecific = archiveInfos.containsKey(shardSpecificKey);
+    }
+    
+    // Also check for any traditional archives that start with the base name and contain shard info
+    boolean hasAnyShardVariant = archiveInfos.keySet().stream()
+        .anyMatch(key -> key.startsWith(dirName + "/" + baseArchiveName) && key.contains(":"));
+    
+    if (hasTraditional || hasShardSpecific || hasAnyShardVariant) {
+      log.debug("Package {} is covered by traditional archive. Found: traditional={}, shardSpecific={}, anyShardVariant={}", 
+                packageName, hasTraditional, hasShardSpecific, hasAnyShardVariant);
+      return true;
+    }
+    
+    return false;
+  }
+
+  /** Extracts package name from a Files database value string. */
   private String extractPackageNameFromValue(String valueStr) {
     // This is a simplified implementation - the actual format may vary
     // Look for patterns like "archive.00100" in the value
@@ -303,9 +374,7 @@ public class ArchiveDbReader implements Closeable {
     return null;
   }
 
-  /**
-   * Finds the actual path to an archive package by name.
-   */
+  /** Finds the actual path to an archive package by name. */
   private Path findArchivePackage(String packageName) {
     try {
       Path packagesPath = Paths.get(dbPath, "packages");
@@ -315,7 +384,7 @@ public class ArchiveDbReader implements Closeable {
 
       // Search in all archive directories
       Pattern archPattern = Pattern.compile("arch(\\d+)");
-      
+
       return Files.list(packagesPath)
           .filter(Files::isDirectory)
           .filter(archDir -> archPattern.matcher(archDir.getFileName().toString()).matches())
@@ -328,16 +397,12 @@ public class ArchiveDbReader implements Closeable {
     }
   }
 
-  /**
-   * Initializes the Files database global index.
-   *
-   * @throws IOException If an I/O error occurs
-   */
-  private void initializeFilesDatabase() throws IOException {
+  /** Initializes the Files database global index. */
+  private void initializeFilesDatabase() {
     // Check if files database exists
     Path filesPath = Paths.get(dbPath, "..", "files");
     Path globalIndexPath = filesPath.resolve("globalindex");
-    
+
     if (Files.exists(globalIndexPath)) {
       try {
         globalIndexDb = new RocksDbWrapper(globalIndexPath.toString());
@@ -396,10 +461,9 @@ public class ArchiveDbReader implements Closeable {
     return null;
   }
 
-  /**
-   * Reads a block from a traditional archive package.
-   */
-  private byte[] readBlockFromTraditionalArchive(String hash, String archiveKey, ArchiveInfo archiveInfo) throws IOException {
+  /** Reads a block from a traditional archive package. */
+  private byte[] readBlockFromTraditionalArchive(
+      String hash, String archiveKey, ArchiveInfo archiveInfo) throws IOException {
     // Get the index DB
     RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.indexPath);
 
@@ -448,10 +512,15 @@ public class ArchiveDbReader implements Closeable {
     return null;
   }
 
-  /**
-   * Reads a block from a Files database package using the global index.
-   */
-  private byte[] readBlockFromFilesPackage(String hash, String archiveKey, ArchiveInfo archiveInfo) throws IOException {
+  /** Reads a block from a Files database package using the global index. */
+  private byte[] readBlockFromFilesPackage(String hash, String archiveKey, ArchiveInfo archiveInfo)
+      throws IOException {
+    // Check if this is an orphaned package (no index file)
+    if (archiveKey.startsWith("orphaned/")) {
+      // Read directly from the package file like readFromOrphanedPackage does
+      return readBlockFromOrphanedPackage(hash, archiveKey, archiveInfo);
+    }
+
     if (globalIndexDb == null) {
       return null;
     }
@@ -478,12 +547,17 @@ public class ArchiveDbReader implements Closeable {
 
           // Validate the offset
           if (offset < 0) {
-            log.warn("Negative seek offset {} for key {} in Files package {}", offset, hash, packageFileName);
+            log.warn(
+                "Negative seek offset {} for key {} in Files package {}",
+                offset,
+                hash,
+                packageFileName);
             return null;
           }
 
           // Get the package reader
-          PackageReader packageReader = getFilesPackageReader(packageFileName, archiveInfo.packagePath);
+          PackageReader packageReader =
+              getFilesPackageReader(packageFileName, archiveInfo.packagePath);
 
           // Get the entry at the offset
           PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
@@ -491,8 +565,86 @@ public class ArchiveDbReader implements Closeable {
           return entry.getData();
         }
       } catch (Exception e) {
-        log.warn("Error reading block {} from Files package {}: {}", hash, packageFileName, e.getMessage());
+        log.warn(
+            "Error reading block {} from Files package {}: {}",
+            hash,
+            packageFileName,
+            e.getMessage());
       }
+    }
+
+    return null;
+  }
+
+  /**
+   * Reads a block directly from an orphaned package file (no index file available).
+   * This method reads the package file sequentially to find the specific block.
+   */
+  private byte[] readBlockFromOrphanedPackage(String hash, String archiveKey, ArchiveInfo archiveInfo)
+      throws IOException {
+    try {
+      // Read the entire package file
+      byte[] packageData = Files.readAllBytes(Paths.get(archiveInfo.packagePath));
+      ByteReader reader = new ByteReader(packageData);
+
+      // Read package header
+      int packageHeaderMagic = reader.readIntLittleEndian();
+      if (packageHeaderMagic != 0xae8fdd01) {
+        log.warn(
+            "Invalid package header magic in {}: expected 0xae8fdd01, got 0x{}",
+            archiveInfo.packagePath,
+            Integer.toHexString(packageHeaderMagic));
+        return null;
+      }
+
+      // Read all entries in the package to find the target hash
+      while (reader.getDataSize() > 0) {
+        try {
+          // Read entry header
+          short entryHeaderMagic = reader.readShortLittleEndian();
+          if (entryHeaderMagic != (short) 0x1e8b) {
+            log.warn(
+                "Invalid entry header magic in {}: expected 0x1e8b, got 0x{}",
+                archiveInfo.packagePath,
+                Integer.toHexString(entryHeaderMagic & 0xFFFF));
+            break;
+          }
+
+          int filenameLength = reader.readShortLittleEndian();
+          int bocSize = reader.readIntLittleEndian();
+
+          // Read filename
+          int[] filenameInts = reader.readBytes(filenameLength);
+          byte[] filenameBytes = new byte[filenameInts.length];
+          for (int i = 0; i < filenameInts.length; i++) {
+            filenameBytes[i] = (byte) filenameInts[i];
+          }
+          String filename = new String(filenameBytes);
+
+          // Read BOC data
+          int[] bocInts = reader.readBytes(bocSize);
+          byte[] bocData = new byte[bocInts.length];
+          for (int i = 0; i < bocInts.length; i++) {
+            bocData[i] = (byte) bocInts[i];
+          }
+
+          // Extract hash from filename and check if it matches
+          String entryHash = extractHashFromFilename(filename);
+          if (entryHash != null && entryHash.equalsIgnoreCase(hash)) {
+            return bocData;
+          }
+
+        } catch (Exception e) {
+          log.warn(
+              "Error reading entry from orphaned package {}: {}",
+              archiveInfo.packagePath,
+              e.getMessage());
+          break;
+        }
+      }
+
+    } catch (IOException e) {
+      log.error("Error reading orphaned package {}: {}", archiveInfo.packagePath, e.getMessage());
     }
 
     return null;
@@ -608,10 +760,9 @@ public class ArchiveDbReader implements Closeable {
     return blocks;
   }
 
-  /**
-   * Reads blocks from a traditional archive package with its own index.
-   */
-  private void readFromTraditionalArchive(String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) throws IOException {
+  /** Reads blocks from a traditional archive package with its own index. */
+  private void readFromTraditionalArchive(
+      String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) throws IOException {
     // Get the index DB
     RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.indexPath);
 
@@ -660,17 +811,13 @@ public class ArchiveDbReader implements Closeable {
             // Validate the offset
             if (offset < 0) {
               log.warn(
-                  "Negative seek offset {} for key {} in archive {}",
-                  offset,
-                  hash,
-                  archiveKey);
+                  "Negative seek offset {} for key {} in archive {}", offset, hash, archiveKey);
               return;
             }
 
             try {
               // Get the package reader
-              PackageReader packageReader =
-                  getPackageReader(archiveKey, archiveInfo.packagePath);
+              PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.packagePath);
 
               // Get the entry at the offset
               PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
@@ -694,10 +841,9 @@ public class ArchiveDbReader implements Closeable {
         });
   }
 
-  /**
-   * Reads blocks from a Files database package using the global index.
-   */
-  private void readFromFilesPackage(String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) {
+  /** Reads blocks from a Files database package using the global index. */
+  private void readFromFilesPackage(
+      String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) {
     // Check if this is an orphaned package (no index file)
     if (archiveKey.startsWith("orphaned/")) {
       // Read directly from the package file like TestFilesDbReader does
@@ -713,62 +859,67 @@ public class ArchiveDbReader implements Closeable {
     String packageBaseName = archiveKey.substring(archiveKey.lastIndexOf('/') + 1);
     String packageFileName = packageBaseName + ".pack";
 
-    globalIndexDb.forEach((key, value) -> {
-      try {
-        String hash = new String(key);
-        if (!isValidHexString(hash)) {
-          return; // Skip non-hex keys
-        }
-
-        // Parse the value to get package location info
-        if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
-          ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-          long packageId = buffer.getLong();
-          long offset = buffer.getLong();
-
-          // Check if this entry belongs to the current package
-          String entryPackageFileName = String.format("%010d.pack", packageId);
-          if (!entryPackageFileName.equals(packageFileName)) {
-            return; // This entry belongs to a different package
-          }
-
+    globalIndexDb.forEach(
+        (key, value) -> {
           try {
-            PackageReader packageReader = getFilesPackageReader(packageFileName, archiveInfo.packagePath);
-            PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
-
-            if (entry != null) {
-              blocks.put(hash, entry.getData());
+            String hash = new String(key);
+            if (!isValidHexString(hash)) {
+              return; // Skip non-hex keys
             }
-          } catch (IOException e) {
+
+            // Parse the value to get package location info
+            if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
+              ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+              long packageId = buffer.getLong();
+              long offset = buffer.getLong();
+
+              // Check if this entry belongs to the current package
+              String entryPackageFileName = String.format("%010d.pack", packageId);
+              if (!entryPackageFileName.equals(packageFileName)) {
+                return; // This entry belongs to a different package
+              }
+
+              try {
+                PackageReader packageReader =
+                    getFilesPackageReader(packageFileName, archiveInfo.packagePath);
+                PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
+
+                if (entry != null) {
+                  blocks.put(hash, entry.getData());
+                }
+              } catch (IOException e) {
+                // Silently skip errors for individual entries
+              }
+            }
+          } catch (Exception e) {
             // Silently skip errors for individual entries
           }
-        }
-      } catch (Exception e) {
-        // Silently skip errors for individual entries
-      }
-    });
+        });
   }
 
   /**
-   * Reads blocks directly from an orphaned package file (no index file available).
-   * This method reads the package file sequentially and extracts all entries.
+   * Reads blocks directly from an orphaned package file (no index file available). This method
+   * reads the package file sequentially and extracts all entries.
    */
-  private void readFromOrphanedPackage(String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) {
+  private void readFromOrphanedPackage(
+      String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) {
     try {
-      log.info("Reading orphaned package directly: {}", archiveInfo.packagePath);
-      
+      //      log.info("Reading orphaned package directly: {}", archiveInfo.packagePath);
+
       // Read the entire package file
       byte[] packageData = Files.readAllBytes(Paths.get(archiveInfo.packagePath));
       ByteReader reader = new ByteReader(packageData);
-      
+
       // Read package header
       int packageHeaderMagic = reader.readIntLittleEndian();
       if (packageHeaderMagic != 0xae8fdd01) {
-        log.warn("Invalid package header magic in {}: expected 0xae8fdd01, got 0x{}", 
-                 archiveInfo.packagePath, Integer.toHexString(packageHeaderMagic));
+        log.warn(
+            "Invalid package header magic in {}: expected 0xae8fdd01, got 0x{}",
+            archiveInfo.packagePath,
+            Integer.toHexString(packageHeaderMagic));
         return;
       }
-      
+
       int entryCount = 0;
       // Read all entries in the package
       while (reader.getDataSize() > 0) {
@@ -776,14 +927,16 @@ public class ArchiveDbReader implements Closeable {
           // Read entry header
           short entryHeaderMagic = reader.readShortLittleEndian();
           if (entryHeaderMagic != (short) 0x1e8b) {
-            log.warn("Invalid entry header magic in {}: expected 0x1e8b, got 0x{}", 
-                     archiveInfo.packagePath, Integer.toHexString(entryHeaderMagic & 0xFFFF));
+            log.warn(
+                "Invalid entry header magic in {}: expected 0x1e8b, got 0x{}",
+                archiveInfo.packagePath,
+                Integer.toHexString(entryHeaderMagic & 0xFFFF));
             break;
           }
-          
+
           int filenameLength = reader.readShortLittleEndian();
           int bocSize = reader.readIntLittleEndian();
-          
+
           // Read filename
           int[] filenameInts = reader.readBytes(filenameLength);
           byte[] filenameBytes = new byte[filenameInts.length];
@@ -791,46 +944,55 @@ public class ArchiveDbReader implements Closeable {
             filenameBytes[i] = (byte) filenameInts[i];
           }
           String filename = new String(filenameBytes);
-          
+
           // Read BOC data
           int[] bocInts = reader.readBytes(bocSize);
           byte[] bocData = new byte[bocInts.length];
           for (int i = 0; i < bocInts.length; i++) {
             bocData[i] = (byte) bocInts[i];
           }
-          
+
           entryCount++;
-          
+
           // Extract hash from filename if it's a block or proof
           String hash = extractHashFromFilename(filename);
           if (hash != null) {
             blocks.put(hash, bocData);
-            
-            // Log first few and last few entries for verification
-            if (entryCount <= 5 || entryCount % 50 == 0) {
-              log.info("Entry {}: filename={}, bocSize={}, hash={}", 
-                       entryCount, filename, bocSize, hash);
-            }
+
+            //            // Log first few and last few entries for verification
+            //            if (entryCount <= 5 || entryCount % 50 == 0) {
+            //              log.info(
+            //                  "Entry {}: filename={}, bocSize={}, hash={}",
+            //                  entryCount,
+            //                  filename,
+            //                  bocSize,
+            //                  hash);
+            //            }
           }
-          
+
         } catch (Exception e) {
-          log.warn("Error reading entry {} from orphaned package {}: {}", 
-                   entryCount, archiveInfo.packagePath, e.getMessage());
+          log.warn(
+              "Error reading entry {} from orphaned package {}: {}",
+              entryCount,
+              archiveInfo.packagePath,
+              e.getMessage());
           break;
         }
       }
-      
-      log.info("Successfully read {} entries from orphaned package: {}", 
-               entryCount, archiveInfo.packagePath);
-      
+
+      log.info(
+          "Successfully read {} entries from orphaned package: {}",
+          entryCount,
+          archiveInfo.packagePath);
+
     } catch (IOException e) {
       log.error("Error reading orphaned package {}: {}", archiveInfo.packagePath, e.getMessage());
     }
   }
 
   /**
-   * Extracts hash from a filename like "block_(-1,8000000000000000,100):hash1:hash2".
-   * Returns the first hash (hash1) which is typically used as the key.
+   * Extracts hash from a filename like "block_(-1,8000000000000000,100):hash1:hash2". Returns the
+   * first hash (hash1) which is typically used as the key.
    */
   private String extractHashFromFilename(String filename) {
     try {
@@ -862,52 +1024,53 @@ public class ArchiveDbReader implements Closeable {
   private void readFromFilesDatabase(Map<String, byte[]> blocks) {
     try {
       Path filesPackagesPath = Paths.get(dbPath, "..", "files", "packages");
-      
-      globalIndexDb.forEach((key, value) -> {
-        try {
-          String hash = new String(key);
-          if (!isValidHexString(hash)) {
-            return; // Skip non-hex keys
-          }
 
-          // Parse the value to get package location info
-          // According to the analysis, this should contain package_id, offset, size
-          if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
-            ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-            long packageId = buffer.getLong();
-            long offset = buffer.getLong();
-            // size might be in the remaining bytes, but we can read until end of entry
-            
-            // Construct package file path
-            String packageFileName = String.format("%010d.pack", packageId);
-            Path packagePath = filesPackagesPath.resolve(packageFileName);
-            
-            if (Files.exists(packagePath)) {
-              try {
-                PackageReader packageReader = getFilesPackageReader(packageFileName, packagePath.toString());
-                PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
-                
-                if (entry != null) {
-                  blocks.put(hash, entry.getData());
-                }
-              } catch (IOException e) {
-                // Silently skip errors for individual entries
+      globalIndexDb.forEach(
+          (key, value) -> {
+            try {
+              String hash = new String(key);
+              if (!isValidHexString(hash)) {
+                return; // Skip non-hex keys
               }
+
+              // Parse the value to get package location info
+              // According to the analysis, this should contain package_id, offset, size
+              if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
+                ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+                long packageId = buffer.getLong();
+                long offset = buffer.getLong();
+                // size might be in the remaining bytes, but we can read until end of entry
+
+                // Construct package file path
+                String packageFileName = String.format("%010d.pack", packageId);
+                Path packagePath = filesPackagesPath.resolve(packageFileName);
+
+                if (Files.exists(packagePath)) {
+                  try {
+                    PackageReader packageReader =
+                        getFilesPackageReader(packageFileName, packagePath.toString());
+                    PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
+
+                    if (entry != null) {
+                      blocks.put(hash, entry.getData());
+                    }
+                  } catch (IOException e) {
+                    // Silently skip errors for individual entries
+                  }
+                }
+              }
+            } catch (Exception e) {
+              // Silently skip errors for individual entries
             }
-          }
-        } catch (Exception e) {
-          // Silently skip errors for individual entries
-        }
-      });
+          });
     } catch (Exception e) {
       log.warn("Error reading from Files database: {}", e.getMessage());
     }
   }
 
-  /**
-   * Gets a package reader for Files database packages.
-   */
-  private PackageReader getFilesPackageReader(String packageKey, String packagePath) throws IOException {
+  /** Gets a package reader for Files database packages. */
+  private PackageReader getFilesPackageReader(String packageKey, String packagePath)
+      throws IOException {
     if (!filesPackageReaders.containsKey(packageKey)) {
       filesPackageReaders.put(packageKey, new PackageReader(packagePath));
     }

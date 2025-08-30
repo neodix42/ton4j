@@ -60,8 +60,8 @@ public class TestDbReader {
           block.getBlockInfo().getShard().getWorkchain(),
           block.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
           block.getBlockInfo().getSeqno(),
-          block.getBlockInfo().getPrevRef().getPrev1().getRootHash(),
-          block.getBlockInfo().getPrevRef().getPrev1().getFileHash());
+          block.getBlockInfo().getPrevRef().getPrev1().getRootHash().toUpperCase(),
+          block.getBlockInfo().getPrevRef().getPrev1().getFileHash().toUpperCase());
       //      BlockPrintInfo.printAllTransactions(block);
     }
   }
@@ -102,7 +102,7 @@ public class TestDbReader {
     ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
     byte[] blockBytes =
         archiveDbReader.readBlock(
-            "09B3F0637E3A5A5AB6B9BA5D89D61B669CEDD3632516629664B16757ADA16854");
+            "15FFB3DAE34BFD36CF220A0C6FAAEC7187047FFF002B478638CEAE7339F361B7");
 
     try {
       Cell c = CellBuilder.beginCell().fromBoc(blockBytes).endCell();
