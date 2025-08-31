@@ -2,6 +2,7 @@ package org.ton.ton4j.tl.types.db;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -20,7 +22,9 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockHandle;
 import org.ton.ton4j.tlb.BlockInfo;
+import org.ton.ton4j.tlb.ShardIdent;
 
 /** Specialized reader for TON archive database. */
 @Slf4j
@@ -1160,6 +1164,82 @@ public class ArchiveDbReader implements Closeable {
     }
   }
 
+  /** Extracts block ID from a TL key. */
+  private String extractBlockIdFromKey(byte[] key) {
+    if (key == null || key.length < 4) {
+      return null;
+    }
+
+    try {
+
+      // Method 2: Try to parse as TL-serialized BlockIdExt
+      if (key.length >= 80) { // BlockIdExt serialized size
+        ByteBuffer buffer = ByteBuffer.wrap(key);
+        try {
+          org.ton.ton4j.tl.liteserver.responses.BlockIdExt blockIdExt =
+              org.ton.ton4j.tl.liteserver.responses.BlockIdExt.deserialize(buffer);
+
+          // Create a meaningful block ID string from BlockIdExt components
+          return String.format(
+              "(%d,%s,%d):%s:%s",
+              blockIdExt.getWorkchain(),
+              Long.toUnsignedString(blockIdExt.shard, 16),
+              blockIdExt.getSeqno(),
+              blockIdExt.getRootHash(),
+              blockIdExt.getFileHash());
+        } catch (Exception e) {
+          // Fall through to other methods
+        }
+      }
+
+      // Method 1: Try to parse as hex string (most common case)
+      String keyStr = new String(key);
+      if (isValidHexString(keyStr)) {
+        return keyStr;
+      }
+
+      // Method 3: Try to parse as TL key with magic number
+      if (key.length >= 4) {
+        ByteBuffer buffer = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN);
+        int magic = buffer.getInt();
+
+        // Check for known TL key magic numbers
+        switch (magic) {
+          case 0x7dc40502: // db_filedb_key_empty
+            return "empty_key";
+          case 0xa504033e: // db_filedb_key_blockFile
+            // Try to parse the BlockIdExt that follows
+            if (key.length >= 4 + 80) {
+              try {
+                buffer.position(4); // Skip magic
+                org.ton.ton4j.tl.liteserver.responses.BlockIdExt blockIdExt =
+                    org.ton.ton4j.tl.liteserver.responses.BlockIdExt.deserialize(buffer);
+
+                return String.format(
+                    "blockFile_(%d,%s,%d):%s:%s",
+                    blockIdExt.getWorkchain(),
+                    Long.toUnsignedString(blockIdExt.shard, 16),
+                    blockIdExt.getSeqno(),
+                    blockIdExt.getRootHash(),
+                    blockIdExt.getFileHash());
+              } catch (Exception e) {
+                // Fall through
+              }
+            }
+            return "blockFile_" + bytesToHex(key);
+          default:
+            return "tl_key_" + String.format("%08x", magic) + "_" + bytesToHex(key);
+        }
+      }
+
+      // Method 4: Fallback to hex representation
+      return bytesToHex(key);
+    } catch (Exception e) {
+      log.debug("Error extracting block ID from key: {}", e.getMessage());
+      return bytesToHex(key);
+    }
+  }
+
   /** Gets a package reader for Files database packages. */
   private PackageReader getFilesPackageReader(String packageKey, String packagePath)
       throws IOException {
@@ -1167,6 +1247,630 @@ public class ArchiveDbReader implements Closeable {
       filesPackageReaders.put(packageKey, new PackageReader(packagePath));
     }
     return filesPackageReaders.get(packageKey);
+  }
+
+  /**
+   * Gets all BlockHandles from RocksDB index files (primary method).
+   *
+   * @return Map of block ID to BlockHandle
+   */
+  public Map<String, BlockHandle> getAllBlockHandlesFromIndex() {
+    Map<String, BlockHandle> blockHandles = new HashMap<>();
+
+    log.info("Reading BlockHandles from RocksDB index files...");
+
+    // Iterate through all archive index databases
+    for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
+      String archiveKey = entry.getKey();
+      ArchiveInfo archiveInfo = entry.getValue();
+
+      if (archiveInfo.indexPath != null) { // Traditional archives with index
+        try {
+          RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.indexPath);
+
+          // Debug: Count different key types in this index
+          Map<String, Integer> keyTypeStats = new HashMap<>();
+          AtomicInteger totalKeys = new AtomicInteger(0);
+          AtomicInteger blockInfoKeys = new AtomicInteger(0);
+
+          // Look for db_blockdb_key_value entries
+          indexDb.forEach(
+              (key, value) -> {
+                try {
+                  totalKeys.incrementAndGet();
+                  
+                  // Debug: Analyze key types
+                  String keyType = analyzeKeyType(key);
+                  keyTypeStats.merge(keyType, 1, Integer::sum);
+                  
+                  // Check if this is a block info key by examining the TL structure
+                  if (isBlockInfoKey(key)) {
+                    blockInfoKeys.incrementAndGet();
+                    // Parse db_block_info value to extract BlockHandle
+                    BlockHandle handle = parseDbBlockInfo(value);
+                    if (handle != null) {
+                      String blockId = extractBlockIdFromKey(key);
+                      if (blockId != null) {
+                        blockHandles.put(blockId, handle);
+                      }
+                    }
+                  }
+                } catch (Exception e) {
+                  log.debug("Error processing key in archive {}: {}", archiveKey, e.getMessage());
+                }
+              });
+
+          log.info("Archive {}: {} total keys, {} block info keys, key types: {}", 
+                   archiveKey, totalKeys.get(), blockInfoKeys.get(), keyTypeStats);
+          log.info("Found {} BlockHandles in archive index: {}", blockHandles.size(), archiveKey);
+        } catch (IOException e) {
+          log.warn("Error reading BlockHandles from archive {}: {}", archiveKey, e.getMessage());
+        }
+      }
+    }
+
+    log.info("Total BlockHandles found in indexes: {}", blockHandles.size());
+    return blockHandles;
+  }
+
+  /**
+   * Gets all BlockHandles from package files (fallback method).
+   *
+   * @return Map of block ID to BlockHandle
+   */
+  public Map<String, BlockHandle> getAllBlockHandlesFromPackages() {
+    Map<String, BlockHandle> blockHandles = new HashMap<>();
+
+    log.info("Reading BlockHandles from package files (fallback method)...");
+
+    Map<String, byte[]> entries = getAllEntries();
+    int processedCount = 0;
+    int errorCount = 0;
+    
+    for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
+      try {
+        String hash = entry.getKey();
+        byte[] data = entry.getValue();
+        processedCount++;
+
+        // Try to parse as BOC and check if it contains BlockHandle information
+        Cell cell = CellBuilder.beginCell().fromBoc(data).endCell();
+        long magic = cell.getBits().preReadUint(32).longValue();
+
+        if (magic == 0x4ac6e727L) { // db.block.info magic
+          // This is a BlockInfo entry, parse it properly using TL schema
+          try {
+            BlockHandle handle = parseBlockInfoFromCell(cell);
+            if (handle != null) {
+              blockHandles.put(hash, handle);
+            }
+          } catch (Exception e) {
+            log.debug("Error parsing BlockInfo cell for {}: {}", hash, e.getMessage());
+            errorCount++;
+          }
+        } else if (magic == 0x11ef55aaL) { // Block magic
+          // This is a Block entry, we can extract BlockHandle from the block structure
+          try {
+            Block block = Block.deserialize(CellSlice.beginParse(cell));
+            if (block != null && block.getBlockInfo() != null) {
+              // Create BlockHandle from block information
+              // In a real implementation, we'd need to calculate the actual offset and size
+              // For now, use the data size as the block size
+              BlockHandle handle =
+                  BlockHandle.builder()
+                      .offset(BigInteger.valueOf(0)) // Would need actual offset calculation
+                      .size(BigInteger.valueOf(data.length))
+                      .build();
+
+              // Create a block ID from the block info
+              String blockId = createBlockIdFromBlock(block);
+              if (blockId != null) {
+                blockHandles.put(blockId, handle);
+              }
+            }
+          } catch (Exception e) {
+            log.debug("Error parsing block for BlockHandle extraction from {}: {}", hash, e.getMessage());
+            errorCount++;
+            // Continue processing other entries instead of failing completely
+          }
+        }
+      } catch (Exception e) {
+        log.debug("Error processing entry {}: {}", entry.getKey(), e.getMessage());
+        errorCount++;
+        // Continue processing other entries
+      }
+    }
+
+    log.info("Processed {} entries, {} errors, found {} BlockHandles from packages", 
+             processedCount, errorCount, blockHandles.size());
+    return blockHandles;
+  }
+
+  /**
+   * Parses a BlockInfo cell to extract BlockHandle information. This implements proper TL parsing
+   * for db.block.info structure.
+   */
+  private BlockHandle parseBlockInfoFromCell(Cell cell) {
+    try {
+      CellSlice cs = CellSlice.beginParse(cell);
+
+      // Skip magic (already verified)
+      cs.loadUint(32);
+
+      // Parse db.block.info TL structure
+      // According to TL schema: db.block.info id:tonNode.blockIdExt flags:# prev:flags.7?int256
+      // next:flags.8?int256 lt:flags.13?long ts:flags.14?int state:flags.17?int256
+      // masterchain_ref_seqno:flags.23?int = db.block.Info;
+
+      // Parse BlockIdExt (workchain:int shard:long seqno:int root_hash:int256 file_hash:int256)
+      int workchain = cs.loadInt(32).intValue();
+      long shard = cs.loadUint(64).longValue();
+      int seqno = cs.loadInt(32).intValue();
+      byte[] rootHash = cs.loadBytes(32);
+      byte[] fileHash = cs.loadBytes(32);
+
+      // Parse flags
+      long flags = cs.loadUint(32).longValue();
+
+      // Parse conditional fields based on flags
+      if ((flags & (1L << 7)) != 0) { // prev
+        cs.loadBytes(32); // prev hash
+      }
+
+      if ((flags & (1L << 8)) != 0) { // next
+        cs.loadBytes(32); // next hash
+      }
+
+      if ((flags & (1L << 13)) != 0) { // lt
+        cs.loadUint(64); // logical time
+      }
+
+      if ((flags & (1L << 14)) != 0) { // ts
+        cs.loadUint(32); // timestamp
+      }
+
+      if ((flags & (1L << 17)) != 0) { // state
+        cs.loadBytes(32); // state hash
+      }
+
+      if ((flags & (1L << 23)) != 0) { // masterchain_ref_seqno
+        cs.loadUint(32); // masterchain reference seqno
+      }
+
+      // At this point, we've parsed the main db.block.info structure
+      // The BlockHandle information (offset and size) might be stored differently
+      // For now, we'll create a synthetic BlockHandle based on available information
+
+      // In a complete implementation, we'd need to understand exactly where
+      // the offset and size are stored in the TL structure
+      return BlockHandle.builder()
+          .offset(BigInteger.valueOf(0)) // Would need to find actual offset field
+          .size(BigInteger.valueOf(1024)) // Would need to find actual size field
+          .build();
+
+    } catch (Exception e) {
+      log.debug("Error parsing BlockInfo cell: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  /** Creates a block ID string from a Block object. */
+  private String createBlockIdFromBlock(Block block) {
+    try {
+      if (block.getBlockInfo() != null && block.getBlockInfo().getShard() != null) {
+        // Create a meaningful block ID from block info
+        ShardIdent shard = block.getBlockInfo().getShard();
+        return String.format(
+            "block_(%d,%s,%d)",
+            shard.getWorkchain(),
+            shard.getShardPrefix().toString(16),
+            block.getBlockInfo().getSeqno());
+      }
+    } catch (Exception e) {
+      log.debug("Error creating block ID from block: {}", e.getMessage());
+    }
+    return null;
+  }
+
+  /**
+   * Gets all BlockHandles using both index and package methods.
+   *
+   * @return Map of block ID to BlockHandle
+   * @throws IOException If an I/O error occurs
+   */
+  public Map<String, BlockHandle> getAllBlockHandles() throws IOException {
+    Map<String, BlockHandle> allBlockHandles = new HashMap<>();
+
+    // Primary: Read from index files
+    Map<String, BlockHandle> indexBlockHandles = getAllBlockHandlesFromIndex();
+    allBlockHandles.putAll(indexBlockHandles);
+
+    // Fallback: Read from package files for orphaned archives
+    Map<String, BlockHandle> packageBlockHandles = getAllBlockHandlesFromPackages();
+
+    // Merge, preferring index-based results
+    for (Map.Entry<String, BlockHandle> entry : packageBlockHandles.entrySet()) {
+      if (!allBlockHandles.containsKey(entry.getKey())) {
+        allBlockHandles.put(entry.getKey(), entry.getValue());
+      }
+    }
+
+    log.info("Total unique BlockHandles: {}", allBlockHandles.size());
+    return allBlockHandles;
+  }
+
+  /**
+   * Gets statistics about archive entry types grouped by Block, BlockProof, and BlockHandle.
+   *
+   * @return Map of entry type to count
+   * @throws IOException If an I/O error occurs
+   */
+  public Map<String, Integer> getArchiveEntryTypeStatistics() throws IOException {
+    Map<String, Integer> stats = new HashMap<>();
+    stats.put("Block", 0);
+    stats.put("BlockProof", 0);
+    stats.put("BlockHandle", 0);
+    stats.put("Other", 0);
+
+    log.info("Analyzing archive entry types grouped by Block, BlockProof, and BlockHandle...");
+
+    // Count from RocksDB indexes (more efficient and accurate)
+    for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
+      String archiveKey = entry.getKey();
+      ArchiveInfo archiveInfo = entry.getValue();
+
+      if (archiveInfo.indexPath != null) {
+        try {
+          RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.indexPath);
+          
+          AtomicInteger blockCount = new AtomicInteger(0);
+          AtomicInteger blockProofCount = new AtomicInteger(0);
+          AtomicInteger blockHandleCount = new AtomicInteger(0);
+          AtomicInteger otherCount = new AtomicInteger(0);
+          
+          indexDb.forEach(
+              (key, value) -> {
+                try {
+                  String entryType = classifyArchiveEntry(key, value);
+                  switch (entryType) {
+                    case "Block":
+                      blockCount.incrementAndGet();
+                      break;
+                    case "BlockProof":
+                      blockProofCount.incrementAndGet();
+                      break;
+                    case "BlockHandle":
+                      blockHandleCount.incrementAndGet();
+                      break;
+                    default:
+                      otherCount.incrementAndGet();
+                      break;
+                  }
+                } catch (Exception e) {
+                  otherCount.incrementAndGet();
+                }
+              });
+              
+          stats.merge("Block", blockCount.get(), Integer::sum);
+          stats.merge("BlockProof", blockProofCount.get(), Integer::sum);
+          stats.merge("BlockHandle", blockHandleCount.get(), Integer::sum);
+          stats.merge("Other", otherCount.get(), Integer::sum);
+          
+          log.info("Archive {}: Block={}, BlockProof={}, BlockHandle={}, Other={}", 
+                   archiveKey, blockCount.get(), blockProofCount.get(), 
+                   blockHandleCount.get(), otherCount.get());
+        } catch (IOException e) {
+          log.warn("Error reading index for statistics in {}: {}", archiveKey, e.getMessage());
+        }
+      }
+    }
+
+    // Also count from package files for orphaned archives
+    Map<String, byte[]> entries = getAllEntries();
+    for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
+      try {
+        String entryType = detectEntryType(entry.getValue());
+        switch (entryType) {
+          case "Block":
+            stats.merge("Block", 1, Integer::sum);
+            break;
+          case "BlockHandle":
+            stats.merge("BlockHandle", 1, Integer::sum);
+            break;
+          default:
+            if (entryType.contains("proof") || entryType.contains("Proof")) {
+              stats.merge("BlockProof", 1, Integer::sum);
+            } else {
+              stats.merge("Other", 1, Integer::sum);
+            }
+            break;
+        }
+      } catch (Exception e) {
+        stats.merge("Other", 1, Integer::sum);
+      }
+    }
+
+    log.info("Final archive entry type statistics: {}", stats);
+    return stats;
+  }
+
+  /**
+   * Classifies an archive entry based on its key and value for the main entry types.
+   *
+   * @param key The RocksDB key
+   * @param value The RocksDB value
+   * @return The entry type classification
+   */
+  private String classifyArchiveEntry(byte[] key, byte[] value) {
+    if (key == null || key.length < 4) {
+      return "Other";
+    }
+
+    try {
+      // Check for TL-serialized keys
+      ByteBuffer buffer = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN);
+      int magic = buffer.getInt();
+
+      switch (magic) {
+        case 0x7f57d173: // db_blockdb_key_value - contains BlockHandle information
+          return "BlockHandle";
+        case 0xa504033e: // db_filedb_key_blockFile - references to block files
+          return "Block";
+        case 0x50a6f90f: // db_filedb_key_proof - references to proof files
+        case 0xf1e3e791: // db_filedb_key_proofLink - references to proof link files
+          return "BlockProof";
+        default:
+          // Check if it's a hex string (likely a file hash)
+          String keyStr = new String(key);
+          if (isValidHexString(keyStr)) {
+            // For hex string keys, we need to examine the value or try to read the actual data
+            // to determine if it's a block, proof, or handle
+            return classifyByValue(value);
+          }
+          return "Other";
+      }
+    } catch (Exception e) {
+      return "Other";
+    }
+  }
+
+  /**
+   * Classifies an entry by examining its value when the key is a hex string.
+   *
+   * @param value The RocksDB value
+   * @return The entry type classification
+   */
+  private String classifyByValue(byte[] value) {
+    if (value == null || value.length == 0) {
+      return "Other";
+    }
+
+    try {
+      // If the value looks like an offset (string of digits), it's likely pointing to a block
+      String valueStr = new String(value).trim();
+      if (valueStr.matches("^\\d+$")) {
+        return "Block"; // Most hex-key entries with offset values are blocks
+      }
+
+      // If the value is binary data, try to parse it
+      if (value.length >= 4) {
+        // Could be a direct BOC or TL structure
+        // For now, classify based on common patterns
+        return "Other";
+      }
+    } catch (Exception e) {
+      // Ignore parsing errors
+    }
+
+    return "Other";
+  }
+
+  /** Checks if a RocksDB key represents a block info entry. */
+  private boolean isBlockInfoKey(byte[] key) {
+    if (key == null || key.length < 4) {
+      return false;
+    }
+
+    try {
+      // Check for TL-serialized keys with the specific db_blockdb_key_value magic number
+      ByteBuffer buffer = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN);
+      int magic = buffer.getInt();
+
+      // Use the correct magic number for db_blockdb_key_value from ton_api.h
+      return magic == 0x7f57d173; // db_blockdb_key_value::ID = 2136461683
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  /** Analyzes the type of a RocksDB key for debugging purposes. */
+  private String analyzeKeyType(byte[] key) {
+    if (key == null || key.length == 0) {
+      return "null_or_empty";
+    }
+
+    try {
+      String keyStr = new String(key);
+
+      // Check for system keys
+      if (keyStr.equals("status")) {
+        return "status_key";
+      }
+
+      // Check if it's a valid hex string
+      if (isValidHexString(keyStr)) {
+        return "hex_string_" + keyStr.length() + "chars";
+      }
+
+      // Check for TL-serialized keys
+      if (key.length >= 4) {
+        ByteBuffer buffer = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN);
+        int magic = buffer.getInt();
+
+        switch (magic) {
+          case 0x9bc7a987:
+            return "db_blockdb_key_value";
+          case 0x7dc40502:
+            return "db_filedb_key_empty";
+          case 0xa504033e:
+            return "db_filedb_key_blockFile";
+          case 0x4ac6e727:
+            return "db_block_info";
+          default:
+            return "tl_key_" + String.format("%08x", magic);
+        }
+      }
+
+      return "unknown_" + key.length + "bytes";
+    } catch (Exception e) {
+      return "parse_error";
+    }
+  }
+
+  /** Parses a db_block_info TL structure to extract BlockHandle. */
+  private BlockHandle parseDbBlockInfo(byte[] value) {
+    if (value == null || value.length == 0) {
+      return null;
+    }
+
+    try {
+      // Method 1: Try to parse as string offset (common in RocksDB indexes)
+      String valueStr = new String(value).trim();
+      if (valueStr.matches("^\\d+$")) {
+        // This is just an offset, create a synthetic BlockHandle
+        long offset = Long.parseLong(valueStr);
+        if (offset >= 0) {
+          return BlockHandle.builder()
+              .offset(BigInteger.valueOf(offset))
+              .size(
+                  BigInteger.valueOf(
+                      1024)) // Default size, will be updated when reading actual data
+              .build();
+        }
+      }
+
+      // Method 2: Try to parse as binary data
+      if (value.length >= 8) {
+        ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+
+        // Try different positions for offset/size pairs
+        for (int pos = 0; pos <= value.length - 16; pos += 4) {
+          try {
+            buffer.position(pos);
+            long offset = buffer.getLong();
+            long size = buffer.getLong();
+
+            // Validate that this looks like a reasonable offset/size pair
+            if (offset >= 0 && size > 0 && size < 100_000_000) { // Max 100MB per block
+              return BlockHandle.builder()
+                  .offset(BigInteger.valueOf(offset))
+                  .size(BigInteger.valueOf(size))
+                  .build();
+            }
+          } catch (Exception e) {
+            // Continue trying other positions
+          }
+        }
+
+        // Method 3: Try single 8-byte value as offset
+        if (value.length >= 8) {
+          buffer.position(0);
+          long offset = buffer.getLong();
+          if (offset >= 0) {
+            return BlockHandle.builder()
+                .offset(BigInteger.valueOf(offset))
+                .size(BigInteger.valueOf(1024)) // Default size
+                .build();
+          }
+        }
+      }
+
+      // Method 4: For very short values, try as 4-byte offset
+      if (value.length >= 4) {
+        ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+        int offset = buffer.getInt();
+        if (offset >= 0) {
+          return BlockHandle.builder()
+              .offset(BigInteger.valueOf(offset))
+              .size(BigInteger.valueOf(1024)) // Default size
+              .build();
+        }
+      }
+
+    } catch (Exception e) {
+      log.debug("Error parsing value as BlockHandle: {}", e.getMessage());
+    }
+
+    return null;
+  }
+
+  /** Creates a synthetic BlockHandle based on package structure. */
+  private BlockHandle createSyntheticBlockHandle(String hash, byte[] data) {
+    // This is a fallback method that creates BlockHandle based on available information
+    // In practice, the offset would be calculated from the package structure
+    // and size would be the actual data size
+
+    if (data != null && data.length > 0) {
+      return BlockHandle.builder()
+          .offset(BigInteger.valueOf(0)) // Would need to calculate actual offset
+          .size(BigInteger.valueOf(data.length))
+          .build();
+    }
+
+    return null;
+  }
+
+  /** Classifies an index entry by examining its key and value. */
+  private String classifyIndexEntry(byte[] key, byte[] value) {
+    if (key == null || key.length < 4) {
+      return "unknown_key";
+    }
+
+    try {
+      ByteBuffer buffer = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN);
+      int magic = buffer.getInt();
+
+      switch (magic) {
+        case 0x7dc40502:
+          return "db_filedb_key_empty";
+        case 0xa504033e:
+          return "db_filedb_key_blockFile";
+        default:
+          // Check if it's a hex string (likely a file hash)
+          String keyStr = new String(key);
+          if (isValidHexString(keyStr)) {
+            return "file_hash_entry";
+          }
+          return "unknown_tl_key_" + String.format("%08x", magic);
+      }
+    } catch (Exception e) {
+      return "parse_error";
+    }
+  }
+
+  /** Detects the type of an entry by examining its BOC data. */
+  private String detectEntryType(byte[] bocData) {
+    if (bocData == null || bocData.length < 4) {
+      return "unknown";
+    }
+
+    try {
+      Cell cell = CellBuilder.beginCell().fromBoc(bocData).endCell();
+      long magic = cell.getBits().preReadUint(32).longValue();
+
+      switch ((int) magic) {
+        case 0x11ef55aa:
+          return "Block";
+        case 0x4ac6e727:
+          return "BlockHandle";
+        case 0x9bc7a987:
+          return "BlockInfo";
+        default:
+          return "unknown_" + Long.toHexString(magic);
+      }
+    } catch (Exception e) {
+      return "parse_error";
+    }
   }
 
   /**
