@@ -1250,14 +1250,66 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /**
-   * Gets all BlockHandles from RocksDB index files (primary method).
+   * Parses a package offset value from RocksDB.
+   * Based on C++ implementation: offsets are stored as strings using td::to_string(offset)
+   * and parsed back using td::to_integer<td::uint64>(value).
    *
-   * @return Map of block ID to BlockHandle
+   * @param value The RocksDB value containing the offset
+   * @return BlockHandle with offset and default size, or null if parsing fails
+   */
+  private BlockHandle parsePackageOffset(byte[] value) {
+    if (value == null || value.length == 0) {
+      return null;
+    }
+
+    try {
+      // C++ stores offsets as strings: td::to_string(offset)
+      String offsetStr = new String(value).trim();
+      
+      // Parse as long (C++ uses td::to_integer<td::uint64>)
+      long offset = Long.parseLong(offsetStr);
+      
+      if (offset >= 0) {
+        return BlockHandle.builder()
+            .offset(BigInteger.valueOf(offset))
+            .size(BigInteger.valueOf(1024)) // Default size, actual size determined when reading package entry
+            .build();
+      }
+    } catch (NumberFormatException e) {
+      log.debug("Failed to parse offset as string: {}", new String(value));
+      
+      // Fallback: try binary format (though C++ uses string format)
+      if (value.length >= 8) {
+        try {
+          ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+          long offset = buffer.getLong();
+          if (offset >= 0) {
+            return BlockHandle.builder()
+                .offset(BigInteger.valueOf(offset))
+                .size(BigInteger.valueOf(1024))
+                .build();
+          }
+        } catch (Exception e2) {
+          log.debug("Failed to parse offset as binary: {}", e2.getMessage());
+        }
+      }
+    } catch (Exception e) {
+      log.debug("Error parsing package offset: {}", e.getMessage());
+    }
+
+    return null;
+  }
+
+  /**
+   * Gets all BlockHandles from RocksDB index files (primary method).
+   * BlockHandles represent file location information (offset and size) for files stored in packages.
+   *
+   * @return Map of file hash to BlockHandle
    */
   public Map<String, BlockHandle> getAllBlockHandlesFromIndex() {
     Map<String, BlockHandle> blockHandles = new HashMap<>();
 
-    log.info("Reading BlockHandles from RocksDB index files...");
+    log.info("Reading BlockHandles (file location info) from RocksDB index files...");
 
     // Iterate through all archive index databases
     for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
@@ -1271,9 +1323,10 @@ public class ArchiveDbReader implements Closeable {
           // Debug: Count different key types in this index
           Map<String, Integer> keyTypeStats = new HashMap<>();
           AtomicInteger totalKeys = new AtomicInteger(0);
-          AtomicInteger blockInfoKeys = new AtomicInteger(0);
+          AtomicInteger fileHashKeys = new AtomicInteger(0);
+          AtomicInteger newBlockHandles = new AtomicInteger(0);
 
-          // Look for db_blockdb_key_value entries
+          // Look for hex string keys (file hashes) that point to package offsets
           indexDb.forEach(
               (key, value) -> {
                 try {
@@ -1283,15 +1336,18 @@ public class ArchiveDbReader implements Closeable {
                   String keyType = analyzeKeyType(key);
                   keyTypeStats.merge(keyType, 1, Integer::sum);
                   
-                  // Check if this is a block info key by examining the TL structure
-                  if (isBlockInfoKey(key)) {
-                    blockInfoKeys.incrementAndGet();
-                    // Parse db_block_info value to extract BlockHandle
-                    BlockHandle handle = parseDbBlockInfo(value);
+                  // Check if this is a file hash key (hex string)
+                  String keyStr = new String(key);
+                  if (isValidHexString(keyStr) && !keyStr.equals("status")) {
+                    fileHashKeys.incrementAndGet();
+                    
+                    // Parse the value as package offset
+                    BlockHandle handle = parsePackageOffset(value);
                     if (handle != null) {
-                      String blockId = extractBlockIdFromKey(key);
-                      if (blockId != null) {
-                        blockHandles.put(blockId, handle);
+                      // Only add if we haven't seen this file hash before (deduplication)
+                      if (!blockHandles.containsKey(keyStr)) {
+                        blockHandles.put(keyStr, handle);
+                        newBlockHandles.incrementAndGet();
                       }
                     }
                   }
@@ -1300,16 +1356,15 @@ public class ArchiveDbReader implements Closeable {
                 }
               });
 
-          log.info("Archive {}: {} total keys, {} block info keys, key types: {}", 
-                   archiveKey, totalKeys.get(), blockInfoKeys.get(), keyTypeStats);
-          log.info("Found {} BlockHandles in archive index: {}", blockHandles.size(), archiveKey);
+          log.info("Archive {}: {} total keys, {} file hash keys, {} new BlockHandles, key types: {}", 
+                   archiveKey, totalKeys.get(), fileHashKeys.get(), newBlockHandles.get(), keyTypeStats);
         } catch (IOException e) {
           log.warn("Error reading BlockHandles from archive {}: {}", archiveKey, e.getMessage());
         }
       }
     }
 
-    log.info("Total BlockHandles found in indexes: {}", blockHandles.size());
+    log.info("Total unique BlockHandles found in indexes: {}", blockHandles.size());
     return blockHandles;
   }
 
