@@ -284,20 +284,26 @@ public class ArchiveDbReader implements Closeable {
                     if (!Files.exists(indexFile)) {
                       // Also check if this package was already discovered as a traditional archive
                       // by checking if any existing archive info uses this package path
-                      boolean alreadyDiscovered = archiveInfos.values().stream()
-                          .anyMatch(info -> packageFile.toString().equals(info.packagePath));
-                      
+                      boolean alreadyDiscovered =
+                          archiveInfos.values().stream()
+                              .anyMatch(info -> packageFile.toString().equals(info.packagePath));
+
                       if (!alreadyDiscovered) {
-                        // Additional check: see if there's a traditional archive that covers the same content
+                        // Additional check: see if there's a traditional archive that covers the
+                        // same content
                         // This prevents reading the same blocks from multiple sources
-                        boolean hasRelatedTraditionalArchive = isPackageCoveredByTraditionalArchive(packageName, dirName);
-                        
+                        boolean hasRelatedTraditionalArchive =
+                            isPackageCoveredByTraditionalArchive(packageName, dirName);
+
                         if (!hasRelatedTraditionalArchive) {
                           // This is truly an orphaned package - add it to discovered packages
                           discoveredPackages.put(packageName, packageFile.toString());
-                          log.info("Found orphaned archive package: {} (no .index file)", packageFile);
+                          log.info(
+                              "Found orphaned archive package: {} (no .index file)", packageFile);
                         } else {
-                          log.debug("Skipping orphaned package {} - already covered by traditional archive", packageFile);
+                          log.debug(
+                              "Skipping orphaned package {} - already covered by traditional archive",
+                              packageFile);
                         }
                       }
                     }
@@ -311,54 +317,64 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /**
-   * Checks if an orphaned package is already covered by a traditional archive.
-   * This prevents reading the same blocks from multiple sources.
+   * Checks if an orphaned package is already covered by a traditional archive. This prevents
+   * reading the same blocks from multiple sources.
    */
   private boolean isPackageCoveredByTraditionalArchive(String packageName, String dirName) {
-    // Extract the base name from the package (e.g., "archive.00479.0:8000000000000000.pack" -> "archive.00479")
+    // Extract the base name from the package (e.g., "archive.00479.0:8000000000000000.pack" ->
+    // "archive.00479")
     String baseName = packageName.substring(0, packageName.lastIndexOf('.'));
-    
+
     // Handle shard-specific packages using regex to match any shard pattern
     // Pattern: archive.XXXXX.workchain:shard or archive.XXXXX:shard
     // Examples: "archive.00479.0:8000000000000000", "archive.00479:-1:8000000000000000", etc.
     Pattern shardPattern = Pattern.compile("^(.+?)(?:\\.[^:]*)?:([0-9a-fA-F]+)$");
     Matcher matcher = shardPattern.matcher(baseName);
-    
+
     String baseArchiveName;
     String shardId = null;
-    
+
     if (matcher.matches()) {
       // This is a shard-specific package
       baseArchiveName = matcher.group(1);
       shardId = matcher.group(2);
-      log.debug("Detected shard-specific package: {} -> base: {}, shard: {}", 
-                packageName, baseArchiveName, shardId);
+      log.debug(
+          "Detected shard-specific package: {} -> base: {}, shard: {}",
+          packageName,
+          baseArchiveName,
+          shardId);
     } else {
       // This is not a shard-specific package
       baseArchiveName = baseName;
     }
-    
+
     // Check if there's a traditional archive with this base name
     String traditionalArchiveKey = dirName + "/" + baseArchiveName;
     boolean hasTraditional = archiveInfos.containsKey(traditionalArchiveKey);
-    
-    // If we found a shard-specific package, also check for the exact shard-specific traditional archive
+
+    // If we found a shard-specific package, also check for the exact shard-specific traditional
+    // archive
     boolean hasShardSpecific = false;
     if (shardId != null) {
       String shardSpecificKey = dirName + "/" + baseName;
       hasShardSpecific = archiveInfos.containsKey(shardSpecificKey);
     }
-    
+
     // Also check for any traditional archives that start with the base name and contain shard info
-    boolean hasAnyShardVariant = archiveInfos.keySet().stream()
-        .anyMatch(key -> key.startsWith(dirName + "/" + baseArchiveName) && key.contains(":"));
-    
+    boolean hasAnyShardVariant =
+        archiveInfos.keySet().stream()
+            .anyMatch(key -> key.startsWith(dirName + "/" + baseArchiveName) && key.contains(":"));
+
     if (hasTraditional || hasShardSpecific || hasAnyShardVariant) {
-      log.debug("Package {} is covered by traditional archive. Found: traditional={}, shardSpecific={}, anyShardVariant={}", 
-                packageName, hasTraditional, hasShardSpecific, hasAnyShardVariant);
+      log.debug(
+          "Package {} is covered by traditional archive. Found: traditional={}, shardSpecific={}, anyShardVariant={}",
+          packageName,
+          hasTraditional,
+          hasShardSpecific,
+          hasAnyShardVariant);
       return true;
     }
-    
+
     return false;
   }
 
@@ -433,14 +449,14 @@ public class ArchiveDbReader implements Closeable {
    */
   public byte[] readBlock(String hash) throws IOException {
     log.info("Looking for block with hash: {}", hash);
-    
+
     // Try to find the block in any archive
     for (Map.Entry<String, ArchiveInfo> archiveEntry : archiveInfos.entrySet()) {
       String archiveKey = archiveEntry.getKey();
       ArchiveInfo archiveInfo = archiveEntry.getValue();
 
       log.debug("Checking archive: {}", archiveKey);
-      
+
       try {
         // Check if this is a Files database package (indicated by null indexPath)
         if (archiveInfo.indexPath == null) {
@@ -462,6 +478,16 @@ public class ArchiveDbReader implements Closeable {
         }
       } catch (IOException e) {
         log.warn("Error reading block {} from archive {}: {}", hash, archiveKey, e.getMessage());
+      }
+    }
+
+    // Also try to read directly from Files database
+    if (globalIndexDb != null) {
+      log.debug("Checking Files database directly for hash: {}", hash);
+      byte[] data = readBlockFromFilesDatabase(hash);
+      if (data != null) {
+        log.info("Found block {} in Files database", hash);
+        return data;
       }
     }
 
@@ -586,11 +612,11 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /**
-   * Reads a block directly from an orphaned package file (no index file available).
-   * This method reads the package file sequentially to find the specific block.
+   * Reads a block directly from an orphaned package file (no index file available). This method
+   * reads the package file sequentially to find the specific block.
    */
-  private byte[] readBlockFromOrphanedPackage(String hash, String archiveKey, ArchiveInfo archiveInfo)
-      throws IOException {
+  private byte[] readBlockFromOrphanedPackage(
+      String hash, String archiveKey, ArchiveInfo archiveInfo) throws IOException {
     try {
       // Read the entire package file
       byte[] packageData = Files.readAllBytes(Paths.get(archiveInfo.packagePath));
@@ -742,9 +768,8 @@ public class ArchiveDbReader implements Closeable {
    * Gets all blocks from all archives.
    *
    * @return Map of block hash to block data
-   * @throws IOException If an I/O error occurs
    */
-  public Map<String, byte[]> getAllEntries() throws IOException {
+  public Map<String, byte[]> getAllEntries() {
     Map<String, byte[]> blocks = new HashMap<>();
 
     // Iterate through all archives
@@ -1022,6 +1047,64 @@ public class ArchiveDbReader implements Closeable {
     } catch (Exception e) {
       log.warn("Error extracting hash from filename {}: {}", filename, e.getMessage());
     }
+    return null;
+  }
+
+  /**
+   * Reads a specific block from the Files database using the global index.
+   *
+   * @param hash The block hash to look for
+   * @return The block data, or null if not found
+   */
+  private byte[] readBlockFromFilesDatabase(String hash) {
+    if (globalIndexDb == null) {
+      return null;
+    }
+
+    try {
+      // Try to get the offset from the global index
+      byte[] offsetBytes = globalIndexDb.get(hash.getBytes());
+      if (offsetBytes != null) {
+        // Parse the value to get package location info
+        if (offsetBytes.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
+          ByteBuffer buffer = ByteBuffer.wrap(offsetBytes).order(ByteOrder.LITTLE_ENDIAN);
+          long packageId = buffer.getLong();
+          long offset = buffer.getLong();
+
+          // Validate the offset
+          if (offset < 0) {
+            log.warn("Negative seek offset {} for key {} in Files database", offset, hash);
+            return null;
+          }
+
+          // Construct package file path
+          String packageFileName = String.format("%010d.pack", packageId);
+          Path filesPackagesPath = Paths.get(dbPath, "..", "files", "packages");
+          Path packagePath = filesPackagesPath.resolve(packageFileName);
+
+          if (Files.exists(packagePath)) {
+            try {
+              PackageReader packageReader =
+                  getFilesPackageReader(packageFileName, packagePath.toString());
+              PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
+
+              if (entry != null) {
+                return entry.getData();
+              }
+            } catch (IOException e) {
+              log.warn(
+                  "Error reading block {} from Files package {}: {}",
+                  hash,
+                  packageFileName,
+                  e.getMessage());
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Error reading block {} from Files database: {}", hash, e.getMessage());
+    }
+
     return null;
   }
 
