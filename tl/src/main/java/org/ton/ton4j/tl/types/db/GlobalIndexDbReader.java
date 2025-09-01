@@ -430,6 +430,315 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
+   * Gets ALL archive package file paths by scanning the archive directories directly.
+   * This method finds all .pack files in archive directories, including those not listed
+   * in the Files database global index. This solves the problem of missing archive files
+   * like archive.00100.pack that exist in the filesystem but aren't referenced in the
+   * Files database.
+   *
+   * @return List of all archive package file paths found in the filesystem
+   */
+  public List<String> getAllArchivePackageFilePathsFromFilesystem() {
+    List<String> archivePackageFiles = new ArrayList<>();
+
+    // Get archive packages directory path
+    Path archivePackagesDir = Paths.get(dbPath, "archive", "packages");
+
+    if (!Files.exists(archivePackagesDir)) {
+      log.warn("Archive packages directory not found: {}", archivePackagesDir);
+      return archivePackageFiles;
+    }
+
+    // Scan for archive directories (arch0000, arch0001, etc.)
+    try {
+      Files.list(archivePackagesDir)
+          .filter(Files::isDirectory)
+          .filter(path -> path.getFileName().toString().startsWith("arch"))
+          .forEach(
+              archDir -> {
+                log.debug("Scanning archive directory for all files: {}", archDir);
+
+                try {
+                  // Find all .pack files in this archive directory
+                  Files.list(archDir)
+                      .filter(Files::isRegularFile)
+                      .filter(path -> path.getFileName().toString().endsWith(".pack"))
+                      .forEach(packFile -> {
+                        archivePackageFiles.add(packFile.toString());
+                        log.debug("Found archive package file: {}", packFile);
+                      });
+                } catch (IOException e) {
+                  log.debug("Error scanning archive directory {}: {}", archDir, e.getMessage());
+                }
+              });
+    } catch (IOException e) {
+      log.error("Error scanning archive packages directory: {}", e.getMessage());
+    }
+
+    log.info("Found {} total archive package files in filesystem", archivePackageFiles.size());
+    return archivePackageFiles;
+  }
+
+  /**
+   * Gets ALL archive file locations by reading individual archive index databases.
+   * This method follows the C++ implementation approach by opening each archive.XXXXX.index
+   * database and reading the hash->offset mappings. This provides complete access to all
+   * files stored in archive packages, including those not referenced in the Files database.
+   *
+   * @return Map of file hash to ArchiveFileLocation
+   */
+  public Map<String, ArchiveFileLocation> getAllArchiveFileLocationsFromIndexDatabases() {
+    Map<String, ArchiveFileLocation> fileLocations = new HashMap<>();
+
+    // Get archive packages directory path
+    Path archivePackagesDir = Paths.get(dbPath, "archive", "packages");
+
+    if (!Files.exists(archivePackagesDir)) {
+      log.warn("Archive packages directory not found: {}", archivePackagesDir);
+      return fileLocations;
+    }
+
+    int totalPackages = 0;
+    int totalFiles = 0;
+
+    // Scan for archive directories (arch0000, arch0001, etc.)
+    try {
+      Files.list(archivePackagesDir)
+          .filter(Files::isDirectory)
+          .filter(path -> path.getFileName().toString().startsWith("arch"))
+          .forEach(
+              archDir -> {
+                log.debug("Scanning archive directory for index databases: {}", archDir);
+
+                try {
+                  // Find all .pack files and their corresponding .index databases
+                  Files.list(archDir)
+                      .filter(Files::isRegularFile)
+                      .filter(path -> path.getFileName().toString().endsWith(".pack"))
+                      .forEach(packFile -> {
+                        String packFileName = packFile.getFileName().toString();
+                        String indexFileName = packFileName.replace(".pack", ".index");
+                        Path indexPath = archDir.resolve(indexFileName);
+
+                        if (Files.exists(indexPath)) {
+                          try {
+                            int packageId = extractPackageIdFromFilename(packFileName);
+                            Map<String, ArchiveFileLocation> packageFiles = 
+                                readArchiveIndexDatabase(packFile.toString(), indexPath.toString(), packageId);
+                            fileLocations.putAll(packageFiles);
+                            
+                            log.debug("Loaded {} files from archive index: {}", 
+                                packageFiles.size(), indexPath);
+                          } catch (Exception e) {
+                            log.debug("Error reading archive index {}: {}", indexPath, e.getMessage());
+                          }
+                        } else {
+                          log.debug("No index database found for package: {}", packFile);
+                        }
+                      });
+                } catch (IOException e) {
+                  log.debug("Error scanning archive directory {}: {}", archDir, e.getMessage());
+                }
+              });
+    } catch (IOException e) {
+      log.error("Error scanning archive packages directory: {}", e.getMessage());
+    }
+
+    log.info("Found {} total files from {} archive index databases", fileLocations.size(), totalPackages);
+    return fileLocations;
+  }
+
+  /**
+   * Reads hash->offset mappings from a specific archive index database.
+   *
+   * @param packagePath Path to the package file
+   * @param indexPath Path to the index database
+   * @param packageId Package ID
+   * @return Map of file hash to ArchiveFileLocation
+   */
+  private Map<String, ArchiveFileLocation> readArchiveIndexDatabase(String packagePath, String indexPath, int packageId) {
+    Map<String, ArchiveFileLocation> fileLocations = new HashMap<>();
+
+    try (ArchiveIndexReader indexReader = new ArchiveIndexReader(indexPath, packagePath, packageId)) {
+      Map<String, Long> hashOffsetMap = indexReader.getAllHashOffsetMappings();
+
+      for (Map.Entry<String, Long> entry : hashOffsetMap.entrySet()) {
+        String hash = entry.getKey();
+        Long offset = entry.getValue();
+
+        ArchiveFileLocation location = ArchiveFileLocation.create(
+            packagePath, indexPath, hash, packageId, offset);
+
+        fileLocations.put(hash, location);
+      }
+
+    } catch (IOException e) {
+      log.debug("Error reading archive index database {}: {}", indexPath, e.getMessage());
+    }
+
+    return fileLocations;
+  }
+
+  /**
+   * Extracts package ID from archive filename.
+   * Examples: archive.00100.pack -> 100, archive.00281.0:8000000000000000.pack -> 281
+   *
+   * @param filename Archive filename
+   * @return Package ID
+   */
+  private int extractPackageIdFromFilename(String filename) {
+    try {
+      // Handle both formats: archive.00100.pack and archive.00281.0:8000000000000000.pack
+      String[] parts = filename.split("\\.");
+      if (parts.length >= 2) {
+        String packageIdStr = parts[1]; // "00100" or "00281"
+        return Integer.parseInt(packageIdStr);
+      }
+    } catch (Exception e) {
+      log.debug("Error extracting package ID from filename {}: {}", filename, e.getMessage());
+    }
+    return -1;
+  }
+
+  /**
+   * Gets a summary of archive packages and their file counts by reading index databases.
+   *
+   * @return Map of package ID to file count
+   */
+  public Map<Integer, Integer> getArchivePackageFileCounts() {
+    Map<Integer, Integer> packageFileCounts = new HashMap<>();
+
+    Path archivePackagesDir = Paths.get(dbPath, "archive", "packages");
+    if (!Files.exists(archivePackagesDir)) {
+      return packageFileCounts;
+    }
+
+    try {
+      Files.list(archivePackagesDir)
+          .filter(Files::isDirectory)
+          .filter(path -> path.getFileName().toString().startsWith("arch"))
+          .forEach(archDir -> {
+            try {
+              Files.list(archDir)
+                  .filter(Files::isRegularFile)
+                  .filter(path -> path.getFileName().toString().endsWith(".pack"))
+                  .forEach(packFile -> {
+                    String packFileName = packFile.getFileName().toString();
+                    String indexFileName = packFileName.replace(".pack", ".index");
+                    Path indexPath = archDir.resolve(indexFileName);
+
+                    if (Files.exists(indexPath)) {
+                      try {
+                        int packageId = extractPackageIdFromFilename(packFileName);
+                        try (ArchiveIndexReader indexReader = new ArchiveIndexReader(
+                            indexPath.toString(), packFile.toString(), packageId)) {
+                          int fileCount = indexReader.getFileCount();
+                          packageFileCounts.put(packageId, fileCount);
+                        }
+                      } catch (Exception e) {
+                        log.debug("Error reading archive index {}: {}", indexPath, e.getMessage());
+                      }
+                    }
+                  });
+            } catch (IOException e) {
+              log.debug("Error scanning archive directory {}: {}", archDir, e.getMessage());
+            }
+          });
+    } catch (IOException e) {
+      log.error("Error scanning archive packages directory: {}", e.getMessage());
+    }
+
+    return packageFileCounts;
+  }
+
+  /**
+   * Reads a file from archive packages using hash->offset lookup.
+   * This follows the C++ implementation approach where files are accessed
+   * by their hash using the individual archive index databases.
+   *
+   * @param hash The file hash (hex string)
+   * @return The file data, or null if not found
+   * @throws IOException If an I/O error occurs
+   */
+  public byte[] readArchiveFileByHash(String hash) throws IOException {
+    log.debug("Reading archive file by hash: {}", hash);
+
+    // Get all archive file locations
+    Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
+    
+    // Find the file location for this hash
+    ArchiveFileLocation location = fileLocations.get(hash);
+    if (location == null) {
+      log.debug("File with hash {} not found in archive indexes", hash);
+      return null;
+    }
+
+    if (!location.isValid()) {
+      log.warn("Invalid location data for hash {}", hash);
+      return null;
+    }
+
+    // Read from the archive package file
+    return readArchiveFileFromPackage(location);
+  }
+
+  /**
+   * Reads a file from an archive package using ArchiveFileLocation.
+   * This method opens the package file and reads data at the specified offset.
+   *
+   * @param location The ArchiveFileLocation containing package path and offset
+   * @return The file data, or null if not found
+   * @throws IOException If an I/O error occurs
+   */
+  public byte[] readArchiveFileFromPackage(ArchiveFileLocation location) throws IOException {
+    if (location == null || !location.isValid()) {
+      return null;
+    }
+
+    log.debug("Reading from archive package: {}, offset: {}", 
+        location.getPackageId(), location.getOffset());
+
+    // Get package reader for the archive package
+    PackageReader packageReader = getPackageReader(location.getPackagePath());
+
+    // Read entry at the specified offset
+    PackageReader.PackageEntry entry = packageReader.getEntryAt(location.getOffset());
+    if (entry == null) {
+      log.warn("No entry found at offset {} in archive package {}",
+          location.getOffset(), location.getPackageId());
+      return null;
+    }
+
+    log.debug("Successfully read {} bytes from archive package {}", 
+        entry.getData().length, location.getPackageId());
+    
+    return entry.getData();
+  }
+
+  /**
+   * Gets all available file hashes from archive index databases.
+   * This provides a complete list of all files that can be accessed
+   * using the hash->offset lookup mechanism.
+   *
+   * @return Set of file hashes available in archive packages
+   */
+  public java.util.Set<String> getAllAvailableArchiveFileHashes() {
+    Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
+    return fileLocations.keySet();
+  }
+
+  /**
+   * Checks if a file with the given hash exists in archive packages.
+   *
+   * @param hash The file hash to check
+   * @return true if the file exists, false otherwise
+   */
+  public boolean archiveFileExists(String hash) {
+    Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
+    return fileLocations.containsKey(hash);
+  }
+
+  /**
    * Finds all package files for a given package ID in a specific archive directory. This includes
    * both main package files (archive.{packageId:05d}.pack) and shard-specific files
    * (archive.{packageId:05d}.{workchain}:{shard}.pack).
