@@ -7,11 +7,15 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tl.types.db.files.key.PackageKey;
 import org.ton.ton4j.tl.types.db.files.package_.PackageValue;
@@ -28,7 +32,7 @@ import org.ton.ton4j.tl.types.db.files.package_.PackageValue;
  */
 @Slf4j
 @Data
-public class FilesDbReader implements Closeable {
+public class GlobalIndexDbReader implements Closeable {
 
   private final String dbPath;
   private RocksDbWrapper globalIndexDb;
@@ -44,10 +48,10 @@ public class FilesDbReader implements Closeable {
    * @param dbPath Path to the database root directory (should contain files/globalindex)
    * @throws IOException If an I/O error occurs
    */
-  public FilesDbReader(String dbPath) throws IOException {
+  public GlobalIndexDbReader(String dbPath) throws IOException {
     this.dbPath = dbPath;
     initializeFilesDatabase();
-
+    loadMainIndex();
   }
 
   /** Initializes the Files database global index. */
@@ -62,12 +66,60 @@ public class FilesDbReader implements Closeable {
     try {
       globalIndexDb = new RocksDbWrapper(globalIndexPath.toString());
       log.info("Initialized Files database global index: {}", globalIndexPath);
+
     } catch (IOException e) {
       throw new IOException(
           "Could not initialize Files database global index: " + e.getMessage(), e);
     }
   }
 
+  /**
+   * Loads the main index entry using db.files.index.key (empty key). This contains the list of all
+   * packages in the Files database.
+   */
+  private void loadMainIndex() throws IOException {
+    try {
+
+      AtomicBoolean found = new AtomicBoolean(false);
+      // Search for the main index entry by iterating through all entries
+      globalIndexDb.forEach(
+          (key, value) -> {
+            if (found.get()) return; // Already found, skip
+
+            try {
+              // Try to deserialize as IndexKey to see if it's the main index entry
+              org.ton.ton4j.tl.types.db.files.GlobalIndexKey globalKey =
+                  org.ton.ton4j.tl.types.db.files.GlobalIndexKey.deserialize(key);
+
+              if (globalKey instanceof org.ton.ton4j.tl.types.db.files.key.IndexKey) {
+                mainIndexIndexValue = (IndexValue) GlobalIndexValue.deserialize(value);
+
+                log.info(
+                    "Loaded Files database main index: {} packages, {} key packages, {} temp packages",
+                    mainIndexIndexValue.getPackages().size(),
+                    mainIndexIndexValue.getKeyPackages().size(),
+                    mainIndexIndexValue.getTempPackages().size());
+                found.set(true);
+              }
+            } catch (Exception e) {
+              // Not a TL-serialized key, skip
+            }
+          });
+
+      if (mainIndexIndexValue == null) {
+        log.warn("Main index entry not found in Files database");
+        // Create empty main index
+        mainIndexIndexValue =
+            IndexValue.builder()
+                .packages(List.of())
+                .keyPackages(List.of())
+                .tempPackages(List.of())
+                .build();
+      }
+    } catch (Exception e) {
+      throw new IOException("Error loading main index: " + e.getMessage(), e);
+    }
+  }
 
   /** Loads metadata for a specific package. */
   private void loadPackageMetadata(int packageId, boolean isKey, boolean isTemp) {
@@ -324,37 +376,182 @@ public class FilesDbReader implements Closeable {
   }
 
   /**
-   * Lists all available package files in the Files database.
+   * Gets archive package file paths from the global index. This method discovers archive package
+   * files by scanning the archive/packages directory structure and matching them with package IDs
+   * from the global index.
    *
-   * @return Map of package ID to file path
+   * @return List of archive package file paths
    */
-  public Map<Long, String> listPackageFiles() {
-    Map<Long, String> packageFiles = new HashMap<>();
+  public List<String> getArchivePackageFilePaths() {
+    List<String> archivePackageFiles = new ArrayList<>();
+
+    if (mainIndexIndexValue == null) {
+      log.warn("Main index not loaded, cannot get archive package file paths");
+      return archivePackageFiles;
+    }
+
+    // Get all package IDs from the global index
+    List<Integer> allPackageIds = new ArrayList<>();
+    allPackageIds.addAll(mainIndexIndexValue.getPackages());
+    allPackageIds.addAll(mainIndexIndexValue.getKeyPackages());
+    allPackageIds.addAll(mainIndexIndexValue.getTempPackages());
+
+    log.info("Looking for {} package IDs in archive directories", allPackageIds.size());
+
+    // Get archive packages directory path
+    Path archivePackagesDir = Paths.get(dbPath, "archive", "packages");
+
+    if (!Files.exists(archivePackagesDir)) {
+      log.warn("Archive packages directory not found: {}", archivePackagesDir);
+      return archivePackageFiles;
+    }
+
+    // Scan for archive directories (arch0000, arch0001, etc.)
+    try {
+      Files.list(archivePackagesDir)
+          .filter(Files::isDirectory)
+          .filter(path -> path.getFileName().toString().startsWith("arch"))
+          .forEach(
+              archDir -> {
+                log.debug("Scanning archive directory: {}", archDir);
+
+                // For each package ID, look for corresponding files in this archive directory
+                for (Integer packageId : allPackageIds) {
+                  List<String> packageFiles = findPackageFiles(archDir, packageId);
+                  archivePackageFiles.addAll(packageFiles);
+                }
+              });
+    } catch (IOException e) {
+      log.error("Error scanning archive packages directory: {}", e.getMessage());
+    }
+
+    log.info("Found {} archive package files from global index", archivePackageFiles.size());
+    return archivePackageFiles;
+  }
+
+  /**
+   * Finds all package files for a given package ID in a specific archive directory. This includes
+   * both main package files (archive.{packageId:05d}.pack) and shard-specific files
+   * (archive.{packageId:05d}.{workchain}:{shard}.pack).
+   *
+   * @param archDir The archive directory to search in
+   * @param packageId The package ID to look for
+   * @return List of file paths for this package ID
+   */
+  private List<String> findPackageFiles(Path archDir, Integer packageId) {
+    List<String> packageFiles = new ArrayList<>();
 
     try {
-      Path packagesDir = Paths.get(dbPath, "files", "packages");
-      if (Files.exists(packagesDir)) {
-        Files.list(packagesDir)
-            .filter(path -> path.toString().endsWith(".pack"))
-            .forEach(
-                path -> {
-                  try {
-                    String fileName = path.getFileName().toString();
-                    String packageIdStr = fileName.substring(0, fileName.lastIndexOf('.'));
-                    long packageId = Long.parseLong(packageIdStr);
-                    packageFiles.put(packageId, path.toString());
-                  } catch (Exception e) {
-                    log.debug("Error parsing package file name: {}", path.getFileName());
-                  }
-                });
-      }
+      String packageIdFormatted = String.format("%05d", packageId);
+
+      // Look for files matching the package ID pattern
+      Files.list(archDir)
+          .filter(Files::isRegularFile)
+          .filter(
+              path -> {
+                String fileName = path.getFileName().toString();
+                return fileName.startsWith("archive." + packageIdFormatted)
+                    && fileName.endsWith(".pack");
+              })
+          .forEach(
+              path -> {
+                packageFiles.add(path.toString());
+                //                log.debug("Found package file for ID {}: {}", packageId, path);
+              });
+
     } catch (IOException e) {
-      log.warn("Error listing package files: {}", e.getMessage());
+      log.debug(
+          "Error scanning archive directory {} for package {}: {}",
+          archDir,
+          packageId,
+          e.getMessage());
     }
 
     return packageFiles;
   }
 
+  /**
+   * Gets the archive package file path for a specific package ID. This method searches through all
+   * archive directories to find the package file.
+   *
+   * @param packageId The package ID
+   * @return The file path or null if not found
+   */
+  public String getArchivePackageFilePath(long packageId) {
+    Path archivePackagesDir = Paths.get(dbPath, "archive", "packages");
+
+    if (!Files.exists(archivePackagesDir)) {
+      log.debug("Archive packages directory not found: {}", archivePackagesDir);
+      return null;
+    }
+
+    try {
+      // Search through all archive directories
+      return Files.list(archivePackagesDir)
+          .filter(Files::isDirectory)
+          .filter(path -> path.getFileName().toString().startsWith("arch"))
+          .map(archDir -> findMainPackageFile(archDir, packageId))
+          .filter(path -> path != null)
+          .findFirst()
+          .orElse(null);
+    } catch (IOException e) {
+      log.debug("Error searching for package {} file: {}", packageId, e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Finds the main package file (archive.{packageId:05d}.pack) for a given package ID in a specific
+   * archive directory.
+   *
+   * @param archDir The archive directory to search in
+   * @param packageId The package ID to look for
+   * @return The file path or null if not found
+   */
+  private String findMainPackageFile(Path archDir, long packageId) {
+    String packageFileName = String.format("archive.%05d.pack", packageId);
+    Path packagePath = archDir.resolve(packageFileName);
+
+    if (Files.exists(packagePath)) {
+      log.debug("Found main package file for ID {}: {}", packageId, packagePath);
+      return packagePath.toString();
+    }
+
+    return null;
+  }
+
+  /**
+   * Gets all archive package file paths for a specific package ID, including shard-specific files.
+   * This method searches through all archive directories to find all files related to the package.
+   *
+   * @param packageId The package ID
+   * @return List of file paths for this package ID
+   */
+  public List<String> getAllArchivePackageFilePaths(long packageId) {
+    List<String> packageFiles = new ArrayList<>();
+    Path archivePackagesDir = Paths.get(dbPath, "archive", "packages");
+
+    if (!Files.exists(archivePackagesDir)) {
+      log.debug("Archive packages directory not found: {}", archivePackagesDir);
+      return packageFiles;
+    }
+
+    try {
+      // Search through all archive directories
+      Files.list(archivePackagesDir)
+          .filter(Files::isDirectory)
+          .filter(path -> path.getFileName().toString().startsWith("arch"))
+          .forEach(
+              archDir -> {
+                List<String> files = findPackageFiles(archDir, (int) packageId);
+                packageFiles.addAll(files);
+              });
+    } catch (IOException e) {
+      log.debug("Error searching for package {} files: {}", packageId, e.getMessage());
+    }
+
+    return packageFiles;
+  }
 
   /**
    * Checks if a string is a valid hexadecimal string.

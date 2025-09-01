@@ -52,9 +52,6 @@ public class TestDbReader {
           return Long.compare(o2.getBlockInfo().getSeqno(), o1.getBlockInfo().getSeqno());
         });
     for (Block block : blocks1) {
-      //      List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
-      //      List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
-      //      log.info("InMsgs: {}, OutMsgs: {}", inMsgs.size(), outMsgs.size());
       log.info(
           "({},{},{}), {} {}",
           block.getBlockInfo().getShard().getWorkchain(),
@@ -108,90 +105,6 @@ public class TestDbReader {
     byte[] blockBytes =
         archiveDbReader.readBlock(
             "8795C33B8DEA5DB6B8AED989F68B2F35A40E00DEB240FB89B75E52B063C5DD09");
-
-    if (blockBytes == null) {
-      log.error("Block not found!");
-      return;
-    }
-
-    log.info("Block found, size: {} bytes", blockBytes.length);
-
-    try {
-      Cell c = CellBuilder.beginCell().fromBoc(blockBytes).endCell();
-      long magic = c.getBits().preReadUint(32).longValue();
-      log.info("Magic number: 0x{}", Long.toHexString(magic));
-
-      if (magic == 0x11ef55aaL) { // block
-        Block block = Block.deserialize(CellSlice.beginParse(c));
-        log.info("Successfully parsed Block: {}", block);
-      } else if ((magic & 0xFF000000L) == 0xc3000000L) { // BlockProof (starts with 0xc3)
-        log.info("Found BlockProof, extracting block from it...");
-        BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c));
-        log.info("Successfully parsed BlockProof: {}", blockProof);
-      } else {
-        log.info(
-            "Unknown data type, magic is 0x{} (expected 0x11ef55aa for Block or 0xc3xxxxxx for BlockProof)",
-            Long.toHexString(magic));
-      }
-    } catch (Throwable e) {
-      log.error("Error parsing block: {}", e.getMessage());
-    }
-  }
-
-  /**
-   * (-1,8000000000000000,701), E298281AEF17D50504F8E56BDBA0F9CF6E6EBDE04CAD82AB5CC7EFC799E8CEDB
-   * 54625D5BE4BF5A00CD6419AEDA83C8F1137A4E4BEA1DB94FD550DF24F60EE420
-   *
-   * @throws IOException
-   */
-  @Test
-  public void testReadArchiveDbBlockByHash2() throws IOException {
-    ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
-    byte[] blockBytes =
-        archiveDbReader.readBlock(
-            "E298281AEF17D50504F8E56BDBA0F9CF6E6EBDE04CAD82AB5CC7EFC799E8CEDB");
-
-    if (blockBytes == null) {
-      log.error("Block not found!");
-      return;
-    }
-
-    log.info("Block found, size: {} bytes", blockBytes.length);
-
-    try {
-      Cell c = CellBuilder.beginCell().fromBoc(blockBytes).endCell();
-      long magic = c.getBits().preReadUint(32).longValue();
-      log.info("Magic number: 0x{}", Long.toHexString(magic));
-
-      if (magic == 0x11ef55aaL) { // block
-        Block block = Block.deserialize(CellSlice.beginParse(c));
-        log.info("Successfully parsed Block: {}", block);
-      } else if ((magic & 0xFF000000L) == 0xc3000000L) { // BlockProof (starts with 0xc3)
-        log.info("Found BlockProof, extracting block from it...");
-        BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c));
-        log.info("Successfully parsed BlockProof: {}", blockProof);
-      } else {
-        log.info(
-            "Unknown data type, magic is 0x{} (expected 0x11ef55aa for Block or 0xc3xxxxxx for BlockProof)",
-            Long.toHexString(magic));
-      }
-    } catch (Throwable e) {
-      log.error("Error parsing block: {}", e.getMessage());
-    }
-  }
-
-  /**
-   * (0,8000000000000000,870), A809DE212158D0EF3CA99507E0041AE03DDAEF9D54E926911419A47BF36D455C
-   * 860F47269086E21910F9090BA32ACEF02909886E5ECF950A18A3913673F2C197
-   *
-   * @throws IOException
-   */
-  @Test
-  public void testReadArchiveDbBlockByHash3() throws IOException {
-    ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
-    byte[] blockBytes =
-        archiveDbReader.readBlock(
-            "A809DE212158D0EF3CA99507E0041AE03DDAEF9D54E926911419A47BF36D455C");
 
     if (blockBytes == null) {
       log.error("Block not found!");

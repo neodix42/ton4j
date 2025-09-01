@@ -51,8 +51,8 @@ public class DbReader implements Closeable {
    */
   public ArchiveDbReader getArchiveDbReader() throws IOException {
     if (archiveDbReader == null) {
-      String archivePath = Paths.get(dbRootPath, "archive").toString();
-      archiveDbReader = new ArchiveDbReader(archivePath);
+      //      String archivePath = Paths.get(dbRootPath, "archive").toString();
+      archiveDbReader = new ArchiveDbReader(dbRootPath);
     }
 
     return archiveDbReader;

@@ -11,8 +11,6 @@ import org.rocksdb.ReadOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
-import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
-import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
 
 /** A wrapper for RocksDB operations. */
 public class RocksDbWrapper implements Closeable {
@@ -51,9 +49,9 @@ public class RocksDbWrapper implements Closeable {
    * @return The value, or null if the key doesn't exist
    * @throws IOException If an I/O error occurs
    */
-  public GlobalIndexValue get(byte[] key) throws IOException {
+  public byte[] get(byte[] key) throws IOException {
     try {
-      return GlobalIndexValue.deserialize(db.get(readOptions, key));
+      return db.get(readOptions, key);
     } catch (RocksDBException e) {
       throw new IOException("Failed to get value: " + e.getMessage(), e);
     }
@@ -64,15 +62,12 @@ public class RocksDbWrapper implements Closeable {
    *
    * @return A list of key-value pairs
    */
-  public List<Map.Entry<GlobalIndexKey, GlobalIndexValue>> getAll() {
-    List<Map.Entry<GlobalIndexKey, GlobalIndexValue>> entries = new ArrayList<>();
+  public List<Map.Entry<byte[], byte[]>> getAll() {
+    List<Map.Entry<byte[], byte[]>> entries = new ArrayList<>();
 
     try (RocksIterator iterator = db.newIterator(readOptions)) {
       for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-        entries.add(
-            Map.entry(
-                GlobalIndexKey.deserialize(iterator.key()),
-                GlobalIndexValue.deserialize(iterator.value())));
+        entries.add(Map.entry(iterator.key(), iterator.value()));
       }
     }
 
@@ -84,12 +79,10 @@ public class RocksDbWrapper implements Closeable {
    *
    * @param consumer Consumer for key-value pairs
    */
-  public void forEach(BiConsumer<GlobalIndexKey, GlobalIndexValue> consumer) {
+  public void forEach(BiConsumer<byte[], byte[]> consumer) {
     try (RocksIterator iterator = db.newIterator(readOptions)) {
       for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-        consumer.accept(
-            GlobalIndexKey.deserialize(iterator.key()),
-            GlobalIndexValue.deserialize(iterator.value()));
+        consumer.accept(iterator.key(), iterator.value());
       }
     }
   }

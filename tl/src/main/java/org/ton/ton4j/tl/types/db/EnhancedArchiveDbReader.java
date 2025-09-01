@@ -38,6 +38,7 @@ public class EnhancedArchiveDbReader extends ArchiveDbReader {
    */
   public EnhancedArchiveDbReader(String dbPath) throws IOException {
     super(dbPath);
+
     log.info("Enhanced ArchiveDbReader initialized with BlockHandle support");
   }
 
@@ -53,10 +54,8 @@ public class EnhancedArchiveDbReader extends ArchiveDbReader {
    * @param handle The BlockHandle containing offset and size information
    * @param packagePath Path to the package file containing the block
    * @return The block data, or null if not found or invalid
-   * @throws IOException If an I/O error occurs
    */
-  public byte[] readBlockUsingBlockHandle(String hash, BlockHandle handle, String packagePath)
-      throws IOException {
+  public byte[] readBlockUsingBlockHandle(String hash, BlockHandle handle, String packagePath) {
 
     if (handle == null || packagePath == null) {
       log.warn("Invalid parameters: handle={}, packagePath={}", handle, packagePath);
@@ -141,10 +140,8 @@ public class EnhancedArchiveDbReader extends ArchiveDbReader {
    * @param hash The block hash
    * @param location The BlockLocation containing package_id, offset, and size
    * @return The block data, or null if not found or invalid
-   * @throws IOException If an I/O error occurs
    */
-  public byte[] readBlockUsingBlockLocation(String hash, BlockLocation location)
-      throws IOException {
+  public byte[] readBlockUsingBlockLocation(String hash, BlockLocation location) {
     if (location == null || !location.isValid()) {
       log.warn("Invalid BlockLocation for hash {}: {}", hash, location);
       return null;
