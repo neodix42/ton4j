@@ -61,6 +61,36 @@ public class TestDbReader {
     }
   }
 
+  /** Test block rate. single thread 1000 blocks per second (no tuning) */
+  @Test
+  public void testReadAllBlocksFromArchiveDbBlockRate() throws IOException {
+    ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
+
+    // Get all available archive keys
+    List<String> archiveKeys = archiveDbReader.getArchiveKeys();
+    log.info("Available archive keys: {}", archiveKeys);
+
+    // Measure time for getAllBlocks() method
+    log.info("Starting to load all blocks...");
+    long startTime = System.currentTimeMillis();
+
+    List<Block> blocks1 = archiveDbReader.getAllBlocks();
+
+    long endTime = System.currentTimeMillis();
+    long durationMs = endTime - startTime;
+    double durationSeconds = durationMs / 1000.0;
+
+    int totalBlocks = blocks1.size();
+    double blocksPerSecond = totalBlocks / durationSeconds;
+
+    log.info("All blocks loaded: {}", totalBlocks);
+    log.info(
+        "Loading time: {} ms ({} seconds)", durationMs, String.format("%.2f", durationSeconds));
+    log.info("Loading rate: {} blocks per second", blocksPerSecond);
+    log.info(
+        "Average time per block: {} ms", String.format("%.2f", (double) durationMs / totalBlocks));
+  }
+
   /** Test reading archive database. */
   @Test
   public void testReadAllBlocksAndTheirHashesFromArchiveDb() throws IOException {
