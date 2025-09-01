@@ -77,8 +77,8 @@ public class TestDbReader {
       Block block = entry.getValue();
       String hash = entry.getKey();
 
-//      List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
-//      List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
+      //      List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
+      //      List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
       //      log.info("InMsgs: {}, OutMsgs: {}", inMsgs.size(), outMsgs.size());
       log.info(
           "hash {} ({},{},{}), {} {}",
@@ -102,7 +102,7 @@ public class TestDbReader {
     ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
     byte[] blockBytes =
         archiveDbReader.readBlock(
-            "388DE460D69B34771C64B4801919EC8158FD39FFAC6C7C3AAEF8E22462025685");
+            "73DB616CB476C8887EBAFE25989E8D3735FEB7BA59470919C3CDA2BD35B749EF");
 
     if (blockBytes == null) {
       log.error("Block not found!");

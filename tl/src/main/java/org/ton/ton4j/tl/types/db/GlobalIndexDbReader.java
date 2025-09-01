@@ -427,11 +427,10 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Gets ALL archive package file paths by scanning the archive directories directly.
-   * This method finds all .pack files in archive directories, including those not listed
-   * in the Files database global index. This solves the problem of missing archive files
-   * like archive.00100.pack that exist in the filesystem but aren't referenced in the
-   * Files database.
+   * Gets ALL archive package file paths by scanning the archive directories directly. This method
+   * finds all .pack files in archive directories, including those not listed in the Files database
+   * global index. This solves the problem of missing archive files like archive.00100.pack that
+   * exist in the filesystem but aren't referenced in the Files database.
    *
    * @return List of all archive package file paths found in the filesystem
    */
@@ -460,10 +459,12 @@ public class GlobalIndexDbReader implements Closeable {
                   Files.list(archDir)
                       .filter(Files::isRegularFile)
                       .filter(path -> path.getFileName().toString().endsWith(".pack"))
-                      .forEach(packFile -> {
-                        archivePackageFiles.add(packFile.toString());
-                        log.debug("Found archive package file: {}", packFile);
-                      });
+                      .forEach(
+                          packFile -> {
+                            archivePackageFiles.add(packFile.toString());
+                            //                        log.debug("Found archive package file: {}",
+                            // packFile);
+                          });
                 } catch (IOException e) {
                   log.debug("Error scanning archive directory {}: {}", archDir, e.getMessage());
                 }
@@ -477,10 +478,10 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Gets ALL archive file locations by reading individual archive index databases.
-   * This method follows the C++ implementation approach by opening each archive.XXXXX.index
-   * database and reading the hash->offset mappings. This provides complete access to all
-   * files stored in archive packages, including those not referenced in the Files database.
+   * Gets ALL archive file locations by reading individual archive index databases. This method
+   * follows the C++ implementation approach by opening each archive.XXXXX.index database and
+   * reading the hash->offset mappings. This provides complete access to all files stored in archive
+   * packages, including those not referenced in the Files database.
    *
    * @return Map of file hash to ArchiveFileLocation
    */
@@ -512,27 +513,34 @@ public class GlobalIndexDbReader implements Closeable {
                   Files.list(archDir)
                       .filter(Files::isRegularFile)
                       .filter(path -> path.getFileName().toString().endsWith(".pack"))
-                      .forEach(packFile -> {
-                        String packFileName = packFile.getFileName().toString();
-                        String indexFileName = packFileName.replace(".pack", ".index");
-                        Path indexPath = archDir.resolve(indexFileName);
+                      .forEach(
+                          packFile -> {
+                            String packFileName = packFile.getFileName().toString();
+                            String indexFileName = packFileName.replace(".pack", ".index");
+                            Path indexPath = archDir.resolve(indexFileName);
 
-                        if (Files.exists(indexPath)) {
-                          try {
-                            int packageId = extractPackageIdFromFilename(packFileName);
-                            Map<String, ArchiveFileLocation> packageFiles = 
-                                readArchiveIndexDatabase(packFile.toString(), indexPath.toString(), packageId);
-                            fileLocations.putAll(packageFiles);
-                            
-                            log.debug("Loaded {} files from archive index: {}", 
-                                packageFiles.size(), indexPath);
-                          } catch (Exception e) {
-                            log.debug("Error reading archive index {}: {}", indexPath, e.getMessage());
-                          }
-                        } else {
-                          log.debug("No index database found for package: {}", packFile);
-                        }
-                      });
+                            if (Files.exists(indexPath)) {
+                              try {
+                                int packageId = extractPackageIdFromFilename(packFileName);
+                                Map<String, ArchiveFileLocation> packageFiles =
+                                    readArchiveIndexDatabase(
+                                        packFile.toString(), indexPath.toString(), packageId);
+                                fileLocations.putAll(packageFiles);
+
+                                log.debug(
+                                    "Loaded {} files from archive index: {}",
+                                    packageFiles.size(),
+                                    indexPath);
+                              } catch (Exception e) {
+                                log.debug(
+                                    "Error reading archive index {}: {}",
+                                    indexPath,
+                                    e.getMessage());
+                              }
+                            } else {
+                              log.debug("No index database found for package: {}", packFile);
+                            }
+                          });
                 } catch (IOException e) {
                   log.debug("Error scanning archive directory {}: {}", archDir, e.getMessage());
                 }
@@ -541,30 +549,35 @@ public class GlobalIndexDbReader implements Closeable {
       log.error("Error scanning archive packages directory: {}", e.getMessage());
     }
 
-    log.info("Found {} total files from {} archive index databases", fileLocations.size(), totalPackages);
+    log.info(
+        "Found {} total files from {} archive index databases",
+        fileLocations.size(),
+        totalPackages);
     return fileLocations;
   }
 
-    /**
-     * Reads hash->offset mappings from a specific archive index database.
-     *
-     * @param packagePath Path to the package file
-     * @param indexPath Path to the index database
-     * @param packageId Package ID
-     * @return Map of file hash to ArchiveFileLocation
-     */
-  private Map<String, ArchiveFileLocation> readArchiveIndexDatabase(String packagePath, String indexPath, int packageId) {
+  /**
+   * Reads hash->offset mappings from a specific archive index database.
+   *
+   * @param packagePath Path to the package file
+   * @param indexPath Path to the index database
+   * @param packageId Package ID
+   * @return Map of file hash to ArchiveFileLocation
+   */
+  private Map<String, ArchiveFileLocation> readArchiveIndexDatabase(
+      String packagePath, String indexPath, int packageId) {
     Map<String, ArchiveFileLocation> fileLocations = new HashMap<>();
 
-    try (ArchiveIndexReader indexReader = new ArchiveIndexReader(indexPath, packagePath, packageId)) {
+    try (ArchiveIndexReader indexReader =
+        new ArchiveIndexReader(indexPath, packagePath, packageId)) {
       Map<String, Long> hashOffsetMap = indexReader.getAllHashOffsetMappings();
 
       for (Map.Entry<String, Long> entry : hashOffsetMap.entrySet()) {
         String hash = entry.getKey();
         Long offset = entry.getValue();
 
-        ArchiveFileLocation location = ArchiveFileLocation.create(
-            packagePath, indexPath, hash, packageId, offset);
+        ArchiveFileLocation location =
+            ArchiveFileLocation.create(packagePath, indexPath, hash, packageId, offset);
 
         fileLocations.put(hash, location);
       }
@@ -577,8 +590,8 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Extracts package ID from archive filename.
-   * Examples: archive.00100.pack -> 100, archive.00281.0:8000000000000000.pack -> 281
+   * Extracts package ID from archive filename. Examples: archive.00100.pack -> 100,
+   * archive.00281.0:8000000000000000.pack -> 281
    *
    * @param filename Archive filename
    * @return Package ID
@@ -614,33 +627,39 @@ public class GlobalIndexDbReader implements Closeable {
       Files.list(archivePackagesDir)
           .filter(Files::isDirectory)
           .filter(path -> path.getFileName().toString().startsWith("arch"))
-          .forEach(archDir -> {
-            try {
-              Files.list(archDir)
-                  .filter(Files::isRegularFile)
-                  .filter(path -> path.getFileName().toString().endsWith(".pack"))
-                  .forEach(packFile -> {
-                    String packFileName = packFile.getFileName().toString();
-                    String indexFileName = packFileName.replace(".pack", ".index");
-                    Path indexPath = archDir.resolve(indexFileName);
+          .forEach(
+              archDir -> {
+                try {
+                  Files.list(archDir)
+                      .filter(Files::isRegularFile)
+                      .filter(path -> path.getFileName().toString().endsWith(".pack"))
+                      .forEach(
+                          packFile -> {
+                            String packFileName = packFile.getFileName().toString();
+                            String indexFileName = packFileName.replace(".pack", ".index");
+                            Path indexPath = archDir.resolve(indexFileName);
 
-                    if (Files.exists(indexPath)) {
-                      try {
-                        int packageId = extractPackageIdFromFilename(packFileName);
-                        try (ArchiveIndexReader indexReader = new ArchiveIndexReader(
-                            indexPath.toString(), packFile.toString(), packageId)) {
-                          int fileCount = indexReader.getFileCount();
-                          packageFileCounts.put(packageId, fileCount);
-                        }
-                      } catch (Exception e) {
-                        log.debug("Error reading archive index {}: {}", indexPath, e.getMessage());
-                      }
-                    }
-                  });
-            } catch (IOException e) {
-              log.debug("Error scanning archive directory {}: {}", archDir, e.getMessage());
-            }
-          });
+                            if (Files.exists(indexPath)) {
+                              try {
+                                int packageId = extractPackageIdFromFilename(packFileName);
+                                try (ArchiveIndexReader indexReader =
+                                    new ArchiveIndexReader(
+                                        indexPath.toString(), packFile.toString(), packageId)) {
+                                  int fileCount = indexReader.getFileCount();
+                                  packageFileCounts.put(packageId, fileCount);
+                                }
+                              } catch (Exception e) {
+                                log.debug(
+                                    "Error reading archive index {}: {}",
+                                    indexPath,
+                                    e.getMessage());
+                              }
+                            }
+                          });
+                } catch (IOException e) {
+                  log.debug("Error scanning archive directory {}: {}", archDir, e.getMessage());
+                }
+              });
     } catch (IOException e) {
       log.error("Error scanning archive packages directory: {}", e.getMessage());
     }
@@ -649,9 +668,9 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Reads a file from archive packages using hash->offset lookup.
-   * This follows the C++ implementation approach where files are accessed
-   * by their hash using the individual archive index databases.
+   * Reads a file from archive packages using hash->offset lookup. This follows the C++
+   * implementation approach where files are accessed by their hash using the individual archive
+   * index databases.
    *
    * @param hash The file hash (hex string)
    * @return The file data, or null if not found
@@ -662,7 +681,7 @@ public class GlobalIndexDbReader implements Closeable {
 
     // Get all archive file locations
     Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
-    
+
     // Find the file location for this hash
     ArchiveFileLocation location = fileLocations.get(hash);
     if (location == null) {
@@ -680,8 +699,8 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Reads a file from an archive package using ArchiveFileLocation.
-   * This method opens the package file and reads data at the specified offset.
+   * Reads a file from an archive package using ArchiveFileLocation. This method opens the package
+   * file and reads data at the specified offset.
    *
    * @param location The ArchiveFileLocation containing package path and offset
    * @return The file data, or null if not found
@@ -692,8 +711,10 @@ public class GlobalIndexDbReader implements Closeable {
       return null;
     }
 
-    log.debug("Reading from archive package: {}, offset: {}", 
-        location.getPackageId(), location.getOffset());
+    log.debug(
+        "Reading from archive package: {}, offset: {}",
+        location.getPackageId(),
+        location.getOffset());
 
     // Get package reader for the archive package
     PackageReader packageReader = getPackageReader(location.getPackagePath());
@@ -701,21 +722,24 @@ public class GlobalIndexDbReader implements Closeable {
     // Read entry at the specified offset
     PackageReader.PackageEntry entry = packageReader.getEntryAt(location.getOffset());
     if (entry == null) {
-      log.warn("No entry found at offset {} in archive package {}",
-          location.getOffset(), location.getPackageId());
+      log.warn(
+          "No entry found at offset {} in archive package {}",
+          location.getOffset(),
+          location.getPackageId());
       return null;
     }
 
-    log.debug("Successfully read {} bytes from archive package {}", 
-        entry.getData().length, location.getPackageId());
-    
+    log.debug(
+        "Successfully read {} bytes from archive package {}",
+        entry.getData().length,
+        location.getPackageId());
+
     return entry.getData();
   }
 
   /**
-   * Gets all available file hashes from archive index databases.
-   * This provides a complete list of all files that can be accessed
-   * using the hash->offset lookup mechanism.
+   * Gets all available file hashes from archive index databases. This provides a complete list of
+   * all files that can be accessed using the hash->offset lookup mechanism.
    *
    * @return Set of file hashes available in archive packages
    */
@@ -736,177 +760,186 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Gets all blocks from archive packages by reading from individual archive index databases.
-   * This method follows the same approach as ArchiveDbReader.getAllBlocks() but uses the
-   * C++ approach of reading from individual archive index databases.
+   * Gets all blocks from archive packages by reading from individual archive index databases. This
+   * method follows the same approach as ArchiveDbReader.getAllBlocks() but uses the C++ approach of
+   * reading from individual archive index databases.
    *
    * @return List of all blocks found in archive packages
    */
   public List<org.ton.ton4j.tlb.Block> getAllIndexedBlocks() {
     List<org.ton.ton4j.tlb.Block> blocks = new ArrayList<>();
-    
+
     log.info("Reading all blocks from archive index databases...");
-    
+
     // Get all archive file locations from index databases
     Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
-    
+
     int totalFiles = fileLocations.size();
     int processedFiles = 0;
     int blockCount = 0;
     int errorCount = 0;
-    
+
     log.info("Found {} files in archive index databases, checking for blocks...", totalFiles);
-    
+
     for (Map.Entry<String, ArchiveFileLocation> entry : fileLocations.entrySet()) {
       String hash = entry.getKey();
       ArchiveFileLocation location = entry.getValue();
-      
+
       try {
         processedFiles++;
-        
+
         // Read the file data using the archive file location
         byte[] fileData = readArchiveFileFromPackage(location);
         if (fileData != null) {
           // Try to parse as BOC and check if it's a block
-          org.ton.ton4j.cell.Cell cell = org.ton.ton4j.cell.CellBuilder.beginCell()
-              .fromBoc(fileData).endCell();
-          
+          org.ton.ton4j.cell.Cell cell =
+              org.ton.ton4j.cell.CellBuilder.beginCell().fromBoc(fileData).endCell();
+
           long magic = cell.getBits().preReadUint(32).longValue();
           if (magic == 0x11ef55aaL) { // block magic
-            org.ton.ton4j.tlb.Block block = org.ton.ton4j.tlb.Block.deserialize(
-                org.ton.ton4j.cell.CellSlice.beginParse(cell));
+            org.ton.ton4j.tlb.Block block =
+                org.ton.ton4j.tlb.Block.deserialize(org.ton.ton4j.cell.CellSlice.beginParse(cell));
             blocks.add(block);
             blockCount++;
-            
+
             // Log progress for large datasets
             if (blockCount % 100 == 0) {
               log.debug("Processed {} files, found {} blocks so far", processedFiles, blockCount);
             }
           }
         }
-        
+
       } catch (Throwable e) {
         errorCount++;
         log.debug("Error processing file {}: {}", hash, e.getMessage());
       }
     }
-    
-    log.info("Processed {} files from archive index databases: {} blocks found, {} errors", 
-        processedFiles, blockCount, errorCount);
-    
+
+    log.info(
+        "Processed {} files from archive index databases: {} blocks found, {} errors",
+        processedFiles,
+        blockCount,
+        errorCount);
+
     return blocks;
   }
 
   /**
-   * Gets all blocks with their hashes from archive packages.
-   * This method is similar to getAllBlocks() but returns a map of hash to block.
+   * Gets all blocks with their hashes from archive packages. This method is similar to
+   * getAllBlocks() but returns a map of hash to block.
    *
    * @return Map of file hash to Block
    */
   public Map<String, org.ton.ton4j.tlb.Block> getAllBlocksWithHashes() {
     Map<String, org.ton.ton4j.tlb.Block> blocks = new HashMap<>();
-    
+
     log.info("Reading all blocks with hashes from archive index databases...");
-    
+
     // Get all archive file locations from index databases
     Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
-    
+
     int totalFiles = fileLocations.size();
     int processedFiles = 0;
     int blockCount = 0;
     int errorCount = 0;
-    
+
     log.info("Found {} files in archive index databases, checking for blocks...", totalFiles);
-    
+
     for (Map.Entry<String, ArchiveFileLocation> entry : fileLocations.entrySet()) {
       String hash = entry.getKey();
       ArchiveFileLocation location = entry.getValue();
-      
+
       try {
         processedFiles++;
-        
+
         // Read the file data using the archive file location
         byte[] fileData = readArchiveFileFromPackage(location);
         if (fileData != null) {
           // Try to parse as BOC and check if it's a block
-          org.ton.ton4j.cell.Cell cell = org.ton.ton4j.cell.CellBuilder.beginCell()
-              .fromBoc(fileData).endCell();
-          
+          org.ton.ton4j.cell.Cell cell =
+              org.ton.ton4j.cell.CellBuilder.beginCell().fromBoc(fileData).endCell();
+
           long magic = cell.getBits().preReadUint(32).longValue();
           if (magic == 0x11ef55aaL) { // block magic
-            org.ton.ton4j.tlb.Block block = org.ton.ton4j.tlb.Block.deserialize(
-                org.ton.ton4j.cell.CellSlice.beginParse(cell));
+            org.ton.ton4j.tlb.Block block =
+                org.ton.ton4j.tlb.Block.deserialize(org.ton.ton4j.cell.CellSlice.beginParse(cell));
             blocks.put(hash, block);
             blockCount++;
-            
+
             // Log progress for large datasets
             if (blockCount % 100 == 0) {
               log.debug("Processed {} files, found {} blocks so far", processedFiles, blockCount);
             }
           }
         }
-        
+
       } catch (Throwable e) {
         errorCount++;
         log.debug("Error processing file {}: {}", hash, e.getMessage());
       }
     }
-    
-    log.info("Processed {} files from archive index databases: {} blocks found, {} errors", 
-        processedFiles, blockCount, errorCount);
-    
+
+    log.info(
+        "Processed {} files from archive index databases: {} blocks found, {} errors",
+        processedFiles,
+        blockCount,
+        errorCount);
+
     return blocks;
   }
 
   /**
-   * Gets all raw entries (file data) from archive packages.
-   * This method returns all files found in archive index databases as raw byte arrays.
+   * Gets all raw entries (file data) from archive packages. This method returns all files found in
+   * archive index databases as raw byte arrays.
    *
    * @return Map of file hash to raw file data
    */
   public Map<String, byte[]> getAllArchiveEntries() {
     Map<String, byte[]> entries = new HashMap<>();
-    
+
     log.info("Reading all entries from archive index databases...");
-    
+
     // Get all archive file locations from index databases
     Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
-    
+
     int totalFiles = fileLocations.size();
     int processedFiles = 0;
     int successCount = 0;
     int errorCount = 0;
-    
+
     log.info("Found {} files in archive index databases, reading all entries...", totalFiles);
-    
+
     for (Map.Entry<String, ArchiveFileLocation> entry : fileLocations.entrySet()) {
       String hash = entry.getKey();
       ArchiveFileLocation location = entry.getValue();
-      
+
       try {
         processedFiles++;
-        
+
         // Read the file data using the archive file location
         byte[] fileData = readArchiveFileFromPackage(location);
         if (fileData != null) {
           entries.put(hash, fileData);
           successCount++;
-          
+
           // Log progress for large datasets
           if (successCount % 1000 == 0) {
             log.debug("Processed {} files, read {} entries so far", processedFiles, successCount);
           }
         }
-        
+
       } catch (Exception e) {
         errorCount++;
         log.debug("Error reading file {}: {}", hash, e.getMessage());
       }
     }
-    
-    log.info("Processed {} files from archive index databases: {} entries read, {} errors", 
-        processedFiles, successCount, errorCount);
-    
+
+    log.info(
+        "Processed {} files from archive index databases: {} entries read, {} errors",
+        processedFiles,
+        successCount,
+        errorCount);
+
     return entries;
   }
 

@@ -135,9 +135,9 @@ public class ArchiveDbReader implements Closeable {
                                   archiveKey,
                                   new ArchiveInfo(archiveId, indexPathStr, packFile.toString()));
 
-                              log.debug(
-                                  "Discovered archive package: {}",
-                                  archiveKey);
+                              //                              log.debug(
+                              //                                  "Discovered archive package: {}",
+                              //                                  archiveKey);
 
                             } catch (Exception e) {
                               log.debug(
@@ -267,7 +267,7 @@ public class ArchiveDbReader implements Closeable {
       String archiveKey = archiveEntry.getKey();
       ArchiveInfo archiveInfo = archiveEntry.getValue();
 
-      log.debug("Checking archive: {}", archiveKey);
+      //      log.debug("Checking archive: {}", archiveKey);
 
       try {
         // Check if this is a Files database package (indicated by null indexPath)
@@ -660,7 +660,7 @@ public class ArchiveDbReader implements Closeable {
     // This includes both explicitly orphaned packages and archive packages without index files
     if (archiveKey.startsWith("orphaned/") || archiveInfo.indexPath == null) {
       // Read directly from the package file like TestFilesDbReader does
-//      log.debug("Reading orphaned package: {} (no index file)", archiveKey);
+      //      log.debug("Reading orphaned package: {} (no index file)", archiveKey);
       readFromOrphanedPackage(archiveKey, archiveInfo, blocks);
       return;
     }
@@ -722,10 +722,10 @@ public class ArchiveDbReader implements Closeable {
             }
           });
 
-//      log.info(
-//          "Successfully read {} entries from orphaned package: {}",
-//          entryCount,
-//          archiveInfo.packagePath);
+      //      log.info(
+      //          "Successfully read {} entries from orphaned package: {}",
+      //          entryCount,
+      //          archiveInfo.packagePath);
 
     } catch (IOException e) {
       log.error("Error reading orphaned package {}: {}", archiveInfo.packagePath, e.getMessage());
