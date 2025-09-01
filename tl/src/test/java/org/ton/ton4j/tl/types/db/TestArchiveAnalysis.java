@@ -1,13 +1,12 @@
 package org.ton.ton4j.tl.types.db;
 
-import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
-import org.ton.ton4j.tlb.BlockHandle;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Map;
-
-import static org.junit.Assert.*;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.Test;
+import org.ton.ton4j.tlb.BlockHandle;
 
 /**
  * Test class for archive analysis functionality including BlockHandle reading
@@ -16,13 +15,13 @@ import static org.junit.Assert.*;
 @Slf4j
 public class TestArchiveAnalysis {
 
-  private static final String DB_PATH = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db/archive";
+  private static final String ROOT_DB_PATH = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
 
   @Test
   public void testArchiveEntryTypeStatistics() throws IOException {
     log.info("Testing archive entry type statistics...");
     
-    try (ArchiveDbReader reader = new ArchiveDbReader(DB_PATH)) {
+    try (ArchiveDbReader reader = new ArchiveDbReader(ROOT_DB_PATH)) {
       Map<String, Integer> stats = reader.getArchiveEntryTypeStatistics();
       
       assertNotNull("Statistics should not be null", stats);
@@ -47,7 +46,7 @@ public class TestArchiveAnalysis {
   public void testBlockHandleExtractionFromIndex() throws IOException {
     log.info("Testing BlockHandle extraction from RocksDB index files...");
     
-    try (ArchiveDbReader reader = new ArchiveDbReader(DB_PATH)) {
+    try (ArchiveDbReader reader = new ArchiveDbReader(ROOT_DB_PATH)) {
       Map<String, BlockHandle> blockHandles = reader.getAllBlockHandlesFromIndex();
       
       assertNotNull("BlockHandles should not be null", blockHandles);
@@ -80,7 +79,7 @@ public class TestArchiveAnalysis {
   public void testBlockHandleExtractionFromPackages() throws IOException {
     log.info("Testing BlockHandle extraction from package files (fallback)...");
     
-    try (ArchiveDbReader reader = new ArchiveDbReader(DB_PATH)) {
+    try (ArchiveDbReader reader = new ArchiveDbReader(ROOT_DB_PATH)) {
       Map<String, BlockHandle> blockHandles = reader.getAllBlockHandlesFromPackages();
       
       assertNotNull("BlockHandles should not be null", blockHandles);
@@ -103,7 +102,7 @@ public class TestArchiveAnalysis {
   public void testCombinedBlockHandleExtraction() throws IOException {
     log.info("Testing combined BlockHandle extraction (index + packages)...");
     
-    try (ArchiveDbReader reader = new ArchiveDbReader(DB_PATH)) {
+    try (ArchiveDbReader reader = new ArchiveDbReader(ROOT_DB_PATH)) {
       Map<String, BlockHandle> allBlockHandles = reader.getAllBlockHandles();
       
       assertNotNull("BlockHandles should not be null", allBlockHandles);
@@ -130,7 +129,7 @@ public class TestArchiveAnalysis {
   public void testBlockHandleUsageExample() throws IOException {
     log.info("Testing practical BlockHandle usage example...");
     
-    try (ArchiveDbReader reader = new ArchiveDbReader(DB_PATH)) {
+    try (ArchiveDbReader reader = new ArchiveDbReader(ROOT_DB_PATH)) {
       Map<String, BlockHandle> blockHandles = reader.getAllBlockHandles();
       
       if (!blockHandles.isEmpty()) {
@@ -198,7 +197,7 @@ public class TestArchiveAnalysis {
   public void testArchiveDiscovery() throws IOException {
     log.info("Testing archive discovery functionality...");
     
-    try (ArchiveDbReader reader = new ArchiveDbReader(DB_PATH)) {
+    try (ArchiveDbReader reader = new ArchiveDbReader(ROOT_DB_PATH)) {
       var archiveKeys = reader.getArchiveKeys();
       
       assertNotNull("Archive keys should not be null", archiveKeys);
@@ -221,7 +220,7 @@ public class TestArchiveAnalysis {
   public void testBlockHandleValidation() throws IOException {
     log.info("Testing BlockHandle validation...");
     
-    try (ArchiveDbReader reader = new ArchiveDbReader(DB_PATH)) {
+    try (ArchiveDbReader reader = new ArchiveDbReader(ROOT_DB_PATH)) {
       Map<String, BlockHandle> blockHandles = reader.getAllBlockHandles();
       
       int validHandles = 0;
@@ -261,7 +260,7 @@ public class TestArchiveAnalysis {
   public void testIntegrationWithExistingMethods() throws IOException {
     log.info("Testing integration with existing ArchiveDbReader methods...");
     
-    try (ArchiveDbReader reader = new ArchiveDbReader(DB_PATH)) {
+    try (ArchiveDbReader reader = new ArchiveDbReader(ROOT_DB_PATH)) {
       // Test that new methods work alongside existing ones
       var blockHandles = reader.getAllBlockHandles();
       var allEntries = reader.getAllEntries();

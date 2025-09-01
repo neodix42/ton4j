@@ -23,7 +23,6 @@ import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tl.types.db.files.key.IndexKey;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockHandle;
-import org.ton.ton4j.tlb.BlockInfo;
 import org.ton.ton4j.tlb.ShardIdent;
 
 /** Specialized reader for TON archive database. */
@@ -390,40 +389,7 @@ public class ArchiveDbReader implements Closeable {
     return null;
   }
 
-  /**
-   * Reads a block info by its hash.
-   *
-   * @param hash The block hash
-   * @return The block info, or null if not found
-   * @throws IOException If an I/O error occurs
-   */
-  public BlockInfo readBlockInfo(String hash) throws IOException {
-    byte[] data = readBlock(hash);
-    if (data == null) {
-      return null;
-    }
-
-    ByteReader reader = new ByteReader(data);
-    byte[] magicBytes = new byte[4];
-    System.arraycopy(data, 0, magicBytes, 0, 4);
-    String magicId = bytesToHex(magicBytes);
-
-    if (magicId.equals("27e7c64a")) { // db.block.info#4ac6e727
-      ByteReader valueReader = new ByteReader(data);
-      int[] bytesArray = valueReader.readBytes();
-      byte[] signedBytes = new byte[bytesArray.length];
-      for (int i = 0; i < bytesArray.length; i++) {
-        signedBytes[i] = (byte) bytesArray[i];
-      }
-      ByteBuffer buffer = ByteBuffer.wrap(signedBytes);
-      //      return BlockInfo.deserialize(buffer); // todo
-      return null;
-    } else {
-      throw new IOException("Invalid block info magic: " + magicId);
-    }
-  }
-
-  public List<Block> getAllBlocks() throws IOException {
+  public List<Block> getAllBlocks() {
     List<Block> blocks = new ArrayList<>();
     Map<String, byte[]> entries = getAllEntries();
     for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
@@ -446,7 +412,7 @@ public class ArchiveDbReader implements Closeable {
     return blocks;
   }
 
-  public Map<String, Block> getAllBlocksWithHashes() throws IOException {
+  public Map<String, Block> getAllBlocksWithHashes() {
     Map<String, Block> blocks = new HashMap<>();
     Map<String, byte[]> entries = getAllEntries();
     for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
@@ -1899,127 +1865,6 @@ public class ArchiveDbReader implements Closeable {
     }
   }
 
-  /** Parses a db_block_info TL structure to extract BlockHandle. */
-  private BlockHandle parseDbBlockInfo(byte[] value) {
-    if (value == null || value.length == 0) {
-      return null;
-    }
-
-    try {
-      // Method 1: Try to parse as string offset (common in RocksDB indexes)
-      String valueStr = new String(value).trim();
-      if (valueStr.matches("^\\d+$")) {
-        // This is just an offset, create a synthetic BlockHandle
-        long offset = Long.parseLong(valueStr);
-        if (offset >= 0) {
-          return BlockHandle.builder()
-              .offset(BigInteger.valueOf(offset))
-              .size(
-                  BigInteger.valueOf(
-                      1024)) // Default size, will be updated when reading actual data
-              .build();
-        }
-      }
-
-      // Method 2: Try to parse as binary data
-      if (value.length >= 8) {
-        ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-
-        // Try different positions for offset/size pairs
-        for (int pos = 0; pos <= value.length - 16; pos += 4) {
-          try {
-            buffer.position(pos);
-            long offset = buffer.getLong();
-            long size = buffer.getLong();
-
-            // Validate that this looks like a reasonable offset/size pair
-            if (offset >= 0 && size > 0 && size < 100_000_000) { // Max 100MB per block
-              return BlockHandle.builder()
-                  .offset(BigInteger.valueOf(offset))
-                  .size(BigInteger.valueOf(size))
-                  .build();
-            }
-          } catch (Exception e) {
-            // Continue trying other positions
-          }
-        }
-
-        // Method 3: Try single 8-byte value as offset
-        if (value.length >= 8) {
-          buffer.position(0);
-          long offset = buffer.getLong();
-          if (offset >= 0) {
-            return BlockHandle.builder()
-                .offset(BigInteger.valueOf(offset))
-                .size(BigInteger.valueOf(1024)) // Default size
-                .build();
-          }
-        }
-      }
-
-      // Method 4: For very short values, try as 4-byte offset
-      if (value.length >= 4) {
-        ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-        int offset = buffer.getInt();
-        if (offset >= 0) {
-          return BlockHandle.builder()
-              .offset(BigInteger.valueOf(offset))
-              .size(BigInteger.valueOf(1024)) // Default size
-              .build();
-        }
-      }
-
-    } catch (Exception e) {
-      log.debug("Error parsing value as BlockHandle: {}", e.getMessage());
-    }
-
-    return null;
-  }
-
-  /** Creates a synthetic BlockHandle based on package structure. */
-  private BlockHandle createSyntheticBlockHandle(String hash, byte[] data) {
-    // This is a fallback method that creates BlockHandle based on available information
-    // In practice, the offset would be calculated from the package structure
-    // and size would be the actual data size
-
-    if (data != null && data.length > 0) {
-      return BlockHandle.builder()
-          .offset(BigInteger.valueOf(0)) // Would need to calculate actual offset
-          .size(BigInteger.valueOf(data.length))
-          .build();
-    }
-
-    return null;
-  }
-
-  /** Classifies an index entry by examining its key and value. */
-  private String classifyIndexEntry(byte[] key, byte[] value) {
-    if (key == null || key.length < 4) {
-      return "unknown_key";
-    }
-
-    try {
-      ByteBuffer buffer = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN);
-      int magic = buffer.getInt();
-
-      switch (magic) {
-        case 0x7dc40502:
-          return "db_filedb_key_empty";
-        case 0xa504033e:
-          return "db_filedb_key_blockFile";
-        default:
-          // Check if it's a hex string (likely a file hash)
-          String keyStr = new String(key);
-          if (isValidHexString(keyStr)) {
-            return "file_hash_entry";
-          }
-          return "unknown_tl_key_" + String.format("%08x", magic);
-      }
-    } catch (Exception e) {
-      return "parse_error";
-    }
-  }
-
   /** Detects the type of an entry by examining its BOC data. */
   private String detectEntryType(byte[] bocData) {
     if (bocData == null || bocData.length < 4) {
@@ -2043,28 +1888,6 @@ public class ArchiveDbReader implements Closeable {
     } catch (Exception e) {
       return "parse_error";
     }
-  }
-
-  /**
-   * Gets all block infos from all archives.
-   *
-   * @return Map of block hash to block info
-   * @throws IOException If an I/O error occurs
-   */
-  public Map<String, BlockInfo> getAllBlockInfos() throws IOException {
-    Map<String, BlockInfo> blockInfos = new HashMap<>();
-
-    Map<String, byte[]> blocks = getAllEntries();
-    for (Map.Entry<String, byte[]> entry : blocks.entrySet()) {
-      String hash = entry.getKey();
-      byte[] data = entry.getValue();
-
-      Block block = getBlock(data);
-
-      blockInfos.put(hash, block.getBlockInfo());
-    }
-
-    return blockInfos;
   }
 
   public static Block getBlock(byte[] data) {

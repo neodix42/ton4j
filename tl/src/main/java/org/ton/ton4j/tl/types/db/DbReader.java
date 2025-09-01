@@ -8,7 +8,6 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.ton.ton4j.tlb.BlockInfo;
 
 /**
  * Main entry point for reading TON RocksDB files. This class provides access to various specialized
@@ -51,7 +50,6 @@ public class DbReader implements Closeable {
    */
   public ArchiveDbReader getArchiveDbReader() throws IOException {
     if (archiveDbReader == null) {
-      //      String archivePath = Paths.get(dbRootPath, "archive").toString();
       archiveDbReader = new ArchiveDbReader(dbRootPath);
     }
 
@@ -72,48 +70,6 @@ public class DbReader implements Closeable {
     }
 
     return openDbs.get(name);
-  }
-
-  /**
-   * Gets a block by its hash from the archive database.
-   *
-   * @param hash The block hash
-   * @return The block data, or null if not found
-   * @throws IOException If an I/O error occurs
-   */
-  public byte[] getBlock(String hash) throws IOException {
-    return getArchiveDbReader().readBlock(hash);
-  }
-
-  /**
-   * Gets a block info by its hash from the archive database.
-   *
-   * @param hash The block hash
-   * @return The block info, or null if not found
-   * @throws IOException If an I/O error occurs
-   */
-  public BlockInfo getBlockInfo(String hash) throws IOException {
-    return getArchiveDbReader().readBlockInfo(hash);
-  }
-
-  /**
-   * Gets all blocks from the archive database.
-   *
-   * @return Map of block hash to block data
-   * @throws IOException If an I/O error occurs
-   */
-  public Map<String, byte[]> getAllBlocks() throws IOException {
-    return getArchiveDbReader().getAllEntries();
-  }
-
-  /**
-   * Gets all block infos from the archive database.
-   *
-   * @return Map of block hash to block info
-   * @throws IOException If an I/O error occurs
-   */
-  public Map<String, BlockInfo> getAllBlockInfos() throws IOException {
-    return getArchiveDbReader().getAllBlockInfos();
   }
 
   @Override
