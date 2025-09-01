@@ -91,6 +91,111 @@ public class TestDbReader {
         "Average time per block: {} ms", String.format("%.2f", (double) durationMs / totalBlocks));
   }
 
+  /** Test parallel block reading with 32 threads (default) */
+  @Test
+  public void testReadAllBlocksFromArchiveDbParallel() throws IOException {
+    ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
+
+    // Get all available archive keys
+    List<String> archiveKeys = archiveDbReader.getArchiveKeys();
+    log.info("Available archive keys: {}", archiveKeys);
+
+    // Measure time for getAllBlocksParallel() method with default 32 threads
+    log.info("Starting to load all blocks in parallel (32 threads)...");
+    long startTime = System.currentTimeMillis();
+
+    List<Block> parallelBlocks = archiveDbReader.getAllBlocksParallel();
+
+    long endTime = System.currentTimeMillis();
+    long durationMs = endTime - startTime;
+    double durationSeconds = durationMs / 1000.0;
+
+    int totalBlocks = parallelBlocks.size();
+    double blocksPerSecond = totalBlocks / durationSeconds;
+
+    log.info("All blocks loaded in parallel: {}", totalBlocks);
+    log.info(
+        "Parallel loading time: {} ms ({} seconds)", durationMs, String.format("%.2f", durationSeconds));
+    log.info("Parallel loading rate: {} blocks per second", String.format("%.2f", blocksPerSecond));
+    log.info(
+        "Average time per block: {} ms", String.format("%.4f", (double) durationMs / totalBlocks));
+  }
+
+  /** Test parallel block reading with custom thread count */
+  @Test
+  public void testReadAllBlocksFromArchiveDbParallelCustomThreads() throws IOException {
+    ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
+
+    // Get all available archive keys
+    List<String> archiveKeys = archiveDbReader.getArchiveKeys();
+    log.info("Available archive keys: {}", archiveKeys);
+
+    int customThreadCount = 16;
+
+    // Measure time for getAllBlocksParallel() method with custom thread count
+    log.info("Starting to load all blocks in parallel ({} threads)...", customThreadCount);
+    long startTime = System.currentTimeMillis();
+
+    List<Block> parallelBlocks = archiveDbReader.getAllBlocksParallel(customThreadCount);
+
+    long endTime = System.currentTimeMillis();
+    long durationMs = endTime - startTime;
+    double durationSeconds = durationMs / 1000.0;
+
+    int totalBlocks = parallelBlocks.size();
+    double blocksPerSecond = totalBlocks / durationSeconds;
+
+    log.info("All blocks loaded in parallel: {}", totalBlocks);
+    log.info(
+        "Parallel loading time: {} ms ({} seconds)", durationMs, String.format("%.2f", durationSeconds));
+    log.info("Parallel loading rate: {} blocks per second", String.format("%.2f", blocksPerSecond));
+    log.info(
+        "Average time per block: {} ms", String.format("%.4f", (double) durationMs / totalBlocks));
+  }
+
+  /** Test parallel entries reading performance comparison */
+  @Test
+  public void testReadAllEntriesParallelComparison() throws IOException {
+    ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
+
+    // Get all available archive keys
+    List<String> archiveKeys = archiveDbReader.getArchiveKeys();
+    log.info("Available archive keys: {}", archiveKeys);
+
+    // Test single-threaded version
+    log.info("Starting single-threaded getAllEntries()...");
+    long singleStartTime = System.currentTimeMillis();
+    Map<String, byte[]> singleThreadedEntries = archiveDbReader.getAllEntries();
+    long singleEndTime = System.currentTimeMillis();
+    long singleDurationMs = singleEndTime - singleStartTime;
+
+    log.info("Single-threaded entries loaded: {}", singleThreadedEntries.size());
+    log.info("Single-threaded time: {} ms", singleDurationMs);
+
+    // Test parallel version
+    log.info("Starting parallel getAllEntriesParallel()...");
+    long parallelStartTime = System.currentTimeMillis();
+    Map<String, byte[]> parallelEntries = archiveDbReader.getAllEntriesParallel();
+    long parallelEndTime = System.currentTimeMillis();
+    long parallelDurationMs = parallelEndTime - parallelStartTime;
+
+    log.info("Parallel entries loaded: {}", parallelEntries.size());
+    log.info("Parallel time: {} ms", parallelDurationMs);
+
+    // Compare results
+    double speedup = (double) singleDurationMs / parallelDurationMs;
+    log.info("Speedup: {}x", String.format("%.2f", speedup));
+    log.info("Performance improvement: {}%", String.format("%.1f", (speedup - 1) * 100));
+
+    // Verify that both methods return the same number of entries
+    if (singleThreadedEntries.size() != parallelEntries.size()) {
+      log.warn("Entry count mismatch: single={}, parallel={}", 
+               singleThreadedEntries.size(), parallelEntries.size());
+    } else {
+      log.info("✓ Entry counts match: {}", singleThreadedEntries.size());
+    }
+  }
+
   /** Test reading archive database. */
   @Test
   public void testReadAllBlocksAndTheirHashesFromArchiveDb() throws IOException {

@@ -12,6 +12,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -519,6 +524,117 @@ public class ArchiveDbReader implements Closeable {
     return blocks;
   }
 
+  /**
+   * Gets all blocks from all archives using parallel processing. Uses 32 threads by default for
+   * concurrent reading from multiple archive packages.
+   *
+   * @return List of Block objects
+   */
+  public List<Block> getAllBlocksParallel() {
+    return getAllBlocksParallel(32);
+  }
+
+  /**
+   * Gets all blocks from all archives using parallel processing with configurable thread count.
+   *
+   * @param threadCount Number of threads to use for parallel processing
+   * @return List of Block objects
+   */
+  public List<Block> getAllBlocksParallel(int threadCount) {
+    if (threadCount <= 1) {
+      // Fall back to single-threaded version
+      return getAllBlocks();
+    }
+
+    log.info(
+        "Starting parallel block reading from {} archives using {} threads",
+        archiveInfos.size(),
+        threadCount);
+    long startTime = System.currentTimeMillis();
+
+    // Get all entries in parallel first
+    Map<String, byte[]> entries = getAllEntriesParallel(threadCount);
+
+    // Use ConcurrentHashMap for thread-safe operations during block parsing
+    List<Block> blocks = new ArrayList<>();
+
+    // Create thread pool for block parsing
+    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+    List<Future<List<Block>>> futures = new ArrayList<>();
+
+    // Split entries into chunks for parallel processing
+    List<Map.Entry<String, byte[]>> entryList = new ArrayList<>(entries.entrySet());
+    int chunkSize = Math.max(1, entryList.size() / threadCount);
+
+    for (int i = 0; i < entryList.size(); i += chunkSize) {
+      int endIndex = Math.min(i + chunkSize, entryList.size());
+      List<Map.Entry<String, byte[]>> chunk = entryList.subList(i, endIndex);
+
+      Future<List<Block>> future =
+          executor.submit(
+              () -> {
+                List<Block> localBlocks = new ArrayList<>();
+
+                for (Map.Entry<String, byte[]> entry : chunk) {
+                  try {
+                    Cell c = CellBuilder.beginCell().fromBoc(entry.getValue()).endCell();
+                    long magic = c.getBits().preReadUint(32).longValue();
+                    if (magic == 0x11ef55aaL) { // block
+                      Block block = Block.deserialize(CellSlice.beginParse(c));
+                      localBlocks.add(block);
+                    }
+                  } catch (Throwable e) {
+                    log.debug("Error parsing block {}: {}", entry.getKey(), e.getMessage());
+                    // Continue processing other blocks instead of failing completely
+                  }
+                }
+
+                return localBlocks;
+              });
+
+      futures.add(future);
+    }
+
+    // Collect results from all threads
+    for (Future<List<Block>> future : futures) {
+      try {
+        List<Block> threadBlocks = future.get();
+        blocks.addAll(threadBlocks);
+      } catch (Exception e) {
+        log.error("Error waiting for block parsing task: {}", e.getMessage());
+      }
+    }
+
+    // Shutdown executor
+    executor.shutdown();
+    try {
+      if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      executor.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
+
+    long endTime = System.currentTimeMillis();
+    long durationMs = endTime - startTime;
+    double durationSeconds = durationMs / 1000.0;
+    double blocksPerSecond = blocks.size() / durationSeconds;
+
+    log.info(
+        "Parallel block reading completed: {} blocks in {} ms ({} seconds) using {} threads",
+        blocks.size(),
+        durationMs,
+        String.format("%.2f", durationSeconds),
+        threadCount);
+    log.info("Parallel loading rate: {} blocks per second", String.format("%.2f", blocksPerSecond));
+    log.info(
+        "Average time per block: {} ms",
+        String.format("%.4f", (double) durationMs / blocks.size()));
+
+    return blocks;
+  }
+
   public Map<String, Block> getAllBlocksWithHashes() {
     Map<String, Block> blocks = new HashMap<>();
     Map<String, byte[]> entries = getAllEntries();
@@ -568,6 +684,112 @@ public class ArchiveDbReader implements Closeable {
         log.warn("Error reading blocks from archive {}: {}", archiveKey, e.getMessage());
       }
     }
+
+    return blocks;
+  }
+
+  /**
+   * Gets all blocks from all archives using parallel processing. Uses 32 threads by default for
+   * concurrent reading from multiple archive packages.
+   *
+   * @return Map of block hash to block data
+   */
+  public Map<String, byte[]> getAllEntriesParallel() {
+    return getAllEntriesParallel(32);
+  }
+
+  /**
+   * Gets all blocks from all archives using parallel processing with configurable thread count.
+   *
+   * @param threadCount Number of threads to use for parallel processing
+   * @return Map of block hash to block data
+   */
+  public Map<String, byte[]> getAllEntriesParallel(int threadCount) {
+    if (threadCount <= 1) {
+      // Fall back to single-threaded version
+      return getAllEntries();
+    }
+
+    log.info(
+        "Starting parallel reading from {} archives using {} threads",
+        archiveInfos.size(),
+        threadCount);
+    long startTime = System.currentTimeMillis();
+
+    // Use ConcurrentHashMap for thread-safe operations
+    Map<String, byte[]> blocks = new ConcurrentHashMap<>();
+
+    // Create thread pool
+    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+    List<Future<Void>> futures = new ArrayList<>();
+
+    // Submit tasks for each archive
+    for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
+      String archiveKey = entry.getKey();
+      ArchiveInfo archiveInfo = entry.getValue();
+
+      Future<Void> future =
+          executor.submit(
+              () -> {
+                try {
+                  // Create a local map for this thread's results
+                  Map<String, byte[]> localBlocks = new HashMap<>();
+
+                  // Check if this is a Files database package (indicated by null indexPath)
+                  if (archiveInfo.indexPath == null) {
+                    // This is a Files database package, handle it separately
+                    readFromFilesPackage(archiveKey, archiveInfo, localBlocks);
+                  } else {
+                    // This is a traditional archive package with its own index
+                    readFromTraditionalArchive(archiveKey, archiveInfo, localBlocks);
+                  }
+
+                  // Merge results into the concurrent map
+                  blocks.putAll(localBlocks);
+
+                  log.debug(
+                      "Completed reading archive {}: {} entries", archiveKey, localBlocks.size());
+                } catch (IOException e) {
+                  log.warn("Error reading blocks from archive {}: {}", archiveKey, e.getMessage());
+                } catch (Exception e) {
+                  log.error("Unexpected error reading archive {}: {}", archiveKey, e.getMessage());
+                }
+                return null;
+              });
+
+      futures.add(future);
+    }
+
+    // Wait for all tasks to complete
+    for (Future<Void> future : futures) {
+      try {
+        future.get();
+      } catch (Exception e) {
+        log.error("Error waiting for archive reading task: {}", e.getMessage());
+      }
+    }
+
+    // Shutdown executor
+    executor.shutdown();
+    try {
+      if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      executor.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
+
+    long endTime = System.currentTimeMillis();
+    long durationMs = endTime - startTime;
+    double durationSeconds = durationMs / 1000.0;
+
+    log.info(
+        "Parallel reading completed: {} entries in {} ms ({} seconds) using {} threads",
+        blocks.size(),
+        durationMs,
+        String.format("%.2f", durationSeconds),
+        threadCount);
 
     return blocks;
   }
