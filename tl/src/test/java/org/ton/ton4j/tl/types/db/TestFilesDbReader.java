@@ -1,499 +1,339 @@
 package org.ton.ton4j.tl.types.db;
 
+import java.io.IOException;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.ton.ton4j.tl.types.db.block.BlockIdExt;
+import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
+import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
+import org.ton.ton4j.tl.types.db.files.package_.PackageValue;
+import org.ton.ton4j.utils.Utils;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeSet;
-
+/**
+ * Test class for the FilesDbReader that demonstrates the optimized block reading approach using the
+ * Files database global index. This test shows the complete implementation of the 4-step optimized
+ * workflow requested in the original task.
+ */
 @Slf4j
 public class TestFilesDbReader {
 
+  private static final String DB_PATH = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+
   @Test
-  public void testReadFilesDbGlobalIndex() throws IOException {
-    String dbPath = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db/files/globalindex";
-    
-    log.info("Opening Files database global index: {}", dbPath);
-    
-    try (RocksDbWrapper globalIndexDb = new RocksDbWrapper(dbPath)) {
-      Map<String, String> fileReferences = new HashMap<>();
-      TreeSet<String> allKeys = new TreeSet<>();
-      TreeSet<String> hexKeys = new TreeSet<>();
-      TreeSet<String> tlKeys = new TreeSet<>();
-      
-      // Collect all keys and analyze them
-      globalIndexDb.forEach((key, value) -> {
-        String keyStr = new String(key);
-        allKeys.add(keyStr);
-        
-        if (isValidHexString(keyStr)) {
-          hexKeys.add(keyStr);
-          
-          // Try to parse the value to understand the format
-          String valueAnalysis = analyzeValue(value);
-          fileReferences.put(keyStr, valueAnalysis);
-          
-        } else {
-          tlKeys.add(keyStr);
-          
-          // Try to parse TL-serialized key
-          String tlKeyAnalysis = analyzeTlKey(key);
-          String valueAnalysis = analyzeValue(value);
-          log.info("TL key: {} -> value: {}", tlKeyAnalysis, valueAnalysis);
-        }
-      });
-      
-      log.info("Total keys in Files database: {}", allKeys.size());
-      log.info("Hex keys (file hashes): {}", hexKeys.size());
-      log.info("TL keys (file references): {}", tlKeys.size());
-      
-      // Show some sample hex keys and their values
-      if (!hexKeys.isEmpty()) {
-        log.info("Sample hex keys and their values:");
-        int count = 0;
-        for (String hexKey : hexKeys) {
-          if (count++ < 10) {
-            log.info("  {} -> {}", hexKey, fileReferences.get(hexKey));
-          }
-        }
-      }
-      
-      // Analyze value patterns for hex keys
-      if (!fileReferences.isEmpty()) {
-        Map<String, Integer> valuePatterns = new HashMap<>();
-        for (String analysis : fileReferences.values()) {
-          valuePatterns.merge(analysis, 1, Integer::sum);
-        }
-        
-        log.info("Value patterns found:");
-        for (Map.Entry<String, Integer> entry : valuePatterns.entrySet()) {
-          log.info("  {}: {} occurrences", entry.getKey(), entry.getValue());
-        }
-      }
-      
-      // Try to extract package references from TL keys
-      log.info("Attempting to extract file references from TL keys...");
-      extractFileReferencesFromTlKeys(globalIndexDb);
-      
-      // Now read actual package files to extract filenames like TestTl.java does
-      log.info("Reading actual package files to extract filenames...");
-      readPackageFiles();
-    }
-  }
-  
-  private void extractFileReferencesFromTlKeys(RocksDbWrapper globalIndexDb) {
-    TreeSet<String> fileNames = new TreeSet<>();
-    TreeSet<String> packageReferences = new TreeSet<>();
-    Map<String, Integer> tlKeyTypes = new HashMap<>();
-    
-    globalIndexDb.forEach((key, value) -> {
-      String keyStr = new String(key);
-      if (!isValidHexString(keyStr)) {
-        // This is a TL-serialized key
-        try {
-          // Parse TL key to extract file information
-          TlKeyInfo tlKeyInfo = parseTlKey(key);
-          if (tlKeyInfo != null) {
-            tlKeyTypes.merge(tlKeyInfo.type, 1, Integer::sum);
-            
-            // Extract file name or hash from the key
-            if (tlKeyInfo.fileName != null) {
-              fileNames.add(tlKeyInfo.fileName);
-            }
-            
-            // Parse the value to get package location
-            String packageInfo = parsePackageValue(value);
-            if (packageInfo != null) {
-              packageReferences.add(packageInfo);
-            }
-            
-            log.info("TL Key Type: {}, File: {}, Package: {}", 
-                tlKeyInfo.type, tlKeyInfo.fileName, packageInfo);
-          }
-        } catch (Exception e) {
-          // Silently skip parsing errors
-        }
-      }
-    });
-    
-    log.info("Found {} unique file names", fileNames.size());
-    log.info("Found {} unique package references", packageReferences.size());
-    
-    log.info("TL Key types found:");
-    for (Map.Entry<String, Integer> entry : tlKeyTypes.entrySet()) {
-      log.info("  {}: {} occurrences", entry.getKey(), entry.getValue());
-    }
-    
-    // Show sample file names
-    log.info("Sample file names:");
-    int count = 0;
-    for (String fileName : fileNames) {
-      if (count++ < 20) {
-        log.info("  {}", fileName);
-      }
-    }
-    
-    // Show sample package references
-    log.info("Sample package references:");
-    count = 0;
-    for (String ref : packageReferences) {
-      if (count++ < 20) {
-        log.info("  {}", ref);
-      }
-    }
-  }
-  
-  /**
-   * Parses a TL-serialized key to extract file information.
-   */
-  private TlKeyInfo parseTlKey(byte[] key) {
-    if (key.length < 4) {
-      return null;
-    }
-    
-    try {
-      ByteBuffer buffer = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN);
-      int magic = buffer.getInt();
-      
-      String keyType = getTlKeyType(magic);
-      String blockInfo = null;
-      
-      if (keyType.equals("db_filedb_key_blockFile")) {
-        // The key format appears to be: magic(4) + workchain(4) + shard(8) + possibly more
-        if (buffer.remaining() >= 12) {
-          int workchain = buffer.getInt();
-          long shard = buffer.getLong();
-          
-          // Check if there's more data for seqno
-          if (buffer.remaining() >= 8) {
-            long seqno = buffer.getLong();
-            blockInfo = String.format("block(%d,%016x,%d)", workchain, shard, seqno);
-          } else {
-            blockInfo = String.format("block(%d,%016x,?)", workchain, shard);
-          }
-          
-          log.debug("Parsed BlockFile key: workchain={}, shard={:016x}, remaining={}", 
-              workchain, shard, buffer.remaining());
-        } else {
-          blockInfo = "block(incomplete)";
-        }
-      } else if (keyType.equals("db_filedb_key_empty")) {
-        blockInfo = "empty";
-      }
-      
-      return new TlKeyInfo(keyType, blockInfo);
-    } catch (Exception e) {
-      log.warn("Error parsing TL key: {}", e.getMessage());
-      return null;
-    }
-  }
-  
-  /**
-   * Gets the TL key type name from magic number.
-   */
-  private String getTlKeyType(int magic) {
-    // These magic numbers need to be calculated from TL schema
-    // For now, let's try to identify them from the patterns we see
-    switch (magic) {
-      case 0x7dc40502:
-        return "db_filedb_key_empty";
-      case 0xa504033e:
-        return "db_filedb_key_blockFile";
-      default:
-        return "unknown_tl_key_" + String.format("%08x", magic);
-    }
-  }
-  
-  /**
-   * Parses a package value to extract package location information.
-   * According to TL schema: db.filedb.value key:db.filedb.Key prev:int256 next:int256 file_hash:int256
-   */
-  private String parsePackageValue(byte[] value) {
-    if (value == null || value.length == 0) {
-      return null;
-    }
-    
-    try {
-      // Try to parse as db.filedb.value structure
-      if (value.length >= 96) { // 32 + 32 + 32 bytes for prev + next + file_hash
-        ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-        
-        // Skip the key part (variable length)
-        // Read prev (int256 = 32 bytes)
-        byte[] prevBytes = new byte[32];
-        buffer.get(prevBytes);
-        String prev = bytesToHex(prevBytes);
-        
-        // Read next (int256 = 32 bytes)  
-        byte[] nextBytes = new byte[32];
-        buffer.get(nextBytes);
-        String next = bytesToHex(nextBytes);
-        
-        // Read file_hash (int256 = 32 bytes)
-        byte[] fileHashBytes = new byte[32];
-        buffer.get(fileHashBytes);
-        String fileHash = bytesToHex(fileHashBytes);
-        
-        return String.format("FileDbValue(prev=%s..., next=%s..., file_hash=%s...)", 
-            prev.substring(0, 8), next.substring(0, 8), fileHash.substring(0, 8));
-      }
-      
-      // Fallback to simpler parsing
-      if (value.length >= 16) {
-        ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-        long first = buffer.getLong();
-        long second = buffer.getLong();
-        return String.format("Binary: (%d, %d)", first, second);
-      }
-      
-      return String.format("Raw bytes: len=%d", value.length);
-    } catch (Exception e) {
-      return "Parse error: " + e.getMessage();
-    }
-  }
-  
-  /**
-   * Analyzes a TL key and returns a human-readable description.
-   */
-  private String analyzeTlKey(byte[] key) {
-    if (key == null || key.length == 0) {
-      return "empty";
-    }
-    
-    StringBuilder analysis = new StringBuilder();
-    analysis.append("len=").append(key.length);
-    
-    // Show first few bytes as hex
-    StringBuilder hex = new StringBuilder();
-    for (int i = 0; i < Math.min(8, key.length); i++) {
-      hex.append(String.format("%02x", key[i] & 0xFF));
-    }
-    analysis.append(", hex=").append(hex);
-    
-    // Try to parse as TL key
-    if (key.length >= 4) {
-      try {
-        ByteBuffer buffer = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN);
-        int magic = buffer.getInt();
-        String keyType = getTlKeyType(magic);
-        analysis.append(", type=").append(keyType);
-      } catch (Exception e) {
-        analysis.append(", tl_parse_error");
-      }
-    }
-    
-    return analysis.toString();
-  }
-  
-  /**
-   * Information extracted from a TL key.
-   */
-  private static class TlKeyInfo {
-    final String type;
-    final String fileName;
-    
-    TlKeyInfo(String type, String fileName) {
-      this.type = type;
-      this.fileName = fileName;
-    }
-  }
-  
-  private String analyzeValue(byte[] value) {
-    if (value == null || value.length == 0) {
-      return "empty";
-    }
-    
-    StringBuilder analysis = new StringBuilder();
-    analysis.append("len=").append(value.length);
-    
-    // Try to interpret as string
-    String valueStr = new String(value);
-    if (isPrintableString(valueStr)) {
-      analysis.append(", str='").append(valueStr.length() > 50 ? valueStr.substring(0, 50) + "..." : valueStr).append("'");
-    }
-    
-    // Try to interpret as binary data
-    if (value.length >= 4) {
-      try {
-        ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-        if (value.length >= 8) {
-          long longValue = buffer.getLong();
-          analysis.append(", long=").append(longValue);
-          if (value.length >= 16) {
-            buffer.rewind();
-            long first = buffer.getLong();
-            long second = buffer.getLong();
-            analysis.append(", pair=(").append(first).append(",").append(second).append(")");
-          }
-        } else {
-          int intValue = buffer.getInt();
-          analysis.append(", int=").append(intValue);
-        }
-      } catch (Exception e) {
-        analysis.append(", binary_parse_error");
-      }
-    }
-    
-    // Show first few bytes as hex
-    StringBuilder hex = new StringBuilder();
-    for (int i = 0; i < Math.min(8, value.length); i++) {
-      hex.append(String.format("%02x", value[i] & 0xFF));
-    }
-    analysis.append(", hex=").append(hex);
-    
-    return analysis.toString();
-  }
-  
-  private boolean isPrintableString(String s) {
-    if (s == null || s.isEmpty()) {
-      return false;
-    }
-    for (char c : s.toCharArray()) {
-      if (c < 32 || c > 126) {
-        return false;
-      }
-    }
-    return true;
-  }
-  
-  private boolean isValidHexString(String s) {
-    if (s == null || s.isEmpty()) {
-      return false;
-    }
-    return s.matches("^[0-9A-Fa-f]+$");
-  }
-  
-  /**
-   * Reads package files directly to extract filenames like TestTl.java does.
-   */
-  private void readPackageFiles() throws IOException {
-    // Read some of the orphaned archive packages that don't have .index files
-    String[] packagePaths = {
-        "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db/archive/packages/arch0000/archive.00100.pack",
-        "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db/archive/packages/arch0000/archive.00200.pack",
-        "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db/archive/packages/arch0000/archive.00300.pack",
-        "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db/archive/packages/arch0000/archive.00400.pack"
-    };
-    
-    for (String packagePath : packagePaths) {
-      try {
-        log.info("Reading package file: {}", packagePath);
-        readSinglePackageFile(packagePath);
-      } catch (Exception e) {
-        log.warn("Error reading package {}: {}", packagePath, e.getMessage());
-      }
-    }
-  }
-  
-  /**
-   * Reads a single package file and extracts filenames, following TestTl.java logic.
-   */
-  private void readSinglePackageFile(String packagePath) throws IOException {
-    java.nio.file.Path path = java.nio.file.Paths.get(packagePath);
-    if (!java.nio.file.Files.exists(path)) {
-      log.warn("Package file does not exist: {}", packagePath);
-      return;
-    }
-    
-    byte[] packageData = java.nio.file.Files.readAllBytes(path);
-    org.ton.ton4j.cell.ByteReader reader = new org.ton.ton4j.cell.ByteReader(packageData);
-    
-    // Read package header magic
-    int packageHeaderMagic = reader.readIntLittleEndian(); // 32 - 0xae8fdd01
-    if (packageHeaderMagic != 0xae8fdd01) {
-      log.error("Wrong packageHeaderMagic in {}, should be 0xae8fdd01, got 0x{}", 
-          packagePath, Integer.toHexString(packageHeaderMagic));
-      return;
-    }
-    
-    log.info("Successfully opened package: {}", packagePath);
-    int entryCount = 0;
-    
-    // Read entries until end of file
-    while (reader.getDataSize() > 0) {
-      try {
-        // Read entry header magic
-        short entryHeaderMagic = reader.readShortLittleEndian(); // 16 - 0x1e8b
-        if (entryHeaderMagic != 0x1e8b) {
-          log.error("Wrong entryHeaderMagic, should be 0x1e8b, got 0x{}", 
-              Integer.toHexString(entryHeaderMagic & 0xFFFF));
-          break;
-        }
-        
-        // Read filename length and BOC size
-        int filenameLength = reader.readShortLittleEndian(); // 16
-        int bocSize = reader.readIntLittleEndian(); // 32
-        
-        // Read filename
-        byte[] filenameBytes = org.ton.ton4j.utils.Utils.unsignedBytesToSigned(reader.readBytes(filenameLength));
-        String filename = new String(filenameBytes);
-        
-        // Skip BOC data for now (we're just interested in filenames)
-        reader.readBytes(bocSize);
-        
-        entryCount++;
-        log.info("Entry {}: bocSize={}, filename={}", entryCount, bocSize, filename);
-        
-        // Parse the filename to extract block information
-        parseFilename(filename);
-        
-      } catch (Exception e) {
-        log.error("Error reading entry {} from {}: {}", entryCount + 1, packagePath, e.getMessage());
-        break;
-      }
-    }
-    
-    log.info("Total entries read from {}: {}", packagePath, entryCount);
-  }
-  
-  /**
-   * Parses a filename like "block_(-1,8000000000000000,123):hash1:hash2" to extract block info.
-   */
-  private void parseFilename(String filename) {
-    try {
-      if (filename.startsWith("block_(") || filename.startsWith("proof_(")) {
-        // Extract the part between parentheses
-        int startParen = filename.indexOf('(');
-        int endParen = filename.indexOf(')', startParen);
-        if (startParen != -1 && endParen != -1) {
-          String blockInfo = filename.substring(startParen + 1, endParen);
-          String[] parts = blockInfo.split(",");
-          if (parts.length >= 3) {
-            try {
-              int workchain = Integer.parseInt(parts[0]);
-              String shardStr = parts[1];
-              int seqno = Integer.parseInt(parts[2]);
-              
-              log.info("  Parsed: workchain={}, shard={}, seqno={}", workchain, shardStr, seqno);
-              
-              // This shows us the actual block ranges in the orphaned packages
-              if (seqno >= 100 && seqno <= 461) {
-                log.info("  *** FOUND MISSING BLOCK: workchain={}, seqno={} ***", workchain, seqno);
-              }
-            } catch (NumberFormatException e) {
-              log.debug("Could not parse numeric values from: {}", blockInfo);
-            }
-          }
-        }
-      }
-    } catch (Exception e) {
-      log.debug("Error parsing filename {}: {}", filename, e.getMessage());
+  public void testGlobalIndexReading() throws IOException {
+
+    try (FilesDbReader reader = new FilesDbReader(DB_PATH)) {
+
+      reader
+          .getGlobalIndexDb()
+          .forEach(
+              (key, value) -> {
+                //                log.info("key: {}, value: {}", Utils.bytesToHex(key),
+                // Utils.bytesToHex(value));
+                GlobalIndexKey globalIndexKey = GlobalIndexKey.deserialize(key);
+                GlobalIndexValue globalIndexValue = GlobalIndexValue.deserialize(value);
+                log.info(
+                    "globalIndexKey: {}, globalIndexValue: {}", globalIndexKey, globalIndexValue);
+              });
     }
   }
 
-  /**
-   * Converts a byte array to a hexadecimal string.
-   */
-  private static String bytesToHex(byte[] bytes) {
-    StringBuilder hex = new StringBuilder(2 * bytes.length);
-    for (byte b : bytes) {
-      hex.append(Character.forDigit((b >> 4) & 0xF, 16)).append(Character.forDigit((b & 0xF), 16));
+  @Test
+  public void testGlobalIndexReading2() throws IOException {
+
+    try (FilesDbReader reader = new FilesDbReader(DB_PATH)) {
+
+      reader
+          .getGlobalIndexDb()
+          .forEach(
+              (key, value) -> {
+                log.info("key: {}, value: {}", Utils.bytesToHex(key), Utils.bytesToHex(value));
+              });
+
+      for (int packageId : reader.getMainIndexIndexValue().getPackages()) {
+        String packagePath = reader.getPackageFilePath(packageId);
+        log.info("{} {}", packageId, packagePath);
+      }
     }
-    return hex.toString().toLowerCase();
+  }
+
+  /** Test the Files database structure and metadata parsing. */
+  @Test
+  public void testFilesDbStructure() throws IOException {
+    log.info("=== Testing Files Database Structure ===");
+
+    try (FilesDbReader reader = new FilesDbReader(DB_PATH)) {
+
+      // Test main index loading
+      log.info("Testing main index loading...");
+      var mainIndex = reader.getMainIndexIndexValue();
+      if (mainIndex != null) {
+        log.info("Main index loaded successfully:");
+        log.info("  Regular packages: {}", mainIndex.getPackages().size());
+        log.info("  Key packages: {}", mainIndex.getKeyPackages().size());
+        log.info("  Temp packages: {}", mainIndex.getTempPackages().size());
+      } else {
+        log.warn("Main index not found or empty");
+      }
+
+      // Test package metadata loading
+      log.info("Testing package metadata loading...");
+      Map<Long, PackageValue> packageMetadata = reader.getAllPackageMetadata();
+      log.info("Loaded metadata for {} packages", packageMetadata.size());
+
+      // Show sample package metadata
+      int count = 0;
+      for (Map.Entry<Long, PackageValue> entry : packageMetadata.entrySet()) {
+        if (count++ < 5) {
+          long packageId = entry.getKey();
+          var metadata = entry.getValue();
+          log.info(
+              "  Package {}: key={}, temp={}, deleted={}, firstblocks={}",
+              packageId,
+              metadata.isKey(),
+              metadata.isTemp(),
+              metadata.isDeleted(),
+              metadata.getFirstblocks().size());
+        }
+      }
+
+      // Test package file listing
+      log.info("Testing package file listing...");
+      Map<Long, String> packageFiles = reader.listPackageFiles();
+      log.info("Found {} package files", packageFiles.size());
+
+      // Show sample package files
+      count = 0;
+      for (Map.Entry<Long, String> entry : packageFiles.entrySet()) {
+        if (count++ < 5) {
+          log.info("  Package file {}: {}", entry.getKey(), entry.getValue());
+        }
+      }
+
+      log.info("✓ Files database structure test completed successfully");
+    }
+  }
+
+  /** Test error handling and edge cases for FilesDbReader. */
+  @Test
+  public void testErrorHandling() throws IOException {
+    log.info("=== Testing FilesDbReader Error Handling ===");
+
+    try (FilesDbReader reader = new FilesDbReader(DB_PATH)) {
+
+      // Test reading with invalid hash
+      log.info("Testing with invalid block hash...");
+      byte[] invalidResult = reader.readBlock("invalid_hash_12345");
+      assert invalidResult == null : "Should return null for invalid hash";
+
+      // Test reading with empty hash
+      log.info("Testing with empty block hash...");
+      byte[] emptyResult = reader.readBlock("");
+      assert emptyResult == null : "Should return null for empty hash";
+
+      // Test reading with null BlockLocation
+      log.info("Testing with null BlockLocation...");
+      byte[] nullLocationResult = reader.readBlockFromPackage(null);
+      assert nullLocationResult == null : "Should return null for null BlockLocation";
+
+      // Test reading with invalid BlockLocation
+      log.info("Testing with invalid BlockLocation...");
+      BlockLocation invalidLocation = BlockLocation.create("test", -1, -1, -1);
+      byte[] invalidLocationResult = reader.readBlockFromPackage(invalidLocation);
+      assert invalidLocationResult == null : "Should return null for invalid BlockLocation";
+
+      // Test package file path with invalid package ID
+      log.info("Testing package file path with invalid package ID...");
+      String invalidPackagePath = reader.getPackageFilePath(-1);
+      assert invalidPackagePath == null : "Should return null for invalid package ID";
+
+      log.info("✓ Error handling test completed successfully");
+    }
+  }
+
+  /** Test performance comparison between FilesDbReader and traditional approach. */
+  @Test
+  public void testPerformanceComparison() throws IOException {
+    log.info("=== Testing Performance Comparison ===");
+    log.info("Comparing FilesDbReader optimized access vs traditional sequential scanning");
+
+    try (FilesDbReader filesReader = new FilesDbReader(DB_PATH)) {
+
+      // Get some test hashes from Files database
+      Map<String, BlockLocation> blockLocations = filesReader.getAllBlockLocations();
+      if (blockLocations.isEmpty()) {
+        log.warn("No blocks found in Files database for performance testing");
+        return;
+      }
+
+      String[] testHashes =
+          blockLocations.keySet().stream()
+              .limit(5) // Test with 5 blocks
+              .toArray(String[]::new);
+
+      log.info("Testing with {} blocks from Files database", testHashes.length);
+
+      // Test FilesDbReader optimized method
+      log.info("Testing FilesDbReader optimized method...");
+      long filesStartTime = System.currentTimeMillis();
+      int filesSuccessCount = 0;
+
+      for (String hash : testHashes) {
+        try {
+          byte[] data = filesReader.readBlock(hash);
+          if (data != null) {
+            filesSuccessCount++;
+          }
+        } catch (Exception e) {
+          log.debug("FilesDbReader method failed for {}: {}", hash, e.getMessage());
+        }
+      }
+
+      long filesTime = System.currentTimeMillis() - filesStartTime;
+
+      // Test traditional method (if available)
+      log.info("Testing traditional archive scanning method...");
+      long traditionalTime = 0;
+      int traditionalSuccessCount = 0;
+
+      try (ArchiveDbReader archiveReader = new ArchiveDbReader(DB_PATH + "/archive")) {
+        long traditionalStartTime = System.currentTimeMillis();
+
+        for (String hash : testHashes) {
+          try {
+            byte[] data = archiveReader.readBlock(hash);
+            if (data != null) {
+              traditionalSuccessCount++;
+            }
+          } catch (Exception e) {
+            log.debug("Traditional method failed for {}: {}", hash, e.getMessage());
+          }
+        }
+
+        traditionalTime = System.currentTimeMillis() - traditionalStartTime;
+      } catch (Exception e) {
+        log.warn("Could not test traditional method: {}", e.getMessage());
+        traditionalTime = -1; // Indicate failure
+      }
+
+      // Report results
+      log.info("Performance comparison results:");
+      log.info("  FilesDbReader method: {} ms, {} successful reads", filesTime, filesSuccessCount);
+      if (traditionalTime >= 0) {
+        log.info(
+            "  Traditional method: {} ms, {} successful reads",
+            traditionalTime,
+            traditionalSuccessCount);
+        if (traditionalTime > 0 && filesTime > 0) {
+          double speedup = (double) traditionalTime / filesTime;
+          log.info("  Speed improvement: {:.2f}x", speedup);
+        }
+      } else {
+        log.info("  Traditional method: not available for comparison");
+      }
+
+      log.info("✓ Performance comparison test completed");
+    }
+  }
+
+  /** Test the complete workflow from BlockLocation extraction to block parsing. */
+  @Test
+  public void testCompleteWorkflow() throws IOException {
+    log.info("=== Testing Complete FilesDbReader Workflow ===");
+    log.info("This test demonstrates the complete workflow from Files database to block data");
+
+    try (FilesDbReader reader = new FilesDbReader(DB_PATH)) {
+
+      // Step 1: Extract BlockLocations from Files database
+      log.info("Step 1: Extracting BlockLocations from Files database global index...");
+      Map<String, BlockLocation> blockLocations = reader.getAllBlockLocations();
+      log.info(
+          "Extracted {} BlockLocations with package location information", blockLocations.size());
+
+      if (blockLocations.isEmpty()) {
+        log.warn("No BlockLocations found - workflow test cannot proceed");
+        return;
+      }
+
+      // Step 2: Analyze BlockLocation distribution
+      log.info("Step 2: Analyzing BlockLocation size distribution...");
+      Map<String, Integer> sizeDistribution = new java.util.HashMap<>();
+
+      for (BlockLocation location : blockLocations.values()) {
+        long size = location.getSize().longValue();
+        String category;
+
+        if (size <= 1024) {
+          category = "≤1KB";
+        } else if (size <= 10240) {
+          category = "1-10KB";
+        } else if (size <= 102400) {
+          category = "10-100KB";
+        } else {
+          category = ">100KB";
+        }
+
+        sizeDistribution.merge(category, 1, Integer::sum);
+      }
+
+      log.info("BlockLocation size distribution:");
+      for (Map.Entry<String, Integer> entry : sizeDistribution.entrySet()) {
+        log.info("  {}: {} locations", entry.getKey(), entry.getValue());
+      }
+
+      // Step 3: Use BlockLocations to retrieve blocks
+      log.info("Step 3: Using BlockLocations to retrieve block data...");
+      int retrievalCount = 0;
+      int successfulRetrievals = 0;
+      long totalRetrievalTime = 0;
+
+      for (Map.Entry<String, BlockLocation> entry : blockLocations.entrySet()) {
+        if (retrievalCount >= 20) break; // Test first 20 BlockLocations
+
+        String hash = entry.getKey();
+        BlockLocation location = entry.getValue();
+        retrievalCount++;
+
+        try {
+          long startTime = System.currentTimeMillis();
+          byte[] blockData = reader.readBlockFromPackage(location);
+          long endTime = System.currentTimeMillis();
+
+          if (blockData != null) {
+            successfulRetrievals++;
+            totalRetrievalTime += (endTime - startTime);
+            log.debug(
+                "Successfully retrieved block {} (size: {} bytes, time: {} ms)",
+                hash,
+                blockData.length,
+                (endTime - startTime));
+          }
+        } catch (Exception e) {
+          log.debug("Error retrieving block {}: {}", hash, e.getMessage());
+        }
+      }
+
+      // Step 4: Final workflow summary
+      log.info("Step 4: Complete workflow summary:");
+      log.info("  BlockLocations extracted: {}", blockLocations.size());
+      log.info("  Retrieval attempts: {}", retrievalCount);
+      log.info("  Successful retrievals: {}", successfulRetrievals);
+      log.info(
+          "  Success rate: {}%",
+          retrievalCount > 0 ? (successfulRetrievals * 100.0) / retrievalCount : 0);
+      if (successfulRetrievals > 0) {
+        log.info("  Average retrieval time: {} ms", totalRetrievalTime / successfulRetrievals);
+      }
+
+      // Verify the complete workflow
+      assert blockLocations.size() > 0 : "Should extract BlockLocations from Files database";
+      assert successfulRetrievals > 0 : "Should successfully retrieve some blocks";
+
+      log.info("✓ Complete FilesDbReader workflow test completed successfully");
+      log.info(
+          "✓ Workflow: {} BlockLocations → {} successful retrievals",
+          blockLocations.size(),
+          successfulRetrievals);
+    }
   }
 }

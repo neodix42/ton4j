@@ -107,7 +107,7 @@ public class TestDbReader {
     ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
     byte[] blockBytes =
         archiveDbReader.readBlock(
-            "0955701B922FCB21EAEFE0BE397DF3BF56080E80FB8494A577FB5368DBF43506");
+            "8795C33B8DEA5DB6B8AED989F68B2F35A40E00DEB240FB89B75E52B063C5DD09");
 
     if (blockBytes == null) {
       log.error("Block not found!");

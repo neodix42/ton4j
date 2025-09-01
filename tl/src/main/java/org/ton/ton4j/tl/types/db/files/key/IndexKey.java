@@ -3,6 +3,7 @@ package org.ton.ton4j.tl.types.db.files.key;
 import java.nio.ByteBuffer;
 import lombok.Builder;
 import lombok.Data;
+import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
 import org.ton.ton4j.tl.types.db.files.Key;
 
 /**
@@ -15,7 +16,7 @@ import org.ton.ton4j.tl.types.db.files.Key;
  */
 @Builder
 @Data
-public class IndexKey extends Key {
+public class IndexKey extends Key implements GlobalIndexKey {
 
   public static IndexKey deserialize(ByteBuffer buffer) {
     return IndexKey.builder().build();

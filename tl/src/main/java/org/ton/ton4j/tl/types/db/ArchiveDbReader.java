@@ -16,11 +16,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.cell.ByteReader;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tl.types.db.files.index.IndexValue;
+import org.ton.ton4j.tl.types.db.files.key.IndexKey;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockHandle;
 import org.ton.ton4j.tlb.BlockInfo;
@@ -28,6 +31,7 @@ import org.ton.ton4j.tlb.ShardIdent;
 
 /** Specialized reader for TON archive database. */
 @Slf4j
+@Data
 public class ArchiveDbReader implements Closeable {
 
   private final String dbPath;
@@ -164,62 +168,64 @@ public class ArchiveDbReader implements Closeable {
       return; // No Files database available
     }
 
-    // Discover packages that are indexed in the Files database global index
-    // This includes both Files database packages and traditional archive packages without .index
-    // files
+    //    // Discover packages that are indexed in the Files database global index
+    //    // This includes both Files database packages and traditional archive packages without
+    // .index
+    //    // files
     Map<String, String> discoveredPackages = new HashMap<>();
-
-    globalIndexDb.forEach(
-        (key, value) -> {
-          try {
-            String hash = new String(key);
-            if (!isValidHexString(hash)) {
-              return; // Skip non-hex keys
-            }
-
-            // The value format varies, but we need to extract package information
-            // Try to parse as package reference
-            if (value.length >= 4) {
-              // This could be a reference to a traditional archive package
-              // The value might contain package name or path information
-              String valueStr = new String(value);
-
-              // Check if this references a traditional archive package
-              if (valueStr.contains("archive.")) {
-                // Extract package name from the value
-                String packageName = extractPackageNameFromValue(valueStr);
-                if (packageName != null) {
-                  // Find the actual package file
-                  Path packagePath = findArchivePackage(packageName);
-                  if (packagePath != null && Files.exists(packagePath)) {
-                    discoveredPackages.put(packageName, packagePath.toString());
-                  }
-                }
-              } else {
-                // This might be a Files database package reference
-                try {
-                  if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
-                    ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-                    long packageId = buffer.getLong();
-
-                    // Construct Files database package file name
-                    String packageFileName = String.format("%010d.pack", packageId);
-                    Path filesPackagesPath = Paths.get(dbPath, "..", "files", "packages");
-                    Path packagePath = filesPackagesPath.resolve(packageFileName);
-
-                    if (Files.exists(packagePath)) {
-                      discoveredPackages.put(packageFileName, packagePath.toString());
-                    }
-                  }
-                } catch (Exception e) {
-                  // Silently skip if not a Files database reference
-                }
-              }
-            }
-          } catch (Exception e) {
-            // Silently skip errors for individual entries
-          }
-        });
+    //
+    //    globalIndexDb.forEach(
+    //        (key, value) -> {
+    //          try {
+    //            String hash = new String(key);
+    //            if (!isValidHexString(hash)) {
+    //              return; // Skip non-hex keys
+    //            }
+    //
+    //            // The value format varies, but we need to extract package information
+    //            // Try to parse as package reference
+    //            if (value.length >= 4) {
+    //              // This could be a reference to a traditional archive package
+    //              // The value might contain package name or path information
+    //              String valueStr = new String(value);
+    //
+    //              // Check if this references a traditional archive package
+    //              if (valueStr.contains("archive.")) {
+    //                // Extract package name from the value
+    //                String packageName = extractPackageNameFromValue(valueStr);
+    //                if (packageName != null) {
+    //                  // Find the actual package file
+    //                  Path packagePath = findArchivePackage(packageName);
+    //                  if (packagePath != null && Files.exists(packagePath)) {
+    //                    discoveredPackages.put(packageName, packagePath.toString());
+    //                  }
+    //                }
+    //              } else {
+    //                // This might be a Files database package reference
+    //                try {
+    //                  if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for
+    // offset
+    //                    ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+    //                    long packageId = buffer.getLong();
+    //
+    //                    // Construct Files database package file name
+    //                    String packageFileName = String.format("%010d.pack", packageId);
+    //                    Path filesPackagesPath = Paths.get(dbPath, "..", "files", "packages");
+    //                    Path packagePath = filesPackagesPath.resolve(packageFileName);
+    //
+    //                    if (Files.exists(packagePath)) {
+    //                      discoveredPackages.put(packageFileName, packagePath.toString());
+    //                    }
+    //                  }
+    //                } catch (Exception e) {
+    //                  // Silently skip if not a Files database reference
+    //                }
+    //              }
+    //            }
+    //          } catch (Exception e) {
+    //            // Silently skip errors for individual entries
+    //          }
+    //        });
 
     // Also discover traditional archive packages that don't have .index files
     discoverOrphanedArchivePackages(discoveredPackages);
@@ -419,7 +425,7 @@ public class ArchiveDbReader implements Closeable {
 
   /** Initializes the Files database global index. */
   private void initializeFilesDatabase() {
-    // Check if files database exists
+    // Check if files database exists - it should be at the same level as archive
     Path filesPath = Paths.get(dbPath, "..", "files");
     Path globalIndexPath = filesPath.resolve("globalindex");
 
@@ -1250,9 +1256,8 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /**
-   * Parses a package offset value from RocksDB.
-   * Based on C++ implementation: offsets are stored as strings using td::to_string(offset)
-   * and parsed back using td::to_integer<td::uint64>(value).
+   * Parses a package offset value from RocksDB. Based on C++ implementation: offsets are stored as
+   * strings using td::to_string(offset) and parsed back using td::to_integer<td::uint64>(value).
    *
    * @param value The RocksDB value containing the offset
    * @return BlockHandle with offset and default size, or null if parsing fails
@@ -1265,19 +1270,21 @@ public class ArchiveDbReader implements Closeable {
     try {
       // C++ stores offsets as strings: td::to_string(offset)
       String offsetStr = new String(value).trim();
-      
+
       // Parse as long (C++ uses td::to_integer<td::uint64>)
       long offset = Long.parseLong(offsetStr);
-      
+
       if (offset >= 0) {
         return BlockHandle.builder()
             .offset(BigInteger.valueOf(offset))
-            .size(BigInteger.valueOf(1024)) // Default size, actual size determined when reading package entry
+            .size(
+                BigInteger.valueOf(
+                    1024)) // Default size, actual size determined when reading package entry
             .build();
       }
     } catch (NumberFormatException e) {
       log.debug("Failed to parse offset as string: {}", new String(value));
-      
+
       // Fallback: try binary format (though C++ uses string format)
       if (value.length >= 8) {
         try {
@@ -1301,8 +1308,408 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /**
-   * Gets all BlockHandles from RocksDB index files (primary method).
-   * BlockHandles represent file location information (offset and size) for files stored in packages.
+   * Gets all BlockLocations from the global index (optimized method). BlockLocations contain
+   * package_id, offset, and size information for direct block access. This is based on the original
+   * TON C++ implementation where the global index maps: file_hash → (package_id, offset, size)
+   *
+   * @return Map of file hash to BlockLocation
+   */
+  public Map<String, BlockLocation> getAllBlockLocationsFromIndex() {
+    Map<String, BlockLocation> blockLocations = new HashMap<>();
+
+    log.info("Reading BlockLocations (package_id + offset + size) from global index...");
+
+    if (globalIndexDb == null) {
+      log.warn("Global index database not available");
+      return blockLocations;
+    }
+
+    // First, parse TL entries for debugging and understanding the structure
+    parseTlEntries();
+
+    AtomicInteger totalEntries = new AtomicInteger(0);
+    AtomicInteger validLocations = new AtomicInteger(0);
+    AtomicInteger parseErrors = new AtomicInteger(0);
+
+    globalIndexDb.forEach(
+        (key, value) -> {
+          try {
+            totalEntries.incrementAndGet();
+
+            String hash = new String(key);
+            if (!isValidHexString(hash)) {
+              return; // Skip non-hex keys
+            }
+
+            // Parse the value to extract package_id, offset, size
+            BlockLocation location = parseGlobalIndexValue(hash, value);
+            if (location != null && location.isValid()) {
+              blockLocations.put(hash, location);
+              validLocations.incrementAndGet();
+            } else {
+              parseErrors.incrementAndGet();
+            }
+          } catch (Exception e) {
+            parseErrors.incrementAndGet();
+            log.debug("Error processing global index entry: {}", e.getMessage());
+          }
+        });
+
+    log.info(
+        "Global index parsing: {} total entries, {} valid BlockLocations, {} parse errors",
+        totalEntries.get(),
+        validLocations.get(),
+        parseErrors.get());
+
+    return blockLocations;
+  }
+
+  /**
+   * Parses a global index value to extract BlockLocation information. Based on the TL classes and
+   * C++ implementation analysis, the Files database global index contains: 1. Main index entry: key
+   * = db.files.index.key (empty), value = db.files.index.value (package lists) 2. Package metadata
+   * entries: key = db.files.package.key, value = db.files.package.value 3. File hash entries: key =
+   * file hash (raw bytes), value = location data (package_id, offset, size)
+   *
+   * @param hash The file hash (for reference)
+   * @param value The global index value
+   * @return BlockLocation or null if parsing fails
+   */
+  private BlockLocation parseGlobalIndexValue(String hash, byte[] value) {
+    if (value == null || value.length < 4) {
+      return null;
+    }
+
+    try {
+      // For file hash entries (64-char hex strings), the value should be direct location data
+      // This is NOT TL-serialized according to the original store_file/load_file pattern
+      if (isValidHexString(hash) && hash.length() == 64) {
+        return parseDirectLocationData(hash, value);
+      }
+
+      return null;
+
+    } catch (Exception e) {
+      log.debug("Error parsing global index value for hash {}: {}", hash, e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Parses direct location data for file hash entries. Based on the original C++
+   * serialize_location(package_id, offset, size) format. Format: [package_id: 8 bytes][offset: 8
+   * bytes][size: 8 bytes] (little-endian)
+   */
+  private BlockLocation parseDirectLocationData(String hash, byte[] value) {
+    if (value.length < 16) {
+      return null; // Need at least package_id + offset
+    }
+
+    try {
+      ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+
+      // Extract package_id (8 bytes)
+      long packageId = buffer.getLong();
+
+      // Extract offset (8 bytes)
+      long offset = buffer.getLong();
+
+      // Extract size (8 bytes if available, otherwise default)
+      long size = 1024; // Default size
+      if (value.length >= 24) {
+        size = buffer.getLong();
+      } else if (value.length >= 20) {
+        size = buffer.getInt() & 0xFFFFFFFFL; // 4-byte unsigned size
+      }
+
+      // Validate values
+      if (packageId >= 0
+          && packageId < 1_000_000_000L
+          && // Reasonable package ID range
+          offset >= 0
+          && offset < 10_000_000_000L
+          && // Reasonable offset range
+          size > 0
+          && size < 100_000_000) { // Reasonable size range
+        return BlockLocation.create(hash, packageId, offset, size);
+      }
+
+      return null;
+    } catch (Exception e) {
+      log.debug("Error parsing direct location data for hash {}: {}", hash, e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Parses TL-serialized entries in the global index. This handles the main index entry and package
+   * metadata entries.
+   */
+  private void parseTlEntries() {
+    if (globalIndexDb == null) {
+      return;
+    }
+
+    try {
+      // Try to read the main index entry using db.files.index.key (empty key)
+      IndexKey indexKey = IndexKey.builder().build();
+      byte[] indexKeyBytes = indexKey.serialize();
+
+      byte[] indexValueBytes = globalIndexDb.get(indexKeyBytes);
+      if (indexValueBytes != null) {
+        try {
+          ByteBuffer buffer = ByteBuffer.wrap(indexValueBytes);
+          IndexValue indexValue = IndexValue.deserialize(buffer);
+
+          log.info(
+              "Files database main index: {} packages, {} key packages, {} temp packages",
+              indexValue.getPackages().size(),
+              indexValue.getKeyPackages().size(),
+              indexValue.getTempPackages().size());
+
+          // Log some package IDs for debugging
+          if (!indexValue.getPackages().isEmpty()) {
+            log.info(
+                "Sample package IDs: {}",
+                indexValue.getPackages().subList(0, Math.min(5, indexValue.getPackages().size())));
+          }
+
+        } catch (Exception e) {
+          log.debug("Error parsing main index value: {}", e.getMessage());
+        }
+      }
+
+      // Try to read some package metadata entries
+      // We can iterate through discovered package IDs and try to read their metadata
+      // This is mainly for debugging and understanding the structure
+
+    } catch (Exception e) {
+      log.debug("Error parsing TL entries: {}", e.getMessage());
+    }
+  }
+
+  /**
+   * Attempts to parse TL-serialized location data. This handles cases where the value is a
+   * TL-serialized object containing location info.
+   */
+  private BlockLocation parseTlSerializedLocation(String hash, byte[] value) {
+    if (value.length < 8) {
+      return null;
+    }
+
+    try {
+      ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+
+      // Check for TL magic numbers that might indicate serialized data
+      int magic = buffer.getInt();
+      buffer.rewind();
+
+      // For now, we don't have the exact TL schema, so we'll try to detect patterns
+      // that look like serialized location data
+
+      // If the first 4 bytes look like a reasonable magic number, skip them
+      if (isLikelyTlMagic(magic)) {
+        buffer.getInt(); // Skip magic
+
+        if (buffer.remaining() >= 16) {
+          long packageId = buffer.getLong();
+          long offset = buffer.getLong();
+          long size = 1024; // Default
+
+          if (buffer.remaining() >= 8) {
+            size = buffer.getLong();
+          } else if (buffer.remaining() >= 4) {
+            size = buffer.getInt() & 0xFFFFFFFFL;
+          }
+
+          if (packageId >= 0 && offset >= 0 && size > 0 && size < 100_000_000) {
+            return BlockLocation.create(hash, packageId, offset, size);
+          }
+        }
+      }
+
+      return null;
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  /**
+   * Attempts to parse direct binary location data. Format: [package_id: 8 bytes][offset: 8
+   * bytes][size: 4-8 bytes] (little-endian)
+   */
+  private BlockLocation parseBinaryLocation(String hash, byte[] value) {
+    if (value.length < 16) {
+      return null;
+    }
+
+    try {
+      ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+
+      // Extract package_id (8 bytes)
+      long packageId = buffer.getLong();
+
+      // Extract offset (8 bytes)
+      long offset = buffer.getLong();
+
+      // Extract size (variable length)
+      long size = 1024; // Default size
+      if (value.length >= 24) {
+        size = buffer.getLong(); // 8-byte size
+      } else if (value.length >= 20) {
+        size = buffer.getInt() & 0xFFFFFFFFL; // 4-byte unsigned size
+      }
+
+      // Validate values - be more permissive for package IDs
+      if (packageId >= 0
+          && packageId < 1_000_000_000L
+          && // Reasonable package ID range
+          offset >= 0
+          && offset < 10_000_000_000L
+          && // Reasonable offset range
+          size > 0
+          && size < 100_000_000) { // Reasonable size range
+        return BlockLocation.create(hash, packageId, offset, size);
+      }
+
+      return null;
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  /**
+   * Attempts to parse string-based location data (like traditional archive indexes). Some entries
+   * might just contain offset as string.
+   */
+  private BlockLocation parseStringLocation(String hash, byte[] value) {
+    try {
+      String valueStr = new String(value).trim();
+
+      // Try to parse as simple offset string
+      if (valueStr.matches("^\\d+$")) {
+        long offset = Long.parseLong(valueStr);
+        if (offset >= 0) {
+          // For string-based offsets, we need to determine package ID from other means
+          // This is a fallback - we'll use a synthetic package ID
+          return BlockLocation.create(hash, 0, offset, 1024);
+        }
+      }
+
+      return null;
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  /**
+   * Checks if a 4-byte value looks like a TL magic number. TL magic numbers are typically in a
+   * specific range.
+   */
+  private boolean isLikelyTlMagic(int magic) {
+    // TL magic numbers are typically 32-bit values
+    // They often have specific patterns, but without the exact schema,
+    // we'll use heuristics based on common TL magic ranges
+
+    // Convert to unsigned for comparison
+    long unsignedMagic = magic & 0xFFFFFFFFL;
+
+    // TL magics are often in certain ranges - this is a heuristic
+    return (unsignedMagic > 0x10000000L && unsignedMagic < 0xF0000000L)
+        || (magic == 0x7dc40502)
+        || // db_filedb_key_empty (known from C++ code)
+        (magic == 0xa504033e)
+        || // db_filedb_key_blockFile
+        (magic == 0x4ac6e727); // db_block_info
+  }
+
+  /**
+   * Maps a package ID to its corresponding file path. This handles both Files database packages and
+   * traditional archive packages.
+   *
+   * @param packageId The package identifier
+   * @return The file path to the package, or null if not found
+   */
+  public String getPackagePathFromId(long packageId) {
+    // Method 1: Check if it's a Files database package
+    String filesPackagePath = getFilesPackagePath(packageId);
+    if (filesPackagePath != null && Files.exists(Paths.get(filesPackagePath))) {
+      return filesPackagePath;
+    }
+
+    // Method 2: Check traditional archive packages
+    String archivePackagePath = getArchivePackagePath(packageId);
+    if (archivePackagePath != null && Files.exists(Paths.get(archivePackagePath))) {
+      return archivePackagePath;
+    }
+
+    // Method 3: Search through discovered archives
+    for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
+      ArchiveInfo info = entry.getValue();
+      if (info.id == packageId && info.packagePath != null) {
+        return info.packagePath;
+      }
+    }
+
+    log.debug("Package path not found for package ID: {}", packageId);
+    return null;
+  }
+
+  /**
+   * Gets the file path for a Files database package.
+   *
+   * @param packageId The package ID
+   * @return The file path or null if not found
+   */
+  private String getFilesPackagePath(long packageId) {
+    try {
+      String packageFileName = String.format("%010d.pack", packageId);
+      Path filesPackagesPath = Paths.get(dbPath, "..", "files", "packages");
+      Path packagePath = filesPackagesPath.resolve(packageFileName);
+      return packagePath.toString();
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  /**
+   * Gets the file path for a traditional archive package.
+   *
+   * @param packageId The package ID
+   * @return The file path or null if not found
+   */
+  private String getArchivePackagePath(long packageId) {
+    try {
+      // Traditional archives are organized by ranges
+      // arch0000 contains packages 0-99999, arch0001 contains 100000-199999, etc.
+      int archiveDir = (int) (packageId / 100000);
+      String archiveDirName = String.format("arch%04d", archiveDir);
+
+      String packageFileName = String.format("archive.%05d.pack", packageId);
+      Path archivePath = Paths.get(dbPath, "packages", archiveDirName, packageFileName);
+
+      if (Files.exists(archivePath)) {
+        return archivePath.toString();
+      }
+
+      // Also try key archives
+      String keyArchiveDirName = String.format("key%03d", (int) (packageId / 1000000));
+      String keyPackageFileName = String.format("key.archive.%06d.pack", packageId);
+      Path keyArchivePath = Paths.get(dbPath, "packages", keyArchiveDirName, keyPackageFileName);
+
+      if (Files.exists(keyArchivePath)) {
+        return keyArchivePath.toString();
+      }
+
+      return null;
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  /**
+   * Gets all BlockHandles from RocksDB index files (primary method). BlockHandles represent file
+   * location information (offset and size) for files stored in packages.
    *
    * @return Map of file hash to BlockHandle
    */
@@ -1331,16 +1738,16 @@ public class ArchiveDbReader implements Closeable {
               (key, value) -> {
                 try {
                   totalKeys.incrementAndGet();
-                  
+
                   // Debug: Analyze key types
                   String keyType = analyzeKeyType(key);
                   keyTypeStats.merge(keyType, 1, Integer::sum);
-                  
+
                   // Check if this is a file hash key (hex string)
                   String keyStr = new String(key);
                   if (isValidHexString(keyStr) && !keyStr.equals("status")) {
                     fileHashKeys.incrementAndGet();
-                    
+
                     // Parse the value as package offset
                     BlockHandle handle = parsePackageOffset(value);
                     if (handle != null) {
@@ -1356,8 +1763,13 @@ public class ArchiveDbReader implements Closeable {
                 }
               });
 
-          log.info("Archive {}: {} total keys, {} file hash keys, {} new BlockHandles, key types: {}", 
-                   archiveKey, totalKeys.get(), fileHashKeys.get(), newBlockHandles.get(), keyTypeStats);
+          log.info(
+              "Archive {}: {} total keys, {} file hash keys, {} new BlockHandles, key types: {}",
+              archiveKey,
+              totalKeys.get(),
+              fileHashKeys.get(),
+              newBlockHandles.get(),
+              keyTypeStats);
         } catch (IOException e) {
           log.warn("Error reading BlockHandles from archive {}: {}", archiveKey, e.getMessage());
         }
@@ -1381,7 +1793,7 @@ public class ArchiveDbReader implements Closeable {
     Map<String, byte[]> entries = getAllEntries();
     int processedCount = 0;
     int errorCount = 0;
-    
+
     for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
       try {
         String hash = entry.getKey();
@@ -1424,7 +1836,8 @@ public class ArchiveDbReader implements Closeable {
               }
             }
           } catch (Exception e) {
-            log.debug("Error parsing block for BlockHandle extraction from {}: {}", hash, e.getMessage());
+            log.debug(
+                "Error parsing block for BlockHandle extraction from {}: {}", hash, e.getMessage());
             errorCount++;
             // Continue processing other entries instead of failing completely
           }
@@ -1436,8 +1849,11 @@ public class ArchiveDbReader implements Closeable {
       }
     }
 
-    log.info("Processed {} entries, {} errors, found {} BlockHandles from packages", 
-             processedCount, errorCount, blockHandles.size());
+    log.info(
+        "Processed {} entries, {} errors, found {} BlockHandles from packages",
+        processedCount,
+        errorCount,
+        blockHandles.size());
     return blockHandles;
   }
 
@@ -1577,12 +1993,12 @@ public class ArchiveDbReader implements Closeable {
       if (archiveInfo.indexPath != null) {
         try {
           RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.indexPath);
-          
+
           AtomicInteger blockCount = new AtomicInteger(0);
           AtomicInteger blockProofCount = new AtomicInteger(0);
           AtomicInteger blockHandleCount = new AtomicInteger(0);
           AtomicInteger otherCount = new AtomicInteger(0);
-          
+
           indexDb.forEach(
               (key, value) -> {
                 try {
@@ -1605,15 +2021,19 @@ public class ArchiveDbReader implements Closeable {
                   otherCount.incrementAndGet();
                 }
               });
-              
+
           stats.merge("Block", blockCount.get(), Integer::sum);
           stats.merge("BlockProof", blockProofCount.get(), Integer::sum);
           stats.merge("BlockHandle", blockHandleCount.get(), Integer::sum);
           stats.merge("Other", otherCount.get(), Integer::sum);
-          
-          log.info("Archive {}: Block={}, BlockProof={}, BlockHandle={}, Other={}", 
-                   archiveKey, blockCount.get(), blockProofCount.get(), 
-                   blockHandleCount.get(), otherCount.get());
+
+          log.info(
+              "Archive {}: Block={}, BlockProof={}, BlockHandle={}, Other={}",
+              archiveKey,
+              blockCount.get(),
+              blockProofCount.get(),
+              blockHandleCount.get(),
+              otherCount.get());
         } catch (IOException e) {
           log.warn("Error reading index for statistics in {}: {}", archiveKey, e.getMessage());
         }

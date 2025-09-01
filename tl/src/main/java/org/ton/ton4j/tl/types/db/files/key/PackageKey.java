@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
+import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
 import org.ton.ton4j.tl.types.db.files.Key;
 
 /**
@@ -16,23 +17,19 @@ import org.ton.ton4j.tl.types.db.files.Key;
  */
 @Builder
 @Data
-public class PackageKey extends Key {
-
+public class PackageKey extends Key implements GlobalIndexKey {
   int packageId;
   boolean key;
   boolean temp;
 
   public static PackageKey deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
+    int magic = buffer.getInt();
     int packageId = buffer.getInt();
     boolean key = buffer.get() != 0;
     boolean temp = buffer.get() != 0;
-    
-    return PackageKey.builder()
-        .packageId(packageId)
-        .key(key)
-        .temp(temp)
-        .build();
+
+    return PackageKey.builder().packageId(packageId).key(key).temp(temp).build();
   }
 
   @Override
@@ -43,5 +40,9 @@ public class PackageKey extends Key {
     buffer.put((byte) (key ? 1 : 0));
     buffer.put((byte) (temp ? 1 : 0));
     return buffer.array();
+  }
+
+  public static PackageKey deserialize(byte[] data) {
+    return deserialize(ByteBuffer.wrap(data));
   }
 }
