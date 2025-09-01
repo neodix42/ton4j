@@ -742,7 +742,7 @@ public class GlobalIndexDbReader implements Closeable {
    *
    * @return List of all blocks found in archive packages
    */
-  public List<org.ton.ton4j.tlb.Block> getAllBlocks() {
+  public List<org.ton.ton4j.tlb.Block> getAllIndexedBlocks() {
     List<org.ton.ton4j.tlb.Block> blocks = new ArrayList<>();
     
     log.info("Reading all blocks from archive index databases...");

@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
 import org.ton.ton4j.tl.types.db.files.package_.PackageValue;
-import org.ton.ton4j.utils.Utils;
 
 /**
  * Test class for the FilesDbReader that demonstrates the optimized block reading approach using the
@@ -213,14 +212,14 @@ public class TestGlobalIndexDbReader {
 
   /** Test block reading functionality using archive index databases. */
   @Test
-  public void testBlockReading() throws IOException {
+  public void testGetIndexedOnlyBlocks() throws IOException {
     log.info("=== Testing Block Reading from Archive Index Databases ===");
 
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
 
       // Test getAllBlocks() method
       log.info("Testing getAllBlocks() method...");
-      List<org.ton.ton4j.tlb.Block> blocks = reader.getAllBlocks();
+      List<org.ton.ton4j.tlb.Block> blocks = reader.getAllIndexedBlocks();
       log.info("Found {} blocks using getAllBlocks()", blocks.size());
 
       // Show some sample blocks
