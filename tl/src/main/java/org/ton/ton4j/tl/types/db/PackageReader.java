@@ -54,8 +54,12 @@ public class PackageReader implements Closeable {
 
     file.seek(currentPosition);
 
-    // Read entry header
-    short entryMagic = readShort();
+    // Read entry header (8 bytes total)
+    // First 4 bytes: entry_header_magic (lower 16 bits) + filename_size (upper 16 bits)
+    int header0 = readInt();
+    int entryMagic = header0 & 0xFFFF;
+    int filenameLength = (header0 >>> 16) & 0xFFFF;
+    
     if (entryMagic != ENTRY_HEADER_MAGIC) {
       throw new IOException(
           "Invalid entry header magic: 0x"
@@ -64,7 +68,7 @@ public class PackageReader implements Closeable {
               + Integer.toHexString(ENTRY_HEADER_MAGIC));
     }
 
-    short filenameLength = readShort();
+    // Next 4 bytes: data_size
     int dataSize = readInt();
 
     // Read filename

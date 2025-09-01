@@ -7,10 +7,7 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
@@ -548,14 +545,14 @@ public class GlobalIndexDbReader implements Closeable {
     return fileLocations;
   }
 
-  /**
-   * Reads hash->offset mappings from a specific archive index database.
-   *
-   * @param packagePath Path to the package file
-   * @param indexPath Path to the index database
-   * @param packageId Package ID
-   * @return Map of file hash to ArchiveFileLocation
-   */
+    /**
+     * Reads hash->offset mappings from a specific archive index database.
+     *
+     * @param packagePath Path to the package file
+     * @param indexPath Path to the index database
+     * @param packageId Package ID
+     * @return Map of file hash to ArchiveFileLocation
+     */
   private Map<String, ArchiveFileLocation> readArchiveIndexDatabase(String packagePath, String indexPath, int packageId) {
     Map<String, ArchiveFileLocation> fileLocations = new HashMap<>();
 
@@ -736,6 +733,181 @@ public class GlobalIndexDbReader implements Closeable {
   public boolean archiveFileExists(String hash) {
     Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
     return fileLocations.containsKey(hash);
+  }
+
+  /**
+   * Gets all blocks from archive packages by reading from individual archive index databases.
+   * This method follows the same approach as ArchiveDbReader.getAllBlocks() but uses the
+   * C++ approach of reading from individual archive index databases.
+   *
+   * @return List of all blocks found in archive packages
+   */
+  public List<org.ton.ton4j.tlb.Block> getAllBlocks() {
+    List<org.ton.ton4j.tlb.Block> blocks = new ArrayList<>();
+    
+    log.info("Reading all blocks from archive index databases...");
+    
+    // Get all archive file locations from index databases
+    Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
+    
+    int totalFiles = fileLocations.size();
+    int processedFiles = 0;
+    int blockCount = 0;
+    int errorCount = 0;
+    
+    log.info("Found {} files in archive index databases, checking for blocks...", totalFiles);
+    
+    for (Map.Entry<String, ArchiveFileLocation> entry : fileLocations.entrySet()) {
+      String hash = entry.getKey();
+      ArchiveFileLocation location = entry.getValue();
+      
+      try {
+        processedFiles++;
+        
+        // Read the file data using the archive file location
+        byte[] fileData = readArchiveFileFromPackage(location);
+        if (fileData != null) {
+          // Try to parse as BOC and check if it's a block
+          org.ton.ton4j.cell.Cell cell = org.ton.ton4j.cell.CellBuilder.beginCell()
+              .fromBoc(fileData).endCell();
+          
+          long magic = cell.getBits().preReadUint(32).longValue();
+          if (magic == 0x11ef55aaL) { // block magic
+            org.ton.ton4j.tlb.Block block = org.ton.ton4j.tlb.Block.deserialize(
+                org.ton.ton4j.cell.CellSlice.beginParse(cell));
+            blocks.add(block);
+            blockCount++;
+            
+            // Log progress for large datasets
+            if (blockCount % 100 == 0) {
+              log.debug("Processed {} files, found {} blocks so far", processedFiles, blockCount);
+            }
+          }
+        }
+        
+      } catch (Throwable e) {
+        errorCount++;
+        log.debug("Error processing file {}: {}", hash, e.getMessage());
+      }
+    }
+    
+    log.info("Processed {} files from archive index databases: {} blocks found, {} errors", 
+        processedFiles, blockCount, errorCount);
+    
+    return blocks;
+  }
+
+  /**
+   * Gets all blocks with their hashes from archive packages.
+   * This method is similar to getAllBlocks() but returns a map of hash to block.
+   *
+   * @return Map of file hash to Block
+   */
+  public Map<String, org.ton.ton4j.tlb.Block> getAllBlocksWithHashes() {
+    Map<String, org.ton.ton4j.tlb.Block> blocks = new HashMap<>();
+    
+    log.info("Reading all blocks with hashes from archive index databases...");
+    
+    // Get all archive file locations from index databases
+    Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
+    
+    int totalFiles = fileLocations.size();
+    int processedFiles = 0;
+    int blockCount = 0;
+    int errorCount = 0;
+    
+    log.info("Found {} files in archive index databases, checking for blocks...", totalFiles);
+    
+    for (Map.Entry<String, ArchiveFileLocation> entry : fileLocations.entrySet()) {
+      String hash = entry.getKey();
+      ArchiveFileLocation location = entry.getValue();
+      
+      try {
+        processedFiles++;
+        
+        // Read the file data using the archive file location
+        byte[] fileData = readArchiveFileFromPackage(location);
+        if (fileData != null) {
+          // Try to parse as BOC and check if it's a block
+          org.ton.ton4j.cell.Cell cell = org.ton.ton4j.cell.CellBuilder.beginCell()
+              .fromBoc(fileData).endCell();
+          
+          long magic = cell.getBits().preReadUint(32).longValue();
+          if (magic == 0x11ef55aaL) { // block magic
+            org.ton.ton4j.tlb.Block block = org.ton.ton4j.tlb.Block.deserialize(
+                org.ton.ton4j.cell.CellSlice.beginParse(cell));
+            blocks.put(hash, block);
+            blockCount++;
+            
+            // Log progress for large datasets
+            if (blockCount % 100 == 0) {
+              log.debug("Processed {} files, found {} blocks so far", processedFiles, blockCount);
+            }
+          }
+        }
+        
+      } catch (Throwable e) {
+        errorCount++;
+        log.debug("Error processing file {}: {}", hash, e.getMessage());
+      }
+    }
+    
+    log.info("Processed {} files from archive index databases: {} blocks found, {} errors", 
+        processedFiles, blockCount, errorCount);
+    
+    return blocks;
+  }
+
+  /**
+   * Gets all raw entries (file data) from archive packages.
+   * This method returns all files found in archive index databases as raw byte arrays.
+   *
+   * @return Map of file hash to raw file data
+   */
+  public Map<String, byte[]> getAllArchiveEntries() {
+    Map<String, byte[]> entries = new HashMap<>();
+    
+    log.info("Reading all entries from archive index databases...");
+    
+    // Get all archive file locations from index databases
+    Map<String, ArchiveFileLocation> fileLocations = getAllArchiveFileLocationsFromIndexDatabases();
+    
+    int totalFiles = fileLocations.size();
+    int processedFiles = 0;
+    int successCount = 0;
+    int errorCount = 0;
+    
+    log.info("Found {} files in archive index databases, reading all entries...", totalFiles);
+    
+    for (Map.Entry<String, ArchiveFileLocation> entry : fileLocations.entrySet()) {
+      String hash = entry.getKey();
+      ArchiveFileLocation location = entry.getValue();
+      
+      try {
+        processedFiles++;
+        
+        // Read the file data using the archive file location
+        byte[] fileData = readArchiveFileFromPackage(location);
+        if (fileData != null) {
+          entries.put(hash, fileData);
+          successCount++;
+          
+          // Log progress for large datasets
+          if (successCount % 1000 == 0) {
+            log.debug("Processed {} files, read {} entries so far", processedFiles, successCount);
+          }
+        }
+        
+      } catch (Exception e) {
+        errorCount++;
+        log.debug("Error reading file {}: {}", hash, e.getMessage());
+      }
+    }
+    
+    log.info("Processed {} files from archive index databases: {} entries read, {} errors", 
+        processedFiles, successCount, errorCount);
+    
+    return entries;
   }
 
   /**

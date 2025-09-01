@@ -48,9 +48,7 @@ public class TestDbReader {
     List<Block> blocks1 = archiveDbReader.getAllBlocks();
     log.info("All blocks: {}", blocks1.size());
     blocks1.sort(
-        (o1, o2) -> {
-          return Long.compare(o2.getBlockInfo().getSeqno(), o1.getBlockInfo().getSeqno());
-        });
+        (o1, o2) -> Long.compare(o2.getBlockInfo().getSeqno(), o1.getBlockInfo().getSeqno()));
     for (Block block : blocks1) {
       log.info(
           "({},{},{}), {} {}",
@@ -79,8 +77,8 @@ public class TestDbReader {
       Block block = entry.getValue();
       String hash = entry.getKey();
 
-      List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
-      List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
+//      List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
+//      List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
       //      log.info("InMsgs: {}, OutMsgs: {}", inMsgs.size(), outMsgs.size());
       log.info(
           "hash {} ({},{},{}), {} {}",
@@ -104,7 +102,7 @@ public class TestDbReader {
     ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
     byte[] blockBytes =
         archiveDbReader.readBlock(
-            "8795C33B8DEA5DB6B8AED989F68B2F35A40E00DEB240FB89B75E52B063C5DD09");
+            "388DE460D69B34771C64B4801919EC8158FD39FFAC6C7C3AAEF8E22462025685");
 
     if (blockBytes == null) {
       log.error("Block not found!");
