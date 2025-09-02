@@ -2,8 +2,10 @@ package org.ton.ton4j.exporter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.File;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -19,29 +21,37 @@ public class TestExporter {
             .tonDatabaseRootPath("/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db")
             .build();
     assertThat(exporter).isNotNull();
-    log.info("exporter={}", exporter.getDatabasePath());
+    log.info("exporter root db path {}", exporter.getDatabasePath());
   }
 
   @Test
-  public void testExporterStdout() {
+  public void testExporterArchiveStats() throws IOException {
     Exporter exporter =
         Exporter.builder()
             .tonDatabaseRootPath("/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db")
-            .outputToStdout(true)
             .build();
     assertThat(exporter).isNotNull();
-    log.info("exporter={}", exporter.getDatabasePath());
+    log.info("exporter root db path {}", exporter.getDatabasePath());
+    exporter.printADbStats();
   }
 
   @Test
-  public void testExporterRun() throws IOException {
+  public void testExporterToFile() throws IOException {
     Exporter exporter =
         Exporter.builder()
             .tonDatabaseRootPath("/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db")
-            .outputToStdout(true)
             .build();
     assertThat(exporter).isNotNull();
-    log.info("exporter={}", exporter.getDatabasePath());
-    exporter.run();
+    FileUtils.deleteQuietly(new File("local.txt"));
+    exporter.exportToFile("local.txt", false, 20);
+  }
+
+  @Test
+  public void testExporterToStdout() throws IOException {
+    Exporter exporter =
+        Exporter.builder()
+            .tonDatabaseRootPath("/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db")
+            .build();
+    exporter.exportToStdout(true, 20);
   }
 }

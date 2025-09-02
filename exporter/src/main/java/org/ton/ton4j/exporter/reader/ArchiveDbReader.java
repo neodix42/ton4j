@@ -273,7 +273,7 @@ public class ArchiveDbReader implements Closeable {
 
       try {
         // Check if this is a Files database package (indicated by null indexPath)
-        if (archiveInfo.indexPath == null) {
+        if (archiveInfo.getIndexPath() == null) {
           // This is a Files database package, use global index
           log.debug("Checking Files database package: {}", archiveKey);
           byte[] data = readBlockFromFilesPackage(hash, archiveKey, archiveInfo);
@@ -314,7 +314,7 @@ public class ArchiveDbReader implements Closeable {
   private byte[] readBlockFromTraditionalArchive(
       String hash, String archiveKey, ArchiveInfo archiveInfo) throws IOException {
     // Get the index DB
-    RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.indexPath);
+    RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.getIndexPath());
 
     // Try to get the offset from this index
     byte[] offsetBytes = indexDb.get(hash.getBytes());
@@ -350,7 +350,7 @@ public class ArchiveDbReader implements Closeable {
       }
 
       // Get the package reader
-      PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.packagePath);
+      PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.getPackagePath());
 
       // Get the entry at the offset
       PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
@@ -406,7 +406,7 @@ public class ArchiveDbReader implements Closeable {
 
           // Get the package reader
           PackageReader packageReader =
-              getFilesPackageReader(packageFileName, archiveInfo.packagePath);
+              getFilesPackageReader(packageFileName, archiveInfo.getPackagePath());
 
           // Get the entry at the offset
           PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
@@ -433,7 +433,7 @@ public class ArchiveDbReader implements Closeable {
       String hash, String archiveKey, ArchiveInfo archiveInfo) throws IOException {
     try {
       // Read the entire package file
-      byte[] packageData = Files.readAllBytes(Paths.get(archiveInfo.packagePath));
+      byte[] packageData = Files.readAllBytes(Paths.get(archiveInfo.getPackagePath()));
       ByteReader reader = new ByteReader(packageData);
 
       // Read package header
@@ -441,7 +441,7 @@ public class ArchiveDbReader implements Closeable {
       if (packageHeaderMagic != 0xae8fdd01) {
         log.warn(
             "Invalid package header magic in {}: expected 0xae8fdd01, got 0x{}",
-            archiveInfo.packagePath,
+            archiveInfo.getPackagePath(),
             Integer.toHexString(packageHeaderMagic));
         return null;
       }
@@ -454,7 +454,7 @@ public class ArchiveDbReader implements Closeable {
           if (entryHeaderMagic != (short) 0x1e8b) {
             log.warn(
                 "Invalid entry header magic in {}: expected 0x1e8b, got 0x{}",
-                archiveInfo.packagePath,
+                archiveInfo.getPackagePath(),
                 Integer.toHexString(entryHeaderMagic & 0xFFFF));
             break;
           }
@@ -486,14 +486,15 @@ public class ArchiveDbReader implements Closeable {
         } catch (Exception e) {
           log.warn(
               "Error reading entry from orphaned package {}: {}",
-              archiveInfo.packagePath,
+              archiveInfo.getPackagePath(),
               e.getMessage());
           break;
         }
       }
 
     } catch (IOException e) {
-      log.error("Error reading orphaned package {}: {}", archiveInfo.packagePath, e.getMessage());
+      log.error(
+          "Error reading orphaned package {}: {}", archiveInfo.getPackagePath(), e.getMessage());
     }
 
     return null;
@@ -771,7 +772,7 @@ public class ArchiveDbReader implements Closeable {
 
       try {
         // Check if this is a Files database package (indicated by null indexPath)
-        if (archiveInfo.indexPath == null) {
+        if (archiveInfo.getIndexPath() == null) {
           // This is a Files database package, handle it separately
           readFromFilesPackage(archiveKey, archiveInfo, blocks);
         } else {
@@ -834,7 +835,7 @@ public class ArchiveDbReader implements Closeable {
                   Map<String, byte[]> localBlocks = new HashMap<>();
 
                   // Check if this is a Files database package (indicated by null indexPath)
-                  if (archiveInfo.indexPath == null) {
+                  if (archiveInfo.getIndexPath() == null) {
                     // This is a Files database package, handle it separately
                     readFromFilesPackage(archiveKey, archiveInfo, localBlocks);
                   } else {
@@ -893,10 +894,10 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /** Reads blocks from a traditional archive package with its own index. */
-  private void readFromTraditionalArchive(
+  public void readFromTraditionalArchive(
       String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) throws IOException {
     // Get the index DB
-    RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.indexPath);
+    RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.getIndexPath());
 
     // Get all key-value pairs from this index
     indexDb.forEach(
@@ -949,7 +950,8 @@ public class ArchiveDbReader implements Closeable {
 
             try {
               // Get the package reader
-              PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.packagePath);
+              PackageReader packageReader =
+                  getPackageReader(archiveKey, archiveInfo.getPackagePath());
 
               // Get the entry at the offset
               PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
@@ -974,11 +976,11 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /** Reads blocks from a Files database package using the global index. */
-  private void readFromFilesPackage(
+  public void readFromFilesPackage(
       String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) {
     // Check if this is an orphaned package (no index file)
     // This includes both explicitly orphaned packages and archive packages without index files
-    if (archiveKey.startsWith("orphaned/") || archiveInfo.indexPath == null) {
+    if (archiveKey.startsWith("orphaned/") || archiveInfo.getIndexPath() == null) {
       // Read directly from the package file like TestFilesDbReader does
       //      log.debug("Reading orphaned package: {} (no index file)", archiveKey);
       readFromOrphanedPackage(archiveKey, archiveInfo, blocks);
@@ -998,20 +1000,30 @@ public class ArchiveDbReader implements Closeable {
         .forEach(
             (key, value) -> {
               try {
-                String hash = key.toString();
+                String hash = new String(key);
                 if (!isValidHexString(hash)) {
                   return; // Skip non-hex keys
                 }
 
-                // For file hash entries, the value should be raw location data (not TL objects)
-                // Only hex string keys (64 chars) contain file location data
-                if (hash.length() == 64) {
-                  // This is a file hash entry, parse the raw location data
+                // Parse the value to get package location info
+                if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
+                  ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+                  long packageId = buffer.getLong();
+                  long offset = buffer.getLong();
+
+                  // Check if this entry belongs to the current package
+                  String entryPackageFileName = String.format("%010d.pack", packageId);
+                  if (!entryPackageFileName.equals(packageFileName)) {
+                    return; // This entry belongs to a different package
+                  }
+
                   try {
-                    // Use FilesDbReader's method to read the block directly
-                    byte[] blockData = globalIndexDbReader.readBlock(hash);
-                    if (blockData != null) {
-                      blocks.put(hash, blockData);
+                    PackageReader packageReader =
+                        getFilesPackageReader(packageFileName, archiveInfo.getPackagePath());
+                    PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
+
+                    if (entry != null) {
+                      blocks.put(hash, entry.getData());
                     }
                   } catch (IOException e) {
                     // Silently skip errors for individual entries
@@ -1031,7 +1043,7 @@ public class ArchiveDbReader implements Closeable {
       String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) {
     try {
       AtomicInteger entryCount = new AtomicInteger();
-      PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.packagePath);
+      PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.getPackagePath());
 
       packageReader.forEach(
           packageEntry -> {
@@ -1045,10 +1057,11 @@ public class ArchiveDbReader implements Closeable {
       //      log.info(
       //          "Successfully read {} entries from orphaned package: {}",
       //          entryCount,
-      //          archiveInfo.packagePath);
+      //          archiveInfo.getPackagePath());
 
     } catch (IOException e) {
-      log.error("Error reading orphaned package {}: {}", archiveInfo.packagePath, e.getMessage());
+      log.error(
+          "Error reading orphaned package {}: {}", archiveInfo.getPackagePath(), e.getMessage());
     }
   }
 
@@ -1674,8 +1687,8 @@ public class ArchiveDbReader implements Closeable {
     // Method 3: Search through discovered archives
     for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
       ArchiveInfo info = entry.getValue();
-      if (info.id == packageId && info.packagePath != null) {
-        return info.packagePath;
+      if (info.getId() == packageId && info.getPackagePath() != null) {
+        return info.getPackagePath();
       }
     }
 
@@ -1751,9 +1764,9 @@ public class ArchiveDbReader implements Closeable {
       String archiveKey = entry.getKey();
       ArchiveInfo archiveInfo = entry.getValue();
 
-      if (archiveInfo.indexPath != null) { // Traditional archives with index
+      if (archiveInfo.getIndexPath() != null) { // Traditional archives with index
         try {
-          RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.indexPath);
+          RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.getIndexPath());
 
           // Debug: Count different key types in this index
           Map<String, Integer> keyTypeStats = new HashMap<>();
@@ -2017,9 +2030,9 @@ public class ArchiveDbReader implements Closeable {
       String archiveKey = entry.getKey();
       ArchiveInfo archiveInfo = entry.getValue();
 
-      if (archiveInfo.indexPath != null) {
+      if (archiveInfo.getIndexPath() != null) {
         try {
-          RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.indexPath);
+          RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.getIndexPath());
 
           AtomicInteger blockCount = new AtomicInteger(0);
           AtomicInteger blockProofCount = new AtomicInteger(0);
@@ -2348,18 +2361,5 @@ public class ArchiveDbReader implements Closeable {
 
     // Check if the string contains only hexadecimal characters
     return s.matches("^[0-9A-Fa-f]+$");
-  }
-
-  /** Information about an archive. */
-  private static class ArchiveInfo {
-    private final int id;
-    private final String indexPath;
-    private final String packagePath;
-
-    public ArchiveInfo(int id, String indexPath, String packagePath) {
-      this.id = id;
-      this.indexPath = indexPath;
-      this.packagePath = packagePath;
-    }
   }
 }
