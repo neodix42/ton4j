@@ -51,6 +51,7 @@ public class Exporter {
   private Boolean showProgress;
 
   private static DbReader dbReader;
+  private StatusManager statusManager;
 
   public static class ExporterBuilder {}
 
@@ -70,7 +71,9 @@ public class Exporter {
         super.showProgress = false;
       }
 
-      return super.build();
+      Exporter exporter = super.build();
+      exporter.statusManager = new StatusManager();
+      return exporter;
     }
   }
 
@@ -79,29 +82,37 @@ public class Exporter {
   }
 
   /**
-   * Common export logic that handles database reading and block processing
+   * Common export logic that handles database reading and block processing with state persistence
    *
    * @param outputWriter strategy for writing output lines
    * @param deserialized if true - deserialized Block TL-B object will be saved as json string,
    *     otherwise boc in hex format will be stored in a single line
    * @param parallelThreads number of parallel threads used to export a database
    * @param showProgressInfo whether to show progress information during export
+   * @param exportStatus the export status for tracking progress
    * @return array containing [parsedBlocksCounter, nonBlocksCounter, totalProcessed]
    */
-  private int[] exportData(
+  private int[] exportDataWithStatus(
       OutputWriter outputWriter,
       boolean deserialized,
       int parallelThreads,
-      boolean showProgressInfo)
+      boolean showProgressInfo,
+      ExportStatus exportStatus)
       throws IOException {
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
 
     dbReader = new DbReader(tonDatabaseRootPath);
 
-    AtomicInteger parsedBlocksCounter = new AtomicInteger(0);
-    AtomicInteger nonBlocksCounter = new AtomicInteger(0);
-    AtomicInteger packsProcessed = new AtomicInteger(0);
+    AtomicInteger parsedBlocksCounter = new AtomicInteger(exportStatus.getParsedBlocksCount());
+    AtomicInteger nonBlocksCounter = new AtomicInteger(exportStatus.getNonBlocksCount());
+    AtomicInteger packsProcessed = new AtomicInteger(exportStatus.getProcessedCount());
     long totalPacks = dbReader.getArchiveDbReader().getArchiveInfos().size();
+
+    // Update total packages if it has changed
+    if (exportStatus.getTotalPackages() != totalPacks) {
+      exportStatus.setTotalPackages(totalPacks);
+      statusManager.saveStatus(exportStatus);
+    }
 
     long startTime = System.currentTimeMillis();
 
@@ -109,17 +120,27 @@ public class Exporter {
     ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
     List<Future<Void>> futures = new ArrayList<>();
 
-    // Submit tasks for each archive
+    // Submit tasks for each archive that hasn't been processed yet
     for (Map.Entry<String, ArchiveInfo> entry :
         dbReader.getArchiveDbReader().getArchiveInfos().entrySet()) {
       String archiveKey = entry.getKey();
       ArchiveInfo archiveInfo = entry.getValue();
+
+      // Skip already processed packages
+      if (exportStatus.isPackageProcessed(archiveKey)) {
+        if (showProgressInfo) {
+          log.debug("Skipping already processed archive: {}", archiveKey);
+        }
+        continue;
+      }
 
       Future<Void> future =
           executor.submit(
               () -> {
                 try {
                   Map<String, byte[]> localBlocks = new HashMap<>();
+                  int localParsedBlocks = 0;
+                  int localNonBlocks = 0;
 
                   if (archiveInfo.getIndexPath() == null) {
                     dbReader
@@ -160,8 +181,10 @@ public class Exporter {
 
                         outputWriter.writeLine(lineToWrite);
                         parsedBlocksCounter.getAndIncrement();
+                        localParsedBlocks++;
                       } else {
                         nonBlocksCounter.getAndIncrement();
+                        localNonBlocks++;
                       }
 
                     } catch (Throwable e) {
@@ -170,16 +193,22 @@ public class Exporter {
                     }
                   }
 
+                  // Mark package as processed and save status
+                  synchronized (exportStatus) {
+                    exportStatus.markPackageProcessed(
+                        archiveKey, localParsedBlocks, localNonBlocks);
+                    statusManager.saveStatus(exportStatus);
+                  }
+
                   if (showProgressInfo) {
                     System.out.println(
-                        "Completed reading archive "
-                            + archiveKey
-                            + ": entries "
-                            + localBlocks.size()
-                            + ", "
-                            + packsProcessed.getAndIncrement()
-                            + "/"
-                            + totalPacks);
+                        String.format(
+                            "Completed reading archive %s: entries %d, progress: %.1f%% (%d/%d)",
+                            archiveKey,
+                            localBlocks.size(),
+                            exportStatus.getProgressPercentage(),
+                            exportStatus.getProcessedCount(),
+                            exportStatus.getTotalPackages()));
                   } else {
                     log.debug(
                         "Completed reading archive {}: {} entries", archiveKey, localBlocks.size());
@@ -219,6 +248,10 @@ public class Exporter {
       Thread.currentThread().interrupt();
     }
 
+    // Mark export as completed
+    exportStatus.markCompleted();
+    statusManager.saveStatus(exportStatus);
+
     log.info(
         "Total duration: {}s, speed: {} blocks per second",
         durationSeconds,
@@ -241,10 +274,50 @@ public class Exporter {
       throw new Error("outputToFile is empty");
     }
 
+    // Check for existing status and resume if possible
+    ExportStatus exportStatus = statusManager.loadStatus();
+    boolean isResume = false;
+
+    if (exportStatus != null && !exportStatus.isCompleted()) {
+      // Validate that the resume parameters match
+      if ("file".equals(exportStatus.getExportType())
+          && outputToFile.equals(exportStatus.getOutputFile())
+          && deserialized == exportStatus.isDeserialized()
+          && parallelThreads == exportStatus.getParallelThreads()) {
+
+        log.info(
+            "Resuming export from previous session. Progress: {}% ({}/{})",
+            exportStatus.getProgressPercentage(),
+            exportStatus.getProcessedCount(),
+            exportStatus.getTotalPackages());
+        isResume = true;
+      } else {
+        log.warn("Export parameters don't match existing status. Starting fresh export.");
+        statusManager.deleteStatus();
+        exportStatus = null;
+      }
+    }
+
+    // Create new status if not resuming
+    if (exportStatus == null) {
+      // Get total packages count
+      dbReader = new DbReader(tonDatabaseRootPath);
+      long totalPackages = dbReader.getArchiveDbReader().getArchiveInfos().size();
+      dbReader.close();
+
+      exportStatus =
+          statusManager.createNewStatus(
+              totalPackages, "file", outputToFile, deserialized, parallelThreads);
+      statusManager.saveStatus(exportStatus);
+      log.info("Starting new export to file: {}", outputToFile);
+    }
+
     File file = new File(outputToFile);
 
     // Create a synchronized PrintWriter for thread-safe immediate file writing
-    try (PrintWriter writer = new PrintWriter(new FileWriter(file, StandardCharsets.UTF_8))) {
+    // Use append mode if resuming
+    try (PrintWriter writer =
+        new PrintWriter(new FileWriter(file, StandardCharsets.UTF_8, isResume))) {
 
       // Create file-based output writer with thread-safe synchronization
       OutputWriter fileWriter =
@@ -256,7 +329,8 @@ public class Exporter {
           };
 
       // Use common export logic with progress info enabled for file export
-      int[] results = exportData(fileWriter, deserialized, parallelThreads, true);
+      int[] results =
+          exportDataWithStatus(fileWriter, deserialized, parallelThreads, true, exportStatus);
       int parsedBlocksCounter = results[0];
       int nonBlocksCounter = results[1];
 
@@ -265,6 +339,9 @@ public class Exporter {
           parsedBlocksCounter,
           nonBlocksCounter,
           outputToFile);
+
+      // Clean up status file after successful completion
+      statusManager.deleteStatus();
     }
   }
 
@@ -274,6 +351,43 @@ public class Exporter {
    * @param parallelThreads number of parallel threads used to export a database
    */
   public void exportToStdout(boolean deserialized, int parallelThreads) throws IOException {
+    // Check for existing status and resume if possible
+    ExportStatus exportStatus = statusManager.loadStatus();
+    boolean isResume = false;
+
+    if (exportStatus != null && !exportStatus.isCompleted()) {
+      // Validate that the resume parameters match
+      if ("stdout".equals(exportStatus.getExportType())
+          && deserialized == exportStatus.isDeserialized()
+          && parallelThreads == exportStatus.getParallelThreads()) {
+
+        log.info(
+            "Resuming stdout export from previous session. Progress: {}% ({}/{})",
+            exportStatus.getProgressPercentage(),
+            exportStatus.getProcessedCount(),
+            exportStatus.getTotalPackages());
+        isResume = true;
+      } else {
+        log.warn("Export parameters don't match existing status. Starting fresh export.");
+        statusManager.deleteStatus();
+        exportStatus = null;
+      }
+    }
+
+    // Create new status if not resuming
+    if (exportStatus == null) {
+      // Get total packages count
+      dbReader = new DbReader(tonDatabaseRootPath);
+      long totalPackages = dbReader.getArchiveDbReader().getArchiveInfos().size();
+      dbReader.close();
+
+      exportStatus =
+          statusManager.createNewStatus(
+              totalPackages, "stdout", null, deserialized, parallelThreads);
+      statusManager.saveStatus(exportStatus);
+      log.info("Starting new export to stdout");
+    }
+
     // Disable logging for stdout export to avoid interference with output
     LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
     for (Logger logger : loggerContext.getLoggerList()) {
@@ -284,7 +398,8 @@ public class Exporter {
     OutputWriter stdoutWriter = System.out::println;
 
     // Use common export logic with progress info disabled for stdout export
-    int[] results = exportData(stdoutWriter, deserialized, parallelThreads, false);
+    int[] results =
+        exportDataWithStatus(stdoutWriter, deserialized, parallelThreads, false, exportStatus);
     int parsedBlocksCounter = results[0];
     int nonBlocksCounter = results[1];
 
@@ -293,6 +408,9 @@ public class Exporter {
     }
 
     log.info("Exported {} blocks (nonBlocks {}) to stdout", parsedBlocksCounter, nonBlocksCounter);
+
+    // Clean up status file after successful completion
+    statusManager.deleteStatus();
   }
 
   public void printADbStats() throws IOException {
