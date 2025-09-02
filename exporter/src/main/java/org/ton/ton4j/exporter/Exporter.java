@@ -13,6 +13,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,8 +32,11 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.exporter.reader.ArchiveInfo;
 import org.ton.ton4j.exporter.reader.DbReader;
+import org.ton.ton4j.exporter.reader.GlobalIndexDbReader;
+import org.ton.ton4j.exporter.reader.PackageReader;
 import org.ton.ton4j.exporter.types.ExportStatus;
 import org.ton.ton4j.exporter.types.ExportedBlock;
+import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.utils.Utils;
 
@@ -879,7 +885,9 @@ public class Exporter {
   }
 
   /**
-   * Gets the very last (most recently added) block from the RocksDB database.
+   * Gets the very last (most recently added) block from the RocksDB database. This optimized
+   * version uses GlobalIndexDbReader to get temp package timestamps directly from the global index,
+   * then reads temp packages directly from the files database.
    *
    * @return The most recently added Block, or null if no blocks are found
    * @throws IOException If an I/O error occurs while reading the database
@@ -888,69 +896,238 @@ public class Exporter {
     dbReader = new DbReader(tonDatabaseRootPath);
 
     try {
-      Block latestBlock = null;
-      long latestTimestamp = 0;
-      long latestSeqno = 0;
+      // Use GlobalIndexDbReader to get temp package timestamps directly
+      GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath);
 
-      // Get all archive infos sorted by package ID (which corresponds to timestamps/seqnos)
-      Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveDbReader().getArchiveInfos();
+      try {
+        IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
 
-      // Strategy 1: Check temp packages first (most likely to contain latest blocks)
-      // Temp packages are organized by timestamp, so higher IDs = more recent
-      List<String> tempPackages =
-          archiveInfos.entrySet().stream()
-              .filter(
-                  entry ->
-                      entry.getKey().contains("temp") || entry.getValue().getIndexPath() == null)
-              .map(Map.Entry::getKey)
-              .sorted(
-                  (a, b) -> {
-                    // Sort by package ID in descending order (most recent first)
-                    try {
-                      long idA = extractPackageId(a);
-                      long idB = extractPackageId(b);
-                      return Long.compare(idB, idA);
-                    } catch (Exception e) {
-                      return b.compareTo(a); // Fallback to string comparison
-                    }
-                  })
-              .collect(java.util.stream.Collectors.toList());
-
-      log.debug("Checking {} temp packages for latest block", tempPackages.size());
-
-      // Check the most recent temp packages first
-      for (String packageKey : tempPackages.subList(0, Math.min(5, tempPackages.size()))) {
-        Block candidate = findLatestBlockInPackage(packageKey, archiveInfos.get(packageKey));
-        if (candidate != null
-            && isMoreRecent(candidate, latestBlock, latestTimestamp, latestSeqno)) {
-          latestBlock = candidate;
-          latestTimestamp = candidate.getBlockInfo().getGenuTime();
-          latestSeqno = candidate.getBlockInfo().getSeqno();
-          log.debug(
-              "Found newer block in temp package {}: seqno={}, timestamp={}",
-              packageKey,
-              latestSeqno,
-              latestTimestamp);
+        if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
+          log.warn("No temp packages found in global index");
+          return null;
         }
-      }
 
-      if (latestBlock != null) {
-        log.info(
-            "Found latest block: workchain={}, shard={}, seqno={}, timestamp={}",
-            latestBlock.getBlockInfo().getShard().getWorkchain(),
-            latestBlock.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
-            latestBlock.getBlockInfo().getSeqno(),
-            latestBlock.getBlockInfo().getGenuTime());
-      } else {
-        log.warn("No blocks found in database");
-      }
+        // Get temp package timestamps (they are Unix timestamps)
+        List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
+        log.debug(
+            "Found {} temp packages in global index: {}",
+            tempPackageTimestamps.size(),
+            tempPackageTimestamps);
 
-      return latestBlock;
+        // Sort timestamps in descending order (most recent first)
+        List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
+        sortedTimestamps.sort(Collections.reverseOrder());
+
+        Block latestBlock = null;
+        long latestTimestamp = 0;
+        long latestSeqno = 0;
+
+        // Check the most recent temp packages (limit to 3 for efficiency)
+        int packagesToCheck = Math.min(1, sortedTimestamps.size());
+        log.debug("Checking {} most recent temp packages", packagesToCheck);
+
+        for (int i = 0; i < packagesToCheck; i++) {
+          Integer packageTimestamp = sortedTimestamps.get(i);
+
+          // Read temp package directly from files database
+          Block candidate = findLatestBlockInTempPackage(packageTimestamp);
+          if (candidate != null
+              && isMoreRecent(candidate, latestBlock, latestTimestamp, latestSeqno)) {
+            latestBlock = candidate;
+            latestTimestamp = candidate.getBlockInfo().getGenuTime();
+            latestSeqno = candidate.getBlockInfo().getSeqno();
+            log.debug(
+                "Found newer block in temp package (timestamp={}): seqno={}, block_timestamp={}",
+                packageTimestamp,
+                latestSeqno,
+                latestTimestamp);
+          }
+        }
+
+        if (latestBlock != null) {
+          log.info(
+              "Found latest block: workchain={}, shard={}, seqno={}, timestamp={}",
+              latestBlock.getBlockInfo().getShard().getWorkchain(),
+              latestBlock.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
+              latestBlock.getBlockInfo().getSeqno(),
+              latestBlock.getBlockInfo().getGenuTime());
+        } else {
+          log.warn("No blocks found in temp packages");
+        }
+
+        return latestBlock;
+
+      } finally {
+        globalIndexReader.close();
+      }
 
     } finally {
       if (dbReader != null) {
         dbReader.close();
       }
+    }
+  }
+
+  /**
+   * Finds the latest block within a specific temp package by reading directly from the package
+   * file. This method bypasses the archive infos and reads temp packages directly from the
+   * filesystem.
+   */
+  private Block findLatestBlockInTempPackage(Integer packageTimestamp) {
+    try {
+      // Construct the temp package filename based on C++ naming convention
+      String tempPackageFilename = "temp.archive." + packageTimestamp + ".pack";
+      Path tempPackagePath =
+          Paths.get(tonDatabaseRootPath, "files", "packages", tempPackageFilename);
+
+      log.debug("Reading temp package directly from filesystem: {}", tempPackagePath);
+
+      if (!Files.exists(tempPackagePath)) {
+        log.debug("Temp package file not found: {}", tempPackagePath);
+        return null;
+      }
+      PackageReader packageReader = new PackageReader(tempPackagePath.toString());
+      // Read the temp package file directly using PackageReader
+      Map<String, byte[]> packageBlocks = packageReader.readAllEntries();
+
+      try {
+
+        if (packageBlocks.isEmpty()) {
+          log.debug("No blocks found in temp package: {}", tempPackageFilename);
+          return null;
+        }
+
+        Block latestInPackage = null;
+        long latestTimestamp = 0;
+        long latestSeqno = 0;
+
+        // Examine all blocks in this temp package
+        for (Map.Entry<String, byte[]> entry : packageBlocks.entrySet()) {
+          try {
+            byte[] data = entry.getValue();
+            if (data == null || data.length < 4) {
+              continue; // Skip invalid data
+            }
+
+            // Check if this looks like a valid BOC by checking the first few bytes
+            if (isValidBocData(data)) {
+
+              Cell c = CellBuilder.beginCell().fromBoc(data).endCell();
+              long magic = c.getBits().preReadUint(32).longValue();
+
+              if (magic == 0x11ef55aaL) { // Block magic
+                Block block = Block.deserialize(CellSlice.beginParse(c));
+
+                if (block.getBlockInfo() != null) {
+                  long blockTimestamp = block.getBlockInfo().getGenuTime();
+                  long blockSeqno = block.getBlockInfo().getSeqno();
+
+                  if (isMoreRecent(block, latestInPackage, latestTimestamp, latestSeqno)) {
+                    latestInPackage = block;
+                    latestTimestamp = blockTimestamp;
+                    latestSeqno = blockSeqno;
+                  }
+                }
+              }
+            }
+          } catch (Exception e) {
+            log.debug(
+                "Error parsing entry in temp package {}: key={}, error={}",
+                tempPackageFilename,
+                entry.getKey(),
+                e.getMessage());
+            // Continue with other blocks
+          }
+        }
+
+        log.debug(
+            "Found {} blocks in temp package {}, latest has seqno={}",
+            packageBlocks.size(),
+            tempPackageFilename,
+            latestSeqno);
+        return latestInPackage;
+
+      } catch (Exception e) {
+        log.debug(
+            "Error reading temp package blocks for {}: {}", tempPackageFilename, e.getMessage());
+        return null;
+      }
+
+    } catch (Exception e) {
+      log.debug(
+          "Error reading temp package for timestamp {}: {}", packageTimestamp, e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Finds the package key for a temp package with the given timestamp. Based on C++ implementation,
+   * temp packages are stored in files/packages/ directory and named as "temp.archive.{timestamp}"
+   * where timestamp is rounded to nearest hour.
+   */
+  private String findTempPackageKey(Integer packageTimestamp) {
+    try {
+      Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveDbReader().getArchiveInfos();
+
+      // Look for temp packages that match this timestamp
+      // Temp packages should be in files database (no index path) and match the timestamp
+      for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
+        String packageKey = entry.getKey();
+        ArchiveInfo archiveInfo = entry.getValue();
+
+        // Check if this is a temp package (files database package - no index path)
+        if (archiveInfo.getIndexPath() == null) {
+          // Extract timestamp from package key
+          // Expected format: "files/temp.archive.{timestamp}" or similar
+          long extractedId = extractPackageId(packageKey);
+          if (extractedId == packageTimestamp.longValue()) {
+            log.debug("Found temp package key for timestamp {}: {}", packageTimestamp, packageKey);
+            return packageKey;
+          }
+        }
+      }
+
+      // If not found, try to construct the expected package key based on C++ naming convention
+      // C++ uses: /files/packages/temp.archive.{timestamp}
+      // Our Java implementation uses: files/{timestamp} format for temp packages
+      String expectedKey1 = "files/" + packageTimestamp;
+      String expectedKey2 = "files/temp.archive." + packageTimestamp;
+      String expectedKey3 = "files/packages/" + packageTimestamp;
+      String expectedKey4 = "files/packages/temp.archive." + packageTimestamp;
+
+      if (archiveInfos.containsKey(expectedKey1)) {
+        log.debug("Found temp package using expected key format 1: {}", expectedKey1);
+        return expectedKey1;
+      }
+
+      if (archiveInfos.containsKey(expectedKey2)) {
+        log.debug("Found temp package using expected key format 2: {}", expectedKey2);
+        return expectedKey2;
+      }
+
+      if (archiveInfos.containsKey(expectedKey3)) {
+        log.debug("Found temp package using expected key format 3: {}", expectedKey3);
+        return expectedKey3;
+      }
+
+      if (archiveInfos.containsKey(expectedKey4)) {
+        log.debug("Found temp package using expected key format 4: {}", expectedKey4);
+        return expectedKey4;
+      }
+
+      log.debug(
+          "No package key found for temp package timestamp: {} (tried keys: {}, {}, {}, {})",
+          packageTimestamp,
+          expectedKey1,
+          expectedKey2,
+          expectedKey3,
+          expectedKey4);
+      return null;
+
+    } catch (Exception e) {
+      log.debug(
+          "Error finding temp package key for timestamp {}: {}", packageTimestamp, e.getMessage());
+      return null;
     }
   }
 
@@ -1055,6 +1232,27 @@ public class Exporter {
       log.debug("Error reading package {}: {}", packageKey, e.getMessage());
       return null;
     }
+  }
+
+  /**
+   * Checks if the given byte array looks like valid BOC data by examining the magic bytes. BOC (Bag
+   * of Cells) format starts with specific magic bytes.
+   */
+  private boolean isValidBocData(byte[] data) {
+    if (data == null || data.length < 4) {
+      return false;
+    }
+
+    // Check for BOC magic bytes
+    // Standard BOC magic: 0xB5EE9C72 (little-endian) or 0x729CEEB5 (big-endian)
+    // CRC32C BOC magic: 0x68FF65F3 (little-endian) or 0xF365FF68 (big-endian)
+    int magic =
+        ((data[0] & 0xFF) << 24)
+            | ((data[1] & 0xFF) << 16)
+            | ((data[2] & 0xFF) << 8)
+            | (data[3] & 0xFF);
+
+    return magic == 0xB5EE9C72 || magic == 0x729CEEB5 || magic == 0x68FF65F3 || magic == 0xF365FF68;
   }
 
   /**

@@ -5,7 +5,10 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
+import lombok.Getter;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 
@@ -130,6 +133,22 @@ public class PackageReader implements Closeable {
     }
   }
 
+  /**
+   * Reads all entries from the package and returns them as a Map.
+   *
+   * @return Map containing all entries with filename as key and data as value
+   * @throws IOException If an I/O error occurs
+   */
+  public Map<String, byte[]> readAllEntries() throws IOException {
+    Map<String, byte[]> result = new HashMap<>();
+    
+    forEach(entry -> {
+      result.put(entry.getFilename(), entry.getData());
+    });
+    
+    return result;
+  }
+
   private int readInt() throws IOException {
     byte[] bytes = new byte[4];
     file.readFully(bytes);
@@ -148,6 +167,7 @@ public class PackageReader implements Closeable {
   }
 
   /** Represents an entry in a package file. */
+  @Getter
   public static class PackageEntry {
     private final String filename;
     private final byte[] data; // boc
@@ -155,14 +175,6 @@ public class PackageReader implements Closeable {
     public PackageEntry(String filename, byte[] data) {
       this.filename = filename;
       this.data = data;
-    }
-
-    public String getFilename() {
-      return filename;
-    }
-
-    public byte[] getData() {
-      return data;
     }
 
     public Cell getCell() {

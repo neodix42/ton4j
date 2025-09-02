@@ -31,7 +31,6 @@ public class TestGetLast {
       Block latestBlock = exporter.getLast();
       long endTime = System.currentTimeMillis();
       long durationMs = endTime - startTime;
-      double durationSeconds = durationMs / 1000.0;
 
       log.info("received last block : {}ms", durationMs);
 
