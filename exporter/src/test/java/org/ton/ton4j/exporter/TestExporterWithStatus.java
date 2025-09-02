@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.ton.ton4j.exporter.types.ExportStatus;
 
 /** Test class for the enhanced Exporter with state persistence functionality */
 public class TestExporterWithStatus {

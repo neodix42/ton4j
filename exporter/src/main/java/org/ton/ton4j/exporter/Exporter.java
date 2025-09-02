@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -28,6 +29,8 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.exporter.reader.ArchiveInfo;
 import org.ton.ton4j.exporter.reader.DbReader;
+import org.ton.ton4j.exporter.types.ExportStatus;
+import org.ton.ton4j.exporter.types.ExportedBlock;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.utils.Utils;
 
@@ -411,6 +414,457 @@ public class Exporter {
 
     // Clean up status file after successful completion
     statusManager.deleteStatus();
+  }
+
+  /**
+   * Export blocks to a Stream of ExportedBlock objects that can be used with parallelStream()
+   *
+   * @param deserialized if true - Block objects will be deserialized, otherwise only raw data is
+   *     available
+   * @param parallelThreads number of parallel threads to use for processing packages
+   * @return Stream of ExportedBlock objects that supports parallelStream() with the specified
+   *     thread count
+   * @throws IOException if there's an error reading the database
+   */
+  public Stream<ExportedBlock> exportToObjects(boolean deserialized, int parallelThreads)
+      throws IOException {
+    dbReader = new DbReader(tonDatabaseRootPath);
+
+    // Get all archive entries
+    Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveDbReader().getArchiveInfos();
+
+    // Create a custom ForkJoinPool with the specified parallelism level
+    java.util.concurrent.ForkJoinPool customThreadPool =
+        new java.util.concurrent.ForkJoinPool(parallelThreads);
+
+    try {
+      // Create a stream of archive entries and process them in parallel
+      Stream<ExportedBlock> blockStream =
+          archiveInfos.entrySet().stream()
+              .flatMap(
+                  entry -> {
+                    String archiveKey = entry.getKey();
+                    ArchiveInfo archiveInfo = entry.getValue();
+
+                    try {
+                      Map<String, byte[]> localBlocks = new HashMap<>();
+
+                      // Read blocks from archive
+                      if (archiveInfo.getIndexPath() == null) {
+                        dbReader
+                            .getArchiveDbReader()
+                            .readFromFilesPackage(archiveKey, archiveInfo, localBlocks);
+                      } else {
+                        dbReader
+                            .getArchiveDbReader()
+                            .readFromTraditionalArchive(archiveKey, archiveInfo, localBlocks);
+                      }
+
+                      // Convert to ExportedBlock objects
+                      return localBlocks.entrySet().stream()
+                          .map(
+                              kv -> {
+                                try {
+                                  Cell c = CellBuilder.beginCell().fromBoc(kv.getValue()).endCell();
+                                  long magic = c.getBits().preReadUint(32).longValue();
+
+                                  if (magic == 0x11ef55aaL) {
+                                    Block deserializedBlock = null;
+
+                                    if (deserialized) {
+                                      try {
+                                        deserializedBlock =
+                                            Block.deserialize(CellSlice.beginParse(c));
+                                      } catch (Throwable e) {
+                                        log.debug(
+                                            "Error deserializing block {}: {}",
+                                            kv.getKey(),
+                                            e.getMessage());
+                                        // Continue with null deserializedBlock
+                                      }
+                                    }
+
+                                    return ExportedBlock.builder()
+                                        .archiveKey(archiveKey)
+                                        .blockKey(kv.getKey())
+                                        .rawData(kv.getValue())
+                                        .deserializedBlock(deserializedBlock)
+                                        .isDeserialized(deserialized && deserializedBlock != null)
+                                        .build();
+                                  }
+                                  return null; // Not a block
+                                } catch (Throwable e) {
+                                  log.debug(
+                                      "Error processing block {}: {}", kv.getKey(), e.getMessage());
+                                  return null;
+                                }
+                              })
+                          .filter(Objects::nonNull); // Remove null entries (non-blocks and errors)
+
+                    } catch (Throwable e) {
+                      log.warn(
+                          "Error reading blocks from archive {}: {}", archiveKey, e.getMessage());
+                      return Stream.empty();
+                    }
+                  });
+
+      // Return a stream that uses the custom thread pool for parallel operations
+      return new ParallelStreamWrapper<>(blockStream, customThreadPool);
+
+    } catch (Exception e) {
+      customThreadPool.shutdown();
+      dbReader.close();
+      throw e;
+    }
+  }
+
+  /** Wrapper class to provide a Stream that uses a custom ForkJoinPool for parallel operations */
+  private static class ParallelStreamWrapper<T> implements Stream<T> {
+    private final Stream<T> delegate;
+    private final java.util.concurrent.ForkJoinPool customPool;
+
+    public ParallelStreamWrapper(Stream<T> delegate, java.util.concurrent.ForkJoinPool customPool) {
+      this.delegate = delegate;
+      this.customPool = customPool;
+    }
+
+    @Override
+    public Stream<T> parallel() {
+      return this;
+    }
+
+    @Override
+    public Stream<T> sequential() {
+      return delegate.sequential();
+    }
+
+    @Override
+    public boolean isParallel() {
+      return true;
+    }
+
+    // Delegate all other Stream methods to the underlying stream
+    @Override
+    public Stream<T> filter(java.util.function.Predicate<? super T> predicate) {
+      return new ParallelStreamWrapper<>(delegate.filter(predicate), customPool);
+    }
+
+    @Override
+    public <R> Stream<R> map(java.util.function.Function<? super T, ? extends R> mapper) {
+      return new ParallelStreamWrapper<>(delegate.map(mapper), customPool);
+    }
+
+    @Override
+    public <R> Stream<R> flatMap(
+        java.util.function.Function<? super T, ? extends Stream<? extends R>> mapper) {
+      return new ParallelStreamWrapper<>(delegate.flatMap(mapper), customPool);
+    }
+
+    @Override
+    public void forEach(java.util.function.Consumer<? super T> action) {
+      try {
+        customPool.submit(() -> delegate.parallel().forEach(action)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+        try {
+          if (!customPool.awaitTermination(60, TimeUnit.SECONDS)) {
+            customPool.shutdownNow();
+          }
+        } catch (InterruptedException ex) {
+          customPool.shutdownNow();
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
+
+    @Override
+    public void forEachOrdered(java.util.function.Consumer<? super T> action) {
+      try {
+        customPool.submit(() -> delegate.parallel().forEachOrdered(action)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public java.util.Iterator<T> iterator() {
+      return delegate.iterator();
+    }
+
+    @Override
+    public java.util.Spliterator<T> spliterator() {
+      return delegate.spliterator();
+    }
+
+    @Override
+    public long count() {
+      try {
+        return customPool.submit(() -> delegate.parallel().count()).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public java.util.Optional<T> min(java.util.Comparator<? super T> comparator) {
+      try {
+        return customPool.submit(() -> delegate.parallel().min(comparator)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public java.util.Optional<T> max(java.util.Comparator<? super T> comparator) {
+      try {
+        return customPool.submit(() -> delegate.parallel().max(comparator)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public boolean anyMatch(java.util.function.Predicate<? super T> predicate) {
+      try {
+        return customPool.submit(() -> delegate.parallel().anyMatch(predicate)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public boolean allMatch(java.util.function.Predicate<? super T> predicate) {
+      try {
+        return customPool.submit(() -> delegate.parallel().allMatch(predicate)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public boolean noneMatch(java.util.function.Predicate<? super T> predicate) {
+      try {
+        return customPool.submit(() -> delegate.parallel().noneMatch(predicate)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public java.util.Optional<T> findFirst() {
+      try {
+        return customPool.submit(() -> delegate.parallel().findFirst()).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public java.util.Optional<T> findAny() {
+      try {
+        return customPool.submit(() -> delegate.parallel().findAny()).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public Object[] toArray() {
+      try {
+        return customPool.submit(() -> delegate.parallel().toArray()).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public <A> A[] toArray(java.util.function.IntFunction<A[]> generator) {
+      try {
+        return customPool.submit(() -> delegate.parallel().toArray(generator)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public T reduce(T identity, java.util.function.BinaryOperator<T> accumulator) {
+      try {
+        return customPool.submit(() -> delegate.parallel().reduce(identity, accumulator)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public java.util.Optional<T> reduce(java.util.function.BinaryOperator<T> accumulator) {
+      try {
+        return customPool.submit(() -> delegate.parallel().reduce(accumulator)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public <U> U reduce(
+        U identity,
+        java.util.function.BiFunction<U, ? super T, U> accumulator,
+        java.util.function.BinaryOperator<U> combiner) {
+      try {
+        return customPool
+            .submit(() -> delegate.parallel().reduce(identity, accumulator, combiner))
+            .get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public <R> R collect(
+        java.util.function.Supplier<R> supplier,
+        java.util.function.BiConsumer<R, ? super T> accumulator,
+        java.util.function.BiConsumer<R, R> combiner) {
+      try {
+        return customPool
+            .submit(() -> delegate.parallel().collect(supplier, accumulator, combiner))
+            .get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public <R, A> R collect(java.util.stream.Collector<? super T, A, R> collector) {
+      try {
+        return customPool.submit(() -> delegate.parallel().collect(collector)).get();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      } finally {
+        customPool.shutdown();
+      }
+    }
+
+    @Override
+    public Stream<T> distinct() {
+      return new ParallelStreamWrapper<>(delegate.distinct(), customPool);
+    }
+
+    @Override
+    public Stream<T> sorted() {
+      return new ParallelStreamWrapper<>(delegate.sorted(), customPool);
+    }
+
+    @Override
+    public Stream<T> sorted(java.util.Comparator<? super T> comparator) {
+      return new ParallelStreamWrapper<>(delegate.sorted(comparator), customPool);
+    }
+
+    @Override
+    public Stream<T> peek(java.util.function.Consumer<? super T> action) {
+      return new ParallelStreamWrapper<>(delegate.peek(action), customPool);
+    }
+
+    @Override
+    public Stream<T> limit(long maxSize) {
+      return new ParallelStreamWrapper<>(delegate.limit(maxSize), customPool);
+    }
+
+    @Override
+    public Stream<T> skip(long n) {
+      return new ParallelStreamWrapper<>(delegate.skip(n), customPool);
+    }
+
+    @Override
+    public java.util.stream.IntStream mapToInt(java.util.function.ToIntFunction<? super T> mapper) {
+      return delegate.mapToInt(mapper);
+    }
+
+    @Override
+    public java.util.stream.LongStream mapToLong(
+        java.util.function.ToLongFunction<? super T> mapper) {
+      return delegate.mapToLong(mapper);
+    }
+
+    @Override
+    public java.util.stream.DoubleStream mapToDouble(
+        java.util.function.ToDoubleFunction<? super T> mapper) {
+      return delegate.mapToDouble(mapper);
+    }
+
+    @Override
+    public java.util.stream.IntStream flatMapToInt(
+        java.util.function.Function<? super T, ? extends java.util.stream.IntStream> mapper) {
+      return delegate.flatMapToInt(mapper);
+    }
+
+    @Override
+    public java.util.stream.LongStream flatMapToLong(
+        java.util.function.Function<? super T, ? extends java.util.stream.LongStream> mapper) {
+      return delegate.flatMapToLong(mapper);
+    }
+
+    @Override
+    public java.util.stream.DoubleStream flatMapToDouble(
+        java.util.function.Function<? super T, ? extends java.util.stream.DoubleStream> mapper) {
+      return delegate.flatMapToDouble(mapper);
+    }
+
+    @Override
+    public Stream<T> takeWhile(java.util.function.Predicate<? super T> predicate) {
+      return new ParallelStreamWrapper<>(delegate.takeWhile(predicate), customPool);
+    }
+
+    @Override
+    public Stream<T> dropWhile(java.util.function.Predicate<? super T> predicate) {
+      return new ParallelStreamWrapper<>(delegate.dropWhile(predicate), customPool);
+    }
+
+    @Override
+    public void close() {
+      delegate.close();
+      customPool.shutdown();
+    }
+
+    @Override
+    public Stream<T> onClose(Runnable closeHandler) {
+      return new ParallelStreamWrapper<>(delegate.onClose(closeHandler), customPool);
+    }
+
+    @Override
+    public Stream<T> unordered() {
+      return new ParallelStreamWrapper<>(delegate.unordered(), customPool);
+    }
   }
 
   public void printADbStats() throws IOException {

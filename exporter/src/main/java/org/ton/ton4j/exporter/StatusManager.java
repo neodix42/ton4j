@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.ton.ton4j.exporter.types.ExportStatus;
 
 /** Manages the persistence of export status to/from status.json file */
 @Slf4j
