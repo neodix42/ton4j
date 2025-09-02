@@ -877,4 +877,211 @@ public class Exporter {
     log.info(
         "total archive packs found: {}", dbReader.getArchiveDbReader().getArchiveInfos().size());
   }
+
+  /**
+   * Gets the very last (most recently added) block from the RocksDB database.
+   *
+   * @return The most recently added Block, or null if no blocks are found
+   * @throws IOException If an I/O error occurs while reading the database
+   */
+  public Block getLast() throws IOException {
+    dbReader = new DbReader(tonDatabaseRootPath);
+
+    try {
+      Block latestBlock = null;
+      long latestTimestamp = 0;
+      long latestSeqno = 0;
+
+      // Get all archive infos sorted by package ID (which corresponds to timestamps/seqnos)
+      Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveDbReader().getArchiveInfos();
+
+      // Strategy 1: Check temp packages first (most likely to contain latest blocks)
+      // Temp packages are organized by timestamp, so higher IDs = more recent
+      List<String> tempPackages =
+          archiveInfos.entrySet().stream()
+              .filter(
+                  entry ->
+                      entry.getKey().contains("temp") || entry.getValue().getIndexPath() == null)
+              .map(Map.Entry::getKey)
+              .sorted(
+                  (a, b) -> {
+                    // Sort by package ID in descending order (most recent first)
+                    try {
+                      long idA = extractPackageId(a);
+                      long idB = extractPackageId(b);
+                      return Long.compare(idB, idA);
+                    } catch (Exception e) {
+                      return b.compareTo(a); // Fallback to string comparison
+                    }
+                  })
+              .collect(java.util.stream.Collectors.toList());
+
+      log.debug("Checking {} temp packages for latest block", tempPackages.size());
+
+      // Check the most recent temp packages first
+      for (String packageKey : tempPackages.subList(0, Math.min(5, tempPackages.size()))) {
+        Block candidate = findLatestBlockInPackage(packageKey, archiveInfos.get(packageKey));
+        if (candidate != null
+            && isMoreRecent(candidate, latestBlock, latestTimestamp, latestSeqno)) {
+          latestBlock = candidate;
+          latestTimestamp = candidate.getBlockInfo().getGenuTime();
+          latestSeqno = candidate.getBlockInfo().getSeqno();
+          log.debug(
+              "Found newer block in temp package {}: seqno={}, timestamp={}",
+              packageKey,
+              latestSeqno,
+              latestTimestamp);
+        }
+      }
+
+      if (latestBlock != null) {
+        log.info(
+            "Found latest block: workchain={}, shard={}, seqno={}, timestamp={}",
+            latestBlock.getBlockInfo().getShard().getWorkchain(),
+            latestBlock.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
+            latestBlock.getBlockInfo().getSeqno(),
+            latestBlock.getBlockInfo().getGenuTime());
+      } else {
+        log.warn("No blocks found in database");
+      }
+
+      return latestBlock;
+
+    } finally {
+      if (dbReader != null) {
+        dbReader.close();
+      }
+    }
+  }
+
+  /**
+   * Extracts the package ID from a package key string. Package keys can be in formats like: -
+   * "files/0000000100" -> 100 - "arch0001/archive.00050" -> 50 - "temp/temp.archive.1640995200" ->
+   * 1640995200
+   */
+  private long extractPackageId(String packageKey) {
+    try {
+      // Handle files database packages: "files/0000000100"
+      if (packageKey.startsWith("files/")) {
+        String idPart = packageKey.substring(6); // Remove "files/"
+        return Long.parseLong(idPart);
+      }
+
+      // Handle temp packages: might contain timestamp
+      if (packageKey.contains("temp")) {
+        String[] parts = packageKey.split("\\.");
+        for (String part : parts) {
+          if (part.matches("\\d+")) {
+            return Long.parseLong(part);
+          }
+        }
+      }
+
+      // Handle archive packages: "arch0001/archive.00050"
+      if (packageKey.contains("archive.")) {
+        String[] parts = packageKey.split("\\.");
+        for (String part : parts) {
+          if (part.matches("\\d+")) {
+            return Long.parseLong(part);
+          }
+        }
+      }
+
+      // Fallback: try to extract any number from the string
+      String numbers = packageKey.replaceAll("[^0-9]", "");
+      if (!numbers.isEmpty()) {
+        return Long.parseLong(numbers);
+      }
+
+    } catch (NumberFormatException e) {
+      log.debug("Could not extract package ID from: {}", packageKey);
+    }
+
+    return 0; // Default fallback
+  }
+
+  /**
+   * Finds the latest block within a specific package by examining all blocks and returning the one
+   * with the highest timestamp/sequence number.
+   */
+  private Block findLatestBlockInPackage(String packageKey, ArchiveInfo archiveInfo) {
+    try {
+      Map<String, byte[]> packageBlocks = new HashMap<>();
+
+      // Read all blocks from this package
+      if (archiveInfo.getIndexPath() == null) {
+        // Files database package
+        dbReader.getArchiveDbReader().readFromFilesPackage(packageKey, archiveInfo, packageBlocks);
+      } else {
+        // Traditional archive package
+        dbReader
+            .getArchiveDbReader()
+            .readFromTraditionalArchive(packageKey, archiveInfo, packageBlocks);
+      }
+
+      Block latestInPackage = null;
+      long latestTimestamp = 0;
+      long latestSeqno = 0;
+
+      // Examine all blocks in this package
+      for (Map.Entry<String, byte[]> entry : packageBlocks.entrySet()) {
+        try {
+          Cell c = CellBuilder.beginCell().fromBoc(entry.getValue()).endCell();
+          long magic = c.getBits().preReadUint(32).longValue();
+
+          if (magic == 0x11ef55aaL) { // Block magic
+            Block block = Block.deserialize(CellSlice.beginParse(c));
+
+            if (block != null && block.getBlockInfo() != null) {
+              long blockTimestamp = block.getBlockInfo().getGenuTime();
+              long blockSeqno = block.getBlockInfo().getSeqno();
+
+              if (isMoreRecent(block, latestInPackage, latestTimestamp, latestSeqno)) {
+                latestInPackage = block;
+                latestTimestamp = blockTimestamp;
+                latestSeqno = blockSeqno;
+              }
+            }
+          }
+        } catch (Exception e) {
+          log.debug("Error parsing block in package {}: {}", packageKey, e.getMessage());
+          // Continue with other blocks
+        }
+      }
+
+      return latestInPackage;
+
+    } catch (Exception e) {
+      log.debug("Error reading package {}: {}", packageKey, e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Determines if a candidate block is more recent than the current latest block. Uses timestamp as
+   * primary criteria, sequence number as secondary.
+   */
+  private boolean isMoreRecent(
+      Block candidate, Block current, long currentTimestamp, long currentSeqno) {
+    if (current == null) {
+      return true;
+    }
+
+    if (candidate == null || candidate.getBlockInfo() == null) {
+      return false;
+    }
+
+    long candidateTimestamp = candidate.getBlockInfo().getGenuTime();
+    long candidateSeqno = candidate.getBlockInfo().getSeqno();
+
+    // Primary criteria: timestamp (Unix time when block was generated)
+    if (candidateTimestamp > currentTimestamp) {
+      return true;
+    } else if (candidateTimestamp < currentTimestamp) {
+      return false;
+    }
+
+    // Secondary criteria: sequence number (for blocks with same timestamp)
+    return candidateSeqno > currentSeqno;
+  }
 }
