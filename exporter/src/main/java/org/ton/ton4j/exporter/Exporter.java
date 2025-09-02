@@ -89,7 +89,11 @@ public class Exporter {
 
     dbReader = new DbReader(tonDatabaseRootPath);
 
-    AtomicInteger globalCounter = new AtomicInteger(0);
+    AtomicInteger parsedBlocksCounter = new AtomicInteger(0);
+    AtomicInteger nonBlocksCounter = new AtomicInteger(0);
+    AtomicInteger packsProcessed = new AtomicInteger(0);
+    long totalPacks = dbReader.getArchiveDbReader().getArchiveInfos().size();
+    long startTime = System.currentTimeMillis();
     // Create a synchronized PrintWriter for thread-safe immediate file writing
     try (PrintWriter writer = new PrintWriter(new FileWriter(file, StandardCharsets.UTF_8))) {
 
@@ -107,39 +111,27 @@ public class Exporter {
             executor.submit(
                 () -> {
                   try {
-                    // Create a local map for this thread's results
                     Map<String, byte[]> localBlocks = new HashMap<>();
 
-                    // Check if this is a Files database package (indicated by null indexPath)
                     if (archiveInfo.getIndexPath() == null) {
-                      // This is a Files database package, handle it separately
                       dbReader
                           .getArchiveDbReader()
                           .readFromFilesPackage(archiveKey, archiveInfo, localBlocks);
                     } else {
-                      // This is a traditional archive package with its own index
                       dbReader
                           .getArchiveDbReader()
                           .readFromTraditionalArchive(archiveKey, archiveInfo, localBlocks);
                     }
-                    //                    log.debug("archiveKey {}, localBlocks {}", archiveKey,
-                    // localBlocks.size());
-
                     for (Map.Entry<String, byte[]> kv : localBlocks.entrySet()) {
                       try {
-                        String piece = Utils.bytesToHex(Utils.slice(kv.getValue(), 0, 64));
-                        //                      log.info("Exporting block: {}", piece);
+                        Cell c = CellBuilder.beginCell().fromBoc(kv.getValue()).endCell();
 
-                        if (piece.contains("11ef55aa")) { // block
+                        long magic = c.getBits().preReadUint(32).longValue();
+                        if (magic == 0x11ef55aaL) {
+
                           String lineToWrite;
 
                           if (deserialized) {
-                            Cell c = CellBuilder.beginCell().fromBoc(kv.getValue()).endCell();
-                            //                        long magic =
-                            // c.getBits().preReadUint(32).longValue();
-                            //                        if (magic == 0x11ef55aaL) { // block
-                            //                          log.info("block");
-                            //                        }
                             // writing deserialized boc in json format
                             Block block = Block.deserialize(CellSlice.beginParse(c));
                             lineToWrite =
@@ -158,22 +150,30 @@ public class Exporter {
                           }
 
                           // Thread-safe immediate writing to file
-                          if (lineToWrite != null) {
-                            synchronized (writer) {
-                              writer.println(lineToWrite);
-                              writer.flush(); // Ensure immediate write to disk
-                            }
+                          synchronized (writer) {
+                            writer.println(lineToWrite);
+                            writer.flush(); // Ensure immediate write to disk
                           }
+                          parsedBlocksCounter.getAndIncrement();
+                        } else {
+                          nonBlocksCounter.getAndIncrement();
                         }
-                        globalCounter.getAndIncrement();
+
                       } catch (Throwable e) {
                         log.debug("Error parsing block {}: {}", entry.getKey(), e.getMessage());
                         // Continue processing other blocks instead of failing completely
                       }
                     }
 
-                    log.debug(
-                        "Completed reading archive {}: {} entries", archiveKey, localBlocks.size());
+                    System.out.println(
+                        "Completed reading archive "
+                            + archiveKey
+                            + ": entries "
+                            + localBlocks.size()
+                            + ", "
+                            + packsProcessed.getAndIncrement()
+                            + "/"
+                            + totalPacks);
                   } catch (IOException e) {
                     log.warn(
                         "Error reading blocks from archive {}: {}", archiveKey, e.getMessage());
@@ -183,7 +183,6 @@ public class Exporter {
                   }
                   return null;
                 });
-
         futures.add(future);
       }
 
@@ -196,6 +195,11 @@ public class Exporter {
         }
       }
 
+      long endTime = System.currentTimeMillis();
+      long durationMs = endTime - startTime;
+      double durationSeconds = durationMs / 1000.0;
+      double blocksPerSecond = parsedBlocksCounter.get() / durationSeconds;
+
       // Shutdown executor
       executor.shutdown();
       try {
@@ -207,7 +211,15 @@ public class Exporter {
         Thread.currentThread().interrupt();
       }
 
-      log.info("Exported {} blocks to file: {}", globalCounter.get(), outputToFile);
+      log.info(
+          "Exported {} blocks (nonBlocks {}) to file: {}",
+          parsedBlocksCounter.get(),
+          nonBlocksCounter.get(),
+          outputToFile);
+      log.info(
+          "Total duration: {}s, speed: {} blocks per second",
+          durationSeconds,
+          String.format("%.2f", blocksPerSecond));
     }
 
     dbReader.close();
@@ -229,6 +241,10 @@ public class Exporter {
     dbReader = new DbReader(tonDatabaseRootPath);
 
     AtomicInteger globalCounter = new AtomicInteger(0);
+    AtomicInteger parsedBlocksCounter = new AtomicInteger(0);
+    AtomicInteger nonBlocksCounter = new AtomicInteger(0);
+
+    long startTime = System.currentTimeMillis();
 
     // Create thread pool
     ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
@@ -259,19 +275,14 @@ public class Exporter {
                         .getArchiveDbReader()
                         .readFromTraditionalArchive(archiveKey, archiveInfo, localBlocks);
                   }
-                  //                    log.debug("archiveKey {}, localBlocks {}", archiveKey,
-                  // localBlocks.size());
 
                   for (Map.Entry<String, byte[]> kv : localBlocks.entrySet()) {
                     try {
-                      String piece = Utils.bytesToHex(Utils.slice(kv.getValue(), 0, 64));
-                      //                      log.info("Exporting block: {}", piece);
-
-                      if (piece.contains("11ef55aa")) { // block
+                      Cell c = CellBuilder.beginCell().fromBoc(kv.getValue()).endCell();
+                      long magic = c.getBits().preReadUint(32).longValue();
+                      if (magic == 0x11ef55aaL) {
                         String lineToWrite;
-
                         if (deserialized) {
-                          Cell c = CellBuilder.beginCell().fromBoc(kv.getValue()).endCell();
                           Block block = Block.deserialize(CellSlice.beginParse(c));
                           lineToWrite =
                               String.format(
@@ -290,6 +301,9 @@ public class Exporter {
 
                         // system.out is thread safe already
                         System.out.println(lineToWrite);
+                        parsedBlocksCounter.getAndIncrement();
+                      } else {
+                        nonBlocksCounter.getAndIncrement();
                       }
                       globalCounter.getAndIncrement();
                     } catch (Throwable e) {
@@ -316,6 +330,10 @@ public class Exporter {
         log.error("Error waiting for archive reading task: {}", e.getMessage());
       }
     }
+    long endTime = System.currentTimeMillis();
+    long durationMs = endTime - startTime;
+    double durationSeconds = durationMs / 1000.0;
+    double blocksPerSecond = parsedBlocksCounter.get() / durationSeconds;
 
     // Shutdown executor
     executor.shutdown();
@@ -329,6 +347,14 @@ public class Exporter {
     }
 
     log.info("Exported {} blocks to stdout", globalCounter.get());
+    log.info(
+        "Exported {} blocks (nonBlocks {}) to stdout",
+        parsedBlocksCounter.get(),
+        nonBlocksCounter.get());
+    log.info(
+        "Total duration: {}s, speed: {} blocks per second",
+        durationSeconds,
+        String.format("%.2f", blocksPerSecond));
 
     dbReader.close();
   }

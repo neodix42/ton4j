@@ -43,7 +43,7 @@ public class TestExporter {
             .build();
     assertThat(exporter).isNotNull();
     FileUtils.deleteQuietly(new File("local.txt"));
-    exporter.exportToFile("local.txt", false, 20);
+    exporter.exportToFile("local.txt", true, 20);
   }
 
   @Test
@@ -52,6 +52,6 @@ public class TestExporter {
         Exporter.builder()
             .tonDatabaseRootPath("/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db")
             .build();
-    exporter.exportToStdout(true, 20);
+    exporter.exportToStdout(false, 20);
   }
 }
