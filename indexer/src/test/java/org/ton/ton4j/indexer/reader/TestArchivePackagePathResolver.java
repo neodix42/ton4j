@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.IOException;
 import java.util.List;
@@ -6,9 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 /**
- * Test class for the archive package path resolution functionality in GlobalIndexDbReader.
- * This test demonstrates how to resolve package IDs from the global index to their actual
- * archive package file paths in the directory structure.
+ * Test class for the archive package path resolution functionality in GlobalIndexDbReader. This
+ * test demonstrates how to resolve package IDs from the global index to their actual archive
+ * package file paths in the directory structure.
  */
 @Slf4j
 public class TestArchivePackagePathResolver {
@@ -51,13 +51,14 @@ public class TestArchivePackagePathResolver {
 
       // Test specific package ID resolution
       log.info("Testing specific package ID resolution...");
-      
+
       // Test with some known package IDs from the global index
-      List<Integer> testPackageIds = mainIndex.getPackages().subList(0, Math.min(5, mainIndex.getPackages().size()));
-      
+      List<Integer> testPackageIds =
+          mainIndex.getPackages().subList(0, Math.min(5, mainIndex.getPackages().size()));
+
       for (Integer packageId : testPackageIds) {
         log.info("Testing package ID: {}", packageId);
-        
+
         // Test single main package file
         String mainPackageFile = reader.getArchivePackageFilePath(packageId);
         if (mainPackageFile != null) {
@@ -65,7 +66,7 @@ public class TestArchivePackagePathResolver {
         } else {
           log.info("  Main package file: NOT FOUND");
         }
-        
+
         // Test all files for this package ID (including shard-specific)
         List<String> allPackageFiles = reader.getAllArchivePackageFilePaths(packageId);
         log.info("  All files for package {}: {} files", packageId, allPackageFiles.size());
@@ -79,7 +80,7 @@ public class TestArchivePackagePathResolver {
         log.info("Testing temp package resolution...");
         Integer tempPackageId = mainIndex.getTempPackages().get(0);
         log.info("Testing temp package ID: {}", tempPackageId);
-        
+
         String tempPackageFile = reader.getArchivePackageFilePath(tempPackageId);
         if (tempPackageFile != null) {
           log.info("  Temp package file: {}", tempPackageFile);
@@ -106,7 +107,7 @@ public class TestArchivePackagePathResolver {
 
       // Create a mapping of package IDs to their file paths
       log.info("Creating package ID to path mapping...");
-      
+
       for (Integer packageId : mainIndex.getPackages()) {
         List<String> packageFiles = reader.getAllArchivePackageFilePaths(packageId);
         if (!packageFiles.isEmpty()) {
@@ -131,20 +132,20 @@ public class TestArchivePackagePathResolver {
 
       // Test the directory scanning functionality
       List<String> allArchiveFiles = reader.getArchivePackageFilePaths();
-      
+
       // Analyze the structure
       log.info("Archive directory structure analysis:");
       log.info("Total archive files found: {}", allArchiveFiles.size());
-      
+
       // Group by directory
       java.util.Map<String, Integer> directoryCounts = new java.util.HashMap<>();
       java.util.Map<String, Integer> fileTypeCounts = new java.util.HashMap<>();
-      
+
       for (String filePath : allArchiveFiles) {
         // Extract directory
         String directory = filePath.substring(0, filePath.lastIndexOf('/'));
         directoryCounts.merge(directory, 1, Integer::sum);
-        
+
         // Extract file type (main vs shard-specific)
         String fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
         if (fileName.matches("archive\\.\\d{5}\\.pack")) {
@@ -155,12 +156,12 @@ public class TestArchivePackagePathResolver {
           fileTypeCounts.merge("other", 1, Integer::sum);
         }
       }
-      
+
       log.info("Files by directory:");
       for (java.util.Map.Entry<String, Integer> entry : directoryCounts.entrySet()) {
         log.info("  {}: {} files", entry.getKey(), entry.getValue());
       }
-      
+
       log.info("Files by type:");
       for (java.util.Map.Entry<String, Integer> entry : fileTypeCounts.entrySet()) {
         log.info("  {}: {} files", entry.getKey(), entry.getValue());

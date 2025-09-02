@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tl.types.db.files.key.PackageKey;
-import org.ton.ton4j.tl.types.db.files.package_.PackageValue;
+import org.ton.ton4j.tl.types.db.files.pkg.PackageValue;
 
 /**
  * Specialized reader for TON Files database global index. This reader focuses specifically on the

@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db.files.package_;
+package org.ton.ton4j.tl.types.db.files.pkg;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -31,7 +31,7 @@ public class FirstBlock implements Serializable {
     int seqno = buffer.getInt();
     int unixtime = buffer.getInt();
     long lt = buffer.getLong();
-    
+
     return FirstBlock.builder()
         .workchain(workchain)
         .shard(shard)

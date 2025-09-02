@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.Closeable;
 import java.io.IOException;

@@ -1,10 +1,9 @@
-package org.ton.ton4j.tl.types.db;
-
-import lombok.Builder;
-import lombok.Data;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import lombok.Builder;
+import lombok.Data;
 
 /**
  * BlockLocation represents the file location information for a block stored in packages.

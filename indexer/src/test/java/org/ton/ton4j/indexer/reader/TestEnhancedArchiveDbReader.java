@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.IOException;
 import java.util.Map;
@@ -15,8 +15,7 @@ import org.ton.ton4j.tlb.BlockHandle;
 @Slf4j
 public class TestEnhancedArchiveDbReader {
 
-  private static final String DB_PATH =
-      "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+  private static final String DB_PATH = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
 
   /**
    * Test the enhanced block reading functionality using the optimized BlockLocation approach. This

@@ -1,12 +1,10 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.IOException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.tl.types.db.StateDbReader.StateFileInfo;
-import org.ton.ton4j.tl.types.db.StateDbReader.StateFileType;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 
 @Slf4j
@@ -28,7 +26,7 @@ public class TestStateDbReader {
       log.info("First 10 state files:");
       for (int i = 0; i < Math.min(10, stateKeys.size()); i++) {
         String key = stateKeys.get(i);
-        StateFileInfo info = stateReader.getStateFileInfo(key);
+        StateDbReader.StateFileInfo info = stateReader.getStateFileInfo(key);
         log.info("  {}: {}", key, info);
       }
 
@@ -49,15 +47,15 @@ public class TestStateDbReader {
   private void analyzeStateFilesByType(StateDbReader stateReader) {
     log.info("Analyzing state files by type:");
 
-    for (StateFileType type : StateFileType.values()) {
-      List<StateFileInfo> files = stateReader.getStateFilesByType(type);
+    for (StateDbReader.StateFileType type : StateDbReader.StateFileType.values()) {
+      List<StateDbReader.StateFileInfo> files = stateReader.getStateFilesByType(type);
       log.info("  {}: {} files", type, files.size());
 
       // Show sample files for each type
       if (!files.isEmpty()) {
         log.info("    Sample files:");
         for (int i = 0; i < Math.min(3, files.size()); i++) {
-          StateFileInfo info = files.get(i);
+          StateDbReader.StateFileInfo info = files.get(i);
           log.info("      {}", info);
         }
       }
@@ -71,7 +69,7 @@ public class TestStateDbReader {
     int[] workchains = {-1, 0}; // Masterchain and basechain
 
     for (int workchain : workchains) {
-      List<StateFileInfo> files = stateReader.getStateFilesByWorkchain(workchain);
+      List<StateDbReader.StateFileInfo> files = stateReader.getStateFilesByWorkchain(workchain);
       log.info("  Workchain {}: {} files", workchain, files.size());
 
       if (!files.isEmpty()) {
@@ -95,7 +93,7 @@ public class TestStateDbReader {
       }
 
       try {
-        StateFileInfo info = stateReader.getStateFileInfo(key);
+        StateDbReader.StateFileInfo info = stateReader.getStateFileInfo(key);
         byte[] data = stateReader.readStateFile(key);
 
         if (data != null) {
@@ -130,16 +128,17 @@ public class TestStateDbReader {
     log.info("Testing specific queries:");
 
     // Test sequence number range query
-    List<StateFileInfo> recentStates = stateReader.getStateFilesBySeqnoRange(0, 1000);
+    List<StateDbReader.StateFileInfo> recentStates = stateReader.getStateFilesBySeqnoRange(0, 1000);
     log.info("  States with seqno 0-1000: {} files", recentStates.size());
 
     // Test zero state lookup
-    List<StateFileInfo> zeroStates = stateReader.getStateFilesByType(StateFileType.ZERO_STATE);
+    List<StateDbReader.StateFileInfo> zeroStates =
+        stateReader.getStateFilesByType(StateDbReader.StateFileType.ZERO_STATE);
     if (!zeroStates.isEmpty()) {
       log.info("  Found {} zero states", zeroStates.size());
 
       // Try to read the first zero state
-      StateFileInfo zeroState = zeroStates.get(0);
+      StateDbReader.StateFileInfo zeroState = zeroStates.get(0);
       try {
         BlockIdExt blockId =
             BlockIdExt.builder()
@@ -160,13 +159,13 @@ public class TestStateDbReader {
     }
 
     // Test persistent state lookup
-    List<StateFileInfo> persistentStates =
-        stateReader.getStateFilesByType(StateFileType.PERSISTENT_STATE);
+    List<StateDbReader.StateFileInfo> persistentStates =
+        stateReader.getStateFilesByType(StateDbReader.StateFileType.PERSISTENT_STATE);
     if (!persistentStates.isEmpty()) {
       log.info("  Found {} persistent states", persistentStates.size());
 
       // Try to read the first persistent state
-      StateFileInfo persistentState = persistentStates.get(0);
+      StateDbReader.StateFileInfo persistentState = persistentStates.get(0);
       try {
         BlockIdExt blockId =
             BlockIdExt.builder()
@@ -241,7 +240,7 @@ public class TestStateDbReader {
             testFilenames.length);
 
         for (String discoveredFile : discoveredFiles) {
-          StateFileInfo info = testReader.getStateFileInfo(discoveredFile);
+          StateDbReader.StateFileInfo info = testReader.getStateFileInfo(discoveredFile);
           log.info("  {}: {}", discoveredFile, info);
         }
       }

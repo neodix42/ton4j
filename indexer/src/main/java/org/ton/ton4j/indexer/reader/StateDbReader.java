@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -18,8 +18,8 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 
 /**
- * Specialized reader for TON archive state database.
- * Handles files stored in the archive/states directory.
+ * Specialized reader for TON archive state database. Handles files stored in the archive/states
+ * directory.
  */
 @Slf4j
 public class StateDbReader implements Closeable {
@@ -37,7 +37,7 @@ public class StateDbReader implements Closeable {
   public StateDbReader(String dbPath) throws IOException {
     this.dbPath = dbPath;
     this.statesPath = Paths.get(dbPath, "archive", "states").toString();
-    
+
     // Discover all state files
     discoverStateFiles();
   }
@@ -54,9 +54,8 @@ public class StateDbReader implements Closeable {
       return;
     }
 
-    List<Path> stateFilePaths = Files.list(statesDir)
-        .filter(Files::isRegularFile)
-        .collect(Collectors.toList());
+    List<Path> stateFilePaths =
+        Files.list(statesDir).filter(Files::isRegularFile).collect(Collectors.toList());
 
     for (Path stateFile : stateFilePaths) {
       try {
@@ -79,12 +78,12 @@ public class StateDbReader implements Closeable {
 
   /**
    * Parses a state filename to extract metadata.
-   * 
-   * State filename formats (based on actual TON database files):
-   * - Zero state: zerostate_{workchain}_{file_hash} (simplified format)
-   * - Persistent state: state_{workchain}_{shard}_{seqno}_{root_hash}_{file_hash}
-   * - Split account state: split_account_{workchain}_{shard}_{seqno}_{effective_shard}_{root_hash}_{file_hash}
-   * - Split persistent state: split_state_{workchain}_{shard}_{seqno}_{root_hash}_{file_hash}
+   *
+   * <p>State filename formats (based on actual TON database files): - Zero state:
+   * zerostate_{workchain}_{file_hash} (simplified format) - Persistent state:
+   * state_{workchain}_{shard}_{seqno}_{root_hash}_{file_hash} - Split account state:
+   * split_account_{workchain}_{shard}_{seqno}_{effective_shard}_{root_hash}_{file_hash} - Split
+   * persistent state: split_state_{workchain}_{shard}_{seqno}_{root_hash}_{file_hash}
    *
    * @param filename The state filename to parse
    * @return StateFileInfo object with parsed metadata, or null if parsing fails
@@ -106,7 +105,8 @@ public class StateDbReader implements Closeable {
       }
 
       // Zero state pattern (full): zerostate_{workchain}_{shard}_{root_hash}_{file_hash}
-      Pattern zeroStateFullPattern = Pattern.compile("^zerostate_(-?\\d+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)$");
+      Pattern zeroStateFullPattern =
+          Pattern.compile("^zerostate_(-?\\d+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)$");
       Matcher zeroFullMatcher = zeroStateFullPattern.matcher(filename);
       if (zeroFullMatcher.matches()) {
         StateFileInfo info = new StateFileInfo();
@@ -120,7 +120,8 @@ public class StateDbReader implements Closeable {
       }
 
       // Persistent state pattern: state_{workchain}_{shard}_{seqno}_{root_hash}_{file_hash}
-      Pattern persistentStatePattern = Pattern.compile("^state_(-?\\d+)_([0-9a-fA-F]+)_(\\d+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)$");
+      Pattern persistentStatePattern =
+          Pattern.compile("^state_(-?\\d+)_([0-9a-fA-F]+)_(\\d+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)$");
       Matcher persistentMatcher = persistentStatePattern.matcher(filename);
       if (persistentMatcher.matches()) {
         StateFileInfo info = new StateFileInfo();
@@ -133,8 +134,11 @@ public class StateDbReader implements Closeable {
         return info;
       }
 
-      // Split account state pattern: split_account_{workchain}_{shard}_{seqno}_{effective_shard}_{root_hash}_{file_hash}
-      Pattern splitAccountPattern = Pattern.compile("^split_account_(-?\\d+)_([0-9a-fA-F]+)_(\\d+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)$");
+      // Split account state pattern:
+      // split_account_{workchain}_{shard}_{seqno}_{effective_shard}_{root_hash}_{file_hash}
+      Pattern splitAccountPattern =
+          Pattern.compile(
+              "^split_account_(-?\\d+)_([0-9a-fA-F]+)_(\\d+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)$");
       Matcher splitAccountMatcher = splitAccountPattern.matcher(filename);
       if (splitAccountMatcher.matches()) {
         StateFileInfo info = new StateFileInfo();
@@ -148,8 +152,11 @@ public class StateDbReader implements Closeable {
         return info;
       }
 
-      // Split persistent state pattern: split_state_{workchain}_{shard}_{seqno}_{root_hash}_{file_hash}
-      Pattern splitStatePattern = Pattern.compile("^split_state_(-?\\d+)_([0-9a-fA-F]+)_(\\d+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)$");
+      // Split persistent state pattern:
+      // split_state_{workchain}_{shard}_{seqno}_{root_hash}_{file_hash}
+      Pattern splitStatePattern =
+          Pattern.compile(
+              "^split_state_(-?\\d+)_([0-9a-fA-F]+)_(\\d+)_([0-9a-fA-F]+)_([0-9a-fA-F]+)$");
       Matcher splitStateMatcher = splitStatePattern.matcher(filename);
       if (splitStateMatcher.matches()) {
         StateFileInfo info = new StateFileInfo();
@@ -198,9 +205,9 @@ public class StateDbReader implements Closeable {
   public byte[] readZeroState(BlockIdExt blockId) throws IOException {
     // Find zero state file matching the block ID
     for (StateFileInfo info : stateFiles.values()) {
-      if (info.type == StateFileType.ZERO_STATE && 
-          info.workchain == blockId.getWorkchain() &&
-          matchesShard(info.shard, blockId.getShard())) {
+      if (info.type == StateFileType.ZERO_STATE
+          && info.workchain == blockId.getWorkchain()
+          && matchesShard(info.shard, blockId.getShard())) {
         return Files.readAllBytes(Paths.get(info.filePath));
       }
     }
@@ -218,10 +225,10 @@ public class StateDbReader implements Closeable {
   public byte[] readPersistentState(BlockIdExt blockId, BlockIdExt mcBlockId) throws IOException {
     // Find persistent state file matching the block IDs
     for (StateFileInfo info : stateFiles.values()) {
-      if (info.type == StateFileType.PERSISTENT_STATE && 
-          info.workchain == blockId.getWorkchain() &&
-          matchesShard(info.shard, blockId.getShard()) &&
-          info.seqno == mcBlockId.getSeqno()) {
+      if (info.type == StateFileType.PERSISTENT_STATE
+          && info.workchain == blockId.getWorkchain()
+          && matchesShard(info.shard, blockId.getShard())
+          && info.seqno == mcBlockId.getSeqno()) {
         return Files.readAllBytes(Paths.get(info.filePath));
       }
     }
@@ -255,7 +262,7 @@ public class StateDbReader implements Closeable {
     if (data == null) {
       return null;
     }
-    
+
     try {
       return CellBuilder.beginCell().fromBoc(data).endCell();
     } catch (Exception e) {
@@ -302,8 +309,8 @@ public class StateDbReader implements Closeable {
   }
 
   /**
-   * Checks if a shard string matches a shard ID.
-   * This is a simplified implementation - in practice, shard matching is more complex.
+   * Checks if a shard string matches a shard ID. This is a simplified implementation - in practice,
+   * shard matching is more complex.
    *
    * @param shardStr The shard string from filename
    * @param shardId The shard ID to match
@@ -325,9 +332,7 @@ public class StateDbReader implements Closeable {
     log.debug("StateDbReader closed");
   }
 
-  /**
-   * Information about a state file.
-   */
+  /** Information about a state file. */
   public static class StateFileInfo {
     public StateFileType type;
     public int workchain;
@@ -340,16 +345,19 @@ public class StateDbReader implements Closeable {
 
     @Override
     public String toString() {
-      return String.format("StateFileInfo{type=%s, workchain=%d, shard=%s, seqno=%d, effectiveShard=%s, rootHash=%s, fileHash=%s}",
-          type, workchain, shard, seqno, effectiveShard, 
+      return String.format(
+          "StateFileInfo{type=%s, workchain=%d, shard=%s, seqno=%d, effectiveShard=%s, rootHash=%s, fileHash=%s}",
+          type,
+          workchain,
+          shard,
+          seqno,
+          effectiveShard,
           rootHash != null ? rootHash.substring(0, Math.min(8, rootHash.length())) + "..." : null,
           fileHash != null ? fileHash.substring(0, Math.min(8, fileHash.length())) + "..." : null);
     }
   }
 
-  /**
-   * Types of state files.
-   */
+  /** Types of state files. */
   public enum StateFileType {
     ZERO_STATE,
     PERSISTENT_STATE,

@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.tl.types.db.candidate;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -20,7 +20,7 @@ import org.ton.ton4j.utils.Utils;
 @Data
 public class Candidate implements Serializable {
 
-  public byte[] source;  // PublicKey
+  public byte[] source; // PublicKey
   BlockIdExt id;
   public byte[] data;
   public byte[] collatedData;
@@ -32,21 +32,21 @@ public class Candidate implements Serializable {
 
   public static Candidate deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-    byte[] source = Utils.read(buffer, 32);  // Assuming PublicKey is 32 bytes
+    byte[] source = Utils.read(buffer, 32); // Assuming PublicKey is 32 bytes
     BlockIdExt id = BlockIdExt.deserialize(buffer);
     byte[] data = Utils.fromBytes(buffer);
     byte[] collatedData = Utils.fromBytes(buffer);
-    
-    return Candidate.builder()
-        .source(source)
-        .id(id)
-        .data(data)
-        .collatedData(collatedData)
-        .build();
+
+    return Candidate.builder().source(source).id(id).data(data).collatedData(collatedData).build();
   }
 
   public byte[] serialize() {
-    ByteBuffer buffer = ByteBuffer.allocate(32 + BlockIdExt.getSize() + Utils.toBytes(data).length + Utils.toBytes(collatedData).length);
+    ByteBuffer buffer =
+        ByteBuffer.allocate(
+            32
+                + BlockIdExt.getSize()
+                + Utils.toBytes(data).length
+                + Utils.toBytes(collatedData).length);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
     buffer.put(source);
     buffer.put(id.serialize());

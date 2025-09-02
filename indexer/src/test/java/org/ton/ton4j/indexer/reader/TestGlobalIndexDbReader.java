@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
-import org.ton.ton4j.tl.types.db.files.package_.PackageValue;
+import org.ton.ton4j.tl.types.db.files.pkg.PackageValue;
 
 /**
  * Test class for the FilesDbReader that demonstrates the optimized block reading approach using the
@@ -52,12 +52,12 @@ public class TestGlobalIndexDbReader {
   public void testGlobalIndexReadingPathsIndexed() throws IOException {
 
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
-      for (Map.Entry<String, ArchiveFileLocation> path : reader.getAllArchiveFileLocationsFromIndexDatabases().entrySet()) {
+      for (Map.Entry<String, ArchiveFileLocation> path :
+          reader.getAllArchiveFileLocationsFromIndexDatabases().entrySet()) {
         log.info("key {}, value: {}", path.getKey(), path.getValue());
       }
     }
   }
-
 
   /** Test the Files database structure and metadata parsing. */
   @Test
@@ -137,7 +137,7 @@ public class TestGlobalIndexDbReader {
       // Find files that are in filesystem but not in index
       List<String> missingFiles = new ArrayList<>(filesFromFilesystem);
       missingFiles.removeAll(filesFromIndex);
-      
+
       if (!missingFiles.isEmpty()) {
         log.info("Missing files that were discovered:");
         for (String missingFile : missingFiles) {
@@ -170,7 +170,8 @@ public class TestGlobalIndexDbReader {
 
       // Method 3: Files from archive index databases (NEW - C++ approach)
       log.info("3. Files from archive index databases (C++ approach):");
-      Map<String, ArchiveFileLocation> fileLocations = reader.getAllArchiveFileLocationsFromIndexDatabases();
+      Map<String, ArchiveFileLocation> fileLocations =
+          reader.getAllArchiveFileLocationsFromIndexDatabases();
       log.info("   Found {} individual files with hash->offset mappings", fileLocations.size());
 
       // Show package file counts
@@ -189,8 +190,11 @@ public class TestGlobalIndexDbReader {
         if (count++ < 5) {
           String hash = entry.getKey();
           ArchiveFileLocation location = entry.getValue();
-          log.info("  Hash: {} -> Package: {}, Offset: {}", 
-              hash.substring(0, 16) + "...", location.getPackageId(), location.getOffset());
+          log.info(
+              "  Hash: {} -> Package: {}, Offset: {}",
+              hash.substring(0, 16) + "...",
+              location.getPackageId(),
+              location.getOffset());
         }
       }
 
@@ -200,9 +204,11 @@ public class TestGlobalIndexDbReader {
       log.info("=== FINAL COMPARISON ===");
       log.info("Method 1 (Global Index): {} package files", filesFromGlobalIndex.size());
       log.info("Method 2 (Filesystem Scan): {} package files", filesFromFilesystem.size());
-      log.info("Method 3 (Archive Index DBs): {} individual files in {} packages", 
-          fileLocations.size(), packageFileCounts.size());
-      
+      log.info(
+          "Method 3 (Archive Index DBs): {} individual files in {} packages",
+          fileLocations.size(),
+          packageFileCounts.size());
+
       log.info("");
       log.info("The C++ approach (Method 3) provides complete access to individual files");
       log.info("within archive packages using hash->offset lookups, just like the original");
@@ -229,8 +235,9 @@ public class TestGlobalIndexDbReader {
         for (org.ton.ton4j.tlb.Block block : blocks) {
           if (count++ < 3) {
             try {
-              log.info("  Block {}: seqno={}, workchain={}", 
-                  count, 
+              log.info(
+                  "  Block {}: seqno={}, workchain={}",
+                  count,
                   block.getBlockInfo().getSeqno(),
                   block.getBlockInfo().getShard().getWorkchain());
             } catch (Exception e) {
@@ -245,7 +252,8 @@ public class TestGlobalIndexDbReader {
       // Test getAllBlocksWithHashes() method
       log.info("Testing getAllBlocksWithHashes() method...");
       Map<String, org.ton.ton4j.tlb.Block> blocksWithHashes = reader.getAllBlocksWithHashes();
-      log.info("Found {} blocks with hashes using getAllBlocksWithHashes()", blocksWithHashes.size());
+      log.info(
+          "Found {} blocks with hashes using getAllBlocksWithHashes()", blocksWithHashes.size());
 
       // Show some sample blocks with hashes
       if (!blocksWithHashes.isEmpty()) {
@@ -256,13 +264,16 @@ public class TestGlobalIndexDbReader {
             String hash = entry.getKey();
             org.ton.ton4j.tlb.Block block = entry.getValue();
             try {
-              log.info("  Hash: {}... -> Block seqno={}, workchain={}", 
+              log.info(
+                  "  Hash: {}... -> Block seqno={}, workchain={}",
                   hash.substring(0, 16),
                   block.getBlockInfo().getSeqno(),
                   block.getBlockInfo().getShard().getWorkchain());
             } catch (Exception e) {
-              log.info("  Hash: {}... -> Block (error reading details: {})", 
-                  hash.substring(0, 16), e.getMessage());
+              log.info(
+                  "  Hash: {}... -> Block (error reading details: {})",
+                  hash.substring(0, 16),
+                  e.getMessage());
             }
           }
         }
@@ -300,12 +311,12 @@ public class TestGlobalIndexDbReader {
       log.info("getAllBlocks(): {} blocks", blocks.size());
       log.info("getAllBlocksWithHashes(): {} blocks", blocksWithHashes.size());
       log.info("getAllArchiveEntries(): {} total entries", allEntries.size());
-      
+
       if (blocks.size() > 0) {
         double blockPercentage = (double) blocks.size() / allEntries.size() * 100;
         log.info("Block percentage: {}% of all entries are blocks", blockPercentage);
       }
-      
+
       log.info("");
       log.info("Block reading functionality is working correctly!");
       log.info("The implementation successfully reads blocks from archive packages");

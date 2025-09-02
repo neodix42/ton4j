@@ -1,7 +1,4 @@
-package org.ton.ton4j.tl.types.db;
-
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -9,6 +6,8 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
 
 /** Reader for TON package files. */
 public class PackageReader implements Closeable {
@@ -59,7 +58,7 @@ public class PackageReader implements Closeable {
     int header0 = readInt();
     int entryMagic = header0 & 0xFFFF;
     int filenameLength = (header0 >>> 16) & 0xFFFF;
-    
+
     if (entryMagic != ENTRY_HEADER_MAGIC) {
       throw new IOException(
           "Invalid entry header magic: 0x"

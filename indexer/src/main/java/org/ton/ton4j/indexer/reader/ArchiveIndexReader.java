@@ -1,9 +1,8 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,11 +11,10 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Reader for individual archive index databases (archive.XXXXX.index).
- * Each archive package has a corresponding RocksDB index that contains
- * hash->offset mappings for files within that package.
- * 
- * Based on the C++ implementation in ArchiveFile class.
+ * Reader for individual archive index databases (archive.XXXXX.index). Each archive package has a
+ * corresponding RocksDB index that contains hash->offset mappings for files within that package.
+ *
+ * <p>Based on the C++ implementation in ArchiveFile class.
  */
 @Slf4j
 @Data
@@ -35,11 +33,12 @@ public class ArchiveIndexReader implements Closeable {
    * @param packageId The package ID (extracted from filename)
    * @throws IOException If the index database cannot be opened
    */
-  public ArchiveIndexReader(String archiveIndexPath, String packagePath, int packageId) throws IOException {
+  public ArchiveIndexReader(String archiveIndexPath, String packagePath, int packageId)
+      throws IOException {
     this.archiveIndexPath = archiveIndexPath;
     this.packagePath = packagePath;
     this.packageId = packageId;
-    
+
     if (!Files.exists(Paths.get(archiveIndexPath))) {
       throw new IOException("Archive index database not found at: " + archiveIndexPath);
     }
@@ -53,54 +52,58 @@ public class ArchiveIndexReader implements Closeable {
   }
 
   /**
-   * Gets all hash->offset mappings from this archive index database.
-   * This follows the C++ implementation where each archive index contains
-   * file hashes as keys and offsets as values.
+   * Gets all hash->offset mappings from this archive index database. This follows the C++
+   * implementation where each archive index contains file hashes as keys and offsets as values.
    *
    * @return Map of file hash to offset within the package file
    */
   public Map<String, Long> getAllHashOffsetMappings() {
     Map<String, Long> hashOffsetMap = new HashMap<>();
-    
+
     AtomicInteger totalEntries = new AtomicInteger(0);
     AtomicInteger validMappings = new AtomicInteger(0);
     AtomicInteger parseErrors = new AtomicInteger(0);
 
-    indexDb.forEach((key, value) -> {
-      try {
-        totalEntries.incrementAndGet();
-        
-        String keyStr = new String(key);
-        String valueStr = new String(value);
-        
-        // Skip special keys like "status"
-        if ("status".equals(keyStr)) {
-          return;
-        }
-        
-        // Validate that key looks like a hash (hex string)
-        if (!isValidHexString(keyStr) || keyStr.length() != 64) {
-          return; // Skip non-hash keys
-        }
-        
-        // Parse offset from value (stored as string in C++ implementation)
-        try {
-          long offset = Long.parseLong(valueStr);
-          hashOffsetMap.put(keyStr, offset);
-          validMappings.incrementAndGet();
-        } catch (NumberFormatException e) {
-          parseErrors.incrementAndGet();
-          log.debug("Error parsing offset for hash {}: {}", keyStr, e.getMessage());
-        }
-        
-      } catch (Exception e) {
-        parseErrors.incrementAndGet();
-        log.debug("Error processing archive index entry: {}", e.getMessage());
-      }
-    });
+    indexDb.forEach(
+        (key, value) -> {
+          try {
+            totalEntries.incrementAndGet();
 
-    log.debug("Archive index {}: {} total entries, {} valid hash mappings, {} parse errors",
-        packageId, totalEntries.get(), validMappings.get(), parseErrors.get());
+            String keyStr = new String(key);
+            String valueStr = new String(value);
+
+            // Skip special keys like "status"
+            if ("status".equals(keyStr)) {
+              return;
+            }
+
+            // Validate that key looks like a hash (hex string)
+            if (!isValidHexString(keyStr) || keyStr.length() != 64) {
+              return; // Skip non-hash keys
+            }
+
+            // Parse offset from value (stored as string in C++ implementation)
+            try {
+              long offset = Long.parseLong(valueStr);
+              hashOffsetMap.put(keyStr, offset);
+              validMappings.incrementAndGet();
+            } catch (NumberFormatException e) {
+              parseErrors.incrementAndGet();
+              log.debug("Error parsing offset for hash {}: {}", keyStr, e.getMessage());
+            }
+
+          } catch (Exception e) {
+            parseErrors.incrementAndGet();
+            log.debug("Error processing archive index entry: {}", e.getMessage());
+          }
+        });
+
+    log.debug(
+        "Archive index {}: {} total entries, {} valid hash mappings, {} parse errors",
+        packageId,
+        totalEntries.get(),
+        validMappings.get(),
+        parseErrors.get());
 
     return hashOffsetMap;
   }
@@ -117,7 +120,7 @@ public class ArchiveIndexReader implements Closeable {
       if (valueBytes == null) {
         return null;
       }
-      
+
       String valueStr = new String(valueBytes);
       return Long.parseLong(valueStr);
     } catch (Exception e) {
@@ -127,8 +130,8 @@ public class ArchiveIndexReader implements Closeable {
   }
 
   /**
-   * Gets the package status (current size) from the archive index.
-   * This corresponds to the "status" key in the C++ implementation.
+   * Gets the package status (current size) from the archive index. This corresponds to the "status"
+   * key in the C++ implementation.
    *
    * @return The package size, or null if not found
    */
@@ -138,7 +141,7 @@ public class ArchiveIndexReader implements Closeable {
       if (valueBytes == null) {
         return null;
       }
-      
+
       String valueStr = new String(valueBytes);
       return Long.parseLong(valueStr);
     } catch (Exception e) {

@@ -28,6 +28,7 @@
         <module>tlb</module>
         <module>adnl</module>
         <module>toncenter</module>
+        <module>indexer</module>
     </modules>
 
     <properties>
@@ -40,7 +41,7 @@
 
         <junit.version>4.13.2</junit.version>
         <commons.version>1.15</commons.version>
-        <lombok.version>1.18.24</lombok.version>
+        <lombok.version>1.18.38</lombok.version>
         <assertj.version>3.26.3</assertj.version>
         <logback.version>1.5.18</logback.version>
         <gson.version>2.9.0</gson.version>

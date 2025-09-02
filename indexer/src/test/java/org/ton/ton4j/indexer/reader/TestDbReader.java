@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.IOException;
 import java.util.*;
@@ -45,10 +45,10 @@ public class TestDbReader {
     List<String> archiveKeys = archiveDbReader.getArchiveKeys();
     log.info("Available archive keys: {}", archiveKeys);
 
-    List<Block> blocks1 = archiveDbReader.getAllBlocks();
+    LinkedHashSet<Block> blocks1 = archiveDbReader.getAllBlocks();
     log.info("All blocks: {}", blocks1.size());
-    blocks1.sort(
-        (o1, o2) -> Long.compare(o2.getBlockInfo().getSeqno(), o1.getBlockInfo().getSeqno()));
+    //    blocks1.sort(
+    //        (o1, o2) -> Long.compare(o2.getBlockInfo().getSeqno(), o1.getBlockInfo().getSeqno()));
     for (Block block : blocks1) {
       log.info(
           "({},{},{}), {} {}",
@@ -74,7 +74,7 @@ public class TestDbReader {
     log.info("Starting to load all blocks...");
     long startTime = System.currentTimeMillis();
 
-    List<Block> blocks1 = archiveDbReader.getAllBlocks();
+    LinkedHashSet<Block> blocks1 = archiveDbReader.getAllBlocks();
 
     long endTime = System.currentTimeMillis();
     long durationMs = endTime - startTime;
@@ -104,7 +104,7 @@ public class TestDbReader {
     log.info("Starting to load all blocks in parallel (32 threads)...");
     long startTime = System.currentTimeMillis();
 
-    List<Block> parallelBlocks = archiveDbReader.getAllBlocksParallel();
+    LinkedHashSet<Block> parallelBlocks = archiveDbReader.getAllBlocksParallel();
 
     long endTime = System.currentTimeMillis();
     long durationMs = endTime - startTime;
@@ -115,7 +115,9 @@ public class TestDbReader {
 
     log.info("All blocks loaded in parallel: {}", totalBlocks);
     log.info(
-        "Parallel loading time: {} ms ({} seconds)", durationMs, String.format("%.2f", durationSeconds));
+        "Parallel loading time: {} ms ({} seconds)",
+        durationMs,
+        String.format("%.2f", durationSeconds));
     log.info("Parallel loading rate: {} blocks per second", String.format("%.2f", blocksPerSecond));
     log.info(
         "Average time per block: {} ms", String.format("%.4f", (double) durationMs / totalBlocks));
@@ -136,7 +138,7 @@ public class TestDbReader {
     log.info("Starting to load all blocks in parallel ({} threads)...", customThreadCount);
     long startTime = System.currentTimeMillis();
 
-    List<Block> parallelBlocks = archiveDbReader.getAllBlocksParallel(customThreadCount);
+    LinkedHashSet<Block> parallelBlocks = archiveDbReader.getAllBlocksParallel(customThreadCount);
 
     long endTime = System.currentTimeMillis();
     long durationMs = endTime - startTime;
@@ -147,7 +149,9 @@ public class TestDbReader {
 
     log.info("All blocks loaded in parallel: {}", totalBlocks);
     log.info(
-        "Parallel loading time: {} ms ({} seconds)", durationMs, String.format("%.2f", durationSeconds));
+        "Parallel loading time: {} ms ({} seconds)",
+        durationMs,
+        String.format("%.2f", durationSeconds));
     log.info("Parallel loading rate: {} blocks per second", String.format("%.2f", blocksPerSecond));
     log.info(
         "Average time per block: {} ms", String.format("%.4f", (double) durationMs / totalBlocks));
@@ -189,14 +193,15 @@ public class TestDbReader {
 
     // Verify that both methods return the same number of entries
     if (singleThreadedEntries.size() != parallelEntries.size()) {
-      log.warn("Entry count mismatch: single={}, parallel={}", 
-               singleThreadedEntries.size(), parallelEntries.size());
+      log.warn(
+          "Entry count mismatch: single={}, parallel={}",
+          singleThreadedEntries.size(),
+          parallelEntries.size());
     } else {
       log.info("✓ Entry counts match: {}", singleThreadedEntries.size());
     }
   }
 
-  /** Test reading archive database. */
   @Test
   public void testReadAllBlocksAndTheirHashesFromArchiveDb() throws IOException {
     ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
@@ -224,6 +229,31 @@ public class TestDbReader {
           block.getBlockInfo().getPrevRef().getPrev1().getRootHash().toUpperCase(),
           block.getBlockInfo().getPrevRef().getPrev1().getFileHash().toUpperCase());
       //      BlockPrintInfo.printAllTransactions(block);
+    }
+  }
+
+  @Test
+  public void testReadAllBlocksAndTheirHashesParallel() throws IOException {
+    ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
+
+    // Get all available archive keys
+    List<String> archiveKeys = archiveDbReader.getArchiveKeys();
+    log.info("Available archive keys: {}", archiveKeys);
+
+    Map<String, Block> entries = archiveDbReader.getAllBlocksWithHashesParallel();
+
+    log.info("All entries: {}", entries.size());
+    for (Map.Entry<String, Block> entry : entries.entrySet()) {
+      Block block = entry.getValue();
+      String hash = entry.getKey();
+      log.info(
+          "hash {} ({},{},{}), {} {}",
+          hash,
+          block.getBlockInfo().getShard().getWorkchain(),
+          block.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
+          block.getBlockInfo().getSeqno(),
+          block.getBlockInfo().getPrevRef().getPrev1().getRootHash().toUpperCase(),
+          block.getBlockInfo().getPrevRef().getPrev1().getFileHash().toUpperCase());
     }
   }
 

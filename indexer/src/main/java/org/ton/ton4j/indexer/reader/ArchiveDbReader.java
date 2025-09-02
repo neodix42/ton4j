@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db;
+package org.ton.ton4j.indexer.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -8,10 +8,7 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -502,8 +499,8 @@ public class ArchiveDbReader implements Closeable {
     return null;
   }
 
-  public List<Block> getAllBlocks() {
-    List<Block> blocks = new ArrayList<>();
+  public LinkedHashSet<Block> getAllBlocks() {
+    LinkedHashSet<Block> blocks = new LinkedHashSet<>();
     Map<String, byte[]> entries = getAllEntries();
     for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
       try {
@@ -513,12 +510,9 @@ public class ArchiveDbReader implements Closeable {
           //          log.info("block");
           Block block = Block.deserialize(CellSlice.beginParse(c));
           blocks.add(block);
-        } else {
-          //           log.info("not a block");
         }
       } catch (Throwable e) {
         log.error("Error parsing block {}", e.getMessage());
-        // return Block.builder().build();
       }
     }
     return blocks;
@@ -530,8 +524,8 @@ public class ArchiveDbReader implements Closeable {
    *
    * @return List of Block objects
    */
-  public List<Block> getAllBlocksParallel() {
-    return getAllBlocksParallel(32);
+  public LinkedHashSet<Block> getAllBlocksParallel() {
+    return getAllBlocksParallel(22);
   }
 
   /**
@@ -540,7 +534,7 @@ public class ArchiveDbReader implements Closeable {
    * @param threadCount Number of threads to use for parallel processing
    * @return List of Block objects
    */
-  public List<Block> getAllBlocksParallel(int threadCount) {
+  public LinkedHashSet<Block> getAllBlocksParallel(int threadCount) {
     if (threadCount <= 1) {
       // Fall back to single-threaded version
       return getAllBlocks();
@@ -556,7 +550,7 @@ public class ArchiveDbReader implements Closeable {
     Map<String, byte[]> entries = getAllEntriesParallel(threadCount);
 
     // Use ConcurrentHashMap for thread-safe operations during block parsing
-    List<Block> blocks = new ArrayList<>();
+    LinkedHashSet<Block> blocks = new LinkedHashSet<>();
 
     // Create thread pool for block parsing
     ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -635,24 +629,128 @@ public class ArchiveDbReader implements Closeable {
     return blocks;
   }
 
+  /**
+   * default number of threads 32
+   *
+   * @return
+   */
+  public Map<String, Block> getAllBlocksWithHashesParallel() {
+    return getAllBlocksWithHashesParallel(32);
+  }
+
+  /**
+   * Gets all blocks from all archives using parallel processing with configurable thread count.
+   *
+   * @param threadCount Number of threads to use for parallel processing
+   * @return List of Block objects with hashes
+   */
+  public Map<String, Block> getAllBlocksWithHashesParallel(int threadCount) {
+    if (threadCount <= 1) {
+      // Fall back to single-threaded version
+      return getAllBlocksWithHashes();
+    }
+
+    log.info(
+        "Starting parallel block reading from {} archives using {} threads",
+        archiveInfos.size(),
+        threadCount);
+    long startTime = System.currentTimeMillis();
+
+    // Get all entries in parallel first
+    Map<String, byte[]> entries = getAllEntriesParallel(threadCount);
+
+    Map<String, Block> blocks = new ConcurrentHashMap<>();
+
+    // Create thread pool for block parsing
+    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+    List<Future<Map<String, Block>>> futures = new ArrayList<>();
+
+    // Split entries into chunks for parallel processing
+    List<Map.Entry<String, byte[]>> entryList = new ArrayList<>(entries.entrySet());
+    int chunkSize = Math.max(1, entryList.size() / threadCount);
+
+    for (int i = 0; i < entryList.size(); i += chunkSize) {
+      int endIndex = Math.min(i + chunkSize, entryList.size());
+      List<Map.Entry<String, byte[]>> chunk = entryList.subList(i, endIndex);
+
+      Future<Map<String, Block>> future =
+          executor.submit(
+              () -> {
+                Map<String, Block> localBlocks = new HashMap<>();
+
+                for (Map.Entry<String, byte[]> entry : chunk) {
+                  try {
+                    Cell c = CellBuilder.beginCell().fromBoc(entry.getValue()).endCell();
+                    long magic = c.getBits().preReadUint(32).longValue();
+                    if (magic == 0x11ef55aaL) { // block
+                      Block block = Block.deserialize(CellSlice.beginParse(c));
+                      localBlocks.put(entry.getKey(), block);
+                    }
+                  } catch (Throwable e) {
+                    log.debug("Error parsing block {}: {}", entry.getKey(), e.getMessage());
+                    // Continue processing other blocks instead of failing completely
+                  }
+                }
+
+                return localBlocks;
+              });
+
+      futures.add(future);
+    }
+
+    // Collect results from all threads
+    for (Future<Map<String, Block>> future : futures) {
+      try {
+        Map<String, Block> threadBlocks = future.get();
+        blocks.putAll(threadBlocks);
+      } catch (Exception e) {
+        log.error("Error waiting for block parsing task: {}", e.getMessage());
+      }
+    }
+
+    // Shutdown executor
+    executor.shutdown();
+    try {
+      if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      executor.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
+
+    long endTime = System.currentTimeMillis();
+    long durationMs = endTime - startTime;
+    double durationSeconds = durationMs / 1000.0;
+    double blocksPerSecond = blocks.size() / durationSeconds;
+
+    log.info(
+        "Parallel block reading completed: {} blocks in {} ms ({} seconds) using {} threads",
+        blocks.size(),
+        durationMs,
+        String.format("%.2f", durationSeconds),
+        threadCount);
+    log.info("Parallel loading rate: {} blocks per second", String.format("%.2f", blocksPerSecond));
+    log.info(
+        "Average time per block: {} ms",
+        String.format("%.4f", (double) durationMs / blocks.size()));
+
+    return blocks;
+  }
+
   public Map<String, Block> getAllBlocksWithHashes() {
     Map<String, Block> blocks = new HashMap<>();
     Map<String, byte[]> entries = getAllEntries();
     for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
       try {
-        //        log.info("key " + entry.getKey());
         Cell c = CellBuilder.beginCell().fromBoc(entry.getValue()).endCell();
         long magic = c.getBits().preReadUint(32).longValue();
         if (magic == 0x11ef55aaL) { // block
           Block block = Block.deserialize(CellSlice.beginParse(c));
           blocks.put(entry.getKey(), block);
-        } else {
-          //          log.info("not a block");
-          // return Block.builder().build();
         }
       } catch (Throwable e) {
         log.error("Error parsing block {}", e.getMessage());
-        // return Block.builder().build();
       }
     }
     return blocks;

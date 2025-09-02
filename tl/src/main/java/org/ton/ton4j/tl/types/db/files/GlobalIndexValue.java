@@ -3,7 +3,7 @@ package org.ton.ton4j.tl.types.db.files;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
-import org.ton.ton4j.tl.types.db.files.package_.PackageValue;
+import org.ton.ton4j.tl.types.db.files.pkg.PackageValue;
 
 public interface GlobalIndexValue {
   static GlobalIndexValue deserialize(ByteBuffer byteBuffer) {
