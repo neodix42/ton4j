@@ -28,7 +28,7 @@
         <module>tlb</module>
         <module>adnl</module>
         <module>toncenter</module>
-        <module>indexer</module>
+        <module>exporter</module>
     </modules>
 
     <properties>

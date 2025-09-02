@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.neodix42</groupId>
+        <artifactId>top</artifactId>
+        <version>1.1.1</version>
+    </parent>
+
+    <artifactId>exporter</artifactId>
+    <name>TON Java DB Exporter</name>
+
+    <description>Java exporter that uses direct access to TON database to retrieve deserialized blocks.</description>
+
+
+    <url>https://github.com/neodiX42/ton4j</url>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>neodiX</name>
+            <email>neodiX@ton.org</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/neodiX42/ton4j.git</connection>
+        <developerConnection>scm:git:ssh://github.com/neodiX42/ton4j.git</developerConnection>
+        <url>https://github.com/neodiX42/ton4j/tree/main</url>
+    </scm>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>tl</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>tlb</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.neodix42</groupId>
+            <artifactId>utils</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>
