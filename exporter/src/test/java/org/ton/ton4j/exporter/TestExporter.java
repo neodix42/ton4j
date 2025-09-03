@@ -5,12 +5,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.File;
 import java.io.IOException;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.exporter.types.BlockId;
+import org.ton.ton4j.exporter.types.ExportedBlock;
 import org.ton.ton4j.tlb.Block;
 
 @Slf4j
@@ -54,13 +56,14 @@ public class TestExporter {
     Exporter exporter =
         Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
 
-    exporter
-        .exportToObjects(true, 20)
-        .forEach(
-            b -> {
-              // insert block to your DB
-              //              log.info("block {}", b);
-            });
+    Stream<ExportedBlock> blockStream = exporter.exportToObjects(true, 20);
+
+    blockStream.forEach(
+        b -> {
+          // insert block to your DB
+          //              log.info("block {}", b);
+        });
+    blockStream.close(); // to delete status file
   }
 
   @Test

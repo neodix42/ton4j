@@ -428,9 +428,9 @@ public class Exporter {
           && deserialized == exportStatus.isDeserialized()
           && parallelThreads == exportStatus.getParallelThreads()) {
 
-        log.info(
-            "Resuming objects export from previous session. Progress: {}% ({}/{})",
-            String.format("%.2f", exportStatus.getProgressPercentage()),
+        System.out.printf(
+            "Resuming objects export from previous session. Progress: %.1f%% %s/%s",
+            exportStatus.getProgressPercentage(),
             exportStatus.getProcessedCount(),
             exportStatus.getTotalPackages());
         isResume = true;
@@ -541,8 +541,8 @@ public class Exporter {
                       }
 
                       if (showProgress) {
-                        log.info(
-                            "Completed reading archive {}: entries {}, progress: {}% ({}/{})",
+                        System.out.printf(
+                            "Completed reading archive %s: entries %d, progress: %.1f%% (%d/%d)%n",
                             archiveKey,
                             localBlocks.size(),
                             finalExportStatus.getProgressPercentage(),
