@@ -106,7 +106,6 @@ public class Exporter {
 
     AtomicInteger parsedBlocksCounter = new AtomicInteger(exportStatus.getParsedBlocksCount());
     AtomicInteger nonBlocksCounter = new AtomicInteger(exportStatus.getNonBlocksCount());
-    AtomicInteger packsProcessed = new AtomicInteger(exportStatus.getProcessedCount());
     long totalPacks = dbReader.getArchiveDbReader().getArchiveInfos().size();
 
     // Update total packages if it has changed

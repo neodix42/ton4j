@@ -16,7 +16,7 @@ import org.ton.ton4j.tlb.*;
 /** Test class for demonstrating how to use the DbReader to read TON RocksDB files. */
 @Slf4j
 @RunWith(JUnit4.class)
-public class TestDbReader {
+public class TestArchiveDbReader {
 
   private static final String TON_DB_PATH =
       "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";

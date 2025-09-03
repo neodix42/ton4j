@@ -40,7 +40,7 @@ public class TestExporter {
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     assertThat(exporter).isNotNull();
     FileUtils.deleteQuietly(new File("local.txt"));
-    exporter.exportToFile("local.txt", false, 20);
+    exporter.exportToFile("local.txt", true, 20);
   }
 
   @Test
