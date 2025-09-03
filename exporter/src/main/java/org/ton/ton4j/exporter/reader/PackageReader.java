@@ -11,6 +11,8 @@ import java.util.function.Consumer;
 import lombok.Getter;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.Block;
 
 /** Reader for TON package files. */
 public class PackageReader implements Closeable {
@@ -141,11 +143,12 @@ public class PackageReader implements Closeable {
    */
   public Map<String, byte[]> readAllEntries() throws IOException {
     Map<String, byte[]> result = new HashMap<>();
-    
-    forEach(entry -> {
-      result.put(entry.getFilename(), entry.getData());
-    });
-    
+
+    forEach(
+        entry -> {
+          result.put(entry.getFilename(), entry.getData());
+        });
+
     return result;
   }
 
@@ -179,6 +182,12 @@ public class PackageReader implements Closeable {
 
     public Cell getCell() {
       return CellBuilder.beginCell().fromBoc(data).endCell();
+    }
+
+    public Block getBlock() {
+      //       CellSlice cs = CellBuilder.beginCell().fromBoc(data).endCell();
+      return Block.deserialize(
+          CellSlice.beginParse(CellBuilder.beginCell().fromBoc(data).endCell()));
     }
   }
 }

@@ -1096,7 +1096,5 @@ public class GlobalIndexDbReader implements Closeable {
     if (globalIndexDb != null) {
       globalIndexDb.close();
     }
-
-    log.info("FilesDbReader closed");
   }
 }

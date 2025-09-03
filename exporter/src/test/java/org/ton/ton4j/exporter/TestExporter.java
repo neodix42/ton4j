@@ -9,27 +9,25 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.ton4j.tlb.Block;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestExporter {
 
+  public static final String TON_DB_ROOT_PATH =
+      "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+
   @Test
   public void testExporterBuilder() {
-    Exporter exporter =
-        Exporter.builder()
-            .tonDatabaseRootPath("/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db")
-            .build();
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     assertThat(exporter).isNotNull();
     log.info("exporter root db path {}", exporter.getDatabasePath());
   }
 
   @Test
   public void testExporterArchiveStats() throws IOException {
-    Exporter exporter =
-        Exporter.builder()
-            .tonDatabaseRootPath("/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db")
-            .build();
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     assertThat(exporter).isNotNull();
     log.info("exporter root db path {}", exporter.getDatabasePath());
     exporter.printADbStats();
@@ -37,10 +35,7 @@ public class TestExporter {
 
   @Test
   public void testExporterToFile() throws IOException {
-    Exporter exporter =
-        Exporter.builder()
-            .tonDatabaseRootPath("/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db")
-            .build();
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     assertThat(exporter).isNotNull();
     FileUtils.deleteQuietly(new File("local.txt"));
     exporter.exportToFile("local.txt", false, 20);
@@ -48,10 +43,28 @@ public class TestExporter {
 
   @Test
   public void testExporterToStdout() throws IOException {
-    Exporter exporter =
-        Exporter.builder()
-            .tonDatabaseRootPath("/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db")
-            .build();
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     exporter.exportToStdout(false, 20);
+  }
+
+  @Test
+  public void testGetLastMethod() throws IOException {
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+
+    long startTime = System.currentTimeMillis();
+
+    Block latestBlock = exporter.getLast();
+
+    long durationMs = System.currentTimeMillis() - startTime;
+
+    log.info("received last block : {}ms", durationMs);
+
+    log.info("Latest block found:");
+    log.info("  Workchain: {}", latestBlock.getBlockInfo().getShard().getWorkchain());
+    log.info(
+        "  Shard: {}",
+        latestBlock.getBlockInfo().getShard().convertShardIdentToShard().toString(16));
+    log.info("  Sequence Number: {}", latestBlock.getBlockInfo().getSeqno());
+    log.info("  Timestamp: {}", latestBlock.getBlockInfo().getGenuTime());
   }
 }
