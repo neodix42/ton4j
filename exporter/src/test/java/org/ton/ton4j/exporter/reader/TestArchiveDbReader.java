@@ -43,7 +43,7 @@ public class TestArchiveDbReader {
 
     // Get all available archive keys
     List<String> archiveKeys = archiveDbReader.getArchiveKeys();
-    log.info("Available archive keys: {}", archiveKeys);
+    log.info("Available archive files: {}", archiveKeys);
 
     LinkedHashSet<Block> blocks1 = archiveDbReader.getAllBlocks();
     log.info("All blocks: {}", blocks1.size());
@@ -257,11 +257,7 @@ public class TestArchiveDbReader {
     }
   }
 
-  /**
-   * find block by file hash
-   *
-   * @throws IOException
-   */
+  /** find block by file hash */
   @Test
   public void testReadArchiveDbBlockByHash() throws IOException {
     ArchiveDbReader archiveDbReader = dbReader.getArchiveDbReader();
@@ -325,29 +321,9 @@ public class TestArchiveDbReader {
     }
   }
 
-  private Cell getFirstCellWithBlock(Cell c) {
-    // Check if this cell itself is a block
-    if (c.getBits().getUsedBits() >= 32) {
-      long blockMagic = c.getBits().preReadUint(32).longValue();
-      if (blockMagic == 0x11ef55aa) {
-        return c;
-      }
-    }
-
-    // Recursively search in all references
-    for (Cell ref : c.getRefs()) {
-      Cell result = getFirstCellWithBlock(ref);
-      if (result != null) {
-        return result;
-      }
-    }
-
-    return null;
-  }
-
   /** Test reading other RocksDB databases. */
   @Test
-  public void testReadCellDb() throws IOException {
+  public void testReadCellDbStats() {
     try {
       // Open the celldb database
       RocksDbWrapper cellDb = dbReader.openDb("celldb");
@@ -361,7 +337,7 @@ public class TestArchiveDbReader {
   }
 
   @Test
-  public void testReadFilesDb() throws IOException {
+  public void testReadFilesDbStats() {
     try {
       // Open the files database
       RocksDbWrapper filesDb = dbReader.openDb("files/globalindex");
@@ -375,7 +351,7 @@ public class TestArchiveDbReader {
   }
 
   @Test
-  public void testReadAdnlDb() throws IOException {
+  public void testReadAdnlDbStats() {
     try {
       // Open the adnl database
       RocksDbWrapper adnlDb = dbReader.openDb("adnl");

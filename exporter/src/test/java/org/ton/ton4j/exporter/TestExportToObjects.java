@@ -129,7 +129,8 @@ public class TestExportToObjects {
   public void testExampleUsage() {
 
     try {
-      Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+      Exporter exporter =
+          Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
 
       exporter
           .exportToObjects(true, 20)

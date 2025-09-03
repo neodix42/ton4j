@@ -50,7 +50,21 @@ public class TestExporter {
   }
 
   @Test
-  public void testGetLastMethod() throws IOException {
+  public void testExporterToObjects() throws IOException {
+    Exporter exporter =
+        Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
+
+    exporter
+        .exportToObjects(true, 20)
+        .forEach(
+            b -> {
+              // insert block to your DB
+              //              log.info("block {}", b);
+            });
+  }
+
+  @Test
+  public void testExporterGetLast() throws IOException {
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
     long startTime = System.currentTimeMillis();
@@ -71,7 +85,7 @@ public class TestExporter {
   }
 
   @Test
-  public void testGetLastXMethod() throws IOException {
+  public void testExporterGetLastWithLimit() throws IOException {
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
     long startTime = System.currentTimeMillis();

@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
@@ -19,35 +20,19 @@ import org.ton.ton4j.utils.Utils;
 @Slf4j
 public class Cell implements Serializable {
 
-  BitString bits;
+  @Getter BitString bits;
   // Use more efficient list implementation for refs (most cells have 0-4 refs)
   List<Cell> refs;
   private CellType type;
   public int index;
-  public boolean exotic;
+  @Getter public boolean exotic;
   public LevelMask levelMask;
   // Use lazy initialization for hashes and depthLevels
-  private byte[] hashes;
-  private int[] depthLevels;
-
-  public BitString getBits() {
-    return bits;
-  }
-
-  public boolean isExotic() {
-    return exotic;
-  }
+  @Getter private byte[] hashes;
+  @Getter private int[] depthLevels;
 
   public List<Cell> getRefs() {
     return new ArrayList<>(refs);
-  }
-
-  public byte[] getHashes() {
-    return hashes;
-  }
-
-  public int[] getDepthLevels() {
-    return depthLevels;
   }
 
   @Override

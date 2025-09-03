@@ -229,7 +229,7 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /** Initializes the Files database global index. */
-  private void initializeFilesDatabase(String rootPath) throws IOException {
+  private void initializeFilesDatabase(String rootPath) {
     // Check if files database exists - it should be at the same level as archive
     Path globalIndexPath = Paths.get(rootPath);
 
@@ -503,12 +503,11 @@ public class ArchiveDbReader implements Closeable {
   public LinkedHashSet<Block> getAllBlocks() {
     LinkedHashSet<Block> blocks = new LinkedHashSet<>();
     Map<String, byte[]> entries = getAllEntries();
-    for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
+    for (Map.Entry<String, byte[]> kv : entries.entrySet()) {
       try {
-        Cell c = CellBuilder.beginCell().fromBoc(entry.getValue()).endCell();
+        Cell c = CellBuilder.beginCell().fromBoc(kv.getValue()).endCell();
         long magic = c.getBits().preReadUint(32).longValue();
-        if (magic == 0x11ef55aaL) { // block
-          //          log.info("block");
+        if (magic == 0x11ef55aaL) {
           Block block = Block.deserialize(CellSlice.beginParse(c));
           blocks.add(block);
         }
@@ -848,8 +847,7 @@ public class ArchiveDbReader implements Closeable {
 
                   log.debug(
                       "Completed reading archive {}: {} entries", archiveKey, localBlocks.size());
-                } catch (IOException e) {
-                  log.warn("Error reading blocks from archive {}: {}", archiveKey, e.getMessage());
+
                 } catch (Exception e) {
                   log.error("Unexpected error reading archive {}: {}", archiveKey, e.getMessage());
                 }

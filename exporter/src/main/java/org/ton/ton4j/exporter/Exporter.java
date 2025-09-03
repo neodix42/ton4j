@@ -8,7 +8,6 @@ import ch.qos.logback.classic.LoggerContext;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -120,7 +119,6 @@ public class Exporter {
     ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
     List<Future<Void>> futures = new ArrayList<>();
 
-    // Submit tasks for each archive that hasn't been processed yet
     for (Map.Entry<String, ArchiveInfo> entry :
         dbReader.getArchiveDbReader().getArchiveInfos().entrySet()) {
       String archiveKey = entry.getKey();
@@ -188,7 +186,7 @@ public class Exporter {
                       }
 
                     } catch (Throwable e) {
-                      log.debug("Error parsing block {}: {}", entry.getKey(), e.getMessage());
+                      log.info("Error parsing block {}: {}", entry.getKey(), e.getMessage());
                       // Continue processing other blocks instead of failing completely
                     }
                   }
@@ -201,20 +199,14 @@ public class Exporter {
                   }
 
                   if (showProgressInfo) {
-                    System.out.println(
-                        String.format(
-                            "Completed reading archive %s: entries %d, progress: %.1f%% (%d/%d)",
-                            archiveKey,
-                            localBlocks.size(),
-                            exportStatus.getProgressPercentage(),
-                            exportStatus.getProcessedCount(),
-                            exportStatus.getTotalPackages()));
-                  } else {
-                    log.debug(
-                        "Completed reading archive {}: {} entries", archiveKey, localBlocks.size());
+                    System.out.printf(
+                        "Completed reading archive %s: entries %d, progress: %.1f%% (%d/%d)%n",
+                        archiveKey,
+                        localBlocks.size(),
+                        exportStatus.getProgressPercentage(),
+                        exportStatus.getProcessedCount(),
+                        exportStatus.getTotalPackages());
                   }
-                } catch (IOException e) {
-                  log.warn("Error reading blocks from archive {}: {}", archiveKey, e.getMessage());
                 } catch (Exception e) {
                   log.error("Unexpected error reading archive {}: {}", archiveKey, e.getMessage());
                 }
@@ -312,12 +304,10 @@ public class Exporter {
       log.info("Starting new export to file: {}", outputToFile);
     }
 
-    File file = new File(outputToFile);
-
     // Create a synchronized PrintWriter for thread-safe immediate file writing
     // Use append mode if resuming
     try (PrintWriter writer =
-        new PrintWriter(new FileWriter(file, StandardCharsets.UTF_8, isResume))) {
+        new PrintWriter(new FileWriter(outputToFile, StandardCharsets.UTF_8, isResume))) {
 
       // Create file-based output writer with thread-safe synchronization
       OutputWriter fileWriter =
@@ -330,7 +320,8 @@ public class Exporter {
 
       // Use common export logic with progress info enabled for file export
       int[] results =
-          exportDataWithStatus(fileWriter, deserialized, parallelThreads, true, exportStatus);
+          exportDataWithStatus(
+              fileWriter, deserialized, parallelThreads, showProgress, exportStatus);
       int parsedBlocksCounter = results[0];
       int nonBlocksCounter = results[1];
 
