@@ -5,51 +5,49 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tl.types.db.celldb.Value;
 
 @Slf4j
 public class TestCellDbReader {
 
-  private static final String TEST_DB_PATH = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+  private static final String TEST_DB_PATH =
+      "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
 
   @Test
   public void testCellDbReaderBasicFunctionality() {
     try {
       log.info("Testing CellDbReader with database at: {}", TEST_DB_PATH);
-      
+
       try (CellDbReader reader = new CellDbReader(TEST_DB_PATH)) {
-        
-//        // Test 1: Get statistics
-//        log.info("=== Test 1: Getting CellDB Statistics ===");
-//        Map<String, Object> stats = reader.getStatistics();
-//        for (Map.Entry<String, Object> entry : stats.entrySet()) {
-//          log.info("Stat: {} = {}", entry.getKey(), entry.getValue());
-//        }
-//
-//        // Test 2: Get empty entry
-//        log.info("=== Test 2: Getting Empty Entry ===");
-//        Value emptyEntry = reader.getEmptyEntry();
-//        if (emptyEntry != null) {
-//          log.info("Empty entry found: prev={}, next={}, rootHash={}",
-//                   emptyEntry.getPrev(), emptyEntry.getNext(), emptyEntry.getRootHash());
-//        } else {
-//          log.warn("Empty entry not found");
-//        }
-        
+
+        //        // Test 1: Get statistics
+        //        log.info("=== Test 1: Getting CellDB Statistics ===");
+        //        Map<String, Object> stats = reader.getStatistics();
+        //        for (Map.Entry<String, Object> entry : stats.entrySet()) {
+        //          log.info("Stat: {} = {}", entry.getKey(), entry.getValue());
+        //        }
+        //
+        //        // Test 2: Get empty entry
+        //        log.info("=== Test 2: Getting Empty Entry ===");
+        //        Value emptyEntry = reader.getEmptyEntry();
+        //        if (emptyEntry != null) {
+        //          log.info("Empty entry found: prev={}, next={}, rootHash={}",
+        //                   emptyEntry.getPrev(), emptyEntry.getNext(), emptyEntry.getRootHash());
+        //        } else {
+        //          log.warn("Empty entry not found");
+        //        }
+
         // Test 3: Get all cell hashes
         log.info("=== Test 3: Getting All Cell Hashes ===");
         Set<String> cellHashes = reader.getAllCellHashes();
         log.info("Found {} cell hashes with binary data", cellHashes.size());
-        
+
         // Show first few hashes as examples
         int count = 0;
         for (String hash : cellHashes) {
           if (count < 10) {
             log.info("Cell hash example {}: {}", count + 1, hash);
-            
+
             // Test reading cell data for this hash
             byte[] cellData = reader.readCellData(hash);
             if (cellData != null) {
@@ -61,12 +59,12 @@ public class TestCellDbReader {
           count++;
           if (count >= 5) break;
         }
-        
+
         // Test 4: Get all cell entries (metadata)
         log.info("=== Test 4: Getting All Cell Entries (Metadata) ===");
         Map<String, Value> cellEntries = reader.getAllCellEntries();
         log.info("Found {} cell metadata entries", cellEntries.size());
-        
+
         // Show first few entries as examples
         count = 0;
         for (Map.Entry<String, Value> entry : cellEntries.entrySet()) {
@@ -79,47 +77,51 @@ public class TestCellDbReader {
             log.info("  -> RootHash: {}", value.getRootHash());
           }
           count++;
-          if (count >=5) break;
+          if (count >= 5) break;
         }
-        
-        // Test 5: Test linked list traversal
-        log.info("=== Test 5: Testing Linked List Traversal ===");
-        try {
-          java.util.List<Value> orderedEntries = reader.getAllCellEntriesOrdered();
-          log.info("Linked list traversal found {} entries in order", orderedEntries.size());
-          
-          // Show first few ordered entries
-          for (int i = 0; i < Math.min(3, orderedEntries.size()); i++) {
-            Value entry = orderedEntries.get(i);
-            if (entry.getBlockId() != null) {
-              log.info("Ordered entry {}: workchain={}, seqno={}", 
-                       i + 1, entry.getBlockId().getWorkchain(), entry.getBlockId().getSeqno());
-            }
-          }
-        } catch (Exception e) {
-          log.warn("Linked list traversal failed: {}", e.getMessage());
-        }
-        
+
+        // Test 5: Test linked list traversal, works but too slow
+        //        log.info("=== Test 5: Testing Linked List Traversal ===");
+        //        try {
+        //          List<Value> orderedEntries = reader.getAllCellEntriesOrdered();
+        //          log.info("Linked list traversal found {} entries in order",
+        // orderedEntries.size());
+        //
+        //          // Show first few ordered entries
+        //          for (int i = 0; i < Math.min(3, orderedEntries.size()); i++) {
+        //            Value entry = orderedEntries.get(i);
+        //            if (entry.getBlockId() != null) {
+        //              log.info("Ordered entry {}: workchain={}, seqno={}",
+        //                       i + 1, entry.getBlockId().getWorkchain(),
+        // entry.getBlockId().getSeqno());
+        //            }
+        //          }
+        //        } catch (Exception e) {
+        //          log.warn("Linked list traversal failed: {}", e.getMessage());
+        //        }
+
         // Test 6: Test hash-to-size mappings
         log.info("=== Test 6: Testing Hash-to-Size Mappings ===");
         Map<String, Long> hashSizeMappings = reader.getAllHashOffsetMappings();
         log.info("Generated {} hash-to-size mappings", hashSizeMappings.size());
-        
+
         // Show some examples
         count = 0;
         for (Map.Entry<String, Long> entry : hashSizeMappings.entrySet()) {
           if (count < 3) {
-            log.info("Hash-size mapping {}: {} -> {} bytes", 
-                     count + 1, entry.getKey(), entry.getValue());
+            log.info(
+                "Hash-size mapping {}: {} -> {} bytes",
+                count + 1,
+                entry.getKey(),
+                entry.getValue());
           }
           count++;
           if (count >= 3) break;
         }
-        
+
         log.info("=== CellDbReader Test Completed Successfully ===");
-        
       }
-      
+
     } catch (IOException e) {
       if (e.getMessage().contains("not found")) {
         log.warn("CellDB database not found at {}, skipping test", TEST_DB_PATH);
@@ -133,40 +135,43 @@ public class TestCellDbReader {
       throw new RuntimeException(e);
     }
   }
-  
+
   @Test
   public void testCellDbReaderSpecificLookup() {
     try {
       log.info("Testing CellDbReader specific lookup functionality");
-      
+
       try (CellDbReader reader = new CellDbReader(TEST_DB_PATH)) {
-        
+
         // Test looking up a specific block (if we have any entries)
         Map<String, Value> allEntries = reader.getAllCellEntries();
-        
+
         if (!allEntries.isEmpty()) {
           // Get the first entry to test specific lookup
           Map.Entry<String, Value> firstEntry = allEntries.entrySet().iterator().next();
           String keyHash = firstEntry.getKey();
           Value originalValue = firstEntry.getValue();
-          
+
           log.info("Testing specific lookup for keyHash: {}", keyHash);
-          
+
           // Test getCellEntryByHash
           Value lookedUpValue = reader.getCellEntryByHash(keyHash);
           if (lookedUpValue != null) {
             log.info("Successfully looked up entry by hash");
-            
+
             // Verify the values match
             if (originalValue.getBlockId() != null && lookedUpValue.getBlockId() != null) {
-              boolean matches = originalValue.getBlockId().getWorkchain() == lookedUpValue.getBlockId().getWorkchain()
-                             && originalValue.getBlockId().getSeqno() == lookedUpValue.getBlockId().getSeqno();
+              boolean matches =
+                  originalValue.getBlockId().getWorkchain()
+                          == lookedUpValue.getBlockId().getWorkchain()
+                      && originalValue.getBlockId().getSeqno()
+                          == lookedUpValue.getBlockId().getSeqno();
               log.info("Entry lookup verification: {}", matches ? "PASSED" : "FAILED");
             }
           } else {
             log.warn("Failed to look up entry by hash");
           }
-          
+
           // Test getCellEntry by BlockId (if we have a valid BlockId)
           if (originalValue.getBlockId() != null) {
             Value blockLookup = reader.getCellEntry(originalValue.getBlockId());
@@ -179,9 +184,8 @@ public class TestCellDbReader {
         } else {
           log.info("No entries found for specific lookup test");
         }
-        
       }
-      
+
     } catch (IOException e) {
       if (e.getMessage().contains("not found")) {
         log.warn("CellDB database not found, skipping specific lookup test");

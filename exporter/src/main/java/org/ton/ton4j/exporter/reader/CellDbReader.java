@@ -13,25 +13,23 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.ton.ton4j.exporter.types.CellDataAnalysis;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tl.types.db.celldb.Value;
 import org.ton.ton4j.utils.Utils;
-
-import javax.print.attribute.ResolutionSyntax;
 
 /**
  * Reader for TON CellDB database. The CellDB stores blockchain state cells in a RocksDB database
  * with a linked-list structure for metadata entries.
  *
- * <p>Based on the original TON C++ implementation in celldb.cpp, the CellDB uses:
- * 1. Metadata entries: key = "desc" + SHA256(TL-serialized block_id), value = TL-serialized db.celldb.value
- * 2. Special empty entry: key = "desczero", value = TL-serialized db.celldb.value (sentinel for linked list)
- * 3. Cell data entries: key = cell hash (raw bytes), value = serialized cell content
- * 4. Linked list structure: entries connected via prev/next pointers forming a doubly-linked list
+ * <p>Based on the original TON C++ implementation in celldb.cpp, the CellDB uses: 1. Metadata
+ * entries: key = "desc" + SHA256(TL-serialized block_id), value = TL-serialized db.celldb.value 2.
+ * Special empty entry: key = "desczero", value = TL-serialized db.celldb.value (sentinel for linked
+ * list) 3. Cell data entries: key = cell hash (raw bytes), value = serialized cell content 4.
+ * Linked list structure: entries connected via prev/next pointers forming a doubly-linked list
  *
- * <p>The TL types used:
- * - db.celldb.value: block_id:tonNode.blockIdExt prev:int256 next:int256 root_hash:int256
- * - db.celldb.key.value: hash:int256
+ * <p>The TL types used: - db.celldb.value: block_id:tonNode.blockIdExt prev:int256 next:int256
+ * root_hash:int256 - db.celldb.key.value: hash:int256
  */
 @Slf4j
 @Data
@@ -81,26 +79,26 @@ public class CellDbReader implements Closeable {
       if (emptyValueBytes != null) {
         ByteBuffer buffer = ByteBuffer.wrap(emptyValueBytes);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
-        
+
         // Skip the TL constructor ID (4 bytes)
         if (buffer.remaining() >= 4) {
           int constructor = buffer.getInt();
           log.debug("Empty entry TL constructor ID: 0x{}", Integer.toHexString(constructor));
         }
-        
+
         emptyEntry = Value.deserialize(buffer);
-        log.debug("Loaded empty entry: prev={}, next={}", 
-                  emptyEntry.getPrev(),
-                  emptyEntry.getNext());
+        log.debug(
+            "Loaded empty entry: prev={}, next={}", emptyEntry.getPrev(), emptyEntry.getNext());
       } else {
         log.warn("Empty entry not found in CellDB");
         // Create a placeholder empty entry
-        emptyEntry = Value.builder()
-            .blockId(getEmptyBlockId())
-            .prev(new byte[32])
-            .next(new byte[32])
-            .rootHash(new byte[32])
-            .build();
+        emptyEntry =
+            Value.builder()
+                .blockId(getEmptyBlockId())
+                .prev(new byte[32])
+                .next(new byte[32])
+                .rootHash(new byte[32])
+                .build();
       }
     } catch (Exception e) {
       throw new IOException("Error loading empty entry: " + e.getMessage(), e);
@@ -108,8 +106,8 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Gets all cell entries from the CellDB as a map of key hash to Value.
-   * This method scans all metadata entries (keys starting with "desc").
+   * Gets all cell entries from the CellDB as a map of key hash to Value. This method scans all
+   * metadata entries (keys starting with "desc").
    *
    * @return Map of key hash to CellDB Value
    */
@@ -122,66 +120,71 @@ public class CellDbReader implements Closeable {
     AtomicInteger validEntries = new AtomicInteger(0);
     AtomicInteger parseErrors = new AtomicInteger(0);
 
-    cellDb.forEach((key, value) -> {
-      try {
-        totalEntries.incrementAndGet();
-        String keyStr = new String(key);
-
-        // Skip non-metadata keys
-        if (!keyStr.startsWith("desc")) {
-          return;
-        }
-
-        // Parse the TL-serialized value
-        // TL format includes a 4-byte constructor ID at the beginning
-        ByteBuffer buffer = ByteBuffer.wrap(value);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        
-        // Skip the TL constructor ID (4 bytes)
-        if (buffer.remaining() >= 4) {
-          int constructor = buffer.getInt();
-          // Log the constructor for debugging
-          if (validEntries.get() < 5) {
-            log.debug("TL constructor ID: 0x{}", Integer.toHexString(constructor));
-          }
-        }
-        
-        Value cellValue = Value.deserialize(buffer);
-
-        // Extract key hash from the key (remove "desc" prefix for regular entries)
-        String keyHash;
-        if ("desczero".equals(keyStr)) {
-          keyHash = ""; // Empty key hash for sentinel entry
-        } else {
-          // The key is "desc" + Base64 hash, so extract the Base64 part
-          // and convert it to hex for consistent storage
-          String base64Part = keyStr.substring(4); // Remove "desc" prefix
+    cellDb.forEach(
+        (key, value) -> {
           try {
-            // Decode Base64 to get the raw hash bytes, then convert to hex
-            byte[] hashBytes = java.util.Base64.getDecoder().decode(base64Part);
-            keyHash = Utils.bytesToHex(hashBytes);
+            totalEntries.incrementAndGet();
+            String keyStr = new String(key);
+
+            // Skip non-metadata keys
+            if (!keyStr.startsWith("desc")) {
+              return;
+            }
+
+            // Parse the TL-serialized value
+            // TL format includes a 4-byte constructor ID at the beginning
+            ByteBuffer buffer = ByteBuffer.wrap(value);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+            // Skip the TL constructor ID (4 bytes)
+            if (buffer.remaining() >= 4) {
+              int constructor = buffer.getInt();
+              // Log the constructor for debugging
+              //              if (validEntries.get() < 5) {
+              //                log.debug("TL constructor ID: 0x{}",
+              // Integer.toHexString(constructor));
+              //              }
+            }
+
+            Value cellValue = Value.deserialize(buffer);
+
+            // Extract key hash from the key (remove "desc" prefix for regular entries)
+            String keyHash;
+            if ("desczero".equals(keyStr)) {
+              keyHash = ""; // Empty key hash for sentinel entry
+            } else {
+              // The key is "desc" + Base64 hash, so extract the Base64 part
+              // and convert it to hex for consistent storage
+              String base64Part = keyStr.substring(4); // Remove "desc" prefix
+              try {
+                // Decode Base64 to get the raw hash bytes, then convert to hex
+                byte[] hashBytes = java.util.Base64.getDecoder().decode(base64Part);
+                keyHash = Utils.bytesToHex(hashBytes);
+              } catch (Exception e) {
+                log.debug("Error decoding Base64 key hash {}: {}", base64Part, e.getMessage());
+                keyHash = base64Part; // Fallback to Base64 part
+              }
+            }
+
+            cellEntries.put(keyHash, cellValue);
+            entryCache.put(keyHash, cellValue);
+            validEntries.incrementAndGet();
+
+            //        if (validEntries.get() % 1000 == 0) {
+            //          log.debug("Processed {} cell entries", validEntries.get());
+            //        }
+
           } catch (Exception e) {
-            log.debug("Error decoding Base64 key hash {}: {}", base64Part, e.getMessage());
-            keyHash = base64Part; // Fallback to Base64 part
+            parseErrors.incrementAndGet();
+            log.debug("Error processing CellDB entry: {}", e.getMessage());
           }
-        }
+        });
 
-        cellEntries.put(keyHash, cellValue);
-        entryCache.put(keyHash, cellValue);
-        validEntries.incrementAndGet();
-
-        if (validEntries.get() % 1000 == 0) {
-          log.debug("Processed {} cell entries", validEntries.get());
-        }
-
-      } catch (Exception e) {
-        parseErrors.incrementAndGet();
-        log.debug("Error processing CellDB entry: {}", e.getMessage());
-      }
-    });
-
-    log.info("CellDB parsing: {} total entries, {} valid cell entries, {} parse errors",
-             totalEntries.get(), validEntries.get(), parseErrors.get());
+    log.info(
+        "CellDB parsing: {} total entries, {} valid cell entries, {} parse errors",
+        totalEntries.get(),
+        validEntries.get(),
+        parseErrors.get());
 
     return cellEntries;
   }
@@ -224,12 +227,12 @@ public class CellDbReader implements Closeable {
 
       ByteBuffer buffer = ByteBuffer.wrap(valueBytes);
       buffer.order(ByteOrder.LITTLE_ENDIAN);
-      
+
       // Skip the TL constructor ID (4 bytes)
       if (buffer.remaining() >= 4) {
         buffer.getInt();
       }
-      
+
       Value cellValue = Value.deserialize(buffer);
 
       // Cache the result
@@ -243,8 +246,8 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Gets all cell entries in linked list order by traversing the prev/next pointers.
-   * This follows the C++ implementation logic for ordered iteration.
+   * Gets all cell entries in linked list order by traversing the prev/next pointers. This follows
+   * the C++ implementation logic for ordered iteration.
    *
    * @return List of CellDB Values in linked list order
    */
@@ -261,11 +264,11 @@ public class CellDbReader implements Closeable {
       String currentHash = emptyEntry.getNext();
       Set<String> visited = new HashSet<>();
 
-      while (!currentHash.equals("0000000000000000000000000000000000000000000000000000000000000000") 
-             && !visited.contains(currentHash)) {
-        
+      while (!currentHash.equals("0000000000000000000000000000000000000000000000000000000000000000")
+          && !visited.contains(currentHash)) {
+
         visited.add(currentHash);
-        
+
         // The prev/next fields contain raw SHA256 hashes, but we need to look them up
         // by their key hash. We need to find the entry that has this hash as its key.
         Value currentEntry = findEntryByKeyHash(currentHash);
@@ -303,8 +306,8 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Finds an entry by its key hash. The prev/next fields in CellDB entries contain
-   * hex-encoded hashes that should directly match the cache keys.
+   * Finds an entry by its key hash. The prev/next fields in CellDB entries contain hex-encoded
+   * hashes that should directly match the cache keys.
    *
    * @param hexHash The hex-encoded hash to look for
    * @return The CellDB Value, or null if not found
@@ -315,10 +318,10 @@ public class CellDbReader implements Closeable {
       if (entryCache.isEmpty()) {
         getAllCellEntries();
       }
-      
+
       log.debug("Looking for hash: {}", hexHash);
       log.debug("Cache has {} entries", entryCache.size());
-      
+
       // Debug: show first few cache keys
       int count = 0;
       for (String cacheKey : entryCache.keySet()) {
@@ -327,20 +330,21 @@ public class CellDbReader implements Closeable {
           count++;
         }
       }
-      
+
       // Direct lookup in cache - the hexHash should match a cache key directly
       if (entryCache.containsKey(hexHash)) {
         Value entry = entryCache.get(hexHash);
-        log.debug("Found entry for hash {} directly in cache: block_id={}", hexHash, entry.getBlockId());
+        log.debug(
+            "Found entry for hash {} directly in cache: block_id={}", hexHash, entry.getBlockId());
         return entry;
       }
-      
+
       log.debug("No entry found for hash: {}", hexHash);
-      
+
     } catch (Exception e) {
       log.debug("Error finding entry by hash {}: {}", hexHash, e.getMessage());
     }
-    
+
     return null;
   }
 
@@ -354,8 +358,8 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Gets all cell hashes that have binary data stored in the database.
-   * This scans for raw hash keys (32 bytes) that are not metadata entries.
+   * Gets all cell hashes that have binary data stored in the database. This scans for raw hash keys
+   * (32 bytes) that are not metadata entries.
    *
    * @return Set of cell hashes (hex strings)
    */
@@ -413,34 +417,34 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Gets hash-to-offset mappings for consistency with other readers.
-   * Note: CellDB doesn't use offset-based storage like archive packages,
-   * so this returns hash-to-size mappings instead.
+   * Gets hash-to-offset mappings for consistency with other readers. Note: CellDB doesn't use
+   * offset-based storage like archive packages, so this returns hash-to-size mappings instead.
    *
    * @return Map of hash to data size
    */
   public Map<String, Long> getAllHashOffsetMappings() {
     Map<String, Long> hashSizeMappings = new HashMap<>();
 
-    cellDb.forEach((key, value) -> {
-      try {
-        // Look for raw hash keys (32 bytes, not starting with "desc")
-        if (key.length == 32) {
-          String hash = Utils.bytesToHex(key);
-          hashSizeMappings.put(hash, (long) value.length);
-        }
-      } catch (Exception e) {
-        log.debug("Error processing hash-size mapping: {}", e.getMessage());
-      }
-    });
+    cellDb.forEach(
+        (key, value) -> {
+          try {
+            // Look for raw hash keys (32 bytes, not starting with "desc")
+            if (key.length == 32) {
+              String hash = Utils.bytesToHex(key);
+              hashSizeMappings.put(hash, (long) value.length);
+            }
+          } catch (Exception e) {
+            log.debug("Error processing hash-size mapping: {}", e.getMessage());
+          }
+        });
 
     log.info("Generated {} hash-to-size mappings", hashSizeMappings.size());
     return hashSizeMappings;
   }
 
   /**
-   * Generates the database key for a given key hash.
-   * Following C++ implementation: "desc" + keyHash for regular entries.
+   * Generates the database key for a given key hash. Following C++ implementation: "desc" + keyHash
+   * for regular entries.
    *
    * @param keyHash The key hash (hex string)
    * @return The database key
@@ -453,8 +457,8 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Generates the key hash for a block ID by SHA256 hashing the TL-serialized block ID.
-   * This follows the C++ implementation logic.
+   * Generates the key hash for a block ID by SHA256 hashing the TL-serialized block ID. This
+   * follows the C++ implementation logic.
    *
    * @param blockId The block ID
    * @return The key hash (hex string)
@@ -467,11 +471,11 @@ public class CellDbReader implements Closeable {
     try {
       // Serialize the block ID to TL format
       byte[] serializedBlockId = blockId.serialize();
-      
+
       // Calculate SHA256 hash
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       byte[] hash = digest.digest(serializedBlockId);
-      
+
       return Utils.bytesToHex(hash);
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException("SHA-256 algorithm not available", e);
@@ -488,14 +492,14 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Creates an empty block ID for the sentinel entry.
-   * Following C++ implementation: workchainInvalid = 0x80000000 (-2147483648)
+   * Creates an empty block ID for the sentinel entry. Following C++ implementation:
+   * workchainInvalid = 0x80000000 (-2147483648)
    *
    * @return Empty block ID
    */
   private static BlockIdExt getEmptyBlockId() {
     return BlockIdExt.builder()
-        .workchain(0x80000000)  // workchainInvalid from TON C++ code
+        .workchain(0x80000000) // workchainInvalid from TON C++ code
         .shard(0)
         .seqno(0)
         .rootHash(new byte[32])
@@ -504,8 +508,8 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Checks if a block ID represents the empty/sentinel entry.
-   * Following C++ implementation: workchainInvalid = 0x80000000, masterchainId = -1
+   * Checks if a block ID represents the empty/sentinel entry. Following C++ implementation:
+   * workchainInvalid = 0x80000000, masterchainId = -1
    *
    * @param blockId The block ID to check
    * @return True if this is an empty block ID
@@ -514,24 +518,134 @@ public class CellDbReader implements Closeable {
     if (blockId == null) {
       return true;
     }
-    
+
     // Check for invalid workchain (sentinel marker)
     // Note: workchain -1 is valid (masterchain), 0x80000000 is invalid
     return blockId.getWorkchain() == 0x80000000;
   }
 
   /**
-   * Checks if a block ID is valid (not null and has reasonable values).
-   * Following C++ implementation: workchainInvalid = 0x80000000, masterchainId = -1
+   * Checks if a block ID is valid (not null and has reasonable values). Following C++
+   * implementation: workchainInvalid = 0x80000000, masterchainId = -1
    *
    * @param blockId The block ID to check
    * @return True if valid
    */
   private static boolean isValidBlockId(BlockIdExt blockId) {
-    return blockId != null && 
-           blockId.getWorkchain() != 0x80000000 && 
-           blockId.getRootHash() != null && 
-           blockId.getFileHash() != null;
+    return blockId != null
+        && blockId.getWorkchain() != 0x80000000
+        && blockId.getRootHash() != null
+        && blockId.getFileHash() != null;
+  }
+
+  /**
+   * Gets cell data for a specific metadata entry using its root hash. This demonstrates the
+   * connection between metadata entries and actual cell data.
+   *
+   * @param entry The metadata entry
+   * @return The cell data, or null if not found
+   * @throws IOException If an I/O error occurs
+   */
+  public byte[] getCellDataForEntry(Value entry) throws IOException {
+    if (entry == null || entry.getRootHash() == null) {
+      return null;
+    }
+    return readCellData(entry.getRootHash());
+  }
+
+  /**
+   * Analyzes the relationship between metadata entries and cell data. This method provides insights
+   * into the dual storage structure of CellDB.
+   *
+   * @return Analysis results showing connections between metadata and cell data
+   */
+  public CellDataAnalysis analyzeCellDataRelationships() {
+    log.info("Analyzing CellDB metadata -> cell data relationships...");
+
+    Map<String, Value> metadata = getAllCellEntries();
+    Set<String> cellHashes = getAllCellHashes();
+
+    int connectedEntries = 0;
+    int orphanedCellData = 0;
+    int missingCellData = 0;
+
+    Set<String> referencedHashes = new HashSet<>();
+
+    // Check metadata -> cell data connections
+    for (Value entry : metadata.values()) {
+      if (entry.getRootHash() != null) {
+        String rootHash = entry.getRootHash();
+        referencedHashes.add(rootHash);
+
+        if (cellHashes.contains(rootHash)) {
+          connectedEntries++;
+        } else {
+          missingCellData++;
+          log.debug("Missing cell data for root hash: {}", rootHash);
+        }
+      }
+    }
+
+    // Check for orphaned cell data
+    for (String hash : cellHashes) {
+      if (!referencedHashes.contains(hash)) {
+        orphanedCellData++;
+      }
+    }
+
+    CellDataAnalysis analysis =
+        new CellDataAnalysis(
+            metadata.size(),
+            cellHashes.size(),
+            connectedEntries,
+            missingCellData,
+            orphanedCellData);
+
+    log.info("CellDB analysis completed: {}", analysis);
+    return analysis;
+  }
+
+  /**
+   * Gets detailed information about metadata entries and their corresponding cell data. This method
+   * demonstrates the relationship between the two storage types.
+   *
+   * @param maxEntries Maximum number of entries to analyze (0 for all)
+   * @return Map of metadata key to cell data info
+   */
+  public Map<String, CellDataInfo> getDetailedCellDataInfo(int maxEntries) {
+    Map<String, CellDataInfo> detailedInfo = new HashMap<>();
+    Map<String, Value> metadata = getAllCellEntries();
+
+    int count = 0;
+    for (Map.Entry<String, Value> entry : metadata.entrySet()) {
+      if (maxEntries > 0 && count >= maxEntries) {
+        break;
+      }
+
+      String keyHash = entry.getKey();
+      Value value = entry.getValue();
+      String rootHash = value.getRootHash();
+
+      try {
+        byte[] cellData = readCellData(rootHash);
+        boolean hasData = cellData != null;
+        int dataSize = hasData ? cellData.length : 0;
+
+        CellDataInfo info =
+            new CellDataInfo(keyHash, rootHash, value.getBlockId(), hasData, dataSize);
+
+        detailedInfo.put(keyHash, info);
+        count++;
+
+      } catch (IOException e) {
+        log.debug("Error reading cell data for {}: {}", rootHash, e.getMessage());
+        CellDataInfo info = new CellDataInfo(keyHash, rootHash, value.getBlockId(), false, 0);
+        detailedInfo.put(keyHash, info);
+      }
+    }
+
+    log.info("Generated detailed cell data info for {} entries", detailedInfo.size());
+    return detailedInfo;
   }
 
   /**
@@ -541,20 +655,20 @@ public class CellDbReader implements Closeable {
    */
   public Map<String, Object> getStatistics() {
     Map<String, Object> stats = new HashMap<>();
-    
+
     try {
       Map<String, Value> allEntries = getAllCellEntries();
       Set<String> cellHashes = getAllCellHashes();
-      
+
       stats.put("total_metadata_entries", allEntries.size());
       stats.put("total_cell_data_entries", cellHashes.size());
       stats.put("empty_entry_available", emptyEntry != null);
-      
+
       if (emptyEntry != null) {
         stats.put("empty_entry_prev", emptyEntry.getPrev());
         stats.put("empty_entry_next", emptyEntry.getNext());
       }
-      
+
       // Count entries by workchain
       Map<Integer, Integer> workchainCounts = new HashMap<>();
       for (Value entry : allEntries.values()) {
@@ -564,13 +678,69 @@ public class CellDbReader implements Closeable {
         }
       }
       stats.put("entries_by_workchain", workchainCounts);
-      
+
+      // Add relationship analysis
+      CellDataAnalysis analysis = analyzeCellDataRelationships();
+      stats.put("connection_percentage", analysis.getConnectionPercentage());
+      stats.put("orphaned_percentage", analysis.getOrphanedPercentage());
+      stats.put("database_healthy", analysis.isHealthy());
+
     } catch (Exception e) {
       log.error("Error generating statistics: {}", e.getMessage());
       stats.put("error", e.getMessage());
     }
-    
+
     return stats;
+  }
+
+  /** Information about a cell data entry and its relationship to metadata. */
+  public static class CellDataInfo {
+    private final String metadataKeyHash;
+    private final String rootHash;
+    private final BlockIdExt blockId;
+    private final boolean hasCellData;
+    private final int cellDataSize;
+
+    public CellDataInfo(
+        String metadataKeyHash,
+        String rootHash,
+        BlockIdExt blockId,
+        boolean hasCellData,
+        int cellDataSize) {
+      this.metadataKeyHash = metadataKeyHash;
+      this.rootHash = rootHash;
+      this.blockId = blockId;
+      this.hasCellData = hasCellData;
+      this.cellDataSize = cellDataSize;
+    }
+
+    // Getters
+    public String getMetadataKeyHash() {
+      return metadataKeyHash;
+    }
+
+    public String getRootHash() {
+      return rootHash;
+    }
+
+    public BlockIdExt getBlockId() {
+      return blockId;
+    }
+
+    public boolean hasCellData() {
+      return hasCellData;
+    }
+
+    public int getCellDataSize() {
+      return cellDataSize;
+    }
+
+    @Override
+    public String toString() {
+      return String.format(
+          "CellDataInfo{keyHash=%s, rootHash=%s, blockId=%s, hasData=%s, size=%d}",
+          metadataKeyHash, rootHash, blockId, hasCellData, cellDataSize);
+    }
   }
 
   @Override
