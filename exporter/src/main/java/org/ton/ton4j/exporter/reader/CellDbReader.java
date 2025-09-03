@@ -80,6 +80,14 @@ public class CellDbReader implements Closeable {
 
       if (emptyValueBytes != null) {
         ByteBuffer buffer = ByteBuffer.wrap(emptyValueBytes);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        
+        // Skip the TL constructor ID (4 bytes)
+        if (buffer.remaining() >= 4) {
+          int constructor = buffer.getInt();
+          log.debug("Empty entry TL constructor ID: 0x{}", Integer.toHexString(constructor));
+        }
+        
         emptyEntry = Value.deserialize(buffer);
         log.debug("Loaded empty entry: prev={}, next={}", 
                   emptyEntry.getPrev(),
@@ -125,7 +133,19 @@ public class CellDbReader implements Closeable {
         }
 
         // Parse the TL-serialized value
+        // TL format includes a 4-byte constructor ID at the beginning
         ByteBuffer buffer = ByteBuffer.wrap(value);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        
+        // Skip the TL constructor ID (4 bytes)
+        if (buffer.remaining() >= 4) {
+          int constructor = buffer.getInt();
+          // Log the constructor for debugging
+          if (validEntries.get() < 5) {
+            log.debug("TL constructor ID: 0x{}", Integer.toHexString(constructor));
+          }
+        }
+        
         Value cellValue = Value.deserialize(buffer);
 
         // Extract key hash from the key (remove "desc" prefix for regular entries)
@@ -133,7 +153,17 @@ public class CellDbReader implements Closeable {
         if ("desczero".equals(keyStr)) {
           keyHash = ""; // Empty key hash for sentinel entry
         } else {
-          keyHash = keyStr.substring(4); // Remove "desc" prefix
+          // The key is "desc" + Base64 hash, so extract the Base64 part
+          // and convert it to hex for consistent storage
+          String base64Part = keyStr.substring(4); // Remove "desc" prefix
+          try {
+            // Decode Base64 to get the raw hash bytes, then convert to hex
+            byte[] hashBytes = java.util.Base64.getDecoder().decode(base64Part);
+            keyHash = Utils.bytesToHex(hashBytes);
+          } catch (Exception e) {
+            log.debug("Error decoding Base64 key hash {}: {}", base64Part, e.getMessage());
+            keyHash = base64Part; // Fallback to Base64 part
+          }
         }
 
         cellEntries.put(keyHash, cellValue);
@@ -193,6 +223,13 @@ public class CellDbReader implements Closeable {
       }
 
       ByteBuffer buffer = ByteBuffer.wrap(valueBytes);
+      buffer.order(ByteOrder.LITTLE_ENDIAN);
+      
+      // Skip the TL constructor ID (4 bytes)
+      if (buffer.remaining() >= 4) {
+        buffer.getInt();
+      }
+      
       Value cellValue = Value.deserialize(buffer);
 
       // Cache the result
@@ -228,15 +265,19 @@ public class CellDbReader implements Closeable {
              && !visited.contains(currentHash)) {
         
         visited.add(currentHash);
-        Value currentEntry = getCellEntryByHash(currentHash);
+        
+        // The prev/next fields contain raw SHA256 hashes, but we need to look them up
+        // by their key hash. We need to find the entry that has this hash as its key.
+        Value currentEntry = findEntryByKeyHash(currentHash);
 
         if (currentEntry == null) {
-          log.warn("Broken linked list: entry {} not found", currentHash);
+          log.warn("Broken linked list: entry with key hash {} not found", currentHash);
           break;
         }
 
         // Check if this is the empty entry (end of list)
         if (isEmptyBlockId(currentEntry.getBlockId())) {
+          log.debug("Found empty block ID, ending traversal: {}", currentEntry.getBlockId());
           break;
         }
 
@@ -259,6 +300,48 @@ public class CellDbReader implements Closeable {
     }
 
     return orderedEntries;
+  }
+
+  /**
+   * Finds an entry by its key hash. The prev/next fields in CellDB entries contain
+   * hex-encoded hashes that should directly match the cache keys.
+   *
+   * @param hexHash The hex-encoded hash to look for
+   * @return The CellDB Value, or null if not found
+   */
+  private Value findEntryByKeyHash(String hexHash) {
+    try {
+      // First, ensure we have all entries loaded
+      if (entryCache.isEmpty()) {
+        getAllCellEntries();
+      }
+      
+      log.debug("Looking for hash: {}", hexHash);
+      log.debug("Cache has {} entries", entryCache.size());
+      
+      // Debug: show first few cache keys
+      int count = 0;
+      for (String cacheKey : entryCache.keySet()) {
+        if (count < 5) {
+          log.debug("Cache key {}: {}", count, cacheKey);
+          count++;
+        }
+      }
+      
+      // Direct lookup in cache - the hexHash should match a cache key directly
+      if (entryCache.containsKey(hexHash)) {
+        Value entry = entryCache.get(hexHash);
+        log.debug("Found entry for hash {} directly in cache: block_id={}", hexHash, entry.getBlockId());
+        return entry;
+      }
+      
+      log.debug("No entry found for hash: {}", hexHash);
+      
+    } catch (Exception e) {
+      log.debug("Error finding entry by hash {}: {}", hexHash, e.getMessage());
+    }
+    
+    return null;
   }
 
   /**
@@ -406,12 +489,13 @@ public class CellDbReader implements Closeable {
 
   /**
    * Creates an empty block ID for the sentinel entry.
+   * Following C++ implementation: workchainInvalid = 0x80000000 (-2147483648)
    *
    * @return Empty block ID
    */
   private static BlockIdExt getEmptyBlockId() {
     return BlockIdExt.builder()
-        .workchain(-1)  // Invalid workchain
+        .workchain(0x80000000)  // workchainInvalid from TON C++ code
         .shard(0)
         .seqno(0)
         .rootHash(new byte[32])
@@ -421,6 +505,7 @@ public class CellDbReader implements Closeable {
 
   /**
    * Checks if a block ID represents the empty/sentinel entry.
+   * Following C++ implementation: workchainInvalid = 0x80000000, masterchainId = -1
    *
    * @param blockId The block ID to check
    * @return True if this is an empty block ID
@@ -431,18 +516,20 @@ public class CellDbReader implements Closeable {
     }
     
     // Check for invalid workchain (sentinel marker)
-    return blockId.getWorkchain() == -1 && blockId.getSeqno() == 0;
+    // Note: workchain -1 is valid (masterchain), 0x80000000 is invalid
+    return blockId.getWorkchain() == 0x80000000;
   }
 
   /**
    * Checks if a block ID is valid (not null and has reasonable values).
+   * Following C++ implementation: workchainInvalid = 0x80000000, masterchainId = -1
    *
    * @param blockId The block ID to check
    * @return True if valid
    */
   private static boolean isValidBlockId(BlockIdExt blockId) {
     return blockId != null && 
-           blockId.getWorkchain() != -1 && 
+           blockId.getWorkchain() != 0x80000000 && 
            blockId.getRootHash() != null && 
            blockId.getFileHash() != null;
   }
