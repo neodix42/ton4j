@@ -46,9 +46,8 @@ public class DbReader implements Closeable {
    * Gets the archive database reader.
    *
    * @return The archive database reader
-   * @throws IOException If an I/O error occurs
    */
-  public ArchiveDbReader getArchiveDbReader() throws IOException {
+  public ArchiveDbReader getArchiveDbReader() {
     if (archiveDbReader == null) {
       archiveDbReader = new ArchiveDbReader(dbRootPath);
     }

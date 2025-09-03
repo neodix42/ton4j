@@ -24,6 +24,7 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.exporter.reader.*;
+import org.ton.ton4j.exporter.types.ArchiveInfo;
 import org.ton.ton4j.exporter.types.BlockId;
 import org.ton.ton4j.exporter.types.ExportStatus;
 import org.ton.ton4j.exporter.types.ExportedBlock;

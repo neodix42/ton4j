@@ -1,4 +1,4 @@
-package org.ton.ton4j.exporter.reader;
+package org.ton.ton4j.exporter.types;
 
 import lombok.Builder;
 import lombok.Data;
