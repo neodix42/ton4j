@@ -10,10 +10,12 @@ import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 @Slf4j
 public class TestStateDbReader {
 
+  public static final String TON_DB_ROOT_PATH = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+
   @Test
   public void testReadStateDb() throws IOException {
     // Update this path to point to your actual TON database
-    String dbPath = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+    String dbPath = TON_DB_ROOT_PATH;
 
     log.info("Opening State database: {}", dbPath);
 

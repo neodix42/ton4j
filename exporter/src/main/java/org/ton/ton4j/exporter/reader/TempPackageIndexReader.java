@@ -154,7 +154,7 @@ public class TempPackageIndexReader implements Closeable {
   }
 
   /** returns last <code>limit</code> blocks, might include blocks of not only master chain */
-  public TreeMap<BlockId, Block> getLastBlocks(int limit) throws IOException {
+  public TreeMap<BlockId, Block> getLast(int limit) throws IOException {
     TreeMap<BlockId, Block> blocks =
         new TreeMap<>(Comparator.comparing(BlockId::getSeqno).reversed());
     TreeMap<Long, Long> mappings = getAllSortedOffsets();

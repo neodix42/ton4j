@@ -1,7 +1,5 @@
 package org.ton.ton4j.exporter.reader;
 
-import static org.junit.Assert.*;
-
 import java.io.IOException;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -85,7 +83,7 @@ public class TestTempPackageIndexReader {
 
     TempPackageIndexReader indexReader =
         new TempPackageIndexReader(TON_DB_ROOT_PATH, PACKAGE_TIMESTAMP);
-    Map<BlockId, Block> mappings = indexReader.getLastBlocks(10);
+    Map<BlockId, Block> mappings = indexReader.getLast(10);
     indexReader.close();
 
     for (Map.Entry<BlockId, Block> kv : mappings.entrySet()) {

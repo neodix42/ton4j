@@ -4,11 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.TreeMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.ton4j.exporter.types.BlockId;
 import org.ton.ton4j.tlb.Block;
 
 @Slf4j
@@ -66,5 +68,23 @@ public class TestExporter {
         latestBlock.getBlockInfo().getShard().convertShardIdentToShard().toString(16));
     log.info("  Sequence Number: {}", latestBlock.getBlockInfo().getSeqno());
     log.info("  Timestamp: {}", latestBlock.getBlockInfo().getGenuTime());
+  }
+
+  @Test
+  public void testGetLastXMethod() throws IOException {
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+
+    long startTime = System.currentTimeMillis();
+
+    TreeMap<BlockId, Block> latestBlocks = exporter.getLast(10);
+
+    long durationMs = System.currentTimeMillis() - startTime;
+
+    log.info("received last block : {}ms", durationMs);
+
+    latestBlocks.forEach(
+        (blockId, block) -> {
+          log.info("blockId {}, {}", blockId, block);
+        });
   }
 }

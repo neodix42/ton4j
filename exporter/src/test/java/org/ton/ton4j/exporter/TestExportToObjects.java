@@ -1,6 +1,5 @@
 package org.ton.ton4j.exporter;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -10,13 +9,14 @@ import org.ton.ton4j.exporter.types.ExportedBlock;
 @Slf4j
 public class TestExportToObjects {
 
-  @Test
-  public void testExportToObjectsWithDeserialization() throws IOException {
+  public static final String TON_DB_ROOT_PATH =
+      "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
 
-    String dbPath = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+  @Test
+  public void testExportToObjectsWithDeserialization() {
 
     try {
-      Exporter exporter = Exporter.builder().tonDatabaseRootPath(dbPath).build();
+      Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
       AtomicInteger blockCount = new AtomicInteger(0);
       AtomicInteger deserializedCount = new AtomicInteger(0);
@@ -52,20 +52,16 @@ public class TestExportToObjects {
 
   @Test
   public void testExportToObjectsWithoutDeserialization() {
-    // Note: This test requires a valid TON database path
-    String dbPath = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db"; // Update this path
 
     try {
-      Exporter exporter = Exporter.builder().tonDatabaseRootPath(dbPath).build();
+      Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
       AtomicInteger blockCount = new AtomicInteger(0);
 
       // Test without deserialization and 20 parallel threads
       Stream<ExportedBlock> blockStream = exporter.exportToObjects(false, 20);
 
-      blockStream
-          // .limit(10)
-          .forEach(
+      blockStream.forEach(
           block -> {
             blockCount.incrementAndGet();
 
@@ -85,8 +81,6 @@ public class TestExportToObjects {
             assert block.getRawData() != null;
             assert block.getRawData() != null;
             assert !block.getRawData().isEmpty();
-
-            //            log.info("Block hex data length: {}", block.getHexData().length());
           });
 
       log.info("Total blocks processed: {}", blockCount.get());
@@ -97,12 +91,10 @@ public class TestExportToObjects {
   }
 
   @Test
-  public void testParallelStreamFunctionality() throws IOException {
-    // Note: This test requires a valid TON database path
-    String dbPath = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db"; // Update this path
+  public void testParallelStreamFunctionality() {
 
     try {
-      Exporter exporter = Exporter.builder().tonDatabaseRootPath(dbPath).build();
+      Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
       AtomicInteger blockCount = new AtomicInteger(0);
 
@@ -115,6 +107,7 @@ public class TestExportToObjects {
               .filter(ExportedBlock::isDeserialized)
               .peek(
                   block -> {
+                    // insert into your DB
                     blockCount.incrementAndGet();
                     log.info(
                         "Thread: {}, Block seqno: {}",
@@ -122,6 +115,7 @@ public class TestExportToObjects {
                         block.getSeqno());
                   })
               .count();
+      blockStream.close(); // to delete status.json file after completion
 
       log.info(
           "Parallel stream processed {} deserialized blocks, total {}", blockCount.get(), count);
@@ -131,20 +125,17 @@ public class TestExportToObjects {
     }
   }
 
-  /** Example usage as requested in the task */
   @Test
-  public void testExampleUsage() throws IOException {
-    // Note: This test requires a valid TON database path
-    String dbPath = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db"; // Update this path
+  public void testExampleUsage() {
 
     try {
-      Exporter exporter = Exporter.builder().tonDatabaseRootPath(dbPath).build();
+      Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
-      // Example usage as specified in the task
       exporter
           .exportToObjects(true, 20)
           .forEach(
               b -> {
+                // insert block to your DB
                 log.info("block {}", b);
               });
 

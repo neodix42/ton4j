@@ -14,10 +14,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.Builder;
@@ -28,6 +25,7 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.exporter.reader.*;
+import org.ton.ton4j.exporter.types.BlockId;
 import org.ton.ton4j.exporter.types.ExportStatus;
 import org.ton.ton4j.exporter.types.ExportedBlock;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
@@ -428,19 +426,58 @@ public class Exporter {
    */
   public Stream<ExportedBlock> exportToObjects(boolean deserialized, int parallelThreads)
       throws IOException {
+
+    // Check for existing status and resume if possible
+    ExportStatus exportStatus = statusManager.loadStatus();
+    boolean isResume = false;
+
+    if (exportStatus != null && !exportStatus.isCompleted()) {
+      // Validate that the resume parameters match
+      if ("objects".equals(exportStatus.getExportType())
+          && deserialized == exportStatus.isDeserialized()
+          && parallelThreads == exportStatus.getParallelThreads()) {
+
+        log.info(
+            "Resuming objects export from previous session. Progress: {}% ({}/{})",
+            String.format("%.2f", exportStatus.getProgressPercentage()),
+            exportStatus.getProcessedCount(),
+            exportStatus.getTotalPackages());
+        isResume = true;
+      } else {
+        log.warn("Export parameters don't match existing status. Starting fresh export.");
+        statusManager.deleteStatus();
+        exportStatus = null;
+      }
+    }
+
     dbReader = new DbReader(tonDatabaseRootPath);
 
     // Get all archive entries
     Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveDbReader().getArchiveInfos();
 
+    // Create new status if not resuming
+    if (exportStatus == null) {
+      long totalPackages = archiveInfos.size();
+      exportStatus =
+          statusManager.createNewStatus(
+              totalPackages, "objects", null, deserialized, parallelThreads);
+      statusManager.saveStatus(exportStatus);
+      log.info("Starting new export to objects stream");
+    }
+
     // Create a custom ForkJoinPool with the specified parallelism level
-    java.util.concurrent.ForkJoinPool customThreadPool =
-        new java.util.concurrent.ForkJoinPool(parallelThreads);
+    ForkJoinPool customThreadPool = new ForkJoinPool(parallelThreads);
 
     try {
       // Create a stream of archive entries and process them in parallel
+      // Filter out already processed packages if resuming
+      final ExportStatus finalExportStatus = exportStatus;
       Stream<ExportedBlock> blockStream =
           archiveInfos.entrySet().stream()
+              .filter(
+                  entry ->
+                      !finalExportStatus.isPackageProcessed(
+                          entry.getKey())) // Skip processed packages
               .flatMap(
                   entry -> {
                     String archiveKey = entry.getKey();
@@ -448,6 +485,8 @@ public class Exporter {
 
                     try {
                       Map<String, byte[]> localBlocks = new HashMap<>();
+                      int localParsedBlocks = 0;
+                      int localNonBlocks = 0;
 
                       // Read blocks from archive
                       if (archiveInfo.getIndexPath() == null) {
@@ -460,46 +499,72 @@ public class Exporter {
                             .readFromTraditionalArchive(archiveKey, archiveInfo, localBlocks);
                       }
 
-                      // Convert to ExportedBlock objects
-                      return localBlocks.entrySet().stream()
-                          .map(
-                              kv -> {
-                                try {
-                                  Cell c = CellBuilder.beginCell().fromBoc(kv.getValue()).endCell();
-                                  long magic = c.getBits().preReadUint(32).longValue();
+                      // Convert to ExportedBlock objects and count blocks/non-blocks
+                      List<ExportedBlock> exportedBlocks = new ArrayList<>();
 
-                                  if (magic == 0x11ef55aaL) {
-                                    Block deserializedBlock = null;
+                      for (Map.Entry<String, byte[]> kv : localBlocks.entrySet()) {
+                        try {
+                          Cell c = CellBuilder.beginCell().fromBoc(kv.getValue()).endCell();
+                          long magic = c.getBits().preReadUint(32).longValue();
 
-                                    if (deserialized) {
-                                      try {
-                                        deserializedBlock =
-                                            Block.deserialize(CellSlice.beginParse(c));
-                                      } catch (Throwable e) {
-                                        log.debug(
-                                            "Error deserializing block {}: {}",
-                                            kv.getKey(),
-                                            e.getMessage());
-                                        // Continue with null deserializedBlock
-                                      }
-                                    }
+                          if (magic == 0x11ef55aaL) {
+                            Block deserializedBlock = null;
 
-                                    return ExportedBlock.builder()
-                                        .archiveKey(archiveKey)
-                                        .blockKey(kv.getKey())
-                                        .rawData(kv.getValue())
-                                        .deserializedBlock(deserializedBlock)
-                                        .isDeserialized(deserialized && deserializedBlock != null)
-                                        .build();
-                                  }
-                                  return null; // Not a block
-                                } catch (Throwable e) {
-                                  log.debug(
-                                      "Error processing block {}: {}", kv.getKey(), e.getMessage());
-                                  return null;
-                                }
-                              })
-                          .filter(Objects::nonNull); // Remove null entries (non-blocks and errors)
+                            if (deserialized) {
+                              try {
+                                deserializedBlock = Block.deserialize(CellSlice.beginParse(c));
+                              } catch (Throwable e) {
+                                log.debug(
+                                    "Error deserializing block {}: {}",
+                                    kv.getKey(),
+                                    e.getMessage());
+                                // Continue with null deserializedBlock
+                              }
+                            }
+
+                            ExportedBlock exportedBlock =
+                                ExportedBlock.builder()
+                                    .archiveKey(archiveKey)
+                                    .blockKey(kv.getKey())
+                                    .rawData(kv.getValue())
+                                    .deserializedBlock(deserializedBlock)
+                                    .isDeserialized(deserialized && deserializedBlock != null)
+                                    .build();
+
+                            exportedBlocks.add(exportedBlock);
+                            localParsedBlocks++;
+                          } else {
+                            localNonBlocks++;
+                          }
+                        } catch (Throwable e) {
+                          log.debug("Error processing block {}: {}", kv.getKey(), e.getMessage());
+                          localNonBlocks++;
+                        }
+                      }
+
+                      // Mark package as processed and save status
+                      synchronized (finalExportStatus) {
+                        finalExportStatus.markPackageProcessed(
+                            archiveKey, localParsedBlocks, localNonBlocks);
+                        statusManager.saveStatus(finalExportStatus);
+                      }
+
+                      if (showProgress) {
+                        log.info(
+                            "Completed reading archive {}: entries {}, progress: {}% ({}/{})",
+                            archiveKey,
+                            localBlocks.size(),
+                            finalExportStatus.getProgressPercentage(),
+                            finalExportStatus.getProcessedCount(),
+                            finalExportStatus.getTotalPackages());
+                      } else {
+                        log.debug(
+                            "Completed reading archive {}: {} entries",
+                            archiveKey,
+                            localBlocks.size());
+                      }
+
+                      return exportedBlocks.stream();
 
                     } catch (Throwable e) {
                       log.warn(
@@ -508,8 +573,26 @@ public class Exporter {
                     }
                   });
 
+      // Mark export as completed when stream is consumed
+      Stream<ExportedBlock> wrappedStream =
+          blockStream.onClose(
+              () -> {
+                try {
+                  finalExportStatus.markCompleted();
+                  statusManager.saveStatus(finalExportStatus);
+                  log.info(
+                      "Completed objects export: {} blocks, {} non-blocks processed",
+                      finalExportStatus.getParsedBlocksCount(),
+                      finalExportStatus.getNonBlocksCount());
+                  // Clean up status file after successful completion
+                  statusManager.deleteStatus();
+                } catch (Exception e) {
+                  log.error("Error finalizing export status: {}", e.getMessage());
+                }
+              });
+
       // Return a stream that uses the custom thread pool for parallel operations
-      return new ParallelStreamWrapper<>(blockStream, customThreadPool);
+      return new ParallelStreamWrapper<>(wrappedStream, customThreadPool);
 
     } catch (Exception e) {
       customThreadPool.shutdown();
@@ -916,6 +999,53 @@ public class Exporter {
         try (TempPackageIndexReader tempIndexReader =
             new TempPackageIndexReader(tonDatabaseRootPath, packageTimestamp)) {
           return tempIndexReader.getLast();
+        }
+      }
+    } finally {
+      if (dbReader != null) {
+        dbReader.close();
+      }
+    }
+  }
+
+  /**
+   * Gets the very last (most recently added) <code>limit</code> blocks from the RocksDB database.
+   * This optimized version uses GlobalIndexDbReader to get temp package timestamps directly from
+   * the global index, then reads temp packages directly from the files database.
+   *
+   * @return The most recently added number of blocks of masterchain and any workchain.
+   * @throws IOException If an I/O error occurs while reading the database
+   */
+  public TreeMap<BlockId, Block> getLast(int limit) throws IOException {
+    dbReader = new DbReader(tonDatabaseRootPath);
+
+    try {
+      try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
+        IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
+
+        if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
+          log.warn("No temp packages found in global index");
+          return null;
+        }
+
+        // Get temp package timestamps (they are Unix timestamps)
+        List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
+        log.debug(
+            "Found {} temp packages in global index: {}",
+            tempPackageTimestamps.size(),
+            tempPackageTimestamps);
+
+        // Sort timestamps in descending order (most recent first)
+        List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
+
+        // sort in descending order
+        sortedTimestamps.sort(Collections.reverseOrder());
+
+        // get the top (most recent, with the biggest timestamp)
+        Integer packageTimestamp = sortedTimestamps.get(0);
+        try (TempPackageIndexReader tempIndexReader =
+            new TempPackageIndexReader(tonDatabaseRootPath, packageTimestamp)) {
+          return tempIndexReader.getLast(limit);
         }
       }
     } finally {
