@@ -38,12 +38,11 @@ public class ShardAccounts {
   public static ShardAccounts deserialize(CellSlice cs) {
     return ShardAccounts.builder()
         .shardAccounts(
-            CellSlice.beginParse(cs)
-                .loadDictAugE(
-                    256,
-                    k -> k.readUint(256),
-                    ShardAccount::deserialize,
-                    DepthBalanceInfo::deserialize))
+            cs.loadDictAugE(
+                256,
+                k -> k.readUint(256),
+                ShardAccount::deserialize,
+                DepthBalanceInfo::deserialize))
         .build();
   }
 

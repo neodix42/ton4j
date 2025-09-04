@@ -32,7 +32,12 @@ public class TonHashMapAug  implements Serializable {
             return new ArrayList<>();
         }
         List<Node> nodes = new ArrayList<>();
-        BitString l = deserializeLabel(edge, keySize - key.toBitString().length());
+        int bitsBeforeLabel = edge.getRestBits();
+        int m = keySize - key.toBitString().length();
+        System.out.println("DEBUG: deserializeEdge - keySize=" + keySize + ", key.length=" + key.toBitString().length() + ", m=" + m + ", bits before label=" + bitsBeforeLabel);
+        BitString l = deserializeLabel(edge, m);
+        int bitsAfterLabel = edge.getRestBits();
+        System.out.println("DEBUG: deserializeEdge - label length=" + l.getUsedBits() + ", bits after label=" + bitsAfterLabel + ", consumed=" + (bitsBeforeLabel - bitsAfterLabel));
         key.writeBitString(l);
         if (key.toBitString().length() == keySize) {
             Cell valueAndExtra = CellBuilder.beginCell().storeSlice(edge).endCell();
@@ -48,6 +53,26 @@ public class TonHashMapAug  implements Serializable {
         }
         return nodes;
     }
+    public BitString deserializeLabel(CellSlice edge, int m) {
+        int bitsBeforeLabel = edge.getRestBits();
+        System.out.println("DEBUG: deserializeLabel - m=" + m + ", bits available=" + bitsBeforeLabel);
+        if (!edge.loadBit()) {
+            // hml_short$0 {m:#} {n:#} len:(Unary ~n) s:(n * Bit) = HmLabel ~n m;
+            BitString result = deserializeLabelShort(edge);
+            System.out.println("DEBUG: deserializeLabel - SHORT label, length=" + result.getUsedBits());
+            return result;
+        }
+        if (!edge.loadBit()) {
+            // hml_long$10 {m:#} n:(#<= m) s:(n * Bit) = HmLabel ~n m;
+            BitString result = deserializeLabelLong(edge, m);
+            System.out.println("DEBUG: deserializeLabel - LONG label, length=" + result.getUsedBits());
+            return result;
+        }
+        // hml_same$11 {m:#} v:Bit n:(#<= m) = HmLabel ~n m;
+        BitString result = deserializeLabelSame(edge, m);
+        System.out.println("DEBUG: deserializeLabel - SAME label, length=" + result.getUsedBits());
+        return result;
+    }
 
     /**
      * Loads HashMapAug and parses keys, values and extras
@@ -56,7 +81,9 @@ public class TonHashMapAug  implements Serializable {
                      Function<BitString, Object> keyParser,
                      Function<CellSlice, Object> valueParser,
                      Function<CellSlice, Object> extraParser) {
+        System.out.println("DEBUG: TonHashMapAug.deserialize - keySize=" + keySize + ", cell bits=" + c.getRestBits());
         List<Node> nodes = deserializeEdge(c, keySize, new BitString(keySize));
+        System.out.println("DEBUG: TonHashMapAug.deserialize - found " + nodes.size() + " nodes");
         for (Node node : nodes) {
             CellSlice valueAndExtra = CellSlice.beginParse(node.value);
             Object extra = extraParser.apply(valueAndExtra);
@@ -64,7 +91,6 @@ public class TonHashMapAug  implements Serializable {
             elements.put(keyParser.apply(node.key), Pair.of(value, extra));
         }
     }
-
     /**
      * Read the keys in array and return binary tree in the form of Patrcia Tree Node
      *
@@ -225,18 +251,6 @@ public class TonHashMapAug  implements Serializable {
         return b.endCell();
     }
 
-    public BitString deserializeLabel(CellSlice edge, int m) {
-        if (!edge.loadBit()) {
-            // hml_short$0 {m:#} {n:#} len:(Unary ~n) s:(n * Bit) = HmLabel ~n m;
-            return deserializeLabelShort(edge);
-        }
-        if (!edge.loadBit()) {
-            // hml_long$10 {m:#} n:(#<= m) s:(n * Bit) = HmLabel ~n m;
-            return deserializeLabelLong(edge, m);
-        }
-        // hml_same$11 {m:#} v:Bit n:(#<= m) = HmLabel ~n m;
-        return deserializeLabelSame(edge, m);
-    }
 
     private BitString deserializeLabelShort(CellSlice edge) {
         int length = edge.bits.getBitString().indexOf("0");
@@ -245,13 +259,45 @@ public class TonHashMapAug  implements Serializable {
     }
 
     private BitString deserializeLabelLong(CellSlice edge, int m) {
-        BigInteger length = edge.loadUint(BigInteger.valueOf(m).bitLength());
+        if (m == 0) {
+            return new BitString(0);
+        }
+        int lenBits = 32 - Integer.numberOfLeadingZeros(m);
+        
+        // Check if we have enough bits to read the length field (like C++ fetch_uint_leq)
+        if (edge.getRestBits() < lenBits) {
+            // Return empty BitString to indicate failure, like C++ returning false
+            System.out.println("DEBUG: deserializeLabelLong - Not enough bits for length field: need " + lenBits + ", have " + edge.getRestBits());
+            return new BitString(0);
+        }
+        
+        BigInteger length = edge.loadUint(lenBits);
+        
+        // Validate that the length is within bounds (like C++ fetch_uint_leq validation)
+        if (length.intValue() > m) {
+            System.out.println("DEBUG: deserializeLabelLong - Length exceeds maximum: " + length + " > " + m);
+            return new BitString(0);
+        }
+        
+        // Check if we have enough bits to read the actual label data
+        if (edge.getRestBits() < length.intValue()) {
+            System.out.println("DEBUG: deserializeLabelLong - Not enough bits for label data: need " + length + ", have " + edge.getRestBits());
+            return new BitString(0);
+        }
+        
         return edge.loadBits(length.intValue());
     }
 
     private BitString deserializeLabelSame(CellSlice edge, int m) {
+        if (m == 0) {
+            return new BitString(0);
+        }
         boolean v = edge.loadBit();
-        BigInteger length = edge.loadUint(BigInteger.valueOf(m).bitLength());
+        int lenBits = 32 - Integer.numberOfLeadingZeros(m);
+        BigInteger length = edge.loadUint(lenBits);
+        if (length.intValue() > m) {
+            throw new Error("Label length " + length + " exceeds maximum " + m);
+        }
         BitString r = new BitString(length.intValue());
         for (int i = 0; i < length.intValue(); i++) {
             r.writeBit(v);
