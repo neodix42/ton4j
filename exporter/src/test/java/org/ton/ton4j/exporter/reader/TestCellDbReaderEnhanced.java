@@ -126,7 +126,7 @@ public class TestCellDbReaderEnhanced {
         log.info("  Missing cell data: {}", missing);
         log.info(
             "  Connection rate: {}%",
-            metadata.size() > 0 ? (double) connected / metadata.size() * 100.0 : 0.0);
+            !metadata.isEmpty() ? (double) connected / metadata.size() * 100.0 : 0.0);
 
         log.info("=== Enhanced CellDB Analysis Completed Successfully ===");
         log.info("Key Insight: root_hash in metadata entries points to actual cell data entries");
@@ -195,13 +195,6 @@ public class TestCellDbReaderEnhanced {
             log.info("  Hash: {}", firstCellHash);
             log.info("  Data Size: {} bytes", cellData != null ? cellData.length : 0);
 
-            //            if (cellData != null && cellData.length > 0) {
-            //              StringBuilder hex = new StringBuilder();
-            //              for (int i = 0; i < Math.min(32, cellData.length); i++) {
-            //                hex.append(String.format("%02x", cellData[i] & 0xFF));
-            //              }
-            //
-            //            }
             log.info("  Data: {}", Utils.bytesToHex(cellData));
           } catch (IOException e) {
             log.warn("Error reading cell data: {}", e.getMessage());

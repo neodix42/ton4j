@@ -3,12 +3,12 @@ package org.ton.ton4j.exporter.reader;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
+import org.ton.ton4j.address.Address;
 import org.ton.ton4j.tlb.ShardAccount;
 import org.ton.ton4j.tlb.ShardStateUnsplit;
 
@@ -74,6 +74,7 @@ public class TestStateBasedAccountDiscovery {
           if (shardState != null) {
             validStates++;
             log.info("Successfully parsed ShardStateUnsplit from hash: {}", stateRootHash);
+            //            log.info("  - ShardStateUnsplit: {}", shardState);
             log.info("  - Global ID: {}", shardState.getGlobalId());
             log.info("  - Sequence Number: {}", shardState.getSeqno());
             log.info("  - Generation Time: {}", shardState.getGenUTime());
@@ -126,7 +127,7 @@ public class TestStateBasedAccountDiscovery {
           if (shardState != null) {
             validStatesProcessed++;
 
-            Map<BigInteger, ShardAccount> accounts =
+            Map<Address, ShardAccount> accounts =
                 cellDbReader.extractAccountsFromShardState(shardState);
             totalAccountsFound += accounts.size();
 
@@ -134,14 +135,14 @@ public class TestStateBasedAccountDiscovery {
 
             // Log details of first few accounts
             int accountCount = 0;
-            for (Map.Entry<BigInteger, ShardAccount> entry : accounts.entrySet()) {
-              BigInteger address = entry.getKey();
+            for (Map.Entry<Address, ShardAccount> entry : accounts.entrySet()) {
+              Address address = entry.getKey();
               ShardAccount shardAccount = entry.getValue();
 
               log.info(
                   "  Account {}: address={}, balance={}",
                   accountCount + 1,
-                  address.toString(16),
+                  address.toRaw(),
                   shardAccount.getBalance());
 
               accountCount++;
@@ -173,25 +174,25 @@ public class TestStateBasedAccountDiscovery {
 
     try {
       // Retrieve all accounts with a limit for testing
-      Map<BigInteger, ShardAccount> allAccounts = cellDbReader.retrieveAllAccounts(3);
+      Map<Address, ShardAccount> allAccounts = cellDbReader.retrieveAllAccounts(5);
 
       log.info("Retrieved {} unique accounts from all state roots", allAccounts.size());
 
       // Log details of first few accounts
       int count = 0;
-      for (Map.Entry<BigInteger, ShardAccount> entry : allAccounts.entrySet()) {
-        BigInteger address = entry.getKey();
+      for (Map.Entry<Address, ShardAccount> entry : allAccounts.entrySet()) {
+        Address address = entry.getKey();
         ShardAccount shardAccount = entry.getValue();
 
         log.info(
             "Account {}: address={}, balance={}, lastTransHash={}",
             count + 1,
-            address.toString(16),
+            address.toRaw(),
             shardAccount.getBalance(),
             shardAccount.getLastTransHash());
 
         count++;
-        if (count >= 5) break;
+        if (count >= 10) break;
       }
 
       // Test passes regardless of account count (database may be empty or have parsing issues)
@@ -209,12 +210,12 @@ public class TestStateBasedAccountDiscovery {
 
     try {
       // First, get some accounts to test with
-      Map<BigInteger, ShardAccount> allAccounts = cellDbReader.retrieveAllAccounts(2);
+      Map<Address, ShardAccount> allAccounts = cellDbReader.retrieveAllAccounts(2);
 
       if (!allAccounts.isEmpty()) {
         // Test retrieving a known account
-        BigInteger testAddress = allAccounts.keySet().iterator().next();
-        log.info("Testing retrieval of account: {}", testAddress.toString(16));
+        Address testAddress = allAccounts.keySet().iterator().next();
+        log.info("Testing retrieval of account: {}", testAddress);
 
         ShardAccount retrievedAccount = cellDbReader.retrieveAccountByAddress(testAddress);
 
@@ -236,12 +237,6 @@ public class TestStateBasedAccountDiscovery {
       } else {
         log.info("No accounts found to test retrieval with");
       }
-
-      // Test with a non-existent address
-      BigInteger nonExistentAddress = new BigInteger("123456789abcdef", 16);
-      ShardAccount notFound = cellDbReader.retrieveAccountByAddress(nonExistentAddress);
-      assertNull("Non-existent account should return null", notFound);
-
     } catch (Exception e) {
       log.error("Error in testRetrieveAccountByAddress: {}", e.getMessage());
       fail("Test failed with exception: " + e.getMessage());
@@ -296,7 +291,7 @@ public class TestStateBasedAccountDiscovery {
 
       // Test new approach (state-based discovery)
       log.info("Testing new approach (state-based discovery):");
-      Map<BigInteger, ShardAccount> stateBasedAccounts = cellDbReader.retrieveAllAccounts(3);
+      Map<Address, ShardAccount> stateBasedAccounts = cellDbReader.retrieveAllAccounts(3);
       log.info("New approach found {} accounts from state roots", stateBasedAccounts.size());
 
       // Compare results

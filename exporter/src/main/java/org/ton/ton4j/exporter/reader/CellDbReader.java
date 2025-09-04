@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.ton.ton4j.address.Address;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -147,7 +148,8 @@ public class CellDbReader implements Closeable {
 
             // Skip the TL constructor ID (4 bytes)
             if (buffer.remaining() >= 4) {
-              int constructor = buffer.getInt();
+              //              int constructor =
+              buffer.getInt();
               // Log the constructor for debugging
               //              if (validEntries.get() < 5) {
               //                log.debug("TL constructor ID: 0x{}",
@@ -249,60 +251,6 @@ public class CellDbReader implements Closeable {
       return getCellEntryByHash(keyHash);
     } catch (Exception e) {
       log.debug("Error getting cell entry by BlockId {}: {}", blockId, e.getMessage());
-      return null;
-    }
-  }
-
-  /**
-   * Retrieves an account cell by its hash from the CellDB. This method scans through all cells
-   * looking for potential account cells.
-   *
-   * <p>Note: This is a placeholder implementation. The correct approach would be to: 1. Parse
-   * CellDB metadata entries to find state root hashes 2. Load ShardState cells from those root
-   * hashes 3. Extract account dictionaries from ShardState structures 4. Lookup accounts by address
-   * in the dictionaries
-   */
-  public Cell retrieveAccountCellByHash(byte[] accountHash) {
-    log.info("Searching for account with hash: {}", Utils.bytesToHex(accountHash));
-
-    try {
-      Set<String> cellHashes = getAllCellHashes();
-      log.info("Scanning {} cells for potential accounts", cellHashes.size());
-
-      int processed = 0;
-      for (String cellHash : cellHashes) {
-        processed++;
-        if (processed % 100000 == 0) {
-          log.info("Processed {} cells", processed);
-        }
-
-        try {
-          byte[] cellData = readCellData(cellHash);
-          if (cellData != null && isLikelyAccountCell(cellData)) {
-            Cell cell = parseCellFromCellDbFormat(cellData);
-            if (cell != null) {
-              // For now, return the first valid account-like cell found
-              // In a real implementation, you'd match by actual account address
-              log.info("Found potential account cell: {}", cellHash);
-              return cell;
-            }
-          }
-        } catch (Exception e) {
-          log.debug("Error processing cell {}: {}", cellHash, e.getMessage());
-        }
-
-        // Limit for testing
-        if (processed >= 10000) {
-          log.info("Limiting scan to first 10000 cells for testing");
-          break;
-        }
-      }
-
-      log.info("No account found after scanning {} cells", processed);
-      return null;
-
-    } catch (Exception e) {
-      log.error("Error during account search: {}", e.getMessage());
       return null;
     }
   }
@@ -617,7 +565,7 @@ public class CellDbReader implements Closeable {
    * @return The key hash (hex string)
    */
   private static String getKeyHash(BlockIdExt blockId) {
-    if (blockId == null || !isValidBlockId(blockId)) {
+    if (!isValidBlockId(blockId)) {
       return "";
     }
 
@@ -993,68 +941,6 @@ public class CellDbReader implements Closeable {
     return candidateHashes;
   }
 
-  /**
-   * Retrieves Account objects from a blockchain state tree starting from a root hash. This method
-   * traverses the state tree and extracts Account objects found within.
-   *
-   * @param stateRootHash The root hash of the blockchain state tree
-   * @param maxDepth Maximum depth to traverse in the state tree (0 for unlimited)
-   * @return Map of cell hash to Account object for all Accounts found in the state tree
-   */
-  public Map<String, Account> retrieveAccountsFromStateRoot(String stateRootHash, int maxDepth) {
-    Map<String, Account> accounts = new HashMap<>();
-
-    if (stateRootHash == null || stateRootHash.isEmpty()) {
-      log.debug("Invalid state root hash provided: {}", stateRootHash);
-      return accounts;
-    }
-
-    log.info(
-        "Retrieving Accounts from state tree root: {} (max depth: {})", stateRootHash, maxDepth);
-
-    // Get all cells in the state tree
-    Set<String> treeCells = getAllChildCells(stateRootHash, maxDepth);
-
-    log.info("Found {} cells in state tree, checking for Accounts", treeCells.size());
-
-    // Check each cell for Account data
-    int processed = 0;
-    int accountsFound = 0;
-
-    for (String cellHash : treeCells) {
-      try {
-        Account account = retrieveAccountByHash(cellHash);
-        if (account != null && !account.isNone()) {
-          accounts.put(cellHash, account);
-          accountsFound++;
-        }
-      } catch (IOException e) {
-        log.debug("Error retrieving Account for hash {}: {}", cellHash, e.getMessage());
-      }
-
-      processed++;
-      if (processed % 1000 == 0) {
-        log.info(
-            "State tree Account extraction progress: {}/{} processed, {} Accounts found",
-            processed,
-            treeCells.size(),
-            accountsFound);
-      }
-    }
-
-    log.info(
-        "State tree Account extraction completed: {} Accounts found from {} cells",
-        accountsFound,
-        processed);
-
-    return accounts;
-  }
-
-  /** Convenience method for unlimited depth state tree traversal. */
-  public Map<String, Account> retrieveAccountsFromStateRoot(String stateRootHash) {
-    return retrieveAccountsFromStateRoot(stateRootHash, 0);
-  }
-
   /** Parses a Cell from CellDB storage format. Based on C++ vm::CellLoader implementation. */
   private Cell parseCellFromCellDbFormat(byte[] cellData) {
     try {
@@ -1156,10 +1042,10 @@ public class CellDbReader implements Closeable {
 
         // Calculate number of significant levels
         int hashesCount = getHashesCount(refLevelMask);
-        
+
         // Calculate required bytes for this reference
         int refSize = hashesCount * (32 + 2); // 32 bytes hash + 2 bytes depth per level
-        
+
         if (offset + refSize > rawData.length) {
           throw new Error("Not enough data for reference " + i + " (need " + refSize + " bytes)");
         }
@@ -1186,7 +1072,8 @@ public class CellDbReader implements Closeable {
 
       // Verify we consumed all data
       if (offset != rawData.length) {
-        log.debug("Warning: {} bytes of data remaining after parsing cell", rawData.length - offset);
+        log.debug(
+            "Warning: {} bytes of data remaining after parsing cell", rawData.length - offset);
       }
 
       int bitSz = ln * 4;
@@ -1206,7 +1093,7 @@ public class CellDbReader implements Closeable {
       CellBuilder builder = CellBuilder.beginCell();
       builder.storeBitString(new BitString(payload, bitSz));
       builder.setExotic(special);
-      
+
       // Add references
       for (Cell ref : refs) {
         builder.storeRef(ref);
@@ -1221,14 +1108,14 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Calculates the number of significant levels (hashes count) from a level mask.
-   * This matches the C++ LevelMask::get_hashes_count() implementation.
+   * Calculates the number of significant levels (hashes count) from a level mask. This matches the
+   * C++ LevelMask::get_hashes_count() implementation.
    */
   private int getHashesCount(int levelMask) {
     // The level mask represents which levels are significant
     // We need to count the number of set bits, but only up to level 3 (max 4 levels: 0,1,2,3)
     int count = 0;
-    for (int i = 0; i <= 3; i++) {  // Only check levels 0-3
+    for (int i = 0; i <= 3; i++) { // Only check levels 0-3
       if ((levelMask & (1 << i)) != 0) {
         count++;
       }
@@ -1237,9 +1124,8 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Creates an external cell reference from hash and depth data.
-   * This is a simplified implementation that tries to resolve the reference
-   * by looking up the hash in the CellDB.
+   * Creates an external cell reference from hash and depth data. This is a simplified
+   * implementation that tries to resolve the reference by looking up the hash in the CellDB.
    */
   private Cell createExternalCellReference(int levelMask, byte[][] hashes, int[] depths) {
     try {
@@ -1247,7 +1133,7 @@ public class CellDbReader implements Closeable {
         // Try to resolve the reference by looking up the primary hash in CellDB
         byte[] primaryHash = hashes[0];
         String hashHex = Utils.bytesToHex(primaryHash);
-        
+
         try {
           byte[] referencedCellData = readCellData(hashHex);
           if (referencedCellData != null) {
@@ -1260,10 +1146,12 @@ public class CellDbReader implements Closeable {
         } catch (Exception e) {
           log.debug("Could not resolve external reference {}: {}", hashHex, e.getMessage());
         }
-        
+
         // Fallback: create a simple cell with some data to avoid empty references
         return CellBuilder.beginCell()
-            .storeBytes(Arrays.copyOf(primaryHash, Math.min(primaryHash.length, 127))) // Limit to max cell size
+            .storeBytes(
+                Arrays.copyOf(
+                    primaryHash, Math.min(primaryHash.length, 127))) // Limit to max cell size
             .endCell();
       } else {
         // Empty reference cell
@@ -1474,9 +1362,8 @@ public class CellDbReader implements Closeable {
    * @param shardState The ShardStateUnsplit containing the account dictionary
    * @return Map of account address (BigInteger) to ShardAccount
    */
-  public Map<java.math.BigInteger, ShardAccount> extractAccountsFromShardState(
-      ShardStateUnsplit shardState) {
-    Map<java.math.BigInteger, ShardAccount> accounts = new HashMap<>();
+  public Map<Address, ShardAccount> extractAccountsFromShardState(ShardStateUnsplit shardState) {
+    Map<Address, ShardAccount> accounts = new HashMap<>();
 
     if (shardState == null || shardState.getShardAccounts() == null) {
       log.debug("Invalid ShardStateUnsplit or missing ShardAccounts");
@@ -1491,13 +1378,7 @@ public class CellDbReader implements Closeable {
 
       for (ShardAccount shardAccount : accountList) {
         if (shardAccount != null && shardAccount.getAccount() != null) {
-          // Use the account's address as the key
-          // Note: We need to extract the actual address from the Account structure
-          // For now, we'll use a placeholder approach
-          java.math.BigInteger accountAddress = extractAccountAddress(shardAccount.getAccount());
-          if (accountAddress != null) {
-            accounts.put(accountAddress, shardAccount);
-          }
+          accounts.put(shardAccount.getAccount().getAddress().toAddress(), shardAccount);
         }
       }
 
@@ -1511,43 +1392,19 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Extracts the account address from an Account TL-B structure. This is a helper method to get the
-   * account's address for dictionary lookup.
-   *
-   * @param account The Account object
-   * @return The account address as BigInteger, or null if extraction fails
-   */
-  private java.math.BigInteger extractAccountAddress(Account account) {
-    try {
-      if (account == null || account.isNone()) {
-        return null;
-      }
-
-      // For account$1 structure, the address is in the addr field
-      // This is a simplified extraction - in practice, you'd need to handle
-      // the MsgAddressInt structure properly
-      return java.math.BigInteger.ZERO; // Placeholder - needs proper implementation
-
-    } catch (Exception e) {
-      log.debug("Error extracting account address: {}", e.getMessage());
-      return null;
-    }
-  }
-
-  /**
    * Retrieves an account by its address using the proper state-based approach. This method follows
    * the C++ implementation pattern from liteserver.cpp.
    *
    * @param accountAddress The account address to lookup
    * @return The ShardAccount object, or null if not found
    */
-  public ShardAccount retrieveAccountByAddress(java.math.BigInteger accountAddress) {
+  public ShardAccount retrieveAccountByAddress(Address accountAddress) {
     if (accountAddress == null) {
       log.debug("Invalid account address provided: null");
       return null;
     }
 
-    log.info("Retrieving account by address: {}", accountAddress.toString(16));
+    log.info("Retrieving account by address: {}", accountAddress.toRaw());
 
     try {
       // 1. Find state root hashes
@@ -1559,14 +1416,12 @@ public class CellDbReader implements Closeable {
         try {
           ShardStateUnsplit shardState = getShardStateUnsplit(stateRootHash);
           if (shardState != null) {
-            Map<java.math.BigInteger, ShardAccount> accounts =
-                extractAccountsFromShardState(shardState);
+            Map<Address, ShardAccount> accounts = extractAccountsFromShardState(shardState);
 
             // 3. Look for the specific account address
             ShardAccount account = accounts.get(accountAddress);
             if (account != null) {
-              log.info(
-                  "Found account {} in state root {}", accountAddress.toString(16), stateRootHash);
+              log.info("Found account {} in state root {}", accountAddress.toRaw(), stateRootHash);
               return account;
             }
           }
@@ -1575,14 +1430,12 @@ public class CellDbReader implements Closeable {
         }
       }
 
-      log.info("Account {} not found in any state root", accountAddress.toString(16));
+      log.info("Account {} not found in any state root", accountAddress.toRaw());
       return null;
 
     } catch (Exception e) {
       log.error(
-          "Error retrieving account by address {}: {}",
-          accountAddress.toString(16),
-          e.getMessage());
+          "Error retrieving account by address {}: {}", accountAddress.toRaw(), e.getMessage());
       return null;
     }
   }
@@ -1594,8 +1447,8 @@ public class CellDbReader implements Closeable {
    * @param maxStateRoots Maximum number of state roots to process (0 for unlimited)
    * @return Map of account address to ShardAccount for all found accounts
    */
-  public Map<java.math.BigInteger, ShardAccount> retrieveAllAccounts(int maxStateRoots) {
-    Map<java.math.BigInteger, ShardAccount> allAccounts = new HashMap<>();
+  public Map<Address, ShardAccount> retrieveAllAccounts(int maxStateRoots) {
+    Map<Address, ShardAccount> allAccounts = new HashMap<>();
 
     log.info("Retrieving all accounts from CellDB state roots");
 
@@ -1612,8 +1465,7 @@ public class CellDbReader implements Closeable {
         try {
           ShardStateUnsplit shardState = getShardStateUnsplit(stateRootHash);
           if (shardState != null) {
-            Map<java.math.BigInteger, ShardAccount> stateAccounts =
-                extractAccountsFromShardState(shardState);
+            Map<Address, ShardAccount> stateAccounts = extractAccountsFromShardState(shardState);
 
             // 3. Merge accounts (later state roots may override earlier ones)
             allAccounts.putAll(stateAccounts);
@@ -1650,7 +1502,7 @@ public class CellDbReader implements Closeable {
   }
 
   /** Convenience method for unlimited state root processing. */
-  public Map<java.math.BigInteger, ShardAccount> retrieveAllAccounts() {
+  public Map<Address, ShardAccount> retrieveAllAccounts() {
     return retrieveAllAccounts(0);
   }
 
@@ -1677,8 +1529,7 @@ public class CellDbReader implements Closeable {
             ShardStateUnsplit shardState = getShardStateUnsplit(stateRootHash);
             if (shardState != null) {
               validStates++;
-              Map<java.math.BigInteger, ShardAccount> accounts =
-                  extractAccountsFromShardState(shardState);
+              Map<Address, ShardAccount> accounts = extractAccountsFromShardState(shardState);
               totalAccountsInSample += accounts.size();
             }
           } catch (Exception e) {
