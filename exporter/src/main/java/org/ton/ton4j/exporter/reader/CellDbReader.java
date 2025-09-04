@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.ton.ton4j.exporter.types.CellDataAnalysis;
+import org.ton.ton4j.exporter.types.*;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tl.types.db.celldb.Value;
 import org.ton.ton4j.utils.Utils;
@@ -246,106 +246,189 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Gets all cell entries in linked list order by traversing the prev/next pointers. This follows
-   * the C++ implementation logic for ordered iteration.
+   * Determines the cell type from cell data by analyzing the cell header. Based on TON cell format
+   * specification.
    *
-   * @return List of CellDB Values in linked list order
+   * @param cellData The raw cell data
+   * @return The determined cell type
    */
-  public List<Value> getAllCellEntriesOrdered() {
-    List<Value> orderedEntries = new ArrayList<>();
-
-    if (emptyEntry == null) {
-      log.warn("Empty entry not available, cannot traverse linked list");
-      return orderedEntries;
+  public CellType determineCellType(byte[] cellData) {
+    if (cellData == null || cellData.length == 0) {
+      return CellType.ORDINARY;
     }
 
     try {
-      // Start from the first real entry (next of empty entry)
-      String currentHash = emptyEntry.getNext();
-      Set<String> visited = new HashSet<>();
+      // Parse cell header to determine special type
+      // Cell format: [descriptor1][descriptor2][data][refs]
+      // descriptor1 contains: refs_count(3) + exotic(1) + has_hashes(1) + level(3)
+      // descriptor2 contains: data_bits(7) + completion_tag(1)
 
-      while (!currentHash.equals("0000000000000000000000000000000000000000000000000000000000000000")
-          && !visited.contains(currentHash)) {
-
-        visited.add(currentHash);
-
-        // The prev/next fields contain raw SHA256 hashes, but we need to look them up
-        // by their key hash. We need to find the entry that has this hash as its key.
-        Value currentEntry = findEntryByKeyHash(currentHash);
-
-        if (currentEntry == null) {
-          log.warn("Broken linked list: entry with key hash {} not found", currentHash);
-          break;
-        }
-
-        // Check if this is the empty entry (end of list)
-        if (isEmptyBlockId(currentEntry.getBlockId())) {
-          log.debug("Found empty block ID, ending traversal: {}", currentEntry.getBlockId());
-          break;
-        }
-
-        orderedEntries.add(currentEntry);
-
-        // Move to next entry
-        currentHash = currentEntry.getNext();
-
-        // Prevent infinite loops
-        if (orderedEntries.size() > 1000000) {
-          log.warn("Linked list traversal stopped: too many entries (possible loop)");
-          break;
-        }
+      if (cellData.length < 2) {
+        return CellType.ORDINARY;
       }
 
-      log.info("Traversed linked list: {} entries in order", orderedEntries.size());
+      byte descriptor1 = cellData[0];
+
+      // Extract exotic flag (bit 3 from right, 0-indexed)
+      boolean isExotic = (descriptor1 & 0x08) != 0;
+
+      if (!isExotic) {
+        return CellType.ORDINARY;
+      }
+
+      // For exotic cells, the type is determined by the first few bits of data
+      if (cellData.length < 3) {
+        return CellType.ORDINARY;
+      }
+
+      // Skip descriptors and look at first data byte
+      byte descriptor2 = cellData[1];
+      int dataBits = (descriptor2 & 0xFE) >> 1; // Extract data_bits (7 bits)
+
+      if (dataBits >= 8 && cellData.length > 2) {
+        byte firstDataByte = cellData[2];
+
+        // Extract special type from first 3 bits of data
+        int specialType = (firstDataByte >> 5) & 0x07;
+        return CellType.fromTypeId(specialType);
+      }
+
+      return CellType.ORDINARY;
 
     } catch (Exception e) {
-      log.error("Error traversing linked list: {}", e.getMessage());
+      log.debug("Error determining cell type: {}", e.getMessage());
+      return CellType.ORDINARY;
     }
-
-    return orderedEntries;
   }
 
   /**
-   * Finds an entry by its key hash. The prev/next fields in CellDB entries contain hex-encoded
-   * hashes that should directly match the cache keys.
+   * Extracts cell references from cell data. This is a simplified implementation that extracts
+   * reference hashes.
    *
-   * @param hexHash The hex-encoded hash to look for
-   * @return The CellDB Value, or null if not found
+   * @param cellData The raw cell data
+   * @return List of referenced cell hashes
    */
-  private Value findEntryByKeyHash(String hexHash) {
-    try {
-      // First, ensure we have all entries loaded
-      if (entryCache.isEmpty()) {
-        getAllCellEntries();
-      }
+  public List<String> extractCellReferences(byte[] cellData) {
+    List<String> references = new ArrayList<>();
 
-      log.debug("Looking for hash: {}", hexHash);
-      log.debug("Cache has {} entries", entryCache.size());
-
-      // Debug: show first few cache keys
-      int count = 0;
-      for (String cacheKey : entryCache.keySet()) {
-        if (count < 5) {
-          log.debug("Cache key {}: {}", count, cacheKey);
-          count++;
-        }
-      }
-
-      // Direct lookup in cache - the hexHash should match a cache key directly
-      if (entryCache.containsKey(hexHash)) {
-        Value entry = entryCache.get(hexHash);
-        log.debug(
-            "Found entry for hash {} directly in cache: block_id={}", hexHash, entry.getBlockId());
-        return entry;
-      }
-
-      log.debug("No entry found for hash: {}", hexHash);
-
-    } catch (Exception e) {
-      log.debug("Error finding entry by hash {}: {}", hexHash, e.getMessage());
+    if (cellData == null || cellData.length < 2) {
+      return references;
     }
 
-    return null;
+    try {
+      byte descriptor1 = cellData[0];
+      byte descriptor2 = cellData[1];
+
+      // Extract reference count from descriptor1 (first 3 bits)
+      int refCount = descriptor1 & 0x07;
+
+      // Extract data bits from descriptor2
+      int dataBits = (descriptor2 & 0xFE) >> 1;
+      int dataBytes = (dataBits + 7) / 8; // Round up to nearest byte
+
+      // Calculate where references start
+      int refsStartOffset = 2 + dataBytes; // 2 descriptors + data bytes
+
+      // Each reference is 32 bytes (256 bits)
+      for (int i = 0; i < refCount && refsStartOffset + (i + 1) * 32 <= cellData.length; i++) {
+        int refOffset = refsStartOffset + i * 32;
+        byte[] refHash = Arrays.copyOfRange(cellData, refOffset, refOffset + 32);
+        references.add(Utils.bytesToHex(refHash));
+      }
+
+    } catch (Exception e) {
+      log.debug("Error extracting cell references: {}", e.getMessage());
+    }
+
+    return references;
+  }
+
+  /**
+   * Traverses the cell tree starting from a root hash and collects all child cells. This implements
+   * breadth-first traversal to avoid deep recursion.
+   *
+   * @param rootHash The root cell hash to start traversal from
+   * @param maxDepth Maximum depth to traverse (0 for unlimited)
+   * @return Set of all cell hashes in the tree
+   */
+  public Set<String> getAllChildCells(String rootHash, int maxDepth) {
+    Set<String> allCells = new HashSet<>();
+    Set<String> visited = new HashSet<>();
+    Queue<CellTraversalNode> toProcess = new LinkedList<>();
+
+    toProcess.add(new CellTraversalNode(rootHash, 0));
+
+    while (!toProcess.isEmpty()) {
+      CellTraversalNode current = toProcess.poll();
+
+      if (visited.contains(current.hash)) {
+        continue;
+      }
+
+      if (maxDepth > 0 && current.depth >= maxDepth) {
+        continue;
+      }
+
+      visited.add(current.hash);
+      allCells.add(current.hash);
+
+      try {
+        byte[] cellData = readCellData(current.hash);
+        if (cellData != null) {
+          List<String> childRefs = extractCellReferences(cellData);
+          for (String childRef : childRefs) {
+            if (!visited.contains(childRef)) {
+              toProcess.add(new CellTraversalNode(childRef, current.depth + 1));
+            }
+          }
+        }
+      } catch (IOException e) {
+        log.debug("Error reading cell data for {}: {}", current.hash, e.getMessage());
+      }
+
+      // Safety check to prevent infinite loops
+      if (allCells.size() > 1000000) {
+        log.warn("Cell tree traversal stopped: too many cells (possible loop or very large tree)");
+        break;
+      }
+    }
+
+    log.info("Cell tree traversal from {} found {} cells", rootHash, allCells.size());
+    return allCells;
+  }
+
+  /** Convenience method for unlimited depth traversal. */
+  public Set<String> getAllChildCells(String rootHash) {
+    return getAllChildCells(rootHash, 0);
+  }
+
+  /**
+   * Analyzes cell tree statistics for a given root hash.
+   *
+   * @param rootHash The root cell hash
+   * @return Statistics about the cell tree
+   */
+  public CellTreeStatistics analyzeCellTree(String rootHash) {
+    Set<String> allCells = getAllChildCells(rootHash, 10); // Limit depth for performance
+
+    Map<CellType, Integer> typeCounts = new HashMap<>();
+    int totalSize = 0;
+    int maxDepth = 0;
+
+    for (String cellHash : allCells) {
+      try {
+        byte[] cellData = readCellData(cellHash);
+        if (cellData != null) {
+          CellType type = determineCellType(cellData);
+          typeCounts.put(type, typeCounts.getOrDefault(type, 0) + 1);
+          totalSize += cellData.length;
+        }
+      } catch (IOException e) {
+        log.debug("Error analyzing cell {}: {}", cellHash, e.getMessage());
+      }
+    }
+
+    return new CellTreeStatistics(rootHash, allCells.size(), typeCounts, totalSize, maxDepth);
   }
 
   /**
@@ -422,7 +505,7 @@ public class CellDbReader implements Closeable {
    *
    * @return Map of hash to data size
    */
-  public Map<String, Long> getAllHashOffsetMappings() {
+  public Map<String, Long> getAllHashSizeMappings() {
     Map<String, Long> hashSizeMappings = new HashMap<>();
 
     cellDb.forEach(
@@ -691,56 +774,6 @@ public class CellDbReader implements Closeable {
     }
 
     return stats;
-  }
-
-  /** Information about a cell data entry and its relationship to metadata. */
-  public static class CellDataInfo {
-    private final String metadataKeyHash;
-    private final String rootHash;
-    private final BlockIdExt blockId;
-    private final boolean hasCellData;
-    private final int cellDataSize;
-
-    public CellDataInfo(
-        String metadataKeyHash,
-        String rootHash,
-        BlockIdExt blockId,
-        boolean hasCellData,
-        int cellDataSize) {
-      this.metadataKeyHash = metadataKeyHash;
-      this.rootHash = rootHash;
-      this.blockId = blockId;
-      this.hasCellData = hasCellData;
-      this.cellDataSize = cellDataSize;
-    }
-
-    // Getters
-    public String getMetadataKeyHash() {
-      return metadataKeyHash;
-    }
-
-    public String getRootHash() {
-      return rootHash;
-    }
-
-    public BlockIdExt getBlockId() {
-      return blockId;
-    }
-
-    public boolean hasCellData() {
-      return hasCellData;
-    }
-
-    public int getCellDataSize() {
-      return cellDataSize;
-    }
-
-    @Override
-    public String toString() {
-      return String.format(
-          "CellDataInfo{keyHash=%s, rootHash=%s, blockId=%s, hasData=%s, size=%d}",
-          metadataKeyHash, rootHash, blockId, hasCellData, cellDataSize);
-    }
   }
 
   @Override

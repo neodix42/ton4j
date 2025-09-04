@@ -102,19 +102,14 @@ public class TestCellDbReader {
 
         // Test 6: Test hash-to-size mappings
         log.info("=== Test 6: Testing Hash-to-Size Mappings ===");
-        Map<String, Long> hashSizeMappings = reader.getAllHashOffsetMappings();
+        Map<String, Long> hashSizeMappings = reader.getAllHashSizeMappings();
         log.info("Generated {} hash-to-size mappings", hashSizeMappings.size());
 
         // Show some examples
         count = 0;
         for (Map.Entry<String, Long> entry : hashSizeMappings.entrySet()) {
-          if (count < 3) {
-            log.info(
-                "Hash-size mapping {}: {} -> {} bytes",
-                count + 1,
-                entry.getKey(),
-                entry.getValue());
-          }
+          log.info(
+              "Hash-size mapping {}: {} -> {} bytes", count + 1, entry.getKey(), entry.getValue());
           count++;
           if (count >= 3) break;
         }

@@ -6,6 +6,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.ton4j.exporter.types.CellDataAnalysis;
+import org.ton.ton4j.exporter.types.CellDataInfo;
 import org.ton.ton4j.tl.types.db.celldb.Value;
 import org.ton.ton4j.utils.Utils;
 
@@ -31,12 +32,12 @@ public class TestCellDbReaderEnhanced {
 
         // Test 2: Get detailed information for first few entries
         log.info("=== Test 2: Detailed Metadata -> Cell Data Mapping ===");
-        Map<String, CellDbReader.CellDataInfo> detailedInfo = reader.getDetailedCellDataInfo(10);
+        Map<String, CellDataInfo> detailedInfo = reader.getDetailedCellDataInfo(10);
 
         int count = 0;
-        for (Map.Entry<String, CellDbReader.CellDataInfo> entry : detailedInfo.entrySet()) {
+        for (Map.Entry<String, CellDataInfo> entry : detailedInfo.entrySet()) {
           if (count < 5) {
-            CellDbReader.CellDataInfo info = entry.getValue();
+            CellDataInfo info = entry.getValue();
             log.info("Entry {}: {}", count + 1, info);
 
             if (info.getBlockId() != null) {
