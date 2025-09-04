@@ -90,8 +90,11 @@ public class ShardStateUnsplit implements Serializable {
             .genUTime(cs.loadUint(32).longValue())
             .genLt(cs.loadUint(64))
             .minRefMCSeqno(cs.loadUint(32).longValue())
-            .outMsgQueueInfo(OutMsgQueueInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
             .build();
+
+    shardStateUnsplit.setOutMsgQueueInfo(
+        OutMsgQueueInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
+
     shardStateUnsplit.setBeforeSplit(cs.loadBit());
 
     shardStateUnsplit.setShardAccounts(

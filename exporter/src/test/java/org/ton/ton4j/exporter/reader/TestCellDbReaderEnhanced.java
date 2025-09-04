@@ -13,16 +13,16 @@ import org.ton.ton4j.utils.Utils;
 @Slf4j
 public class TestCellDbReaderEnhanced {
 
-  private static final String TEST_DB_PATH =
+  private static final String TON_DB_ROOT_PATH =
       "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
 
   @Test
   public void testCellDbReaderMetadataToCellDataConnection() {
     try {
       log.info("=== Enhanced CellDB Analysis: Metadata -> Cell Data Connection ===");
-      log.info("Testing CellDbReader with database at: {}", TEST_DB_PATH);
+      log.info("Testing CellDbReader with database at: {}", TON_DB_ROOT_PATH);
 
-      try (CellDbReader reader = new CellDbReader(TEST_DB_PATH)) {
+      try (CellDbReader reader = new CellDbReader(TON_DB_ROOT_PATH)) {
 
         // Test 1: Analyze the relationship between metadata and cell data
         log.info("=== Test 1: Analyzing Metadata -> Cell Data Relationships ===");
@@ -134,7 +134,7 @@ public class TestCellDbReaderEnhanced {
 
     } catch (IOException e) {
       if (e.getMessage().contains("not found")) {
-        log.warn("CellDB database not found at {}, skipping test", TEST_DB_PATH);
+        log.warn("CellDB database not found at {}, skipping test", TON_DB_ROOT_PATH);
         log.info("To run this test, ensure a CellDB database exists at the specified path");
       } else {
         log.error("Error testing CellDbReader: {}", e.getMessage(), e);
@@ -151,7 +151,7 @@ public class TestCellDbReaderEnhanced {
     try {
       log.info("=== CellDB Storage Structure Analysis ===");
 
-      try (CellDbReader reader = new CellDbReader(TEST_DB_PATH)) {
+      try (CellDbReader reader = new CellDbReader(TON_DB_ROOT_PATH)) {
 
         // Analyze the key patterns in the database
         log.info("=== Analyzing Database Key Patterns ===");
