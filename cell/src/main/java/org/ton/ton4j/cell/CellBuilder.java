@@ -67,6 +67,11 @@ public class CellBuilder {
     return this;
   }
 
+  public CellBuilder setLevelMask(LevelMask levelMask) {
+    cell.setLevelMask(levelMask);
+    return this;
+  }
+
   public CellBuilder storeBits(List<Boolean> arrayBits) {
     checkBitsOverflow(arrayBits.size());
     for (Boolean bit : arrayBits) {

@@ -1,16 +1,23 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.isNull;
+
 import java.io.Serializable;
 import java.math.BigInteger;
-
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 
-import static java.util.Objects.isNull;
-
+/**
+ *
+ *
+ * <pre>
+ * account_none$0 = Account;
+ * account$1 addr:MsgAddressInt storage_stat:StorageInfo storage:AccountStorage = Account;
+ * </pre>
+ */
 @Builder
 @Data
 public class Account implements Serializable {

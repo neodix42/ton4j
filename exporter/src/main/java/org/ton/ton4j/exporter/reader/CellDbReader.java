@@ -13,9 +13,15 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.ton.ton4j.bitstring.BitString;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.cell.LevelMask;
 import org.ton.ton4j.exporter.types.*;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tl.types.db.celldb.Value;
+import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -771,6 +777,476 @@ public class CellDbReader implements Closeable {
     } catch (Exception e) {
       log.error("Error generating statistics: {}", e.getMessage());
       stats.put("error", e.getMessage());
+    }
+
+    return stats;
+  }
+
+  /**
+   * Retrieves and deserializes an Account TL-B object by cell hash. This method converts raw cell
+   * data to an Account object using the TON TL-B deserialization process.
+   *
+   * @param cellHash The cell hash (hex string) containing Account data
+   * @return The deserialized Account object, or null if not found or not a valid Account cell
+   * @throws IOException If an I/O error occurs during cell data retrieval
+   */
+  public Account retrieveAccountByHash(String cellHash) throws IOException {
+    if (cellHash == null || cellHash.isEmpty()) {
+      log.debug("Invalid cell hash provided: {}", cellHash);
+      return null;
+    }
+
+    try {
+      // 1. Retrieve raw cell data
+      byte[] cellData = readCellData(cellHash);
+      if (cellData == null) {
+        log.debug("No cell data found for hash: {}", cellHash);
+        return null;
+      }
+
+      // 2. Parse cell from CellDB storage format
+      Cell cell = parseCellFromCellDbFormat(cellData);
+      if (cell == null) {
+        log.debug("Failed to parse cell from CellDB format for hash: {}", cellHash);
+        return null;
+      }
+
+      // 3. Create CellSlice for TL-B deserialization
+      CellSlice cellSlice = CellSlice.beginParse(cell);
+
+      // 4. Deserialize to Account using TL-B deserializer
+      Account account = Account.deserialize(cellSlice);
+
+      log.debug(
+          "Successfully retrieved Account for hash: {} (isNone: {})", cellHash, account.isNone());
+      return account;
+
+    } catch (Exception e) {
+      log.debug("Failed to retrieve Account for hash {}: {}", cellHash, e.getMessage());
+      return null; // Graceful handling - not all cells are Accounts
+    }
+  }
+
+  /**
+   * Retrieves and deserializes multiple Account TL-B objects by their cell hashes. This method
+   * processes accounts in batch for better performance.
+   *
+   * @param cellHashes Set of cell hashes to retrieve Account objects for
+   * @return Map of cell hash to Account object (only successful retrievals included)
+   */
+  public Map<String, Account> retrieveAccountsByHashes(Set<String> cellHashes) {
+    Map<String, Account> accounts = new HashMap<>();
+
+    if (cellHashes == null || cellHashes.isEmpty()) {
+      log.debug("No cell hashes provided for batch Account retrieval");
+      return accounts;
+    }
+
+    log.info("Starting batch Account retrieval for {} hashes", cellHashes.size());
+
+    int processed = 0;
+    int successful = 0;
+    int failed = 0;
+
+    for (String cellHash : cellHashes) {
+      try {
+        Account account = retrieveAccountByHash(cellHash);
+        if (account != null) {
+          accounts.put(cellHash, account);
+          successful++;
+        } else {
+          failed++;
+        }
+      } catch (IOException e) {
+        log.debug("I/O error retrieving Account for hash {}: {}", cellHash, e.getMessage());
+        failed++;
+      }
+
+      processed++;
+      if (processed % 1000 == 0) {
+        log.info(
+            "Batch Account retrieval progress: {}/{} processed, {} successful, {} failed",
+            processed,
+            cellHashes.size(),
+            successful,
+            failed);
+      }
+    }
+
+    log.info(
+        "Batch Account retrieval completed: {}/{} successful, {} failed",
+        successful,
+        cellHashes.size(),
+        failed);
+
+    return accounts;
+  }
+
+  /**
+   * Searches for potential Account cells in the database by analyzing cell structure. This method
+   * uses heuristics to identify cells that might contain Account data.
+   *
+   * @param maxResults Maximum number of candidate Account cells to return (0 for unlimited)
+   * @return Set of cell hashes that are likely to contain Account data
+   */
+  public Set<String> findAccountCells(int maxResults) {
+    Set<String> candidateHashes = new HashSet<>();
+    Set<String> allCellHashes = getAllCellHashes();
+
+    log.info("Searching for Account cells among {} total cells", allCellHashes.size());
+
+    int processed = 0;
+    int candidates = 0;
+
+    for (String cellHash : allCellHashes) {
+      if (maxResults > 0 && candidates >= maxResults) {
+        break;
+      }
+
+      try {
+        byte[] cellData = readCellData(cellHash);
+        if (isLikelyAccountCell(cellData)) {
+          candidateHashes.add(cellHash);
+          candidates++;
+        }
+      } catch (IOException e) {
+        log.debug("Error reading cell data for hash {}: {}", cellHash, e.getMessage());
+      }
+
+      processed++;
+      if (processed % 100000 == 0) {
+        log.info(
+            "Account cell search progress: {}/{} processed, {} candidates found",
+            processed,
+            allCellHashes.size(),
+            candidates);
+      }
+    }
+
+    log.info(
+        "Account cell search completed: {} candidates found from {} cells", candidates, processed);
+
+    return candidateHashes;
+  }
+
+  /**
+   * Retrieves Account objects from a blockchain state tree starting from a root hash. This method
+   * traverses the state tree and extracts Account objects found within.
+   *
+   * @param stateRootHash The root hash of the blockchain state tree
+   * @param maxDepth Maximum depth to traverse in the state tree (0 for unlimited)
+   * @return Map of cell hash to Account object for all Accounts found in the state tree
+   */
+  public Map<String, Account> retrieveAccountsFromStateRoot(String stateRootHash, int maxDepth) {
+    Map<String, Account> accounts = new HashMap<>();
+
+    if (stateRootHash == null || stateRootHash.isEmpty()) {
+      log.debug("Invalid state root hash provided: {}", stateRootHash);
+      return accounts;
+    }
+
+    log.info(
+        "Retrieving Accounts from state tree root: {} (max depth: {})", stateRootHash, maxDepth);
+
+    // Get all cells in the state tree
+    Set<String> treeCells = getAllChildCells(stateRootHash, maxDepth);
+
+    log.info("Found {} cells in state tree, checking for Accounts", treeCells.size());
+
+    // Check each cell for Account data
+    int processed = 0;
+    int accountsFound = 0;
+
+    for (String cellHash : treeCells) {
+      try {
+        Account account = retrieveAccountByHash(cellHash);
+        if (account != null && !account.isNone()) {
+          accounts.put(cellHash, account);
+          accountsFound++;
+        }
+      } catch (IOException e) {
+        log.debug("Error retrieving Account for hash {}: {}", cellHash, e.getMessage());
+      }
+
+      processed++;
+      if (processed % 1000 == 0) {
+        log.info(
+            "State tree Account extraction progress: {}/{} processed, {} Accounts found",
+            processed,
+            treeCells.size(),
+            accountsFound);
+      }
+    }
+
+    log.info(
+        "State tree Account extraction completed: {} Accounts found from {} cells",
+        accountsFound,
+        processed);
+
+    return accounts;
+  }
+
+  /** Convenience method for unlimited depth state tree traversal. */
+  public Map<String, Account> retrieveAccountsFromStateRoot(String stateRootHash) {
+    return retrieveAccountsFromStateRoot(stateRootHash, 0);
+  }
+
+  /** Parses a Cell from CellDB storage format. Based on C++ vm::CellLoader implementation. */
+  private Cell parseCellFromCellDbFormat(byte[] cellData) {
+    try {
+      if (cellData.length < 4) {
+        log.debug("Cell data too short: {} bytes", cellData.length);
+        return null;
+      }
+
+      // Parse refcount (first 4 bytes)
+      int refcnt = ByteBuffer.wrap(cellData, 0, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+      int dataOffset = 4;
+
+      boolean storedAsBoc = false;
+      if (refcnt == -1) {
+        // Stored as BoC format
+        storedAsBoc = true;
+        if (cellData.length < 8) {
+          log.debug("Cell data too short for BoC format: {} bytes", cellData.length);
+          return null;
+        }
+        refcnt = ByteBuffer.wrap(cellData, 4, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        dataOffset = 8;
+      }
+
+      if (refcnt <= 0) {
+        log.debug("Invalid refcount: {}", refcnt);
+        return null;
+      }
+
+      byte[] actualCellData = Arrays.copyOfRange(cellData, dataOffset, cellData.length);
+
+      if (storedAsBoc) {
+        // Parse as BoC
+        return Cell.fromBoc(actualCellData);
+      } else {
+        // Parse as raw cell format
+        return parseCellFromRawFormat(actualCellData);
+      }
+
+    } catch (Exception e) {
+      log.debug("Failed to parse cell from CellDB format: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Parses a Cell from raw cell format (not BoC). This implements the cell serialization format
+   * from C++ RefcntCellStorer.
+   */
+  private Cell parseCellFromRawFormat(byte[] rawData) {
+    try {
+      if (rawData.length < 2) {
+        log.debug("Raw cell data too short: {} bytes", rawData.length);
+        return null;
+      }
+
+      int offset = 0;
+
+      // Parse cell descriptor (first byte)
+      int flags = rawData[offset];
+      int refsNum = flags & 0b111;
+      boolean special = (flags & 0b1000) != 0;
+      boolean withHashes = (flags & 0b10000) != 0;
+      LevelMask levelMask = new LevelMask(flags >> 5);
+
+      if (refsNum > 4) {
+        throw new Error("too many refs in cell");
+      }
+
+      int ln = rawData[offset + 1] & 0xFF;
+      int oneMore = ln % 2;
+      int sz = (ln / 2 + oneMore);
+
+      offset += 2;
+      if ((rawData.length - offset) < sz) {
+        throw new Error("failed to parse cell payload, corrupted data");
+      }
+
+      if (withHashes) {
+        int maskBits = (int) Math.ceil(Math.log(levelMask.getMask() + 1) / Math.log(2));
+        int hashesNum = maskBits + 1;
+        offset += hashesNum * 32 + hashesNum * 2;
+      }
+      byte[] payload = Arrays.copyOfRange(rawData, offset, offset + sz);
+
+      // skip refs for now
+
+      //      offset += sz;
+
+      //      if ((rawData.length - offset) < (refsNum * refSzBytes)) {
+      //        throw new Error("failed to parse cell refs, corrupted data");
+      //      }
+
+      //      int[] refsIndex = new int[refsNum];
+      //      int x = 0;
+      //      for (int j = 0; j < refsNum; j++) {
+      //        byte[] t = Arrays.copyOfRange(rawData, offset, offset + refSzBytes);
+      //        refsIndex[x++] = Utils.dynInt(t);
+      //
+      //        offset += refSzBytes;
+      //      }
+      //
+      //      Cell[] refs = new Cell[refsIndex.length];
+      //
+      //      for (int y = 0; y < refsIndex.length; y++) {
+      //        if ((refsIndex[y] < i) && (isNull(index))) {
+      //          throw new Error("reference to index which is behind parent cell");
+      //        }
+      //
+      //        if (refsIndex[y] >= cells.length) {
+      //          throw new Error("invalid index, out of scope");
+      //        }
+      //
+      //        refs[y] = cells[refsIndex[y]];
+      //      }
+
+      int bitSz = ln * 4;
+
+      // if not full byte
+      if ((ln % 2) != 0) {
+        // find last bit of byte which indicates the end and cut it and next
+        for (int y = 0; y < 8; y++) {
+          if (((payload[payload.length - 1] >> y) & 1) == 1) {
+            bitSz += 3 - y;
+            break;
+          }
+        }
+      }
+
+      // Create cell from data
+      //      CellBuilder builder = CellBuilder.beginCell();
+      //      builder.storeBitString(new BitString(payload, bitSz));
+      //      builder.setExotic(special);
+      //      builder.setLevelMask(levelMask);
+
+      //      // Add bits to builder
+      //      for (int i = 0; i < dataBitLength; i++) {
+      //        int byteIndex = i / 8;
+      //        int bitIndex = 7 - (i % 8); // MSB first
+      //        boolean bit = (payload[byteIndex] & (1 << bitIndex)) != 0;
+      //        builder.storeBit(bit);
+      //      }
+
+      return CellBuilder.beginCell()
+          .storeBitString(new BitString(payload, bitSz))
+          .setExotic(special)
+          .setLevelMask(levelMask)
+          .endCell();
+
+    } catch (Exception e) {
+      log.debug("Failed to parse raw cell format: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Heuristic method to determine if a cell is likely to contain Account data. This uses simple
+   * checks based on cell structure and size patterns.
+   *
+   * @param cellData Raw cell data to analyze
+   * @return True if the cell might contain Account data
+   */
+  private boolean isLikelyAccountCell(byte[] cellData) {
+    if (cellData == null || cellData.length < 10) {
+      return false; // Too small to be a meaningful Account
+    }
+
+    try {
+      // Parse cell header
+
+      byte descriptor1 = cellData[0];
+      byte descriptor2 = cellData[1];
+
+      // Extract basic cell properties
+      int refCount = descriptor1 & 0x07;
+      boolean isExotic = (descriptor1 & 0x08) != 0;
+      int dataBits = (descriptor2 & 0xFE) >> 1;
+
+      // Account cells typically:
+      // - Are not exotic cells
+      // - Have reasonable data size (not too small, not too large)
+      // - May have references (for storage, code, etc.)
+      if (isExotic) {
+        return false; // Accounts are ordinary cells
+      }
+
+      // Check data size - Accounts typically have substantial data
+      if (dataBits < 8) {
+        return false; // Too small or too large for typical Account
+      }
+
+      // Accounts often have references (storage, code)
+      if (refCount > 4) {
+        return false; // Too many references for Account
+      }
+
+      // Additional heuristic: try to parse using CellDB format and check first bit
+      // Account TL-B starts with a boolean flag
+      try {
+        Cell cell = parseCellFromCellDbFormat(cellData);
+        if (cell == null) {
+          return false;
+        }
+        //
+        CellSlice slice = CellSlice.beginParse(cell);
+
+        // Account starts with isAccount:Bool
+        // If we can read at least one bit, it's a potential Account
+        if (slice.getRestBits() > 0) {
+          return true;
+        }
+      } catch (Exception e) {
+        // If CellDB parsing fails, it's probably not an Account
+        return false;
+      }
+
+      return true;
+
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  /**
+   * Enhanced statistics that include Account-related information.
+   *
+   * @return Map of statistic name to value, including Account statistics
+   */
+  public Map<String, Object> getEnhancedStatistics() {
+    Map<String, Object> stats = getStatistics();
+
+    try {
+      // Add Account-specific statistics
+      Set<String> candidateAccountCells = findAccountCells(10); // Sample first 10
+      stats.put("candidate_account_cells_sample", candidateAccountCells.size());
+
+      if (!candidateAccountCells.isEmpty()) {
+        // Try to retrieve a few Accounts to validate
+        Set<String> sampleHashes =
+            candidateAccountCells.stream().limit(10).collect(java.util.stream.Collectors.toSet());
+
+        Map<String, Account> sampleAccounts = retrieveAccountsByHashes(sampleHashes);
+        stats.put("validated_accounts_sample", sampleAccounts.size());
+
+        // Count account states in sample
+        Map<String, Integer> accountStates = new HashMap<>();
+        for (Account account : sampleAccounts.values()) {
+          String state = account.getAccountState();
+          accountStates.put(state, accountStates.getOrDefault(state, 0) + 1);
+        }
+        stats.put("account_states_sample", accountStates);
+      }
+
+    } catch (Exception e) {
+      log.debug("Error generating enhanced statistics: {}", e.getMessage());
+      stats.put("enhanced_stats_error", e.getMessage());
     }
 
     return stats;

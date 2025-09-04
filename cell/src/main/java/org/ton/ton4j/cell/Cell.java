@@ -274,6 +274,10 @@ public class Cell implements Serializable {
     exotic = pExotic;
   }
 
+  void setLevelMask(LevelMask pLevelMask) {
+    levelMask = pLevelMask;
+  }
+
   /**
    * Converts BoC in hex string to Cell
    *
@@ -543,12 +547,6 @@ public class Cell implements Serializable {
       Cell[] refs = new Cell[refsIndex.length];
 
       for (int y = 0; y < refsIndex.length; y++) {
-        // Skip the recursive reference check as it can cause false positives
-        // in complex cell structures during serialization/deserialization
-        // if (i == refsIndex[y]) {
-        //   throw new Error("recursive reference of cells");
-        // }
-
         if ((refsIndex[y] < i) && (isNull(index))) {
           throw new Error("reference to index which is behind parent cell");
         }
@@ -966,7 +964,7 @@ public class Cell implements Serializable {
     int unusedBits = 8 - (bits.getUsedBits() % 8);
 
     if (unusedBits != 8) {
-      body[body.length - 1] += 1 << (unusedBits - 1);
+      body[body.length - 1] += (byte) (1 << (unusedBits - 1));
     }
 
     int refsLn = this.getRefs().size() * refIndexSzBytes;
