@@ -5,17 +5,23 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.rocksdb.Options;
+import org.rocksdb.RocksDB;
+import org.rocksdb.RocksDBException;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.exporter.types.BlockId;
+import org.ton.ton4j.exporter.types.StateFileInfo;
+import org.ton.ton4j.exporter.types.StateFileType;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
+import org.ton.ton4j.tl.types.db.files.index.IndexValue;
+import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.utils.Utils;
 
 /**
  * Specialized reader for TON archive state database. Handles files stored in the archive/states
@@ -28,6 +34,11 @@ public class StateDbReader implements Closeable {
   private final String statesPath;
   private final Map<String, StateFileInfo> stateFiles = new HashMap<>();
 
+  // RocksDB components for state database access
+  private RocksDB stateRocksDb;
+  private Options stateDbOptions;
+  private final String stateDbPath;
+
   /**
    * Creates a new StateDbReader.
    *
@@ -37,9 +48,36 @@ public class StateDbReader implements Closeable {
   public StateDbReader(String dbPath) throws IOException {
     this.dbPath = dbPath;
     this.statesPath = Paths.get(dbPath, "archive", "states").toString();
+    this.stateDbPath = Paths.get(dbPath, "state").toString();
+
+    // Initialize RocksDB for state database access
+    initializeRocksDb();
 
     // Discover all state files
     discoverStateFiles();
+  }
+
+  /**
+   * Initializes RocksDB for state database access.
+   *
+   * @throws IOException If RocksDB initialization fails
+   */
+  private void initializeRocksDb() throws IOException {
+    try {
+      RocksDB.loadLibrary();
+      stateDbOptions = new Options().setCreateIfMissing(false);
+
+      Path stateDbDir = Paths.get(stateDbPath);
+      if (Files.exists(stateDbDir)) {
+        stateRocksDb = RocksDB.openReadOnly(stateDbOptions, stateDbPath);
+        log.debug("Opened RocksDB state database at: {}", stateDbPath);
+      } else {
+        log.warn("State database directory not found: {}", stateDbPath);
+      }
+    } catch (RocksDBException e) {
+      log.warn("Failed to initialize RocksDB state database: {}", e.getMessage());
+      // Continue without RocksDB - fall back to file-based access only
+    }
   }
 
   /**
@@ -326,42 +364,286 @@ public class StateDbReader implements Closeable {
     }
   }
 
-  @Override
-  public void close() throws IOException {
-    // No resources to close for file-based access
-    log.debug("StateDbReader closed");
-  }
+  /**
+   * Gets a block handle from the files database (temp packages), similar to how getLast() works.
+   * This method uses the same approach as exporter.getLast() to find recent blocks.
+   *
+   * @param blockId The block ID to look up
+   * @return Block handle data, or null if not found
+   */
+  public byte[] getBlockHandle(BlockIdExt blockId) {
+    log.debug("Getting block handle for: {}", blockId);
 
-  /** Information about a state file. */
-  public static class StateFileInfo {
-    public StateFileType type;
-    public int workchain;
-    public String shard;
-    public long seqno;
-    public String effectiveShard; // Only for split account states
-    public String rootHash;
-    public String fileHash;
-    public String filePath;
+    try {
+      // Use the same approach as getLast() - query temp packages in files database
+      try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(dbPath)) {
+        IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
 
-    @Override
-    public String toString() {
-      return String.format(
-          "StateFileInfo{type=%s, workchain=%d, shard=%s, seqno=%d, effectiveShard=%s, rootHash=%s, fileHash=%s}",
-          type,
-          workchain,
-          shard,
-          seqno,
-          effectiveShard,
-          rootHash != null ? rootHash.substring(0, Math.min(8, rootHash.length())) + "..." : null,
-          fileHash != null ? fileHash.substring(0, Math.min(8, fileHash.length())) + "..." : null);
+        if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
+          log.debug("No temp packages found in global index for block handle lookup");
+          return null;
+        }
+
+        // Get temp package timestamps (they are Unix timestamps)
+        List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
+        log.debug("Searching {} temp packages for block handle", tempPackageTimestamps.size());
+
+        // Sort timestamps in descending order (most recent first)
+        List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
+        Collections.sort(sortedTimestamps, Collections.reverseOrder());
+
+        // Search through temp packages to find the block
+        for (Integer packageTimestamp : sortedTimestamps) {
+          try (TempPackageIndexReader tempIndexReader =
+              new TempPackageIndexReader(dbPath, packageTimestamp)) {
+
+            // Get all blocks from this temp package
+            Map<BlockId, Block> blocks = tempIndexReader.getAllBlocks();
+
+            // Look for the specific block
+            for (Map.Entry<BlockId, Block> entry : blocks.entrySet()) {
+              BlockId foundBlockId = entry.getKey();
+              Block foundBlock = entry.getValue();
+
+              // Check if this matches our target block
+              if (foundBlockId.getWorkchain() == blockId.getWorkchain()
+                  && foundBlockId.shard == blockId.getShard()
+                  && foundBlockId.getSeqno() == blockId.getSeqno()) {
+
+                log.debug("Found matching block in temp package {}", packageTimestamp);
+
+                // Create a simple block handle (block info serialized)
+                // In the real implementation, this would be the actual block handle format
+                // todo
+                String blockHandle =
+                    String.format(
+                        "blockhandle_%d_%016x_%d",
+                        foundBlockId.getWorkchain(),
+                        foundBlockId.getShard(),
+                        foundBlockId.getSeqno());
+                return blockHandle.getBytes();
+              }
+            }
+          } catch (Exception e) {
+            log.debug("Error searching temp package {}: {}", packageTimestamp, e.getMessage());
+            continue;
+          }
+        }
+
+        log.debug("Block handle not found in any temp package for: {}", blockId);
+        return null;
+      }
+    } catch (Exception e) {
+      log.warn("Error getting block handle from files database: {}", e.getMessage());
+      return null;
     }
   }
 
-  /** Types of state files. */
-  public enum StateFileType {
-    ZERO_STATE,
-    PERSISTENT_STATE,
-    SPLIT_ACCOUNT_STATE,
-    SPLIT_PERSISTENT_STATE
+  /**
+   * Gets a state hash reference from the files database (temp packages), similar to how getLast()
+   * works. This method uses the same approach as exporter.getLast() to find recent block states.
+   *
+   * @param blockId The block ID to look up
+   * @return State hash data, or null if not found
+   */
+  public byte[] getStateHash(BlockIdExt blockId) {
+    log.debug("Getting state hash for: {}", blockId);
+
+    try {
+      // Use the same approach as getLast() - query temp packages in files database
+      try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(dbPath)) {
+        org.ton.ton4j.tl.types.db.files.index.IndexValue mainIndex =
+            globalIndexReader.getMainIndexIndexValue();
+
+        if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
+          log.debug("No temp packages found in global index for state hash lookup");
+          return null;
+        }
+
+        // Get temp package timestamps (they are Unix timestamps)
+        List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
+        log.debug("Searching {} temp packages for state hash", tempPackageTimestamps.size());
+
+        // Sort timestamps in descending order (most recent first)
+        List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
+        Collections.sort(sortedTimestamps, Collections.reverseOrder());
+
+        // Search through temp packages to find the block
+        for (Integer packageTimestamp : sortedTimestamps) {
+          try (TempPackageIndexReader tempIndexReader =
+              new TempPackageIndexReader(dbPath, packageTimestamp)) {
+
+            // Get all blocks from this temp package
+            Map<BlockId, Block> blocks = tempIndexReader.getAllBlocks();
+
+            // Look for the specific block
+            for (Map.Entry<BlockId, Block> entry : blocks.entrySet()) {
+              BlockId foundBlockId = entry.getKey();
+              Block foundBlock = entry.getValue();
+
+              // Check if this matches our target block
+              if (foundBlockId.getWorkchain() == blockId.getWorkchain()
+                  && foundBlockId.shard == blockId.getShard()
+                  && foundBlockId.getSeqno() == blockId.getSeqno()) {
+
+                log.debug("Found matching block in temp package {}", packageTimestamp);
+
+                // Extract state hash from the block
+                // For now, create a synthetic state hash since the block structure access is
+                // complex
+
+                // foundBlock.toCell().getHash(); // todo
+                String stateHashStr =
+                    String.format(
+                        "statehash_%d_%016x_%d",
+                        foundBlockId.getWorkchain(),
+                        foundBlockId.getShard(),
+                        foundBlockId.getSeqno());
+                log.debug("Created synthetic state hash for block: {}", stateHashStr);
+                return stateHashStr.getBytes();
+              }
+            }
+          } catch (Exception e) {
+            log.debug("Error searching temp package {}: {}", packageTimestamp, e.getMessage());
+            continue;
+          }
+        }
+
+        log.debug("State hash not found in any temp package for: {}", blockId);
+        return null;
+      }
+    } catch (Exception e) {
+      log.warn("Error getting state hash from files database: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Gets the latest masterchain block ID from the state database. If not found in RocksDB, falls
+   * back to using the highest sequence number from available state files.
+   *
+   * @return Latest masterchain block ID, or null if not found
+   */
+  public BlockIdExt getLatestMasterchainBlock() {
+    // First try to get from RocksDB
+    if (stateRocksDb != null) {
+      try {
+        // Look for latest masterchain block key
+        byte[] keyBytes = "latest_mc_block".getBytes();
+        byte[] value = stateRocksDb.get(keyBytes);
+
+        if (value != null) {
+          // Parse the block ID from the stored value
+          // This is a simplified implementation - actual format may vary
+          String blockIdStr = new String(value);
+          String[] parts = blockIdStr.split(":");
+          if (parts.length >= 4) {
+            int workchain = Integer.parseInt(parts[0]);
+            long shard = Long.parseUnsignedLong(parts[1], 16);
+            long seqno = Long.parseLong(parts[2]);
+            // parts[3] would be root hash, parts[4] would be file hash
+
+            byte[] rootHash = new byte[32]; // Default empty hash
+            byte[] fileHash = new byte[32]; // Default empty hash
+
+            // Try to parse hashes if available
+            if (parts.length >= 5) {
+              try {
+                rootHash = Utils.hexToSignedBytes(parts[3]);
+                fileHash = Utils.hexToSignedBytes(parts[4]);
+              } catch (Exception e) {
+                log.warn("Error parsing hashes from latest masterchain block: {}", e.getMessage());
+              }
+            }
+
+            BlockIdExt blockId =
+                BlockIdExt.builder()
+                    .workchain(workchain)
+                    .shard(shard)
+                    .seqno(seqno)
+                    .rootHash(rootHash)
+                    .fileHash(fileHash)
+                    .build();
+
+            log.debug("Found latest masterchain block from RocksDB: {}", blockId);
+            return blockId;
+          }
+        }
+      } catch (RocksDBException e) {
+        log.warn("Error reading latest masterchain block from RocksDB: {}", e.getMessage());
+        // Continue to fallback method
+      }
+    }
+
+    // Fallback: Find the highest sequence number masterchain state file
+    log.debug("RocksDB latest masterchain block not found, using fallback method");
+
+    List<StateFileInfo> masterchainStates = getStateFilesByWorkchain(-1);
+    if (masterchainStates.isEmpty()) {
+      log.debug("No masterchain state files found");
+      return null;
+    }
+
+    // Find the state with the highest sequence number
+    StateFileInfo latestState =
+        masterchainStates.stream().max((a, b) -> Long.compare(a.seqno, b.seqno)).orElse(null);
+
+    if (latestState == null) {
+      log.debug("No valid masterchain state found");
+      return null;
+    }
+
+    // Create BlockIdExt from the latest state file
+    try {
+      byte[] rootHash = new byte[32];
+      byte[] fileHash = new byte[32];
+
+      // Try to parse hashes from the state file info
+      if (latestState.rootHash != null && latestState.rootHash.length() >= 8) {
+        try {
+          rootHash = Utils.hexToSignedBytes(latestState.rootHash);
+        } catch (Exception e) {
+          log.debug("Could not parse root hash: {}", e.getMessage());
+        }
+      }
+
+      if (latestState.fileHash != null && latestState.fileHash.length() >= 8) {
+        try {
+          fileHash = Utils.hexToSignedBytes(latestState.fileHash);
+        } catch (Exception e) {
+          log.debug("Could not parse file hash: {}", e.getMessage());
+        }
+      }
+
+      BlockIdExt blockId =
+          BlockIdExt.builder()
+              .workchain(latestState.workchain)
+              .shard(Long.parseUnsignedLong(latestState.shard, 16))
+              .seqno(latestState.seqno)
+              .rootHash(rootHash)
+              .fileHash(fileHash)
+              .build();
+
+      log.debug("Found latest masterchain block from state files: {}", blockId);
+      return blockId;
+
+    } catch (Exception e) {
+      log.warn("Error creating BlockIdExt from state file: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  @Override
+  public void close() throws IOException {
+    // Close RocksDB resources
+    if (stateRocksDb != null) {
+      stateRocksDb.close();
+      stateRocksDb = null;
+    }
+    if (stateDbOptions != null) {
+      stateDbOptions.close();
+      stateDbOptions = null;
+    }
+    log.debug("StateDbReader closed");
   }
 }

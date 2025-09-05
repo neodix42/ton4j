@@ -4,6 +4,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.lang3.tuple.Pair;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -79,23 +82,21 @@ public class BlockIdExt {
         + ", seqno="
         + seqno
         + ", rootHash="
-        + bytesToHex(rootHash)
+        + Utils.bytesToHex(rootHash)
         + ", fileHash="
-        + bytesToHex(fileHash)
+        + Utils.bytesToHex(fileHash)
         + '}';
   }
 
-  /**
-   * Converts a byte array to a hexadecimal string.
-   *
-   * @param bytes The byte array to convert
-   * @return The hexadecimal string
-   */
-  private static String bytesToHex(byte[] bytes) {
-    StringBuilder hex = new StringBuilder(2 * bytes.length);
-    for (byte b : bytes) {
-      hex.append(Character.forDigit((b >> 4) & 0xF, 16)).append(Character.forDigit((b & 0xF), 16));
-    }
-    return hex.toString().toLowerCase();
+  public static BlockIdExt fromBlock(Pair<Cell, Block> cellBlock) {
+    Block block = cellBlock.getRight();
+    Cell cell = cellBlock.getLeft();
+    return BlockIdExt.builder()
+        .seqno(block.getBlockInfo().getSeqno())
+        .shard(block.getBlockInfo().getShard().convertShardIdentToShard().longValue())
+        .workchain(block.getBlockInfo().getShard().getWorkchain())
+        .rootHash(block.toCell().getHash()) // bug in block serialization?
+        .fileHash(cell.getHash())
+        .build();
   }
 }

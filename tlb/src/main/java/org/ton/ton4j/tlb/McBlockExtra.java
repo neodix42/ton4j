@@ -1,13 +1,11 @@
 package org.ton.ton4j.tlb;
 
 import java.io.Serializable;
-import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.TonHashMapAugE;
 
 /**
  *
@@ -32,8 +30,8 @@ public class McBlockExtra implements Serializable {
   long magic;
   boolean keyBlock;
   ShardHashes shardHashes;
-  //    ShardFees shardFees;
-  TonHashMapAugE shardFees;
+  ShardFees shardFees;
+  //  TonHashMapAugE shardFees;
   McBlockExtraInfo info;
   ConfigParams config;
 
@@ -45,15 +43,19 @@ public class McBlockExtra implements Serializable {
     return CellBuilder.beginCell()
         .storeUint(0xcca5, 32)
         .storeBit(keyBlock)
-        .storeCell(shardHashes.toCell())
-        //                .storeCell(shardFees.toCell())
+        //        .storeCell(shardHashes.toCell())
+        .storeCell(shardFees.toCell())
         .storeDict(
-            shardFees.serialize(
-                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 96).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeCell((Cell) v), // todo ShardFeeCreated
-                e -> CellBuilder.beginCell().storeCell((Cell) e), // todo ShardFeeCreated
-                (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
-                ))
+            shardFees.toCell()
+            //            shardFees.serialize(
+            //                k -> CellBuilder.beginCell().storeUint((BigInteger) k,
+            // 96).endCell().getBits(),
+            //                v -> CellBuilder.beginCell().storeCell((Cell) v), // todo
+            // ShardFeeCreated
+            //                e -> CellBuilder.beginCell().storeCell((Cell) e), // todo
+            // ShardFeeCreated
+            //                (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
+            )
         .storeRef(info.toCell())
         .storeCell(keyBlock ? config.toCell() : CellBuilder.beginCell().endCell())
         .endCell();
@@ -70,8 +72,8 @@ public class McBlockExtra implements Serializable {
             .magic(0xcca5L)
             .keyBlock(keyBlock)
             .shardHashes(ShardHashes.deserialize(cs))
-            //                .shardFees(ShardFees.deserialize(cs))
-            .shardFees(cs.loadDictAugE(96, k -> k.readUint(96), v -> v, e -> e))
+            .shardFees(ShardFees.deserialize(cs))
+            //            .shardFees(cs.loadDictAugE(96, k -> k.readUint(96), v -> v, e -> e))
             .build();
     mcBlockExtra.setInfo(McBlockExtraInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
     mcBlockExtra.setConfig(keyBlock ? ConfigParams.deserialize(cs) : null);

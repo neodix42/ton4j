@@ -10,6 +10,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
+import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.exporter.types.BlockId;
 import org.ton.ton4j.tlb.Block;
 
@@ -198,6 +200,26 @@ public class TempPackageIndexReader implements Closeable {
           packageReader.close();
           return block;
         }
+      }
+    }
+    packageReader.close();
+    return null;
+  }
+
+  /**
+   * @return Block as cell and Block as TL-B
+   * @throws IOException
+   */
+  public Pair<Cell, Block> getLastAsPair() throws IOException {
+
+    TreeMap<Long, Long> mappings = getAllSortedOffsets();
+
+    PackageReader packageReader = new PackageReader(packagePath);
+
+    for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
+      PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(kv.getKey());
+      if (packageEntry.getFilename().startsWith("block_")) {
+        return Pair.of(packageEntry.getCell(), packageEntry.getBlock());
       }
     }
     packageReader.close();

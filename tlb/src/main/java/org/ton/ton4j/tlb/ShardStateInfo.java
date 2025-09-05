@@ -1,5 +1,7 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.isNull;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
@@ -42,7 +44,7 @@ public class ShardStateInfo implements Serializable {
             libraries.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((LibDescr) v).toCell()).endCell()))
-        .storeCellMaybe(masterRef.toCell())
+        .storeCellMaybe(isNull(masterRef) ? null : masterRef.toCell())
         .endCell();
   }
 

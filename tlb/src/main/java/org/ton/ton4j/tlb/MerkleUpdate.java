@@ -30,6 +30,7 @@ public class MerkleUpdate implements Serializable {
 
   public Cell toCell() {
     return CellBuilder.beginCell()
+        .storeUint(0x04, 8)
         .storeUint(oldHash, 256)
         .storeUint(newHash, 256)
         .storeUint(oldDepth, 16)

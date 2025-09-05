@@ -3,9 +3,14 @@ package org.ton.ton4j.exporter.reader;
 import java.io.IOException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.exporter.Exporter;
+import org.ton.ton4j.exporter.types.StateFileInfo;
+import org.ton.ton4j.exporter.types.StateFileType;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
+import org.ton.ton4j.tlb.Block;
 
 @Slf4j
 public class TestStateDbReader {
@@ -16,11 +21,10 @@ public class TestStateDbReader {
   @Test
   public void testReadStateDb() throws IOException {
     // Update this path to point to your actual TON database
-    String dbPath = TON_DB_ROOT_PATH;
 
-    log.info("Opening State database: {}", dbPath);
+    log.info("Opening State database: {}", TON_DB_ROOT_PATH);
 
-    try (StateDbReader stateReader = new StateDbReader(dbPath)) {
+    try (StateDbReader stateReader = new StateDbReader(TON_DB_ROOT_PATH)) {
       // Get all state file keys
       List<String> stateKeys = stateReader.getStateFileKeys();
       log.info("Found {} state files", stateKeys.size());
@@ -29,7 +33,7 @@ public class TestStateDbReader {
       log.info("First 10 state files:");
       for (int i = 0; i < Math.min(10, stateKeys.size()); i++) {
         String key = stateKeys.get(i);
-        StateDbReader.StateFileInfo info = stateReader.getStateFileInfo(key);
+        StateFileInfo info = stateReader.getStateFileInfo(key);
         log.info("  {}: {}", key, info);
       }
 
@@ -50,15 +54,15 @@ public class TestStateDbReader {
   private void analyzeStateFilesByType(StateDbReader stateReader) {
     log.info("Analyzing state files by type:");
 
-    for (StateDbReader.StateFileType type : StateDbReader.StateFileType.values()) {
-      List<StateDbReader.StateFileInfo> files = stateReader.getStateFilesByType(type);
+    for (StateFileType type : StateFileType.values()) {
+      List<StateFileInfo> files = stateReader.getStateFilesByType(type);
       log.info("  {}: {} files", type, files.size());
 
       // Show sample files for each type
       if (!files.isEmpty()) {
         log.info("    Sample files:");
         for (int i = 0; i < Math.min(3, files.size()); i++) {
-          StateDbReader.StateFileInfo info = files.get(i);
+          StateFileInfo info = files.get(i);
           log.info("      {}", info);
         }
       }
@@ -72,7 +76,7 @@ public class TestStateDbReader {
     int[] workchains = {-1, 0}; // Masterchain and basechain
 
     for (int workchain : workchains) {
-      List<StateDbReader.StateFileInfo> files = stateReader.getStateFilesByWorkchain(workchain);
+      List<StateFileInfo> files = stateReader.getStateFilesByWorkchain(workchain);
       log.info("  Workchain {}: {} files", workchain, files.size());
 
       if (!files.isEmpty()) {
@@ -96,7 +100,7 @@ public class TestStateDbReader {
       }
 
       try {
-        StateDbReader.StateFileInfo info = stateReader.getStateFileInfo(key);
+        StateFileInfo info = stateReader.getStateFileInfo(key);
         byte[] data = stateReader.readStateFile(key);
 
         if (data != null) {
@@ -131,17 +135,16 @@ public class TestStateDbReader {
     log.info("Testing specific queries:");
 
     // Test sequence number range query
-    List<StateDbReader.StateFileInfo> recentStates = stateReader.getStateFilesBySeqnoRange(0, 1000);
+    List<StateFileInfo> recentStates = stateReader.getStateFilesBySeqnoRange(0, 1000);
     log.info("  States with seqno 0-1000: {} files", recentStates.size());
 
     // Test zero state lookup
-    List<StateDbReader.StateFileInfo> zeroStates =
-        stateReader.getStateFilesByType(StateDbReader.StateFileType.ZERO_STATE);
+    List<StateFileInfo> zeroStates = stateReader.getStateFilesByType(StateFileType.ZERO_STATE);
     if (!zeroStates.isEmpty()) {
       log.info("  Found {} zero states", zeroStates.size());
 
       // Try to read the first zero state
-      StateDbReader.StateFileInfo zeroState = zeroStates.get(0);
+      StateFileInfo zeroState = zeroStates.get(0);
       try {
         BlockIdExt blockId =
             BlockIdExt.builder()
@@ -162,13 +165,13 @@ public class TestStateDbReader {
     }
 
     // Test persistent state lookup
-    List<StateDbReader.StateFileInfo> persistentStates =
-        stateReader.getStateFilesByType(StateDbReader.StateFileType.PERSISTENT_STATE);
+    List<StateFileInfo> persistentStates =
+        stateReader.getStateFilesByType(StateFileType.PERSISTENT_STATE);
     if (!persistentStates.isEmpty()) {
       log.info("  Found {} persistent states", persistentStates.size());
 
       // Try to read the first persistent state
-      StateDbReader.StateFileInfo persistentState = persistentStates.get(0);
+      StateFileInfo persistentState = persistentStates.get(0);
       try {
         BlockIdExt blockId =
             BlockIdExt.builder()
@@ -193,6 +196,32 @@ public class TestStateDbReader {
       } catch (Exception e) {
         log.warn("    Error reading persistent state: {}", e.getMessage());
       }
+    }
+  }
+
+  /** this works, but state db is not updated locally, todo */
+  @Test
+  public void testReadStateDbGetLast() throws IOException {
+    log.info("Opening State database: {}", TON_DB_ROOT_PATH);
+
+    try (StateDbReader stateReader = new StateDbReader(TON_DB_ROOT_PATH)) {
+      BlockIdExt blockIdExt = stateReader.getLatestMasterchainBlock();
+      log.info("blockIdExt: {}", blockIdExt);
+    }
+  }
+
+  /** todo bug in Block serialization */
+  @Test
+  public void testReadStateDbGetBlockHandle() throws IOException {
+    log.info("Opening State database: {}", TON_DB_ROOT_PATH);
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+    Pair<Cell, Block> latestCellBlock = exporter.getLastAsPair();
+
+    try (StateDbReader stateReader = new StateDbReader(TON_DB_ROOT_PATH)) {
+      byte[] blockHandle = stateReader.getBlockHandle(BlockIdExt.fromBlock(latestCellBlock));
+      log.info(
+          "blockHandle: {}",
+          blockHandle != null ? "found (" + blockHandle.length + " bytes)" : "not found");
     }
   }
 }

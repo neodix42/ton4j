@@ -1,6 +1,7 @@
 package org.ton.ton4j.tlb;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
@@ -37,9 +38,9 @@ public class ShardState implements Serializable {
           .endCell();
     }
     if (magic == 0x9023afe2L) {
-      return CellBuilder.beginCell().storeUint(0x9023afe2L, 32).storeCell(left.toCell()).endCell();
+      return CellBuilder.beginCell().storeUint(2418257890L, 32).storeCell(left.toCell()).endCell();
     } else {
-      throw new Error("wrong magic number");
+      throw new Error("wrong magic number " + BigInteger.valueOf(magic).toString(16));
     }
   }
 

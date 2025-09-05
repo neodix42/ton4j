@@ -1,5 +1,6 @@
 package org.ton.ton4j.tl.types.db.files;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.ton.ton4j.tl.types.db.files.key.IndexKey;
@@ -18,7 +19,8 @@ public interface GlobalIndexKey {
       packageKey.setTemp(byteBuffer.getInt() == 0);
       return packageKey;
     } else {
-      throw new IllegalArgumentException("Unsupported magic number: " + magic);
+      throw new IllegalArgumentException(
+          "wrong magic number: " + BigInteger.valueOf(magic).toString(16));
     }
   }
 

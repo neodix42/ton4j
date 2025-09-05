@@ -29,8 +29,8 @@ public class ShardAccounts {
         .storeCell(
             shardAccounts.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeCell(((ShardAccount) v).toCell()),
-                e -> CellBuilder.beginCell().storeCell(((DepthBalanceInfo) e).toCell()),
+                v -> CellBuilder.beginCell().storeCell(((ShardAccount) v).toCell()).endCell(),
+                e -> CellBuilder.beginCell().storeCell(((DepthBalanceInfo) e).toCell()).endCell(),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1)))
         .endCell();
   }

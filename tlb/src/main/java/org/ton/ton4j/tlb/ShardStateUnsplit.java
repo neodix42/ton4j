@@ -1,5 +1,7 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.isNull;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
@@ -56,7 +58,7 @@ public class ShardStateUnsplit implements Serializable {
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        .storeUint(0x9023afe2, 32)
+        .storeUint(2418257890L, 32)
         .storeInt(globalId, 32)
         .storeCell(shardIdent.toCell())
         .storeUint(seqno, 32)
@@ -68,7 +70,7 @@ public class ShardStateUnsplit implements Serializable {
         .storeBit(beforeSplit)
         .storeRef(shardAccounts.toCell())
         .storeRef(shardStateInfo.toCell())
-        .storeRefMaybe(custom.toCell())
+        .storeRefMaybe(isNull(custom) ? null : custom.toCell())
         .endCell();
   }
 

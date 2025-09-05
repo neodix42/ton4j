@@ -14,8 +14,10 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.exporter.types.ArchiveFileLocation;
 import org.ton.ton4j.exporter.types.BlockLocation;
+import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
+import org.ton.ton4j.tl.types.db.files.key.IndexKey;
 import org.ton.ton4j.tl.types.db.files.key.PackageKey;
 import org.ton.ton4j.tl.types.db.files.pkg.PackageValue;
 
@@ -87,10 +89,9 @@ public class GlobalIndexDbReader implements Closeable {
 
             try {
               // Try to deserialize as IndexKey to see if it's the main index entry
-              org.ton.ton4j.tl.types.db.files.GlobalIndexKey globalKey =
-                  org.ton.ton4j.tl.types.db.files.GlobalIndexKey.deserialize(key);
+              GlobalIndexKey globalKey = GlobalIndexKey.deserialize(key);
 
-              if (globalKey instanceof org.ton.ton4j.tl.types.db.files.key.IndexKey) {
+              if (globalKey instanceof IndexKey) {
                 mainIndexIndexValue = (IndexValue) GlobalIndexValue.deserialize(value);
 
                 log.info(

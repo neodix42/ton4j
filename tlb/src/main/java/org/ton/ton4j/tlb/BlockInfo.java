@@ -76,7 +76,7 @@ public class BlockInfo implements Serializable {
   public Cell toCell() {
     CellBuilder result =
         CellBuilder.beginCell()
-            .storeUint(0x9bc7a987, 32)
+            .storeUint(2613553543L, 32) // 0x9bc7a987L
             .storeUint(version, 32)
             .storeBit(notMaster)
             .storeBit(afterMerge)

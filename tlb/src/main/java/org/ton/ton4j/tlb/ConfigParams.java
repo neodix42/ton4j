@@ -10,6 +10,13 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.cell.TonHashMap;
 
+/**
+ *
+ *
+ * <pre>
+ * config_addr:bits256 config:^(Hashmap 32 ^Cell) = ConfigParams;
+ *   </pre>
+ */
 @Builder
 @Data
 public class ConfigParams implements Serializable {

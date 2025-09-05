@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class BlockId implements Serializable {
   int workchain;
-  long shard;
+  public long shard;
   long seqno;
 
   public String getShard() {
