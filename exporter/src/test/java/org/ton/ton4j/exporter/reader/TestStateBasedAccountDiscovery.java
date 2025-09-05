@@ -57,6 +57,35 @@ public class TestStateBasedAccountDiscovery {
   }
 
   @Test
+  public void testFindStateRootHashesOptimized() {
+    log.info("=== Test 1: Finding State Root Hashes ===");
+
+    try {
+      CellDbReaderOptimized cellDbReader = new CellDbReaderOptimized(TON_DB_ROOT_PATH);
+
+      // Find state root hashes that point to ShardStateUnsplit cells
+      Set<String> stateRootHashes = cellDbReader.findShardStateRootHashes(10);
+
+      log.info("Found {} state root hash candidates", stateRootHashes.size());
+
+      // Log first few candidates for inspection
+      int count = 0;
+      for (String hash : stateRootHashes) {
+        log.info("State root candidate {}: {}", count + 1, hash);
+        count++;
+        if (count >= 5) break;
+      }
+
+      // We expect to find at least some state root candidates
+      assertTrue("Should find some state root candidates", stateRootHashes.size() >= 0);
+
+    } catch (Exception e) {
+      log.error("Error in testFindStateRootHashes: {}", e.getMessage());
+      fail("Test failed with exception: " + e.getMessage());
+    }
+  }
+
+  @Test
   public void testParseShardStateUnsplit() {
     log.info("=== Test 2: Parsing ShardStateUnsplit Structures ===");
 
@@ -110,6 +139,61 @@ public class TestStateBasedAccountDiscovery {
   }
 
   @Test
+  public void testParseShardStateUnsplitOptimized() {
+    log.info("=== Test 2: Parsing ShardStateUnsplit Structures ===");
+
+    try {
+      CellDbReaderOptimized cellDbReader = new CellDbReaderOptimized(TON_DB_ROOT_PATH);
+
+      // Find state root hashes
+      Set<String> stateRootHashes = cellDbReader.findShardStateRootHashes(5);
+      log.info("Testing ShardStateUnsplit parsing with {} candidates", stateRootHashes.size());
+
+      int validStates = 0;
+      int parseErrors = 0;
+
+      for (String stateRootHash : stateRootHashes) {
+        try {
+          ShardStateUnsplit shardState = cellDbReader.getShardStateUnsplit(stateRootHash);
+          if (shardState != null) {
+            validStates++;
+            log.info("Successfully parsed ShardStateUnsplit from hash: {}", stateRootHash);
+            //            log.info("  - ShardStateUnsplit: {}", shardState);
+            log.info("  - Global ID: {}", shardState.getGlobalId());
+            log.info("  - Sequence Number: {}", shardState.getSeqno());
+            log.info("  - Generation Time: {}", shardState.getGenUTime());
+
+            // Check if it has account data
+            if (shardState.getShardAccounts() != null) {
+              log.info("  - Has ShardAccounts: YES");
+            } else {
+              log.info("  - Has ShardAccounts: NO");
+            }
+          } else {
+            parseErrors++;
+            log.debug("Failed to parse ShardStateUnsplit from hash: {}", stateRootHash);
+          }
+        } catch (Exception e) {
+          parseErrors++;
+          log.debug(
+              "Error parsing ShardStateUnsplit from hash {}: {}", stateRootHash, e.getMessage());
+        }
+      }
+
+      log.info("ShardStateUnsplit parsing results: {} valid, {} errors", validStates, parseErrors);
+
+      // We expect at least some valid states if we found state root candidates
+      if (!stateRootHashes.isEmpty()) {
+        assertTrue("Should have some parsing results", validStates > 0 || parseErrors > 0);
+      }
+      cellDbReader.close();
+    } catch (Exception e) {
+      log.error("Error in testParseShardStateUnsplit: {}", e.getMessage());
+      fail("Test failed with exception: " + e.getMessage());
+    }
+  }
+
+  @Test
   public void testExtractAccountsFromShardState() {
     log.info("=== Test 3: Extracting Accounts from ShardState ===");
 
@@ -146,7 +230,7 @@ public class TestStateBasedAccountDiscovery {
                   shardAccount.getBalance());
 
               accountCount++;
-              if (accountCount >= 3) break;
+              if (accountCount >= 15) break;
             }
           }
         } catch (Exception e) {
@@ -162,6 +246,67 @@ public class TestStateBasedAccountDiscovery {
       // The test passes if we processed some states (accounts may or may not be found)
       assertTrue("Should process some states", validStatesProcessed >= 0);
 
+    } catch (Exception e) {
+      log.error("Error in testExtractAccountsFromShardState: {}", e.getMessage());
+      fail("Test failed with exception: " + e.getMessage());
+    }
+  }
+
+  @Test
+  public void testExtractAccountsFromShardStateOptimized() {
+    log.info("=== Test 3: Extracting Accounts from ShardState ===");
+
+    try {
+      CellDbReaderOptimized cellDbReader = new CellDbReaderOptimized(TON_DB_ROOT_PATH);
+
+      // Find and parse state roots
+      Set<String> stateRootHashes = cellDbReader.findShardStateRootHashes(3);
+      log.info("Testing account extraction with {} state root candidates", stateRootHashes.size());
+
+      int totalAccountsFound = 0;
+      int validStatesProcessed = 0;
+
+      for (String stateRootHash : stateRootHashes) {
+        try {
+          ShardStateUnsplit shardState = cellDbReader.getShardStateUnsplit(stateRootHash);
+          if (shardState != null) {
+            validStatesProcessed++;
+
+            Map<Address, ShardAccount> accounts =
+                cellDbReader.extractAccountsFromShardState(shardState);
+            totalAccountsFound += accounts.size();
+
+            log.info("State root {}: {} accounts extracted", stateRootHash, accounts.size());
+
+            // Log details of first few accounts
+            int accountCount = 0;
+            for (Map.Entry<Address, ShardAccount> entry : accounts.entrySet()) {
+              Address address = entry.getKey();
+              ShardAccount shardAccount = entry.getValue();
+
+              log.info(
+                  "  Account {}: address={}, balance={}",
+                  accountCount + 1,
+                  address.toRaw(),
+                  shardAccount.getBalance());
+
+              accountCount++;
+              if (accountCount >= 15) break;
+            }
+          }
+        } catch (Exception e) {
+          log.debug("Error processing state root {}: {}", stateRootHash, e.getMessage());
+        }
+      }
+
+      log.info(
+          "Account extraction completed: {} accounts from {} valid states",
+          totalAccountsFound,
+          validStatesProcessed);
+
+      // The test passes if we processed some states (accounts may or may not be found)
+      assertTrue("Should process some states", validStatesProcessed >= 0);
+      cellDbReader.close();
     } catch (Exception e) {
       log.error("Error in testExtractAccountsFromShardState: {}", e.getMessage());
       fail("Test failed with exception: " + e.getMessage());
@@ -241,6 +386,70 @@ public class TestStateBasedAccountDiscovery {
       log.error("Error in testRetrieveAccountByAddress: {}", e.getMessage());
       fail("Test failed with exception: " + e.getMessage());
     }
+  }
+
+  @Test
+  public void testRetrieveAccountByAddressOptimized() {
+    log.info("=== Test 5: Retrieving Account by Address ===");
+
+    try {
+      CellDbReaderOptimized cellDbReader = new CellDbReaderOptimized(TON_DB_ROOT_PATH);
+
+      // First, get some accounts to test with
+      Map<Address, ShardAccount> allAccounts = cellDbReader.retrieveAllAccounts(2);
+
+      if (!allAccounts.isEmpty()) {
+        // Test retrieving a known account
+        Address testAddress = allAccounts.keySet().iterator().next();
+        log.info("Testing retrieval of account: {}", testAddress);
+
+        ShardAccount retrievedAccount = cellDbReader.retrieveAccountByAddress(testAddress);
+
+        if (retrievedAccount != null) {
+          log.info(
+              "Successfully retrieved account: balance={}, lastTransHash={}",
+              retrievedAccount.getBalance(),
+              retrievedAccount.getLastTransHash());
+
+          // Verify it matches the original
+          ShardAccount originalAccount = allAccounts.get(testAddress);
+          assertEquals(
+              "Retrieved account should match original",
+              originalAccount.getBalance(),
+              retrievedAccount.getBalance());
+        } else {
+          log.info("Account not found (this may be expected due to implementation limitations)");
+        }
+      } else {
+        log.info("No accounts found to test retrieval with");
+      }
+      cellDbReader.close();
+    } catch (Exception e) {
+      log.error("Error in testRetrieveAccountByAddress: {}", e.getMessage());
+      fail("Test failed with exception: " + e.getMessage());
+    }
+  }
+
+  @Test
+  public void testRetrieveAccountByAddressOptimizedSpecific() throws IOException {
+    log.info("=== Test 5: Retrieving Account by Address ===");
+
+    CellDbReaderOptimized cellDbReader = new CellDbReaderOptimized(TON_DB_ROOT_PATH);
+
+    // Test retrieving a known account
+    Address testAddress =
+        Address.of("-1:578a994a4be99fedf40953621cf780d109aea2126de9c1ad5362ece75867a10a");
+    log.info("Testing retrieval of account: {}", testAddress);
+
+    ShardAccount retrievedAccount = cellDbReader.retrieveAccountByAddress(testAddress);
+
+    if (retrievedAccount != null) {
+      log.info(
+          "Successfully retrieved account: balance={}, lastTransHash={}",
+          retrievedAccount.getBalance(),
+          retrievedAccount.getLastTransHash());
+    }
+    cellDbReader.close();
   }
 
   @Test

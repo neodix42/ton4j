@@ -10,7 +10,7 @@ import org.ton.ton4j.tlb.Block;
 @Slf4j
 public class TestTempPackageIndexReader {
 
-  public static final int PACKAGE_TIMESTAMP = 1756882800;
+  public static final int PACKAGE_TIMESTAMP = 1757055600;
   public static final String TON_DB_ROOT_PATH =
       "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
 
@@ -34,6 +34,7 @@ public class TestTempPackageIndexReader {
           log.info(" - filename {}", packageEntry.getFilename());
           //      log.info(" - seqno {}", packageEntry.getBlock().getBlockInfo().getSeqno());
         }
+        log.info("total entries {}", mappings.size());
       }
     }
   }
@@ -60,6 +61,7 @@ public class TestTempPackageIndexReader {
             log.info("block {}", packageEntry.getBlock());
           }
         }
+        log.info("total entries {}", mappings.size());
       }
     }
   }
@@ -75,6 +77,7 @@ public class TestTempPackageIndexReader {
       for (Map.Entry<BlockId, Block> kv : mappings.entrySet()) {
         log.info("{} {}", kv.getKey(), kv.getValue());
       }
+      log.info("total entries {}", mappings.size());
     }
   }
 

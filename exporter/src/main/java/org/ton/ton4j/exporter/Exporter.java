@@ -20,6 +20,7 @@ import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
+import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -29,6 +30,7 @@ import org.ton.ton4j.exporter.types.BlockId;
 import org.ton.ton4j.exporter.types.ExportStatus;
 import org.ton.ton4j.exporter.types.ExportedBlock;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
+import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.utils.Utils;
 
@@ -1045,4 +1047,14 @@ public class Exporter {
       }
     }
   }
+
+  public Account getAccountByAddress(Address address) throws IOException {
+    try (CellDbReaderOptimized cellDbReader = new CellDbReaderOptimized(tonDatabaseRootPath)) {
+      return cellDbReader.retrieveAccountByAddress(address).getAccount();
+    }
+  }
+
+  //  public Account getAccountByAddress(Address address) throws IOException {
+  //    Block block = getLast();
+  //  }
 }

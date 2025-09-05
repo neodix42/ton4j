@@ -92,13 +92,10 @@ public class CellDbReader implements Closeable {
 
         // Skip the TL constructor ID (4 bytes)
         if (buffer.remaining() >= 4) {
-          int constructor = buffer.getInt();
-          log.debug("Empty entry TL constructor ID: 0x{}", Integer.toHexString(constructor));
+          buffer.getInt();
         }
 
         emptyEntry = Value.deserialize(buffer);
-        log.debug(
-            "Loaded empty entry: prev={}, next={}", emptyEntry.getPrev(), emptyEntry.getNext());
       } else {
         log.warn("Empty entry not found in CellDB");
         // Create a placeholder empty entry
@@ -141,22 +138,16 @@ public class CellDbReader implements Closeable {
               return;
             }
 
-            // Parse the TL-serialized value
-            // TL format includes a 4-byte constructor ID at the beginning
+            // Parse the TL-serialized value, TL format includes a 4-byte constructor ID
             ByteBuffer buffer = ByteBuffer.wrap(value);
             buffer.order(ByteOrder.LITTLE_ENDIAN);
 
             // Skip the TL constructor ID (4 bytes)
             if (buffer.remaining() >= 4) {
-              //              int constructor =
               buffer.getInt();
-              // Log the constructor for debugging
-              //              if (validEntries.get() < 5) {
-              //                log.debug("TL constructor ID: 0x{}",
-              // Integer.toHexString(constructor));
-              //              }
             }
-
+            // db.celldb.value block_id:tonNode.blockIdExt prev:int256 next:int256 root_hash:int256
+            // = db.celldb.Value;
             Value cellValue = Value.deserialize(buffer);
 
             // Extract key hash from the key (remove "desc" prefix for regular entries)
@@ -169,8 +160,7 @@ public class CellDbReader implements Closeable {
               String base64Part = keyStr.substring(4); // Remove "desc" prefix
               try {
                 // Decode Base64 to get the raw hash bytes, then convert to hex
-                byte[] hashBytes = java.util.Base64.getDecoder().decode(base64Part);
-                keyHash = Utils.bytesToHex(hashBytes);
+                keyHash = Utils.base64ToHexString(base64Part);
               } catch (Exception e) {
                 log.debug("Error decoding Base64 key hash {}: {}", base64Part, e.getMessage());
                 keyHash = base64Part; // Fallback to Base64 part
@@ -180,10 +170,6 @@ public class CellDbReader implements Closeable {
             cellEntries.put(keyHash, cellValue);
             entryCache.put(keyHash, cellValue);
             validEntries.incrementAndGet();
-
-            //        if (validEntries.get() % 1000 == 0) {
-            //          log.debug("Processed {} cell entries", validEntries.get());
-            //        }
 
           } catch (Exception e) {
             parseErrors.incrementAndGet();
@@ -1232,17 +1218,17 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Finds state root hashes from CellDB metadata entries. These are the root hashes that point to
-   * ShardStateUnsplit cells containing account dictionaries.
+   * Finds shardState root hashes from CellDB metadata entries. These are the root hashes that point
+   * to ShardStateUnsplit cells containing account dictionaries.
    *
-   * @param maxResults Maximum number of state root hashes to return (0 for unlimited)
-   * @return Set of state root hashes that likely contain ShardStateUnsplit structures
+   * @param maxResults Maximum number of shardState root hashes to return (0 for unlimited)
+   * @return Set of shardState root hashes that likely contain ShardStateUnsplit structures
    */
   public Set<String> findStateRootHashes(int maxResults) {
     Set<String> stateRootHashes = new HashSet<>();
     Map<String, Value> allEntries = getAllCellEntries();
 
-    log.info("Searching for state root hashes among {} metadata entries", allEntries.size());
+    log.info("Searching for shardState root hashes among {} metadata entries", allEntries.size());
 
     int processed = 0;
     int candidates = 0;
@@ -1268,7 +1254,7 @@ public class CellDbReader implements Closeable {
       processed++;
       if (processed % 10000 == 0) {
         log.info(
-            "State root search progress: {}/{} processed, {} candidates found",
+            "shardState root search progress: {}/{} processed, {} candidates found",
             processed,
             allEntries.size(),
             candidates);
@@ -1276,7 +1262,9 @@ public class CellDbReader implements Closeable {
     }
 
     log.info(
-        "State root search completed: {} candidates found from {} entries", candidates, processed);
+        "shardState root search completed: {} candidates found from {} entries",
+        candidates,
+        processed);
 
     return stateRootHashes;
   }
@@ -1321,7 +1309,7 @@ public class CellDbReader implements Closeable {
    */
   public ShardStateUnsplit getShardStateUnsplit(String stateRootHash) {
     if (stateRootHash == null || stateRootHash.isEmpty()) {
-      log.debug("Invalid state root hash provided: {}", stateRootHash);
+      log.debug("Invalid shardState root hash provided: {}", stateRootHash);
       return null;
     }
 
@@ -1329,7 +1317,7 @@ public class CellDbReader implements Closeable {
       // 1. Retrieve raw cell data
       byte[] cellData = readCellData(stateRootHash);
       if (cellData == null) {
-        log.debug("No cell data found for state root hash: {}", stateRootHash);
+        log.debug("No cell data found for shardState root hash: {}", stateRootHash);
         return null;
       }
 
@@ -1407,11 +1395,11 @@ public class CellDbReader implements Closeable {
     log.info("Retrieving account by address: {}", accountAddress.toRaw());
 
     try {
-      // 1. Find state root hashes
+      // 1. Find shardState root hashes
       Set<String> stateRootHashes = findStateRootHashes(10); // Limit for performance
-      log.info("Found {} potential state root hashes", stateRootHashes.size());
+      log.info("Found {} potential shardState root hashes", stateRootHashes.size());
 
-      // 2. Try each state root to find the account
+      // 2. Try each shardState root to find the account
       for (String stateRootHash : stateRootHashes) {
         try {
           ShardStateUnsplit shardState = getShardStateUnsplit(stateRootHash);
@@ -1421,16 +1409,17 @@ public class CellDbReader implements Closeable {
             // 3. Look for the specific account address
             ShardAccount account = accounts.get(accountAddress);
             if (account != null) {
-              log.info("Found account {} in state root {}", accountAddress.toRaw(), stateRootHash);
+              log.info(
+                  "Found account {} in shardState root {}", accountAddress.toRaw(), stateRootHash);
               return account;
             }
           }
         } catch (Exception e) {
-          log.debug("Error processing state root {}: {}", stateRootHash, e.getMessage());
+          log.debug("Error processing shardState root {}: {}", stateRootHash, e.getMessage());
         }
       }
 
-      log.info("Account {} not found in any state root", accountAddress.toRaw());
+      log.info("Account {} not found in any shardState root", accountAddress.toRaw());
       return null;
 
     } catch (Exception e) {
@@ -1441,26 +1430,24 @@ public class CellDbReader implements Closeable {
   }
 
   /**
-   * Retrieves all accounts from all available state roots. This provides a comprehensive view of
-   * all accounts stored in the CellDB.
+   * Retrieves all accounts from all available shardState roots. This provides a comprehensive view
+   * of all accounts stored in the CellDB.
    *
-   * @param maxStateRoots Maximum number of state roots to process (0 for unlimited)
+   * @param maxStateRoots Maximum number of shardState roots to process (0 for unlimited)
    * @return Map of account address to ShardAccount for all found accounts
    */
   public Map<Address, ShardAccount> retrieveAllAccounts(int maxStateRoots) {
     Map<Address, ShardAccount> allAccounts = new HashMap<>();
 
-    log.info("Retrieving all accounts from CellDB state roots");
-
     try {
-      // 1. Find all state root hashes
+      // 1. Find all shardState root hashes
       Set<String> stateRootHashes = findStateRootHashes(maxStateRoots);
-      log.info("Processing {} state root hashes", stateRootHashes.size());
+      log.info("Processing {} shardState root hashes", stateRootHashes.size());
 
       int processedRoots = 0;
       int totalAccounts = 0;
 
-      // 2. Process each state root
+      // 2. Process each shardState root
       for (String stateRootHash : stateRootHashes) {
         try {
           ShardStateUnsplit shardState = getShardStateUnsplit(stateRootHash);
@@ -1472,16 +1459,18 @@ public class CellDbReader implements Closeable {
             totalAccounts += stateAccounts.size();
 
             log.info(
-                "Processed state root {}: {} accounts found", stateRootHash, stateAccounts.size());
+                "Processed shardState root {}: {} accounts found",
+                stateRootHash,
+                stateAccounts.size());
           }
         } catch (Exception e) {
-          log.debug("Error processing state root {}: {}", stateRootHash, e.getMessage());
+          log.debug("Error processing shardState root {}: {}", stateRootHash, e.getMessage());
         }
 
         processedRoots++;
         if (processedRoots % 10 == 0) {
           log.info(
-              "Progress: {}/{} state roots processed, {} unique accounts found",
+              "Progress: {}/{} shardState roots processed, {} unique accounts found",
               processedRoots,
               stateRootHashes.size(),
               allAccounts.size());
@@ -1489,7 +1478,7 @@ public class CellDbReader implements Closeable {
       }
 
       log.info(
-          "Account retrieval completed: {} unique accounts from {} state roots (total {} account entries)",
+          "Account retrieval completed: {} unique accounts from {} shardState roots (total {} account entries)",
           allAccounts.size(),
           processedRoots,
           totalAccounts);
@@ -1501,7 +1490,7 @@ public class CellDbReader implements Closeable {
     return allAccounts;
   }
 
-  /** Convenience method for unlimited state root processing. */
+  /** Convenience method for unlimited shardState root processing. */
   public Map<Address, ShardAccount> retrieveAllAccounts() {
     return retrieveAllAccounts(0);
   }
@@ -1533,7 +1522,7 @@ public class CellDbReader implements Closeable {
               totalAccountsInSample += accounts.size();
             }
           } catch (Exception e) {
-            log.debug("Error processing state root for statistics: {}", e.getMessage());
+            log.debug("Error processing shardState root for statistics: {}", e.getMessage());
           }
         }
 

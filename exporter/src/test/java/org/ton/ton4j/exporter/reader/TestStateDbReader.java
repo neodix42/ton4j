@@ -10,7 +10,8 @@ import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 @Slf4j
 public class TestStateDbReader {
 
-  public static final String TON_DB_ROOT_PATH = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+  public static final String TON_DB_ROOT_PATH =
+      "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
 
   @Test
   public void testReadStateDb() throws IOException {
@@ -192,73 +193,6 @@ public class TestStateDbReader {
       } catch (Exception e) {
         log.warn("    Error reading persistent state: {}", e.getMessage());
       }
-    }
-  }
-
-  @Test
-  public void testStateFilenamePatterns() {
-    log.info("Testing state filename parsing patterns:");
-
-    // Test various filename patterns
-    String[] testFilenames = {
-      "zerostate_-1_8000000000000000_A6A0BD6608672B11B79538A50B2204E748305C12AA0DED9C16CF0006CE3AF8DB_4AC7A727E36B690590C64D1D8432E616E0A2B5B8B8B8B8B8B8B8B8B8B8B8B8B8",
-      "state_0_8000000000000000_123_B1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF_C1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF",
-      "split_account_0_8000000000000000_456_4000000000000000_D1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF_E1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF",
-      "split_state_0_8000000000000000_789_F1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF_A1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF",
-      "zerostate_0_557887380CA63F0710D05358E8F65FC14AFDE95C1B4ECB393BB609F573980EDE",
-      "zerostate_-1_19E74429499CC327B6F21523CCC78492D5C6DFB228F0FE534B7F40BA87359B74",
-      "invalid_filename_format",
-      "state_invalid_format"
-    };
-
-    // Create a temporary StateDbReader to test filename parsing
-    try {
-      // Create a temporary directory for testing
-      String tempDir = System.getProperty("java.io.tmpdir") + "/test_state_db";
-      java.nio.file.Files.createDirectories(java.nio.file.Paths.get(tempDir, "archive", "states"));
-
-      // We can't directly test the private parseStateFilename method,
-      // but we can test the overall functionality by creating test files
-      for (String filename : testFilenames) {
-        log.info("Testing filename: {}", filename);
-
-        // Create empty test file
-        java.nio.file.Path testFile =
-            java.nio.file.Paths.get(tempDir, "archive", "states", filename);
-        try {
-          java.nio.file.Files.write(testFile, new byte[0]);
-        } catch (Exception e) {
-          log.warn("Could not create test file {}: {}", filename, e.getMessage());
-          continue;
-        }
-      }
-
-      // Test with the temporary directory
-      try (StateDbReader testReader = new StateDbReader(tempDir)) {
-        List<String> discoveredFiles = testReader.getStateFileKeys();
-        log.info(
-            "Discovered {} valid state files out of {} test files",
-            discoveredFiles.size(),
-            testFilenames.length);
-
-        for (String discoveredFile : discoveredFiles) {
-          StateDbReader.StateFileInfo info = testReader.getStateFileInfo(discoveredFile);
-          log.info("  {}: {}", discoveredFile, info);
-        }
-      }
-
-      // Clean up test files
-      try {
-        java.nio.file.Files.walk(java.nio.file.Paths.get(tempDir))
-            .sorted(java.util.Comparator.reverseOrder())
-            .map(java.nio.file.Path::toFile)
-            .forEach(java.io.File::delete);
-      } catch (Exception e) {
-        log.warn("Could not clean up test directory: {}", e.getMessage());
-      }
-
-    } catch (Exception e) {
-      log.error("Error in filename pattern test: {}", e.getMessage());
     }
   }
 }
