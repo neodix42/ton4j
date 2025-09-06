@@ -69,7 +69,7 @@ public class CellSlice implements Serializable {
 
   public static CellSlice of(Object cell) {
     if (!((cell instanceof Cell) || (cell instanceof CellSlice))) {
-      throw new Error("CellSlice works only with Cell types");
+      throw new Error("CellSlice accepts only Cell or CellSlice types");
     }
     if ((cell instanceof Cell)) {
       return beginParse((Cell) cell);

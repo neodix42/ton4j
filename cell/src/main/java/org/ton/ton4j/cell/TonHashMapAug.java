@@ -1,5 +1,8 @@
 package org.ton.ton4j.cell;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.*;
@@ -80,8 +83,26 @@ public class TonHashMapAug implements Serializable {
     }
   }
 
+  @Override
+  public String toString() {
+    List<String> parsedElements = new ArrayList<>();
+
+    for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
+      String s =
+          String.format(
+              "%s,%s,%s", entry.getKey(), entry.getValue().getLeft(), entry.getValue().getRight());
+      parsedElements.add(s);
+    }
+    Gson gson =
+        new GsonBuilder()
+            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+            .disableHtmlEscaping()
+            .create();
+    return gson.toJson(parsedElements);
+  }
+
   /**
-   * Read the keys in array and return binary tree in the form of Patrcia Tree Node
+   * Read the keys in array and return binary tree in the form of Patricia Tree Node
    *
    * @param nodes list which contains nodes
    * @return tree node
@@ -304,24 +325,6 @@ public class TonHashMapAug implements Serializable {
 
   private static double log2(int n) {
     return (Math.log(n) / Math.log(2));
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("(");
-    for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
-      String s =
-          String.format(
-              "[%s,(%s,%s)],",
-              entry.getKey(), entry.getValue().getLeft(), entry.getValue().getRight());
-      sb.append(s);
-    }
-    if (!elements.isEmpty()) {
-      sb.setLength(sb.length() - 1);
-    }
-    sb.append(")");
-    return sb.toString();
   }
 
   public Object getKeyByIndex(long index) {

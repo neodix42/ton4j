@@ -196,6 +196,7 @@ public class TempPackageIndexReader implements Closeable {
       PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(kv.getKey());
       if (packageEntry.getFilename().startsWith("block_")) {
         Block block = packageEntry.getBlock();
+        log.info("block {}", block);
         if (block.getBlockInfo().getShard().getWorkchain() == -1) {
           packageReader.close();
           return block;

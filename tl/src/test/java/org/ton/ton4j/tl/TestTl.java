@@ -133,7 +133,7 @@ public class TestTl {
           "inMsg {}, outMsg {}, account blocks {}, block {}",
           block.getExtra().getInMsgDesc().getCount(),
           block.getExtra().getOutMsgDesc().getCount(),
-          block.getExtra().getShardAccountBlocks().elements.size(),
+          //          block.getExtra().getShardAccountBlocks().getShardAccountBlocksAsList().size(),
           block);
 
     } while (r.getDataSize() != 0);

@@ -215,7 +215,7 @@ public class TestTonSdkTestCasesHashmapDeserialization {
     TonHashMapAug x =
         cs.loadDictAug(
             keySizeBits,
-            k -> k.readUint(keySizeBits),
+            k -> k.readUint(32),
             v -> CellSlice.beginParse(v).loadUint(uintValueSizeBits),
             e -> CellSlice.beginParse(e).loadUint(uintEdgeSizeBits));
 
@@ -256,7 +256,7 @@ public class TestTonSdkTestCasesHashmapDeserialization {
     TonHashMapAugE x =
         cs.loadDictAugE(
             keySizeBits,
-            k -> k.readUint(keySizeBits),
+            k -> k.readUint(32),
             v -> CellSlice.beginParse(v).loadUint(uintValueSizeBits),
             e -> CellSlice.beginParse(e).loadUint(uintEdgeSizeBits));
 

@@ -426,9 +426,9 @@ public class BitString implements Serializable {
    * @param valueBits int size of length field in bits
    */
   public void writeVarUint(BigInteger value, int valueBits) {
-      int bytesSize = (value.bitLength() + 7) / 8;
-      writeUint(BigInteger.valueOf(bytesSize), BigInteger.valueOf(valueBits - 1).bitLength());
-      writeUint(value, bytesSize * 8);
+    int bytesSize = (value.bitLength() + 7) / 8;
+    writeUint(BigInteger.valueOf(bytesSize), BigInteger.valueOf(valueBits - 1).bitLength());
+    writeUint(value, bytesSize * 8);
   }
 
   /**

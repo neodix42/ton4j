@@ -1,17 +1,14 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.isNull;
+
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.TonHashMapAugE;
 
 /**
  *
@@ -33,8 +30,8 @@ import org.ton.ton4j.cell.TonHashMapAugE;
 public class McStateExtraInfo implements Serializable {
   BigInteger flags;
   ValidatorInfo validatorInfo;
-  //    OldMcBlocksInfo prevBlocks;
-  TonHashMapAugE prevBlocks;
+  OldMcBlocksInfo prevBlocks;
+  //  TonHashMapAugE prevBlocks;
   Boolean afterKeyBlock;
   ExtBlkRef lastKeyBlock;
   BlockCreateStats blockCreateStats;
@@ -42,47 +39,42 @@ public class McStateExtraInfo implements Serializable {
   public Cell toCell() {
     return CellBuilder.beginCell()
         .storeUint(flags, 16)
+        .storeUint(0, 65)
         .storeCell(validatorInfo.toCell())
-        .storeDict(
-            prevBlocks.serialize(
-                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 32).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeCell(((KeyExtBlkRef) v).toCell()),
-                e -> CellBuilder.beginCell().storeCell(((KeyMaxLt) e).toCell()),
-                (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1)))
+        .storeCell(prevBlocks.toCell())
+        //            prevBlocks.serialize(
+        //                k -> CellBuilder.beginCell().storeUint((BigInteger) k,
+        // 32).endCell().getBits(),
+        //                v -> CellBuilder.beginCell().storeCell(((KeyExtBlkRef) v).toCell()),
+        //                e -> CellBuilder.beginCell().storeCell(((KeyMaxLt) e).toCell()),
+        //                (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1)))
         .storeBit(afterKeyBlock)
-        .storeCellMaybe(lastKeyBlock.toCell())
+        .storeCellMaybe(isNull(lastKeyBlock) ? null : lastKeyBlock.toCell())
         .storeCell(flags.testBit(0) ? blockCreateStats.toCell() : null)
         .endCell();
   }
 
   public static McStateExtraInfo deserialize(CellSlice cs) {
-    BigInteger flags = cs.preloadUint(16);
+    BigInteger flags = cs.loadUint(16);
     if (flags.longValue() > 1) {
       throw new Error("McStateExtra deserialization error expected flags <= 1, got: " + flags);
     }
+
+    cs.loadBits(65);
+
     McStateExtraInfo mcStateExtraInfo =
         McStateExtraInfo.builder()
-            .flags(cs.loadUint(16))
+            .flags(flags)
             .validatorInfo(ValidatorInfo.deserialize(cs))
-            //                .prevBlocks(OldMcBlocksInfo.deserialize(cs))
-            .prevBlocks(cs.loadDictAugE(32, k -> k.readUint(32), v -> v, e -> e))
+            .prevBlocks(OldMcBlocksInfo.deserialize(cs))
+            //            .prevBlocks(cs.loadDictAugE(32, k -> k.readUint(32), v -> v, e -> e))
             .afterKeyBlock(cs.loadBit())
             .build();
-
-    cs.loadBits(65); // todo why?
 
     mcStateExtraInfo.setLastKeyBlock(cs.loadBit() ? ExtBlkRef.deserialize(cs) : null);
     mcStateExtraInfo.setBlockCreateStats(
         flags.testBit(0) ? BlockCreateStats.deserialize(cs) : null);
 
     return mcStateExtraInfo;
-  }
-
-  public List<KeyExtBlkRef> getPrevBlocksAsList() {
-    List<KeyExtBlkRef> prevBlock = new ArrayList<>();
-    for (Map.Entry<Object, Pair<Object, Object>> entry : prevBlocks.elements.entrySet()) {
-      prevBlock.add((KeyExtBlkRef) entry.getValue().getLeft());
-    }
-    return prevBlock;
   }
 }

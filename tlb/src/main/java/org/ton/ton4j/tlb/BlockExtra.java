@@ -2,18 +2,13 @@ package org.ton.ton4j.tlb;
 
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.TonHashMapAugE;
 
 /**
  *
@@ -22,7 +17,7 @@ import org.ton.ton4j.cell.TonHashMapAugE;
  * block_extra
  * in_msg_descr:^InMsgDescr
  * out_msg_descr:^OutMsgDescr
- * account_blocks:^ShardAccountBlocks // _ (HashmapAugE 256 AccountBlock CurrencyCollection) = ShardAccountBlocks;
+ * account_blocks:^ShardAccountBlocks
  * rand_seed:bits256
  * created_by:bits256
  * custom:(Maybe ^McBlockExtra) = BlockExtra;
@@ -33,9 +28,9 @@ import org.ton.ton4j.cell.TonHashMapAugE;
 public class BlockExtra implements Serializable {
   InMsgDescr inMsgDesc;
   OutMsgDescr outMsgDesc;
-  TonHashMapAugE shardAccountBlocks;
-  BigInteger randSeed;
-  BigInteger createdBy;
+  ShardAccountBlocks shardAccountBlocks;
+  public BigInteger randSeed;
+  public BigInteger createdBy;
   McBlockExtra mcBlockExtra;
 
   private String getRandSeed() {
@@ -54,12 +49,7 @@ public class BlockExtra implements Serializable {
     return CellBuilder.beginCell()
         .storeRef(inMsgDesc.toCell())
         .storeRef(outMsgDesc.toCell())
-        .storeRef(
-            shardAccountBlocks.serialize(
-                k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeCell(((AccountBlock) v).toCell()),
-                e -> CellBuilder.beginCell().storeCell(((CurrencyCollection) e).toCell()),
-                (fk, fv) -> CellBuilder.beginCell().storeUint(((Long) fk) + ((Long) fv), 32)))
+        .storeRef(shardAccountBlocks.toCell())
         .storeUint(randSeed, 256)
         .storeUint(createdBy, 256)
         .storeRefMaybe(mcBlockExtra.toCell())
@@ -76,17 +66,13 @@ public class BlockExtra implements Serializable {
 
     InMsgDescr inMsgDescr = InMsgDescr.deserialize(CellSlice.beginParse(cs.loadRef()));
     OutMsgDescr outMsgDescr = OutMsgDescr.deserialize(CellSlice.beginParse(cs.loadRef()));
+    ShardAccountBlocks shardAccountBlocks =
+        ShardAccountBlocks.deserialize(CellSlice.beginParse(cs.loadRef()));
     BlockExtra blockExtra =
         BlockExtra.builder()
             .inMsgDesc(inMsgDescr)
             .outMsgDesc(outMsgDescr)
-            .shardAccountBlocks(
-                CellSlice.beginParse(cs.loadRef())
-                    .loadDictAugE(
-                        256,
-                        k -> k.readUint(256),
-                        v -> v, // AccountBlock.deserialize(v),
-                        e -> e)) // CurrencyCollection.deserialize(e)))
+            .shardAccountBlocks(shardAccountBlocks)
             .randSeed(cs.loadUint(256))
             .createdBy(cs.loadUint(256))
             .build();
@@ -95,13 +81,5 @@ public class BlockExtra implements Serializable {
         cs.loadBit() ? McBlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
 
     return blockExtra;
-  }
-
-  public List<AccountBlock> getShardAccountBlocksAsList() {
-    List<AccountBlock> accountBlocks = new ArrayList<>();
-    for (Map.Entry<Object, Pair<Object, Object>> entry : shardAccountBlocks.elements.entrySet()) {
-      accountBlocks.add((AccountBlock) entry.getValue().getLeft());
-    }
-    return accountBlocks;
   }
 }

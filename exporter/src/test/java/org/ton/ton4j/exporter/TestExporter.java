@@ -88,12 +88,12 @@ public class TestExporter {
         latestBlock.getBlockInfo().getShard().convertShardIdentToShard().toString(16));
     log.info("  Sequence Number: {}", latestBlock.getBlockInfo().getSeqno());
     log.info("  Timestamp: {}", latestBlock.getBlockInfo().getGenuTime());
+    log.info("block {}", latestBlock);
   }
 
   @Test
   public void testExporterGetLastWithLimit() throws IOException {
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
-
     long startTime = System.currentTimeMillis();
 
     TreeMap<BlockId, Block> latestBlocks = exporter.getLast(10);

@@ -46,7 +46,7 @@ public class BlockCreateStatsExt implements BlockCreateStats, Serializable {
                 256,
                 k -> k.readUint(256),
                 v -> CreatorStats.deserialize(CellSlice.beginParse(v)),
-                e -> cs.loadUint(32)))
+                e -> e.loadUint(32)))
         .build();
   }
 

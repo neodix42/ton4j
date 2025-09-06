@@ -37,7 +37,7 @@ public class AccountBlock implements Serializable {
             (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
             );
     return CellBuilder.beginCell()
-        .storeUint(0x5, 32)
+        .storeUint(0x5, 4)
         .storeUint(addr, 256)
         .storeDict(dictCell)
         .storeRef(stateUpdate)
@@ -57,7 +57,7 @@ public class AccountBlock implements Serializable {
                 64,
                 k -> k.readUint(64),
                 v -> Transaction.deserialize(CellSlice.beginParse(v.loadRef())),
-                e -> CurrencyCollection.deserialize(e)))
+                CurrencyCollection::deserialize))
         .stateUpdate(cs.loadRef()) // ^(HASH_UPDATE Account) todo
         .build();
   }

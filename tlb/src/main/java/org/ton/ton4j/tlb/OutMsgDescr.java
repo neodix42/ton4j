@@ -41,10 +41,7 @@ public class OutMsgDescr implements Serializable {
     return OutMsgDescr.builder()
         .outMsg(
             cs.loadDictAugE(
-                256,
-                k -> k.readUint(256),
-                v -> OutMsg.deserialize(v),
-                e -> CurrencyCollection.deserialize(e)))
+                256, k -> k.readUint(256), OutMsg::deserialize, CurrencyCollection::deserialize))
         .build();
   }
 
