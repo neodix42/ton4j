@@ -42,12 +42,6 @@ public class McStateExtraInfo implements Serializable {
         .storeUint(0, 65)
         .storeCell(validatorInfo.toCell())
         .storeCell(prevBlocks.toCell())
-        //            prevBlocks.serialize(
-        //                k -> CellBuilder.beginCell().storeUint((BigInteger) k,
-        // 32).endCell().getBits(),
-        //                v -> CellBuilder.beginCell().storeCell(((KeyExtBlkRef) v).toCell()),
-        //                e -> CellBuilder.beginCell().storeCell(((KeyMaxLt) e).toCell()),
-        //                (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1)))
         .storeBit(afterKeyBlock)
         .storeCellMaybe(isNull(lastKeyBlock) ? null : lastKeyBlock.toCell())
         .storeCell(flags.testBit(0) ? blockCreateStats.toCell() : null)
@@ -67,7 +61,6 @@ public class McStateExtraInfo implements Serializable {
             .flags(flags)
             .validatorInfo(ValidatorInfo.deserialize(cs))
             .prevBlocks(OldMcBlocksInfo.deserialize(cs))
-            //            .prevBlocks(cs.loadDictAugE(32, k -> k.readUint(32), v -> v, e -> e))
             .afterKeyBlock(cs.loadBit())
             .build();
 

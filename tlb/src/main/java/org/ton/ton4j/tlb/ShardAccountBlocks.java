@@ -42,8 +42,7 @@ public class ShardAccountBlocks {
                 256,
                 k -> k.readUint(256),
                 AccountBlock::deserialize,
-                //                v -> v,
-                CurrencyCollection::deserialize)) // CurrencyCollection::deserialize))
+                CurrencyCollection::deserialize))
         .build();
   }
 

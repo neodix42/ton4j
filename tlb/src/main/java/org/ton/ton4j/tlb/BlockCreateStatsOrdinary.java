@@ -19,7 +19,7 @@ import org.ton.ton4j.cell.TonHashMapE;
 @Builder
 @Data
 public class BlockCreateStatsOrdinary implements BlockCreateStats, Serializable {
-
+  long magic;
   TonHashMapE list;
 
   public Cell toCell() {
@@ -33,7 +33,10 @@ public class BlockCreateStatsOrdinary implements BlockCreateStats, Serializable 
   }
 
   public static BlockCreateStatsOrdinary deserialize(CellSlice cs) {
+    long magic = cs.loadUint(8).longValue();
+    assert (magic == 0x17) : "Block: magic not equal to 0x17, found 0x" + Long.toHexString(magic);
     return BlockCreateStatsOrdinary.builder()
+        .magic(magic)
         .list(
             cs.loadDictE(
                 256, k -> k.readUint(256), v -> CreatorStats.deserialize(CellSlice.beginParse(v))))

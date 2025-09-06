@@ -185,6 +185,7 @@ public class PackageReader implements Closeable {
     }
 
     public Block getBlock() {
+//      System.out.println(Utils.bytesToHex(data));
       return Block.deserialize(
           CellSlice.beginParse(CellBuilder.beginCell().fromBoc(data).endCell()));
     }

@@ -1,5 +1,8 @@
 package org.ton.ton4j.cell;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.*;
@@ -79,6 +82,23 @@ public class TonHashMap implements Serializable {
     for (Node node : nodes) {
       elements.put(keyParser.apply(node.key), valueParser.apply(node.value));
     }
+  }
+
+  @Override
+  public String toString() {
+
+    List<String> parsedElements = new ArrayList<>();
+
+    for (Map.Entry<Object, Object> entry : elements.entrySet()) {
+      String s = String.format("%s,%s", entry.getKey(), entry.getValue());
+      parsedElements.add(s);
+    }
+    Gson gson =
+        new GsonBuilder()
+            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+            .disableHtmlEscaping()
+            .create();
+    return gson.toJson(parsedElements);
   }
 
   /**
@@ -299,7 +319,11 @@ public class TonHashMap implements Serializable {
   }
 
   private BitString deserializeLabelShort(CellSlice edge) {
-    int length = edge.bits.getBitString().indexOf("0");
+    // Find the length by counting consecutive 1s until we hit a 0
+    int length = 0;
+    while (length < edge.getRestBits() && edge.preloadBitAt(length + 1)) {
+      length++;
+    }
     edge.skipBits(length + 1);
     return edge.loadBits(length);
   }
@@ -334,21 +358,6 @@ public class TonHashMap implements Serializable {
       return Integer.numberOfTrailingZeros(n);
     }
     return Math.log(n) / LOG_2;
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("(");
-    for (Map.Entry<Object, Object> entry : elements.entrySet()) {
-      String s = String.format("[%s,%s],", entry.getKey(), entry.getValue());
-      sb.append(s);
-    }
-    if (!elements.isEmpty()) {
-      sb.setLength(sb.length() - 1);
-    }
-    sb.append(")");
-    return sb.toString();
   }
 
   /**

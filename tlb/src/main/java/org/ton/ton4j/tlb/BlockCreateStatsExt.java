@@ -23,12 +23,12 @@ import org.ton.ton4j.cell.TonHashMapAugE;
 @Builder
 @Data
 public class BlockCreateStatsExt implements BlockCreateStats, Serializable {
-
+  long magic;
   TonHashMapAugE counters;
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        .storeUint(0x17, 8)
+        .storeUint(0x34, 8)
         .storeDict(
             counters.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
@@ -40,7 +40,10 @@ public class BlockCreateStatsExt implements BlockCreateStats, Serializable {
   }
 
   public static BlockCreateStatsExt deserialize(CellSlice cs) {
+    long magic = cs.loadUint(8).longValue();
+    assert (magic == 0x34) : "Block: magic not equal to 0x34, found 0x" + Long.toHexString(magic);
     return BlockCreateStatsExt.builder()
+        .magic(magic)
         .counters(
             cs.loadDictAugE(
                 256,
