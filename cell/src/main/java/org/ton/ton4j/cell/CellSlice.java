@@ -203,13 +203,6 @@ public class CellSlice implements Serializable {
     TonHashMapAug x = new TonHashMapAug(n);
     x.deserialize(this, keyParser, valueParser, extraParser);
 
-    if (!refs.isEmpty()) {
-      refs.remove(0);
-    }
-    if (!refs.isEmpty()) {
-      refs.remove(0);
-    }
-
     return x;
   }
 

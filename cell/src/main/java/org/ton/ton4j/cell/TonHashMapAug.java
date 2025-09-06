@@ -35,10 +35,10 @@ public class TonHashMapAug implements Serializable {
       return new ArrayList<>();
     }
     List<Node> nodes = new ArrayList<>();
-    int m = keySize - key.toBitString().length();
+    int m = keySize - key.getUsedBits();
     BitString l = deserializeLabel(edge, m);
     key.writeBitString(l);
-    if (key.toBitString().length() == keySize) {
+    if (key.getUsedBits() == keySize) {
       Cell valueAndExtra = CellBuilder.beginCell().storeSlice(edge).endCell();
       nodes.add(new Node(key, valueAndExtra)); // fork-extra does not exist in edge
       return nodes;
@@ -274,8 +274,12 @@ public class TonHashMapAug implements Serializable {
   }
 
   private BitString deserializeLabelShort(CellSlice edge) {
-    int length = edge.bits.getBitString().indexOf("0");
-    edge.skipBits(length + 1);
+    // Find the length by counting consecutive 1s until we hit a 0
+    int length = 0;
+    while (length < edge.getRestBits() && edge.preloadBitAt(length + 1)) {
+      length++;
+    }
+    edge.skipBits(length + 1); // Skip the unary length + terminating 0
     return edge.loadBits(length);
   }
 
