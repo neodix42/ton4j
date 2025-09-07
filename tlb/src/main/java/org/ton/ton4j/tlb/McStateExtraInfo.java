@@ -31,7 +31,6 @@ public class McStateExtraInfo implements Serializable {
   BigInteger flags;
   ValidatorInfo validatorInfo;
   OldMcBlocksInfo prevBlocks;
-  //  TonHashMapAugE prevBlocks;
   Boolean afterKeyBlock;
   ExtBlkRef lastKeyBlock;
   BlockCreateStats blockCreateStats;
@@ -39,7 +38,6 @@ public class McStateExtraInfo implements Serializable {
   public Cell toCell() {
     return CellBuilder.beginCell()
         .storeUint(flags, 16)
-        .storeUint(0, 65)
         .storeCell(validatorInfo.toCell())
         .storeCell(prevBlocks.toCell())
         .storeBit(afterKeyBlock)
@@ -54,8 +52,6 @@ public class McStateExtraInfo implements Serializable {
       throw new Error("McStateExtra deserialization error expected flags <= 1, got: " + flags);
     }
 
-    cs.loadBits(65);
-
     McStateExtraInfo mcStateExtraInfo =
         McStateExtraInfo.builder()
             .flags(flags)
@@ -66,7 +62,7 @@ public class McStateExtraInfo implements Serializable {
 
     mcStateExtraInfo.setLastKeyBlock(cs.loadBit() ? ExtBlkRef.deserialize(cs) : null);
     mcStateExtraInfo.setBlockCreateStats(
-        flags.testBit(0) ? BlockCreateStats.deserialize(cs) : null);
+        !flags.testBit(0) ? BlockCreateStats.deserialize(cs) : null);
 
     return mcStateExtraInfo;
   }
