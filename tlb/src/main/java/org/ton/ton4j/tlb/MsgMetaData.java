@@ -19,7 +19,7 @@ import org.ton.ton4j.cell.CellSlice;
  */
 @Builder
 @Data
-public class MsgMetaData implements Serializable {
+public class MsgMetaData implements MsgEnvelope, Serializable {
   int magic;
   long depth;
   MsgAddressInt initiatorAddress;

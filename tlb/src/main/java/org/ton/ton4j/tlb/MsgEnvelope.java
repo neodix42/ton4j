@@ -9,6 +9,10 @@ public interface MsgEnvelope {
   static MsgEnvelope deserialize(CellSlice cs) {
     int msgEnvelopeFlag = cs.preloadUint(4).intValue();
     switch (msgEnvelopeFlag) {
+      case 0:
+        {
+          return MsgMetaData.deserialize(cs);
+        }
       case 4:
         {
           return MsgEnvelopeV1.deserialize(cs);
@@ -18,6 +22,6 @@ public interface MsgEnvelope {
           return MsgEnvelopeV2.deserialize(cs);
         }
     }
-    throw new Error("unknown MsgEnvelope flag, found 0x" + Long.toBinaryString(msgEnvelopeFlag));
+    throw new Error("unknown MsgEnvelope flag, found 0x" + Long.toHexString(msgEnvelopeFlag));
   }
 }
