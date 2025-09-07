@@ -28,18 +28,21 @@ public class BlockCreateStatsOrdinary implements BlockCreateStats, Serializable 
         .storeDict(
             list.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeCell(((CreatorStats) v).toCell()).endCell()))
+                v -> ((CreatorStats) v).toCell()))
         .endCell();
   }
 
   public static BlockCreateStatsOrdinary deserialize(CellSlice cs) {
     long magic = cs.loadUint(8).longValue();
-    assert (magic == 0x17) : "Block: magic not equal to 0x17, found 0x" + Long.toHexString(magic);
+    assert (magic == 0x17)
+        : "BlockCreateStatsOrdinary: magic not equal to 0x17, found 0x" + Long.toHexString(magic);
+
     return BlockCreateStatsOrdinary.builder()
         .magic(magic)
         .list(
-            cs.loadDictE(
-                256, k -> k.readUint(256), v -> CreatorStats.deserialize(CellSlice.beginParse(v))))
+            cs.loadDictE(256, k -> k.readUint(256), v -> v)
+            //                    v -> CreatorStats.deserialize(CellSlice.beginParse(v)))
+            )
         .build();
   }
 }

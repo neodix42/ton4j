@@ -41,14 +41,17 @@ public class BlockCreateStatsExt implements BlockCreateStats, Serializable {
 
   public static BlockCreateStatsExt deserialize(CellSlice cs) {
     long magic = cs.loadUint(8).longValue();
-    assert (magic == 0x34) : "Block: magic not equal to 0x34, found 0x" + Long.toHexString(magic);
+    assert (magic == 0x34)
+        : "BlockCreateStatsExt: magic not equal to 0x34, found 0x" + Long.toHexString(magic);
+
     return BlockCreateStatsExt.builder()
         .magic(magic)
         .counters(
             cs.loadDictAugE(
                 256,
                 k -> k.readUint(256),
-                v -> CreatorStats.deserialize(CellSlice.beginParse(v)),
+                v -> v,
+                //                v -> CreatorStats.deserialize(CellSlice.beginParse(v)),
                 e -> e.loadUint(32)))
         .build();
   }
