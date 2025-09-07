@@ -12,34 +12,20 @@ import org.ton.ton4j.cell.CellSlice;
 @Builder
 @Data
 public class KeyMaxLt implements Serializable {
-  BigInteger endLt;
-  int seqno;
-  BigInteger rootHash;
-  BigInteger fileHash;
-
-  private String getRootHash() {
-    return rootHash.toString(16);
-  }
-
-  private String getFileHash() {
-    return fileHash.toString(16);
-  }
+  boolean key;
+  BigInteger maxEndLt;
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        .storeUint(endLt, 64)
-        .storeUint(seqno, 32)
-        .storeUint(rootHash, 256)
-        .storeUint(fileHash, 256)
+        .storeBit(key)
+        .storeUint(maxEndLt, 64)
         .endCell();
   }
 
   public static KeyMaxLt deserialize(CellSlice cs) {
     return KeyMaxLt.builder()
-        .endLt(cs.loadUint(64))
-        .seqno(cs.loadUint(32).intValue())
-        .rootHash(cs.loadUint(256))
-        .fileHash(cs.loadUint(256))
+        .key(cs.loadBit())
+        .maxEndLt(cs.loadUint(64))
         .build();
   }
 }
