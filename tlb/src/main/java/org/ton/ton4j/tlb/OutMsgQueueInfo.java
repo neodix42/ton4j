@@ -61,7 +61,7 @@ public class OutMsgQueueInfo implements Serializable {
                     v -> ProcessedUpto.deserialize(CellSlice.beginParse(v))))
             .build();
     if (cs.loadBit()) {
-      outMsgQueueInfo.setExtra(OutMsgQueueExtra.deserialize(CellSlice.beginParse(cs)));
+      outMsgQueueInfo.setExtra(OutMsgQueueExtra.deserialize(cs));
     }
     return outMsgQueueInfo;
   }

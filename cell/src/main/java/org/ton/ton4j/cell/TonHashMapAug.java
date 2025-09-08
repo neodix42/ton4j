@@ -63,8 +63,7 @@ public class TonHashMapAug implements Serializable {
       return deserializeLabelLong(edge, m);
     }
     // hml_same$11 {m:#} v:Bit n:(#<= m) = HmLabel ~n m;
-    BitString result = deserializeLabelSame(edge, m);
-    return result;
+    return deserializeLabelSame(edge, m);
   }
 
   /** Loads HashMapAug and parses keys, values and extras */
