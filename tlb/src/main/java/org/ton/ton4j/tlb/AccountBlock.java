@@ -56,8 +56,13 @@ public class AccountBlock implements Serializable {
             cs.loadDictAug(
                 64,
                 k -> k.readUint(64),
-                v -> Transaction.deserialize(CellSlice.beginParse(v.loadRef())),
-                CurrencyCollection::deserialize))
+                v ->
+                    (v.getRefsCount() > 0)
+                        ? Transaction.deserialize(CellSlice.beginParse(v.loadRef()))
+                        : null,
+                e -> {
+                  return CurrencyCollection.deserialize(e);
+                }))
         .stateUpdate(cs.loadRef()) // ^(HASH_UPDATE Account) todo
         .build();
   }

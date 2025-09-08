@@ -213,7 +213,12 @@ public class CellSlice implements Serializable {
       return new TonHashMapE(n);
     } else {
       TonHashMapE hashMap = new TonHashMapE(n);
-      hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
+      if (this.getRefsCount() > 0) {
+        hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
+      } else {
+        // load inline dict
+        hashMap.deserialize(CellSlice.beginParse(this), keyParser, valueParser);
+      }
       return hashMap;
     }
   }

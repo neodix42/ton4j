@@ -192,10 +192,8 @@ public class Exporter {
                       }
 
                     } catch (Throwable e) {
-                      log.info(
-                          "Error parsing block {}: {}, boc {}", entry.getKey(), e.getMessage(), ""
-                          //                          Utils.bytesToHex(kv.getValue())
-                          );
+                      log.info("Error parsing block {}: {}", entry.getKey(), e.getMessage());
+                      //                      log.info("boc {}", Utils.bytesToHex(kv.getValue()));
                       // Continue processing other blocks instead of failing completely
                     }
                   }

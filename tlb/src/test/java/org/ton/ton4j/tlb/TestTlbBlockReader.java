@@ -180,6 +180,33 @@ public class TestTlbBlockReader {
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
   }
 
+  /** Refs overflow. No more refs., */
+  @Test
+  public void testShouldDeserializeBlock10() {
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-7.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+  }
+
+  /** Can't load 256 bits. 235 bits left. */
+  @Test
+  public void testShouldDeserializeBlock11() {
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-8.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+  }
+
+  /** BigInteger out of byte range, boc */
+  @Test
+  public void testShouldDeserializeBlock12() {
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-9.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+  }
+
   private String getBoc(String fileName) {
     return Utils.streamToString(
         Objects.requireNonNull(
