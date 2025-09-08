@@ -7,6 +7,7 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 
 /**
  *
@@ -21,8 +22,8 @@ import java.io.Serializable;
 @Builder
 @Data
 public class Anycast implements Serializable {
-  int depth; // 5 bits
-  byte rewritePfx;
+  int depth;
+  int rewritePfx;
 
   public Cell toCell() {
     return CellBuilder.beginCell().storeUint(depth, 5).storeUint(rewritePfx, depth).endCell();
@@ -30,6 +31,6 @@ public class Anycast implements Serializable {
 
   public static Anycast deserialize(CellSlice cs) {
     int depth = cs.loadUint(5).intValue();
-    return Anycast.builder().depth(depth).rewritePfx(cs.loadUint(depth).byteValueExact()).build();
+    return Anycast.builder().depth(depth).rewritePfx(cs.loadUint(depth).intValue()).build();
   }
 }
