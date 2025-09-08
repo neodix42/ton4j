@@ -109,8 +109,10 @@ addr_var$11 anycast:(Maybe Anycast) addr_len:(## 9)
 _ _:MsgAddressInt = MsgAddress;
 _ _:MsgAddressExt = MsgAddress;
 //
-var_uint$_ {n:#} len:(#< n) value:(uint (len * 8)) = VarUInteger n;
-var_int$_  {n:#} len:(#< n) value:(int (len * 8)) = VarInteger n;
+var_uint$_ {n:#} len:(#< n) value:(uint (len * 8))
+         = VarUInteger n;
+var_int$_ {n:#} len:(#< n) value:(int (len * 8))
+        = VarInteger n;
 nanograms$_ amount:(VarUInteger 16) = Grams;
 
 _ grams:Grams = Coins;
@@ -171,6 +173,7 @@ msg_envelope#4 cur_addr:IntermediateAddress
   next_addr:IntermediateAddress fwd_fee_remaining:Grams
   msg:^(Message Any) = MsgEnvelope;
 msg_metadata#0 depth:uint32 initiator_addr:MsgAddressInt initiator_lt:uint64 = MsgMetadata;
+
 msg_envelope_v2#5 cur_addr:IntermediateAddress
   next_addr:IntermediateAddress fwd_fee_remaining:Grams
   msg:^(Message Any)
@@ -668,6 +671,7 @@ workchain_v2#a7 enabled_since:uint32 monitor_min_split:(## 8)
   zerostate_root_hash:bits256 zerostate_file_hash:bits256
   version:uint32 format:(WorkchainFormat basic)
   split_merge_timings:WcSplitMergeTimings
+  persistent_state_split_depth:(## 8) { persistent_state_split_depth <= 63 }
   = WorkchainDescr;
 
 _ workchains:(HashmapE 32 WorkchainDescr) = ConfigParam 12;
@@ -713,7 +717,11 @@ config_gas_prices#_ GasLimitsPrices = ConfigParam 21;
 
 param_limits#c3 underload:# soft_limit:# { underload <= soft_limit }
   hard_limit:# { soft_limit <= hard_limit } = ParamLimits;
+imported_msg_queue_limits#d3 max_bytes:# max_msgs:# = ImportedMsgQueueLimits;
 block_limits#5d bytes:ParamLimits gas:ParamLimits lt_delta:ParamLimits
+  = BlockLimits;
+block_limits_v2#5e bytes:ParamLimits gas:ParamLimits lt_delta:ParamLimits
+  collated_data:ParamLimits imported_msg_queue:ImportedMsgQueueLimits
   = BlockLimits;
 
 config_mc_block_limits#_ BlockLimits = ConfigParam 22;
@@ -839,6 +847,7 @@ top_block_descr#d5 proof_for:BlockIdExt signatures:(Maybe ^BlockSignatures)
 //  COLLATED DATA
 //
 top_block_descr_set#4ac789f3 collection:(HashmapE 96 ^TopBlockDescr) = TopBlockDescrSet;
+account_storage_dict_proof#37c1e3fc proof:^Cell = AccountStorageDictProof;
 
 //
 //  VALIDATOR MISBEHAVIOR COMPLAINTS

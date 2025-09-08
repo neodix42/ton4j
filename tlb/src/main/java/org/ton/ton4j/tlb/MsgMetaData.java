@@ -22,14 +22,14 @@ import org.ton.ton4j.cell.CellSlice;
 public class MsgMetaData implements MsgEnvelope, Serializable {
   int magic;
   long depth;
-  MsgAddressInt initiatorAddress;
+  MsgAddress initiatorAddress;
   BigInteger initiatorLt;
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        .storeUint(0, 4) // magic
+        .storeUint(0, 4)
         .storeUint(depth, 32)
-        .storeAddress(initiatorAddress.toAddress())
+        .storeCell(initiatorAddress.toCell())
         .storeUint(initiatorLt, 64)
         .endCell();
   }
@@ -40,7 +40,8 @@ public class MsgMetaData implements MsgEnvelope, Serializable {
 
     return MsgMetaData.builder()
         .depth(cs.loadUint(32).longValue())
-        .initiatorAddress(MsgAddressInt.deserialize(cs))
+        .initiatorAddress(
+            MsgAddress.deserialize(cs)) // there are blocks with ext address though, todo
         .initiatorLt(cs.loadUint(64))
         .build();
   }
