@@ -1,5 +1,7 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.isNull;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
@@ -41,7 +43,7 @@ public class MsgEnvelopeV2 implements MsgEnvelope, Serializable {
         .storeCoins(fwdFeeRemaining)
         .storeRef(msg.toCell())
         .storeUintMaybe(emittedLt, 64)
-        .storeCellMaybe(msgMetaData.toCell())
+        .storeCellMaybe(isNull(msgMetaData) ? null : msgMetaData.toCell())
         .endCell();
   }
 
