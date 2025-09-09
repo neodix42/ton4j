@@ -2,6 +2,10 @@ package org.ton.ton4j.exporter.app;
 
 import org.ton.ton4j.exporter.Exporter;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 /**
  * Command-line application for exporting TON blockchain data.
  *
@@ -20,6 +24,12 @@ import org.ton.ton4j.exporter.Exporter;
 public class TonExporterApp {
 
   public static void main(String[] args) {
+    // Check for version argument first
+    if (args.length == 1 && "-v".equals(args[0])) {
+      printVersion();
+      System.exit(0);
+    }
+
     if (args.length < 4) {
       printUsage();
       System.exit(1);
@@ -116,14 +126,32 @@ public class TonExporterApp {
     }
   }
 
+  private static void printVersion() {
+    Properties properties = new Properties();
+    try (InputStream inputStream = TonExporterApp.class.getClassLoader().getResourceAsStream("application.properties")) {
+      if (inputStream != null) {
+        properties.load(inputStream);
+        String version = properties.getProperty("app.version", "unknown");
+        String appName = properties.getProperty("app.name", "TonExporterApp");
+        System.out.println(appName + " version " + version);
+      } else {
+        System.out.println("TonExporterApp version unknown (properties file not found)");
+      }
+    } catch (IOException e) {
+      System.out.println("TonExporterApp version unknown (error reading properties: " + e.getMessage() + ")");
+    }
+  }
+
   private static void printUsage() {
     System.err.println("Usage:");
+    System.err.println("  For version: java -jar TonExporterApp -v");
     System.err.println(
         "  For file output: java -jar TonExporterApp <ton-db-root-path> file <json|boc> <num-of-threads> <true|false> <output-file-name>");
     System.err.println(
         "  For stdout output: java -jar TonExporterApp <ton-db-root-path> stdout <json|boc> <num-of-threads>");
     System.err.println();
     System.err.println("Arguments:");
+    System.err.println("  -v                : Show version information");
     System.err.println("  ton-db-root-path  : Path to the TON database root directory");
     System.err.println("  file|stdout       : Output destination (file or stdout)");
     System.err.println(
@@ -134,6 +162,7 @@ public class TonExporterApp {
         "  output-file-name : Name of the output file (required only for file output)");
     System.err.println();
     System.err.println("Examples:");
+    System.err.println("  java -jar TonExporterApp -v");
     System.err.println("  java -jar TonExporterApp /var/ton-work/db file json 4 true blocks.json");
     System.err.println("  java -jar TonExporterApp /var/ton-work/db stdout boc 8");
   }
