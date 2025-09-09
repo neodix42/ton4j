@@ -134,7 +134,10 @@ public class Exporter {
       throws IOException {
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
 
-    dbReader = new DbReader(tonDatabaseRootPath);
+    // Reuse existing dbReader if available, otherwise create new one
+    if (dbReader == null) {
+      dbReader = new DbReader(tonDatabaseRootPath);
+    }
 
     AtomicInteger parsedBlocksCounter = new AtomicInteger(exportStatus.getParsedBlocksCount());
     AtomicInteger nonBlocksCounter = new AtomicInteger(exportStatus.getNonBlocksCount());
@@ -394,10 +397,12 @@ public class Exporter {
 
     // Create new status if not resuming
     if (exportStatus == null) {
-      // Get total packages count
-      dbReader = new DbReader(tonDatabaseRootPath);
+      // Get total packages count - reuse dbReader to avoid duplicate scanning
+      if (dbReader == null) {
+        dbReader = new DbReader(tonDatabaseRootPath);
+      }
       long totalPackages = dbReader.getArchiveDbReader().getArchiveInfos().size();
-      dbReader.close();
+      // Don't close dbReader here as we'll reuse it in exportDataWithStatus
 
       exportStatus =
           statusManager.createNewStatus(
@@ -487,10 +492,12 @@ public class Exporter {
 
     // Create new status if not resuming
     if (exportStatus == null) {
-      // Get total packages count
-      dbReader = new DbReader(tonDatabaseRootPath);
+      // Get total packages count - reuse dbReader to avoid duplicate scanning
+      if (dbReader == null) {
+        dbReader = new DbReader(tonDatabaseRootPath);
+      }
       long totalPackages = dbReader.getArchiveDbReader().getArchiveInfos().size();
-      dbReader.close();
+      // Don't close dbReader here as we'll reuse it in exportDataWithStatus
 
       exportStatus =
           statusManager.createNewStatus(

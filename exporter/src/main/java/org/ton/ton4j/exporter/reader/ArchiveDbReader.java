@@ -62,7 +62,7 @@ public class ArchiveDbReader implements Closeable {
    * .index databases.
    */
   private void discoverAllArchivePackagesFromFilesystem() {
-    log.info("Discovering all archive packages from filesystem (comprehensive scan)...");
+    //    log.info("Discovering all archive packages from filesystem (comprehensive scan)...");
 
     // Get archive packages directory path
     Path archivePackagesDir = Paths.get(rootPath, "packages");
@@ -552,12 +552,13 @@ public class ArchiveDbReader implements Closeable {
         //          "Successfully read {} entries from orphaned package: {}",
         //          entryCount,
         //          archiveInfo.getPackagePath());
-      } else {
-        log.warn(
-            "PackageReader is null for orphaned package {} with path {}",
-            archiveKey,
-            archiveInfo.getPackagePath());
       }
+      //      else {
+      //        log.warn(
+      //            "PackageReader is null for orphaned package {} with path {}",
+      //            archiveKey,
+      //            archiveInfo.getPackagePath());
+      //      }
 
     } catch (IOException e) {
       log.error(
