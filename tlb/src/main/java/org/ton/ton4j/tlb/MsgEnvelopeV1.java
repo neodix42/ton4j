@@ -27,7 +27,7 @@ import org.ton.ton4j.cell.CellSlice;
 @Builder
 @Data
 public class MsgEnvelopeV1 implements MsgEnvelope, Serializable {
-  int magic;
+  long magic;
   IntermediateAddress currAddr;
   IntermediateAddress nextAddr;
   BigInteger fwdFeeRemaining;
@@ -48,6 +48,7 @@ public class MsgEnvelopeV1 implements MsgEnvelope, Serializable {
     assert (magic == 4) : "MsgEnvelopeV1: magic not equal to 4, found 0x" + Long.toHexString(magic);
 
     return MsgEnvelopeV1.builder()
+        .magic(magic)
         .currAddr(IntermediateAddress.deserialize(cs))
         .nextAddr(IntermediateAddress.deserialize(cs))
         .fwdFeeRemaining(cs.loadCoins())

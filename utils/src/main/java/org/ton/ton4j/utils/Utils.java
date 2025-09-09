@@ -991,6 +991,15 @@ public class Utils {
     }
   }
 
+  public static byte[] streamToBytes(InputStream is) {
+    try {
+
+      return is.readAllBytes();
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
   public static BigInteger toNano(double toncoins, Integer precision) {
     return BigDecimal.valueOf(toncoins).multiply(BigDecimal.TEN.pow(precision)).toBigInteger();
   }

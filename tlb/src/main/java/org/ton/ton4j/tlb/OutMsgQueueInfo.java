@@ -50,10 +50,7 @@ public class OutMsgQueueInfo implements Serializable {
         OutMsgQueueInfo.builder()
             .outMsgQueue(
                 cs.loadDictAugE(
-                    352,
-                    k -> k.readUint(352),
-                    EnqueuedMsg::deserialize,
-                    e -> CellSlice.beginParse(e).loadUint(64)))
+                    352, k -> k.readUint(352), EnqueuedMsg::deserialize, e -> e.loadUint(64)))
             .processedInfo(
                 cs.loadDictE(
                     96,

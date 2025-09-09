@@ -35,14 +35,16 @@ public class MsgMetaData implements MsgEnvelope, Serializable {
   }
 
   public static MsgMetaData deserialize(CellSlice cs) {
-    long magic = cs.loadUint(4).longValue();
-    assert (magic == 0) : "MsgMetaData: magic not equal to 0, found 0x" + Long.toHexString(magic);
-
-    return MsgMetaData.builder()
-        .depth(cs.loadUint(32).longValue())
-        .initiatorAddress(
-            MsgAddressInt.deserialize(cs)) // there are blocks with ext address though, todo
-        .initiatorLt(cs.loadUint(64))
-        .build();
+    return null;
+    //    long magic = cs.loadUint(4).longValue();
+    //    assert (magic == 0) : "MsgMetaData: magic not equal to 0, found 0x" +
+    // Long.toHexString(magic);
+    //
+    //    return MsgMetaData.builder()
+    //        .depth(cs.loadUint(32).longValue())
+    //        .initiatorAddress(
+    //            MsgAddressInt.deserialize(cs)) // there are blocks with ext address though, todo
+    //        .initiatorLt(cs.loadUint(64))
+    //        .build();
   }
 }

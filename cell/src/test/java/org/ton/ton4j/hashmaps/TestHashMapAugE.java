@@ -2,6 +2,7 @@ package org.ton.ton4j.hashmaps;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
@@ -11,6 +12,7 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.cell.TonHashMapAugE;
+import org.ton.ton4j.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -139,5 +141,73 @@ public class TestHashMapAugE {
 
     log.info(
         "Deserialized hashmapAugE from cell {}, count {}", loadedDict, loadedDict.elements.size());
+  }
+
+  @Test
+  public void testShouldDeserializeHashMapAugE0() {
+    Cell cell = CellBuilder.beginCell().fromBoc(getBocAsBytes("aug-dict0.boc")).endCell();
+    CellSlice cs = CellSlice.beginParse(cell);
+
+    TonHashMapAugE loadedDict =
+        cs.loadDictAugE(
+            32,
+            k -> k.readUint(32),
+            v -> CellSlice.beginParse(v).loadUint(32),
+            e -> CellSlice.beginParse(e).loadUint(32));
+    log.info("Deserialized hashmapAugE from cell {}", loadedDict);
+  }
+
+  @Test
+  public void testShouldDeserializeHashMapAugE1() {
+    Cell cell = CellBuilder.beginCell().fromBoc(getBocAsBytes("aug-dict1.boc")).endCell();
+    CellSlice cs = CellSlice.beginParse(cell);
+
+    TonHashMapAugE loadedDict =
+        cs.loadDictAugE(
+            32,
+            k -> k.readUint(32),
+            v -> CellSlice.beginParse(v).loadUint(32),
+            e -> CellSlice.beginParse(e).loadUint(32));
+    log.info("Deserialized hashmapAugE from cell {}", loadedDict);
+  }
+
+  @Test
+  public void testShouldDeserializeHashMapAugE2() {
+    Cell cell = CellBuilder.beginCell().fromBoc(getBocAsBytes("aug-dict2.boc")).endCell();
+    CellSlice cs = CellSlice.beginParse(cell);
+
+    TonHashMapAugE loadedDict =
+        cs.loadDictAugE(
+            32,
+            k -> k.readUint(32),
+            v -> CellSlice.beginParse(v).loadUint(32),
+            e -> CellSlice.beginParse(e).loadUint(32));
+    log.info("Deserialized hashmapAugE from cell {}", loadedDict);
+  }
+
+  @Test
+  public void testShouldDeserializeHashMapAugE3() {
+    Cell cell = CellBuilder.beginCell().fromBoc(getBocAsBytes("aug-dict10.boc")).endCell();
+    CellSlice cs = CellSlice.beginParse(cell);
+
+    TonHashMapAugE loadedDict =
+        cs.loadDictAugE(
+            32,
+            k -> k.readUint(32),
+            v -> CellSlice.beginParse(v).loadUint(32),
+            e -> CellSlice.beginParse(e).loadUint(32));
+    log.info("Deserialized hashmapAugE from cell {}", loadedDict);
+  }
+
+  private String getBoc(String fileName) {
+    return Utils.streamToString(
+        Objects.requireNonNull(
+            TestHashMapAugE.class.getClassLoader().getResourceAsStream(fileName)));
+  }
+
+  private byte[] getBocAsBytes(String fileName) {
+    return Utils.streamToBytes(
+        Objects.requireNonNull(
+            TestHashMapAugE.class.getClassLoader().getResourceAsStream(fileName)));
   }
 }
