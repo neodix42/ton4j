@@ -125,6 +125,26 @@ public class Exporter {
     ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
     List<Future<Void>> futures = new ArrayList<>();
 
+    // Create a separate thread for periodic rate display
+    ScheduledExecutorService rateDisplayExecutor = null;
+    if (showProgressInfo) {
+      rateDisplayExecutor = Executors.newSingleThreadScheduledExecutor();
+      rateDisplayExecutor.scheduleAtFixedRate(
+          () -> {
+            long currentTime = System.currentTimeMillis();
+            long elapsedSeconds = (currentTime - startTime) / 1000;
+            if (elapsedSeconds > 0) {
+              double blocksPerSecond = parsedBlocksCounter.get() / (double) elapsedSeconds;
+              System.out.printf(
+                  "Block rate: %.2f blocks/sec (total: %d blocks, elapsed: %ds)%n",
+                  blocksPerSecond, parsedBlocksCounter.get(), elapsedSeconds);
+            }
+          },
+          10,
+          10,
+          TimeUnit.SECONDS);
+    }
+
     for (Map.Entry<String, ArchiveInfo> entry :
         dbReader.getArchiveDbReader().getArchiveInfos().entrySet()) {
       String archiveKey = entry.getKey();
@@ -207,12 +227,11 @@ public class Exporter {
 
                   if (showProgressInfo) {
                     System.out.printf(
-                        "Completed reading archive %s: entries %d, progress: %.1f%% (%d/%d)%n",
-                        archiveKey,
-                        localBlocks.size(),
+                        "progress: %5.1f%% %6d/%d archive %s%n",
                         exportStatus.getProgressPercentage(),
                         exportStatus.getProcessedCount(),
-                        exportStatus.getTotalPackages());
+                        exportStatus.getTotalPackages(),
+                        archiveKey);
                   }
                 } catch (Exception e) {
                   log.error("Unexpected error reading archive {}: {}", archiveKey, e.getMessage());
@@ -245,6 +264,19 @@ public class Exporter {
     } catch (InterruptedException e) {
       executor.shutdownNow();
       Thread.currentThread().interrupt();
+    }
+
+    // Shutdown rate display executor
+    if (rateDisplayExecutor != null) {
+      rateDisplayExecutor.shutdown();
+      try {
+        if (!rateDisplayExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+          rateDisplayExecutor.shutdownNow();
+        }
+      } catch (InterruptedException e) {
+        rateDisplayExecutor.shutdownNow();
+        Thread.currentThread().interrupt();
+      }
     }
 
     // Mark export as completed
@@ -548,12 +580,11 @@ public class Exporter {
 
                       if (showProgress) {
                         System.out.printf(
-                            "Completed reading archive %s: entries %d, progress: %.1f%% (%d/%d)%n",
-                            archiveKey,
-                            localBlocks.size(),
+                            "progress: %5.1f%% %6d/%d archive %s%n",
                             finalExportStatus.getProgressPercentage(),
                             finalExportStatus.getProcessedCount(),
-                            finalExportStatus.getTotalPackages());
+                            finalExportStatus.getTotalPackages(),
+                            archiveKey);
                       } else {
                         log.debug(
                             "Completed reading archive {}: {} entries",
