@@ -50,6 +50,15 @@ public class TestExporter {
   }
 
   @Test
+  public void testExporterToFileNotDeserialized() throws IOException {
+    Exporter exporter =
+        Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
+    assertThat(exporter).isNotNull();
+    FileUtils.deleteQuietly(new File("local.txt"));
+    exporter.exportToFile("local.txt", false, 20);
+  }
+
+  @Test
   public void testExporterToStdout() throws IOException {
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     exporter.exportToStdout(false, 20);

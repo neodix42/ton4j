@@ -6,10 +6,10 @@ import org.ton.ton4j.exporter.Exporter;
  * Command-line application for exporting TON blockchain data.
  *
  * <p>Usage: <br>
- * For file output: java -jar TonExporterApp <ton-db-root-path> file <json|boc> <num-of-threads>
- * <true|false> <output-file-name> <br>
- * For stdout output: java -jar TonExporterApp <ton-db-root-path> stdout <json|boc> <num-of-threads>
- * <true|false>
+ * For file output: java -jar TonExporterApp &lt;ton-db-root-path&gt; file &lt;json|boc&gt; &lt;num-of-threads&gt;
+ * &lt;true|false&gt; &lt;output-file-name&gt; <br>
+ * For stdout output: java -jar TonExporterApp &lt;ton-db-root-path&gt; stdout &lt;json|boc&gt; &lt;num-of-threads&gt;
+ * &lt;true|false&gt;
  *
  * <p>Arguments: - ton-db-root-path: Path to the TON database root directory - file|stdout: Output
  * destination (file or stdout) - json|boc: Output format (json for deserialized blocks, boc for raw

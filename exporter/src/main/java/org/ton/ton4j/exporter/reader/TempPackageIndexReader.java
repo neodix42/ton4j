@@ -17,7 +17,7 @@ import org.ton.ton4j.tlb.Block;
 
 /**
  * Reader for temp package index databases. Each temp package (e.g., temp.archive.1756843200.pack)
- * has a corresponding RocksDB index (temp.archive.1756843200.index) that contains hash->offset
+ * has a corresponding RocksDB index (temp.archive.1756843200.index) that contains hash-&gt;offset
  * mappings for fast block lookup.
  *
  * <p>Based on the original C++ implementation in archive-db.cpp, temp package indexes store: - File
@@ -69,7 +69,7 @@ public class TempPackageIndexReader implements Closeable {
   }
 
   /**
-   * Gets all hash->offset mappings from the temp package index (unsorted).
+   * Gets all hash-&gt;offset mappings from the temp package index (unsorted).
    *
    * @return Map of file hash to offset
    */

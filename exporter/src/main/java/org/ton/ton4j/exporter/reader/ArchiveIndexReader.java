@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Reader for individual archive index databases (archive.XXXXX.index). Each archive package has a
- * corresponding RocksDB index that contains hash->offset mappings for files within that package.
+ * corresponding RocksDB index that contains hash-&gt;offset mappings for files within that package.
  *
  * <p>Based on the C++ implementation in ArchiveFile class.
  */
@@ -52,7 +52,7 @@ public class ArchiveIndexReader implements Closeable {
   }
 
   /**
-   * Gets all hash->offset mappings from this archive index database. This follows the C++
+   * Gets all hash-&gt;offset mappings from this archive index database. This follows the C++
    * implementation where each archive index contains file hashes as keys and offsets as values.
    *
    * @return Map of file hash to offset within the package file
@@ -153,7 +153,7 @@ public class ArchiveIndexReader implements Closeable {
   /**
    * Gets the number of file entries in this archive index.
    *
-   * @return Number of hash->offset mappings
+   * @return Number of hash-&gt;offset mappings
    */
   public int getFileCount() {
     return getAllHashOffsetMappings().size();

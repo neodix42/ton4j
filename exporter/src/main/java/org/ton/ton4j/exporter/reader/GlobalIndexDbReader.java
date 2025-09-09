@@ -480,7 +480,7 @@ public class GlobalIndexDbReader implements Closeable {
   /**
    * Gets ALL archive file locations by reading individual archive index databases. This method
    * follows the C++ implementation approach by opening each archive.XXXXX.index database and
-   * reading the hash->offset mappings. This provides complete access to all files stored in archive
+   * reading the hash-&gt;offset mappings. This provides complete access to all files stored in archive
    * packages, including those not referenced in the Files database.
    *
    * @return Map of file hash to ArchiveFileLocation
@@ -557,7 +557,7 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Reads hash->offset mappings from a specific archive index database.
+   * Reads hash-&gt;offset mappings from a specific archive index database.
    *
    * @param packagePath Path to the package file
    * @param indexPath Path to the index database
@@ -668,7 +668,7 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Reads a file from archive packages using hash->offset lookup. This follows the C++
+   * Reads a file from archive packages using hash-&gt;offset lookup. This follows the C++
    * implementation approach where files are accessed by their hash using the individual archive
    * index databases.
    *
