@@ -97,11 +97,11 @@ public class Exporter {
     if (seconds < 0) {
       return "N/A";
     }
-    
+
     long hours = seconds / 3600;
     long minutes = (seconds % 3600) / 60;
     long secs = seconds % 60;
-    
+
     if (hours > 0) {
       return String.format("%dh %dm %ds", hours, minutes, secs);
     } else if (minutes > 0) {
@@ -161,22 +161,27 @@ public class Exporter {
             if (elapsedSeconds > 0) {
               double blocksPerSecond = parsedBlocksCounter.get() / (double) elapsedSeconds;
               double progressPercentage = exportStatus.getProgressPercentage();
-              
+
               // Calculate estimated time remaining
               String timeRemainingStr = "N/A";
               if (progressPercentage > 0.1) { // Only calculate if we have meaningful progress
                 double remainingPercentage = 100.0 - progressPercentage;
                 double estimatedTotalTimeSeconds = elapsedSeconds / (progressPercentage / 100.0);
-                long estimatedRemainingSeconds = (long) (estimatedTotalTimeSeconds - elapsedSeconds);
-                
+                long estimatedRemainingSeconds =
+                    (long) (estimatedTotalTimeSeconds - elapsedSeconds);
+
                 if (estimatedRemainingSeconds > 0) {
                   timeRemainingStr = formatDuration(estimatedRemainingSeconds);
                 }
               }
-              
+
               System.out.printf(
                   "Block rate: %.2f blocks/sec (total: %d blocks, elapsed: %ds, progress: %.1f%%, ETA: %s)%n",
-                  blocksPerSecond, parsedBlocksCounter.get(), elapsedSeconds, progressPercentage, timeRemainingStr);
+                  blocksPerSecond,
+                  parsedBlocksCounter.get(),
+                  elapsedSeconds,
+                  progressPercentage,
+                  timeRemainingStr);
             }
           },
           10,
@@ -407,8 +412,11 @@ public class Exporter {
 
       // Calculate statistics
       int totalProcessed = parsedBlocksCounter + nonBlocksCounter + errorCounter;
-      double errorRatio = totalProcessed > 0 ? (double) errorCounter / totalProcessed * 100.0 : 0.0;
-      double successRatio = totalProcessed > 0 ? (double) parsedBlocksCounter / totalProcessed * 100.0 : 0.0;
+      int totalBlocks =
+          parsedBlocksCounter + errorCounter; // Only count actual blocks for success/error rate
+      double errorRatio = totalBlocks > 0 ? (double) errorCounter / totalBlocks * 100.0 : 0.0;
+      double successRatio =
+          totalBlocks > 0 ? (double) parsedBlocksCounter / totalBlocks * 100.0 : 0.0;
 
       log.info(
           "Exported {} blocks (nonBlocks {}, errors {}) to file: {}",
@@ -416,12 +424,10 @@ public class Exporter {
           nonBlocksCounter,
           errorCounter,
           outputToFile);
-      
-      log.info(
-          "Export statistics: Total processed: {}, Success rate: {:.2f}%, Error rate: {:.2f}%",
-          totalProcessed,
-          successRatio,
-          errorRatio);
+
+      System.out.printf(
+          "Export statistics: Total processed: %d, Success rate: %.2f%%, Error rate: %.2f%%%n",
+          totalProcessed, successRatio, errorRatio);
 
       // Clean up status file after successful completion
       statusManager.deleteStatus();
@@ -493,15 +499,20 @@ public class Exporter {
 
     // Calculate statistics
     int totalProcessed = parsedBlocksCounter + nonBlocksCounter + errorCounter;
-    double errorRatio = totalProcessed > 0 ? (double) errorCounter / totalProcessed * 100.0 : 0.0;
-    double successRatio = totalProcessed > 0 ? (double) parsedBlocksCounter / totalProcessed * 100.0 : 0.0;
+    int totalBlocks =
+        parsedBlocksCounter + errorCounter; // Only count actual blocks for success/error rate
+    double errorRatio = totalBlocks > 0 ? (double) errorCounter / totalBlocks * 100.0 : 0.0;
+    double successRatio =
+        totalBlocks > 0 ? (double) parsedBlocksCounter / totalBlocks * 100.0 : 0.0;
 
-    log.info("Exported {} blocks (nonBlocks {}, errors {}) to stdout", parsedBlocksCounter, nonBlocksCounter, errorCounter);
     log.info(
-        "Export statistics: Total processed: {}, Success rate: {:.2f}%, Error rate: {:.2f}%",
-        totalProcessed,
-        successRatio,
-        errorRatio);
+        "Exported {} blocks (nonBlocks {}, errors {}) to stdout",
+        parsedBlocksCounter,
+        nonBlocksCounter,
+        errorCounter);
+    System.out.printf(
+        "Export statistics: Total processed: %d, Success rate: %.2f%%, Error rate: %.2f%%%n",
+        totalProcessed, successRatio, errorRatio);
 
     // Clean up status file after successful completion
     statusManager.deleteStatus();

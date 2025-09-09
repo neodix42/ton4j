@@ -114,7 +114,7 @@ public class TestExporter {
 
     latestBlocks.forEach(
         (blockId, block) -> {
-          log.info("blockId {}, {}", blockId, block);
+          log.info("blockId {}", blockId);
         });
   }
 

@@ -50,6 +50,7 @@ public class ArchiveDbReader implements Closeable {
     discoverAllArchivePackagesFromFilesystem();
 
     // Also try to discover from global index as fallback for any additional packages
+    // but avoid duplicate scanning by using the Files database index directly
     if (globalIndexDbReader != null) {
       discoverArchivesFromFilesDatabase();
     }
@@ -147,69 +148,51 @@ public class ArchiveDbReader implements Closeable {
   /**
    * Discovers archives from the Files database global index (fallback method). This is kept as a
    * fallback in case there are additional packages referenced in the Files database that weren't
-   * found by filesystem scanning.
+   * found by filesystem scanning. This method uses the Files database index directly without
+   * additional filesystem scanning to avoid duplication.
    */
   private void discoverArchivesFromFilesDatabase() {
     log.debug("Discovering additional archives from Files database global index...");
 
-    // Get archive package file paths from the global index
-    List<String> archivePackageFiles =
-        globalIndexDbReader.getAllArchivePackageFilePathsFromFilesystem();
+    // Use the Files database index directly to get package information
+    // without additional filesystem scanning
+    try {
+      if (globalIndexDbReader.getMainIndexIndexValue() != null) {
+        List<Integer> allPackageIds = new ArrayList<>();
+        allPackageIds.addAll(globalIndexDbReader.getMainIndexIndexValue().getPackages());
+        allPackageIds.addAll(globalIndexDbReader.getMainIndexIndexValue().getKeyPackages());
+        allPackageIds.addAll(globalIndexDbReader.getMainIndexIndexValue().getTempPackages());
 
-    int newPackages = 0;
+        int newPackages = 0;
 
-    // Create archive info entries for discovered packages (only if not already found)
-    for (String packagePath : archivePackageFiles) {
-      try {
-        Path path = Paths.get(packagePath);
-        String fileName = path.getFileName().toString();
+        // For each package ID, try to find corresponding archive files that weren't found by
+        // filesystem scan
+        for (Integer packageId : allPackageIds) {
+          // Look for archive files with this package ID that might have been missed
+          String archiveKey = "files/" + String.format("%010d", packageId);
 
-        // Extract package info from the file path
-        Path parentDir = path.getParent();
-        String dirName = parentDir.getFileName().toString();
+          if (!archiveInfos.containsKey(archiveKey)) {
+            // Try to find the package file path
+            String packagePath = globalIndexDbReader.getPackageFilePath(packageId);
+            if (packagePath != null) {
+              // Create archive info for Files database package (no index file)
+              archiveInfos.put(archiveKey, new ArchiveInfo(packageId, null, packagePath));
+              newPackages++;
 
-        // Remove .pack extension to get the package base name
-        String packageBaseName = fileName.substring(0, fileName.lastIndexOf('.'));
-        String archiveKey = dirName + "/" + packageBaseName;
-
-        // Only add if not already discovered by filesystem scan
-        if (!archiveInfos.containsKey(archiveKey)) {
-          // Extract archive ID from directory name (arch0000 -> 0)
-          int archiveId = 0;
-          if (dirName.startsWith("arch")) {
-            try {
-              archiveId = Integer.parseInt(dirName.substring(4));
-            } catch (NumberFormatException e) {
-              log.debug("Could not parse archive ID from directory name: {}", dirName);
+              log.debug(
+                  "Discovered additional Files database package: {} (package: {})",
+                  archiveKey,
+                  packagePath);
             }
           }
-
-          // Look for corresponding index file
-          String indexFileName = packageBaseName + ".index";
-          Path indexPath = parentDir.resolve(indexFileName);
-          String indexPathStr = Files.exists(indexPath) ? indexPath.toString() : null;
-
-          // Create archive info
-          archiveInfos.put(archiveKey, new ArchiveInfo(archiveId, indexPathStr, packagePath));
-          newPackages++;
-
-          log.debug(
-              "Discovered additional archive from Files database: {} (index: {}, package: {})",
-              archiveKey,
-              indexPathStr != null ? indexPathStr : "none",
-              packagePath);
         }
 
-      } catch (Exception e) {
-        log.debug(
-            "Error processing archive package file from Files database {}: {}",
-            packagePath,
-            e.getMessage());
+        if (newPackages > 0) {
+          log.info("Discovered {} additional packages from Files database index", newPackages);
+        }
       }
-    }
-
-    if (newPackages > 0) {
-      log.info("Discovered {} additional archive packages from Files database", newPackages);
+    } catch (Exception e) {
+      log.debug("Error discovering archives from Files database index: {}", e.getMessage());
     }
   }
 
@@ -454,17 +437,25 @@ public class ArchiveDbReader implements Closeable {
               PackageReader packageReader =
                   getPackageReader(archiveKey, archiveInfo.getPackagePath());
 
-              // Get the entry at the offset
-              PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
+              // Check if packageReader is null before using it
+              if (packageReader != null) {
+                // Get the entry at the offset
+                PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
 
-              if (packageEntry != null) {
-                blocks.put(hash, packageEntry.getData());
+                if (packageEntry != null) {
+                  blocks.put(hash, packageEntry.getData());
+                } else {
+                  log.warn(
+                      "Null package entry for key {} at offset {} in archive {}",
+                      hash,
+                      offset,
+                      archiveKey);
+                }
               } else {
                 log.warn(
-                    "Null package entry for key {} at offset {} in archive {}",
-                    hash,
-                    offset,
-                    archiveKey);
+                    "PackageReader is null for archive {} with package path {}",
+                    archiveKey,
+                    archiveInfo.getPackagePath());
               }
             } catch (IOException e) {
               // Silently skip individual entry errors
@@ -546,19 +537,27 @@ public class ArchiveDbReader implements Closeable {
       AtomicInteger entryCount = new AtomicInteger();
       PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.getPackagePath());
 
-      packageReader.forEach(
-          packageEntry -> {
-            entryCount.getAndIncrement();
-            String hash = extractHashFromFilename(packageEntry.getFilename());
-            if (hash != null) {
-              blocks.put(hash, packageEntry.getData());
-            }
-          });
+      // Check if packageReader is null before using it
+      if (packageReader != null) {
+        packageReader.forEach(
+            packageEntry -> {
+              entryCount.getAndIncrement();
+              String hash = extractHashFromFilename(packageEntry.getFilename());
+              if (hash != null) {
+                blocks.put(hash, packageEntry.getData());
+              }
+            });
 
-      //      log.info(
-      //          "Successfully read {} entries from orphaned package: {}",
-      //          entryCount,
-      //          archiveInfo.getPackagePath());
+        //      log.info(
+        //          "Successfully read {} entries from orphaned package: {}",
+        //          entryCount,
+        //          archiveInfo.getPackagePath());
+      } else {
+        log.warn(
+            "PackageReader is null for orphaned package {} with path {}",
+            archiveKey,
+            archiveInfo.getPackagePath());
+      }
 
     } catch (IOException e) {
       log.error(
@@ -698,12 +697,24 @@ public class ArchiveDbReader implements Closeable {
    *
    * @param archiveKey The archive key
    * @param packagePath Path to the package file
-   * @return The package reader
+   * @return The package reader, or null if creation fails
    * @throws IOException If an I/O error occurs
    */
   private PackageReader getPackageReader(String archiveKey, String packagePath) throws IOException {
     if (!packageReaders.containsKey(archiveKey)) {
-      packageReaders.put(archiveKey, new PackageReader(packagePath));
+      try {
+        PackageReader reader = new PackageReader(packagePath);
+        packageReaders.put(archiveKey, reader);
+      } catch (IOException e) {
+        log.warn(
+            "Failed to create PackageReader for archive {} with path {}: {}",
+            archiveKey,
+            packagePath,
+            e.getMessage());
+        // Store null to avoid repeated attempts
+        packageReaders.put(archiveKey, null);
+        throw e;
+      }
     }
 
     return packageReaders.get(archiveKey);
@@ -714,11 +725,43 @@ public class ArchiveDbReader implements Closeable {
 
     // Close all package readers
     for (PackageReader reader : packageReaders.values()) {
-      reader.close();
+      if (reader != null) {
+        try {
+          reader.close();
+        } catch (IOException e) {
+          log.warn("Error closing package reader: {}", e.getMessage());
+        }
+      }
     }
 
     for (PackageReader reader : filesPackageReaders.values()) {
-      reader.close();
+      if (reader != null) {
+        try {
+          reader.close();
+        } catch (IOException e) {
+          log.warn("Error closing files package reader: {}", e.getMessage());
+        }
+      }
+    }
+
+    // Close global index database reader
+    if (globalIndexDbReader != null) {
+      try {
+        globalIndexDbReader.close();
+      } catch (IOException e) {
+        log.warn("Error closing global index database reader: {}", e.getMessage());
+      }
+    }
+
+    // Close index databases
+    for (RocksDbWrapper indexDb : indexDbs.values()) {
+      if (indexDb != null) {
+        try {
+          indexDb.close();
+        } catch (IOException e) {
+          log.warn("Error closing index database: {}", e.getMessage());
+        }
+      }
     }
   }
 
