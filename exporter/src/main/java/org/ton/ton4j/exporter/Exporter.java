@@ -8,6 +8,7 @@ import ch.qos.logback.classic.LoggerContext;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -120,6 +121,7 @@ public class Exporter {
    * @param parallelThreads number of parallel threads used to export a database
    * @param showProgressInfo whether to show progress information during export
    * @param exportStatus the export status for tracking progress
+   * @param errorFilePath path to the errors.txt file where error block data will be written
    * @return array containing [parsedBlocksCounter, nonBlocksCounter, errorCounter]
    */
   private int[] exportDataWithStatus(
@@ -127,7 +129,8 @@ public class Exporter {
       boolean deserialized,
       int parallelThreads,
       boolean showProgressInfo,
-      ExportStatus exportStatus)
+      ExportStatus exportStatus,
+      String errorFilePath)
       throws IOException {
     Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
 
@@ -259,6 +262,21 @@ public class Exporter {
                       log.info("Error parsing block {}: {}", kv.getKey(), e.getMessage());
                       //                      log.info("boc {}", Utils.bytesToHex(kv.getValue()));
                       errorCounter.getAndIncrement();
+                      
+                      // Write error block data to errors.txt file if errorFilePath is provided
+                      if (errorFilePath != null) {
+                        try {
+                          synchronized (this) {
+                            try (PrintWriter errorWriter = new PrintWriter(new FileWriter(errorFilePath, StandardCharsets.UTF_8, true))) {
+                              errorWriter.println(Utils.bytesToHex(kv.getValue()));
+                              errorWriter.flush();
+                            }
+                          }
+                        } catch (IOException ioException) {
+                          log.warn("Failed to write error block data to {}: {}", errorFilePath, ioException.getMessage());
+                        }
+                      }
+                      
                       // Continue processing other blocks instead of failing completely
                     }
                   }
@@ -402,10 +420,14 @@ public class Exporter {
             }
           };
 
+      // Create error file path in the same directory as output file
+      File outputFile = new File(outputToFile);
+      String errorFilePath = new File(outputFile.getParent(), "errors.txt").getAbsolutePath();
+
       // Use common export logic with progress info enabled for file export
       int[] results =
           exportDataWithStatus(
-              fileWriter, deserialized, parallelThreads, showProgress, exportStatus);
+              fileWriter, deserialized, parallelThreads, showProgress, exportStatus, errorFilePath);
       int parsedBlocksCounter = results[0];
       int nonBlocksCounter = results[1];
       int errorCounter = results[2];
@@ -487,8 +509,9 @@ public class Exporter {
     OutputWriter stdoutWriter = System.out::println;
 
     // Use common export logic with progress info disabled for stdout export
+    // For stdout export, we don't create an error file, so pass null
     int[] results =
-        exportDataWithStatus(stdoutWriter, deserialized, parallelThreads, false, exportStatus);
+        exportDataWithStatus(stdoutWriter, deserialized, parallelThreads, false, exportStatus, null);
     int parsedBlocksCounter = results[0];
     int nonBlocksCounter = results[1];
     int errorCounter = results[2];
