@@ -120,7 +120,7 @@ public class Exporter {
    * @param parallelThreads number of parallel threads used to export a database
    * @param showProgressInfo whether to show progress information during export
    * @param exportStatus the export status for tracking progress
-   * @return array containing [parsedBlocksCounter, nonBlocksCounter, totalProcessed]
+   * @return array containing [parsedBlocksCounter, nonBlocksCounter, errorCounter]
    */
   private int[] exportDataWithStatus(
       OutputWriter outputWriter,
@@ -135,6 +135,7 @@ public class Exporter {
 
     AtomicInteger parsedBlocksCounter = new AtomicInteger(exportStatus.getParsedBlocksCount());
     AtomicInteger nonBlocksCounter = new AtomicInteger(exportStatus.getNonBlocksCount());
+    AtomicInteger errorCounter = new AtomicInteger(0);
     long totalPacks = dbReader.getArchiveDbReader().getArchiveInfos().size();
 
     // Update total packages if it has changed
@@ -250,8 +251,9 @@ public class Exporter {
                       }
 
                     } catch (Throwable e) {
-                      log.info("Error parsing block {}: {}", entry.getKey(), e.getMessage());
+                      log.info("Error parsing block {}: {}", kv.getKey(), e.getMessage());
                       //                      log.info("boc {}", Utils.bytesToHex(kv.getValue()));
+                      errorCounter.getAndIncrement();
                       // Continue processing other blocks instead of failing completely
                     }
                   }
@@ -328,7 +330,7 @@ public class Exporter {
 
     dbReader.close();
 
-    return new int[] {parsedBlocksCounter.get(), nonBlocksCounter.get()};
+    return new int[] {parsedBlocksCounter.get(), nonBlocksCounter.get(), errorCounter.get()};
   }
 
   /**
@@ -401,12 +403,25 @@ public class Exporter {
               fileWriter, deserialized, parallelThreads, showProgress, exportStatus);
       int parsedBlocksCounter = results[0];
       int nonBlocksCounter = results[1];
+      int errorCounter = results[2];
+
+      // Calculate statistics
+      int totalProcessed = parsedBlocksCounter + nonBlocksCounter + errorCounter;
+      double errorRatio = totalProcessed > 0 ? (double) errorCounter / totalProcessed * 100.0 : 0.0;
+      double successRatio = totalProcessed > 0 ? (double) parsedBlocksCounter / totalProcessed * 100.0 : 0.0;
 
       log.info(
-          "Exported {} blocks (nonBlocks {}) to file: {}",
+          "Exported {} blocks (nonBlocks {}, errors {}) to file: {}",
           parsedBlocksCounter,
           nonBlocksCounter,
+          errorCounter,
           outputToFile);
+      
+      log.info(
+          "Export statistics: Total processed: {}, Success rate: {:.2f}%, Error rate: {:.2f}%",
+          totalProcessed,
+          successRatio,
+          errorRatio);
 
       // Clean up status file after successful completion
       statusManager.deleteStatus();
@@ -470,12 +485,23 @@ public class Exporter {
         exportDataWithStatus(stdoutWriter, deserialized, parallelThreads, false, exportStatus);
     int parsedBlocksCounter = results[0];
     int nonBlocksCounter = results[1];
+    int errorCounter = results[2];
 
     for (Logger logger : loggerContext.getLoggerList()) {
       logger.setLevel(Level.INFO);
     }
 
-    log.info("Exported {} blocks (nonBlocks {}) to stdout", parsedBlocksCounter, nonBlocksCounter);
+    // Calculate statistics
+    int totalProcessed = parsedBlocksCounter + nonBlocksCounter + errorCounter;
+    double errorRatio = totalProcessed > 0 ? (double) errorCounter / totalProcessed * 100.0 : 0.0;
+    double successRatio = totalProcessed > 0 ? (double) parsedBlocksCounter / totalProcessed * 100.0 : 0.0;
+
+    log.info("Exported {} blocks (nonBlocks {}, errors {}) to stdout", parsedBlocksCounter, nonBlocksCounter, errorCounter);
+    log.info(
+        "Export statistics: Total processed: {}, Success rate: {:.2f}%, Error rate: {:.2f}%",
+        totalProcessed,
+        successRatio,
+        errorRatio);
 
     // Clean up status file after successful completion
     statusManager.deleteStatus();
