@@ -88,6 +88,30 @@ public class Exporter {
   }
 
   /**
+   * Formats duration in seconds to a human-readable string (e.g., "2h 30m 45s")
+   *
+   * @param seconds the duration in seconds
+   * @return formatted duration string
+   */
+  private static String formatDuration(long seconds) {
+    if (seconds < 0) {
+      return "N/A";
+    }
+    
+    long hours = seconds / 3600;
+    long minutes = (seconds % 3600) / 60;
+    long secs = seconds % 60;
+    
+    if (hours > 0) {
+      return String.format("%dh %dm %ds", hours, minutes, secs);
+    } else if (minutes > 0) {
+      return String.format("%dm %ds", minutes, secs);
+    } else {
+      return String.format("%ds", secs);
+    }
+  }
+
+  /**
    * Common export logic that handles database reading and block processing with state persistence
    *
    * @param outputWriter strategy for writing output lines
@@ -135,9 +159,23 @@ public class Exporter {
             long elapsedSeconds = (currentTime - startTime) / 1000;
             if (elapsedSeconds > 0) {
               double blocksPerSecond = parsedBlocksCounter.get() / (double) elapsedSeconds;
+              double progressPercentage = exportStatus.getProgressPercentage();
+              
+              // Calculate estimated time remaining
+              String timeRemainingStr = "N/A";
+              if (progressPercentage > 0.1) { // Only calculate if we have meaningful progress
+                double remainingPercentage = 100.0 - progressPercentage;
+                double estimatedTotalTimeSeconds = elapsedSeconds / (progressPercentage / 100.0);
+                long estimatedRemainingSeconds = (long) (estimatedTotalTimeSeconds - elapsedSeconds);
+                
+                if (estimatedRemainingSeconds > 0) {
+                  timeRemainingStr = formatDuration(estimatedRemainingSeconds);
+                }
+              }
+              
               System.out.printf(
-                  "Block rate: %.2f blocks/sec (total: %d blocks, elapsed: %ds)%n",
-                  blocksPerSecond, parsedBlocksCounter.get(), elapsedSeconds);
+                  "Block rate: %.2f blocks/sec (total: %d blocks, elapsed: %ds, progress: %.1f%%, ETA: %s)%n",
+                  blocksPerSecond, parsedBlocksCounter.get(), elapsedSeconds, progressPercentage, timeRemainingStr);
             }
           },
           10,
