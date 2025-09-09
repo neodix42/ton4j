@@ -265,21 +265,26 @@ public class Exporter {
                       log.info("Error parsing block {}: {}", kv.getKey(), e.getMessage());
                       //                      log.info("boc {}", Utils.bytesToHex(kv.getValue()));
                       errorCounter.getAndIncrement();
-                      
+
                       // Write error block data to errors.txt file if errorFilePath is provided
                       if (errorFilePath != null) {
                         try {
                           synchronized (this) {
-                            try (PrintWriter errorWriter = new PrintWriter(new FileWriter(errorFilePath, StandardCharsets.UTF_8, true))) {
+                            try (PrintWriter errorWriter =
+                                new PrintWriter(
+                                    new FileWriter(errorFilePath, StandardCharsets.UTF_8, true))) {
                               errorWriter.println(Utils.bytesToHex(kv.getValue()));
                               errorWriter.flush();
                             }
                           }
                         } catch (IOException ioException) {
-                          log.warn("Failed to write error block data to {}: {}", errorFilePath, ioException.getMessage());
+                          log.warn(
+                              "Failed to write error block data to {}: {}",
+                              errorFilePath,
+                              ioException.getMessage());
                         }
                       }
-                      
+
                       // Continue processing other blocks instead of failing completely
                     }
                   }
@@ -349,10 +354,8 @@ public class Exporter {
     exportStatus.markCompleted();
     statusManager.saveStatus(exportStatus);
 
-    log.info(
-        "Total duration: {}s, speed: {} blocks per second",
-        durationSeconds,
-        String.format("%.2f", blocksPerSecond));
+    System.out.printf(
+        "Total duration: %.1fs, speed: %.2f blocks per second%n", durationSeconds, blocksPerSecond);
 
     dbReader.close();
 
@@ -445,12 +448,9 @@ public class Exporter {
       double successRatio =
           totalBlocks > 0 ? (double) parsedBlocksCounter / totalBlocks * 100.0 : 0.0;
 
-      log.info(
-          "Exported {} blocks (nonBlocks {}, errors {}) to file: {}",
-          parsedBlocksCounter,
-          nonBlocksCounter,
-          errorCounter,
-          outputToFile);
+      System.out.printf(
+          "Exported %d blocks (nonBlocks %d, errors %d) to file: %s%n",
+          parsedBlocksCounter, nonBlocksCounter, errorCounter, outputToFile);
 
       System.out.printf(
           "Export statistics: Total processed: %d, Success rate: %.2f%%, Error rate: %.2f%%%n",
@@ -518,7 +518,8 @@ public class Exporter {
     // Use common export logic with progress info disabled for stdout export
     // For stdout export, we don't create an error file, so pass null
     int[] results =
-        exportDataWithStatus(stdoutWriter, deserialized, parallelThreads, false, exportStatus, null);
+        exportDataWithStatus(
+            stdoutWriter, deserialized, parallelThreads, false, exportStatus, null);
     int parsedBlocksCounter = results[0];
     int nonBlocksCounter = results[1];
     int errorCounter = results[2];
@@ -535,11 +536,9 @@ public class Exporter {
     double successRatio =
         totalBlocks > 0 ? (double) parsedBlocksCounter / totalBlocks * 100.0 : 0.0;
 
-    log.info(
-        "Exported {} blocks (nonBlocks {}, errors {}) to stdout",
-        parsedBlocksCounter,
-        nonBlocksCounter,
-        errorCounter);
+    System.out.printf(
+        "Exported %d blocks (nonBlocks %d, errors %d) to stdout%n",
+        parsedBlocksCounter, nonBlocksCounter, errorCounter);
     System.out.printf(
         "Export statistics: Total processed: %d, Success rate: %.2f%%, Error rate: %.2f%%%n",
         totalProcessed, successRatio, errorRatio);

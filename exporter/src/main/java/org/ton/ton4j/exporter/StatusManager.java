@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.exporter.types.ExportStatus;
 
@@ -16,7 +17,7 @@ public class StatusManager {
 
   private static final String STATUS_FILE_NAME = "status.json";
   private final Gson gson;
-  private final Path statusFilePath;
+  @Getter private final Path statusFilePath;
 
   public StatusManager() {
     this.gson = new GsonBuilder().setPrettyPrinting().create();
@@ -72,10 +73,6 @@ public class StatusManager {
       String jsonContent = gson.toJson(status);
       Files.writeString(statusFilePath, jsonContent, StandardCharsets.UTF_8);
 
-      //      log.debug(
-      //          "Saved export status: {}% complete ({}/{})",
-      //          status.getProgressPercentage(), status.getProcessedCount(),
-      // status.getTotalPackages());
     } catch (Exception e) {
       log.error("Failed to save status file {}: {}", statusFilePath, e.getMessage());
     }
@@ -107,7 +104,7 @@ public class StatusManager {
     try {
       if (Files.exists(statusFilePath)) {
         Files.delete(statusFilePath);
-        log.info("Deleted status file: {}", statusFilePath);
+        System.out.println("Deleted status file: " + statusFilePath);
       }
     } catch (Exception e) {
       log.warn("Failed to delete status file {}: {}", statusFilePath, e.getMessage());
@@ -121,14 +118,5 @@ public class StatusManager {
    */
   public boolean statusExists() {
     return Files.exists(statusFilePath);
-  }
-
-  /**
-   * Gets the path to the status file
-   *
-   * @return Path to the status file
-   */
-  public Path getStatusFilePath() {
-    return statusFilePath;
   }
 }
