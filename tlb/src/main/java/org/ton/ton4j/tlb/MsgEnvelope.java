@@ -9,10 +9,6 @@ public interface MsgEnvelope {
   static MsgEnvelope deserialize(CellSlice cs) {
     int msgEnvelopeFlag = cs.preloadUint(4).intValue();
     switch (msgEnvelopeFlag) {
-      case 0:
-        {
-          return MsgMetaData.deserialize(cs);
-        }
       case 4:
         {
           return MsgEnvelopeV1.deserialize(cs);

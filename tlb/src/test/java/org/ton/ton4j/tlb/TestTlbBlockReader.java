@@ -207,6 +207,24 @@ public class TestTlbBlockReader {
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
   }
 
+  /** Wrong magic for MsgAddressInt, found 0 */
+  @Test
+  public void testShouldDeserializeBlock13() {
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-10.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+  }
+
+  /** Wrong magic for MsgAddressInt, found 0 */
+  @Test
+  public void testShouldDeserializeBlock14() {
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-11.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+  }
+
   private String getBoc(String fileName) {
     return Utils.streamToString(
         Objects.requireNonNull(
