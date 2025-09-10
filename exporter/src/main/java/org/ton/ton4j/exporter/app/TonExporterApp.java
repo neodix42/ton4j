@@ -169,7 +169,14 @@ public class TonExporterApp {
               // Only show interrupted statistics if export was not completed successfully
               if (!exportCompleted.get() && !exportInterrupted.getAndSet(true)) {
                 System.err.println(
-                    "\n\nExport interrupted by user (Ctrl+C). Showing final statistics...");
+                    "\n\nExport interrupted by user (Ctrl+C). Waiting for threads to finish...");
+                
+                // Wait for all threads to finish before showing statistics
+                if (currentExporter != null) {
+                  currentExporter.waitForThreadsToFinish();
+                }
+                
+                System.err.println("All threads finished. Showing final statistics...");
                 printFinalStatistics(false);
               }
             });
@@ -308,9 +315,9 @@ public class TonExporterApp {
     System.err.println("Usage:");
     System.err.println("  For version: java -jar TonExporterApp -v");
     System.err.println(
-        "  For file output: java -jar TonExporterApp <ton-db-root-path> file <json|boc> <num-of-threads> <true|false> <output-file-name>");
+        "  For file output: java -jar TonExporterApp.jar <ton-db-root-path> file <json|boc> <num-of-threads> <true|false> <output-file-name>");
     System.err.println(
-        "  For stdout output: java -jar TonExporterApp <ton-db-root-path> stdout <json|boc> <num-of-threads>");
+        "  For stdout output: java -jar TonExporterApp.jar <ton-db-root-path> stdout <json|boc> <num-of-threads>");
     System.err.println();
     System.err.println("Arguments:");
     System.err.println("  -v                : Show version information");
@@ -324,8 +331,8 @@ public class TonExporterApp {
         "  output-file-name : Name of the output file (required only for file output)");
     System.err.println();
     System.err.println("Examples:");
-    System.err.println("  java -jar TonExporterApp -v");
-    System.err.println("  java -jar TonExporterApp /var/ton-work/db file json 4 true blocks.json");
-    System.err.println("  java -jar TonExporterApp /var/ton-work/db stdout boc 8");
+    System.err.println("  java -jar TonExporterApp.jar -v");
+    System.err.println("  java -jar TonExporterApp.jar /var/ton-work/db file json 4 true blocks.json");
+    System.err.println("  java -jar TonExporterApp.jar /var/ton-work/db stdout boc 8");
   }
 }

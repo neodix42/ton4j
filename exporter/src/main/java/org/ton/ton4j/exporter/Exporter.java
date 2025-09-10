@@ -48,6 +48,12 @@ public class Exporter {
     void writeLine(String line);
   }
 
+  // Volatile reference to current executor service for shutdown coordination
+  private volatile ExecutorService currentExecutorService = null;
+  private volatile ScheduledExecutorService currentRateDisplayExecutor = null;
+  // Shutdown signal to stop processing new packages
+  private volatile boolean shutdownRequested = false;
+
   /**
    * usually located in /var/ton-work/db on server or myLocalTon/genesis/db in MyLocalTon app.
    * Specify absolute path
@@ -86,6 +92,52 @@ public class Exporter {
 
   public String getDatabasePath() {
     return tonDatabaseRootPath;
+  }
+
+  /**
+   * Signals shutdown and waits for all currently running executor services to finish. This method
+   * is called by the shutdown hook to ensure clean termination.
+   */
+  public void waitForThreadsToFinish() {
+    // Signal shutdown to stop processing new packages
+    shutdownRequested = true;
+    log.info("Shutdown signal sent to worker threads...");
+
+    ExecutorService executor = currentExecutorService;
+    ScheduledExecutorService rateExecutor = currentRateDisplayExecutor;
+
+    if (executor != null && !executor.isShutdown()) {
+      log.info("Waiting for worker threads to finish current packages...");
+      executor.shutdown();
+      try {
+        if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+          log.warn("Worker threads did not finish within 10 seconds, forcing shutdown...");
+          executor.shutdownNow();
+          if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+            log.error("Worker threads did not respond to forced shutdown");
+          }
+        } else {
+          log.info("All worker threads finished successfully");
+        }
+      } catch (InterruptedException e) {
+        log.warn("Interrupted while waiting for worker threads to finish");
+        executor.shutdownNow();
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    if (rateExecutor != null && !rateExecutor.isShutdown()) {
+      log.debug("Shutting down rate display executor...");
+      rateExecutor.shutdown();
+      try {
+        if (!rateExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
+          rateExecutor.shutdownNow();
+        }
+      } catch (InterruptedException e) {
+        rateExecutor.shutdownNow();
+        Thread.currentThread().interrupt();
+      }
+    }
   }
 
   /**
@@ -154,12 +206,14 @@ public class Exporter {
 
     // Create thread pool
     ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
+    currentExecutorService = executor; // Store reference for shutdown coordination
     List<Future<Void>> futures = new ArrayList<>();
 
     // Create a separate thread for periodic rate display
     ScheduledExecutorService rateDisplayExecutor = null;
     if (showProgressInfo) {
       rateDisplayExecutor = Executors.newSingleThreadScheduledExecutor();
+      currentRateDisplayExecutor = rateDisplayExecutor; // Store reference for shutdown coordination
       rateDisplayExecutor.scheduleAtFixedRate(
           () -> {
             long currentTime = System.currentTimeMillis();
@@ -197,13 +251,20 @@ public class Exporter {
 
     for (Map.Entry<String, ArchiveInfo> entry :
         dbReader.getArchiveDbReader().getArchiveInfos().entrySet()) {
+
+      // Check for shutdown signal before processing new packages
+      if (shutdownRequested) {
+        log.info("Shutdown requested, stopping submission of new packages");
+        break;
+      }
+
       String archiveKey = entry.getKey();
       ArchiveInfo archiveInfo = entry.getValue();
 
       // Skip already processed packages
       if (exportStatus.isPackageProcessed(archiveKey)) {
         if (showProgressInfo) {
-          log.debug("Skipping already processed archive: {}", archiveKey);
+          log.info("Skipping already processed archive: {}", archiveKey);
         }
         continue;
       }
@@ -211,6 +272,12 @@ public class Exporter {
       Future<Void> future =
           executor.submit(
               () -> {
+                // Check shutdown signal at the beginning of each task
+                if (shutdownRequested) {
+                  //                  log.debug("Shutdown requested, skipping archive: {}",
+                  // archiveKey);
+                  return null;
+                }
                 try {
                   Map<String, byte[]> localBlocks = new HashMap<>();
                   int localParsedBlocks = 0;
