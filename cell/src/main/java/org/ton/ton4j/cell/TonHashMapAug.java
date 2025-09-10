@@ -12,6 +12,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.utils.Utils;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 public class TonHashMapAug implements Serializable {
 
   public HashMap<Object, Pair<Object, Object>> elements; // Pair<Value,Extra>
@@ -87,15 +90,9 @@ public class TonHashMapAug implements Serializable {
     List<String> parsedElements = new ArrayList<>();
 
     for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
-      Object value = entry.getValue().getLeft();
-      String s = null;
-      if (value instanceof Cell) {
-        s =
-            String.format(
-                "%s,%s,%s", entry.getKey(), ((Cell) value).toHex(), entry.getValue().getRight());
-      } else {
-        s = String.format("%s,%s,%s", entry.getKey(), value, entry.getValue().getRight());
-      }
+      String s =
+          String.format(
+              "%s,%s,%s", entry.getKey(), entry.getValue().getLeft(), entry.getValue().getRight());
       parsedElements.add(s);
     }
     Gson gson =
@@ -256,15 +253,18 @@ public class TonHashMapAug implements Serializable {
     List<Node> nodes = new ArrayList<>();
     for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
       BitString key = keyParser.apply(entry.getKey());
-      Cell value = (Cell) valueParser.apply(entry.getValue().getLeft());
-      Cell extra = (Cell) extraParser.apply(entry.getValue().getRight());
-      Cell both =
-          CellBuilder.beginCell()
-              .storeSlice(CellSlice.beginParse(extra))
-              .storeSlice(CellSlice.beginParse(value))
-              .endCell();
-
-      nodes.add(new Node(key, both));
+      Cell value =
+              isNull(valueParser) ? null : (Cell) valueParser.apply(entry.getValue().getLeft());
+      Cell extra =
+              isNull(extraParser) ? null : (Cell) extraParser.apply(entry.getValue().getRight());
+      CellBuilder both = CellBuilder.beginCell();
+      if (nonNull(value)) {
+        both.storeSlice(CellSlice.beginParse(value));
+      }
+      if (nonNull(extra)) {
+        both.storeSlice(CellSlice.beginParse(extra));
+      }
+      nodes.add(new Node(key, both.endCell()));
     }
 
     if (nodes.isEmpty()) {

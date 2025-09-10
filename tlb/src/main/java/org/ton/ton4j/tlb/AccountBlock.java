@@ -32,8 +32,13 @@ public class AccountBlock implements Serializable {
     Cell dictCell =
         transactions.serialize(
             k -> CellBuilder.beginCell().storeUint((BigInteger) k, 64).endCell().getBits(),
-            v -> CellBuilder.beginCell().storeRef(((Transaction) v).toCell()),
-            e -> CellBuilder.beginCell().storeCell(((CurrencyCollection) e).toCell()),
+            v -> {
+              if (v == null) {
+                return v;
+              }
+              return CellBuilder.beginCell().storeRef(((Transaction) v).toCell()).endCell();
+            },
+            e -> ((CurrencyCollection) e).toCell(),
             (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
             );
     return CellBuilder.beginCell()
@@ -60,9 +65,7 @@ public class AccountBlock implements Serializable {
                     (v.getRefsCount() > 0)
                         ? Transaction.deserialize(CellSlice.beginParse(v.loadRef()))
                         : null,
-                e -> {
-                  return CurrencyCollection.deserialize(e);
-                }))
+                    CurrencyCollection::deserialize))
         .stateUpdate(cs.loadRef()) // ^(HASH_UPDATE Account) todo
         .build();
   }

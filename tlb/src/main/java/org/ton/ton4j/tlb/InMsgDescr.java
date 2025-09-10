@@ -30,8 +30,8 @@ public class InMsgDescr implements Serializable {
         .storeDict(
             inMsg.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeCell(((InMsg) v).toCell()),
-                e -> CellBuilder.beginCell().storeCell(((ImportFees) e).toCell()),
+                v -> ((InMsg) v).toCell(),
+                e -> ((ImportFees) e).toCell(),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
                 ))
         .endCell();

@@ -10,6 +10,8 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 
+import static java.util.Objects.isNull;
+
 /**
  *
  *
@@ -52,7 +54,7 @@ public class BlockExtra implements Serializable {
         .storeRef(shardAccountBlocks.toCell())
         .storeUint(randSeed, 256)
         .storeUint(createdBy, 256)
-        .storeRefMaybe(mcBlockExtra.toCell())
+        .storeRefMaybe(isNull(mcBlockExtra) ? null : mcBlockExtra.toCell())
         .endCell();
   }
 

@@ -25,8 +25,8 @@ public class ConfigParams implements Serializable {
 
   public Cell toCell() {
     return CellBuilder.beginCell()
-        .storeAddress(configAddr)
-        .storeDict(
+        .storeUint(configAddr.toBigInteger(), 256)
+        .storeCell(
             config.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 32).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeRef((Cell) v).endCell()))

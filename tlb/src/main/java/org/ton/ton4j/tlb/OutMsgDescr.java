@@ -30,8 +30,8 @@ public class OutMsgDescr implements Serializable {
         .storeDict(
             outMsg.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeCell(((OutMsg) v).toCell()),
-                e -> CellBuilder.beginCell().storeCell(((CurrencyCollection) e).toCell()),
+                v -> ((OutMsg) v).toCell(),
+                e -> ((CurrencyCollection) e).toCell(),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
                 ))
         .endCell();

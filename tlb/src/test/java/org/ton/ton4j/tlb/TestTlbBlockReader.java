@@ -74,6 +74,7 @@ public class TestTlbBlockReader {
 
     List<Transaction> txs = block.getAllTransactions();
     log.info("txs {}", txs);
+//    block.toCell();
   }
 
   @Test
@@ -100,6 +101,7 @@ public class TestTlbBlockReader {
 
     List<Transaction> txs = block.getAllTransactions();
     log.info("txs {}", txs);
+    block.toCell();
   }
 
   @Ignore
@@ -111,6 +113,7 @@ public class TestTlbBlockReader {
     log.info("block {}", block);
     List<Transaction> txs = block.getAllTransactions();
     log.info("txs {}", txs);
+    block.toCell();
   }
 
   @Test
@@ -152,6 +155,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+//    block.toCell();
   }
 
   @Test
@@ -160,6 +164,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+//    block.toCell();
   }
 
   // Bits overflow. Can't load 32 bits. 1 bits left.
@@ -169,6 +174,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+//    block.toCell(); empty config params?
   }
 
   // unknown MsgEnvelope flag, found 0x0,
@@ -178,6 +184,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+    block.toCell();
   }
 
   /** Refs overflow. No more refs., */
@@ -187,6 +194,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+    block.toCell();
   }
 
   /** Can't load 256 bits. 235 bits left. */
@@ -196,6 +204,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+    block.toCell();
   }
 
   /** BigInteger out of byte range, boc */
@@ -205,6 +214,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+    block.toCell();
   }
 
   /** Wrong magic for MsgAddressInt, found 0 */
@@ -214,6 +224,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+    block.toCell();
   }
 
   /** Bits overflow. Can't load 8 bits. 5 bits left. */
@@ -223,6 +234,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+//    block.toCell();
   }
 
   private String getBoc(String fileName) {

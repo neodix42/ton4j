@@ -8,6 +8,9 @@ import java.util.function.Function;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 public class TonHashMapAugE extends TonHashMapAug {
 
   /**
@@ -39,14 +42,18 @@ public class TonHashMapAugE extends TonHashMapAug {
     List<Node> nodes = new ArrayList<>();
     for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
       BitString key = keyParser.apply(entry.getKey());
-      Cell value = (Cell) valueParser.apply(entry.getValue().getLeft());
-      Cell extra = (Cell) extraParser.apply(entry.getValue().getRight());
-      Cell both =
-          CellBuilder.beginCell()
-              .storeSlice(CellSlice.beginParse(value))
-              .storeSlice(CellSlice.beginParse(extra))
-              .endCell();
-      nodes.add(new Node(key, both));
+      Cell value =
+          isNull(valueParser) ? null : (Cell) valueParser.apply(entry.getValue().getLeft());
+      Cell extra =
+          isNull(extraParser) ? null : (Cell) extraParser.apply(entry.getValue().getRight());
+      CellBuilder both = CellBuilder.beginCell();
+      if (nonNull(value)) {
+        both.storeSlice(CellSlice.beginParse(value));
+      }
+      if (nonNull(extra)) {
+        both.storeSlice(CellSlice.beginParse(extra));
+      }
+      nodes.add(new Node(key, both.endCell()));
     }
 
     if (nodes.isEmpty()) {

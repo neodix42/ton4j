@@ -29,8 +29,8 @@ public class OutMsgQueue {
         .storeCell(
             outMsgQueue.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 352).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeCell(((EnqueuedMsg) v).toCell()),
-                e -> CellBuilder.beginCell().storeUint((BigInteger) e, 64).endCell().getBits(),
+                v -> null,
+                e -> CellBuilder.beginCell().storeUint((BigInteger) e, 64).endCell(),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1)))
         .endCell();
   }
