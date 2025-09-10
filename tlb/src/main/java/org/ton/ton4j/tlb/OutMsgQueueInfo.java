@@ -3,7 +3,6 @@ package org.ton.ton4j.tlb;
 import static java.util.Objects.isNull;
 
 import java.io.Serializable;
-import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.*;
@@ -18,24 +17,13 @@ import org.ton.ton4j.cell.*;
 @Builder
 @Data
 public class OutMsgQueueInfo implements Serializable {
-  TonHashMapAugE outMsgQueue;
-  TonHashMapE processedInfo;
+  OutMsgQueue outMsgQueue;
+  ProcessedInfo processedInfo;
   OutMsgQueueExtra extra;
 
   public Cell toCell() {
     CellBuilder cellBuilder =
-        CellBuilder.beginCell()
-            .storeDict(
-                outMsgQueue.serialize(
-                    k -> CellBuilder.beginCell().storeUint((BigInteger) k, 352).endCell().getBits(),
-                    v -> CellBuilder.beginCell().storeCell(((EnqueuedMsg) v).toCell()),
-                    e -> CellBuilder.beginCell().storeUint((BigInteger) e, 64).endCell().getBits(),
-                    (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1))) // todo
-            .storeDict(
-                processedInfo.serialize(
-                    k -> CellBuilder.beginCell().storeUint((BigInteger) k, 96).endCell().getBits(),
-                    v ->
-                        CellBuilder.beginCell().storeCell(((ProcessedUpto) v).toCell()).endCell()));
+        CellBuilder.beginCell().storeCell(outMsgQueue.toCell()).storeCell(processedInfo.toCell());
     if (isNull(extra)) {
       cellBuilder.storeBit(false);
     } else {
@@ -48,14 +36,8 @@ public class OutMsgQueueInfo implements Serializable {
   public static OutMsgQueueInfo deserialize(CellSlice cs) {
     OutMsgQueueInfo outMsgQueueInfo =
         OutMsgQueueInfo.builder()
-            .outMsgQueue(
-                cs.loadDictAugE(
-                    352, k -> k.readUint(352), EnqueuedMsg::deserialize, e -> e.loadUint(64)))
-            .processedInfo(
-                cs.loadDictE(
-                    96,
-                    k -> k.readUint(96),
-                    v -> ProcessedUpto.deserialize(CellSlice.beginParse(v))))
+            .outMsgQueue(OutMsgQueue.deserialize(cs))
+            .processedInfo(ProcessedInfo.deserialize(cs))
             .build();
     if (cs.loadBit()) {
       outMsgQueueInfo.setExtra(OutMsgQueueExtra.deserialize(cs));
