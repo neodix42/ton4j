@@ -501,9 +501,28 @@ public class Exporter {
       }
     }
 
-    // Mark export as completed
-    exportStatus.markCompleted();
-    statusManager.saveStatus(exportStatus);
+    // Only mark as completed if we actually processed all packages and weren't interrupted
+    boolean actuallyCompleted = !shutdownRequested && 
+        exportStatus.getProcessedCount() >= exportStatus.getTotalPackages();
+
+    if (actuallyCompleted) {
+      exportStatus.markCompleted();
+      statusManager.saveStatus(exportStatus);
+      log.info("Export completed successfully. Processed {}/{} packages.", 
+          exportStatus.getProcessedCount(), exportStatus.getTotalPackages());
+      // Clean up status file after successful completion
+      statusManager.deleteStatus();
+    } else {
+      // Save status without marking as completed for potential resume
+      statusManager.saveStatus(exportStatus);
+      if (shutdownRequested) {
+        log.info("Export interrupted by shutdown request. Processed {}/{} packages.", 
+            exportStatus.getProcessedCount(), exportStatus.getTotalPackages());
+      } else {
+        log.warn("Export finished but not all packages were processed. Processed {}/{} packages.", 
+            exportStatus.getProcessedCount(), exportStatus.getTotalPackages());
+      }
+    }
 
     System.out.printf(
         "Total duration: %.1fs, speed: %.2f blocks per second%n", durationSeconds, blocksPerSecond);
@@ -596,8 +615,7 @@ public class Exporter {
       int nonBlocksCounter = results[1];
       int errorCounter = results[2];
 
-      // Clean up status file after successful completion
-      statusManager.deleteStatus();
+      // Status cleanup is now handled in exportDataWithStatus based on actual completion
     }
   }
 
@@ -668,8 +686,7 @@ public class Exporter {
       logger.setLevel(Level.INFO);
     }
 
-    // Clean up status file after successful completion
-    statusManager.deleteStatus();
+    // Status cleanup is now handled in exportDataWithStatus based on actual completion
   }
 
   /**

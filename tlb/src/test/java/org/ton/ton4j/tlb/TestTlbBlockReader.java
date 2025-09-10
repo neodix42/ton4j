@@ -74,7 +74,7 @@ public class TestTlbBlockReader {
 
     List<Transaction> txs = block.getAllTransactions();
     log.info("txs {}", txs);
-//    block.toCell();
+    //    block.toCell();
   }
 
   @Test
@@ -155,7 +155,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
-//    block.toCell();
+    //    block.toCell();
   }
 
   @Test
@@ -164,7 +164,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
-//    block.toCell();
+    //    block.toCell();
   }
 
   // Bits overflow. Can't load 32 bits. 1 bits left.
@@ -174,7 +174,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
-//    block.toCell(); empty config params?
+    //    block.toCell(); empty config params?
   }
 
   // unknown MsgEnvelope flag, found 0x0,
@@ -234,7 +234,17 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
-//    block.toCell();
+    //    block.toCell();
+  }
+
+  /** wrong magic number, can be only [0x5f327da5L, 0x9023afe2L], found 101b099 */
+  @Test
+  public void testShouldDeserializeBlock15() {
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-12.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+    block.toCell();
   }
 
   private String getBoc(String fileName) {

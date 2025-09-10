@@ -1,7 +1,8 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.nonNull;
+
 import java.io.Serializable;
-import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
@@ -52,10 +53,10 @@ public class ShardState implements Serializable {
           .storeRef(right.toCell())
           .endCell();
     }
-    if (magic == 0x9023afe2L) {
-      return CellBuilder.beginCell().storeUint(2418257890L, 32).storeCell(left.toCell()).endCell();
+    if (nonNull(left.shardIdent)) {
+      return CellBuilder.beginCell().storeCell(left.toCell()).endCell();
     } else {
-      throw new Error("wrong magic number " + BigInteger.valueOf(magic).toString(16));
+      return CellBuilder.beginCell().endCell();
     }
   }
 
@@ -66,12 +67,8 @@ public class ShardState implements Serializable {
       left = ShardStateUnsplit.deserialize(CellSlice.beginParse(cs.loadRef()));
       right = ShardStateUnsplit.deserialize(CellSlice.beginParse(cs.loadRef()));
       return ShardState.builder().magic(tag).left(left).right(right).build();
-    } else if (tag == 0x9023afe2L) {
-      return ShardState.builder().magic(tag).left(ShardStateUnsplit.deserialize(cs)).build();
     } else {
-      throw new Error(
-          "wrong magic number, can be only [0x5f327da5L, 0x9023afe2L], found "
-              + BigInteger.valueOf(tag).toString(16));
+      return ShardState.builder().magic(tag).left(ShardStateUnsplit.deserialize(cs)).build();
     }
   }
 }
