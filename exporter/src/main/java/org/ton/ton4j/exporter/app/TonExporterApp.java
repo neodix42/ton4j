@@ -139,8 +139,12 @@ public class TonExporterApp {
 
       // If we reach here, export completed successfully
       exportCompleted.set(true);
-      printFinalStatistics(true);
-      System.err.println("Export completed successfully.");
+      
+      // Only print completion statistics if export was not interrupted
+      if (!exportInterrupted.get()) {
+        printFinalStatistics(true);
+        System.err.println("Export completed successfully.");
+      }
 
       // Remove shutdown hook since we completed successfully
       removeShutdownHook();
@@ -231,6 +235,25 @@ public class TonExporterApp {
       }
     } else {
       System.err.println("Output destination: stdout");
+    }
+
+    // Show success/error statistics if available from the exporter
+    if (currentExporter != null) {
+      int parsedBlocks = currentExporter.getParsedBlocksCount();
+      int nonBlocks = currentExporter.getNonBlocksCount();
+      int errors = currentExporter.getErrorsCount();
+      int totalProcessed = currentExporter.getTotalProcessedCount();
+      
+      if (totalProcessed > 0) {
+        double successRate = currentExporter.getSuccessRate();
+        double errorRate = currentExporter.getErrorRate();
+        
+        System.err.println("Export statistics:");
+        System.err.println("  Blocks processed: " + parsedBlocks + " successful, " + errors + " errors, " + nonBlocks + " non-blocks");
+        System.err.println("  Total processed: " + totalProcessed + " entries");
+        System.err.println("  Success rate: " + String.format("%.2f%%", successRate));
+        System.err.println("  Error rate: " + String.format("%.2f%%", errorRate));
+      }
     }
 
     System.err.println("=".repeat(60));

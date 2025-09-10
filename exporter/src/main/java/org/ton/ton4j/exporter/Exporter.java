@@ -53,6 +53,11 @@ public class Exporter {
   private volatile ScheduledExecutorService currentRateDisplayExecutor = null;
   // Shutdown signal to stop processing new packages
   private volatile boolean shutdownRequested = false;
+  
+  // Statistics tracking for interrupted exports
+  volatile AtomicInteger totalParsedBlocks = new AtomicInteger(0);
+  volatile AtomicInteger totalNonBlocks = new AtomicInteger(0);
+  volatile AtomicInteger totalErrors = new AtomicInteger(0);
 
   /**
    * usually located in /var/ton-work/db on server or myLocalTon/genesis/db in MyLocalTon app.
@@ -86,12 +91,88 @@ public class Exporter {
 
       Exporter exporter = super.build();
       exporter.statusManager = new StatusManager();
+      
+      // Initialize statistics tracking fields
+      if (exporter.totalParsedBlocks == null) {
+        exporter.totalParsedBlocks = new AtomicInteger(0);
+      }
+      if (exporter.totalNonBlocks == null) {
+        exporter.totalNonBlocks = new AtomicInteger(0);
+      }
+      if (exporter.totalErrors == null) {
+        exporter.totalErrors = new AtomicInteger(0);
+      }
+      
       return exporter;
     }
   }
 
   public String getDatabasePath() {
     return tonDatabaseRootPath;
+  }
+
+  /**
+   * Gets the current count of successfully parsed blocks.
+   * This method is thread-safe and can be called during export interruption.
+   *
+   * @return the number of successfully parsed blocks
+   */
+  public int getParsedBlocksCount() {
+    return totalParsedBlocks.get();
+  }
+
+  /**
+   * Gets the current count of non-block entries processed.
+   * This method is thread-safe and can be called during export interruption.
+   *
+   * @return the number of non-block entries processed
+   */
+  public int getNonBlocksCount() {
+    return totalNonBlocks.get();
+  }
+
+  /**
+   * Gets the current count of blocks that failed to parse.
+   * This method is thread-safe and can be called during export interruption.
+   *
+   * @return the number of blocks that failed to parse
+   */
+  public int getErrorsCount() {
+    return totalErrors.get();
+  }
+
+  /**
+   * Gets the total count of all processed entries (blocks + non-blocks + errors).
+   * This method is thread-safe and can be called during export interruption.
+   *
+   * @return the total number of processed entries
+   */
+  public int getTotalProcessedCount() {
+    return totalParsedBlocks.get() + totalNonBlocks.get() + totalErrors.get();
+  }
+
+  /**
+   * Calculates the success rate as a percentage of successfully parsed blocks
+   * out of total block entries (excluding non-blocks).
+   * This method is thread-safe and can be called during export interruption.
+   *
+   * @return the success rate as a percentage (0.0 to 100.0)
+   */
+  public double getSuccessRate() {
+    int totalBlocks = totalParsedBlocks.get() + totalErrors.get();
+    return totalBlocks > 0 ? (double) totalParsedBlocks.get() / totalBlocks * 100.0 : 0.0;
+  }
+
+  /**
+   * Calculates the error rate as a percentage of failed blocks
+   * out of total block entries (excluding non-blocks).
+   * This method is thread-safe and can be called during export interruption.
+   *
+   * @return the error rate as a percentage (0.0 to 100.0)
+   */
+  public double getErrorRate() {
+    int totalBlocks = totalParsedBlocks.get() + totalErrors.get();
+    return totalBlocks > 0 ? (double) totalErrors.get() / totalBlocks * 100.0 : 0.0;
   }
 
   /**
@@ -322,9 +403,11 @@ public class Exporter {
 
                         outputWriter.writeLine(lineToWrite);
                         parsedBlocksCounter.getAndIncrement();
+                        totalParsedBlocks.incrementAndGet(); // Update real-time statistics
                         localParsedBlocks++;
                       } else {
                         nonBlocksCounter.getAndIncrement();
+                        totalNonBlocks.incrementAndGet(); // Update real-time statistics
                         localNonBlocks++;
                       }
 
@@ -332,6 +415,7 @@ public class Exporter {
                       log.info("Error parsing block {}: {}", kv.getKey(), e.getMessage());
                       //                      log.info("boc {}", Utils.bytesToHex(kv.getValue()));
                       errorCounter.getAndIncrement();
+                      totalErrors.incrementAndGet(); // Update real-time statistics
 
                       // Write error block data to errors.txt file if errorFilePath is provided
                       if (errorFilePath != null) {
@@ -426,6 +510,11 @@ public class Exporter {
 
     dbReader.close();
 
+    // Update total statistics for potential access during interruption
+    totalParsedBlocks.set(parsedBlocksCounter.get());
+    totalNonBlocks.set(nonBlocksCounter.get());
+    totalErrors.set(errorCounter.get());
+
     return new int[] {parsedBlocksCounter.get(), nonBlocksCounter.get(), errorCounter.get()};
   }
 
@@ -507,22 +596,6 @@ public class Exporter {
       int nonBlocksCounter = results[1];
       int errorCounter = results[2];
 
-      // Calculate statistics
-      int totalProcessed = parsedBlocksCounter + nonBlocksCounter + errorCounter;
-      int totalBlocks =
-          parsedBlocksCounter + errorCounter; // Only count actual blocks for success/error rate
-      double errorRatio = totalBlocks > 0 ? (double) errorCounter / totalBlocks * 100.0 : 0.0;
-      double successRatio =
-          totalBlocks > 0 ? (double) parsedBlocksCounter / totalBlocks * 100.0 : 0.0;
-
-      System.out.printf(
-          "Exported %d blocks (nonBlocks %d, errors %d) to file: %s%n",
-          parsedBlocksCounter, nonBlocksCounter, errorCounter, outputToFile);
-
-      System.out.printf(
-          "Export statistics: Total processed: %d, Success rate: %.2f%%, Error rate: %.2f%%%n",
-          totalProcessed, successRatio, errorRatio);
-
       // Clean up status file after successful completion
       statusManager.deleteStatus();
     }
@@ -594,21 +667,6 @@ public class Exporter {
     for (Logger logger : loggerContext.getLoggerList()) {
       logger.setLevel(Level.INFO);
     }
-
-    // Calculate statistics
-    int totalProcessed = parsedBlocksCounter + nonBlocksCounter + errorCounter;
-    int totalBlocks =
-        parsedBlocksCounter + errorCounter; // Only count actual blocks for success/error rate
-    double errorRatio = totalBlocks > 0 ? (double) errorCounter / totalBlocks * 100.0 : 0.0;
-    double successRatio =
-        totalBlocks > 0 ? (double) parsedBlocksCounter / totalBlocks * 100.0 : 0.0;
-
-    System.out.printf(
-        "Exported %d blocks (nonBlocks %d, errors %d) to stdout%n",
-        parsedBlocksCounter, nonBlocksCounter, errorCounter);
-    System.out.printf(
-        "Export statistics: Total processed: %d, Success rate: %.2f%%, Error rate: %.2f%%%n",
-        totalProcessed, successRatio, errorRatio);
 
     // Clean up status file after successful completion
     statusManager.deleteStatus();
