@@ -87,9 +87,15 @@ public class TonHashMapAug implements Serializable {
     List<String> parsedElements = new ArrayList<>();
 
     for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
-      String s =
-          String.format(
-              "%s,%s,%s", entry.getKey(), entry.getValue().getLeft(), entry.getValue().getRight());
+      Object value = entry.getValue().getLeft();
+      String s = null;
+      if (value instanceof Cell) {
+        s =
+            String.format(
+                "%s,%s,%s", entry.getKey(), ((Cell) value).toHex(), entry.getValue().getRight());
+      } else {
+        s = String.format("%s,%s,%s", entry.getKey(), value, entry.getValue().getRight());
+      }
       parsedElements.add(s);
     }
     Gson gson =

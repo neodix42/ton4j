@@ -46,8 +46,8 @@ public class ShardStateUnsplit implements Serializable {
   long genUTime;
   BigInteger genLt;
   long minRefMCSeqno;
-  //  OutMsgQueueInfo outMsgQueueInfo;
-  Cell outMsgQueueInfo;
+  OutMsgQueueInfo outMsgQueueInfo;
+  //  Cell outMsgQueueInfo;
   boolean beforeSplit;
   ShardAccounts shardAccounts;
   ShardStateInfo shardStateInfo;
@@ -67,8 +67,8 @@ public class ShardStateUnsplit implements Serializable {
         .storeUint(genUTime, 32)
         .storeUint(genLt, 64)
         .storeUint(minRefMCSeqno, 32)
-        //        .storeRef(outMsgQueueInfo.toCell())
-        .storeRef(outMsgQueueInfo)
+        .storeRef(outMsgQueueInfo.toCell())
+        //        .storeRef(outMsgQueueInfo)
         .storeBit(beforeSplit)
         .storeRef(shardAccounts.toCell())
         .storeRef(shardStateInfo.toCell())
@@ -96,9 +96,9 @@ public class ShardStateUnsplit implements Serializable {
             .minRefMCSeqno(cs.loadUint(32).longValue())
             .build();
 
-    shardStateUnsplit.setOutMsgQueueInfo(cs.loadRef());
-    //    shardStateUnsplit.setOutMsgQueueInfo(
-    //        OutMsgQueueInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
+    //    shardStateUnsplit.setOutMsgQueueInfo(cs.loadRef());
+    shardStateUnsplit.setOutMsgQueueInfo(
+        OutMsgQueueInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
 
     shardStateUnsplit.setBeforeSplit(cs.loadBit());
 

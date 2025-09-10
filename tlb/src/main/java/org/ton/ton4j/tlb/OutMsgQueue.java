@@ -37,9 +37,13 @@ public class OutMsgQueue {
 
   public static OutMsgQueue deserialize(CellSlice cs) {
     return OutMsgQueue.builder()
-        .outMsgQueue(
-            cs.loadDictAugE(
-                352, k -> k.readUint(352), v -> EnqueuedMsg.deserialize(v), e -> e.loadUint(64)))
+        //        .outMsgQueue(
+        //            cs.loadDictAugE(
+        //                352,
+        //                k -> k.readUint(352),
+        //                EnqueuedMsg::deserialize,
+        //                e -> e.loadUint(64))) // unknown MsgEnvelope flag, found 0x0
+        .outMsgQueue(cs.loadDictAugE(352, k -> k.readUint(352), v -> v, e -> e.loadUint(64)))
         .build();
   }
 
