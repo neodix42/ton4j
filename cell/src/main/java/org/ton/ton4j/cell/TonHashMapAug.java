@@ -314,7 +314,14 @@ public class TonHashMapAug implements Serializable {
       return new BitString(0);
     }
     boolean v = edge.loadBit();
-    int lenBits = 32 - Integer.numberOfLeadingZeros(m);
+    //    int lenBits = 32 - Integer.numberOfLeadingZeros(m);
+    int lenBits = m == 0 ? 0 : 32 - Integer.numberOfLeadingZeros(m);
+
+    // Check if we have enough bits to read the length field
+    if (edge.getRestBits() < lenBits) {
+      return new BitString(0);
+    }
+
     BigInteger length = edge.loadUint(lenBits);
     if (length.intValue() > m) {
       throw new Error("Label length " + length + " exceeds maximum " + m);

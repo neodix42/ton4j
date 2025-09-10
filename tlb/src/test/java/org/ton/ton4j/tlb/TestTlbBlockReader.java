@@ -216,7 +216,7 @@ public class TestTlbBlockReader {
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
   }
 
-  /** Wrong magic for MsgAddressInt, found 0 */
+  /** Bits overflow. Can't load 8 bits. 5 bits left. */
   @Test
   public void testShouldDeserializeBlock14() {
     Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-11.txt")).endCell();

@@ -155,6 +155,7 @@ public class TestHashMapAugE {
             v -> CellSlice.beginParse(v).loadUint(32),
             e -> CellSlice.beginParse(e).loadUint(32));
     log.info("Deserialized hashmapAugE from cell {}", loadedDict);
+    assertThat(loadedDict.elements.size()).isEqualTo(0);
   }
 
   @Test
@@ -169,6 +170,7 @@ public class TestHashMapAugE {
             v -> CellSlice.beginParse(v).loadUint(32),
             e -> CellSlice.beginParse(e).loadUint(32));
     log.info("Deserialized hashmapAugE from cell {}", loadedDict);
+    assertThat(loadedDict.elements.size()).isEqualTo(1);
   }
 
   @Test
@@ -183,6 +185,7 @@ public class TestHashMapAugE {
             v -> CellSlice.beginParse(v).loadUint(32),
             e -> CellSlice.beginParse(e).loadUint(32));
     log.info("Deserialized hashmapAugE from cell {}", loadedDict);
+    assertThat(loadedDict.elements.size()).isEqualTo(2);
   }
 
   @Test
@@ -197,6 +200,7 @@ public class TestHashMapAugE {
             v -> CellSlice.beginParse(v).loadUint(32),
             e -> CellSlice.beginParse(e).loadUint(32));
     log.info("Deserialized hashmapAugE from cell {}", loadedDict);
+    assertThat(loadedDict.elements.size()).isEqualTo(10);
   }
 
   private String getBoc(String fileName) {
