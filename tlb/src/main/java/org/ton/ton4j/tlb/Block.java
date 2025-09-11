@@ -70,14 +70,14 @@ public class Block implements Serializable {
 
     long magic = cs.loadUint(32).longValue();
     assert (magic == 0x11ef55aaL)
-            : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
+        : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
 
     Block block =
-            Block.builder()
-                    .magic(0x11ef55aaL)
-                    .globalId(cs.loadInt(32).intValue())
-                    .blockInfo(BlockInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
-                    .build();
+        Block.builder()
+            .magic(0x11ef55aaL)
+            .globalId(cs.loadInt(32).intValue())
+            .blockInfo(BlockInfo.deserialize(CellSlice.beginParse(cs.loadRef())))
+            .build();
 
     block.setValueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())));
 
@@ -121,6 +121,48 @@ public class Block implements Serializable {
       }
       if (inMsg instanceof InMsgImportFin) {
         result.add(((InMsgImportFin) inMsg).getTransaction());
+      }
+    }
+    return result;
+  }
+
+  /**
+   * @return List of messages of Message or MsgEnvelope type
+   */
+  public List<Object> getAllMessages() {
+    List<Object> result = new ArrayList<>();
+    Block block = this;
+
+    List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
+
+    for (OutMsg outMsg : outMsgs) {
+      if (outMsg instanceof OutMsgExt) {
+        result.add(((OutMsgExt) outMsg).getMsg());
+      }
+      if (outMsg instanceof OutMsgImm) {
+        result.add(((OutMsgImm) outMsg).getMsg());
+      }
+      if (outMsg instanceof OutMsgNew) {
+        result.add(((OutMsgNew) outMsg).getOutMsg());
+      }
+      if (outMsg instanceof OutMsgNew) {
+        result.add(((OutMsgNew) outMsg).getOutMsg());
+      }
+    }
+
+    List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
+    for (InMsg inMsg : inMsgs) {
+      if (inMsg instanceof InMsgImportExt) {
+        result.add(((InMsgImportExt) inMsg).getMsg());
+      }
+      if (inMsg instanceof InMsgImportIhr) {
+        result.add(((InMsgImportIhr) inMsg).getMsg());
+      }
+      if (inMsg instanceof InMsgImportImm) {
+        result.add(((InMsgImportImm) inMsg).getInMsg());
+      }
+      if (inMsg instanceof InMsgImportFin) {
+        result.add(((InMsgImportFin) inMsg).getInMsg());
       }
     }
     return result;

@@ -74,7 +74,11 @@ public class TestExporter {
     blockStream.forEach(
         b -> {
           // insert block to your DB
-          log.info("block {}", b);
+          log.info(
+              "block {}, txs {}, msgs {}",
+              b.getSeqno(),
+              b.getBlock().getAllTransactions().size(),
+              b.getBlock().getAllMessages().size());
         });
     blockStream.close(); // to delete status file
   }
