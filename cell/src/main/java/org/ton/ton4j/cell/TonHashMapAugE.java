@@ -1,5 +1,8 @@
 package org.ton.ton4j.cell;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -7,9 +10,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 public class TonHashMapAugE extends TonHashMapAug {
 

@@ -2,11 +2,8 @@ package org.ton.ton4j.exporter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import com.google.gson.ToNumberPolicy;
+import java.sql.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +41,9 @@ public class TestExportObjectsToMysql {
   @Test
   public void testExportToObjectsWithMysqlInsertion() {
     try {
+      Gson gson =
+          new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+
       // Initialize exporter
       Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
@@ -52,6 +52,11 @@ public class TestExportObjectsToMysql {
 
       AtomicInteger blockCount = new AtomicInteger(0);
       AtomicInteger insertedCount = new AtomicInteger(0);
+      AtomicInteger errorCount = new AtomicInteger(0);
+
+      // Start timing
+      long startTime = System.currentTimeMillis();
+      log.info("Starting export process at: {}", new java.util.Date(startTime));
 
       // Test with deserialization enabled and 20 parallel threads
       Stream<ExportedBlock> blockStream = exporter.exportToObjects(true, 20);
@@ -71,25 +76,13 @@ public class TestExportObjectsToMysql {
                     int workchain = block.getWorkchain();
                     String shardHex = block.getShard();
                     long seqno = block.getSeqno();
-
-                    // Create JSON data containing block information
-                    BlockData blockData =
-                        BlockData.builder()
-                            .workchain(workchain)
-                            .shard(shardHex)
-                            .seqno(seqno)
-                            .rawData(block.getRawData())
-                            .archiveKey(block.getArchiveKey())
-                            .blockKey(block.getBlockKey())
-                            .build();
-
-                    String jsonData = gson.toJson(blockData);
+                    String jsonBlock = gson.toJson(block.getDeserializedBlock());
 
                     // Insert into database
                     preparedStatement.setInt(1, workchain);
                     preparedStatement.setString(2, shardHex);
                     preparedStatement.setLong(3, seqno);
-                    preparedStatement.setString(4, jsonData);
+                    preparedStatement.setString(4, jsonBlock);
                     preparedStatement.executeUpdate();
 
                     insertedCount.incrementAndGet();
@@ -101,8 +94,10 @@ public class TestExportObjectsToMysql {
                         seqno);
 
                   } catch (SQLException e) {
+                    errorCount.incrementAndGet();
                     log.error("Failed to insert block: {}", e.getMessage());
                   } catch (NumberFormatException e) {
+                    errorCount.incrementAndGet();
                     log.warn(
                         "Failed to parse shard hex '{}': {}", block.getShard(), e.getMessage());
                   }
@@ -115,13 +110,75 @@ public class TestExportObjectsToMysql {
         }
       }
 
+      // End timing and calculate metrics
+      long endTime = System.currentTimeMillis();
+      long durationMs = endTime - startTime;
+      double durationSeconds = durationMs / 1000.0;
+      double insertRate = insertedCount.get() / durationSeconds;
+
+      // Display summary
+      log.info("=== EXPORT PROCESS SUMMARY ===");
+      log.info("Start time: {}", new java.util.Date(startTime));
+      log.info("End time: {}", new java.util.Date(endTime));
       log.info(
-          "Total blocks processed: {}, Successfully inserted: {}",
-          blockCount.get(),
-          insertedCount.get());
+          "Total duration: {} ms ({} seconds)", durationMs, String.format("%.2f", durationSeconds));
+      log.info("Total blocks processed: {}", blockCount.get());
+      log.info("Successfully inserted blocks: {}", insertedCount.get());
+      log.info("Errors encountered: {}", errorCount.get());
+      log.info("Insert rate: {} blocks/second", insertRate);
+
+      if (errorCount.get() > 0) {
+        log.warn("Success rate: {}%", (insertedCount.get() * 100.0) / blockCount.get());
+      } else {
+        log.info("Success rate: 100% (no errors)");
+      }
+
+      // Display first 3 rows from the database
+      displaySampleData();
 
     } catch (Exception e) {
       log.warn("Test skipped - database or TON database path not available: {}", e.getMessage());
+    }
+  }
+
+  /** Display the first 3 rows from the blocks table with all columns */
+  private void displaySampleData() {
+    try (Connection connection =
+            DriverManager.getConnection(DB_URL + DB_NAME, DB_USER, DB_PASSWORD);
+        Statement statement = connection.createStatement()) {
+
+      String selectSQL =
+          "SELECT id, wc, shard, seqno, json_data, created_at FROM blocks ORDER BY id LIMIT 100";
+
+      try (ResultSet resultSet = statement.executeQuery(selectSQL)) {
+        log.info("=== FIRST 10 ROWS FROM BLOCKS TABLE ===");
+
+        int rowCount = 0;
+        while (resultSet.next()) {
+          rowCount++;
+          long id = resultSet.getLong("id");
+          int wc = resultSet.getInt("wc");
+          long shard = resultSet.getLong("shard");
+          long seqno = resultSet.getLong("seqno");
+          String jsonData = resultSet.getString("json_data");
+          java.sql.Timestamp createdAt = resultSet.getTimestamp("created_at");
+
+          log.info("--- Row {} ---", rowCount);
+          log.info("ID: {}", id);
+          log.info("Workchain: {}", wc);
+          log.info("Shard: {}", shard);
+          log.info("Seqno: {}", seqno);
+          log.info("Created At: {}", createdAt);
+          log.info("JSON Data: {}", jsonData);
+        }
+
+        if (rowCount == 0) {
+          log.info("No rows found in the blocks table");
+        }
+      }
+
+    } catch (SQLException e) {
+      log.error("Failed to retrieve sample data: {}", e.getMessage());
     }
   }
 
