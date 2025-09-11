@@ -247,6 +247,26 @@ public class TestTlbBlockReader {
     block.toCell();
   }
 
+  /** no more refs */
+  @Test
+  public void testShouldDeserializeBlock16() {
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-13.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+    block.toCell();
+  }
+
+  /** Bits overflow. Can't load 276 bits. 42 bits left. */
+  @Test
+  public void testShouldDeserializeBlock17() {
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-14.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+    block.toCell();
+  }
+
   private String getBoc(String fileName) {
     return Utils.streamToString(
         Objects.requireNonNull(

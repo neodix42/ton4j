@@ -36,6 +36,9 @@ public class ShardAccount implements Serializable {
   }
 
   public static ShardAccount deserialize(CellSlice cs) {
+    if (cs.isExotic()) {
+      return ShardAccount.builder().build();
+    }
     return ShardAccount.builder()
         .account(Account.deserialize(CellSlice.beginParse(cs.loadRef())))
         .lastTransHash(cs.loadUint(256))

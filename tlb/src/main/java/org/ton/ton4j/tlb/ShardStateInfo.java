@@ -49,15 +49,22 @@ public class ShardStateInfo implements Serializable {
   }
 
   public static ShardStateInfo deserialize(CellSlice cs) {
+    if (cs.isExotic()) {
       return ShardStateInfo.builder()
-          .overloadHistory(cs.loadUint(64))
-          .underloadHistory(cs.loadUint(64))
-          .totalBalance(CurrencyCollection.deserialize(cs))
-          .totalValidatorFees(CurrencyCollection.deserialize(cs))
-          .libraries(
-              cs.loadDictE(
-                  256, k -> k.readUint(256), v -> LibDescr.deserialize(CellSlice.beginParse(v))))
-          .masterRef(cs.loadBit() ? ExtBlkRef.deserialize(CellSlice.beginParse(cs)) : null)
+          .totalBalance(CurrencyCollection.builder().build())
+          .totalValidatorFees(CurrencyCollection.builder().build())
+          .libraries(new TonHashMapE(256))
           .build();
+    }
+    return ShardStateInfo.builder()
+        .overloadHistory(cs.loadUint(64))
+        .underloadHistory(cs.loadUint(64))
+        .totalBalance(CurrencyCollection.deserialize(cs))
+        .totalValidatorFees(CurrencyCollection.deserialize(cs))
+        .libraries(
+            cs.loadDictE(
+                256, k -> k.readUint(256), v -> LibDescr.deserialize(CellSlice.beginParse(v))))
+        .masterRef(cs.loadBit() ? ExtBlkRef.deserialize(CellSlice.beginParse(cs)) : null)
+        .build();
   }
 }

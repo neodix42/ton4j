@@ -26,7 +26,7 @@ public class AccountBlock implements Serializable {
   long magic;
   BigInteger addr;
   TonHashMapAug transactions;
-  Cell stateUpdate; // todo deserialize
+  Cell stateUpdate; // todo deserialize, HashUpdate: magic not equal to 0x72, found 0x70
 
   public Cell toCell() {
     Cell dictCell =
@@ -50,12 +50,17 @@ public class AccountBlock implements Serializable {
   }
 
   public static AccountBlock deserialize(CellSlice cs) {
+
+    if (cs.isExotic()) {
+      AccountBlock.builder().build();
+    }
+
     long magic = cs.loadUint(4).longValue();
     assert (magic == 0x5L)
         : "AccountBlock: magic not equal to 0x5, found 0x" + Long.toHexString(magic);
 
     return AccountBlock.builder()
-        .magic(0x5)
+        .magic(magic)
         .addr(cs.loadUint(256))
         .transactions(
             cs.loadDictAug(
@@ -65,8 +70,10 @@ public class AccountBlock implements Serializable {
                     (v.getRefsCount() > 0)
                         ? Transaction.deserialize(CellSlice.beginParse(v.loadRef()))
                         : null,
-                    CurrencyCollection::deserialize))
-        .stateUpdate(cs.loadRef()) // ^(HASH_UPDATE Account) todo
+                CurrencyCollection::deserialize))
+        //        .stateUpdate(HashUpdate.deserialize(CellSlice.beginParse(cs.loadRef()))) //
+        // HashUpdate: magic not equal to 0x72, found 0x70
+        .stateUpdate(cs.loadRef())
         .build();
   }
 }

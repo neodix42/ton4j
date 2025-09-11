@@ -67,6 +67,9 @@ public class Message implements Serializable {
   }
 
   public static Message deserialize(CellSlice cs) {
+    if (cs.isExotic()) {
+      return Message.builder().build();
+    }
     Message message = Message.builder().info(CommonMsgInfo.deserialize(cs)).build();
 
     StateInit stateInit = null;

@@ -1,13 +1,12 @@
 package org.ton.ton4j.tlb;
 
+import java.io.Serializable;
+import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
-
-import java.io.Serializable;
-import java.math.BigInteger;
 
 /**
  *
@@ -19,7 +18,7 @@ import java.math.BigInteger;
 @Builder
 @Data
 public class HashUpdate implements Serializable {
-  int magic;
+  long magic;
   BigInteger oldHash;
   BigInteger newHash;
 
@@ -44,12 +43,15 @@ public class HashUpdate implements Serializable {
   }
 
   public static HashUpdate deserialize(CellSlice cs) {
+    if (cs.isExotic()) {
+      return HashUpdate.builder().build();
+    }
     long magic = cs.loadUint(8).intValue();
     assert (magic == 0x72)
         : "HashUpdate: magic not equal to 0x72, found 0x" + Long.toHexString(magic);
 
     return HashUpdate.builder()
-        .magic(0x72)
+        .magic(magic)
         .oldHash(cs.loadUint(256))
         .newHash(cs.loadUint(256))
         .build();

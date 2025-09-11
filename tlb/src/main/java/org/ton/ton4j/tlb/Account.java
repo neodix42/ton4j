@@ -40,6 +40,11 @@ public class Account implements Serializable {
   }
 
   public static Account deserialize(CellSlice cs) {
+
+    if (cs.isExotic()) {
+      Account.builder().isNone(true).build();
+    }
+
     boolean isAccount = cs.loadBit();
     if (!isAccount) {
       return Account.builder().isNone(true).build();

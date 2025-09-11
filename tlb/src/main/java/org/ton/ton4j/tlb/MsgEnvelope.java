@@ -7,6 +7,9 @@ public interface MsgEnvelope {
   Cell toCell();
 
   static MsgEnvelope deserialize(CellSlice cs) {
+    if (cs.isExotic()) {
+      return MsgEnvelopeV1.builder().build();
+    }
     int msgEnvelopeFlag = cs.preloadUint(4).intValue();
     switch (msgEnvelopeFlag) {
       case 4:
