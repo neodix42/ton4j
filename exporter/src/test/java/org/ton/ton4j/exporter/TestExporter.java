@@ -29,6 +29,18 @@ public class TestExporter {
   public static final String TON_DB_ROOT_PATH =
       "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
 
+  public static final Gson gson =
+      new GsonBuilder()
+          .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+          .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          .disableHtmlEscaping()
+          .setLenient()
+          .create();
+
   @Test
   public void testExporterBuilder() {
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
@@ -160,17 +172,6 @@ public class TestExporter {
     log.info(
         "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
 
-    Gson gson =
-        new GsonBuilder()
-            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-            .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
-            .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
-            .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
-            .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
-            .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
-            .disableHtmlEscaping()
-            .setLenient()
-            .create();
     log.info("blockGson {}", gson.toJson(block));
   }
 }

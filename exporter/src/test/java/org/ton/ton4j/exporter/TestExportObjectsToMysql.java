@@ -8,7 +8,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.ton.ton4j.cell.TonHashMap;
+import org.ton.ton4j.cell.TonHashMapAug;
+import org.ton.ton4j.cell.TonHashMapAugE;
+import org.ton.ton4j.cell.TonHashMapE;
 import org.ton.ton4j.exporter.types.ExportedBlock;
+import org.ton.ton4j.tlb.adapters.*;
 
 /**
  * Test class that demonstrates exporting TON blocks to MySQL database.
@@ -42,7 +47,16 @@ public class TestExportObjectsToMysql {
   public void testExportToObjectsWithMysqlInsertion() {
     try {
       Gson gson =
-          new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+          new GsonBuilder()
+              .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+              .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+              .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+              .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+              .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+              .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+              .disableHtmlEscaping()
+              .setLenient()
+              .create();
 
       // Initialize exporter
       Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
