@@ -7,10 +7,12 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.ton.ton4j.bitstring.BitString;
 
 /** Ordinary Hashmap (Patricia Tree), with fixed length keys. */
+@Data
 public class TonHashMap implements Serializable {
 
   public HashMap<Object, Object> elements;

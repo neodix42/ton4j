@@ -1,4 +1,4 @@
-package org.ton.ton4j.exporter.types;
+package org.ton.ton4j.tlb.adapters;
 
 import com.google.gson.*;
 import java.lang.reflect.Type;

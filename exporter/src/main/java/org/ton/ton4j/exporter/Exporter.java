@@ -33,6 +33,7 @@ import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockHandle;
+import org.ton.ton4j.tlb.adapters.ByteArrayToHexTypeAdapter;
 import org.ton.ton4j.utils.Utils;
 
 @Builder

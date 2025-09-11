@@ -1,20 +1,19 @@
 package org.ton.ton4j.cell;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.ToNumberPolicy;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.utils.Utils;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-
+@Data
 public class TonHashMapAug implements Serializable {
 
   public HashMap<Object, Pair<Object, Object>> elements; // Pair<Value,Extra>
@@ -83,24 +82,6 @@ public class TonHashMapAug implements Serializable {
       Object value = valueParser.apply(valueAndExtra);
       elements.put(keyParser.apply(node.key), Pair.of(value, extra));
     }
-  }
-
-  @Override
-  public String toString() {
-    List<String> parsedElements = new ArrayList<>();
-
-    for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
-      String s =
-          String.format(
-              "%s,%s,%s", entry.getKey(), entry.getValue().getLeft(), entry.getValue().getRight());
-      parsedElements.add(s);
-    }
-    Gson gson =
-        new GsonBuilder()
-            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-            .disableHtmlEscaping()
-            .create();
-    return gson.toJson(parsedElements);
   }
 
   /**
@@ -254,9 +235,9 @@ public class TonHashMapAug implements Serializable {
     for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
       BitString key = keyParser.apply(entry.getKey());
       Cell value =
-              isNull(valueParser) ? null : (Cell) valueParser.apply(entry.getValue().getLeft());
+          isNull(valueParser) ? null : (Cell) valueParser.apply(entry.getValue().getLeft());
       Cell extra =
-              isNull(extraParser) ? null : (Cell) extraParser.apply(entry.getValue().getRight());
+          isNull(extraParser) ? null : (Cell) extraParser.apply(entry.getValue().getRight());
       CellBuilder both = CellBuilder.beginCell();
       if (nonNull(value)) {
         both.storeSlice(CellSlice.beginParse(value));

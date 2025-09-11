@@ -43,6 +43,20 @@ public class DisassemblerTest {
   }
 
   @Test
+  public void shouldDisassembleAnyConfig() {
+    Tonlib.builder()
+        .pathToTonlibSharedLib(tonlibPath)
+        .pathToGlobalConfig(Utils.getGlobalConfigUrlMyLocalTon())
+        .ignoreCache(false)
+        .build();
+    Address address = Address.of("Ef9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVbxn");
+    FullAccountState accountState = tonlib.getAccountState(address);
+    byte[] codeBoc = Utils.base64ToBytes(accountState.getAccount_state().getCode());
+    String result = normalizeLines(Disassembler.fromBoc(codeBoc));
+    System.out.println(result);
+  }
+
+  @Test
   public void shouldDisassembleNft() throws Exception {
     byte[] boc = fetchCodeOrSnapshot("EQBmG4YwsdGsUHG46rL-_GtGxsUrdmn-8Tau1DKkzQMNsGaW");
     String result = normalizeLines(Disassembler.fromBoc(boc));

@@ -11,8 +11,8 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.ton.ton4j.exporter.Exporter;
-import org.ton.ton4j.exporter.types.ByteArrayToHexTypeAdapter;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.adapters.ByteArrayToHexTypeAdapter;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -408,7 +408,7 @@ public class TonExporterApp {
           System.out.println(jsonOutput);
           // When stdout AND json is specified, show additional information at the end
           System.out.printf(
-              "(%s,%s,%s) txs %s, msgs %s",
+              "(%s,%s,%s) txs %s, msgs %s%n",
               block.getBlockInfo().getShard().getWorkchain(),
               block.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
               block.getBlockInfo().getSeqno(),

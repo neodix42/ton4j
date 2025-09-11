@@ -2,6 +2,9 @@ package org.ton.ton4j.tlb;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Objects;
@@ -195,6 +198,8 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
+    log.info(
+        "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
   }
 
   /** Can't load 256 bits. 235 bits left. */
@@ -205,6 +210,8 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
+    log.info(
+        "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
   }
 
   /** BigInteger out of byte range, boc */
@@ -214,7 +221,17 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+    log.info(
+        "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
     block.toCell();
+
+    Gson gson =
+        new GsonBuilder()
+            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+            //                    .registerTypeAdapter(byte[].class, new
+            // ByteArrayToHexTypeAdapter())
+            .create();
+    log.info("gson {}", gson.toJson(block));
   }
 
   /** Wrong magic for MsgAddressInt, found 0 */
@@ -225,6 +242,8 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
+    log.info(
+        "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
   }
 
   /** Bits overflow. Can't load 8 bits. 5 bits left. */
@@ -235,6 +254,8 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     //    block.toCell();
+    log.info(
+        "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
   }
 
   /** wrong magic number, can be only [0x5f327da5L, 0x9023afe2L], found 101b099 */
