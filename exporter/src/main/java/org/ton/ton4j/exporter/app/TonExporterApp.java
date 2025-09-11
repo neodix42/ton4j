@@ -1,27 +1,40 @@
 package org.ton.ton4j.exporter.app;
 
+import com.google.gson.*;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.ton.ton4j.exporter.Exporter;
+import org.ton.ton4j.exporter.types.ByteArrayToHexTypeAdapter;
+import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.utils.Utils;
 
 /**
  * Command-line application for exporting TON blockchain data.
  *
  * <p>Usage: <br>
  * For file output: java -jar TonExporterApp &lt;ton-db-root-path&gt; file &lt;json|boc&gt;
- * &lt;num-of-threads&gt; &lt;true|false&gt; &lt;output-file-name&gt; <br>
+ * &lt;num-of-threads&gt; &lt;true|false&gt; &lt;output-file-name&gt; [last] <br>
  * For stdout output: java -jar TonExporterApp &lt;ton-db-root-path&gt; stdout &lt;json|boc&gt;
- * &lt;num-of-threads&gt; &lt;true|false&gt;
+ * &lt;num-of-threads&gt; [&lt;true|false&gt;] [last]
  *
  * <p>Arguments: - ton-db-root-path: Path to the TON database root directory - file|stdout: Output
  * destination (file or stdout) - json|boc: Output format (json for deserialized blocks, boc for raw
  * hex format) - num-of-threads: Number of parallel threads to use for processing - true|false:
  * Whether to show progress information during export - output-file-name: Name of the output file
- * (required only for file output)
+ * (required only for file output) - last: Optional flag to get only the last block (ignores
+ * progress and uses 1 thread)
+ *
+ * <p>Last Mode: When 'last' is specified as the final argument, the application will retrieve only
+ * the most recent master chain block from the database. In this mode, progress display is disabled
+ * and only 1 thread is used. For stdout output with json format, additional information is
+ * displayed including block sequence number, transactions and messages count.
  */
 public class TonExporterApp {
 
@@ -54,20 +67,48 @@ public class TonExporterApp {
       int numOfThreads = Integer.parseInt(args[3]);
       String showProgressStr = "false"; // Default value for stdout
       String outputFileName = null;
+      boolean isLastMode = false;
+
+      // Check if the last argument is "last"
+      if (args.length > 0 && "last".equals(args[args.length - 1])) {
+        isLastMode = true;
+        // In last mode, ignore show progress and use 1 thread
+        showProgressStr = "false";
+        numOfThreads = 1;
+      }
 
       // For file output, output filename is required
       if (outputDestination.equals("file")) {
-        if (args.length < 6) {
+        int requiredArgs = isLastMode ? 6 : 6; // Same number of args, but last one might be "last"
+        if (args.length < requiredArgs) {
           System.err.println("Error: Output file name is required when using 'file' destination");
           printUsage();
           System.exit(1);
         }
-        showProgressStr = args[4].toLowerCase();
-        outputFileName = args[5];
+        if (!isLastMode) {
+          showProgressStr = args[4].toLowerCase();
+          outputFileName = args[5];
+        } else {
+          // In last mode, the structure is: <path> file <format> <threads> <progress> <filename>
+          // last
+          if (args.length >= 7) {
+            showProgressStr = "false"; // Force to false in last mode
+            outputFileName = args[5];
+          } else {
+            System.err.println(
+                "Error: Output file name is required when using 'file' destination with 'last' mode");
+            printUsage();
+            System.exit(1);
+          }
+        }
       } else if (outputDestination.equals("stdout")) {
         // For stdout, use defaults and ignore extra arguments
-        if (args.length >= 5) {
+        if (args.length >= 5 && !isLastMode) {
           showProgressStr = args[4].toLowerCase();
+        }
+        // In last mode, force showProgress to false
+        if (isLastMode) {
+          showProgressStr = "false";
         }
         // Ignore any additional arguments for stdout
       }
@@ -126,15 +167,21 @@ public class TonExporterApp {
           "Starting export process... Press Ctrl+C to interrupt and show statistics.");
 
       // Execute appropriate export method based on destination and format
-      if (outputDestination.equals("file")) {
-        if (outputFileName == null) {
-          System.err.println("Error: Output file name is required for file output");
-          printUsage();
-          System.exit(1);
-        }
-        currentExporter.exportToFile(outputFileName, outputFormat.equals("json"), numOfThreads);
+      if (isLastMode) {
+        // Last mode: get only the last block
+        handleLastMode(outputDestination, outputFormat, outputFileName);
       } else {
-        currentExporter.exportToStdout(outputFormat.equals("json"), numOfThreads);
+        // Normal mode: full export
+        if (outputDestination.equals("file")) {
+          if (outputFileName == null) {
+            System.err.println("Error: Output file name is required for file output");
+            printUsage();
+            System.exit(1);
+          }
+          currentExporter.exportToFile(outputFileName, outputFormat.equals("json"), numOfThreads);
+        } else {
+          currentExporter.exportToStdout(outputFormat.equals("json"), numOfThreads);
+        }
       }
 
       // If we reach here, export completed successfully
@@ -323,6 +370,78 @@ public class TonExporterApp {
     return String.format("%.2f %s", size, units[unitIndex]);
   }
 
+  /**
+   * Handles the "last" mode functionality - gets only the last block from the database and outputs
+   * it according to the specified format and destination.
+   *
+   * @param outputDestination "file" or "stdout"
+   * @param outputFormat "json" or "boc"
+   * @param outputFileName the output file name (null for stdout)
+   * @throws IOException if an error occurs during processing
+   */
+  private static void handleLastMode(
+      String outputDestination, String outputFormat, String outputFileName) throws IOException {
+    try {
+      if (outputFormat.equals("json")) {
+        // Get last block as deserialized Block object
+        Block block = currentExporter.getLast();
+        if (block == null) {
+          System.err.println("No last block found in database");
+          return;
+        }
+
+        // Create JSON representation
+        Gson gson =
+            new GsonBuilder()
+                .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+                .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+                .create();
+        String jsonOutput = gson.toJson(block);
+
+        // Output to file or stdout
+        if (outputDestination.equals("file")) {
+          try (PrintWriter writer =
+              new PrintWriter(new FileWriter(outputFileName, StandardCharsets.UTF_8))) {
+            writer.println(jsonOutput);
+          }
+        } else {
+          System.out.println(jsonOutput);
+          // When stdout AND json is specified, show additional information at the end
+          System.out.printf(
+              "(%s,%s,%s) txs %s, msgs %s",
+              block.getBlockInfo().getShard().getWorkchain(),
+              block.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
+              block.getBlockInfo().getSeqno(),
+              block.getAllTransactions().size(),
+              block.getAllMessages().size());
+        }
+
+      } else {
+        // Get last block as BOC (Bag of Cells)
+        byte[] bocData = currentExporter.getLastAsBoc();
+        if (bocData == null) {
+          System.err.println("No last block found in database");
+          return;
+        }
+
+        String bocHex = Utils.bytesToHex(bocData);
+
+        // Output to file or stdout
+        if (outputDestination.equals("file")) {
+          try (PrintWriter writer =
+              new PrintWriter(new FileWriter(outputFileName, StandardCharsets.UTF_8))) {
+            writer.println(bocHex);
+          }
+        } else {
+          System.out.println(bocHex);
+        }
+      }
+
+    } catch (Exception e) {
+      throw new IOException("Error in last mode: " + e.getMessage(), e);
+    }
+  }
+
   private static void printVersion() {
     Properties properties = new Properties();
     try (InputStream inputStream =
@@ -345,9 +464,9 @@ public class TonExporterApp {
     System.err.println("Usage:");
     System.err.println("  For version: java -jar TonExporterApp -v");
     System.err.println(
-        "  For file output: java -jar TonExporterApp.jar <ton-db-root-path> file <json|boc> <num-of-threads> <true|false> <output-file-name>");
+        "  For file output: java -jar TonExporterApp.jar <ton-db-root-path> file <json|boc> <num-of-threads> <true|false> <output-file-name> [last]");
     System.err.println(
-        "  For stdout output: java -jar TonExporterApp.jar <ton-db-root-path> stdout <json|boc> <num-of-threads>");
+        "  For stdout output: java -jar TonExporterApp.jar <ton-db-root-path> stdout <json|boc> <num-of-threads> [<true|false>] [last]");
     System.err.println();
     System.err.println("Arguments:");
     System.err.println("  -v                : Show version information");
@@ -359,11 +478,24 @@ public class TonExporterApp {
     System.err.println("  true|false       : Whether to show progress information during export");
     System.err.println(
         "  output-file-name : Name of the output file (required only for file output)");
+    System.err.println(
+        "  last             : Optional flag to get only the last block (ignores progress and uses 1 thread)");
+    System.err.println();
+    System.err.println("Last Mode:");
+    System.err.println("  When 'last' is specified as the final argument:");
+    System.err.println("  - Progress display is ignored and set to false");
+    System.err.println("  - Number of threads is ignored and set to 1");
+    System.err.println("  - Only the most recent block is retrieved and output");
+    System.err.println(
+        "  - For stdout + json: additional info is shown (seqno, transactions count, messages count)");
     System.err.println();
     System.err.println("Examples:");
     System.err.println("  java -jar TonExporterApp.jar -v");
     System.err.println(
         "  java -jar TonExporterApp.jar /var/ton-work/db file json 4 true blocks.json");
     System.err.println("  java -jar TonExporterApp.jar /var/ton-work/db stdout boc 8");
+    System.err.println(
+        "  java -jar TonExporterApp.jar /var/ton-work/db file json 1 false last_block.json last");
+    System.err.println("  java -jar TonExporterApp.jar /var/ton-work/db stdout json 1 last");
   }
 }

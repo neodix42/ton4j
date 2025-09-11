@@ -2,6 +2,9 @@ package org.ton.ton4j.exporter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import java.io.File;
 import java.io.IOException;
 import java.util.TreeMap;
@@ -13,6 +16,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.exporter.types.BlockId;
+import org.ton.ton4j.exporter.types.ByteArrayToHexTypeAdapter;
 import org.ton.ton4j.exporter.types.ExportedBlock;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
@@ -103,6 +107,12 @@ public class TestExporter {
     log.info("  Sequence Number: {}", latestBlock.getBlockInfo().getSeqno());
     log.info("  Timestamp: {}", latestBlock.getBlockInfo().getGenuTime());
     log.info("block {}", latestBlock);
+    Gson gson =
+        new GsonBuilder()
+            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+            .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+            .create();
+    log.info("blockGson {}", gson.toJson(latestBlock));
   }
 
   @Test

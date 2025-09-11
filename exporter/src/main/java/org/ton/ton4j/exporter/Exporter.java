@@ -27,10 +27,7 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.exporter.reader.*;
-import org.ton.ton4j.exporter.types.ArchiveInfo;
-import org.ton.ton4j.exporter.types.BlockId;
-import org.ton.ton4j.exporter.types.ExportStatus;
-import org.ton.ton4j.exporter.types.ExportedBlock;
+import org.ton.ton4j.exporter.types.*;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tlb.Account;
@@ -53,7 +50,7 @@ public class Exporter {
   private volatile ScheduledExecutorService currentRateDisplayExecutor = null;
   // Shutdown signal to stop processing new packages
   private volatile boolean shutdownRequested = false;
-  
+
   // Statistics tracking for interrupted exports
   volatile AtomicInteger totalParsedBlocks = new AtomicInteger(0);
   volatile AtomicInteger totalNonBlocks = new AtomicInteger(0);
@@ -91,7 +88,7 @@ public class Exporter {
 
       Exporter exporter = super.build();
       exporter.statusManager = new StatusManager();
-      
+
       // Initialize statistics tracking fields
       if (exporter.totalParsedBlocks == null) {
         exporter.totalParsedBlocks = new AtomicInteger(0);
@@ -102,7 +99,7 @@ public class Exporter {
       if (exporter.totalErrors == null) {
         exporter.totalErrors = new AtomicInteger(0);
       }
-      
+
       return exporter;
     }
   }
@@ -112,8 +109,8 @@ public class Exporter {
   }
 
   /**
-   * Gets the current count of successfully parsed blocks.
-   * This method is thread-safe and can be called during export interruption.
+   * Gets the current count of successfully parsed blocks. This method is thread-safe and can be
+   * called during export interruption.
    *
    * @return the number of successfully parsed blocks
    */
@@ -122,8 +119,8 @@ public class Exporter {
   }
 
   /**
-   * Gets the current count of non-block entries processed.
-   * This method is thread-safe and can be called during export interruption.
+   * Gets the current count of non-block entries processed. This method is thread-safe and can be
+   * called during export interruption.
    *
    * @return the number of non-block entries processed
    */
@@ -132,8 +129,8 @@ public class Exporter {
   }
 
   /**
-   * Gets the current count of blocks that failed to parse.
-   * This method is thread-safe and can be called during export interruption.
+   * Gets the current count of blocks that failed to parse. This method is thread-safe and can be
+   * called during export interruption.
    *
    * @return the number of blocks that failed to parse
    */
@@ -142,8 +139,8 @@ public class Exporter {
   }
 
   /**
-   * Gets the total count of all processed entries (blocks + non-blocks + errors).
-   * This method is thread-safe and can be called during export interruption.
+   * Gets the total count of all processed entries (blocks + non-blocks + errors). This method is
+   * thread-safe and can be called during export interruption.
    *
    * @return the total number of processed entries
    */
@@ -152,9 +149,9 @@ public class Exporter {
   }
 
   /**
-   * Calculates the success rate as a percentage of successfully parsed blocks
-   * out of total block entries (excluding non-blocks).
-   * This method is thread-safe and can be called during export interruption.
+   * Calculates the success rate as a percentage of successfully parsed blocks out of total block
+   * entries (excluding non-blocks). This method is thread-safe and can be called during export
+   * interruption.
    *
    * @return the success rate as a percentage (0.0 to 100.0)
    */
@@ -164,9 +161,9 @@ public class Exporter {
   }
 
   /**
-   * Calculates the error rate as a percentage of failed blocks
-   * out of total block entries (excluding non-blocks).
-   * This method is thread-safe and can be called during export interruption.
+   * Calculates the error rate as a percentage of failed blocks out of total block entries
+   * (excluding non-blocks). This method is thread-safe and can be called during export
+   * interruption.
    *
    * @return the error rate as a percentage (0.0 to 100.0)
    */
@@ -265,7 +262,11 @@ public class Exporter {
       ExportStatus exportStatus,
       String errorFilePath)
       throws IOException {
-    Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+    Gson gson =
+        new GsonBuilder()
+            .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+            .create();
 
     // Reuse existing dbReader if available, otherwise create new one
     if (dbReader == null) {
@@ -502,25 +503,31 @@ public class Exporter {
     }
 
     // Only mark as completed if we actually processed all packages and weren't interrupted
-    boolean actuallyCompleted = !shutdownRequested && 
-        exportStatus.getProcessedCount() >= exportStatus.getTotalPackages();
+    boolean actuallyCompleted =
+        !shutdownRequested && exportStatus.getProcessedCount() >= exportStatus.getTotalPackages();
 
     if (actuallyCompleted) {
       exportStatus.markCompleted();
       statusManager.saveStatus(exportStatus);
-      log.info("Export completed successfully. Processed {}/{} packages.", 
-          exportStatus.getProcessedCount(), exportStatus.getTotalPackages());
+      log.info(
+          "Export completed successfully. Processed {}/{} packages.",
+          exportStatus.getProcessedCount(),
+          exportStatus.getTotalPackages());
       // Clean up status file after successful completion
       statusManager.deleteStatus();
     } else {
       // Save status without marking as completed for potential resume
       statusManager.saveStatus(exportStatus);
       if (shutdownRequested) {
-        log.info("Export interrupted by shutdown request. Processed {}/{} packages.", 
-            exportStatus.getProcessedCount(), exportStatus.getTotalPackages());
+        log.info(
+            "Export interrupted by shutdown request. Processed {}/{} packages.",
+            exportStatus.getProcessedCount(),
+            exportStatus.getTotalPackages());
       } else {
-        log.warn("Export finished but not all packages were processed. Processed {}/{} packages.", 
-            exportStatus.getProcessedCount(), exportStatus.getTotalPackages());
+        log.warn(
+            "Export finished but not all packages were processed. Processed {}/{} packages.",
+            exportStatus.getProcessedCount(),
+            exportStatus.getTotalPackages());
       }
     }
 
@@ -1236,9 +1243,9 @@ public class Exporter {
   }
 
   /**
-   * Gets the very last (most recently added) block from the RocksDB database. This optimized
-   * version uses GlobalIndexDbReader to get temp package timestamps directly from the global index,
-   * then reads temp packages directly from the files database.
+   * Gets the very last (most recently added) deserialized block from the RocksDB database. This
+   * optimized version uses GlobalIndexDbReader to get temp package timestamps directly from the
+   * global index, then reads temp packages directly from the files database.
    *
    * @return The most recently added Block of masterchain, or null if no blocks are found
    * @throws IOException If an I/O error occurs while reading the database
@@ -1271,6 +1278,47 @@ public class Exporter {
       try (TempPackageIndexReader tempIndexReader =
           new TempPackageIndexReader(tonDatabaseRootPath, packageTimestamp)) {
         return tempIndexReader.getLast();
+      }
+    }
+  }
+
+  /**
+   * Gets the very last (most recently added) serialized block in format of Bag Of Cells from the
+   * RocksDB database. This optimized version uses GlobalIndexDbReader to get temp package
+   * timestamps directly from the global index, then reads temp packages directly from the files
+   * database.
+   *
+   * @return The most recently added Block of masterchain, or null if no blocks are found
+   * @throws IOException If an I/O error occurs while reading the database
+   */
+  public byte[] getLastAsBoc() throws IOException {
+
+    try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
+      IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
+
+      if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
+        log.warn("No temp packages found in global index");
+        return null;
+      }
+
+      // Get temp package timestamps (they are Unix timestamps)
+      List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
+      log.debug(
+          "Found {} temp packages in global index: {}",
+          tempPackageTimestamps.size(),
+          tempPackageTimestamps);
+
+      // Sort timestamps in descending order (most recent first)
+      List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
+
+      // sort in descending order
+      sortedTimestamps.sort(Collections.reverseOrder());
+
+      // get the top (most recent, with the biggest timestamp)
+      Integer packageTimestamp = sortedTimestamps.get(0);
+      try (TempPackageIndexReader tempIndexReader =
+          new TempPackageIndexReader(tonDatabaseRootPath, packageTimestamp)) {
+        return tempIndexReader.getLastAsBoC();
       }
     }
   }

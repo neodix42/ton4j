@@ -185,7 +185,7 @@ public class TempPackageIndexReader implements Closeable {
     return blocks;
   }
 
-  /** returns last <code>limit</code> blocks, might include blocks of not only master chain */
+  /** returns last master chain block */
   public Block getLast() throws IOException {
 
     TreeMap<Long, Long> mappings = getAllSortedOffsets();
@@ -200,6 +200,27 @@ public class TempPackageIndexReader implements Closeable {
         if (block.getBlockInfo().getShard().getWorkchain() == -1) {
           packageReader.close();
           return block;
+        }
+      }
+    }
+    packageReader.close();
+    return null;
+  }
+
+  /** returns last master chain block as BoC */
+  public byte[] getLastAsBoC() throws IOException {
+
+    TreeMap<Long, Long> mappings = getAllSortedOffsets();
+
+    PackageReader packageReader = new PackageReader(packagePath);
+
+    for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
+      PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(kv.getKey());
+      if (packageEntry.getFilename().startsWith("block_")) {
+        Block block = packageEntry.getBlock();
+        if (block.getBlockInfo().getShard().getWorkchain() == -1) {
+          packageReader.close();
+          return packageEntry.getData();
         }
       }
     }
