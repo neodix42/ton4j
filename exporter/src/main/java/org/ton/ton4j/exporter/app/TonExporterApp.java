@@ -139,7 +139,7 @@ public class TonExporterApp {
 
       // If we reach here, export completed successfully
       exportCompleted.set(true);
-      
+
       // Only print completion statistics if export was not interrupted
       if (!exportInterrupted.get()) {
         printFinalStatistics(true);
@@ -174,12 +174,12 @@ public class TonExporterApp {
               if (!exportCompleted.get() && !exportInterrupted.getAndSet(true)) {
                 System.err.println(
                     "\n\nExport interrupted by user (Ctrl+C). Waiting for threads to finish...");
-                
+
                 // Wait for all threads to finish before showing statistics
                 if (currentExporter != null) {
                   currentExporter.waitForThreadsToFinish();
                 }
-                
+
                 System.err.println("All threads finished. Showing final statistics...");
                 printFinalStatistics(false);
               }
@@ -243,16 +243,23 @@ public class TonExporterApp {
       int nonBlocks = currentExporter.getNonBlocksCount();
       int errors = currentExporter.getErrorsCount();
       int totalProcessed = currentExporter.getTotalProcessedCount();
-      
+
       if (totalProcessed > 0) {
         double successRate = currentExporter.getSuccessRate();
         double errorRate = currentExporter.getErrorRate();
-        
+
         System.err.println("Export statistics:");
-        System.err.println("  Blocks processed: " + parsedBlocks + " successful, " + errors + " errors, " + nonBlocks + " non-blocks");
+        System.err.println(
+            "  Blocks processed: "
+                + parsedBlocks
+                + " successful, "
+                + errors
+                + " errors, "
+                + nonBlocks
+                + " non-blocks");
         System.err.println("  Total processed: " + totalProcessed + " entries");
-        System.err.println("  Success rate: " + String.format("%.2f%%", successRate));
-        System.err.println("  Error rate: " + String.format("%.2f%%", errorRate));
+        System.err.println("  Success rate: " + String.format("%.4f%%", successRate));
+        System.err.println("  Error rate: " + String.format("%.4f%%", errorRate));
       }
     }
 
@@ -355,7 +362,8 @@ public class TonExporterApp {
     System.err.println();
     System.err.println("Examples:");
     System.err.println("  java -jar TonExporterApp.jar -v");
-    System.err.println("  java -jar TonExporterApp.jar /var/ton-work/db file json 4 true blocks.json");
+    System.err.println(
+        "  java -jar TonExporterApp.jar /var/ton-work/db file json 4 true blocks.json");
     System.err.println("  java -jar TonExporterApp.jar /var/ton-work/db stdout boc 8");
   }
 }
