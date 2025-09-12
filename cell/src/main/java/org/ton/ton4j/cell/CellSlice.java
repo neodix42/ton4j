@@ -190,7 +190,9 @@ public class CellSlice implements Serializable {
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
     TonHashMap x = new TonHashMap(n);
     x.deserialize(CellSlice.beginParse(this), keyParser, valueParser);
-
+    if (x.elements.isEmpty()) {
+      throw new Error("TonHashMap can't be empty");
+    }
     return x;
   }
 
@@ -202,7 +204,9 @@ public class CellSlice implements Serializable {
       Function<CellSlice, Object> extraParser) {
     TonHashMapAug x = new TonHashMapAug(n);
     x.deserialize(this, keyParser, valueParser, extraParser);
-
+    if (x.elements.isEmpty()) {
+      throw new Error("TonHashMapAug can't be empty");
+    }
     return x;
   }
 
@@ -247,6 +251,9 @@ public class CellSlice implements Serializable {
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
     TonPfxHashMap x = new TonPfxHashMap(n);
     x.deserialize(this, keyParser, valueParser);
+    if (x.elements.isEmpty()) {
+      throw new Error("TonPfxHashMap can't be empty");
+    }
     return x;
   }
 
@@ -254,6 +261,9 @@ public class CellSlice implements Serializable {
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
     TonPfxHashMap x = new TonPfxHashMap(n);
     x.deserialize(this, keyParser, valueParser);
+    if (x.elements.isEmpty()) {
+      throw new Error("TonPfxHashMap can't be empty");
+    }
     return x;
   }
 
@@ -281,6 +291,9 @@ public class CellSlice implements Serializable {
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
     TonHashMap x = new TonHashMap(n);
     x.deserialize(this.clone(), keyParser, valueParser);
+    if (x.elements.isEmpty()) {
+      throw new Error("TonHashMap can't be empty");
+    }
     return x;
   }
 
