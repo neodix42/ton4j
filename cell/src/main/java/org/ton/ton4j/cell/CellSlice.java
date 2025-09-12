@@ -189,7 +189,7 @@ public class CellSlice implements Serializable {
   public TonHashMap loadDict(
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
     TonHashMap x = new TonHashMap(n);
-    x.deserialize(CellSlice.beginParse(this), keyParser, valueParser);
+    x.deserialize(this, keyParser, valueParser);
     if (x.elements.isEmpty()) {
       throw new Error("TonHashMap can't be empty");
     }
@@ -217,12 +217,7 @@ public class CellSlice implements Serializable {
       return new TonHashMapE(n);
     } else {
       TonHashMapE hashMap = new TonHashMapE(n);
-      if (this.getRefsCount() > 0) {
-        hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
-      } else {
-        // load inline dict
-        hashMap.deserialize(CellSlice.beginParse(this), keyParser, valueParser);
-      }
+      hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
       return hashMap;
     }
   }
