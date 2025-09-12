@@ -66,13 +66,11 @@ public class TonHashMap implements Serializable {
       return nodes;
     }
 
-    int refsSize = edge.refs.size();
-    for (int j = 0; j < refsSize; j++) {
+    for (int j = 0; j < edge.refs.size(); j++) {
       CellSlice forkEdge = CellSlice.beginParse(edge.refs.get(j));
       BitString forkKey = key.clone();
       forkKey.writeBit(j != 0);
-      List<Node> childNodes = deserializeEdge(forkEdge, keySize, forkKey);
-      nodes.addAll(childNodes);
+      nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
     }
     return nodes;
   }

@@ -31,7 +31,6 @@ public class McBlockExtra implements Serializable {
   boolean keyBlock;
   ShardHashes shardHashes;
   ShardFees shardFees;
-  //  TonHashMapAugE shardFees;
   McBlockExtraInfo info;
   ConfigParams config;
 
@@ -40,25 +39,17 @@ public class McBlockExtra implements Serializable {
   }
 
   public Cell toCell() {
-    return CellBuilder.beginCell()
-        .storeUint(0xcca5, 32)
-        .storeBit(keyBlock)
-        //        .storeCell(shardHashes.toCell())
-        .storeCell(shardFees.toCell())
-        .storeDict(
-            shardFees.toCell()
-            //            shardFees.serialize(
-            //                k -> CellBuilder.beginCell().storeUint((BigInteger) k,
-            // 96).endCell().getBits(),
-            //                v -> CellBuilder.beginCell().storeCell((Cell) v), // todo
-            // ShardFeeCreated
-            //                e -> CellBuilder.beginCell().storeCell((Cell) e), // todo
-            // ShardFeeCreated
-            //                (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
-            )
-        .storeRef(info.toCell())
-        .storeCell(keyBlock ? config.toCell() : CellBuilder.beginCell().endCell())
-        .endCell();
+    CellBuilder cell =
+        CellBuilder.beginCell()
+            .storeUint(0xcca5, 32)
+            .storeBit(keyBlock)
+            .storeCell(shardHashes.toCell())
+            .storeCell(shardFees.toCell())
+            .storeRef(info.toCell());
+    if (keyBlock) {
+      cell.storeCell(config.toCell());
+    }
+    return cell.endCell();
   }
 
   public static McBlockExtra deserialize(CellSlice cs) {
@@ -73,7 +64,6 @@ public class McBlockExtra implements Serializable {
             .keyBlock(keyBlock)
             .shardHashes(ShardHashes.deserialize(cs))
             .shardFees(ShardFees.deserialize(cs))
-            //            .shardFees(cs.loadDictAugE(96, k -> k.readUint(96), v -> v, e -> e))
             .build();
     mcBlockExtra.setInfo(McBlockExtraInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
     mcBlockExtra.setConfig(keyBlock ? ConfigParams.deserialize(cs) : null);

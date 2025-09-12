@@ -13,14 +13,26 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.cell.*;
+import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestTlbBlockReader {
+
+  public static final Gson gson =
+      new GsonBuilder()
+          .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+          .registerTypeAdapter(Cell.class, new CellTypeAdapter())
+          .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          .disableHtmlEscaping()
+          .setLenient()
+          .create();
 
   @Test
   public void testShouldDeserializeBlockInfo() {
@@ -36,6 +48,7 @@ public class TestTlbBlockReader {
     assertThat(blockInfo.getGenValidatorListHashShort()).isEqualTo(4113611331L);
     assertThat(blockInfo.getPrevRef().getPrev1().getFileHash())
         .isEqualTo("5ab4d36de07ce24d78ddc0c37a776ebea7728d08bc5d720cf7ab662a4ffb23e0");
+    c.toHex();
   }
 
   @Test
@@ -53,6 +66,7 @@ public class TestTlbBlockReader {
     assertThat(valueFlow.getFeesImported().getCoins()).isEqualTo(1000000000L);
     assertThat(valueFlow.getFromPrevBlk().getCoins())
         .isEqualTo(new BigInteger("2280867924805872170"));
+    c.toHex();
   }
 
   @Test
@@ -65,6 +79,7 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     MerkleUpdate merkleUpdate = MerkleUpdate.deserialize(CellSlice.beginParse(c));
     log.info("stateUpdate {}", merkleUpdate);
+    c.toHex();
   }
 
   @Test
@@ -88,6 +103,7 @@ public class TestTlbBlockReader {
                 "b5ee9c7241023201000498000114ff00f4a413f4bcf2c80b010201200302000cf2308048f2f00201480e0402012008050201200706001db9c34f00a5f03802032028307f00580011bbbd182108325e4c380201200d090201200b0a003bb6e53da89a1f401a803a1a7ffe00203e00203a861a1e0026209a8608a810020120310c002bb2fe7c02840917c120c1fd039be864fe800c380c1c200017bb9a5ed44d0d430d0d3ff3080202cb120f0201ce1110005b3e105bc90c0c40b53d01347b5134350c3434ffcc201254452ebcbd087ec120841ca368e840b2333d00104c3c01a000513e105bc90c0c40bd01347b5134350c3434ffcc20125444eebcbd20840764eab600723d00104c3c01a002012023130201201c140201201915020120181601f73e105bc90c80fd01347c02b434c03e8034c7f4c7fd010c2012c97cbd2012d4e4ae7cbd2012d4e4ee7cbd20134920840ee6b2802814032ec6fcbd3e097e0554c1e8483e0454c2e0083d039be864f4c7cc248c083880a94b20083d039be865900720083d05a74c083232c7f274100720083d05b882a9013232c01400e0170038fa02cb1fcb1f17f400c9f00b82101a69387e02c8cb1ff4004130f00600793e105bc90c0c40b53d01347b5134350c3434ffcc201254c52ebcbd08b434ffcc201200aebcbd3c028c54943c02e0843218aeaf40b2333d00104c3c01a00201201b1a00e33e105bc90c0c40b4fff4c7fe803d01347c02887434ffcc20125446eebcbd08e0080a60c1fc014c6011c07cbc94ca3c020a7232ffd50825a0083d10c1291508e43c0240bc02e0840d2212a4497232ffd49032c7d4883d00095110d4a17c01e0841c04df21c0f232ffc4b2c7fd00104c3c01a000ed3e105bc90c0c40b4fff4c7fe803d01347c0288e0080a60c1fc016011c07cbd2011d4c6eebcbd14cc3c0214d2bc020af232ffd5082e20083d10c06951543c0241291509243c025004fc02e084260abfffc97232ffd49032c7d4883d00095110d4a17c01e0840c19b443c0f232ffc4b2c7fd00104c3c01a0020120201d0201201f1e001f3214017e8084fd003d003333327b552000193b51343e803d013d0135350c200201202221003b20128870403cbc8830802672007e8080a0c1fd10e5cc0060c1fd16cc38a0001d0060c1fd039be864fe800c380c1c200201202b2402012028250201202726003d1c20043232c141bc0105b3c594013e808532dab2c7c4b2cff3c4f25c7ec020003d1c20043232c1417c010573c5893e808532da84b2c7f2cff3c4f260103ec0200201202a290023104cfd039be8482540b5c04c00780c5c0ca0001d1c081cb232c072c032c1f2fff274200201202d2c00215fa4001fa46804602c00012f2f4d3ff3080201202f2e001134c1c06a80b5c6006001ed20120871c03cbc807434c0c05c6c2497c0f83c00cc4074c7dc208061a808f00023858cc074c7e01200a0841b5a5b9d2e84bcbd2082c63cd865d6f4cffe801400f880fe0048840d10015bc13e186084100d28f014842ea4cc3c033820842296cbb9d4842ea4cc3c03782082c63cd854842ea4cc3c03f8203000588210982535785210ba9330f00ee08210b766741a5210ba9330f011e0821025d53dfdba92f010e0308048f2f00011b323bc02840d17c12004896818")
             .endCell();
     log.info("CellType {}", c.getCellType());
+    c.toHex();
   }
 
   @Test
@@ -105,6 +121,7 @@ public class TestTlbBlockReader {
     List<Transaction> txs = block.getAllTransactions();
     log.info("txs {}", txs);
     block.toCell();
+    block.toCell().toHex();
   }
 
   @Ignore
@@ -117,6 +134,7 @@ public class TestTlbBlockReader {
     List<Transaction> txs = block.getAllTransactions();
     log.info("txs {}", txs);
     block.toCell();
+    block.toCell().toHex();
   }
 
   @Test
@@ -133,6 +151,7 @@ public class TestTlbBlockReader {
         block.getExtra().getInMsgDesc().getCount(),
         block.getExtra().getOutMsgDesc().getCount(),
         block);
+    block.toCell().toHex();
   }
 
   @Test
@@ -150,6 +169,7 @@ public class TestTlbBlockReader {
         block.getExtra().getOutMsgDesc().getCount(),
         block.getExtra().getShardAccountBlocks(),
         block);
+    block.toCell().toHex();
   }
 
   @Test
@@ -188,6 +208,7 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
+    block.toCell().toHex();
   }
 
   /** Refs overflow. No more refs., */
@@ -198,6 +219,7 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
+    block.toCell().toHex();
     log.info(
         "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
   }
@@ -210,6 +232,7 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
+    block.toCell().toHex();
     log.info(
         "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
   }
@@ -224,13 +247,7 @@ public class TestTlbBlockReader {
     log.info(
         "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
     block.toCell();
-
-    Gson gson =
-        new GsonBuilder()
-            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-            //                    .registerTypeAdapter(byte[].class, new
-            // ByteArrayToHexTypeAdapter())
-            .create();
+    block.toCell().toHex();
     log.info("gson {}", gson.toJson(block));
   }
 
@@ -244,6 +261,7 @@ public class TestTlbBlockReader {
     block.toCell();
     log.info(
         "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
+    block.toCell().toHex();
   }
 
   /** Bits overflow. Can't load 8 bits. 5 bits left. */
@@ -256,6 +274,8 @@ public class TestTlbBlockReader {
     //    block.toCell();
     log.info(
         "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
+    // block.toCell().toHex(); // java.lang.Error: TonHashMap does not support empty dict. Consider
+    // using TonHashMapE
   }
 
   /** wrong magic number, can be only [0x5f327da5L, 0x9023afe2L], found 101b099 */
@@ -266,6 +286,7 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
+    block.toCell().toHex();
   }
 
   /** no more refs */
@@ -276,6 +297,7 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
+    block.toCell().toHex();
   }
 
   /** Bits overflow. Can't load 276 bits. 42 bits left. */
@@ -286,6 +308,7 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
+    block.toCell().toHex();
   }
 
   /** no more refs */
@@ -296,6 +319,7 @@ public class TestTlbBlockReader {
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
+    block.toCell().toHex();
   }
 
   private String getBoc(String fileName) {

@@ -12,12 +12,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
+@ToString
 public class Cell implements Serializable {
 
   @Getter BitString bits;
@@ -311,7 +313,7 @@ public class Cell implements Serializable {
   }
 
   public String toString() {
-    return bits.toHex();
+    return this.toHex();
   }
 
   public int getBitLength() {
@@ -731,7 +733,12 @@ public class Cell implements Serializable {
       hashIndex = 0;
     }
 
-    return Utils.slice(hashes, hashIndex * 32, 32);
+    if (hashes.length != 0) {
+      return Utils.slice(hashes, hashIndex * 32, 32);
+    } else {
+      byte[] bytes = new byte[32];
+      return bytes;
+    }
   }
 
   public byte[] getRefsDescriptor(int lvl) {

@@ -32,6 +32,8 @@ public class TestCellSerialization {
     Cell cbs = CellBuilder.beginCell().storeUint(0x5f21, 15).endCell();
     assertThat(Utils.bytesToHex(cbs.hash()))
         .isEqualTo("7c617d77cf0f8561eb82bede8fcc95e728710b4c31510699eb78b5793fd8c6c2");
+
+    cbs.toBoc();
   }
 
   @Test
@@ -59,6 +61,8 @@ public class TestCellSerialization {
         .isEqualTo("b5ee9c7241010301000c0002020d020101020c02000155921e09df");
     assertThat(Utils.bytesToHex(c3.toBoc(true, true)))
         .isEqualTo("b5ee9c72c1010301000c0005090c02020d020101020c02000155b647f116");
+
+    c3.toBoc();
   }
 
   @Test
@@ -108,6 +112,7 @@ public class TestCellSerialization {
     assertThat(Utils.bytesToHex(c1.toBoc(true)))
         .isEqualTo(
             "b5ee9c72410106010040000402000102030401015505003f0000000000000000000000000000000000000000000000000000000000000093000b400000000008000b8000000000200002115085e80e");
+    c1.toHex();
   }
 
   @Test
@@ -138,6 +143,7 @@ public class TestCellSerialization {
     assertThat(c2.endCell().bitStringToHex()).isEqualTo("8000000002_");
     assertThat(c3.endCell().bitStringToHex()).isEqualTo("80000000002_");
     assertThat(c4.endCell().bitStringToHex()).isEqualTo("40000000000");
+    c4.endCell().toHex();
   }
 
   @Test
@@ -447,5 +453,6 @@ public class TestCellSerialization {
     List<Cell> cellWithRoots = Cell.fromBocMultiRoot(bocWithRoots);
     log.info("cell with size {}", cellWithRoots.size());
     log.info("cell with roots {}", cellWithRoots.size());
+    c3.toHex();
   }
 }
