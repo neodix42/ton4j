@@ -54,9 +54,9 @@ public class McStateExtra implements Serializable {
       return null;
     }
 
-    if (cs.isExotic()) {
-      return null;
-    }
+    //    if (cs.isExotic()) {
+    //      return null;
+    //    }
     long magic = cs.loadUint(16).longValue();
     assert (magic == 0xcc26L)
         : "McStateExtra: magic not equal to 0xcc26, found 0x" + Long.toHexString(magic);

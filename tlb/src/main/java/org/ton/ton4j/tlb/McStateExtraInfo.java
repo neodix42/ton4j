@@ -61,24 +61,8 @@ public class McStateExtraInfo implements Serializable {
             .build();
 
     mcStateExtraInfo.setLastKeyBlock(cs.loadBit() ? ExtBlkRef.deserialize(cs) : null);
-    
-    // Handle BlockCreateStats based on flag bit 0
-    if (flags.testBit(0)) {
-      // Check if there's enough data and valid magic before attempting deserialization
-      if (cs.getRestBits() >= 8) {
-        long magic = cs.preloadUint(8).longValue();
-        if (magic == 0x17 || magic == 0x34) {
-          mcStateExtraInfo.setBlockCreateStats(BlockCreateStats.deserialize(cs));
-        } else {
-          // Flag is set but no valid BlockCreateStats data - set to null
-          mcStateExtraInfo.setBlockCreateStats(null);
-        }
-      } else {
-        mcStateExtraInfo.setBlockCreateStats(null);
-      }
-    } else {
-      mcStateExtraInfo.setBlockCreateStats(null);
-    }
+    mcStateExtraInfo.setBlockCreateStats(
+        flags.testBit(0) ? BlockCreateStats.deserialize(cs) : null);
 
     return mcStateExtraInfo;
   }

@@ -58,9 +58,7 @@ public class Block implements Serializable {
             .build();
 
     block.setValueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())));
-
-    MerkleUpdate merkleUpdate = MerkleUpdate.deserialize(CellSlice.beginParse(cs.loadRef()));
-    block.setStateUpdate(merkleUpdate);
+    block.setStateUpdate(MerkleUpdate.deserialize(CellSlice.beginParse(cs.loadRef())));
     block.setExtra(BlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())));
 
     return block;
