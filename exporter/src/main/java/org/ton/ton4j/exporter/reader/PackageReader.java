@@ -111,8 +111,7 @@ public class PackageReader implements Closeable {
         throw new IOException("Offset beyond file size: " + offset);
       }
 
-      PackageEntry entry = readNextEntry();
-      return entry;
+      return readNextEntry();
     } catch (IOException e) {
       throw new IOException("Error reading entry at offset " + offset + ": " + e.getMessage(), e);
     } finally {
@@ -185,7 +184,7 @@ public class PackageReader implements Closeable {
     }
 
     public Block getBlock() {
-//      System.out.println(Utils.bytesToHex(data));
+      //      System.out.println(Utils.bytesToHex(data));
       return Block.deserialize(
           CellSlice.beginParse(CellBuilder.beginCell().fromBoc(data).endCell()));
     }

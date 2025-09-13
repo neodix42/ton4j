@@ -23,9 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.LoggerFactory;
 import org.ton.ton4j.address.Address;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.reader.*;
 import org.ton.ton4j.exporter.types.*;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
@@ -33,12 +31,25 @@ import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockHandle;
-import org.ton.ton4j.tlb.adapters.ByteArrayToHexTypeAdapter;
+import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
 @Slf4j
 public class Exporter {
+
+  public static final Gson gson =
+      new GsonBuilder()
+          .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+          .registerTypeHierarchyAdapter(Cell.class, new CellTypeAdapter())
+          .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          .disableHtmlEscaping()
+          .setLenient()
+          .create();
 
   /** Functional interface for abstracting output writing operations */
   @FunctionalInterface
@@ -53,9 +64,9 @@ public class Exporter {
   private volatile boolean shutdownRequested = false;
 
   // Statistics tracking for interrupted exports
-  volatile AtomicInteger totalParsedBlocks = new AtomicInteger(0);
-  volatile AtomicInteger totalNonBlocks = new AtomicInteger(0);
-  volatile AtomicInteger totalErrors = new AtomicInteger(0);
+  volatile AtomicInteger totalParsedBlocks;
+  volatile AtomicInteger totalNonBlocks;
+  volatile AtomicInteger totalErrors;
 
   /**
    * usually located in /var/ton-work/db on server or myLocalTon/genesis/db in MyLocalTon app.
@@ -263,11 +274,6 @@ public class Exporter {
       ExportStatus exportStatus,
       String errorFilePath)
       throws IOException {
-    Gson gson =
-        new GsonBuilder()
-            .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
-            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-            .create();
 
     // Reuse existing dbReader if available, otherwise create new one
     if (dbReader == null) {
@@ -510,10 +516,9 @@ public class Exporter {
     if (actuallyCompleted) {
       exportStatus.markCompleted();
       statusManager.saveStatus(exportStatus);
-      log.info(
-          "Export completed successfully. Processed {}/{} packages.",
-          exportStatus.getProcessedCount(),
-          exportStatus.getTotalPackages());
+      System.out.printf(
+          "Export completed successfully. Processed %s/%s packages.%n",
+          exportStatus.getProcessedCount(), exportStatus.getTotalPackages());
       // Clean up status file after successful completion
       statusManager.deleteStatus();
     } else {
@@ -533,7 +538,8 @@ public class Exporter {
     }
 
     System.out.printf(
-        "Total duration: %.1fs, speed: %.2f blocks per second%n", durationSeconds, blocksPerSecond);
+        "Total duration: %.1fs, speed: %.2f blocks per second, blocks %s%n",
+        durationSeconds, blocksPerSecond, parsedBlocksCounter.get());
 
     dbReader.close();
 
@@ -635,7 +641,6 @@ public class Exporter {
   public void exportToStdout(boolean deserialized, int parallelThreads) throws IOException {
     // Check for existing status and resume if possible
     ExportStatus exportStatus = statusManager.loadStatus();
-    boolean isResume = false;
 
     if (exportStatus != null && !exportStatus.isCompleted()) {
       // Validate that the resume parameters match
@@ -648,7 +653,6 @@ public class Exporter {
             exportStatus.getProgressPercentage(),
             exportStatus.getProcessedCount(),
             exportStatus.getTotalPackages());
-        isResume = true;
       } else {
         log.warn("Export parameters don't match existing status. Starting fresh export.");
         statusManager.deleteStatus();

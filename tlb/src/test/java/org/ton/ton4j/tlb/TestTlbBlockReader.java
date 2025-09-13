@@ -322,6 +322,18 @@ public class TestTlbBlockReader {
     block.toCell().toHex();
   }
 
+  /** TonHashMap can't be empty */
+  @Test
+  public void testShouldDeserializeBlock19() {
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-16.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
+    block.toCell();
+    block.toCell().toHex();
+    log.info("gson {}", gson.toJson(block));
+  }
+
   private String getBoc(String fileName) {
     return Utils.streamToString(
         Objects.requireNonNull(
