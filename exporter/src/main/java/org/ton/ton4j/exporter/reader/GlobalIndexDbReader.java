@@ -309,7 +309,10 @@ public class GlobalIndexDbReader implements Closeable {
       return null;
     }
 
-    return entry.getData();
+    if (entry.getFilename().startsWith("block_")) {
+      return entry.getData();
+    }
+    return null;
   }
 
   /**
@@ -480,8 +483,8 @@ public class GlobalIndexDbReader implements Closeable {
   /**
    * Gets ALL archive file locations by reading individual archive index databases. This method
    * follows the C++ implementation approach by opening each archive.XXXXX.index database and
-   * reading the hash-&gt;offset mappings. This provides complete access to all files stored in archive
-   * packages, including those not referenced in the Files database.
+   * reading the hash-&gt;offset mappings. This provides complete access to all files stored in
+   * archive packages, including those not referenced in the Files database.
    *
    * @return Map of file hash to ArchiveFileLocation
    */
@@ -729,12 +732,15 @@ public class GlobalIndexDbReader implements Closeable {
       return null;
     }
 
-    log.debug(
-        "Successfully read {} bytes from archive package {}",
-        entry.getData().length,
-        location.getPackageId());
+    if (entry.getFilename().startsWith("block_")) {
+      log.debug(
+          "Successfully read block's {} bytes from archive package {}",
+          entry.getData().length,
+          location.getPackageId());
 
-    return entry.getData();
+      return entry.getData();
+    }
+    return null;
   }
 
   /**

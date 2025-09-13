@@ -442,14 +442,8 @@ public class ArchiveDbReader implements Closeable {
                 // Get the entry at the offset
                 PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
 
-                if (packageEntry != null) {
+                if ((packageEntry != null) && (packageEntry.getFilename().startsWith("block_"))) {
                   blocks.put(hash, packageEntry.getData());
-                } else {
-                  log.warn(
-                      "Null package entry for key {} at offset {} in archive {}",
-                      hash,
-                      offset,
-                      archiveKey);
                 }
               } else {
                 log.warn(
@@ -514,7 +508,7 @@ public class ArchiveDbReader implements Closeable {
                         getFilesPackageReader(packageFileName, archiveInfo.getPackagePath());
                     PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
 
-                    if (entry != null) {
+                    if ((entry != null) && (entry.getFilename().startsWith("block_"))) {
                       blocks.put(hash, entry.getData());
                     }
                   } catch (IOException e) {
@@ -630,7 +624,7 @@ public class ArchiveDbReader implements Closeable {
                   getFilesPackageReader(packageFileName, packagePath.toString());
               PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
 
-              if (entry != null) {
+              if ((entry != null) && (entry.getFilename().startsWith("block_"))) {
                 return entry.getData();
               }
             } catch (IOException e) {
