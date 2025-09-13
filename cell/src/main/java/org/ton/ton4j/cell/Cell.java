@@ -12,14 +12,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import lombok.Getter;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
-@ToString
 public class Cell implements Serializable {
 
   @Getter BitString bits;
@@ -313,7 +311,7 @@ public class Cell implements Serializable {
   }
 
   public String toString() {
-    return this.toHex();
+    return bits.toHex();
   }
 
   public int getBitLength() {
