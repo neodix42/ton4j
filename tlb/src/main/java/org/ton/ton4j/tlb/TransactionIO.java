@@ -1,5 +1,7 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.isNull;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -33,7 +35,10 @@ public class TransactionIO implements Serializable {
         out.serialize(
             k -> CellBuilder.beginCell().storeUint((BigInteger) k, 15).endCell().getBits(),
             v -> CellBuilder.beginCell().storeRef(((Message) v).toCell()).endCell());
-    return CellBuilder.beginCell().storeRefMaybe(in.toCell()).storeDict(dictCell).endCell();
+    return CellBuilder.beginCell()
+        .storeRefMaybe(isNull(in) ? null : in.toCell())
+        .storeDict(dictCell)
+        .endCell();
   }
 
   public List<Message> getOutMessages() {
