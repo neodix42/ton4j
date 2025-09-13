@@ -31,7 +31,7 @@ public class ShardFees {
             shardFees.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 96).endCell().getBits(),
                 v -> CellBuilder.beginCell().storeCell(((ShardFeeCreated) v).toCell()).endCell(),
-                e -> CellBuilder.beginCell().storeCell(((ShardFeeCreated) e).toCell()),
+                e -> CellBuilder.beginCell().storeCell(((ShardFeeCreated) e).toCell()).endCell(),
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1) // todo
                 ))
         .endCell();
