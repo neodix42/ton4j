@@ -77,8 +77,23 @@ public class Exporter {
   /** whether to show blocks' reading progress every second, default false */
   private Boolean showProgress;
 
-  private static DbReader dbReader;
+  private DbReader dbReader;
   private StatusManager statusManager;
+
+  // Thread-local Gson instances to avoid contention
+  private static final ThreadLocal<Gson> threadLocalGson =
+      ThreadLocal.withInitial(
+          () ->
+              new GsonBuilder()
+                  .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+                  .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+                  .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+                  .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+                  .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+                  .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+                  .disableHtmlEscaping()
+                  .setLenient()
+                  .create());
 
   public static class ExporterBuilder {}
 
@@ -367,84 +382,38 @@ public class Exporter {
                   return null;
                 }
                 try {
-                  Map<String, byte[]> localBlocks = new HashMap<>();
+                  // Use streaming processing instead of loading all blocks into memory
                   int localParsedBlocks = 0;
                   int localNonBlocks = 0;
 
+                  // Get thread-local Gson instance to avoid contention
+                  Gson localGson = threadLocalGson.get();
+
+                  // Process blocks one by one using streaming approach
                   if (archiveInfo.getIndexPath() == null) {
-                    dbReader
-                        .getArchiveDbReader()
-                        .readFromFilesPackage(archiveKey, archiveInfo, localBlocks);
+                    localParsedBlocks =
+                        processFilesPackageStreaming(
+                            archiveKey,
+                            archiveInfo,
+                            outputWriter,
+                            deserialized,
+                            localGson,
+                            errorFilePath,
+                            parsedBlocksCounter,
+                            nonBlocksCounter,
+                            errorCounter);
                   } else {
-                    dbReader
-                        .getArchiveDbReader()
-                        .readFromTraditionalArchive(archiveKey, archiveInfo, localBlocks);
-                  }
-
-                  for (Map.Entry<String, byte[]> kv : localBlocks.entrySet()) {
-                    try {
-                      Cell c = CellBuilder.beginCell().fromBoc(kv.getValue()).endCell();
-
-                      long magic = c.getBits().preReadUint(32).longValue();
-                      if (magic == 0x11ef55aaL) {
-
-                        String lineToWrite;
-
-                        if (deserialized) {
-                          // writing deserialized boc in json format
-                          Block block = Block.deserialize(CellSlice.beginParse(c));
-                          lineToWrite =
-                              String.format(
-                                  "%s,%s,%s,%s",
-                                  block.getBlockInfo().getShard().getWorkchain(),
-                                  block
-                                      .getBlockInfo()
-                                      .getShard()
-                                      .convertShardIdentToShard()
-                                      .toString(16),
-                                  block.getBlockInfo().getSeqno(),
-                                  gson.toJson(block));
-                        } else { // write boc in hex format
-                          lineToWrite = Utils.bytesToHex(kv.getValue());
-                        }
-
-                        outputWriter.writeLine(lineToWrite);
-                        parsedBlocksCounter.getAndIncrement();
-                        totalParsedBlocks.incrementAndGet(); // Update real-time statistics
-                        localParsedBlocks++;
-                      } else {
-                        nonBlocksCounter.getAndIncrement();
-                        totalNonBlocks.incrementAndGet(); // Update real-time statistics
-                        localNonBlocks++;
-                      }
-
-                    } catch (Throwable e) {
-                      log.info("Error parsing block {}: {}", kv.getKey(), e.getMessage());
-                      //                      log.info("boc {}", Utils.bytesToHex(kv.getValue()));
-                      errorCounter.getAndIncrement();
-                      totalErrors.incrementAndGet(); // Update real-time statistics
-
-                      // Write error block data to errors.txt file if errorFilePath is provided
-                      if (errorFilePath != null) {
-                        try {
-                          synchronized (this) {
-                            try (PrintWriter errorWriter =
-                                new PrintWriter(
-                                    new FileWriter(errorFilePath, StandardCharsets.UTF_8, true))) {
-                              errorWriter.println(Utils.bytesToHex(kv.getValue()));
-                              errorWriter.flush();
-                            }
-                          }
-                        } catch (IOException ioException) {
-                          log.warn(
-                              "Failed to write error block data to {}: {}",
-                              errorFilePath,
-                              ioException.getMessage());
-                        }
-                      }
-
-                      // Continue processing other blocks instead of failing completely
-                    }
+                    localParsedBlocks =
+                        processTraditionalArchiveStreaming(
+                            archiveKey,
+                            archiveInfo,
+                            outputWriter,
+                            deserialized,
+                            localGson,
+                            errorFilePath,
+                            parsedBlocksCounter,
+                            nonBlocksCounter,
+                            errorCounter);
                   }
 
                   // Mark package as processed and save status
@@ -602,19 +571,15 @@ public class Exporter {
       log.info("Starting new export to file: {}", outputToFile);
     }
 
-    // Create a synchronized PrintWriter for thread-safe immediate file writing
-    // Use append mode if resuming
-    try (PrintWriter writer =
-        new PrintWriter(new FileWriter(outputToFile, StandardCharsets.UTF_8, isResume))) {
-
-      // Create file-based output writer with thread-safe synchronization
-      OutputWriter fileWriter =
-          line -> {
-            synchronized (writer) {
-              writer.println(line);
-              writer.flush(); // Ensure immediate write to disk
-            }
-          };
+    // Create AsyncFileWriter for high-performance buffered writing
+    try (AsyncFileWriter asyncWriter = new AsyncFileWriter(outputToFile, isResume)) {
+      
+      // Configure flush behavior - flush on package completion by default
+      asyncWriter.setFlushOnPackageComplete(true);
+      asyncWriter.setFlushInterval(1000); // Also flush every 1000 blocks as backup
+      
+      // Create async output writer
+      OutputWriter fileWriter = asyncWriter::writeLine;
 
       File outputFile = new File(outputToFile);
       String errorFilePath = new File(outputFile.getParent(), "errors.txt").getAbsolutePath();
@@ -865,352 +830,172 @@ public class Exporter {
     }
   }
 
-  /** Wrapper class to provide a Stream that uses a custom ForkJoinPool for parallel operations */
-  private static class ParallelStreamWrapper<T> implements Stream<T> {
-    private final Stream<T> delegate;
-    private final java.util.concurrent.ForkJoinPool customPool;
+  /** Process Files package using streaming approach to avoid loading all blocks into memory */
+  private int processFilesPackageStreaming(
+      String archiveKey,
+      ArchiveInfo archiveInfo,
+      OutputWriter outputWriter,
+      boolean deserialized,
+      Gson localGson,
+      String errorFilePath,
+      AtomicInteger parsedBlocksCounter,
+      AtomicInteger nonBlocksCounter,
+      AtomicInteger errorCounter)
+      throws IOException {
 
-    public ParallelStreamWrapper(Stream<T> delegate, java.util.concurrent.ForkJoinPool customPool) {
-      this.delegate = delegate;
-      this.customPool = customPool;
-    }
+    int localParsedBlocks = 0;
+    int localNonBlocks = 0;
 
-    @Override
-    public Stream<T> parallel() {
-      return this;
-    }
+    // Use streaming approach with callback to process blocks one by one
+    dbReader
+        .getArchiveDbReader()
+        .streamFromFilesPackage(
+            archiveKey,
+            archiveInfo,
+            (blockKey, blockData) -> {
+              processBlockData(
+                  blockKey,
+                  blockData,
+                  outputWriter,
+                  deserialized,
+                  localGson,
+                  errorFilePath,
+                  parsedBlocksCounter,
+                  nonBlocksCounter,
+                  errorCounter);
+            });
 
-    @Override
-    public Stream<T> sequential() {
-      return delegate.sequential();
-    }
+    return localParsedBlocks;
+  }
 
-    @Override
-    public boolean isParallel() {
-      return true;
-    }
+  /**
+   * Process traditional archive using streaming approach to avoid loading all blocks into memory
+   */
+  private int processTraditionalArchiveStreaming(
+      String archiveKey,
+      ArchiveInfo archiveInfo,
+      OutputWriter outputWriter,
+      boolean deserialized,
+      Gson localGson,
+      String errorFilePath,
+      AtomicInteger parsedBlocksCounter,
+      AtomicInteger nonBlocksCounter,
+      AtomicInteger errorCounter)
+      throws IOException {
 
-    // Delegate all other Stream methods to the underlying stream
-    @Override
-    public Stream<T> filter(java.util.function.Predicate<? super T> predicate) {
-      return new ParallelStreamWrapper<>(delegate.filter(predicate), customPool);
-    }
+    int localParsedBlocks = 0;
+    int localNonBlocks = 0;
 
-    @Override
-    public <R> Stream<R> map(java.util.function.Function<? super T, ? extends R> mapper) {
-      return new ParallelStreamWrapper<>(delegate.map(mapper), customPool);
-    }
+    // Use streaming approach with callback to process blocks one by one
+    dbReader
+        .getArchiveDbReader()
+        .streamFromTraditionalArchive(
+            archiveKey,
+            archiveInfo,
+            (blockKey, blockData) -> {
+              processBlockData(
+                  blockKey,
+                  blockData,
+                  outputWriter,
+                  deserialized,
+                  localGson,
+                  errorFilePath,
+                  parsedBlocksCounter,
+                  nonBlocksCounter,
+                  errorCounter);
+            });
 
-    @Override
-    public <R> Stream<R> flatMap(
-        java.util.function.Function<? super T, ? extends Stream<? extends R>> mapper) {
-      return new ParallelStreamWrapper<>(delegate.flatMap(mapper), customPool);
-    }
+    return localParsedBlocks;
+  }
 
-    @Override
-    public void forEach(java.util.function.Consumer<? super T> action) {
-      try {
-        customPool.submit(() -> delegate.parallel().forEach(action)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-        try {
-          if (!customPool.awaitTermination(60, TimeUnit.SECONDS)) {
-            customPool.shutdownNow();
+  /** Process individual block data without storing in memory collections */
+  private void processBlockData(
+      String blockKey,
+      byte[] blockData,
+      OutputWriter outputWriter,
+      boolean deserialized,
+      Gson localGson,
+      String errorFilePath,
+      AtomicInteger parsedBlocksCounter,
+      AtomicInteger nonBlocksCounter,
+      AtomicInteger errorCounter) {
+
+    try {
+      // Fast path: if not deserialized, skip expensive Cell parsing and just check magic bytes
+      if (!deserialized) {
+        // Check magic number directly from raw bytes (much faster)
+        if (blockData.length >= 4) {
+          // Read first 4 bytes as little-endian uint32 to check magic
+          int magic = ((blockData[3] & 0xFF) << 24) | 
+                     ((blockData[2] & 0xFF) << 16) | 
+                     ((blockData[1] & 0xFF) << 8) | 
+                     (blockData[0] & 0xFF);
+          
+          if (magic == 0x11ef55aa) { // Block magic number
+            // Write raw BOC in hex format without any parsing
+            outputWriter.writeLine(Utils.bytesToHex(blockData));
+            parsedBlocksCounter.getAndIncrement();
+            totalParsedBlocks.incrementAndGet();
+            return;
           }
-        } catch (InterruptedException ex) {
-          customPool.shutdownNow();
-          Thread.currentThread().interrupt();
+        }
+        
+        // Not a block
+        nonBlocksCounter.getAndIncrement();
+        totalNonBlocks.incrementAndGet();
+        return;
+      }
+
+      // Slow path: full deserialization only when needed
+      Cell c = CellBuilder.beginCell().fromBoc(blockData).endCell();
+      long magic = c.getBits().preReadUint(32).longValue();
+      
+      if (magic == 0x11ef55aaL) {
+        // Only deserialize when needed for JSON output
+        Block block = Block.deserialize(CellSlice.beginParse(c));
+        
+        // Pre-compute values to avoid repeated calls during JSON serialization
+        int workchain = block.getBlockInfo().getShard().getWorkchain();
+        String shardHex = block.getBlockInfo().getShard().convertShardIdentToShard().toString(16);
+        long seqno = block.getBlockInfo().getSeqno();
+        
+        // Use StringBuilder for more efficient string construction
+        StringBuilder lineBuilder = new StringBuilder(1024); // Pre-allocate reasonable size
+        lineBuilder.append(workchain).append(',')
+                   .append(shardHex).append(',')
+                   .append(seqno).append(',')
+                   .append(localGson.toJson(block));
+        
+        outputWriter.writeLine(lineBuilder.toString());
+        parsedBlocksCounter.getAndIncrement();
+        totalParsedBlocks.incrementAndGet();
+      } else {
+        nonBlocksCounter.getAndIncrement();
+        totalNonBlocks.incrementAndGet();
+      }
+
+    } catch (Throwable e) {
+      log.debug("Error parsing block {}: {}", blockKey, e.getMessage()); // Changed to debug to reduce logging overhead
+      errorCounter.getAndIncrement();
+      totalErrors.incrementAndGet();
+
+      // Write error block data to errors.txt file if errorFilePath is provided
+      if (errorFilePath != null) {
+        try {
+          synchronized (this) {
+            try (PrintWriter errorWriter =
+                new PrintWriter(new FileWriter(errorFilePath, StandardCharsets.UTF_8, true))) {
+              errorWriter.println(Utils.bytesToHex(blockData));
+              errorWriter.flush();
+            }
+          }
+        } catch (IOException ioException) {
+          log.warn(
+              "Failed to write error block data to {}: {}",
+              errorFilePath,
+              ioException.getMessage());
         }
       }
-    }
-
-    @Override
-    public void forEachOrdered(java.util.function.Consumer<? super T> action) {
-      try {
-        customPool.submit(() -> delegate.parallel().forEachOrdered(action)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public java.util.Iterator<T> iterator() {
-      return delegate.iterator();
-    }
-
-    @Override
-    public java.util.Spliterator<T> spliterator() {
-      return delegate.spliterator();
-    }
-
-    @Override
-    public long count() {
-      try {
-        return customPool.submit(() -> delegate.parallel().count()).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public java.util.Optional<T> min(java.util.Comparator<? super T> comparator) {
-      try {
-        return customPool.submit(() -> delegate.parallel().min(comparator)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public java.util.Optional<T> max(java.util.Comparator<? super T> comparator) {
-      try {
-        return customPool.submit(() -> delegate.parallel().max(comparator)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public boolean anyMatch(java.util.function.Predicate<? super T> predicate) {
-      try {
-        return customPool.submit(() -> delegate.parallel().anyMatch(predicate)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public boolean allMatch(java.util.function.Predicate<? super T> predicate) {
-      try {
-        return customPool.submit(() -> delegate.parallel().allMatch(predicate)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public boolean noneMatch(java.util.function.Predicate<? super T> predicate) {
-      try {
-        return customPool.submit(() -> delegate.parallel().noneMatch(predicate)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public java.util.Optional<T> findFirst() {
-      try {
-        return customPool.submit(() -> delegate.parallel().findFirst()).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public java.util.Optional<T> findAny() {
-      try {
-        return customPool.submit(() -> delegate.parallel().findAny()).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public Object[] toArray() {
-      try {
-        return customPool.submit(() -> delegate.parallel().toArray()).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public <A> A[] toArray(java.util.function.IntFunction<A[]> generator) {
-      try {
-        return customPool.submit(() -> delegate.parallel().toArray(generator)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public T reduce(T identity, java.util.function.BinaryOperator<T> accumulator) {
-      try {
-        return customPool.submit(() -> delegate.parallel().reduce(identity, accumulator)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public java.util.Optional<T> reduce(java.util.function.BinaryOperator<T> accumulator) {
-      try {
-        return customPool.submit(() -> delegate.parallel().reduce(accumulator)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public <U> U reduce(
-        U identity,
-        java.util.function.BiFunction<U, ? super T, U> accumulator,
-        java.util.function.BinaryOperator<U> combiner) {
-      try {
-        return customPool
-            .submit(() -> delegate.parallel().reduce(identity, accumulator, combiner))
-            .get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public <R> R collect(
-        java.util.function.Supplier<R> supplier,
-        java.util.function.BiConsumer<R, ? super T> accumulator,
-        java.util.function.BiConsumer<R, R> combiner) {
-      try {
-        return customPool
-            .submit(() -> delegate.parallel().collect(supplier, accumulator, combiner))
-            .get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public <R, A> R collect(java.util.stream.Collector<? super T, A, R> collector) {
-      try {
-        return customPool.submit(() -> delegate.parallel().collect(collector)).get();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      } finally {
-        customPool.shutdown();
-      }
-    }
-
-    @Override
-    public Stream<T> distinct() {
-      return new ParallelStreamWrapper<>(delegate.distinct(), customPool);
-    }
-
-    @Override
-    public Stream<T> sorted() {
-      return new ParallelStreamWrapper<>(delegate.sorted(), customPool);
-    }
-
-    @Override
-    public Stream<T> sorted(java.util.Comparator<? super T> comparator) {
-      return new ParallelStreamWrapper<>(delegate.sorted(comparator), customPool);
-    }
-
-    @Override
-    public Stream<T> peek(java.util.function.Consumer<? super T> action) {
-      return new ParallelStreamWrapper<>(delegate.peek(action), customPool);
-    }
-
-    @Override
-    public Stream<T> limit(long maxSize) {
-      return new ParallelStreamWrapper<>(delegate.limit(maxSize), customPool);
-    }
-
-    @Override
-    public Stream<T> skip(long n) {
-      return new ParallelStreamWrapper<>(delegate.skip(n), customPool);
-    }
-
-    @Override
-    public java.util.stream.IntStream mapToInt(java.util.function.ToIntFunction<? super T> mapper) {
-      return delegate.mapToInt(mapper);
-    }
-
-    @Override
-    public java.util.stream.LongStream mapToLong(
-        java.util.function.ToLongFunction<? super T> mapper) {
-      return delegate.mapToLong(mapper);
-    }
-
-    @Override
-    public java.util.stream.DoubleStream mapToDouble(
-        java.util.function.ToDoubleFunction<? super T> mapper) {
-      return delegate.mapToDouble(mapper);
-    }
-
-    @Override
-    public java.util.stream.IntStream flatMapToInt(
-        java.util.function.Function<? super T, ? extends java.util.stream.IntStream> mapper) {
-      return delegate.flatMapToInt(mapper);
-    }
-
-    @Override
-    public java.util.stream.LongStream flatMapToLong(
-        java.util.function.Function<? super T, ? extends java.util.stream.LongStream> mapper) {
-      return delegate.flatMapToLong(mapper);
-    }
-
-    @Override
-    public java.util.stream.DoubleStream flatMapToDouble(
-        java.util.function.Function<? super T, ? extends java.util.stream.DoubleStream> mapper) {
-      return delegate.flatMapToDouble(mapper);
-    }
-
-    @Override
-    public Stream<T> takeWhile(java.util.function.Predicate<? super T> predicate) {
-      return new ParallelStreamWrapper<>(delegate.takeWhile(predicate), customPool);
-    }
-
-    @Override
-    public Stream<T> dropWhile(java.util.function.Predicate<? super T> predicate) {
-      return new ParallelStreamWrapper<>(delegate.dropWhile(predicate), customPool);
-    }
-
-    @Override
-    public void close() {
-      delegate.close();
-      customPool.shutdown();
-    }
-
-    @Override
-    public Stream<T> onClose(Runnable closeHandler) {
-      return new ParallelStreamWrapper<>(delegate.onClose(closeHandler), customPool);
-    }
-
-    @Override
-    public Stream<T> unordered() {
-      return new ParallelStreamWrapper<>(delegate.unordered(), customPool);
     }
   }
 
