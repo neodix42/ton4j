@@ -41,7 +41,7 @@ public class Exporter {
   public static final Gson gson =
       new GsonBuilder()
           .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-          .registerTypeHierarchyAdapter(Cell.class, new CellTypeAdapter())
+          //          .registerTypeHierarchyAdapter(Cell.class, new CellTypeAdapter())
           .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
           .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
           .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
