@@ -6,12 +6,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.List;
-import java.util.ArrayList;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -136,6 +136,8 @@ public class HighPerformanceFileWriter implements Closeable {
             BufferedWriter bufferedWriter = new BufferedWriter(writer, bufferSizeMB * 1024 * 1024);
             
             List<String> batch = new ArrayList<>(batchSize);
+            long lastFlushTime = System.currentTimeMillis();
+            int linesWrittenSinceFlush = 0;
             
             while (!isShutdown.get() || !writeQueue.isEmpty()) {
                 try {
@@ -145,6 +147,14 @@ public class HighPerformanceFileWriter implements Closeable {
                     // Get first line (blocking)
                     String line = writeQueue.poll(100, TimeUnit.MILLISECONDS);
                     if (line == null) {
+                        // Timeout - check if we need to flush due to time (every 5 seconds)
+                        long currentTime = System.currentTimeMillis();
+                        if (linesWrittenSinceFlush > 0 && (currentTime - lastFlushTime) > 5000) {
+                            bufferedWriter.flush();
+                            lastFlushTime = currentTime;
+                            linesWrittenSinceFlush = 0;
+                            log.debug("Writer {} flushed due to timeout ({} lines)", writerId, linesWrittenSinceFlush);
+                        }
                         continue; // Timeout, check shutdown status
                     }
                     
@@ -177,12 +187,24 @@ public class HighPerformanceFileWriter implements Closeable {
                         bufferedWriter.newLine();
                     }
                     
-                    // Flush periodically for better throughput
-                    if (batch.size() >= batchSize / 2) {
-                        bufferedWriter.flush();
-                    }
-                    
+                    linesWrittenSinceFlush += batch.size();
                     totalLinesWritten.addAndGet(batch.size());
+                    
+                    // Flush based on reasonable criteria:
+                    // 1. Every 5000 lines (reasonable for 1000 ops/sec = flush every 5 seconds)
+                    // 2. Every 10 seconds (backup time-based flush)
+                    // 3. When batch is large enough (original logic)
+                    long currentTime = System.currentTimeMillis();
+                    boolean shouldFlush = linesWrittenSinceFlush >= 5000 || // Every 5000 lines
+                                         (currentTime - lastFlushTime) > 10000 || // Every 10 seconds
+                                         batch.size() >= batchSize / 2; // Large batch
+                    
+                    if (shouldFlush) {
+                        bufferedWriter.flush();
+                        lastFlushTime = currentTime;
+                        linesWrittenSinceFlush = 0;
+                        log.debug("Writer {} flushed {} lines (total: {})", writerId, batch.size(), totalLinesWritten.get());
+                    }
                     
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();

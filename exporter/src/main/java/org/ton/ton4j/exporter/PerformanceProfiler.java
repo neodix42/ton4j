@@ -28,6 +28,11 @@ public class PerformanceProfiler {
     private final AtomicLong maxMemoryUsed = new AtomicLong(0);
     private final AtomicLong totalMemoryAllocated = new AtomicLong(0);
     
+    // Thread configuration tracking
+    private volatile int parallelThreads = 1;
+    private volatile long wallClockStartTime = 0;
+    private volatile long wallClockEndTime = 0;
+    
     /**
      * Records RocksDB read time
      */
@@ -78,6 +83,27 @@ public class PerformanceProfiler {
         
         maxMemoryUsed.set(Math.max(maxMemoryUsed.get(), usedMemory));
         totalMemoryAllocated.set(runtime.totalMemory());
+    }
+    
+    /**
+     * Sets the number of parallel threads used for processing
+     */
+    public void setParallelThreads(int threads) {
+        this.parallelThreads = threads;
+    }
+    
+    /**
+     * Records the start time for wall clock measurements
+     */
+    public void recordWallClockStart() {
+        this.wallClockStartTime = System.currentTimeMillis();
+    }
+    
+    /**
+     * Records the end time for wall clock measurements
+     */
+    public void recordWallClockEnd() {
+        this.wallClockEndTime = System.currentTimeMillis();
     }
     
     /**
@@ -135,6 +161,42 @@ public class PerformanceProfiler {
             diskWrites.get(),
             diskOpsPerSec));
         
+        // Threading analysis
+        log.info("Threading Analysis:");
+        log.info(String.format("  Parallel Threads:   %d", parallelThreads));
+        
+        // Calculate wall clock time if available
+        long wallClockTimeMs = 0;
+        if (wallClockEndTime > wallClockStartTime && wallClockStartTime > 0) {
+            wallClockTimeMs = wallClockEndTime - wallClockStartTime;
+            double wallClockTimeSeconds = wallClockTimeMs / 1000.0;
+            log.info(String.format("  Wall Clock Time:    %.1fs", wallClockTimeSeconds));
+            
+            // Calculate effective parallelization
+            double totalCpuTimeSeconds = totalTime / 1_000_000_000.0;
+            double effectiveParallelization = totalCpuTimeSeconds / wallClockTimeSeconds;
+            log.info(String.format("  Effective Parallel: %.1fx (CPU time / Wall time)", effectiveParallelization));
+            
+            // Single-thread equivalent rates
+            if (bocParsings.get() > 0) {
+                double singleThreadBocRate = bocOpsPerSec;
+                double multiThreadBocRate = bocParsings.get() / wallClockTimeSeconds;
+                log.info(String.format("  BOC Single-Thread:  %.0f ops/sec", singleThreadBocRate));
+                log.info(String.format("  BOC Multi-Thread:   %.0f ops/sec (%.1fx speedup)", multiThreadBocRate, multiThreadBocRate / singleThreadBocRate));
+            }
+            
+            if (diskWrites.get() > 0) {
+                double multiThreadDiskRate = diskWrites.get() / wallClockTimeSeconds;
+                double singleThreadDiskRate = multiThreadDiskRate / parallelThreads; // Average per writer thread
+                log.info(String.format("  Disk Single-Thread:  %.0f ops/sec (average per writer thread)", singleThreadDiskRate));
+                log.info(String.format("  Disk Multi-Thread:   %.0f ops/sec (total throughput across %d writer threads)", multiThreadDiskRate, parallelThreads));
+            }
+        } else {
+            log.info("  Wall Clock Time:    Not available");
+            log.info(String.format("  Single-Thread Rate: %.0f ops/sec (BOC parsing)", bocOpsPerSec));
+            log.info(String.format("  Multi-Thread Est:   %.0f ops/sec (theoretical max)", bocOpsPerSec * parallelThreads));
+        }
+        
         // Memory usage - get actual system memory instead of JVM max heap
         Runtime runtime = Runtime.getRuntime();
         long jvmMaxMemory = runtime.maxMemory();
@@ -190,5 +252,9 @@ public class PerformanceProfiler {
         
         maxMemoryUsed.set(0);
         totalMemoryAllocated.set(0);
+        
+        parallelThreads = 1;
+        wallClockStartTime = 0;
+        wallClockEndTime = 0;
     }
 }

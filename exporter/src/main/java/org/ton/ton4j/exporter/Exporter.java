@@ -308,6 +308,10 @@ public class Exporter {
 
     long startTime = System.currentTimeMillis();
 
+    // Configure global profiler with thread count and start time
+    globalProfiler.setParallelThreads(parallelThreads);
+    globalProfiler.recordWallClockStart();
+
     // Create thread pool
     ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
     currentExecutorService = executor; // Store reference for shutdown coordination
@@ -317,11 +321,12 @@ public class Exporter {
     ScheduledExecutorService rateDisplayExecutor = null;
     if (showProgressInfo) {
       // Create a custom thread factory to make threads non-daemon so they keep JVM alive
-      ThreadFactory nonDaemonThreadFactory = r -> {
-        Thread t = new Thread(r, "PerformanceReporter");
-        t.setDaemon(false); // Non-daemon thread keeps JVM alive
-        return t;
-      };
+      ThreadFactory nonDaemonThreadFactory =
+          r -> {
+            Thread t = new Thread(r, "PerformanceReporter");
+            t.setDaemon(false); // Non-daemon thread keeps JVM alive
+            return t;
+          };
       rateDisplayExecutor = Executors.newSingleThreadScheduledExecutor(nonDaemonThreadFactory);
       currentRateDisplayExecutor = rateDisplayExecutor; // Store reference for shutdown coordination
 
@@ -360,9 +365,16 @@ public class Exporter {
 
                 // Print performance analysis every 6 scheduler runs (60 seconds)
                 int runCount = schedulerRunCount.incrementAndGet();
-                System.out.println("DEBUG: Scheduler run " + runCount + " (elapsed: " + elapsedSeconds + "s)");
-                if (runCount % 6 == 0) { // Every 6 runs = 60 seconds (since scheduler runs every 10s)
-                  System.out.println("DEBUG: Triggering performance report at run " + runCount + " (elapsed: " + elapsedSeconds + "s)");
+                System.out.println(
+                    "DEBUG: Scheduler run " + runCount + " (elapsed: " + elapsedSeconds + "s)");
+                if (runCount % 3
+                    == 0) { // Every 3 runs = 30 seconds (since scheduler runs every 10s)
+                  System.out.println(
+                      "DEBUG: Triggering performance report at run "
+                          + runCount
+                          + " (elapsed: "
+                          + elapsedSeconds
+                          + "s)");
                   try {
                     globalProfiler.printReport();
                     System.out.println("DEBUG: Performance report completed successfully");
@@ -485,6 +497,9 @@ public class Exporter {
     double durationSeconds = durationMs / 1000.0;
     double blocksPerSecond = parsedBlocksCounter.get() / durationSeconds;
 
+    // Record wall clock end time for profiler
+    globalProfiler.recordWallClockEnd();
+
     // Shutdown executor
     executor.shutdown();
     try {
@@ -497,8 +512,9 @@ public class Exporter {
     }
 
     // DON'T shutdown rate display executor here - let it continue running
-    System.out.println("DEBUG: Main processing completed, but scheduler will continue running independently...");
-    
+    System.out.println(
+        "DEBUG: Main processing completed, but scheduler will continue running independently...");
+
     // The scheduler will continue running and showing reports every 60 seconds
     // It will be shut down by the shutdown hook or when the JVM exits
 
@@ -603,9 +619,8 @@ public class Exporter {
     // Force allocation of 80% of max heap memory for buffering
     long targetBufferMemory = (long) (maxMemory * 0.8);
 
-    // Calculate aggressive buffer settings
-    int writerThreads =
-        Math.max(8, parallelThreads); // At least 8 writers, scale up with processing threads
+    // Use the parallelThreads parameter directly as requested
+    int writerThreads = parallelThreads;
 
     // Massive queue capacity to force RAM usage
     int queueCapacity =
@@ -663,20 +678,6 @@ public class Exporter {
 
       exportDataWithStatus(
           fileWriter, deserialized, parallelThreads, showProgress, exportStatus, errorFilePath);
-    }
-    
-    // Keep the main thread alive to allow scheduler to continue running
-    if (showProgress && currentRateDisplayExecutor != null && !currentRateDisplayExecutor.isShutdown()) {
-      System.out.println("DEBUG: Export completed, but keeping main thread alive for continued performance reports...");
-      System.out.println("DEBUG: Press Ctrl+C to terminate the application");
-      
-      try {
-        // Keep main thread alive indefinitely to allow scheduler to continue
-        Thread.currentThread().join();
-      } catch (InterruptedException e) {
-        System.out.println("DEBUG: Main thread interrupted, shutting down...");
-        Thread.currentThread().interrupt();
-      }
     }
   }
 
@@ -946,7 +947,7 @@ public class Exporter {
             (blockKey, blockData) -> {
               int beforeParsed = parsedBlocksCounter.get();
               int beforeNonBlocks = nonBlocksCounter.get();
-              
+
               processBlockData(
                   blockKey,
                   blockData,
@@ -957,11 +958,11 @@ public class Exporter {
                   parsedBlocksCounter,
                   nonBlocksCounter,
                   errorCounter);
-              
+
               // Track local increments
               int afterParsed = parsedBlocksCounter.get();
               int afterNonBlocks = nonBlocksCounter.get();
-              
+
               localParsedBlocks.addAndGet(afterParsed - beforeParsed);
               localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
             });
@@ -996,7 +997,7 @@ public class Exporter {
             (blockKey, blockData) -> {
               int beforeParsed = parsedBlocksCounter.get();
               int beforeNonBlocks = nonBlocksCounter.get();
-              
+
               processBlockData(
                   blockKey,
                   blockData,
@@ -1007,11 +1008,11 @@ public class Exporter {
                   parsedBlocksCounter,
                   nonBlocksCounter,
                   errorCounter);
-              
+
               // Track local increments
               int afterParsed = parsedBlocksCounter.get();
               int afterNonBlocks = nonBlocksCounter.get();
-              
+
               localParsedBlocks.addAndGet(afterParsed - beforeParsed);
               localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
             });
