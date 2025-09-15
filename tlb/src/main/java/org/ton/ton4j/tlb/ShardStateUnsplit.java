@@ -47,7 +47,6 @@ public class ShardStateUnsplit implements Serializable {
   BigInteger genLt;
   long minRefMCSeqno;
   OutMsgQueueInfo outMsgQueueInfo;
-  //  Cell outMsgQueueInfo;
   boolean beforeSplit;
   ShardAccounts shardAccounts;
   ShardStateInfo shardStateInfo;
@@ -68,7 +67,6 @@ public class ShardStateUnsplit implements Serializable {
         .storeUint(genLt, 64)
         .storeUint(minRefMCSeqno, 32)
         .storeRef(outMsgQueueInfo.toCell())
-        //        .storeRef(outMsgQueueInfo)
         .storeBit(beforeSplit)
         .storeRef(shardAccounts.toCell())
         .storeRef(shardStateInfo.toCell())
@@ -77,9 +75,9 @@ public class ShardStateUnsplit implements Serializable {
   }
 
   public static ShardStateUnsplit deserialize(CellSlice cs) {
-    //    if (cs.isExotic()) {
-    //      return ShardStateUnsplit.builder().build();
-    //    }
+    if (cs.isExotic()) {
+      return ShardStateUnsplit.builder().build();
+    }
     long magic = cs.loadUint(32).longValue();
     assert (magic == 0x9023afe2L)
         : "ShardStateUnsplit magic not equal to 0x9023afe2L, found 0x" + Long.toHexString(magic);

@@ -165,4 +165,55 @@ public class Block implements Serializable {
     }
     return result;
   }
+
+  /**
+   * @return List of incoming messages of Message or MsgEnvelope type
+   */
+  public List<Object> getAllIncomingMessages() {
+    List<Object> result = new ArrayList<>();
+    Block block = this;
+
+    List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
+    for (InMsg inMsg : inMsgs) {
+      if (inMsg instanceof InMsgImportExt) {
+        result.add(((InMsgImportExt) inMsg).getMsg());
+      }
+      if (inMsg instanceof InMsgImportIhr) {
+        result.add(((InMsgImportIhr) inMsg).getMsg());
+      }
+      if (inMsg instanceof InMsgImportImm) {
+        result.add(((InMsgImportImm) inMsg).getInMsg());
+      }
+      if (inMsg instanceof InMsgImportFin) {
+        result.add(((InMsgImportFin) inMsg).getInMsg());
+      }
+    }
+    return result;
+  }
+
+  /**
+   * @return List of outgoing messages of Message or MsgEnvelope type
+   */
+  public List<Object> getAllOutgoingMessages() {
+    List<Object> result = new ArrayList<>();
+    Block block = this;
+
+    List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
+
+    for (OutMsg outMsg : outMsgs) {
+      if (outMsg instanceof OutMsgExt) {
+        result.add(((OutMsgExt) outMsg).getMsg());
+      }
+      if (outMsg instanceof OutMsgImm) {
+        result.add(((OutMsgImm) outMsg).getMsg());
+      }
+      if (outMsg instanceof OutMsgNew) {
+        result.add(((OutMsgNew) outMsg).getOutMsg());
+      }
+      if (outMsg instanceof OutMsgNew) {
+        result.add(((OutMsgNew) outMsg).getOutMsg());
+      }
+    }
+    return result;
+  }
 }

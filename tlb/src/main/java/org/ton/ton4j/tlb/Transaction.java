@@ -1,5 +1,6 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.Serializable;
@@ -96,8 +97,8 @@ public class Transaction implements Serializable {
     c.storeCell(totalFees.toCell());
 
     c.storeRef(inOut.toCell());
-    c.storeRef(stateUpdate.toCell());
-    c.storeRef(description.toCell());
+    c.storeRef(isNull(stateUpdate) ? CellBuilder.beginCell().endCell() : stateUpdate.toCell());
+    c.storeRef(isNull(description) ? CellBuilder.beginCell().endCell() : description.toCell());
 
     return c.endCell();
   }
@@ -132,11 +133,16 @@ public class Transaction implements Serializable {
     tx.setInOut(TransactionIO.builder().in(msg).out(out).build());
 
     tx.setTotalFees(CurrencyCollection.deserialize(cs));
-    tx.setStateUpdate(HashUpdate.deserialize(CellSlice.beginParse(cs.loadRef())));
-    tx.setDescription(TransactionDescription.deserialize(CellSlice.beginParse(cs.loadRef())));
-    //    if (nonNull(msg)) {
-    //      tx.setHash(Utils.bytesToBase64(msg.toCell().getHash()));
-    //    }
+    tx.setStateUpdate(
+        (cs.getRefsCount() > 0)
+            ? HashUpdate.deserialize(CellSlice.beginParse(cs.loadRef()))
+            : null);
+
+    tx.setDescription(
+        (cs.getRefsCount() > 0)
+            ? TransactionDescription.deserialize(CellSlice.beginParse(cs.loadRef()))
+            : null);
+
     return tx;
   }
 

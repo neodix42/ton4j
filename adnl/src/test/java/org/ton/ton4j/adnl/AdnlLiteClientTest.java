@@ -233,8 +233,32 @@ public class AdnlLiteClientTest {
     log.info("Testing testGetBlock query");
     assertTrue(client.isConnected(), "Client should be connected");
 
+    long timestamp = System.currentTimeMillis();
     MasterchainInfo masterchainInfo = client.getMasterchainInfo();
     BlockData blockData = client.getBlock(masterchainInfo.getLast());
+    log.info("elapsed time: {} ms", System.currentTimeMillis() - timestamp); // ~450ms
+    log.info("getBlock {}", blockData);
+    log.info("Block  {}", blockData.getBlock());
+    assertThat(blockData.getId().getSeqno()).isGreaterThan(0);
+    assertThat(blockData.getBlock()).isNotNull();
+  }
+
+  @Test
+  void testGetBlockFromMyLocalTon() throws Exception {
+
+    TonGlobalConfig tonGlobalConfig =
+        TonGlobalConfig.loadFromUrl("http://localhost:8000/localhost.global.config.json");
+
+    AdnlLiteClient client = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).build();
+
+    assertTrue(client.isConnected(), "Client should be connected");
+
+    long timestamp = System.currentTimeMillis();
+    MasterchainInfo masterchainInfo = client.getMasterchainInfo();
+    BlockData blockData = client.getBlock(masterchainInfo.getLast());
+    log.info(
+        "elapsed time: {} ms",
+        System.currentTimeMillis() - timestamp); // ~20ms, ~20x faster than from a remote server
     log.info("getBlock {}", blockData);
     log.info("Block  {}", blockData.getBlock());
     assertThat(blockData.getId().getSeqno()).isGreaterThan(0);

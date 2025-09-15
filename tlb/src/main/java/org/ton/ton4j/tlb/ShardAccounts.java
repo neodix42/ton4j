@@ -1,5 +1,7 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.isNull;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,17 +27,37 @@ public class ShardAccounts {
   TonHashMapAugE shardAccounts;
 
   public Cell toCell() {
+    if (isNull(shardAccounts)) {
+      return CellBuilder.beginCell().endCell();
+    }
     return CellBuilder.beginCell()
         .storeCell(
             shardAccounts.serialize(
                 k -> CellBuilder.beginCell().storeUint((BigInteger) k, 256).endCell().getBits(),
-                v -> CellBuilder.beginCell().storeCell(((ShardAccount) v).toCell()).endCell(),
-                e -> CellBuilder.beginCell().storeCell(((DepthBalanceInfo) e).toCell()).endCell(),
+                v -> {
+                  if (isNull(v)) {
+                    return null;
+                  }
+                  return CellBuilder.beginCell().storeCell(((ShardAccount) v).toCell()).endCell();
+                },
+                e -> {
+                  if (isNull(e)) {
+                    return null;
+                  }
+                  return CellBuilder.beginCell()
+                      .storeCell(((DepthBalanceInfo) e).toCell())
+                      .endCell();
+                },
                 (fk, fv) -> CellBuilder.beginCell().storeUint(0, 1)))
         .endCell();
   }
 
   public static ShardAccounts deserialize(CellSlice cs) {
+
+    if (cs.isExotic()) {
+      return ShardAccounts.builder().build();
+    }
+
     return ShardAccounts.builder()
         .shardAccounts(
             cs.loadDictAugE(

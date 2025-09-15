@@ -24,14 +24,17 @@ public class TestTlbBlockReader {
   public static final Gson gson =
       new GsonBuilder()
           .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-          .registerTypeAdapter(Cell.class, new CellTypeAdapter())
+          //          .registerTypeAdapter(Cell.class, new CellTypeAdapter())
           .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
           .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
           .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
           .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
           .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          //          .excludeFieldsWithModifiers(Modifier.TRANSIENT)
+          //          .enableComplexMapKeySerialization()
           .disableHtmlEscaping()
-          .setLenient()
+          //          .enableComplexMapKeySerialization()
+          //                    .setLenient()
           .create();
 
   @Test
@@ -217,11 +220,17 @@ public class TestTlbBlockReader {
     Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-7.txt")).endCell();
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
-    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
-    block.toCell();
-    block.toCell().toHex();
+    //    log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(),
+    // block);
+    //    block.toCell();
+    //    block.toCell().toHex();
     log.info(
-        "block, txs {}, msgs {}", block.getAllTransactions().size(), block.getAllMessages().size());
+        "block, txs {}, msgs {} (in {}, out {})",
+        block.getAllTransactions().size(),
+        block.getAllMessages().size(),
+        block.getAllIncomingMessages().size(),
+        block.getAllOutgoingMessages().size());
+    log.info("gson {}", gson.toJson(block));
   }
 
   /** Can't load 256 bits. 235 bits left. */
@@ -320,6 +329,8 @@ public class TestTlbBlockReader {
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
     block.toCell();
     block.toCell().toHex();
+    log.info("------------------");
+    log.info("gson {}", gson.toJson(block));
   }
 
   /** TonHashMap can't be empty */
@@ -329,8 +340,9 @@ public class TestTlbBlockReader {
     log.info("CellType {}", c.getCellType());
     Block block = Block.deserialize(CellSlice.beginParse(c));
     log.info("getShardAccountBlocks {}, block {}", block.getExtra().getShardAccountBlocks(), block);
-    block.toCell();
-    block.toCell().toHex();
+    //    block.toCell();
+    //    block.toCell().toHex();
+    log.info("------------------");
     log.info("gson {}", gson.toJson(block));
   }
 

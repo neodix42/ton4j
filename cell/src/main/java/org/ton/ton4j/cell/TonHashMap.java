@@ -1,8 +1,5 @@
 package org.ton.ton4j.cell;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.ToNumberPolicy;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.*;
@@ -17,26 +14,6 @@ public class TonHashMap implements Serializable {
 
   public HashMap<Object, Object> elements;
   int keySize;
-  int maxMembers;
-
-  /**
-   * TonHashMap with the fixed length keys. TonHashMap cannot be empty. If you plan to store empty
-   * Hashmap consider using TonHashMapE.
-   *
-   * <p>TonHashMap consists of two subsequent refs Notice, all keys should be of the same size. If
-   * you have keys of different size - align them first. Duplicates are not allowed.
-   *
-   * @param keySize key size in bits
-   * @param maxMembers max number of hashmap entries
-   */
-  public TonHashMap(int keySize, int maxMembers) {
-    // Initialize with expected capacity to avoid resizing
-    // Use initial capacity slightly larger than maxMembers to avoid rehashing
-    int initialCapacity = Math.max(16, (int) (maxMembers * 1.25));
-    elements = new LinkedHashMap<>(initialCapacity, 0.75f);
-    this.keySize = keySize;
-    this.maxMembers = maxMembers;
-  }
 
   /**
    * HashMap with the fixed length keys. TonHashMap cannot be empty. If you plan to store empty
@@ -52,11 +29,14 @@ public class TonHashMap implements Serializable {
     // Most TON dictionaries are small, so 16 is a good starting point
     elements = new LinkedHashMap<>(16, 0.75f);
     this.keySize = keySize;
-    this.maxMembers = 10000;
   }
 
   public List<Node> deserializeEdge(CellSlice edge, int keySize, final BitString key) {
     // Pre-allocate list with estimated capacity
+    if (edge.type == CellType.PRUNED_BRANCH) {
+      //      System.out.println("TonHashMap: pruned branch in cell");
+      return new ArrayList<>();
+    }
     List<Node> nodes = new ArrayList<>(4);
     BitString l = deserializeLabel(edge, keySize - key.getUsedBits());
     key.writeBitString(l);
@@ -82,23 +62,6 @@ public class TonHashMap implements Serializable {
     for (Node node : nodes) {
       elements.put(keyParser.apply(node.key), valueParser.apply(node.value));
     }
-  }
-
-  @Override
-  public String toString() {
-
-    List<String> parsedElements = new ArrayList<>();
-
-    for (Map.Entry<Object, Object> entry : elements.entrySet()) {
-      String s = String.format("%s,%s", entry.getKey(), entry.getValue());
-      parsedElements.add(s);
-    }
-    Gson gson =
-        new GsonBuilder()
-            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-            .disableHtmlEscaping()
-            .create();
-    return gson.toJson(parsedElements);
   }
 
   /**

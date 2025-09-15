@@ -203,6 +203,21 @@ public class TestHashMapAugE {
     assertThat(loadedDict.elements.size()).isEqualTo(10);
   }
 
+  @Test
+  public void testShouldDeserializeHashMapAugE4() {
+    Cell cell = CellBuilder.beginCell().fromBoc(getBocAsBytes("aug-dict-6410.boc")).endCell();
+    CellSlice cs = CellSlice.beginParse(cell);
+
+    TonHashMapAugE loadedDict =
+        cs.loadDictAugE(
+            64,
+            k -> k.readUint(64),
+            v -> CellSlice.beginParse(v).loadUint(32),
+            e -> CellSlice.beginParse(e).loadUint(32));
+    log.info("Deserialized hashmapAugE from cell {}", loadedDict);
+    assertThat(loadedDict.elements.size()).isEqualTo(10);
+  }
+
   private String getBoc(String fileName) {
     return Utils.streamToString(
         Objects.requireNonNull(

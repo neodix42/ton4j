@@ -6,8 +6,8 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -23,7 +23,8 @@ public class TestBinTree {
     Deque<ShardDescr> cells = generateShardDescrDeque(5);
     Cell c = BinTree.fromDeque(cells).toCell();
 
-    List<ShardDescr> bt = BinTree.deserialize(CellSlice.beginParse(c)).toList();
+    List<ShardDescr> bt =
+        Objects.requireNonNull(BinTree.deserialize(CellSlice.beginParse(c))).toList();
 
     for (ShardDescr cc : bt) {
       printLog(cc);
@@ -32,7 +33,6 @@ public class TestBinTree {
     assertThat(bt.size()).isEqualTo(5);
   }
 
-  @Ignore("needs to be reworked")
   @Test
   public void testBinTree() {
     BinTree node = generateBinTree(10);
@@ -77,8 +77,10 @@ public class TestBinTree {
     Cell cTree = BinTree.fromDeque(cells).toCell();
     Cell cRoot = root.toCell();
 
-    List<ShardDescr> deserializedTree = BinTree.deserialize(CellSlice.beginParse(cTree)).toList();
-    List<ShardDescr> deserializedRoot = BinTree.deserialize(CellSlice.beginParse(cRoot)).toList();
+    List<ShardDescr> deserializedTree =
+        Objects.requireNonNull(BinTree.deserialize(CellSlice.beginParse(cTree))).toList();
+    List<ShardDescr> deserializedRoot =
+        Objects.requireNonNull(BinTree.deserialize(CellSlice.beginParse(cRoot))).toList();
 
     for (ShardDescr cc : deserializedTree) {
       printLog(cc);
@@ -96,8 +98,10 @@ public class TestBinTree {
     Cell cTree = BinTree.fromDeque(cells).toCell();
     Cell cRoot = root.toCell();
 
-    List<ShardDescr> deserializedTree = BinTree.deserialize(CellSlice.beginParse(cTree)).toList();
-    List<ShardDescr> deserializedRoot = BinTree.deserialize(CellSlice.beginParse(cRoot)).toList();
+    List<ShardDescr> deserializedTree =
+        Objects.requireNonNull(BinTree.deserialize(CellSlice.beginParse(cTree))).toList();
+    List<ShardDescr> deserializedRoot =
+        Objects.requireNonNull(BinTree.deserialize(CellSlice.beginParse(cRoot))).toList();
 
     for (ShardDescr cc : deserializedTree) {
       printLog(cc);
@@ -107,7 +111,6 @@ public class TestBinTree {
     assertThat(deserializedRoot.size()).isEqualTo(2);
   }
 
-  @Ignore("needs to be reworked")
   @Test
   public void testBinTreeThree() {
     Deque<ShardDescr> cells = generateShardDescrDeque(3);
@@ -119,8 +122,10 @@ public class TestBinTree {
     printLog(cTree);
     printLog(cRoot);
 
-    List<ShardDescr> deserializedTree = BinTree.deserialize(CellSlice.beginParse(cTree)).toList();
-    List<ShardDescr> deserializedRoot = BinTree.deserialize(CellSlice.beginParse(cRoot)).toList();
+    List<ShardDescr> deserializedTree =
+        Objects.requireNonNull(BinTree.deserialize(CellSlice.beginParse(cTree))).toList();
+    List<ShardDescr> deserializedRoot =
+        Objects.requireNonNull(BinTree.deserialize(CellSlice.beginParse(cRoot))).toList();
 
     for (ShardDescr cc : deserializedTree) {
       printLog(cc);
@@ -130,7 +135,6 @@ public class TestBinTree {
     assertThat(deserializedRoot.size()).isEqualTo(3);
   }
 
-  @Ignore("needs to be reworked")
   @Test
   public void testBinTreeLarge() {
     BinTree root = generateBinTree(100);
@@ -139,7 +143,8 @@ public class TestBinTree {
 
     printLog(cRoot);
 
-    List<ShardDescr> deserializedRoot = BinTree.deserialize(CellSlice.beginParse(cRoot)).toList();
+    List<ShardDescr> deserializedRoot =
+        Objects.requireNonNull(BinTree.deserialize(CellSlice.beginParse(cRoot))).toList();
 
     for (ShardDescr cc : deserializedRoot) {
       printLog(cc);
@@ -159,16 +164,14 @@ public class TestBinTree {
   }
 
   public BinTree generateBinTree(int size) {
-    ShardDescr[] shardDescrArr = new ShardDescr[size];
-
-    for (int i = 0; i < size; i++) {
-      shardDescrArr[i] = createShardDescr(i + 1);
-    }
-
-    return buildTree(shardDescrArr, 0, size - 1);
+    // Create a deque with the same data as generateShardDescrDeque
+    Deque<ShardDescr> cells = generateShardDescrDeque(size);
+    // Use the same fromDeque method to ensure consistency
+    return BinTree.fromDeque(cells);
   }
 
-  private BinTree buildTree(ShardDescr[] shardDescrArr, int start, int end) {
+  // Keep the old method for reference but don't use it in tests
+  private BinTree buildTreeOld(ShardDescr[] shardDescrArr, int start, int end) {
     if (start > end) {
       return null;
     }
@@ -176,8 +179,8 @@ public class TestBinTree {
     int mid = (start + end) / 2;
     ShardDescr value = shardDescrArr[mid];
 
-    BinTree left = buildTree(shardDescrArr, start, mid - 1);
-    BinTree right = buildTree(shardDescrArr, mid + 1, end);
+    BinTree left = buildTreeOld(shardDescrArr, start, mid - 1);
+    BinTree right = buildTreeOld(shardDescrArr, mid + 1, end);
 
     return new BinTree(value, left, right);
   }

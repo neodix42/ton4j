@@ -18,22 +18,15 @@ public class TonHashMapAug implements Serializable {
 
   public HashMap<Object, Pair<Object, Object>> elements; // Pair<Value,Extra>
   int keySize;
-  int maxMembers;
-
-  public TonHashMapAug(int keySize, int maxMembers) {
-    elements = new LinkedHashMap<>();
-    this.keySize = keySize;
-    this.maxMembers = maxMembers;
-  }
 
   public TonHashMapAug(int keySize) {
     elements = new LinkedHashMap<>();
     this.keySize = keySize;
-    this.maxMembers = 10000;
   }
 
   public List<Node> deserializeEdge(CellSlice edge, int keySize, final BitString key) {
-    if (edge.type != CellType.ORDINARY) {
+    if (edge.type == CellType.PRUNED_BRANCH) {
+      //      System.out.println("TonHashMapAug: pruned branch in cell");
       return new ArrayList<>();
     }
     List<Node> nodes = new ArrayList<>();

@@ -189,10 +189,15 @@ public class CellSlice implements Serializable {
   public TonHashMap loadDict(
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
     TonHashMap x = new TonHashMap(n);
-    x.deserialize(this, keyParser, valueParser);
-    if (x.elements.isEmpty()) {
-      throw new Error("TonHashMap can't be empty");
+    if (this.type == CellType.PRUNED_BRANCH) {
+      //      System.out.println("TonHashMap: pruned branch in cell");
+      return new TonHashMap(n);
     }
+
+    x.deserialize(this, keyParser, valueParser);
+    //    if (x.elements.isEmpty()) {
+    //      throw new Error("TonHashMap can't be empty");
+    //    }
     return x;
   }
 
@@ -203,6 +208,10 @@ public class CellSlice implements Serializable {
       Function<CellSlice, Object> valueParser,
       Function<CellSlice, Object> extraParser) {
     TonHashMapAug x = new TonHashMapAug(n);
+    if (this.type == CellType.PRUNED_BRANCH) {
+      //      System.out.println("TonHashMap: pruned branch in cell");
+      return new TonHashMapAug(n);
+    }
     x.deserialize(this, keyParser, valueParser, extraParser);
     if (x.elements.isEmpty()) {
       throw new Error("TonHashMapAug can't be empty");
@@ -215,9 +224,13 @@ public class CellSlice implements Serializable {
     boolean isEmpty = !this.loadBit();
     if (isEmpty) {
       return new TonHashMapE(n);
+    } else if (this.type == CellType.PRUNED_BRANCH) {
+      return new TonHashMapE(n);
     } else {
       TonHashMapE hashMap = new TonHashMapE(n);
-      hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
+      if (this.getRefsCount() > 0) {
+        hashMap.deserialize(CellSlice.beginParse(this.loadRef()), keyParser, valueParser);
+      }
       return hashMap;
     }
   }
@@ -236,8 +249,10 @@ public class CellSlice implements Serializable {
       return new TonHashMapAugE(n);
     } else {
       TonHashMapAugE hashMap = new TonHashMapAugE(n);
-      hashMap.deserialize(
-          CellSlice.beginParse(this.loadRef()), keyParser, valueParser, extraParser);
+      if (this.getRefsCount() > 0) {
+        hashMap.deserialize(
+            CellSlice.beginParse(this.loadRef()), keyParser, valueParser, extraParser);
+      }
       return hashMap;
     }
   }
@@ -264,6 +279,11 @@ public class CellSlice implements Serializable {
 
   public TonPfxHashMapE loadDictPfxE(
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
+
+    if (this.isExotic()) {
+      return new TonPfxHashMapE(n);
+    }
+
     boolean isEmpty = !this.loadBit();
     if (isEmpty) {
       return new TonPfxHashMapE(n);
@@ -653,7 +673,7 @@ public class CellSlice implements Serializable {
   }
 
   public String toString() {
-    return bits.toBitString();
+    return bits.toHex();
   }
 
   public Address loadAddress() {

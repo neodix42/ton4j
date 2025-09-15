@@ -60,14 +60,18 @@ public class AccountBlock implements Serializable {
         .magic(magic)
         .addr(cs.loadUint(256))
         .transactions(
-            cs.loadDictAug(
-                64,
-                k -> k.readUint(64),
-                v ->
-                    (v.getRefsCount() > 0)
-                        ? Transaction.deserialize(CellSlice.beginParse(v.loadRef()))
-                        : null,
-                CurrencyCollection::deserialize))
+            CellSlice.beginParse(cs)
+                .loadDictAug(
+                    64,
+                    k -> k.readUint(64),
+                    v -> {
+                      if (v.getRefsCount() > 0) {
+                        return Transaction.deserialize(CellSlice.beginParse(v.loadRef()));
+                      } else {
+                        return null;
+                      }
+                    },
+                    CurrencyCollection::deserialize))
         //        .stateUpdate(HashUpdate.deserialize(CellSlice.beginParse(cs.loadRef()))) //
         // HashUpdate: magic not equal to 0x72, found 0x70
         .stateUpdate(cs.loadRef())

@@ -311,7 +311,8 @@ public class Cell implements Serializable {
   }
 
   public String toString() {
-    return bits.toHex();
+    //    return bits.toHex();
+    return toHex(false);
   }
 
   public int getBitLength() {

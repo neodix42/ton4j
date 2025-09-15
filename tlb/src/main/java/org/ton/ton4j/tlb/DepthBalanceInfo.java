@@ -6,7 +6,7 @@ import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.utils.Utils;
+import org.ton.ton4j.cell.CellType;
 
 /**
  *
@@ -22,13 +22,13 @@ public class DepthBalanceInfo implements Serializable {
   CurrencyCollection currencies;
 
   public Cell toCell() {
-    return CellBuilder.beginCell()
-        .storeUint(depth, Utils.log2Ceil(depth))
-        .storeCell(currencies.toCell())
-        .endCell();
+    return CellBuilder.beginCell().storeUint(depth, 5).storeCell(currencies.toCell()).endCell();
   }
 
   public static DepthBalanceInfo deserialize(CellSlice cs) {
+    if (cs.type == CellType.PRUNED_BRANCH) {
+      return null;
+    }
     return DepthBalanceInfo.builder()
         .depth(cs.loadUint(5).intValue()) // tlb #<= 60
         .currencies(CurrencyCollection.deserialize(cs))

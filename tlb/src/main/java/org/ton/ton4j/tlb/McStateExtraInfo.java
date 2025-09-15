@@ -42,7 +42,7 @@ public class McStateExtraInfo implements Serializable {
         .storeCell(prevBlocks.toCell())
         .storeBit(afterKeyBlock)
         .storeCellMaybe(isNull(lastKeyBlock) ? null : lastKeyBlock.toCell())
-        .storeCell(flags.testBit(0) ? blockCreateStats.toCell() : null)
+        //        .storeCell(flags.testBit(0) ? blockCreateStats.toCell() : null)
         .endCell();
   }
 
@@ -61,8 +61,8 @@ public class McStateExtraInfo implements Serializable {
             .build();
 
     mcStateExtraInfo.setLastKeyBlock(cs.loadBit() ? ExtBlkRef.deserialize(cs) : null);
-    mcStateExtraInfo.setBlockCreateStats(
-        flags.testBit(0) ? BlockCreateStats.deserialize(cs) : null);
+    //    mcStateExtraInfo.setBlockCreateStats(
+    //        flags.testBit(0) ? BlockCreateStats.deserialize(cs) : null);
 
     return mcStateExtraInfo;
   }

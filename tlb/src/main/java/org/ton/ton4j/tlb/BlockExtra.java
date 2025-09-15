@@ -1,5 +1,7 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.isNull;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
@@ -9,8 +11,6 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
-
-import static java.util.Objects.isNull;
 
 /**
  *

@@ -58,10 +58,10 @@ public class Exporter {
   }
 
   // Volatile reference to current executor service for shutdown coordination
-  private volatile ExecutorService currentExecutorService = null;
-  private volatile ScheduledExecutorService currentRateDisplayExecutor = null;
+  private volatile ExecutorService currentExecutorService;
+  private volatile ScheduledExecutorService currentRateDisplayExecutor;
   // Shutdown signal to stop processing new packages
-  private volatile boolean shutdownRequested = false;
+  private volatile boolean shutdownRequested;
 
   // Statistics tracking for interrupted exports
   volatile AtomicInteger totalParsedBlocks;
@@ -314,7 +314,6 @@ public class Exporter {
               // Calculate estimated time remaining
               String timeRemainingStr = "N/A";
               if (progressPercentage > 0.1) { // Only calculate if we have meaningful progress
-                double remainingPercentage = 100.0 - progressPercentage;
                 double estimatedTotalTimeSeconds = elapsedSeconds / (progressPercentage / 100.0);
                 long estimatedRemainingSeconds =
                     (long) (estimatedTotalTimeSeconds - elapsedSeconds);
@@ -617,19 +616,11 @@ public class Exporter {
             }
           };
 
-      // Create error file path in the same directory as output file
       File outputFile = new File(outputToFile);
       String errorFilePath = new File(outputFile.getParent(), "errors.txt").getAbsolutePath();
 
-      // Use common export logic with progress info enabled for file export
-      int[] results =
-          exportDataWithStatus(
-              fileWriter, deserialized, parallelThreads, showProgress, exportStatus, errorFilePath);
-      int parsedBlocksCounter = results[0];
-      int nonBlocksCounter = results[1];
-      int errorCounter = results[2];
-
-      // Status cleanup is now handled in exportDataWithStatus based on actual completion
+      exportDataWithStatus(
+          fileWriter, deserialized, parallelThreads, showProgress, exportStatus, errorFilePath);
     }
   }
 
@@ -639,7 +630,6 @@ public class Exporter {
    * @param parallelThreads number of parallel threads used to export a database
    */
   public void exportToStdout(boolean deserialized, int parallelThreads) throws IOException {
-    // Check for existing status and resume if possible
     ExportStatus exportStatus = statusManager.loadStatus();
 
     if (exportStatus != null && !exportStatus.isCompleted()) {
@@ -682,23 +672,13 @@ public class Exporter {
       logger.setLevel(Level.OFF);
     }
 
-    // Create stdout-based output writer (System.out is already thread-safe)
     OutputWriter stdoutWriter = System.out::println;
 
-    // Use common export logic with progress info disabled for stdout export
-    // For stdout export, we don't create an error file, so pass null
-    int[] results =
-        exportDataWithStatus(
-            stdoutWriter, deserialized, parallelThreads, false, exportStatus, null);
-    int parsedBlocksCounter = results[0];
-    int nonBlocksCounter = results[1];
-    int errorCounter = results[2];
+    exportDataWithStatus(stdoutWriter, deserialized, parallelThreads, false, exportStatus, null);
 
     for (Logger logger : loggerContext.getLoggerList()) {
       logger.setLevel(Level.INFO);
     }
-
-    // Status cleanup is now handled in exportDataWithStatus based on actual completion
   }
 
   /**
@@ -716,7 +696,6 @@ public class Exporter {
 
     // Check for existing status and resume if possible
     ExportStatus exportStatus = statusManager.loadStatus();
-    boolean isResume = false;
 
     if (exportStatus != null && !exportStatus.isCompleted()) {
       // Validate that the resume parameters match
@@ -729,7 +708,6 @@ public class Exporter {
             exportStatus.getProgressPercentage(),
             exportStatus.getProcessedCount(),
             exportStatus.getTotalPackages());
-        isResume = true;
       } else {
         log.warn("Export parameters don't match existing status. Starting fresh export.");
         statusManager.deleteStatus();
@@ -1407,7 +1385,8 @@ public class Exporter {
     }
   }
 
-  public Account getAccountByAddress(Address address) throws IOException {
+  // way to slow, will be reworked one day
+  private Account getAccountByAddress(Address address) throws IOException {
     try (CellDbReaderOptimized cellDbReader = new CellDbReaderOptimized(tonDatabaseRootPath)) {
       return cellDbReader.retrieveAccountByAddress(address).getAccount();
     }
@@ -1430,7 +1409,8 @@ public class Exporter {
    * @return The Account state, or null if not found
    * @throws IOException If an I/O error occurs while reading the database
    */
-  public Account getAccountState(Address address) throws IOException {
+  // way to slow, will be reworked one day
+  private Account getAccountState(Address address) throws IOException {
     log.debug("Getting account state for address: {}", address.toString(false));
 
     try {
@@ -1458,7 +1438,6 @@ public class Exporter {
       // Step 3: Resolve the appropriate shard for the account
       // In TON, accounts are distributed across shards based on their address hash
       // For the account's workchain, we need to find the shard that contains this address
-      int targetWorkchain = address.wc;
 
       // Step 4: Find and read the appropriate shard state
       Block shardBlock = findShardBlockForAddress(address, latestMcBlock);
@@ -1503,6 +1482,7 @@ public class Exporter {
    * @return The shard block containing the address, or null if not found
    * @throws IOException If an I/O error occurs
    */
+  // way to slow, will be reworked one day
   private Block findShardBlockForAddress(Address address, Block masterchainBlock)
       throws IOException {
     try {
@@ -1642,7 +1622,8 @@ public class Exporter {
   //    Block block = getLast();
   //  }
 
-  public BlockHandle getLastBlockHandle() {
+  // review required
+  private BlockHandle getLastBlockHandle() {
 
     try {
       // Step 1: Get the latest masterchain block using the same approach as getLast()

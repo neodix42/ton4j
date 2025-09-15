@@ -1,5 +1,7 @@
 package org.ton.ton4j.tlb;
 
+import static java.util.Objects.isNull;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
@@ -7,6 +9,7 @@ import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.cell.CellType;
 
 /**
  * </pre>
@@ -28,6 +31,9 @@ public class ShardAccount implements Serializable {
   }
 
   public Cell toCell() {
+    if (isNull(account)) {
+      return CellBuilder.beginCell().endCell();
+    }
     return CellBuilder.beginCell()
         .storeRef(account.toCell())
         .storeUint(lastTransHash, 256)
@@ -36,8 +42,11 @@ public class ShardAccount implements Serializable {
   }
 
   public static ShardAccount deserialize(CellSlice cs) {
-    if (cs.isExotic()) {
-      return ShardAccount.builder().build();
+    if (cs.type == CellType.PRUNED_BRANCH) {
+      return null;
+    }
+    if (cs.getRefsCount() == 0) {
+      return null;
     }
     return ShardAccount.builder()
         .account(Account.deserialize(CellSlice.beginParse(cs.loadRef())))

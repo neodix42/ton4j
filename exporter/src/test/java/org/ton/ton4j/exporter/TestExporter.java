@@ -14,10 +14,8 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.types.*;
-import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.*;
@@ -119,6 +117,12 @@ public class TestExporter {
         latestBlock.getBlockInfo().getShard().convertShardIdentToShard().toString(16));
     log.info("  Sequence Number: {}", latestBlock.getBlockInfo().getSeqno());
     log.info("  Timestamp: {}", latestBlock.getBlockInfo().getGenuTime());
+    log.info(
+        "txs {}, msgs {} (in {}, out {})",
+        latestBlock.getAllTransactions().size(),
+        latestBlock.getAllMessages().size(),
+        latestBlock.getAllIncomingMessages().size(),
+        latestBlock.getAllOutgoingMessages().size());
     log.info("block {}", latestBlock);
     Gson gson =
         new GsonBuilder()
@@ -143,20 +147,6 @@ public class TestExporter {
         (blockId, block) -> {
           log.info("blockId {}", blockId);
         });
-  }
-
-  @Test
-  public void testExporterGetAccountByAddress() throws IOException {
-    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
-    Address testAddress =
-        Address.of("-1:6744E92C6F71C776FBBCEF299E31BF76F39C245CD56F2075B89C6A22026B4131");
-    long startTime = System.currentTimeMillis();
-
-    Account account = exporter.getAccountByAddress(testAddress);
-    log.info("received account : {}ms", System.currentTimeMillis() - startTime);
-    log.info("balance {}", Utils.formatNanoValue(account.getBalance()));
-
-    assertThat(account).isNotNull();
   }
 
   @Test

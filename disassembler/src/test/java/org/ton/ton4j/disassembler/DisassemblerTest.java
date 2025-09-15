@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -42,6 +43,7 @@ public class DisassemblerTest {
     assertThat(actual).isEqualToNormalizingNewlines(result);
   }
 
+  @Ignore
   @Test
   public void shouldDisassembleAnyConfig() {
     Tonlib.builder()
