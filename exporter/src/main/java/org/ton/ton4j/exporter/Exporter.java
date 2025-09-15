@@ -345,6 +345,11 @@ public class Exporter {
                   elapsedSeconds,
                   progressPercentage,
                   timeRemainingStr);
+              
+              // Print performance analysis every 60 seconds
+              if (elapsedSeconds % 60 == 0) {
+                globalProfiler.printReport();
+              }
             }
           },
           10,
@@ -571,15 +576,51 @@ public class Exporter {
       log.info("Starting new export to file: {}", outputToFile);
     }
 
-    // Create AsyncFileWriter for high-performance buffered writing
-    try (AsyncFileWriter asyncWriter = new AsyncFileWriter(outputToFile, isResume)) {
+    // FORCE 80% RAM USAGE - be much more aggressive
+    Runtime runtime = Runtime.getRuntime();
+    long maxMemory = runtime.maxMemory();
+    
+    // Force allocation of 80% of max heap memory for buffering
+    long targetBufferMemory = (long) (maxMemory * 0.8);
+    
+    // Calculate aggressive buffer settings
+    int writerThreads = Math.max(8, parallelThreads); // At least 8 writers, scale up with processing threads
+    
+    // Massive queue capacity to force RAM usage
+    int queueCapacity = (int) Math.min(500000, targetBufferMemory / 200); // ~200 bytes per line estimate (more realistic)
+    
+    // Large buffers per writer thread
+    int bufferSizeMB = Math.max(256, (int) (targetBufferMemory / (writerThreads * 2 * 1024 * 1024))); // Use half for buffers, half for queue
+    
+    // Force immediate memory allocation to reach 80% usage
+    System.gc(); // Clean up first
+    
+    // Pre-allocate large objects to force memory usage
+    try {
+        // Allocate dummy arrays to force JVM to use more memory
+        int dummyArraySize = (int) (targetBufferMemory / (8 * 10)); // 10 arrays of 1/10th target memory each
+        @SuppressWarnings("unused")
+        byte[][] memoryForcer = new byte[10][dummyArraySize];
+        
+        // Let GC clean up the dummy arrays but keep the heap expanded
+        memoryForcer = null;
+        
+        log.info("Forced memory allocation to reach target RAM usage");
+    } catch (OutOfMemoryError e) {
+        log.warn("Could not allocate full target memory, reducing buffer sizes");
+        queueCapacity = Math.min(queueCapacity, 200000);
+        bufferSizeMB = Math.min(bufferSizeMB, 512);
+    }
+    
+    log.info("AGGRESSIVE RAM CONFIG: MaxRAM={}MB, TargetRAM={}MB (80%), writers={}, queueCapacity={}, bufferMB={}", 
+        maxMemory / (1024 * 1024), targetBufferMemory / (1024 * 1024), writerThreads, queueCapacity, bufferSizeMB);
+
+    // Create HighPerformanceFileWriter for maximum disk I/O utilization
+    try (HighPerformanceFileWriter hpWriter = new HighPerformanceFileWriter(
+            outputToFile, isResume, writerThreads, bufferSizeMB, queueCapacity, 5000)) {
       
-      // Configure flush behavior - flush on package completion by default
-      asyncWriter.setFlushOnPackageComplete(true);
-      asyncWriter.setFlushInterval(1000); // Also flush every 1000 blocks as backup
-      
-      // Create async output writer
-      OutputWriter fileWriter = asyncWriter::writeLine;
+      // Create high-throughput output writer
+      OutputWriter fileWriter = hpWriter::writeLine;
 
       File outputFile = new File(outputToFile);
       String errorFilePath = new File(outputFile.getParent(), "errors.txt").getAbsolutePath();
@@ -908,7 +949,10 @@ public class Exporter {
     return localParsedBlocks;
   }
 
-  /** Process individual block data without storing in memory collections */
+  // Global performance profiler for measurements (shared across all threads)
+  private static final PerformanceProfiler globalProfiler = new PerformanceProfiler();
+
+  /** Process individual block data with detailed performance measurements */
   private void processBlockData(
       String blockKey,
       byte[] blockData,
@@ -920,53 +964,58 @@ public class Exporter {
       AtomicInteger nonBlocksCounter,
       AtomicInteger errorCounter) {
 
-    try {
-      // Fast path: if not deserialized, skip expensive Cell parsing and just check magic bytes
-      if (!deserialized) {
-        // Check magic number directly from raw bytes (much faster)
-        if (blockData.length >= 4) {
-          // Read first 4 bytes as little-endian uint32 to check magic
-          int magic = ((blockData[3] & 0xFF) << 24) | 
-                     ((blockData[2] & 0xFF) << 16) | 
-                     ((blockData[1] & 0xFF) << 8) | 
-                     (blockData[0] & 0xFF);
-          
-          if (magic == 0x11ef55aa) { // Block magic number
-            // Write raw BOC in hex format without any parsing
-            outputWriter.writeLine(Utils.bytesToHex(blockData));
-            parsedBlocksCounter.getAndIncrement();
-            totalParsedBlocks.incrementAndGet();
-            return;
-          }
-        }
-        
-        // Not a block
-        nonBlocksCounter.getAndIncrement();
-        totalNonBlocks.incrementAndGet();
-        return;
-      }
+    globalProfiler.updateMemoryUsage();
 
-      // Slow path: full deserialization only when needed
+    try {
+      // ALWAYS parse BOC to TLB as requested - restore this functionality
+      long bocStartTime = System.nanoTime();
       Cell c = CellBuilder.beginCell().fromBoc(blockData).endCell();
+      long bocEndTime = System.nanoTime();
+      globalProfiler.recordBocParsing(bocEndTime - bocStartTime);
+
+      // Check magic number after BOC parsing
       long magic = c.getBits().preReadUint(32).longValue();
       
       if (magic == 0x11ef55aaL) {
-        // Only deserialize when needed for JSON output
+        // Always deserialize Block from TLB as requested
+        long tlbStartTime = System.nanoTime();
         Block block = Block.deserialize(CellSlice.beginParse(c));
+        long tlbEndTime = System.nanoTime();
+        globalProfiler.recordTlbDeserialization(tlbEndTime - tlbStartTime);
         
-        // Pre-compute values to avoid repeated calls during JSON serialization
-        int workchain = block.getBlockInfo().getShard().getWorkchain();
-        String shardHex = block.getBlockInfo().getShard().convertShardIdentToShard().toString(16);
-        long seqno = block.getBlockInfo().getSeqno();
+        String lineToWrite;
         
-        // Use StringBuilder for more efficient string construction
-        StringBuilder lineBuilder = new StringBuilder(1024); // Pre-allocate reasonable size
-        lineBuilder.append(workchain).append(',')
-                   .append(shardHex).append(',')
-                   .append(seqno).append(',')
-                   .append(localGson.toJson(block));
+        if (deserialized) {
+          // Pre-compute values to avoid repeated calls during JSON serialization
+          int workchain = block.getBlockInfo().getShard().getWorkchain();
+          String shardHex = block.getBlockInfo().getShard().convertShardIdentToShard().toString(16);
+          long seqno = block.getBlockInfo().getSeqno();
+          
+          // Measure JSON serialization time
+          long jsonStartTime = System.nanoTime();
+          String jsonBlock = localGson.toJson(block);
+          long jsonEndTime = System.nanoTime();
+          globalProfiler.recordJsonSerialization(jsonEndTime - jsonStartTime);
+          
+          // Use StringBuilder for more efficient string construction
+          StringBuilder lineBuilder = new StringBuilder(1024); // Pre-allocate reasonable size
+          lineBuilder.append(workchain).append(',')
+                     .append(shardHex).append(',')
+                     .append(seqno).append(',')
+                     .append(jsonBlock);
+          
+          lineToWrite = lineBuilder.toString();
+        } else {
+          // Write raw BOC in hex format
+          lineToWrite = Utils.bytesToHex(blockData);
+        }
         
-        outputWriter.writeLine(lineBuilder.toString());
+        // Measure disk write time
+        long writeStartTime = System.nanoTime();
+        outputWriter.writeLine(lineToWrite);
+        long writeEndTime = System.nanoTime();
+        globalProfiler.recordDiskWrite(writeEndTime - writeStartTime);
+        
         parsedBlocksCounter.getAndIncrement();
         totalParsedBlocks.incrementAndGet();
       } else {

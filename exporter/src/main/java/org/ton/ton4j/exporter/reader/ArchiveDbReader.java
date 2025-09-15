@@ -31,7 +31,7 @@ public class ArchiveDbReader implements Closeable {
   private final Map<String, ArchiveInfo> archiveInfos = new HashMap<>();
   private GlobalIndexDbReader globalIndexDbReader;
   private final Map<String, PackageReader> filesPackageReaders = new HashMap<>();
-  
+
   // Track resource usage for cleanup
   private int processedPackageCount = 0;
   private static final int CLEANUP_INTERVAL = 50; // Clean up every 50 packages
@@ -726,36 +726,39 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /**
-   * Performs periodic cleanup of accumulated resources to prevent memory leaks
-   * This method is thread-safe and only performs cleanup when safe to do so
+   * Performs periodic cleanup of accumulated resources to prevent memory leaks This method is
+   * thread-safe and only performs cleanup when safe to do so
    */
   public synchronized void performPeriodicCleanup() {
     processedPackageCount++;
-    
+
     // Only perform cleanup every 100 packages to reduce frequency and avoid conflicts
     if (processedPackageCount % (CLEANUP_INTERVAL * 2) == 0) {
-      log.debug("Performing periodic cleanup after {} packages", processedPackageCount);
-      
+      //      log.debug("Performing periodic cleanup after {} packages", processedPackageCount);
+
       // Only suggest garbage collection, don't close active resources in multi-threaded environment
       System.gc();
-      
-      log.debug("Periodic cleanup completed. Active readers: packages={}, indexes={}, filesPackages={}", 
-          packageReaders.size(), indexDbs.size(), filesPackageReaders.size());
+
+      log.debug(
+          "Periodic cleanup completed. Active readers: packages={}, indexes={}, filesPackages={}",
+          packageReaders.size(),
+          indexDbs.size(),
+          filesPackageReaders.size());
     }
   }
-  
+
   /**
-   * Cleanup package readers - disabled in multi-threaded environment to prevent stream closed errors
-   * Resources will be cleaned up when ArchiveDbReader is closed
+   * Cleanup package readers - disabled in multi-threaded environment to prevent stream closed
+   * errors Resources will be cleaned up when ArchiveDbReader is closed
    */
   private void cleanupPackageReaders() {
     // Disabled to prevent "Stream Closed" errors in multi-threaded processing
     // Resources will be properly cleaned up in the close() method
   }
-  
+
   /**
-   * Cleanup index databases - disabled in multi-threaded environment to prevent stream closed errors
-   * Resources will be cleaned up when ArchiveDbReader is closed
+   * Cleanup index databases - disabled in multi-threaded environment to prevent stream closed
+   * errors Resources will be cleaned up when ArchiveDbReader is closed
    */
   private void cleanupIndexDatabases() {
     // Disabled to prevent "Stream Closed" errors in multi-threaded processing
@@ -808,9 +811,11 @@ public class ArchiveDbReader implements Closeable {
   }
 
   /**
-   * Stream blocks from a Files database package using callback processing to avoid memory accumulation
+   * Stream blocks from a Files database package using callback processing to avoid memory
+   * accumulation
    */
-  public void streamFromFilesPackage(String archiveKey, ArchiveInfo archiveInfo, BlockProcessor processor) throws IOException {
+  public void streamFromFilesPackage(
+      String archiveKey, ArchiveInfo archiveInfo, BlockProcessor processor) throws IOException {
     // Check if this is an orphaned package (no index file)
     if (archiveKey.startsWith("orphaned/") || archiveInfo.getIndexPath() == null) {
       streamFromOrphanedPackage(archiveKey, archiveInfo, processor);
@@ -826,133 +831,153 @@ public class ArchiveDbReader implements Closeable {
     String packageBaseName = archiveKey.substring(archiveKey.lastIndexOf('/') + 1);
     String packageFileName = packageBaseName + ".pack";
 
-    globalIndexDbReader.getGlobalIndexDb().forEach((key, value) -> {
-      try {
-        String hash = new String(key);
-        if (!isValidHexString(hash)) {
-          return; // Skip non-hex keys
-        }
+    globalIndexDbReader
+        .getGlobalIndexDb()
+        .forEach(
+            (key, value) -> {
+              try {
+                String hash = new String(key);
+                if (!isValidHexString(hash)) {
+                  return; // Skip non-hex keys
+                }
 
-        // Parse the value to get package location info
-        if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
-          ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-          long packageId = buffer.getLong();
-          long offset = buffer.getLong();
+                // Parse the value to get package location info
+                if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
+                  ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+                  long packageId = buffer.getLong();
+                  long offset = buffer.getLong();
 
-          // Check if this entry belongs to the current package
-          String entryPackageFileName = String.format("%010d.pack", packageId);
-          if (!entryPackageFileName.equals(packageFileName)) {
-            return; // This entry belongs to a different package
-          }
+                  // Check if this entry belongs to the current package
+                  String entryPackageFileName = String.format("%010d.pack", packageId);
+                  if (!entryPackageFileName.equals(packageFileName)) {
+                    return; // This entry belongs to a different package
+                  }
 
-          try {
-            PackageReader packageReader = getFilesPackageReader(packageFileName, archiveInfo.getPackagePath());
-            PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
+                  try {
+                    PackageReader packageReader =
+                        getFilesPackageReader(packageFileName, archiveInfo.getPackagePath());
+                    PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
 
-            if ((entry != null) && (entry.getFilename().startsWith("block_"))) {
-              processor.process(hash, entry.getData());
-            }
-          } catch (IOException e) {
-            // Silently skip errors for individual entries
-          }
-        }
-      } catch (Exception e) {
-        // Silently skip errors for individual entries
-      }
-    });
-    
+                    if ((entry != null) && (entry.getFilename().startsWith("block_"))) {
+                      processor.process(hash, entry.getData());
+                    }
+                  } catch (IOException e) {
+                    // Silently skip errors for individual entries
+                  }
+                }
+              } catch (Exception e) {
+                // Silently skip errors for individual entries
+              }
+            });
+
     // Perform periodic cleanup after processing package
     performPeriodicCleanup();
   }
 
   /**
-   * Stream blocks from a traditional archive package using callback processing to avoid memory accumulation
+   * Stream blocks from a traditional archive package using callback processing to avoid memory
+   * accumulation
    */
-  public void streamFromTraditionalArchive(String archiveKey, ArchiveInfo archiveInfo, BlockProcessor processor) throws IOException {
+  public void streamFromTraditionalArchive(
+      String archiveKey, ArchiveInfo archiveInfo, BlockProcessor processor) throws IOException {
     // Get the index DB
     RocksDbWrapper indexDb = getIndexDb(archiveKey, archiveInfo.getIndexPath());
 
     // Process all key-value pairs from this index using streaming
-    indexDb.forEach((key, value) -> {
-      try {
-        // Skip keys that are not valid hex strings (likely system or metadata keys)
-        String hash = new String(key);
-        if (!isValidHexString(hash) && !hash.equals("status")) {
-          return;
-        }
-
-        // Validate the value before parsing
-        if (value == null || value.length == 0) {
-          log.warn("Invalid value for key {} in archive {}: value is null or empty", hash, archiveKey);
-          return;
-        }
-
-        long offset;
-        try {
-          // Try to parse the offset as a string first (as in C++ implementation)
-          String offsetStr = new String(value);
+    indexDb.forEach(
+        (key, value) -> {
           try {
-            offset = Long.parseLong(offsetStr.trim());
-          } catch (NumberFormatException e) {
-            // If string parsing fails, try binary format as fallback
-            if (value.length >= 8) {
-              offset = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN).getLong();
-            } else {
+            // Skip keys that are not valid hex strings (likely system or metadata keys)
+            String hash = new String(key);
+            if (!isValidHexString(hash) && !hash.equals("status")) {
               return;
             }
-          }
-        } catch (Exception e) {
-          log.warn("Error parsing offset for key {} in archive {}: {}", hash, archiveKey, e.getMessage());
-          return;
-        }
 
-        // Validate the offset
-        if (offset < 0) {
-          log.warn("Negative seek offset {} for key {} in archive {}", offset, hash, archiveKey);
-          return;
-        }
-
-        try {
-          // Get the package reader
-          PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.getPackagePath());
-
-          // Check if packageReader is null before using it
-          if (packageReader != null) {
-            // Get the entry at the offset
-            PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
-
-            if ((packageEntry != null) && (packageEntry.getFilename().startsWith("block_"))) {
-              processor.process(hash, packageEntry.getData());
+            // Validate the value before parsing
+            if (value == null || value.length == 0) {
+              log.warn(
+                  "Invalid value for key {} in archive {}: value is null or empty",
+                  hash,
+                  archiveKey);
+              return;
             }
-          } else {
-            log.warn("PackageReader is null for archive {} with package path {}", archiveKey, archiveInfo.getPackagePath());
+
+            long offset;
+            try {
+              // Try to parse the offset as a string first (as in C++ implementation)
+              String offsetStr = new String(value);
+              try {
+                offset = Long.parseLong(offsetStr.trim());
+              } catch (NumberFormatException e) {
+                // If string parsing fails, try binary format as fallback
+                if (value.length >= 8) {
+                  offset = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN).getLong();
+                } else {
+                  return;
+                }
+              }
+            } catch (Exception e) {
+              log.warn(
+                  "Error parsing offset for key {} in archive {}: {}",
+                  hash,
+                  archiveKey,
+                  e.getMessage());
+              return;
+            }
+
+            // Validate the offset
+            if (offset < 0) {
+              log.warn(
+                  "Negative seek offset {} for key {} in archive {}", offset, hash, archiveKey);
+              return;
+            }
+
+            try {
+              // Get the package reader
+              PackageReader packageReader =
+                  getPackageReader(archiveKey, archiveInfo.getPackagePath());
+
+              // Check if packageReader is null before using it
+              if (packageReader != null) {
+                // Get the entry at the offset
+                PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
+
+                if ((packageEntry != null) && (packageEntry.getFilename().startsWith("block_"))) {
+                  processor.process(hash, packageEntry.getData());
+                }
+              } else {
+                log.warn(
+                    "PackageReader is null for archive {} with package path {}",
+                    archiveKey,
+                    archiveInfo.getPackagePath());
+              }
+            } catch (IOException e) {
+              // Silently skip individual entry errors
+            }
+          } catch (Exception e) {
+            log.warn(
+                "Unexpected error processing key in archive {}: {}", archiveKey, e.getMessage());
           }
-        } catch (IOException e) {
-          // Silently skip individual entry errors
-        }
-      } catch (Exception e) {
-        log.warn("Unexpected error processing key in archive {}: {}", archiveKey, e.getMessage());
-      }
-    });
-    
+        });
+
     // Perform periodic cleanup after processing package
     performPeriodicCleanup();
   }
 
-  /**
-   * Stream blocks from an orphaned package using callback processing
-   */
-  private void streamFromOrphanedPackage(String archiveKey, ArchiveInfo archiveInfo, BlockProcessor processor) throws IOException {
+  /** Stream blocks from an orphaned package using callback processing */
+  private void streamFromOrphanedPackage(
+      String archiveKey, ArchiveInfo archiveInfo, BlockProcessor processor) throws IOException {
     PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.getPackagePath());
 
     // Check if packageReader is null before using it
     if (packageReader != null) {
-      packageReader.forEach(packageEntry -> {
-        String hash = extractHashFromFilename(packageEntry.getFilename());
-        if (hash != null) {
-          processor.process(hash, packageEntry.getData());
-        }
-      });
+      packageReader.forEach(
+          packageEntry -> {
+            String hash = extractHashFromFilename(packageEntry.getFilename());
+            if (hash != null) {
+              processor.process(hash, packageEntry.getData());
+            }
+          });
     }
   }
 

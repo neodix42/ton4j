@@ -320,6 +320,10 @@
                                 <include>func-*</include>
                                 <include>lite-client-*</include>
                                 <include>tonlibjson-*</include>
+                                <include>status.json</include>
+                                <include>status.json</include>
+                                <include>local.txt</include>
+                                <include>local_part*</include>
                             </includes>
                         </fileset>
                     </filesets>
