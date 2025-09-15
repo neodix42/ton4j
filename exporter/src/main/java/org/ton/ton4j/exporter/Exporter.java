@@ -934,8 +934,8 @@ public class Exporter {
       AtomicInteger errorCounter)
       throws IOException {
 
-    int localParsedBlocks = 0;
-    int localNonBlocks = 0;
+    AtomicInteger localParsedBlocks = new AtomicInteger(0);
+    AtomicInteger localNonBlocks = new AtomicInteger(0);
 
     // Use streaming approach with callback to process blocks one by one
     dbReader
@@ -944,6 +944,9 @@ public class Exporter {
             archiveKey,
             archiveInfo,
             (blockKey, blockData) -> {
+              int beforeParsed = parsedBlocksCounter.get();
+              int beforeNonBlocks = nonBlocksCounter.get();
+              
               processBlockData(
                   blockKey,
                   blockData,
@@ -954,9 +957,16 @@ public class Exporter {
                   parsedBlocksCounter,
                   nonBlocksCounter,
                   errorCounter);
+              
+              // Track local increments
+              int afterParsed = parsedBlocksCounter.get();
+              int afterNonBlocks = nonBlocksCounter.get();
+              
+              localParsedBlocks.addAndGet(afterParsed - beforeParsed);
+              localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
             });
 
-    return localParsedBlocks;
+    return localParsedBlocks.get();
   }
 
   /**
@@ -974,8 +984,8 @@ public class Exporter {
       AtomicInteger errorCounter)
       throws IOException {
 
-    int localParsedBlocks = 0;
-    int localNonBlocks = 0;
+    AtomicInteger localParsedBlocks = new AtomicInteger(0);
+    AtomicInteger localNonBlocks = new AtomicInteger(0);
 
     // Use streaming approach with callback to process blocks one by one
     dbReader
@@ -984,6 +994,9 @@ public class Exporter {
             archiveKey,
             archiveInfo,
             (blockKey, blockData) -> {
+              int beforeParsed = parsedBlocksCounter.get();
+              int beforeNonBlocks = nonBlocksCounter.get();
+              
               processBlockData(
                   blockKey,
                   blockData,
@@ -994,9 +1007,16 @@ public class Exporter {
                   parsedBlocksCounter,
                   nonBlocksCounter,
                   errorCounter);
+              
+              // Track local increments
+              int afterParsed = parsedBlocksCounter.get();
+              int afterNonBlocks = nonBlocksCounter.get();
+              
+              localParsedBlocks.addAndGet(afterParsed - beforeParsed);
+              localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
             });
 
-    return localParsedBlocks;
+    return localParsedBlocks.get();
   }
 
   // Global performance profiler for measurements (shared across all threads)
@@ -1027,15 +1047,15 @@ public class Exporter {
       long magic = c.getBits().preReadUint(32).longValue();
 
       if (magic == 0x11ef55aaL) {
-        // Always deserialize Block from TLB as requested
-        long tlbStartTime = System.nanoTime();
-        Block block = Block.deserialize(CellSlice.beginParse(c));
-        long tlbEndTime = System.nanoTime();
-        globalProfiler.recordTlbDeserialization(tlbEndTime - tlbStartTime);
-
         String lineToWrite;
 
         if (deserialized) {
+          // Only deserialize Block from TLB when deserialized output is requested
+          long tlbStartTime = System.nanoTime();
+          Block block = Block.deserialize(CellSlice.beginParse(c));
+          long tlbEndTime = System.nanoTime();
+          globalProfiler.recordTlbDeserialization(tlbEndTime - tlbStartTime);
+
           // Pre-compute values to avoid repeated calls during JSON serialization
           int workchain = block.getBlockInfo().getShard().getWorkchain();
           String shardHex = block.getBlockInfo().getShard().convertShardIdentToShard().toString(16);
@@ -1060,7 +1080,7 @@ public class Exporter {
 
           lineToWrite = lineBuilder.toString();
         } else {
-          // Write raw BOC in hex format
+          // Write raw BOC in hex format - no deserialization needed
           lineToWrite = Utils.bytesToHex(blockData);
         }
 
