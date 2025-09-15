@@ -739,11 +739,12 @@ public class ArchiveDbReader implements Closeable {
       // Only suggest garbage collection, don't close active resources in multi-threaded environment
       System.gc();
 
-      log.debug(
-          "Periodic cleanup completed. Active readers: packages={}, indexes={}, filesPackages={}",
-          packageReaders.size(),
-          indexDbs.size(),
-          filesPackageReaders.size());
+      //      log.debug(
+      //          "Periodic cleanup completed. Active readers: packages={}, indexes={},
+      // filesPackages={}",
+      //          packageReaders.size(),
+      //          indexDbs.size(),
+      //          filesPackageReaders.size());
     }
   }
 

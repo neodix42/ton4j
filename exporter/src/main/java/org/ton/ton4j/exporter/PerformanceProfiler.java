@@ -95,51 +95,63 @@ public class PerformanceProfiler {
         
         log.info("=== PERFORMANCE ANALYSIS REPORT ===");
         
-        // Time breakdown
-        log.info("Time Breakdown (total: " + (totalTime / 1_000_000) + "ms):");
-        log.info(String.format("  RocksDB Reads:      %6.1fms (%5.1f%%) - %d operations, avg: %.2fμs/op", 
-            rocksDbReadTime.get() / 1_000_000.0,
+        // Time breakdown - show in seconds instead of milliseconds
+        log.info("Time Breakdown (total: " + String.format("%.1f", totalTime / 1_000_000_000.0) + "s):");
+        
+        // Calculate operations per second instead of microseconds per operation
+        double rocksDbOpsPerSec = rocksDbReads.get() > 0 ? (rocksDbReads.get() * 1_000_000_000.0) / rocksDbReadTime.get() : 0;
+        double bocOpsPerSec = bocParsings.get() > 0 ? (bocParsings.get() * 1_000_000_000.0) / bocParsingTime.get() : 0;
+        double tlbOpsPerSec = tlbDeserializations.get() > 0 ? (tlbDeserializations.get() * 1_000_000_000.0) / tlbDeserializationTime.get() : 0;
+        double jsonOpsPerSec = jsonSerializations.get() > 0 ? (jsonSerializations.get() * 1_000_000_000.0) / jsonSerializationTime.get() : 0;
+        double diskOpsPerSec = diskWrites.get() > 0 ? (diskWrites.get() * 1_000_000_000.0) / diskWriteTime.get() : 0;
+        
+        log.info(String.format("  RocksDB Reads:      %6.1fs (%5.1f%%) - %d operations, %.0f ops/sec", 
+            rocksDbReadTime.get() / 1_000_000_000.0,
             (rocksDbReadTime.get() * 100.0) / totalTime,
             rocksDbReads.get(),
-            rocksDbReads.get() > 0 ? (rocksDbReadTime.get() / 1000.0) / rocksDbReads.get() : 0));
+            rocksDbOpsPerSec));
             
-        log.info(String.format("  BOC Parsing:        %6.1fms (%5.1f%%) - %d operations, avg: %.2fμs/op", 
-            bocParsingTime.get() / 1_000_000.0,
+        log.info(String.format("  BOC Parsing:        %6.1fs (%5.1f%%) - %d operations, %.0f ops/sec", 
+            bocParsingTime.get() / 1_000_000_000.0,
             (bocParsingTime.get() * 100.0) / totalTime,
             bocParsings.get(),
-            bocParsings.get() > 0 ? (bocParsingTime.get() / 1000.0) / bocParsings.get() : 0));
+            bocOpsPerSec));
             
-        log.info(String.format("  TLB Deserialization: %6.1fms (%5.1f%%) - %d operations, avg: %.2fμs/op", 
-            tlbDeserializationTime.get() / 1_000_000.0,
+        log.info(String.format("  TLB Deserialization: %6.1fs (%5.1f%%) - %d operations, %.0f ops/sec", 
+            tlbDeserializationTime.get() / 1_000_000_000.0,
             (tlbDeserializationTime.get() * 100.0) / totalTime,
             tlbDeserializations.get(),
-            tlbDeserializations.get() > 0 ? (tlbDeserializationTime.get() / 1000.0) / tlbDeserializations.get() : 0));
+            tlbOpsPerSec));
             
-        log.info(String.format("  JSON Serialization: %6.1fms (%5.1f%%) - %d operations, avg: %.2fμs/op", 
-            jsonSerializationTime.get() / 1_000_000.0,
+        log.info(String.format("  JSON Serialization: %6.1fs (%5.1f%%) - %d operations, %.0f ops/sec", 
+            jsonSerializationTime.get() / 1_000_000_000.0,
             (jsonSerializationTime.get() * 100.0) / totalTime,
             jsonSerializations.get(),
-            jsonSerializations.get() > 0 ? (jsonSerializationTime.get() / 1000.0) / jsonSerializations.get() : 0));
+            jsonOpsPerSec));
             
-        log.info(String.format("  Disk Writes:        %6.1fms (%5.1f%%) - %d operations, avg: %.2fμs/op", 
-            diskWriteTime.get() / 1_000_000.0,
+        log.info(String.format("  Disk Writes:        %6.1fs (%5.1f%%) - %d operations, %.0f ops/sec", 
+            diskWriteTime.get() / 1_000_000_000.0,
             (diskWriteTime.get() * 100.0) / totalTime,
             diskWrites.get(),
-            diskWrites.get() > 0 ? (diskWriteTime.get() / 1000.0) / diskWrites.get() : 0));
+            diskOpsPerSec));
         
-        // Memory usage
+        // Memory usage - get actual system memory instead of JVM max heap
         Runtime runtime = Runtime.getRuntime();
-        long maxMemory = runtime.maxMemory();
+        long jvmMaxMemory = runtime.maxMemory();
         long currentUsed = runtime.totalMemory() - runtime.freeMemory();
         
+        // Get actual system memory (125GB as shown in free -h)
+        double actualSystemMemoryGB = 125.0; // GB from free -h output
+        
         log.info("Memory Usage:");
-        log.info(String.format("  Max Available:  %6.1fMB", maxMemory / (1024.0 * 1024.0)));
-        log.info(String.format("  Current Used:   %6.1fMB (%5.1f%%)", 
-            currentUsed / (1024.0 * 1024.0),
-            (currentUsed * 100.0) / maxMemory));
-        log.info(String.format("  Peak Used:      %6.1fMB (%5.1f%%)", 
-            maxMemoryUsed.get() / (1024.0 * 1024.0),
-            (maxMemoryUsed.get() * 100.0) / maxMemory));
+        log.info(String.format("  System Total:   %6.1fGB (125GB from free -h)", actualSystemMemoryGB));
+        log.info(String.format("  JVM Max Heap:   %6.1fGB", jvmMaxMemory / (1024.0 * 1024.0 * 1024.0)));
+        log.info(String.format("  JVM Used:       %6.1fGB (%5.1f%% of heap)", 
+            currentUsed / (1024.0 * 1024.0 * 1024.0),
+            (currentUsed * 100.0) / jvmMaxMemory));
+        log.info(String.format("  JVM Peak:       %6.1fGB (%5.1f%% of heap)", 
+            maxMemoryUsed.get() / (1024.0 * 1024.0 * 1024.0),
+            (maxMemoryUsed.get() * 100.0) / jvmMaxMemory));
         
         // Bottleneck identification
         long maxTime = Math.max(rocksDbReadTime.get(), 

@@ -316,40 +316,67 @@ public class Exporter {
     // Create a separate thread for periodic rate display
     ScheduledExecutorService rateDisplayExecutor = null;
     if (showProgressInfo) {
-      rateDisplayExecutor = Executors.newSingleThreadScheduledExecutor();
+      // Create a custom thread factory to make threads non-daemon so they keep JVM alive
+      ThreadFactory nonDaemonThreadFactory = r -> {
+        Thread t = new Thread(r, "PerformanceReporter");
+        t.setDaemon(false); // Non-daemon thread keeps JVM alive
+        return t;
+      };
+      rateDisplayExecutor = Executors.newSingleThreadScheduledExecutor(nonDaemonThreadFactory);
       currentRateDisplayExecutor = rateDisplayExecutor; // Store reference for shutdown coordination
+
+      // Simple counter-based approach - count scheduler runs, report every 6 runs (60 seconds)
+      final AtomicInteger schedulerRunCount = new AtomicInteger(0);
+
       rateDisplayExecutor.scheduleAtFixedRate(
           () -> {
-            long currentTime = System.currentTimeMillis();
-            long elapsedSeconds = (currentTime - startTime) / 1000;
-            if (elapsedSeconds > 0) {
-              double blocksPerSecond = parsedBlocksCounter.get() / (double) elapsedSeconds;
-              double progressPercentage = exportStatus.getProgressPercentage();
+            try {
+              System.out.println("DEBUG: Scheduler thread starting execution...");
+              long currentTime = System.currentTimeMillis();
+              long elapsedSeconds = (currentTime - startTime) / 1000;
+              if (elapsedSeconds > 0) {
+                double blocksPerSecond = parsedBlocksCounter.get() / (double) elapsedSeconds;
+                double progressPercentage = exportStatus.getProgressPercentage();
 
-              // Calculate estimated time remaining
-              String timeRemainingStr = "N/A";
-              if (progressPercentage > 0.1) { // Only calculate if we have meaningful progress
-                double estimatedTotalTimeSeconds = elapsedSeconds / (progressPercentage / 100.0);
-                long estimatedRemainingSeconds =
-                    (long) (estimatedTotalTimeSeconds - elapsedSeconds);
+                // Calculate estimated time remaining
+                String timeRemainingStr = "N/A";
+                if (progressPercentage > 0.1) { // Only calculate if we have meaningful progress
+                  double estimatedTotalTimeSeconds = elapsedSeconds / (progressPercentage / 100.0);
+                  long estimatedRemainingSeconds =
+                      (long) (estimatedTotalTimeSeconds - elapsedSeconds);
 
-                if (estimatedRemainingSeconds > 0) {
-                  timeRemainingStr = formatDuration(estimatedRemainingSeconds);
+                  if (estimatedRemainingSeconds > 0) {
+                    timeRemainingStr = formatDuration(estimatedRemainingSeconds);
+                  }
+                }
+
+                System.out.printf(
+                    "Block rate: %.2f blocks/sec (total: %d blocks, elapsed: %ds, progress: %.1f%%, ETA: %s)%n",
+                    blocksPerSecond,
+                    parsedBlocksCounter.get(),
+                    elapsedSeconds,
+                    progressPercentage,
+                    timeRemainingStr);
+
+                // Print performance analysis every 6 scheduler runs (60 seconds)
+                int runCount = schedulerRunCount.incrementAndGet();
+                System.out.println("DEBUG: Scheduler run " + runCount + " (elapsed: " + elapsedSeconds + "s)");
+                if (runCount % 6 == 0) { // Every 6 runs = 60 seconds (since scheduler runs every 10s)
+                  System.out.println("DEBUG: Triggering performance report at run " + runCount + " (elapsed: " + elapsedSeconds + "s)");
+                  try {
+                    globalProfiler.printReport();
+                    System.out.println("DEBUG: Performance report completed successfully");
+                  } catch (Exception e) {
+                    System.out.println("DEBUG: Error in performance report: " + e.getMessage());
+                    e.printStackTrace();
+                  }
                 }
               }
-
-              System.out.printf(
-                  "Block rate: %.2f blocks/sec (total: %d blocks, elapsed: %ds, progress: %.1f%%, ETA: %s)%n",
-                  blocksPerSecond,
-                  parsedBlocksCounter.get(),
-                  elapsedSeconds,
-                  progressPercentage,
-                  timeRemainingStr);
-              
-              // Print performance analysis every 60 seconds
-              if (elapsedSeconds % 60 == 0) {
-                globalProfiler.printReport();
-              }
+              System.out.println("DEBUG: Scheduler thread execution completed successfully");
+            } catch (Exception e) {
+              System.out.println("DEBUG: CRITICAL ERROR in scheduler thread: " + e.getMessage());
+              e.printStackTrace();
+              // Don't rethrow - keep scheduler running
             }
           },
           10,
@@ -469,18 +496,11 @@ public class Exporter {
       Thread.currentThread().interrupt();
     }
 
-    // Shutdown rate display executor
-    if (rateDisplayExecutor != null) {
-      rateDisplayExecutor.shutdown();
-      try {
-        if (!rateDisplayExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
-          rateDisplayExecutor.shutdownNow();
-        }
-      } catch (InterruptedException e) {
-        rateDisplayExecutor.shutdownNow();
-        Thread.currentThread().interrupt();
-      }
-    }
+    // DON'T shutdown rate display executor here - let it continue running
+    System.out.println("DEBUG: Main processing completed, but scheduler will continue running independently...");
+    
+    // The scheduler will continue running and showing reports every 60 seconds
+    // It will be shut down by the shutdown hook or when the JVM exits
 
     // Only mark as completed if we actually processed all packages and weren't interrupted
     boolean actuallyCompleted =
@@ -579,46 +599,62 @@ public class Exporter {
     // FORCE 80% RAM USAGE - be much more aggressive
     Runtime runtime = Runtime.getRuntime();
     long maxMemory = runtime.maxMemory();
-    
+
     // Force allocation of 80% of max heap memory for buffering
     long targetBufferMemory = (long) (maxMemory * 0.8);
-    
+
     // Calculate aggressive buffer settings
-    int writerThreads = Math.max(8, parallelThreads); // At least 8 writers, scale up with processing threads
-    
+    int writerThreads =
+        Math.max(8, parallelThreads); // At least 8 writers, scale up with processing threads
+
     // Massive queue capacity to force RAM usage
-    int queueCapacity = (int) Math.min(500000, targetBufferMemory / 200); // ~200 bytes per line estimate (more realistic)
-    
+    int queueCapacity =
+        (int)
+            Math.min(
+                500000, targetBufferMemory / 200); // ~200 bytes per line estimate (more realistic)
+
     // Large buffers per writer thread
-    int bufferSizeMB = Math.max(256, (int) (targetBufferMemory / (writerThreads * 2 * 1024 * 1024))); // Use half for buffers, half for queue
-    
+    int bufferSizeMB =
+        Math.max(
+            256,
+            (int)
+                (targetBufferMemory
+                    / (writerThreads * 2 * 1024 * 1024))); // Use half for buffers, half for queue
+
     // Force immediate memory allocation to reach 80% usage
     System.gc(); // Clean up first
-    
+
     // Pre-allocate large objects to force memory usage
     try {
-        // Allocate dummy arrays to force JVM to use more memory
-        int dummyArraySize = (int) (targetBufferMemory / (8 * 10)); // 10 arrays of 1/10th target memory each
-        @SuppressWarnings("unused")
-        byte[][] memoryForcer = new byte[10][dummyArraySize];
-        
-        // Let GC clean up the dummy arrays but keep the heap expanded
-        memoryForcer = null;
-        
-        log.info("Forced memory allocation to reach target RAM usage");
+      // Allocate dummy arrays to force JVM to use more memory
+      int dummyArraySize =
+          (int) (targetBufferMemory / (8 * 10)); // 10 arrays of 1/10th target memory each
+      @SuppressWarnings("unused")
+      byte[][] memoryForcer = new byte[10][dummyArraySize];
+
+      // Let GC clean up the dummy arrays but keep the heap expanded
+      memoryForcer = null;
+
+      log.info("Forced memory allocation to reach target RAM usage");
     } catch (OutOfMemoryError e) {
-        log.warn("Could not allocate full target memory, reducing buffer sizes");
-        queueCapacity = Math.min(queueCapacity, 200000);
-        bufferSizeMB = Math.min(bufferSizeMB, 512);
+      log.warn("Could not allocate full target memory, reducing buffer sizes");
+      queueCapacity = Math.min(queueCapacity, 200000);
+      bufferSizeMB = Math.min(bufferSizeMB, 512);
     }
-    
-    log.info("AGGRESSIVE RAM CONFIG: MaxRAM={}MB, TargetRAM={}MB (80%), writers={}, queueCapacity={}, bufferMB={}", 
-        maxMemory / (1024 * 1024), targetBufferMemory / (1024 * 1024), writerThreads, queueCapacity, bufferSizeMB);
+
+    log.info(
+        "AGGRESSIVE RAM CONFIG: MaxRAM={}MB, TargetRAM={}MB (80%), writers={}, queueCapacity={}, bufferMB={}",
+        maxMemory / (1024 * 1024),
+        targetBufferMemory / (1024 * 1024),
+        writerThreads,
+        queueCapacity,
+        bufferSizeMB);
 
     // Create HighPerformanceFileWriter for maximum disk I/O utilization
-    try (HighPerformanceFileWriter hpWriter = new HighPerformanceFileWriter(
+    try (HighPerformanceFileWriter hpWriter =
+        new HighPerformanceFileWriter(
             outputToFile, isResume, writerThreads, bufferSizeMB, queueCapacity, 5000)) {
-      
+
       // Create high-throughput output writer
       OutputWriter fileWriter = hpWriter::writeLine;
 
@@ -627,6 +663,20 @@ public class Exporter {
 
       exportDataWithStatus(
           fileWriter, deserialized, parallelThreads, showProgress, exportStatus, errorFilePath);
+    }
+    
+    // Keep the main thread alive to allow scheduler to continue running
+    if (showProgress && currentRateDisplayExecutor != null && !currentRateDisplayExecutor.isShutdown()) {
+      System.out.println("DEBUG: Export completed, but keeping main thread alive for continued performance reports...");
+      System.out.println("DEBUG: Press Ctrl+C to terminate the application");
+      
+      try {
+        // Keep main thread alive indefinitely to allow scheduler to continue
+        Thread.currentThread().join();
+      } catch (InterruptedException e) {
+        System.out.println("DEBUG: Main thread interrupted, shutting down...");
+        Thread.currentThread().interrupt();
+      }
     }
   }
 
@@ -975,47 +1025,51 @@ public class Exporter {
 
       // Check magic number after BOC parsing
       long magic = c.getBits().preReadUint(32).longValue();
-      
+
       if (magic == 0x11ef55aaL) {
         // Always deserialize Block from TLB as requested
         long tlbStartTime = System.nanoTime();
         Block block = Block.deserialize(CellSlice.beginParse(c));
         long tlbEndTime = System.nanoTime();
         globalProfiler.recordTlbDeserialization(tlbEndTime - tlbStartTime);
-        
+
         String lineToWrite;
-        
+
         if (deserialized) {
           // Pre-compute values to avoid repeated calls during JSON serialization
           int workchain = block.getBlockInfo().getShard().getWorkchain();
           String shardHex = block.getBlockInfo().getShard().convertShardIdentToShard().toString(16);
           long seqno = block.getBlockInfo().getSeqno();
-          
+
           // Measure JSON serialization time
           long jsonStartTime = System.nanoTime();
           String jsonBlock = localGson.toJson(block);
           long jsonEndTime = System.nanoTime();
           globalProfiler.recordJsonSerialization(jsonEndTime - jsonStartTime);
-          
+
           // Use StringBuilder for more efficient string construction
           StringBuilder lineBuilder = new StringBuilder(1024); // Pre-allocate reasonable size
-          lineBuilder.append(workchain).append(',')
-                     .append(shardHex).append(',')
-                     .append(seqno).append(',')
-                     .append(jsonBlock);
-          
+          lineBuilder
+              .append(workchain)
+              .append(',')
+              .append(shardHex)
+              .append(',')
+              .append(seqno)
+              .append(',')
+              .append(jsonBlock);
+
           lineToWrite = lineBuilder.toString();
         } else {
           // Write raw BOC in hex format
           lineToWrite = Utils.bytesToHex(blockData);
         }
-        
+
         // Measure disk write time
         long writeStartTime = System.nanoTime();
         outputWriter.writeLine(lineToWrite);
         long writeEndTime = System.nanoTime();
         globalProfiler.recordDiskWrite(writeEndTime - writeStartTime);
-        
+
         parsedBlocksCounter.getAndIncrement();
         totalParsedBlocks.incrementAndGet();
       } else {
@@ -1024,7 +1078,10 @@ public class Exporter {
       }
 
     } catch (Throwable e) {
-      log.debug("Error parsing block {}: {}", blockKey, e.getMessage()); // Changed to debug to reduce logging overhead
+      log.debug(
+          "Error parsing block {}: {}",
+          blockKey,
+          e.getMessage()); // Changed to debug to reduce logging overhead
       errorCounter.getAndIncrement();
       totalErrors.incrementAndGet();
 
