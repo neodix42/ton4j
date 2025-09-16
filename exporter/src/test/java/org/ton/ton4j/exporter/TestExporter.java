@@ -61,7 +61,7 @@ public class TestExporter {
         Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
     assertThat(exporter).isNotNull();
     FileUtils.deleteQuietly(new File("local.txt"));
-    exporter.exportToFile("local.txt", true, 16);
+    exporter.exportToFile("local.txt", true, 32);
   }
 
   @Test
@@ -70,7 +70,7 @@ public class TestExporter {
         Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
     assertThat(exporter).isNotNull();
     FileUtils.deleteQuietly(new File("local.txt"));
-    exporter.exportToFile("local.txt", false, 20);
+    exporter.exportToFile("local.txt", false, 32);
   }
 
   @Test

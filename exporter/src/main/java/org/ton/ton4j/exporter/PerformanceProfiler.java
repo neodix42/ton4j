@@ -1,5 +1,8 @@
 package org.ton.ton4j.exporter;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
@@ -202,11 +205,11 @@ public class PerformanceProfiler {
         long jvmMaxMemory = runtime.maxMemory();
         long currentUsed = runtime.totalMemory() - runtime.freeMemory();
         
-        // Get actual system memory (125GB as shown in free -h)
-        double actualSystemMemoryGB = 125.0; // GB from free -h output
+        // Get actual system memory dynamically
+        double actualSystemMemoryGB = getSystemMemoryGB();
         
         log.info("Memory Usage:");
-        log.info(String.format("  System Total:   %6.1fGB (125GB from free -h)", actualSystemMemoryGB));
+        log.info(String.format("  System Total:   %6.1fGB", actualSystemMemoryGB));
         log.info(String.format("  JVM Max Heap:   %6.1fGB", jvmMaxMemory / (1024.0 * 1024.0 * 1024.0)));
         log.info(String.format("  JVM Used:       %6.1fGB (%5.1f%% of heap)", 
             currentUsed / (1024.0 * 1024.0 * 1024.0),
@@ -232,6 +235,31 @@ public class PerformanceProfiler {
             bottleneck, (maxTime * 100.0) / totalTime));
         
         log.info("=====================================");
+    }
+    
+    /**
+     * Gets system memory in GB by reading /proc/meminfo
+     */
+    private double getSystemMemoryGB() {
+        try (BufferedReader reader = new BufferedReader(new FileReader("/proc/meminfo"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("MemTotal:")) {
+                    // Extract memory in KB and convert to GB
+                    String[] parts = line.split("\\s+");
+                    if (parts.length >= 2) {
+                        long memoryKB = Long.parseLong(parts[1]);
+                        return memoryKB / (1024.0 * 1024.0); // Convert KB to GB
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log.warn("Could not read system memory from /proc/meminfo: {}", e.getMessage());
+        }
+        
+        // Fallback to JVM max memory if system memory cannot be determined
+        Runtime runtime = Runtime.getRuntime();
+        return runtime.maxMemory() / (1024.0 * 1024.0 * 1024.0);
     }
     
     /**
