@@ -69,7 +69,7 @@ public class Exporter {
   // High-performance decoupled processing components
   private volatile MassiveBlockQueue blockQueue;
   private volatile boolean useInMemoryProcessing = true; // Enable aggressive RAM usage by default
-  
+
   // Optimal writer thread count (independent of processing threads)
   private volatile int optimalWriterThreads = 32; // Default for modern SSDs
 
@@ -216,7 +216,7 @@ public class Exporter {
 
   /**
    * Enable or disable in-memory processing with aggressive RAM utilization
-   * 
+   *
    * @param enabled true to enable in-memory processing, false to use traditional streaming
    */
   public void setInMemoryProcessingEnabled(boolean enabled) {
@@ -226,26 +226,26 @@ public class Exporter {
 
   /**
    * Check if in-memory processing is enabled
-   * 
+   *
    * @return true if in-memory processing is enabled
    */
   public boolean isInMemoryProcessingEnabled() {
     return useInMemoryProcessing;
   }
-  
+
   /**
    * Set optimal writer thread count (independent of processing threads)
-   * 
+   *
    * @param writerThreads Number of writer threads (recommended: 8-64 depending on storage)
    */
   public void setOptimalWriterThreads(int writerThreads) {
     this.optimalWriterThreads = Math.max(1, Math.min(writerThreads, 128));
     log.info("Optimal writer threads set to: {}", this.optimalWriterThreads);
   }
-  
+
   /**
    * Get current optimal writer thread count
-   * 
+   *
    * @return Number of writer threads
    */
   public int getOptimalWriterThreads() {
@@ -329,7 +329,7 @@ public class Exporter {
       blockLevelProcessor.requestShutdown();
       blockLevelProcessor.shutdown();
     }
-    
+
     if (parallelBocParser != null) {
       parallelBocParser.shutdown();
     }
@@ -1117,20 +1117,20 @@ public class Exporter {
       throws IOException {
 
     long startTime = System.nanoTime();
-    
+
     // Step 1: Read entire pack file into memory (10MB)
     byte[] packageBuffer = Files.readAllBytes(Paths.get(archiveInfo.getPackagePath()));
-    
+
     long readTime = System.nanoTime() - startTime;
-    log.debug("Loaded pack file {} into memory: {} bytes in {}ms", 
+    log.debug("Loaded pack file {} into memory: {} bytes in {}ms",
         archiveKey, packageBuffer.length, readTime / 1_000_000);
-    
+
     // Step 2: Create in-memory package reader for ultra-fast processing
     try (InMemoryPackageReader memoryReader = new InMemoryPackageReader(packageBuffer)) {
-      
+
       AtomicInteger localParsedBlocks = new AtomicInteger(0);
       AtomicInteger localNonBlocks = new AtomicInteger(0);
-      
+
       // Step 3: Process all blocks from memory (zero disk I/O)
       memoryReader.forEachBlock((blockKey, blockData) -> {
         int beforeParsed = parsedBlocksCounter.get();
@@ -1156,10 +1156,10 @@ public class Exporter {
       });
 
       long totalTime = System.nanoTime() - startTime;
-      log.debug("Processed {} blocks from memory in {}ms ({}MB/s)", 
+      log.debug("Processed {} blocks from memory in {}ms ({}MB/s)",
           localParsedBlocks.get(), totalTime / 1_000_000,
           String.format("%.2f", (packageBuffer.length / 1024.0 / 1024.0) / (totalTime / 1_000_000_000.0)));
-      
+
       return localParsedBlocks.get();
     }
   }
@@ -1226,28 +1226,28 @@ public class Exporter {
       throws IOException {
 
     long startTime = System.nanoTime();
-    
+
     // Step 1: Read entire pack file into memory (10MB)
     byte[] packageBuffer = Files.readAllBytes(Paths.get(archiveInfo.getPackagePath()));
-    
+
     long readTime = System.nanoTime() - startTime;
-    log.debug("Loaded traditional archive {} into memory: {} bytes in {}ms", 
+    log.debug("Loaded traditional archive {} into memory: {} bytes in {}ms",
         archiveKey, packageBuffer.length, readTime / 1_000_000);
-    
+
     // Step 2: Create in-memory package reader for ultra-fast processing
     try (InMemoryPackageReader memoryReader = new InMemoryPackageReader(packageBuffer)) {
-      
+
       AtomicInteger localParsedBlocks = new AtomicInteger(0);
       AtomicInteger localNonBlocks = new AtomicInteger(0);
-      
+
       // Step 3: Get all blocks from memory and process them
       Map<String, byte[]> allBlocks = memoryReader.getAllBlocks();
-      
+
       // Step 4: Process each block (all data already in memory)
       for (Map.Entry<String, byte[]> entry : allBlocks.entrySet()) {
         String blockKey = entry.getKey();
         byte[] blockData = entry.getValue();
-        
+
         int beforeParsed = parsedBlocksCounter.get();
         int beforeNonBlocks = nonBlocksCounter.get();
 
@@ -1271,10 +1271,10 @@ public class Exporter {
       }
 
       long totalTime = System.nanoTime() - startTime;
-      log.debug("Processed {} blocks from traditional archive memory in {}ms ({}MB/s)", 
+      log.debug("Processed {} blocks from traditional archive memory in {}ms ({}MB/s)",
           localParsedBlocks.get(), totalTime / 1_000_000,
           String.format("%.2f", (packageBuffer.length / 1024.0 / 1024.0) / (totalTime / 1_000_000_000.0)));
-      
+
       return localParsedBlocks.get();
     }
   }
