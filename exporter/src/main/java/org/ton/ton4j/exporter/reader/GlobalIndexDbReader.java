@@ -300,7 +300,11 @@ public class GlobalIndexDbReader implements Closeable {
     PackageReader packageReader = getPackageReader(packagePath);
 
     // Read entry at offset
-    PackageReader.PackageEntry entry = packageReader.getEntryAt(location.getOffset().longValue());
+    Object entryObj = packageReader.getEntryAt(location.getOffset().longValue());
+    if (!(entryObj instanceof PackageReader.PackageEntry)) {
+      return null;
+    }
+    PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
     if (entry == null) {
       log.warn(
           "No entry found at offset {} in package {}",
@@ -723,7 +727,11 @@ public class GlobalIndexDbReader implements Closeable {
     PackageReader packageReader = getPackageReader(location.getPackagePath());
 
     // Read entry at the specified offset
-    PackageReader.PackageEntry entry = packageReader.getEntryAt(location.getOffset());
+    Object entryObj = packageReader.getEntryAt(location.getOffset());
+    if (!(entryObj instanceof PackageReader.PackageEntry)) {
+      return null;
+    }
+    PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
     if (entry == null) {
       log.warn(
           "No entry found at offset {} in archive package {}",

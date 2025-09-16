@@ -138,7 +138,11 @@ public class TempPackageIndexReader implements Closeable {
 
     for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
       //      log.info("{} {}", kv.getKey(), kv.getValue());
-      PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(kv.getKey());
+      Object entryObj = packageReader.getEntryAt(kv.getKey());
+      if (!(entryObj instanceof PackageReader.PackageEntry)) {
+        continue;
+      }
+      PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
       if (packageEntry.getFilename().startsWith("block_")) {
         //        log.info("Found block {}", packageEntry.getFilename());
         Block block = packageEntry.getBlock();
@@ -165,7 +169,11 @@ public class TempPackageIndexReader implements Closeable {
     int count = 0;
 
     for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
-      PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(kv.getKey());
+      Object entryObj = packageReader.getEntryAt(kv.getKey());
+      if (!(entryObj instanceof PackageReader.PackageEntry)) {
+        continue;
+      }
+      PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
       if (packageEntry.getFilename().startsWith("block_")) {
         Block block = packageEntry.getBlock();
         blocks.put(
@@ -193,7 +201,11 @@ public class TempPackageIndexReader implements Closeable {
     PackageReader packageReader = new PackageReader(packagePath);
 
     for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
-      PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(kv.getKey());
+      Object entryObj = packageReader.getEntryAt(kv.getKey());
+      if (!(entryObj instanceof PackageReader.PackageEntry)) {
+        continue;
+      }
+      PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
       if (packageEntry.getFilename().startsWith("block_")) {
         Block block = packageEntry.getBlock();
         //        log.info("block {}", block);
@@ -215,7 +227,11 @@ public class TempPackageIndexReader implements Closeable {
     PackageReader packageReader = new PackageReader(packagePath);
 
     for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
-      PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(kv.getKey());
+      Object entryObj = packageReader.getEntryAt(kv.getKey());
+      if (!(entryObj instanceof PackageReader.PackageEntry)) {
+        continue;
+      }
+      PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
       if (packageEntry.getFilename().startsWith("block_")) {
         Block block = packageEntry.getBlock();
         if (block.getBlockInfo().getShard().getWorkchain() == -1) {
@@ -239,7 +255,11 @@ public class TempPackageIndexReader implements Closeable {
     PackageReader packageReader = new PackageReader(packagePath);
 
     for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
-      PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(kv.getKey());
+      Object entryObj = packageReader.getEntryAt(kv.getKey());
+      if (!(entryObj instanceof PackageReader.PackageEntry)) {
+        continue;
+      }
+      PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
       if (packageEntry.getFilename().startsWith("block_")) {
         return Pair.of(packageEntry.getCell(), packageEntry.getBlock());
       }

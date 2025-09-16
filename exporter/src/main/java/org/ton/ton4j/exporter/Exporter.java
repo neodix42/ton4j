@@ -365,26 +365,28 @@ public class Exporter {
 
                 // Print performance analysis every 6 scheduler runs (60 seconds)
                 int runCount = schedulerRunCount.incrementAndGet();
-                System.out.println(
-                    "DEBUG: Scheduler run " + runCount + " (elapsed: " + elapsedSeconds + "s)");
+                //                System.out.println(                    "DEBUG: Scheduler run " +
+                // runCount + " (elapsed: " + elapsedSeconds + "s)");
                 if (runCount % 3
                     == 0) { // Every 3 runs = 30 seconds (since scheduler runs every 10s)
-                  System.out.println(
-                      "DEBUG: Triggering performance report at run "
-                          + runCount
-                          + " (elapsed: "
-                          + elapsedSeconds
-                          + "s)");
+                  //                  System.out.println(
+                  //                      "DEBUG: Triggering performance report at run "
+                  //                          + runCount
+                  //                          + " (elapsed: "
+                  //                          + elapsedSeconds
+                  //                          + "s)");
                   try {
                     globalProfiler.printReport();
-                    System.out.println("DEBUG: Performance report completed successfully");
+                    //                    System.out.println("DEBUG: Performance report completed
+                    // successfully");
                   } catch (Exception e) {
                     System.out.println("DEBUG: Error in performance report: " + e.getMessage());
                     e.printStackTrace();
                   }
                 }
               }
-              System.out.println("DEBUG: Scheduler thread execution completed successfully");
+              //              System.out.println("DEBUG: Scheduler thread execution completed
+              // successfully");
             } catch (Exception e) {
               System.out.println("DEBUG: CRITICAL ERROR in scheduler thread: " + e.getMessage());
               e.printStackTrace();

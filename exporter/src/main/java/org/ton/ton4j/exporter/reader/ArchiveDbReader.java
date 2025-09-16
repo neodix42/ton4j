@@ -27,7 +27,7 @@ public class ArchiveDbReader implements Closeable {
   private final String rootPath;
   String dbPath;
   private final Map<String, RocksDbWrapper> indexDbs = new HashMap<>();
-  private final Map<String, PackageReader> packageReaders = new HashMap<>();
+  private final Map<String, PackageReaderInterface> packageReaders = new HashMap<>();
   private final Map<String, ArchiveInfo> archiveInfos = new HashMap<>();
   private GlobalIndexDbReader globalIndexDbReader;
   private final Map<String, PackageReader> filesPackageReaders = new HashMap<>();
@@ -444,16 +444,27 @@ public class ArchiveDbReader implements Closeable {
 
             try {
               // Get the package reader
-              PackageReader packageReader =
+              PackageReaderInterface packageReader =
                   getPackageReader(archiveKey, archiveInfo.getPackagePath());
 
               // Check if packageReader is null before using it
               if (packageReader != null) {
                 // Get the entry at the offset
-                PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
+                Object entryObj = packageReader.getEntryAt(offset);
 
-                if ((packageEntry != null) && (packageEntry.getFilename().startsWith("block_"))) {
-                  blocks.put(hash, packageEntry.getData());
+                if (entryObj != null) {
+                  // Cast to appropriate entry type based on implementation
+                  if (entryObj instanceof BufferedPackageReader.PackageEntry) {
+                    BufferedPackageReader.PackageEntry packageEntry = (BufferedPackageReader.PackageEntry) entryObj;
+                    if (packageEntry.getFilename().startsWith("block_")) {
+                      blocks.put(hash, packageEntry.getData());
+                    }
+                  } else if (entryObj instanceof PackageReader.PackageEntry) {
+                    PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
+                    if (packageEntry.getFilename().startsWith("block_")) {
+                      blocks.put(hash, packageEntry.getData());
+                    }
+                  }
                 }
               } else {
                 log.warn(
@@ -516,10 +527,13 @@ public class ArchiveDbReader implements Closeable {
                   try {
                     PackageReader packageReader =
                         getFilesPackageReader(packageFileName, archiveInfo.getPackagePath());
-                    PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
+                    Object entryObj = packageReader.getEntryAt(offset);
 
-                    if ((entry != null) && (entry.getFilename().startsWith("block_"))) {
-                      blocks.put(hash, entry.getData());
+                    if (entryObj instanceof PackageReader.PackageEntry) {
+                      PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
+                      if (entry.getFilename().startsWith("block_")) {
+                        blocks.put(hash, entry.getData());
+                      }
                     }
                   } catch (IOException e) {
                     // Silently skip errors for individual entries
@@ -539,16 +553,32 @@ public class ArchiveDbReader implements Closeable {
       String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) {
     try {
       AtomicInteger entryCount = new AtomicInteger();
-      PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.getPackagePath());
+      PackageReaderInterface packageReader = getPackageReader(archiveKey, archiveInfo.getPackagePath());
 
       // Check if packageReader is null before using it
       if (packageReader != null) {
         packageReader.forEach(
-            packageEntry -> {
+            entryObj -> {
               entryCount.getAndIncrement();
-              String hash = extractHashFromFilename(packageEntry.getFilename());
-              if (hash != null) {
-                blocks.put(hash, packageEntry.getData());
+              String filename = null;
+              byte[] data = null;
+              
+              // Cast to appropriate entry type based on implementation
+              if (entryObj instanceof BufferedPackageReader.PackageEntry) {
+                BufferedPackageReader.PackageEntry packageEntry = (BufferedPackageReader.PackageEntry) entryObj;
+                filename = packageEntry.getFilename();
+                data = packageEntry.getData();
+              } else if (entryObj instanceof PackageReader.PackageEntry) {
+                PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
+                filename = packageEntry.getFilename();
+                data = packageEntry.getData();
+              }
+              
+              if (filename != null && data != null) {
+                String hash = extractHashFromFilename(filename);
+                if (hash != null) {
+                  blocks.put(hash, data);
+                }
               }
             });
 
@@ -630,13 +660,16 @@ public class ArchiveDbReader implements Closeable {
 
           if (Files.exists(packagePath)) {
             try {
-              PackageReader packageReader =
-                  getFilesPackageReader(packageFileName, packagePath.toString());
-              PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
+                    PackageReader packageReader =
+                        getFilesPackageReader(packageFileName, packagePath.toString());
+                    Object entryObj = packageReader.getEntryAt(offset);
 
-              if ((entry != null) && (entry.getFilename().startsWith("block_"))) {
-                return entry.getData();
-              }
+                    if (entryObj instanceof PackageReader.PackageEntry) {
+                      PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
+                      if (entry.getFilename().startsWith("block_")) {
+                        return entry.getData();
+                      }
+                    }
             } catch (IOException e) {
               log.warn(
                   "Error reading block {} from Files package {}: {}",
@@ -699,20 +732,23 @@ public class ArchiveDbReader implements Closeable {
 
   /**
    * Gets a package reader for a specific archive.
+   * Now uses BufferedPackageReader for optimized sequential I/O.
    *
    * @param archiveKey The archive key
    * @param packagePath Path to the package file
    * @return The package reader, or null if creation fails
    * @throws IOException If an I/O error occurs
    */
-  private PackageReader getPackageReader(String archiveKey, String packagePath) throws IOException {
+  private PackageReaderInterface getPackageReader(String archiveKey, String packagePath) throws IOException {
     if (!packageReaders.containsKey(archiveKey)) {
       try {
-        PackageReader reader = new PackageReader(packagePath);
+        // Use BufferedPackageReader for optimized performance
+        PackageReaderInterface reader = new BufferedPackageReader(packagePath);
         packageReaders.put(archiveKey, reader);
+        log.debug("Created BufferedPackageReader for archive: {}", archiveKey);
       } catch (IOException e) {
         log.warn(
-            "Failed to create PackageReader for archive {} with path {}: {}",
+            "Failed to create BufferedPackageReader for archive {} with path {}: {}",
             archiveKey,
             packagePath,
             e.getMessage());
@@ -770,7 +806,7 @@ public class ArchiveDbReader implements Closeable {
   public void close() throws IOException {
 
     // Close all package readers
-    for (PackageReader reader : packageReaders.values()) {
+    for (PackageReaderInterface reader : packageReaders.values()) {
       if (reader != null) {
         try {
           reader.close();
@@ -857,10 +893,13 @@ public class ArchiveDbReader implements Closeable {
                   try {
                     PackageReader packageReader =
                         getFilesPackageReader(packageFileName, archiveInfo.getPackagePath());
-                    PackageReader.PackageEntry entry = packageReader.getEntryAt(offset);
+                    Object entryObj = packageReader.getEntryAt(offset);
 
-                    if ((entry != null) && (entry.getFilename().startsWith("block_"))) {
-                      processor.process(hash, entry.getData());
+                    if (entryObj instanceof PackageReader.PackageEntry) {
+                      PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
+                      if (entry.getFilename().startsWith("block_")) {
+                        processor.process(hash, entry.getData());
+                      }
                     }
                   } catch (IOException e) {
                     // Silently skip errors for individual entries
@@ -935,16 +974,27 @@ public class ArchiveDbReader implements Closeable {
 
             try {
               // Get the package reader
-              PackageReader packageReader =
+              PackageReaderInterface packageReader =
                   getPackageReader(archiveKey, archiveInfo.getPackagePath());
 
               // Check if packageReader is null before using it
               if (packageReader != null) {
                 // Get the entry at the offset
-                PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
+                Object entryObj = packageReader.getEntryAt(offset);
 
-                if ((packageEntry != null) && (packageEntry.getFilename().startsWith("block_"))) {
-                  processor.process(hash, packageEntry.getData());
+                if (entryObj != null) {
+                  // Cast to appropriate entry type based on implementation
+                  if (entryObj instanceof BufferedPackageReader.PackageEntry) {
+                    BufferedPackageReader.PackageEntry packageEntry = (BufferedPackageReader.PackageEntry) entryObj;
+                    if (packageEntry.getFilename().startsWith("block_")) {
+                      processor.process(hash, packageEntry.getData());
+                    }
+                  } else if (entryObj instanceof PackageReader.PackageEntry) {
+                    PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
+                    if (packageEntry.getFilename().startsWith("block_")) {
+                      processor.process(hash, packageEntry.getData());
+                    }
+                  }
                 }
               } else {
                 log.warn(
@@ -968,15 +1018,31 @@ public class ArchiveDbReader implements Closeable {
   /** Stream blocks from an orphaned package using callback processing */
   private void streamFromOrphanedPackage(
       String archiveKey, ArchiveInfo archiveInfo, BlockProcessor processor) throws IOException {
-    PackageReader packageReader = getPackageReader(archiveKey, archiveInfo.getPackagePath());
+    PackageReaderInterface packageReader = getPackageReader(archiveKey, archiveInfo.getPackagePath());
 
     // Check if packageReader is null before using it
     if (packageReader != null) {
       packageReader.forEach(
-          packageEntry -> {
-            String hash = extractHashFromFilename(packageEntry.getFilename());
-            if (hash != null) {
-              processor.process(hash, packageEntry.getData());
+          entryObj -> {
+            String filename = null;
+            byte[] data = null;
+            
+            // Cast to appropriate entry type based on implementation
+            if (entryObj instanceof BufferedPackageReader.PackageEntry) {
+              BufferedPackageReader.PackageEntry packageEntry = (BufferedPackageReader.PackageEntry) entryObj;
+              filename = packageEntry.getFilename();
+              data = packageEntry.getData();
+            } else if (entryObj instanceof PackageReader.PackageEntry) {
+              PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
+              filename = packageEntry.getFilename();
+              data = packageEntry.getData();
+            }
+            
+            if (filename != null && data != null) {
+              String hash = extractHashFromFilename(filename);
+              if (hash != null) {
+                processor.process(hash, data);
+              }
             }
           });
     }

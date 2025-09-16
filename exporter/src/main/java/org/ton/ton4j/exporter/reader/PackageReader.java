@@ -15,7 +15,7 @@ import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.tlb.Block;
 
 /** Reader for TON package files. */
-public class PackageReader implements Closeable {
+public class PackageReader implements PackageReaderInterface {
 
   private static final int PACKAGE_HEADER_MAGIC = 0xae8fdd01;
   private static final short ENTRY_HEADER_MAGIC = 0x1e8b;
@@ -97,7 +97,8 @@ public class PackageReader implements Closeable {
    * @return The entry
    * @throws IOException If an I/O error occurs
    */
-  public PackageEntry getEntryAt(long offset) throws IOException {
+  @Override
+  public Object getEntryAt(long offset) throws IOException {
     if (offset < 0) {
       throw new IOException("Negative seek offset: " + offset);
     }
@@ -125,7 +126,23 @@ public class PackageReader implements Closeable {
    * @param consumer Consumer for entries
    * @throws IOException If an I/O error occurs
    */
-  public void forEach(Consumer<PackageEntry> consumer) throws IOException {
+  @Override
+  public void forEach(Consumer<Object> consumer) throws IOException {
+    currentPosition = 4; // Reset to start (after header)
+
+    PackageEntry entry;
+    while ((entry = readNextEntry()) != null) {
+      consumer.accept(entry);
+    }
+  }
+
+  /**
+   * Iterates through all entries in the package with typed consumer.
+   *
+   * @param consumer Consumer for entries
+   * @throws IOException If an I/O error occurs
+   */
+  public void forEachTyped(Consumer<PackageEntry> consumer) throws IOException {
     currentPosition = 4; // Reset to start (after header)
 
     PackageEntry entry;
@@ -140,10 +157,11 @@ public class PackageReader implements Closeable {
    * @return Map containing all entries with filename as key and data as value
    * @throws IOException If an I/O error occurs
    */
+  @Override
   public Map<String, byte[]> readAllEntries() throws IOException {
     Map<String, byte[]> result = new HashMap<>();
 
-    forEach(
+    forEachTyped(
         entry -> {
           result.put(entry.getFilename(), entry.getData());
         });

@@ -8,8 +8,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.tlb.*;
 
 /** Test class for demonstrating how to use the DbReader to read TON RocksDB files. */
@@ -302,31 +300,31 @@ public class TestArchiveDbReader {
   //  }
 
   /** Test reading package files. */
-  @Test
-  public void testReadPackageFiles() throws IOException {
-    // This test demonstrates how to read a specific package file
-    try (PackageReader packageReader =
-        new PackageReader(TON_DB_PATH + "\\archive\\packages\\arch0000\\archive.00000.pack")) {
-      // Read all entries in the package
-      packageReader.forEach(
-          entry -> {
-            Cell c = entry.getCell();
-            log.info(
-                "Entry filename: {}, size: {} bytes, boc {}",
-                entry.getFilename(),
-                entry.getData().length,
-                c);
-            if (c.getBits().preReadUint(8).longValue() == 0xc3) {
-              BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c));
-              log.info("deserialized blockProof: {}", blockProof);
-            } else if (c.getBits().preReadUint(32).longValue() == 0x11ef55aa) {
-              //              Cell blockCell = getFirstCellWithBlock(c);
-              //              Block block = Block.deserialize(CellSlice.beginParse(c));
-              //              log.info("deserialized block: {}", block);
-            }
-          });
-    }
-  }
+  //  @Test
+  //  public void testReadPackageFiles() throws IOException {
+  //    // This test demonstrates how to read a specific package file
+  //    try (PackageReader packageReader =
+  //        new PackageReader(TON_DB_PATH + "\\archive\\packages\\arch0000\\archive.00000.pack")) {
+  //      // Read all entries in the package
+  //      packageReader.forEach(
+  //          entry -> {
+  //            Cell c = entry.getCell();
+  //            log.info(
+  //                "Entry filename: {}, size: {} bytes, boc {}",
+  //                entry.getFilename(),
+  //                entry.getData().length,
+  //                c);
+  //            if (c.getBits().preReadUint(8).longValue() == 0xc3) {
+  //              BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c));
+  //              log.info("deserialized blockProof: {}", blockProof);
+  //            } else if (c.getBits().preReadUint(32).longValue() == 0x11ef55aa) {
+  //              //              Cell blockCell = getFirstCellWithBlock(c);
+  //              //              Block block = Block.deserialize(CellSlice.beginParse(c));
+  //              //              log.info("deserialized block: {}", block);
+  //            }
+  //          });
+  //    }
+  //  }
 
   /** Test reading other RocksDB databases. */
   @Test

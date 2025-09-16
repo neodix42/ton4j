@@ -30,9 +30,12 @@ public class TestTempPackageIndexReader {
 
         for (Map.Entry<String, Long> kv : mappings.entrySet()) {
           log.info("{} {}", kv.getKey(), kv.getValue());
-          PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(kv.getValue());
-          log.info(" - filename {}", packageEntry.getFilename());
-          //      log.info(" - seqno {}", packageEntry.getBlock().getBlockInfo().getSeqno());
+          Object entryObj = packageReader.getEntryAt(kv.getValue());
+          if (entryObj instanceof PackageReader.PackageEntry) {
+            PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
+            log.info(" - filename {}", packageEntry.getFilename());
+            //      log.info(" - seqno {}", packageEntry.getBlock().getBlockInfo().getSeqno());
+          }
         }
         log.info("total entries {}", mappings.size());
       }
@@ -55,10 +58,13 @@ public class TestTempPackageIndexReader {
 
         for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
           log.info("{} {}", kv.getKey(), kv.getValue());
-          PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(kv.getKey());
-          log.info("result {}", packageEntry.getFilename());
-          if (packageEntry.getFilename().startsWith("block_")) {
-            log.info("block {}", packageEntry.getBlock());
+          Object entryObj = packageReader.getEntryAt(kv.getKey());
+          if (entryObj instanceof PackageReader.PackageEntry) {
+            PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
+            log.info("result {}", packageEntry.getFilename());
+            if (packageEntry.getFilename().startsWith("block_")) {
+              log.info("block {}", packageEntry.getBlock());
+            }
           }
         }
         log.info("total entries {}", mappings.size());
