@@ -13,6 +13,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,13 +59,21 @@ public class Exporter {
     void writeLine(String line);
   }
 
-  // Volatile reference to current executor service for shutdown coordination
-  private volatile ExecutorService currentExecutorService;
+  // Volatile reference to current executor services for shutdown coordination
+  private volatile ExecutorService currentProcessingExecutor;
+  private volatile ExecutorService currentWriterExecutor;
   private volatile ScheduledExecutorService currentRateDisplayExecutor;
   // Shutdown signal to stop processing new packages
   private volatile boolean shutdownRequested;
 
-  // Block-level parallel processing components (Phase 3.1)
+  // High-performance decoupled processing components
+  private volatile MassiveBlockQueue blockQueue;
+  private volatile boolean useInMemoryProcessing = true; // Enable aggressive RAM usage by default
+  
+  // Optimal writer thread count (independent of processing threads)
+  private volatile int optimalWriterThreads = 32; // Default for modern SSDs
+
+  // Block-level parallel processing components (Phase 3.1) - kept for compatibility
   private volatile BlockLevelParallelProcessor blockLevelProcessor;
   private volatile ParallelBocParser parallelBocParser;
   private volatile boolean useBlockLevelParallelization = true; // Enable by default
@@ -205,7 +215,45 @@ public class Exporter {
   }
 
   /**
-   * Enable or disable block-level parallelization (Phase 3.1)
+   * Enable or disable in-memory processing with aggressive RAM utilization
+   * 
+   * @param enabled true to enable in-memory processing, false to use traditional streaming
+   */
+  public void setInMemoryProcessingEnabled(boolean enabled) {
+    this.useInMemoryProcessing = enabled;
+    log.info("In-memory processing {}", enabled ? "enabled" : "disabled");
+  }
+
+  /**
+   * Check if in-memory processing is enabled
+   * 
+   * @return true if in-memory processing is enabled
+   */
+  public boolean isInMemoryProcessingEnabled() {
+    return useInMemoryProcessing;
+  }
+  
+  /**
+   * Set optimal writer thread count (independent of processing threads)
+   * 
+   * @param writerThreads Number of writer threads (recommended: 8-64 depending on storage)
+   */
+  public void setOptimalWriterThreads(int writerThreads) {
+    this.optimalWriterThreads = Math.max(1, Math.min(writerThreads, 128));
+    log.info("Optimal writer threads set to: {}", this.optimalWriterThreads);
+  }
+  
+  /**
+   * Get current optimal writer thread count
+   * 
+   * @return Number of writer threads
+   */
+  public int getOptimalWriterThreads() {
+    return optimalWriterThreads;
+  }
+
+  /**
+   * Enable or disable block-level parallelization (Phase 3.1) - kept for compatibility
    * 
    * @param enabled true to enable block-level parallelization, false to use traditional package-level parallelization
    */
@@ -269,9 +317,14 @@ public class Exporter {
   public void waitForThreadsToFinish() {
     // Signal shutdown to stop processing new packages
     shutdownRequested = true;
-    log.info("Shutdown signal sent to worker threads...");
+    log.info("Shutdown signal sent to all worker threads...");
 
-    // Shutdown block-level parallel processing components first
+    // Shutdown massive block queue first
+    if (blockQueue != null) {
+      blockQueue.shutdown(optimalWriterThreads);
+    }
+
+    // Shutdown block-level parallel processing components
     if (blockLevelProcessor != null) {
       blockLevelProcessor.requestShutdown();
       blockLevelProcessor.shutdown();
@@ -281,29 +334,52 @@ public class Exporter {
       parallelBocParser.shutdown();
     }
 
-    ExecutorService executor = currentExecutorService;
-    ScheduledExecutorService rateExecutor = currentRateDisplayExecutor;
-
-    if (executor != null && !executor.isShutdown()) {
-      log.info("Waiting for worker threads to finish current packages...");
-      executor.shutdown();
+    // Shutdown processing executor
+    ExecutorService processingExecutor = currentProcessingExecutor;
+    if (processingExecutor != null && !processingExecutor.isShutdown()) {
+      log.info("Waiting for processing threads to finish current packages...");
+      processingExecutor.shutdown();
       try {
-        if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-          log.warn("Worker threads did not finish within 10 seconds, forcing shutdown...");
-          executor.shutdownNow();
-          if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-            log.error("Worker threads did not respond to forced shutdown");
+        if (!processingExecutor.awaitTermination(15, TimeUnit.SECONDS)) {
+          log.warn("Processing threads did not finish within 15 seconds, forcing shutdown...");
+          processingExecutor.shutdownNow();
+          if (!processingExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+            log.error("Processing threads did not respond to forced shutdown");
           }
         } else {
-          log.info("All worker threads finished successfully");
+          log.info("All processing threads finished successfully");
         }
       } catch (InterruptedException e) {
-        log.warn("Interrupted while waiting for worker threads to finish");
-        executor.shutdownNow();
+        log.warn("Interrupted while waiting for processing threads to finish");
+        processingExecutor.shutdownNow();
         Thread.currentThread().interrupt();
       }
     }
 
+    // Shutdown writer executor
+    ExecutorService writerExecutor = currentWriterExecutor;
+    if (writerExecutor != null && !writerExecutor.isShutdown()) {
+      log.info("Waiting for writer threads to finish...");
+      writerExecutor.shutdown();
+      try {
+        if (!writerExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
+          log.warn("Writer threads did not finish within 30 seconds, forcing shutdown...");
+          writerExecutor.shutdownNow();
+          if (!writerExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+            log.error("Writer threads did not respond to forced shutdown");
+          }
+        } else {
+          log.info("All writer threads finished successfully");
+        }
+      } catch (InterruptedException e) {
+        log.warn("Interrupted while waiting for writer threads to finish");
+        writerExecutor.shutdownNow();
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    // Shutdown rate display executor
+    ScheduledExecutorService rateExecutor = currentRateDisplayExecutor;
     if (rateExecutor != null && !rateExecutor.isShutdown()) {
       log.debug("Shutting down rate display executor...");
       rateExecutor.shutdown();
@@ -387,7 +463,7 @@ public class Exporter {
 
     // Create thread pool
     ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
-    currentExecutorService = executor; // Store reference for shutdown coordination
+    currentProcessingExecutor = executor; // Store reference for shutdown coordination
     List<Future<Void>> futures = new ArrayList<>();
 
     // Create a separate thread for periodic rate display
@@ -508,31 +584,61 @@ public class Exporter {
                   // Get thread-local Gson instance to avoid contention
                   Gson localGson = threadLocalGson.get();
 
-                  // Process blocks one by one using streaming approach
-                  if (archiveInfo.getIndexPath() == null) {
-                    localParsedBlocks =
-                        processFilesPackageStreaming(
-                            archiveKey,
-                            archiveInfo,
-                            outputWriter,
-                            deserialized,
-                            localGson,
-                            errorFilePath,
-                            parsedBlocksCounter,
-                            nonBlocksCounter,
-                            errorCounter);
+                  // Choose processing approach based on configuration
+                  if (useInMemoryProcessing) {
+                    // Use aggressive in-memory processing for maximum performance
+                    if (archiveInfo.getIndexPath() == null) {
+                      localParsedBlocks =
+                          processFilesPackageInMemory(
+                              archiveKey,
+                              archiveInfo,
+                              outputWriter,
+                              deserialized,
+                              localGson,
+                              errorFilePath,
+                              parsedBlocksCounter,
+                              nonBlocksCounter,
+                              errorCounter);
+                    } else {
+                      localParsedBlocks =
+                          processTraditionalArchiveInMemory(
+                              archiveKey,
+                              archiveInfo,
+                              outputWriter,
+                              deserialized,
+                              localGson,
+                              errorFilePath,
+                              parsedBlocksCounter,
+                              nonBlocksCounter,
+                              errorCounter);
+                    }
                   } else {
-                    localParsedBlocks =
-                        processTraditionalArchiveStreaming(
-                            archiveKey,
-                            archiveInfo,
-                            outputWriter,
-                            deserialized,
-                            localGson,
-                            errorFilePath,
-                            parsedBlocksCounter,
-                            nonBlocksCounter,
-                            errorCounter);
+                    // Use traditional streaming approach
+                    if (archiveInfo.getIndexPath() == null) {
+                      localParsedBlocks =
+                          processFilesPackageStreaming(
+                              archiveKey,
+                              archiveInfo,
+                              outputWriter,
+                              deserialized,
+                              localGson,
+                              errorFilePath,
+                              parsedBlocksCounter,
+                              nonBlocksCounter,
+                              errorCounter);
+                    } else {
+                      localParsedBlocks =
+                          processTraditionalArchiveStreaming(
+                              archiveKey,
+                              archiveInfo,
+                              outputWriter,
+                              deserialized,
+                              localGson,
+                              errorFilePath,
+                              parsedBlocksCounter,
+                              nonBlocksCounter,
+                              errorCounter);
+                    }
                   }
 
                   // Mark package as processed and save status
@@ -997,6 +1103,67 @@ public class Exporter {
     }
   }
 
+  /** Process Files package using aggressive in-memory approach for maximum performance */
+  private int processFilesPackageInMemory(
+      String archiveKey,
+      ArchiveInfo archiveInfo,
+      OutputWriter outputWriter,
+      boolean deserialized,
+      Gson localGson,
+      String errorFilePath,
+      AtomicInteger parsedBlocksCounter,
+      AtomicInteger nonBlocksCounter,
+      AtomicInteger errorCounter)
+      throws IOException {
+
+    long startTime = System.nanoTime();
+    
+    // Step 1: Read entire pack file into memory (10MB)
+    byte[] packageBuffer = Files.readAllBytes(Paths.get(archiveInfo.getPackagePath()));
+    
+    long readTime = System.nanoTime() - startTime;
+    log.debug("Loaded pack file {} into memory: {} bytes in {}ms", 
+        archiveKey, packageBuffer.length, readTime / 1_000_000);
+    
+    // Step 2: Create in-memory package reader for ultra-fast processing
+    try (InMemoryPackageReader memoryReader = new InMemoryPackageReader(packageBuffer)) {
+      
+      AtomicInteger localParsedBlocks = new AtomicInteger(0);
+      AtomicInteger localNonBlocks = new AtomicInteger(0);
+      
+      // Step 3: Process all blocks from memory (zero disk I/O)
+      memoryReader.forEachBlock((blockKey, blockData) -> {
+        int beforeParsed = parsedBlocksCounter.get();
+        int beforeNonBlocks = nonBlocksCounter.get();
+
+        processBlockData(
+            blockKey,
+            blockData,
+            outputWriter,
+            deserialized,
+            localGson,
+            errorFilePath,
+            parsedBlocksCounter,
+            nonBlocksCounter,
+            errorCounter);
+
+        // Track local increments
+        int afterParsed = parsedBlocksCounter.get();
+        int afterNonBlocks = nonBlocksCounter.get();
+
+        localParsedBlocks.addAndGet(afterParsed - beforeParsed);
+        localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
+      });
+
+      long totalTime = System.nanoTime() - startTime;
+      log.debug("Processed {} blocks from memory in {}ms ({}MB/s)", 
+          localParsedBlocks.get(), totalTime / 1_000_000,
+          String.format("%.2f", (packageBuffer.length / 1024.0 / 1024.0) / (totalTime / 1_000_000_000.0)));
+      
+      return localParsedBlocks.get();
+    }
+  }
+
   /** Process Files package using streaming approach to avoid loading all blocks into memory */
   private int processFilesPackageStreaming(
       String archiveKey,
@@ -1043,6 +1210,73 @@ public class Exporter {
             });
 
     return localParsedBlocks.get();
+  }
+
+  /** Process traditional archive using aggressive in-memory approach for maximum performance */
+  private int processTraditionalArchiveInMemory(
+      String archiveKey,
+      ArchiveInfo archiveInfo,
+      OutputWriter outputWriter,
+      boolean deserialized,
+      Gson localGson,
+      String errorFilePath,
+      AtomicInteger parsedBlocksCounter,
+      AtomicInteger nonBlocksCounter,
+      AtomicInteger errorCounter)
+      throws IOException {
+
+    long startTime = System.nanoTime();
+    
+    // Step 1: Read entire pack file into memory (10MB)
+    byte[] packageBuffer = Files.readAllBytes(Paths.get(archiveInfo.getPackagePath()));
+    
+    long readTime = System.nanoTime() - startTime;
+    log.debug("Loaded traditional archive {} into memory: {} bytes in {}ms", 
+        archiveKey, packageBuffer.length, readTime / 1_000_000);
+    
+    // Step 2: Create in-memory package reader for ultra-fast processing
+    try (InMemoryPackageReader memoryReader = new InMemoryPackageReader(packageBuffer)) {
+      
+      AtomicInteger localParsedBlocks = new AtomicInteger(0);
+      AtomicInteger localNonBlocks = new AtomicInteger(0);
+      
+      // Step 3: Get all blocks from memory and process them
+      Map<String, byte[]> allBlocks = memoryReader.getAllBlocks();
+      
+      // Step 4: Process each block (all data already in memory)
+      for (Map.Entry<String, byte[]> entry : allBlocks.entrySet()) {
+        String blockKey = entry.getKey();
+        byte[] blockData = entry.getValue();
+        
+        int beforeParsed = parsedBlocksCounter.get();
+        int beforeNonBlocks = nonBlocksCounter.get();
+
+        processBlockData(
+            blockKey,
+            blockData,
+            outputWriter,
+            deserialized,
+            localGson,
+            errorFilePath,
+            parsedBlocksCounter,
+            nonBlocksCounter,
+            errorCounter);
+
+        // Track local increments
+        int afterParsed = parsedBlocksCounter.get();
+        int afterNonBlocks = nonBlocksCounter.get();
+
+        localParsedBlocks.addAndGet(afterParsed - beforeParsed);
+        localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
+      }
+
+      long totalTime = System.nanoTime() - startTime;
+      log.debug("Processed {} blocks from traditional archive memory in {}ms ({}MB/s)", 
+          localParsedBlocks.get(), totalTime / 1_000_000,
+          String.format("%.2f", (packageBuffer.length / 1024.0 / 1024.0) / (totalTime / 1_000_000_000.0)));
+      
+      return localParsedBlocks.get();
+    }
   }
 
   /**
