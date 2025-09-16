@@ -105,11 +105,11 @@ public class BufferedPackageReader implements PackageReaderInterface {
     parseAllEntries();
     initialized = true;
 
-    log.debug(
-        "Initialized BufferedPackageReader for {}: {} entries, {} bytes",
-        filePath,
-        entryList.size(),
-        fileSize);
+    //    log.debug(
+    //        "Initialized BufferedPackageReader for {}: {} entries, {} bytes",
+    //        filePath,
+    //        entryList.size(),
+    //        fileSize);
   }
 
   /**
@@ -173,7 +173,7 @@ public class BufferedPackageReader implements PackageReaderInterface {
       }
     }
 
-    log.debug("Parsed {} entries from package file", entryCount);
+    //    log.debug("Parsed {} entries from package file", entryCount);
   }
 
   /**

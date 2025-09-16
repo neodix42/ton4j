@@ -73,9 +73,6 @@ public class Exporter {
   // Optimal writer thread count (independent of processing threads)
   private volatile int optimalWriterThreads = 32; // Default for modern SSDs
 
-  // Block-level parallel processing components (Phase 3.1) - kept for compatibility
-  private volatile BlockLevelParallelProcessor blockLevelProcessor;
-  private volatile ParallelBocParser parallelBocParser;
   private volatile boolean useBlockLevelParallelization = true; // Enable by default
 
   // Statistics tracking for interrupted exports
@@ -253,64 +250,6 @@ public class Exporter {
   }
 
   /**
-   * Enable or disable block-level parallelization (Phase 3.1) - kept for compatibility
-   * 
-   * @param enabled true to enable block-level parallelization, false to use traditional package-level parallelization
-   */
-  public void setBlockLevelParallelizationEnabled(boolean enabled) {
-    this.useBlockLevelParallelization = enabled;
-    log.info("Block-level parallelization {}", enabled ? "enabled" : "disabled");
-  }
-
-  /**
-   * Check if block-level parallelization is enabled
-   * 
-   * @return true if block-level parallelization is enabled
-   */
-  public boolean isBlockLevelParallelizationEnabled() {
-    return useBlockLevelParallelization;
-  }
-
-  /**
-   * Initialize block-level parallel processing components
-   * 
-   * @param parallelThreads Number of threads for parallel processing
-   */
-  private void initializeBlockLevelParallelization(int parallelThreads) {
-    if (!useBlockLevelParallelization) {
-      return;
-    }
-
-    if (blockLevelProcessor == null) {
-      blockLevelProcessor = new BlockLevelParallelProcessor(parallelThreads);
-      log.info("Initialized BlockLevelParallelProcessor with {} threads", parallelThreads);
-    }
-
-    if (parallelBocParser == null) {
-      parallelBocParser = new ParallelBocParser(parallelThreads);
-      log.info("Initialized ParallelBocParser with {} threads", parallelThreads);
-    }
-  }
-
-  /**
-   * Get performance statistics from the parallel BOC parser
-   * 
-   * @return Parsing statistics, or null if parallel BOC parser is not initialized
-   */
-  public ParallelBocParser.ParsingStatistics getBocParsingStatistics() {
-    return parallelBocParser != null ? parallelBocParser.getStatistics() : null;
-  }
-
-  /**
-   * Reset performance statistics for the parallel BOC parser
-   */
-  public void resetBocParsingStatistics() {
-    if (parallelBocParser != null) {
-      parallelBocParser.resetStatistics();
-    }
-  }
-
-  /**
    * Signals shutdown and waits for all currently running executor services to finish. This method
    * is called by the shutdown hook to ensure clean termination.
    */
@@ -323,17 +262,6 @@ public class Exporter {
     if (blockQueue != null) {
       blockQueue.shutdown(optimalWriterThreads);
     }
-
-    // Shutdown block-level parallel processing components
-    if (blockLevelProcessor != null) {
-      blockLevelProcessor.requestShutdown();
-      blockLevelProcessor.shutdown();
-    }
-
-    if (parallelBocParser != null) {
-      parallelBocParser.shutdown();
-    }
-
     // Shutdown processing executor
     ExecutorService processingExecutor = currentProcessingExecutor;
     if (processingExecutor != null && !processingExecutor.isShutdown()) {
@@ -801,13 +729,12 @@ public class Exporter {
     long targetBufferMemory = (long) (maxMemory * 0.8);
 
     // Use the parallelThreads parameter directly as requested
-    int writerThreads = parallelThreads;
 
     // Massive queue capacity to force RAM usage
     int queueCapacity =
         (int)
             Math.min(
-                500000, targetBufferMemory / 200); // ~200 bytes per line estimate (more realistic)
+                500000, targetBufferMemory / 2000); // ~200 bytes per line estimate (more realistic)
 
     // Large buffers per writer thread
     int bufferSizeMB =
@@ -815,7 +742,7 @@ public class Exporter {
             256,
             (int)
                 (targetBufferMemory
-                    / (writerThreads * 2 * 1024 * 1024))); // Use half for buffers, half for queue
+                    / (parallelThreads * 2 * 1024 * 1024))); // Use half for buffers, half for queue
 
     // Force immediate memory allocation to reach 80% usage
     System.gc(); // Clean up first
@@ -842,14 +769,14 @@ public class Exporter {
         "AGGRESSIVE RAM CONFIG: MaxRAM={}MB, TargetRAM={}MB (80%), writers={}, queueCapacity={}, bufferMB={}",
         maxMemory / (1024 * 1024),
         targetBufferMemory / (1024 * 1024),
-        writerThreads,
+        parallelThreads,
         queueCapacity,
         bufferSizeMB);
 
     // Create HighPerformanceFileWriter for maximum disk I/O utilization
     try (HighPerformanceFileWriter hpWriter =
         new HighPerformanceFileWriter(
-            outputToFile, isResume, writerThreads, bufferSizeMB, queueCapacity, 5000)) {
+            outputToFile, isResume, parallelThreads, bufferSizeMB, queueCapacity, 5000)) {
 
       // Create high-throughput output writer
       OutputWriter fileWriter = hpWriter::writeLine;
@@ -1122,8 +1049,11 @@ public class Exporter {
     byte[] packageBuffer = Files.readAllBytes(Paths.get(archiveInfo.getPackagePath()));
 
     long readTime = System.nanoTime() - startTime;
-    log.debug("Loaded pack file {} into memory: {} bytes in {}ms",
-        archiveKey, packageBuffer.length, readTime / 1_000_000);
+    log.debug(
+        "Loaded pack file {} into memory: {} bytes in {}ms",
+        archiveKey,
+        packageBuffer.length,
+        readTime / 1_000_000);
 
     // Step 2: Create in-memory package reader for ultra-fast processing
     try (InMemoryPackageReader memoryReader = new InMemoryPackageReader(packageBuffer)) {
@@ -1132,33 +1062,37 @@ public class Exporter {
       AtomicInteger localNonBlocks = new AtomicInteger(0);
 
       // Step 3: Process all blocks from memory (zero disk I/O)
-      memoryReader.forEachBlock((blockKey, blockData) -> {
-        int beforeParsed = parsedBlocksCounter.get();
-        int beforeNonBlocks = nonBlocksCounter.get();
+      memoryReader.forEachBlock(
+          (blockKey, blockData) -> {
+            int beforeParsed = parsedBlocksCounter.get();
+            int beforeNonBlocks = nonBlocksCounter.get();
 
-        processBlockData(
-            blockKey,
-            blockData,
-            outputWriter,
-            deserialized,
-            localGson,
-            errorFilePath,
-            parsedBlocksCounter,
-            nonBlocksCounter,
-            errorCounter);
+            processBlockData(
+                blockKey,
+                blockData,
+                outputWriter,
+                deserialized,
+                localGson,
+                errorFilePath,
+                parsedBlocksCounter,
+                nonBlocksCounter,
+                errorCounter);
 
-        // Track local increments
-        int afterParsed = parsedBlocksCounter.get();
-        int afterNonBlocks = nonBlocksCounter.get();
+            // Track local increments
+            int afterParsed = parsedBlocksCounter.get();
+            int afterNonBlocks = nonBlocksCounter.get();
 
-        localParsedBlocks.addAndGet(afterParsed - beforeParsed);
-        localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
-      });
+            localParsedBlocks.addAndGet(afterParsed - beforeParsed);
+            localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
+          });
 
       long totalTime = System.nanoTime() - startTime;
-      log.debug("Processed {} blocks from memory in {}ms ({}MB/s)",
-          localParsedBlocks.get(), totalTime / 1_000_000,
-          String.format("%.2f", (packageBuffer.length / 1024.0 / 1024.0) / (totalTime / 1_000_000_000.0)));
+      log.debug(
+          "Processed {} blocks from memory in {}ms ({}MB/s)",
+          localParsedBlocks.get(),
+          totalTime / 1_000_000,
+          String.format(
+              "%.2f", (packageBuffer.length / 1024.0 / 1024.0) / (totalTime / 1_000_000_000.0)));
 
       return localParsedBlocks.get();
     }
@@ -1231,8 +1165,11 @@ public class Exporter {
     byte[] packageBuffer = Files.readAllBytes(Paths.get(archiveInfo.getPackagePath()));
 
     long readTime = System.nanoTime() - startTime;
-    log.debug("Loaded traditional archive {} into memory: {} bytes in {}ms",
-        archiveKey, packageBuffer.length, readTime / 1_000_000);
+    log.debug(
+        "Loaded traditional archive {} into memory: {} bytes in {}ms",
+        archiveKey,
+        packageBuffer.length,
+        readTime / 1_000_000);
 
     // Step 2: Create in-memory package reader for ultra-fast processing
     try (InMemoryPackageReader memoryReader = new InMemoryPackageReader(packageBuffer)) {
@@ -1271,9 +1208,12 @@ public class Exporter {
       }
 
       long totalTime = System.nanoTime() - startTime;
-      log.debug("Processed {} blocks from traditional archive memory in {}ms ({}MB/s)",
-          localParsedBlocks.get(), totalTime / 1_000_000,
-          String.format("%.2f", (packageBuffer.length / 1024.0 / 1024.0) / (totalTime / 1_000_000_000.0)));
+      log.debug(
+          "Processed {} blocks from traditional archive memory in {}ms ({}MB/s)",
+          localParsedBlocks.get(),
+          totalTime / 1_000_000,
+          String.format(
+              "%.2f", (packageBuffer.length / 1024.0 / 1024.0) / (totalTime / 1_000_000_000.0)));
 
       return localParsedBlocks.get();
     }
