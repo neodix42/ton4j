@@ -63,6 +63,11 @@ public class Exporter {
   // Shutdown signal to stop processing new packages
   private volatile boolean shutdownRequested;
 
+  // Block-level parallel processing components (Phase 3.1)
+  private volatile BlockLevelParallelProcessor blockLevelProcessor;
+  private volatile ParallelBocParser parallelBocParser;
+  private volatile boolean useBlockLevelParallelization = true; // Enable by default
+
   // Statistics tracking for interrupted exports
   volatile AtomicInteger totalParsedBlocks;
   volatile AtomicInteger totalNonBlocks;
@@ -200,6 +205,64 @@ public class Exporter {
   }
 
   /**
+   * Enable or disable block-level parallelization (Phase 3.1)
+   * 
+   * @param enabled true to enable block-level parallelization, false to use traditional package-level parallelization
+   */
+  public void setBlockLevelParallelizationEnabled(boolean enabled) {
+    this.useBlockLevelParallelization = enabled;
+    log.info("Block-level parallelization {}", enabled ? "enabled" : "disabled");
+  }
+
+  /**
+   * Check if block-level parallelization is enabled
+   * 
+   * @return true if block-level parallelization is enabled
+   */
+  public boolean isBlockLevelParallelizationEnabled() {
+    return useBlockLevelParallelization;
+  }
+
+  /**
+   * Initialize block-level parallel processing components
+   * 
+   * @param parallelThreads Number of threads for parallel processing
+   */
+  private void initializeBlockLevelParallelization(int parallelThreads) {
+    if (!useBlockLevelParallelization) {
+      return;
+    }
+
+    if (blockLevelProcessor == null) {
+      blockLevelProcessor = new BlockLevelParallelProcessor(parallelThreads);
+      log.info("Initialized BlockLevelParallelProcessor with {} threads", parallelThreads);
+    }
+
+    if (parallelBocParser == null) {
+      parallelBocParser = new ParallelBocParser(parallelThreads);
+      log.info("Initialized ParallelBocParser with {} threads", parallelThreads);
+    }
+  }
+
+  /**
+   * Get performance statistics from the parallel BOC parser
+   * 
+   * @return Parsing statistics, or null if parallel BOC parser is not initialized
+   */
+  public ParallelBocParser.ParsingStatistics getBocParsingStatistics() {
+    return parallelBocParser != null ? parallelBocParser.getStatistics() : null;
+  }
+
+  /**
+   * Reset performance statistics for the parallel BOC parser
+   */
+  public void resetBocParsingStatistics() {
+    if (parallelBocParser != null) {
+      parallelBocParser.resetStatistics();
+    }
+  }
+
+  /**
    * Signals shutdown and waits for all currently running executor services to finish. This method
    * is called by the shutdown hook to ensure clean termination.
    */
@@ -207,6 +270,16 @@ public class Exporter {
     // Signal shutdown to stop processing new packages
     shutdownRequested = true;
     log.info("Shutdown signal sent to worker threads...");
+
+    // Shutdown block-level parallel processing components first
+    if (blockLevelProcessor != null) {
+      blockLevelProcessor.requestShutdown();
+      blockLevelProcessor.shutdown();
+    }
+    
+    if (parallelBocParser != null) {
+      parallelBocParser.shutdown();
+    }
 
     ExecutorService executor = currentExecutorService;
     ScheduledExecutorService rateExecutor = currentRateDisplayExecutor;
