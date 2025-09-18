@@ -13,8 +13,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1005,7 +1003,7 @@ public class Exporter {
     }
   }
 
-  /** Process Files package using in-memory approach for maximum performance */
+  /** Process Files package using streaming approach to avoid memory accumulation */
   private int processFilesPackageInMemory(
       String archiveKey,
       ArchiveInfo archiveInfo,
@@ -1020,57 +1018,77 @@ public class Exporter {
 
     long startTime = System.nanoTime();
 
-    // Step 1: Read entire pack file into memory (10MB)
-    byte[] packageBuffer = Files.readAllBytes(Paths.get(archiveInfo.getPackagePath()));
+    AtomicInteger localParsedBlocks = new AtomicInteger(0);
+    AtomicInteger localNonBlocks = new AtomicInteger(0);
 
-    long readTime = System.nanoTime() - startTime;
-    log.debug(
-        "Loaded pack file {} into memory: {} bytes in {}ms",
-        archiveKey,
-        packageBuffer.length,
-        readTime / 1_000_000);
+    // Use streaming PackageReader instead of loading everything into memory
+    try (PackageReader packageReader = new PackageReader(archiveInfo.getPackagePath())) {
 
-    // Step 2: Create in-memory package reader for ultra-fast processing
-    try (InMemoryPackageReader memoryReader = new InMemoryPackageReader(packageBuffer)) {
+      // Process each entry as it's read from disk (no memory accumulation)
+      packageReader.forEachTyped(
+          entry -> {
+            String filename = entry.getFilename();
 
-      AtomicInteger localParsedBlocks = new AtomicInteger(0);
-      AtomicInteger localNonBlocks = new AtomicInteger(0);
+            // Only process block files
+            if (filename.startsWith("block_")) {
+              String blockKey = extractHashFromFilename(filename);
+              if (blockKey != null) {
+                int beforeParsed = parsedBlocksCounter.get();
+                int beforeNonBlocks = nonBlocksCounter.get();
 
-      // Step 3: Process all blocks from memory (zero disk I/O)
-      memoryReader.forEachBlock(
-          (blockKey, blockData) -> {
-            int beforeParsed = parsedBlocksCounter.get();
-            int beforeNonBlocks = nonBlocksCounter.get();
+                processBlockData(
+                    blockKey,
+                    entry.getData(),
+                    outputWriter,
+                    deserialized,
+                    localGson,
+                    errorFilePath,
+                    parsedBlocksCounter,
+                    nonBlocksCounter,
+                    errorCounter);
 
-            processBlockData(
-                blockKey,
-                blockData,
-                outputWriter,
-                deserialized,
-                localGson,
-                errorFilePath,
-                parsedBlocksCounter,
-                nonBlocksCounter,
-                errorCounter);
+                // Track local increments
+                int afterParsed = parsedBlocksCounter.get();
+                int afterNonBlocks = nonBlocksCounter.get();
 
-            // Track local increments
-            int afterParsed = parsedBlocksCounter.get();
-            int afterNonBlocks = nonBlocksCounter.get();
-
-            localParsedBlocks.addAndGet(afterParsed - beforeParsed);
-            localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
+                localParsedBlocks.addAndGet(afterParsed - beforeParsed);
+                localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
+              }
+            }
           });
 
       long totalTime = System.nanoTime() - startTime;
       log.debug(
-          "Processed {} blocks from memory in {}ms ({}MB/s)",
+          "Processed {} blocks using streaming in {}ms",
           localParsedBlocks.get(),
-          totalTime / 1_000_000,
-          String.format(
-              "%.2f", (packageBuffer.length / 1024.0 / 1024.0) / (totalTime / 1_000_000_000.0)));
+          totalTime / 1_000_000);
 
       return localParsedBlocks.get();
     }
+  }
+
+  /**
+   * Extracts hash from a filename like "block_(-1,8000000000000000,100):hash1:hash2". Returns the
+   * first hash (hash1) which is typically used as the key.
+   */
+  private String extractHashFromFilename(String filename) {
+    try {
+      if (filename.contains("):")) {
+        int colonIndex = filename.indexOf("):");
+        if (colonIndex != -1) {
+          String hashPart = filename.substring(colonIndex + 2);
+          int nextColonIndex = hashPart.indexOf(':');
+          if (nextColonIndex != -1) {
+            return hashPart.substring(0, nextColonIndex);
+          } else {
+            return hashPart;
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Error extracting hash from filename {}: {}", filename, e.getMessage());
+    }
+    return null;
   }
 
   /** Process Files package using streaming approach to avoid loading all blocks into memory */
@@ -1121,7 +1139,7 @@ public class Exporter {
     return localParsedBlocks.get();
   }
 
-  /** Process traditional archive using in-memory approach for maximum performance */
+  /** Process traditional archive using streaming approach to avoid memory accumulation */
   private int processTraditionalArchiveInMemory(
       String archiveKey,
       ArchiveInfo archiveInfo,
@@ -1136,59 +1154,50 @@ public class Exporter {
 
     long startTime = System.nanoTime();
 
-    // Step 1: Read entire pack file into memory (10MB)
-    byte[] packageBuffer = Files.readAllBytes(Paths.get(archiveInfo.getPackagePath()));
+    AtomicInteger localParsedBlocks = new AtomicInteger(0);
+    AtomicInteger localNonBlocks = new AtomicInteger(0);
 
-    long readTime = System.nanoTime() - startTime;
-    log.debug(
-        "Loaded traditional archive {} into memory: {} bytes in {}ms",
-        archiveKey,
-        packageBuffer.length,
-        readTime / 1_000_000);
+    // Use streaming PackageReader instead of loading everything into memory
+    try (PackageReader packageReader = new PackageReader(archiveInfo.getPackagePath())) {
 
-    // Step 2: Create in-memory package reader for ultra-fast processing
-    try (InMemoryPackageReader memoryReader = new InMemoryPackageReader(packageBuffer)) {
+      // Process each entry as it's read from disk (no memory accumulation)
+      packageReader.forEachTyped(
+          entry -> {
+            String filename = entry.getFilename();
 
-      AtomicInteger localParsedBlocks = new AtomicInteger(0);
-      AtomicInteger localNonBlocks = new AtomicInteger(0);
+            // Only process block files
+            if (filename.startsWith("block_")) {
+              String blockKey = extractHashFromFilename(filename);
+              if (blockKey != null) {
+                int beforeParsed = parsedBlocksCounter.get();
+                int beforeNonBlocks = nonBlocksCounter.get();
 
-      // Step 3: Get all blocks from memory and process them
-      Map<String, byte[]> allBlocks = memoryReader.getAllBlocks();
+                processBlockData(
+                    blockKey,
+                    entry.getData(),
+                    outputWriter,
+                    deserialized,
+                    localGson,
+                    errorFilePath,
+                    parsedBlocksCounter,
+                    nonBlocksCounter,
+                    errorCounter);
 
-      // Step 4: Process each block (all data already in memory)
-      for (Map.Entry<String, byte[]> entry : allBlocks.entrySet()) {
-        String blockKey = entry.getKey();
-        byte[] blockData = entry.getValue();
+                // Track local increments
+                int afterParsed = parsedBlocksCounter.get();
+                int afterNonBlocks = nonBlocksCounter.get();
 
-        int beforeParsed = parsedBlocksCounter.get();
-        int beforeNonBlocks = nonBlocksCounter.get();
-
-        processBlockData(
-            blockKey,
-            blockData,
-            outputWriter,
-            deserialized,
-            localGson,
-            errorFilePath,
-            parsedBlocksCounter,
-            nonBlocksCounter,
-            errorCounter);
-
-        // Track local increments
-        int afterParsed = parsedBlocksCounter.get();
-        int afterNonBlocks = nonBlocksCounter.get();
-
-        localParsedBlocks.addAndGet(afterParsed - beforeParsed);
-        localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
-      }
+                localParsedBlocks.addAndGet(afterParsed - beforeParsed);
+                localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
+              }
+            }
+          });
 
       long totalTime = System.nanoTime() - startTime;
       log.debug(
-          "Processed {} blocks from traditional archive memory in {}ms ({}MB/s)",
+          "Processed {} blocks from traditional archive using streaming in {}ms",
           localParsedBlocks.get(),
-          totalTime / 1_000_000,
-          String.format(
-              "%.2f", (packageBuffer.length / 1024.0 / 1024.0) / (totalTime / 1_000_000_000.0)));
+          totalTime / 1_000_000);
 
       return localParsedBlocks.get();
     }
