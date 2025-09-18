@@ -40,10 +40,11 @@ import org.ton.ton4j.utils.Utils;
 @Slf4j
 public class Exporter {
 
+  // Optimized static GSON instance - single shared instance for all threads
+  // No thread-local instances needed since GSON is thread-safe for serialization
   public static final Gson gson =
       new GsonBuilder()
           .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-          //          .registerTypeHierarchyAdapter(Cell.class, new CellTypeAdapter())
           .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
           .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
           .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
@@ -65,6 +66,8 @@ public class Exporter {
   private volatile ScheduledExecutorService currentRateDisplayExecutor;
   // Shutdown signal to stop processing new packages
   private volatile boolean shutdownRequested;
+
+  // All reset mechanisms removed - no caching, no performance degradation
 
   // High-performance decoupled processing components
   private volatile MassiveBlockQueue blockQueue;
@@ -92,20 +95,8 @@ public class Exporter {
   private DbReader dbReader;
   private StatusManager statusManager;
 
-  // Thread-local Gson instances to avoid contention
-  private static final ThreadLocal<Gson> threadLocalGson =
-      ThreadLocal.withInitial(
-          () ->
-              new GsonBuilder()
-                  .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-                  .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
-                  .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
-                  .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
-                  .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
-                  .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
-                  .disableHtmlEscaping()
-                  .setLenient()
-                  .create());
+  // No thread-local GSON needed - static GSON is thread-safe for serialization
+  // Removed ThreadLocal to eliminate potential memory leaks and state accumulation
 
   public static class ExporterBuilder {}
 
@@ -138,6 +129,8 @@ public class Exporter {
       if (exporter.totalErrors == null) {
         exporter.totalErrors = new AtomicInteger(0);
       }
+
+      // No reset mechanisms needed - all caching removed
 
       return exporter;
     }
@@ -372,15 +365,31 @@ public class Exporter {
       dbReader = new DbReader(tonDatabaseRootPath);
     }
 
+    // Ensure dbReader and its components are properly initialized
+    if (dbReader == null) {
+      throw new IOException("Failed to initialize DbReader");
+    }
+
+    if (dbReader.getArchiveDbReader() == null) {
+      throw new IOException("ArchiveDbReader is not initialized");
+    }
+
+    Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveDbReader().getArchiveInfos();
+    if (archiveInfos == null) {
+      throw new IOException("Archive infos map is null");
+    }
+
     AtomicInteger parsedBlocksCounter = new AtomicInteger(exportStatus.getParsedBlocksCount());
     AtomicInteger nonBlocksCounter = new AtomicInteger(exportStatus.getNonBlocksCount());
     AtomicInteger errorCounter = new AtomicInteger(0);
-    long totalPacks = dbReader.getArchiveDbReader().getArchiveInfos().size();
+    long totalPacks = archiveInfos.size();
 
     // Update total packages if it has changed
     if (exportStatus.getTotalPackages() != totalPacks) {
       exportStatus.setTotalPackages(totalPacks);
-      statusManager.saveStatus(exportStatus);
+      if (statusManager != null) {
+        statusManager.saveStatus(exportStatus);
+      }
     }
 
     long startTime = System.currentTimeMillis();
@@ -393,6 +402,9 @@ public class Exporter {
     ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
     currentProcessingExecutor = executor; // Store reference for shutdown coordination
     List<Future<Void>> futures = new ArrayList<>();
+
+    // Phase 2: Track processed blocks for reset mechanism
+    AtomicInteger globalProcessedBlocks = new AtomicInteger(0);
 
     // Create a separate thread for periodic rate display
     ScheduledExecutorService rateDisplayExecutor = null;
@@ -475,14 +487,15 @@ public class Exporter {
           TimeUnit.SECONDS);
     }
 
-    for (Map.Entry<String, ArchiveInfo> entry :
-        dbReader.getArchiveDbReader().getArchiveInfos().entrySet()) {
+    for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
 
       // Check for shutdown signal before processing new packages
       if (shutdownRequested) {
         log.info("Shutdown requested, stopping submission of new packages");
         break;
       }
+
+      // No reset mechanisms - all caching removed, no performance degradation
 
       String archiveKey = entry.getKey();
       ArchiveInfo archiveInfo = entry.getValue();
@@ -509,8 +522,8 @@ public class Exporter {
                   int localParsedBlocks = 0;
                   int localNonBlocks = 0;
 
-                  // Get thread-local Gson instance to avoid contention
-                  Gson localGson = threadLocalGson.get();
+                  // Use static GSON instance - thread-safe for serialization
+                  Gson localGson = gson;
 
                   // Choose processing approach based on configuration
                   if (useInMemoryProcessing) {
@@ -573,7 +586,9 @@ public class Exporter {
                   synchronized (exportStatus) {
                     exportStatus.markPackageProcessed(
                         archiveKey, localParsedBlocks, localNonBlocks);
-                    statusManager.saveStatus(exportStatus);
+                    if (statusManager != null) {
+                      statusManager.saveStatus(exportStatus);
+                    }
                   }
 
                   if (showProgressInfo) {
@@ -1232,6 +1247,8 @@ public class Exporter {
   // Global performance profiler for measurements (shared across all threads)
   private static final PerformanceProfiler globalProfiler = new PerformanceProfiler();
 
+  // All reset mechanisms removed - no caching, no performance degradation
+
   /** Process individual block data with detailed performance measurements */
   private void processBlockData(
       String blockKey,
@@ -1317,6 +1334,8 @@ public class Exporter {
           // No GC calls - let G1GC's concurrent collector work naturally
           //          log.debug("Memory references cleared at block {}", currentParsedCount);
         }
+
+        // All reset mechanisms removed - no caching, no performance degradation
 
       } else {
         nonBlocksCounter.getAndIncrement();
@@ -1524,7 +1543,7 @@ public class Exporter {
 
   // way to slow, will be reworked one day
   private Account getAccountByAddress(Address address) throws IOException {
-    try (CellDbReaderOptimized cellDbReader = new CellDbReaderOptimized(tonDatabaseRootPath)) {
+    try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
       return cellDbReader.retrieveAccountByAddress(address).getAccount();
     }
   }
@@ -1730,16 +1749,14 @@ public class Exporter {
           // For now, fall back to the existing cell database approach for account extraction
           // This provides the account dictionary navigation functionality
           // In a full implementation, we would parse the shard state directly here
-          try (CellDbReaderOptimized cellDbReader =
-              new CellDbReaderOptimized(tonDatabaseRootPath)) {
+          try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
             return cellDbReader.retrieveAccountByAddress(address).getAccount();
           }
         } else {
           log.debug("No block handle or state hash found, using direct cell database access");
 
           // Direct cell database access as fallback
-          try (CellDbReaderOptimized cellDbReader =
-              new CellDbReaderOptimized(tonDatabaseRootPath)) {
+          try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
             return cellDbReader.retrieveAccountByAddress(address).getAccount();
           }
         }
@@ -1749,7 +1766,7 @@ public class Exporter {
       log.warn("Error extracting account from shard state: {}", e.getMessage());
 
       // Final fallback to direct cell database access
-      try (CellDbReaderOptimized cellDbReader = new CellDbReaderOptimized(tonDatabaseRootPath)) {
+      try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
         return cellDbReader.retrieveAccountByAddress(address).getAccount();
       }
     }

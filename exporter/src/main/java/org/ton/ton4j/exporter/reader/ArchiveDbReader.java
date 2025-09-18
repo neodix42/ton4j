@@ -232,6 +232,15 @@ public class ArchiveDbReader implements Closeable {
     return new ArrayList<>(archiveInfos.keySet());
   }
 
+  /**
+   * Gets all archive information.
+   *
+   * @return Map of archive keys to archive information
+   */
+  public Map<String, ArchiveInfo> getArchiveInfos() {
+    return new HashMap<>(archiveInfos);
+  }
+
   //  public Map<String, Block> getAllBlocksWithHashes() {
   //    Map<String, Block> blocks = new HashMap<>();
   //    Map<String, byte[]> entries = getAllEntries();

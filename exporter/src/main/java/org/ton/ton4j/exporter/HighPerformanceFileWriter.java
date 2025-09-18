@@ -317,35 +317,29 @@ public class HighPerformanceFileWriter implements Closeable {
       for (String partFile : partFiles) {
         fileIndex++;
         log.info("Merging part file {}/{}: {}", fileIndex, partFiles.size(), partFile);
-        
+
         Path partPath = Paths.get(partFile);
-        long fileSize = Files.size(partPath);
-        log.info("Part file size: {} MB", fileSize / (1024 * 1024));
-        
+
         long startTime = System.currentTimeMillis();
         long linesRead = 0;
-        
+
         try (BufferedReader reader = Files.newBufferedReader(partPath, StandardCharsets.UTF_8)) {
           String line;
           while ((line = reader.readLine()) != null) {
             finalWriter.write(line);
             finalWriter.newLine();
             linesRead++;
-            
+
             // Progress update every 100,000 lines
             if (linesRead % 100000 == 0) {
-              log.info("Merged {} lines from part file {}/{}", linesRead, fileIndex, partFiles.size());
+              log.info(
+                  "Merged {} lines from part file {}/{}", linesRead, fileIndex, partFiles.size());
             }
           }
         }
 
-        long duration = System.currentTimeMillis() - startTime;
-        log.info("Completed merging part file {}/{}: {} lines in {}ms", 
-                fileIndex, partFiles.size(), linesRead, duration);
-
         // Delete part file after merging
         Files.deleteIfExists(partPath);
-        log.info("Deleted part file: {}", partFile);
       }
     }
 
