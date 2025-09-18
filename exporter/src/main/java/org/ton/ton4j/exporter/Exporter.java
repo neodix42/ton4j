@@ -8,10 +8,7 @@ import ch.qos.logback.classic.LoggerContext;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -68,7 +65,6 @@ public class Exporter {
   // All reset mechanisms removed - no caching, no performance degradation
 
   // High-performance decoupled processing components
-  private volatile MassiveBlockQueue blockQueue;
   private volatile boolean useInMemoryProcessing = true; // Enable in-memory processing by default
 
   // Optimal writer thread count (independent of processing threads)
@@ -249,10 +245,10 @@ public class Exporter {
     shutdownRequested = true;
     log.info("Shutdown signal sent to all worker threads...");
 
-    // Shutdown massive block queue first
-    if (blockQueue != null) {
-      blockQueue.shutdown(optimalWriterThreads);
-    }
+    // MassiveBlockQueue removed - no longer needed
+    // if (blockQueue != null) {
+    //   blockQueue.shutdown(optimalWriterThreads);
+    // }
     // Shutdown processing executor
     ExecutorService processingExecutor = currentProcessingExecutor;
     if (processingExecutor != null && !processingExecutor.isShutdown()) {
@@ -392,9 +388,9 @@ public class Exporter {
 
     long startTime = System.currentTimeMillis();
 
-    // Configure global profiler with thread count and start time
-    globalProfiler.setParallelThreads(parallelThreads);
-    globalProfiler.recordWallClockStart();
+    // PerformanceProfiler completely disabled to eliminate atomic contention
+    // globalProfiler.setParallelThreads(parallelThreads);
+    // globalProfiler.recordWallClockStart();
 
     // Create thread pool
     ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
@@ -462,14 +458,13 @@ public class Exporter {
                   //                          + " (elapsed: "
                   //                          + elapsedSeconds
                   //                          + "s)");
-                  try {
-                    globalProfiler.printReport();
-                    //                    System.out.println("DEBUG: Performance report completed
-                    // successfully");
-                  } catch (Exception e) {
-                    System.out.println("DEBUG: Error in performance report: " + e.getMessage());
-                    e.printStackTrace();
-                  }
+                  // PerformanceProfiler completely disabled to eliminate atomic contention
+                  // try {
+                  //   globalProfiler.printReport();
+                  // } catch (Exception e) {
+                  //   System.out.println("DEBUG: Error in performance report: " + e.getMessage());
+                  //   e.printStackTrace();
+                  // }
                 }
               }
               //              System.out.println("DEBUG: Scheduler thread execution completed
@@ -627,8 +622,8 @@ public class Exporter {
     double durationSeconds = durationMs / 1000.0;
     double blocksPerSecond = parsedBlocksCounter.get() / durationSeconds;
 
-    // Record wall clock end time for profiler
-    globalProfiler.recordWallClockEnd();
+    // PerformanceProfiler completely disabled to eliminate atomic contention
+    // globalProfiler.recordWallClockEnd();
 
     // Shutdown executor
     executor.shutdown();
@@ -754,19 +749,23 @@ public class Exporter {
     int queueCapacity = 10000; // Conservative default queue capacity
     int bufferSizeMB = 64; // Conservative default buffer size per writer thread
 
-    // Create HighPerformanceFileWriter for maximum disk I/O utilization
-    try (HighPerformanceFileWriter hpWriter =
-        new HighPerformanceFileWriter(
-            outputToFile, isResume, parallelThreads, bufferSizeMB, queueCapacity, 5000)) {
-
-      // Create high-throughput output writer
-      OutputWriter fileWriter = hpWriter::writeLine;
-
-      File outputFile = new File(outputToFile);
-      String errorFilePath = new File(outputFile.getParent(), "errors.txt").getAbsolutePath();
+    // Use existing AsyncFileWriter instead of HighPerformanceFileWriter to avoid massive queue accumulation
+    File outputFile = new File(outputToFile);
+    String errorFilePath = new File(outputFile.getParent(), "errors.txt").getAbsolutePath();
+    
+    // Create AsyncFileWriter with reasonable queue size (much smaller than HighPerformanceFileWriter)
+    try (AsyncFileWriter asyncWriter = new AsyncFileWriter(
+        outputToFile, 
+        isResume, 
+        5000,    // Small queue capacity (vs 200,000 in HighPerformanceFileWriter)
+        256 * 1024,  // 256KB buffer
+        1000)) { // Flush every 1000 lines
+      
+      // Create output writer using AsyncFileWriter
+      OutputWriter outputWriter = asyncWriter::writeLine;
 
       exportDataWithStatus(
-          fileWriter, deserialized, parallelThreads, showProgress, exportStatus, errorFilePath);
+          outputWriter, deserialized, parallelThreads, showProgress, exportStatus, errorFilePath);
     }
   }
 
