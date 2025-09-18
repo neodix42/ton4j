@@ -68,7 +68,7 @@ public class Exporter {
 
   // High-performance decoupled processing components
   private volatile MassiveBlockQueue blockQueue;
-  private volatile boolean useInMemoryProcessing = true; // Enable aggressive RAM usage by default
+  private volatile boolean useInMemoryProcessing = true; // Enable in-memory processing by default
 
   // Optimal writer thread count (independent of processing threads)
   private volatile int optimalWriterThreads = 32; // Default for modern SSDs
@@ -212,7 +212,7 @@ public class Exporter {
   }
 
   /**
-   * Enable or disable in-memory processing with aggressive RAM utilization
+   * Enable or disable in-memory processing
    *
    * @param enabled true to enable in-memory processing, false to use traditional streaming
    */
@@ -397,14 +397,14 @@ public class Exporter {
     // Create a separate thread for periodic rate display
     ScheduledExecutorService rateDisplayExecutor = null;
     if (showProgressInfo) {
-      // Create a custom thread factory to make threads non-daemon so they keep JVM alive
-      ThreadFactory nonDaemonThreadFactory =
+      // Create a custom thread factory to make threads daemon so they don't keep JVM alive
+      ThreadFactory daemonThreadFactory =
           r -> {
             Thread t = new Thread(r, "PerformanceReporter");
-            t.setDaemon(false); // Non-daemon thread keeps JVM alive
+            t.setDaemon(true); // Daemon thread won't keep JVM alive
             return t;
           };
-      rateDisplayExecutor = Executors.newSingleThreadScheduledExecutor(nonDaemonThreadFactory);
+      rateDisplayExecutor = Executors.newSingleThreadScheduledExecutor(daemonThreadFactory);
       currentRateDisplayExecutor = rateDisplayExecutor; // Store reference for shutdown coordination
 
       // Simple counter-based approach - count scheduler runs, report every 6 runs (60 seconds)
@@ -413,7 +413,7 @@ public class Exporter {
       rateDisplayExecutor.scheduleAtFixedRate(
           () -> {
             try {
-              System.out.println("DEBUG: Scheduler thread starting execution...");
+              //              System.out.println("DEBUG: Scheduler thread starting execution...");
               long currentTime = System.currentTimeMillis();
               long elapsedSeconds = (currentTime - startTime) / 1000;
               if (elapsedSeconds > 0) {
@@ -514,7 +514,7 @@ public class Exporter {
 
                   // Choose processing approach based on configuration
                   if (useInMemoryProcessing) {
-                    // Use aggressive in-memory processing for maximum performance
+                    // Use in-memory processing for maximum performance
                     if (archiveInfo.getIndexPath() == null) {
                       localParsedBlocks =
                           processFilesPackageInMemory(
@@ -577,12 +577,12 @@ public class Exporter {
                   }
 
                   if (showProgressInfo) {
-                    System.out.printf(
-                        "progress: %5.1f%% %6d/%d archive %s%n",
-                        exportStatus.getProgressPercentage(),
-                        exportStatus.getProcessedCount(),
-                        exportStatus.getTotalPackages(),
-                        archiveKey);
+                    //                    System.out.printf(
+                    //                        "progress: %5.1f%% %6d/%d archive %s%n",
+                    //                        exportStatus.getProgressPercentage(),
+                    //                        exportStatus.getProcessedCount(),
+                    //                        exportStatus.getTotalPackages(),
+                    //                        archiveKey);
                   }
                 } catch (Exception e) {
                   log.error("Unexpected error reading archive {}: {}", archiveKey, e.getMessage());
@@ -620,12 +620,20 @@ public class Exporter {
       Thread.currentThread().interrupt();
     }
 
-    // DON'T shutdown rate display executor here - let it continue running
-    System.out.println(
-        "DEBUG: Main processing completed, but scheduler will continue running independently...");
-
-    // The scheduler will continue running and showing reports every 60 seconds
-    // It will be shut down by the shutdown hook or when the JVM exits
+    // Shutdown rate display executor properly
+    ScheduledExecutorService rateExecutor = currentRateDisplayExecutor;
+    if (rateExecutor != null && !rateExecutor.isShutdown()) {
+      log.debug("Shutting down rate display executor...");
+      rateExecutor.shutdown();
+      try {
+        if (!rateExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+          rateExecutor.shutdownNow();
+        }
+      } catch (InterruptedException e) {
+        rateExecutor.shutdownNow();
+        Thread.currentThread().interrupt();
+      }
+    }
 
     // Only mark as completed if we actually processed all packages and weren't interrupted
     boolean actuallyCompleted =
@@ -721,57 +729,9 @@ public class Exporter {
       log.info("Starting new export to file: {}", outputToFile);
     }
 
-    // FORCE 80% RAM USAGE - be much more aggressive
-    Runtime runtime = Runtime.getRuntime();
-    long maxMemory = runtime.maxMemory();
-
-    // Force allocation of 80% of max heap memory for buffering
-    long targetBufferMemory = (long) (maxMemory * 0.8);
-
-    // Use the parallelThreads parameter directly as requested
-
-    // Massive queue capacity to force RAM usage
-    int queueCapacity =
-        (int)
-            Math.min(
-                500000, targetBufferMemory / 2000); // ~200 bytes per line estimate (more realistic)
-
-    // Large buffers per writer thread
-    int bufferSizeMB =
-        Math.max(
-            256,
-            (int)
-                (targetBufferMemory
-                    / (parallelThreads * 2 * 1024 * 1024))); // Use half for buffers, half for queue
-
-    // Force immediate memory allocation to reach 80% usage
-    System.gc(); // Clean up first
-
-    // Pre-allocate large objects to force memory usage
-    try {
-      // Allocate dummy arrays to force JVM to use more memory
-      int dummyArraySize =
-          (int) (targetBufferMemory / (8 * 10)); // 10 arrays of 1/10th target memory each
-      @SuppressWarnings("unused")
-      byte[][] memoryForcer = new byte[10][dummyArraySize];
-
-      // Let GC clean up the dummy arrays but keep the heap expanded
-      memoryForcer = null;
-
-      log.info("Forced memory allocation to reach target RAM usage");
-    } catch (OutOfMemoryError e) {
-      log.warn("Could not allocate full target memory, reducing buffer sizes");
-      queueCapacity = Math.min(queueCapacity, 200000);
-      bufferSizeMB = Math.min(bufferSizeMB, 512);
-    }
-
-    log.info(
-        "AGGRESSIVE RAM CONFIG: MaxRAM={}MB, TargetRAM={}MB (80%), writers={}, queueCapacity={}, bufferMB={}",
-        maxMemory / (1024 * 1024),
-        targetBufferMemory / (1024 * 1024),
-        parallelThreads,
-        queueCapacity,
-        bufferSizeMB);
+    // Use reasonable default buffer sizes and queue capacity
+    int queueCapacity = 10000; // Conservative default queue capacity
+    int bufferSizeMB = 64; // Conservative default buffer size per writer thread
 
     // Create HighPerformanceFileWriter for maximum disk I/O utilization
     try (HighPerformanceFileWriter hpWriter =
@@ -1030,7 +990,7 @@ public class Exporter {
     }
   }
 
-  /** Process Files package using aggressive in-memory approach for maximum performance */
+  /** Process Files package using in-memory approach for maximum performance */
   private int processFilesPackageInMemory(
       String archiveKey,
       ArchiveInfo archiveInfo,
@@ -1146,7 +1106,7 @@ public class Exporter {
     return localParsedBlocks.get();
   }
 
-  /** Process traditional archive using aggressive in-memory approach for maximum performance */
+  /** Process traditional archive using in-memory approach for maximum performance */
   private int processTraditionalArchiveInMemory(
       String archiveKey,
       ArchiveInfo archiveInfo,

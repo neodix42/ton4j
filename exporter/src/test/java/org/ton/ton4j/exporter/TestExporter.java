@@ -33,8 +33,8 @@ public class TestExporter {
   }
 
   /**
-   * Configures JVM memory settings to use 80% of available system RAM.
-   * This method calculates the optimal heap size and applies it programmatically.
+   * Configures JVM memory settings to use 80% of available system RAM. This method calculates the
+   * optimal heap size and applies it programmatically.
    */
   private static void configureOptimalMemoryUsage() {
     try {
@@ -42,27 +42,28 @@ public class TestExporter {
       long maxMemory = runtime.maxMemory();
       long totalMemory = runtime.totalMemory();
       long freeMemory = runtime.freeMemory();
-      
+
       // Get system total memory from OS
       long systemTotalMemory = getSystemTotalMemory();
-      
+
       log.info("Current JVM Memory Configuration:");
       log.info("  JVM Max Heap: {}MB", maxMemory / (1024 * 1024));
       log.info("  JVM Total: {}MB", totalMemory / (1024 * 1024));
       log.info("  JVM Free: {}MB", freeMemory / (1024 * 1024));
       log.info("  System Total: {}MB", systemTotalMemory / (1024 * 1024));
-      
+
       // Calculate 80% of system memory
       long targetHeapSize = (long) (systemTotalMemory * 0.8);
-      
+
       if (maxMemory < targetHeapSize) {
-        log.warn("JVM heap size ({}MB) is less than optimal ({}MB - 80% of system memory)", 
-                 maxMemory / (1024 * 1024), targetHeapSize / (1024 * 1024));
+        log.warn(
+            "JVM heap size ({}MB) is less than optimal ({}MB - 80% of system memory)",
+            maxMemory / (1024 * 1024), targetHeapSize / (1024 * 1024));
         log.warn("Consider running tests with: -Xmx{}g", targetHeapSize / (1024 * 1024 * 1024));
-        
+
         // Try to expand heap if possible (this won't work but will log the recommendation)
         System.gc(); // Force garbage collection to free up memory
-        
+
         // Force memory allocation to use more of available heap
         try {
           // Allocate large arrays to force JVM to expand heap usage
@@ -79,15 +80,15 @@ public class TestExporter {
       } else {
         log.info("JVM heap size is already optimal for system memory");
       }
-      
+
     } catch (Exception e) {
       log.warn("Failed to configure optimal memory usage: {}", e.getMessage());
     }
   }
-  
+
   /**
-   * Gets total system memory in bytes by reading /proc/meminfo on Linux systems.
-   * Falls back to JVM max memory if unable to read system memory.
+   * Gets total system memory in bytes by reading /proc/meminfo on Linux systems. Falls back to JVM
+   * max memory if unable to read system memory.
    */
   private static long getSystemTotalMemory() {
     try {
@@ -108,7 +109,7 @@ public class TestExporter {
     } catch (Exception e) {
       log.debug("Could not read system memory from /proc/meminfo: {}", e.getMessage());
     }
-    
+
     // Fallback to JVM max memory * 4 as rough estimate
     return Runtime.getRuntime().maxMemory() * 4;
   }
