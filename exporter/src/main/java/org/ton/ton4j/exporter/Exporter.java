@@ -1290,7 +1290,7 @@ public class Exporter {
               .append(jsonBlock);
 
           lineToWrite = lineBuilder.toString();
-          
+
           // Clear JSON string reference immediately after use
           jsonBlock = null;
         } else {
@@ -1306,18 +1306,18 @@ public class Exporter {
 
         int currentParsedCount = parsedBlocksCounter.getAndIncrement();
         totalParsedBlocks.incrementAndGet();
-        
+
         // PHASE 1.3: Pure reference clearing - No GC calls, just help the garbage collector
         if (deserialized && currentParsedCount > 0 && currentParsedCount % 1000 == 0) {
           // Clear references to help GC - let G1GC handle timing naturally
           block = null;
           c = null;
           lineToWrite = null;
-          
+
           // No GC calls - let G1GC's concurrent collector work naturally
-//          log.debug("Memory references cleared at block {}", currentParsedCount);
+          //          log.debug("Memory references cleared at block {}", currentParsedCount);
         }
-        
+
       } else {
         nonBlocksCounter.getAndIncrement();
         totalNonBlocks.incrementAndGet();
