@@ -776,8 +776,8 @@ public class ArchiveDbReader implements Closeable {
     if (processedPackageCount % (CLEANUP_INTERVAL * 2) == 0) {
       //      log.debug("Performing periodic cleanup after {} packages", processedPackageCount);
 
-      // Only suggest garbage collection, don't close active resources in multi-threaded environment
-      System.gc();
+      // PHASE 1.3: Removed System.gc() - let G1GC handle cleanup naturally in multi-threaded environment
+      // Resources will be cleaned up when ArchiveDbReader is closed
 
       //      log.debug(
       //          "Periodic cleanup completed. Active readers: packages={}, indexes={},

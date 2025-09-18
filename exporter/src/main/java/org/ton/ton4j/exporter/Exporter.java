@@ -1258,11 +1258,12 @@ public class Exporter {
 
       if (magic == 0x11ef55aaL) {
         String lineToWrite;
+        Block block = null; // Declare block variable for explicit cleanup
 
         if (deserialized) {
           // Only deserialize Block from TLB when deserialized output is requested
           long tlbStartTime = System.nanoTime();
-          Block block = Block.deserialize(CellSlice.beginParse(c));
+          block = Block.deserialize(CellSlice.beginParse(c));
           long tlbEndTime = System.nanoTime();
           globalProfiler.recordTlbDeserialization(tlbEndTime - tlbStartTime);
 
@@ -1289,6 +1290,9 @@ public class Exporter {
               .append(jsonBlock);
 
           lineToWrite = lineBuilder.toString();
+          
+          // Clear JSON string reference immediately after use
+          jsonBlock = null;
         } else {
           // Write raw BOC in hex format - no deserialization needed
           lineToWrite = Utils.bytesToHex(blockData);
@@ -1300,8 +1304,20 @@ public class Exporter {
         long writeEndTime = System.nanoTime();
         globalProfiler.recordDiskWrite(writeEndTime - writeStartTime);
 
-        parsedBlocksCounter.getAndIncrement();
+        int currentParsedCount = parsedBlocksCounter.getAndIncrement();
         totalParsedBlocks.incrementAndGet();
+        
+        // PHASE 1.3: Pure reference clearing - No GC calls, just help the garbage collector
+        if (deserialized && currentParsedCount > 0 && currentParsedCount % 1000 == 0) {
+          // Clear references to help GC - let G1GC handle timing naturally
+          block = null;
+          c = null;
+          lineToWrite = null;
+          
+          // No GC calls - let G1GC's concurrent collector work naturally
+//          log.debug("Memory references cleared at block {}", currentParsedCount);
+        }
+        
       } else {
         nonBlocksCounter.getAndIncrement();
         totalNonBlocks.incrementAndGet();

@@ -316,7 +316,7 @@ public class BufferedPackageReader implements PackageReaderInterface {
         if (buffer.isDirect()) {
           // Best effort cleanup - JVM will eventually clean it up
           buffer = null;
-          System.gc(); // Suggest GC to clean up direct buffer
+          // PHASE 1.3: Removed System.gc() - let G1GC handle direct buffer cleanup naturally
         }
       } catch (Exception e) {
         log.debug("Could not explicitly clean direct buffer: {}", e.getMessage());
