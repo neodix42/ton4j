@@ -580,13 +580,21 @@ public class Exporter {
                     }
                   }
 
-                  // Mark package as processed and save status
-                  synchronized (exportStatus) {
-                    exportStatus.markPackageProcessed(
-                        archiveKey, localParsedBlocks, localNonBlocks);
-                    if (statusManager != null) {
-                      statusManager.saveStatus(exportStatus);
-                    }
+                  // Mark package as processed (optimized to avoid synchronized file I/O)
+                  exportStatus.markPackageProcessed(archiveKey, localParsedBlocks, localNonBlocks);
+
+                  // Save status less frequently to avoid performance degradation
+                  // Only save every 10th package to reduce file I/O overhead
+                  if (statusManager != null && exportStatus.getProcessedCount() % 10 == 0) {
+                    // Use separate thread for status saving to avoid blocking processing
+                    CompletableFuture.runAsync(
+                        () -> {
+                          try {
+                            statusManager.saveStatus(exportStatus);
+                          } catch (Exception e) {
+                            log.warn("Error saving export status: {}", e.getMessage());
+                          }
+                        });
                   }
 
                   if (showProgressInfo) {
@@ -946,7 +954,7 @@ public class Exporter {
                       }
 
                       // Mark package as processed and save status
-                      synchronized (finalExportStatus) {
+                      synchronized (finalExportStatus) { // todo same as for file
                         finalExportStatus.markPackageProcessed(
                             archiveKey, localParsedBlocks, localNonBlocks);
                         statusManager.saveStatus(finalExportStatus);
@@ -1258,7 +1266,7 @@ public class Exporter {
 
   // All reset mechanisms removed - no caching, no performance degradation
 
-  /** Process individual block data with detailed performance measurements */
+  /** Process individual block data with optimized performance (profiling disabled) */
   private void processBlockData(
       String blockKey,
       byte[] blockData,
@@ -1270,14 +1278,12 @@ public class Exporter {
       AtomicInteger nonBlocksCounter,
       AtomicInteger errorCounter) {
 
-    globalProfiler.updateMemoryUsage();
+    // Removed globalProfiler calls - they were causing performance degradation
+    // due to atomic operations on shared counters across 32 threads
 
     try {
-      // ALWAYS parse BOC to TLB as requested - restore this functionality
-      long bocStartTime = System.nanoTime();
+      // Parse BOC to TLB
       Cell c = CellBuilder.beginCell().fromBoc(blockData).endCell();
-      long bocEndTime = System.nanoTime();
-      globalProfiler.recordBocParsing(bocEndTime - bocStartTime);
 
       // Check magic number after BOC parsing
       long magic = c.getBits().preReadUint(32).longValue();
@@ -1287,22 +1293,16 @@ public class Exporter {
         Block block = null; // Declare block variable for explicit cleanup
 
         if (deserialized) {
-          // Only deserialize Block from TLB when deserialized output is requested
-          long tlbStartTime = System.nanoTime();
+          // Deserialize Block from TLB when deserialized output is requested
           block = Block.deserialize(CellSlice.beginParse(c));
-          long tlbEndTime = System.nanoTime();
-          globalProfiler.recordTlbDeserialization(tlbEndTime - tlbStartTime);
 
           // Pre-compute values to avoid repeated calls during JSON serialization
           int workchain = block.getBlockInfo().getShard().getWorkchain();
           String shardHex = block.getBlockInfo().getShard().convertShardIdentToShard().toString(16);
           long seqno = block.getBlockInfo().getSeqno();
 
-          // Measure JSON serialization time
-          long jsonStartTime = System.nanoTime();
+          // JSON serialization
           String jsonBlock = localGson.toJson(block);
-          long jsonEndTime = System.nanoTime();
-          globalProfiler.recordJsonSerialization(jsonEndTime - jsonStartTime);
 
           // Use StringBuilder for more efficient string construction
           StringBuilder lineBuilder = new StringBuilder(1024); // Pre-allocate reasonable size
@@ -1324,27 +1324,19 @@ public class Exporter {
           lineToWrite = Utils.bytesToHex(blockData);
         }
 
-        // Measure disk write time
-        long writeStartTime = System.nanoTime();
+        // Write to output
         outputWriter.writeLine(lineToWrite);
-        long writeEndTime = System.nanoTime();
-        globalProfiler.recordDiskWrite(writeEndTime - writeStartTime);
 
         int currentParsedCount = parsedBlocksCounter.getAndIncrement();
         totalParsedBlocks.incrementAndGet();
 
-        // PHASE 1.3: Pure reference clearing - No GC calls, just help the garbage collector
+        // Pure reference clearing - No GC calls, just help the garbage collector
         if (deserialized && currentParsedCount > 0 && currentParsedCount % 1000 == 0) {
           // Clear references to help GC - let G1GC handle timing naturally
           block = null;
           c = null;
           lineToWrite = null;
-
-          // No GC calls - let G1GC's concurrent collector work naturally
-          //          log.debug("Memory references cleared at block {}", currentParsedCount);
         }
-
-        // All reset mechanisms removed - no caching, no performance degradation
 
       } else {
         nonBlocksCounter.getAndIncrement();
