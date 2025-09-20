@@ -4,7 +4,6 @@ import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -56,8 +55,6 @@ public class McBlockExtra implements Serializable {
   }
 
   public static McBlockExtra deserialize(CellSlice cs) {
-    StopWatch stopWatch = new StopWatch();
-    stopWatch.start();
     long magic = cs.loadUint(16).longValue();
     assert (magic == 0xcca5L)
         : "McBlockExtra: magic not equal to 0xcca5, found 0x" + Long.toHexString(magic);
@@ -72,7 +69,6 @@ public class McBlockExtra implements Serializable {
             .build();
     mcBlockExtra.setInfo(McBlockExtraInfo.deserialize(CellSlice.beginParse(cs.loadRef())));
     mcBlockExtra.setConfig(keyBlock ? ConfigParams.deserialize(cs) : null);
-    log.info("{} deserialized in {}ms", BlockExtra.class.getSimpleName(), stopWatch.getTime());
 
     return mcBlockExtra;
   }

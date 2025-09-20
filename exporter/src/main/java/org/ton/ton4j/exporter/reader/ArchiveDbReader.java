@@ -131,11 +131,11 @@ public class ArchiveDbReader implements Closeable {
                               // Create archive info
                               archiveInfos.put(
                                   archiveKey,
-                                  new ArchiveInfo(archiveId, indexPathStr, packFile.toString()));
-
-                              //                              log.debug(
-                              //                                  "Discovered archive package: {}",
-                              //                                  archiveKey);
+                                  new ArchiveInfo(
+                                      archiveId,
+                                      indexPathStr,
+                                      packFile.toString(),
+                                      Files.size(packFile)));
 
                             } catch (Exception e) {
                               log.debug(
@@ -186,7 +186,7 @@ public class ArchiveDbReader implements Closeable {
             String packagePath = globalIndexDbReader.getPackageFilePath(packageId);
             if (packagePath != null) {
               // Create archive info for Files database package (no index file)
-              archiveInfos.put(archiveKey, new ArchiveInfo(packageId, null, packagePath));
+              archiveInfos.put(archiveKey, new ArchiveInfo(packageId, null, packagePath, 0));
               newPackages++;
 
               log.debug(
@@ -785,7 +785,8 @@ public class ArchiveDbReader implements Closeable {
     if (processedPackageCount % (CLEANUP_INTERVAL * 2) == 0) {
       //      log.debug("Performing periodic cleanup after {} packages", processedPackageCount);
 
-      // PHASE 1.3: Removed System.gc() - let G1GC handle cleanup naturally in multi-threaded environment
+      // PHASE 1.3: Removed System.gc() - let G1GC handle cleanup naturally in multi-threaded
+      // environment
       // Resources will be cleaned up when ArchiveDbReader is closed
 
       //      log.debug(

@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.*;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -252,8 +251,6 @@ public class BinTree implements Serializable {
   }
 
   public static BinTree deserialize(CellSlice cs) {
-    StopWatch stopWatch = new StopWatch();
-    stopWatch.start();
     if (cs.isExotic() || cs.getRestBits() == 0) {
       return null;
     }
@@ -261,7 +258,6 @@ public class BinTree implements Serializable {
     BinTree tree = new BinTree();
     try {
       tree.loadFromCell(cs, "");
-      log.info("{} deserialized in {}ms", BinTree.class.getSimpleName(), stopWatch.getTime());
 
       return tree;
     } catch (Exception e) {

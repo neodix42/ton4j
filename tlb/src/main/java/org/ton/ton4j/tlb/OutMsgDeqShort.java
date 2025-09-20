@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -44,17 +43,12 @@ public class OutMsgDeqShort implements OutMsg, Serializable {
 
   public static OutMsgDeqShort deserialize(CellSlice cs) {
 
-    StopWatch stopWatch = new StopWatch();
-    stopWatch.start();
-    OutMsgDeqShort result =
-        OutMsgDeqShort.builder()
-            .magic(cs.loadUint(4).intValue())
-            .msgEnvHash(cs.loadUint(256))
-            .nextWorkchain(cs.loadInt(32).longValue())
-            .nextAddrPfx(cs.loadUint(64))
-            .importBlockLt(cs.loadUint(64))
-            .build();
-    log.info("{} deserialized in {}ms", OutMsgDeqShort.class.getSimpleName(), stopWatch.getTime());
-    return result;
+    return OutMsgDeqShort.builder()
+        .magic(cs.loadUint(4).intValue())
+        .msgEnvHash(cs.loadUint(256))
+        .nextWorkchain(cs.loadInt(32).longValue())
+        .nextAddrPfx(cs.loadUint(64))
+        .importBlockLt(cs.loadUint(64))
+        .build();
   }
 }

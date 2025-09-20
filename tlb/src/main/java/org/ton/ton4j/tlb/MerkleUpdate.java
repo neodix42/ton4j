@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -44,8 +43,6 @@ public class MerkleUpdate implements Serializable {
   }
 
   public static MerkleUpdate deserialize(CellSlice cs) {
-    StopWatch stopWatch = new StopWatch();
-    stopWatch.start();
     if (cs.type != CellType.MERKLE_UPDATE) {
       return null;
     }
@@ -54,17 +51,14 @@ public class MerkleUpdate implements Serializable {
     assert (magic == 0x04)
         : "MerkleUpdate: magic not equal to 0x04, found 0x" + Long.toHexString(magic);
 
-    MerkleUpdate result =
-        MerkleUpdate.builder()
-            .oldHash(cs.loadUint(256))
-            .newHash(cs.loadUint(256))
-            .oldDepth(cs.loadUint(16))
-            .newDepth(cs.loadUint(16))
-            .oldShardState(ShardState.deserialize(CellSlice.beginParse(cs.loadRef())))
-            .newShardState(ShardState.deserialize(CellSlice.beginParse(cs.loadRef())))
-            .build();
-    log.info("{} deserialized in {}ms", MerkleUpdate.class.getSimpleName(), stopWatch.getTime());
-    return result;
+    return MerkleUpdate.builder()
+        .oldHash(cs.loadUint(256))
+        .newHash(cs.loadUint(256))
+        .oldDepth(cs.loadUint(16))
+        .newDepth(cs.loadUint(16))
+        .oldShardState(ShardState.deserialize(CellSlice.beginParse(cs.loadRef())))
+        .newShardState(ShardState.deserialize(CellSlice.beginParse(cs.loadRef())))
+        .build();
   }
 
   public String getOldHash() {

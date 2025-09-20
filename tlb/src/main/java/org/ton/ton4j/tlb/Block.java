@@ -7,7 +7,6 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -29,6 +28,7 @@ import org.ton.ton4j.cell.CellSlice;
 @Slf4j
 // @Metrics(registry = "objectRunnerBlock")
 public class Block implements Serializable {
+
   long magic;
   int globalId;
   BlockInfo blockInfo;
@@ -47,10 +47,8 @@ public class Block implements Serializable {
         .endCell();
   }
 
-  @TimerNinjaTracker
   public static Block deserialize(CellSlice cs) {
-    StopWatch stopWatch = new StopWatch();
-    stopWatch.start();
+
     long magic = cs.loadUint(32).longValue();
     assert (magic == 0x11ef55aaL)
         : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
@@ -65,7 +63,7 @@ public class Block implements Serializable {
     block.setValueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())));
     block.setStateUpdate(MerkleUpdate.deserialize(CellSlice.beginParse(cs.loadRef())));
     block.setExtra(BlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())));
-    log.info("{} deserialized in {}ms", Block.class.getSimpleName(), stopWatch.getTime());
+
     return block;
   }
 

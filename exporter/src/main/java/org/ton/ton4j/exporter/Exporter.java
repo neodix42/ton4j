@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.LoggerFactory;
 import org.ton.ton4j.address.Address;
@@ -28,7 +29,6 @@ import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockHandle;
-import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
@@ -40,11 +40,11 @@ public class Exporter {
   public static final Gson gson =
       new GsonBuilder()
           .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-          .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
-          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
-          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
-          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
-          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          //          .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+          //          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
           .disableHtmlEscaping()
           .setLenient()
           .create();
@@ -228,15 +228,6 @@ public class Exporter {
   }
 
   /**
-   * Get current optimal writer thread count
-   *
-   * @return Number of writer threads
-   */
-  public int getOptimalWriterThreads() {
-    return optimalWriterThreads;
-  }
-
-  /**
    * Signals shutdown and waits for all currently running executor services to finish. This method
    * is called by the shutdown hook to ensure clean termination.
    */
@@ -393,9 +384,9 @@ public class Exporter {
     // globalProfiler.recordWallClockStart();
 
     // Create thread pool
-    //    ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
-    //    currentProcessingExecutor = executor; // Store reference for shutdown coordination
-    //    List<Future<Void>> futures = new ArrayList<>();
+    ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
+    currentProcessingExecutor = executor; // Store reference for shutdown coordination
+    List<Future<Void>> futures = new ArrayList<>();
 
     // Phase 2: Track processed blocks for reset mechanism
     AtomicInteger globalProcessedBlocks = new AtomicInteger(0);
@@ -416,7 +407,7 @@ public class Exporter {
       // Simple counter-based approach - count scheduler runs, report every 6 runs (60 seconds)
       final AtomicInteger schedulerRunCount = new AtomicInteger(0);
 
-      rateDisplayExecutor.scheduleAtFixedRate(
+      rateDisplayExecutor.scheduleWithFixedDelay(
           () -> {
             try {
               //              System.out.println("DEBUG: Scheduler thread starting execution...");
@@ -481,14 +472,10 @@ public class Exporter {
     }
 
     for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
-
-      // Check for shutdown signal before processing new packages
       if (shutdownRequested) {
         log.info("Shutdown requested, stopping submission of new packages");
         break;
       }
-
-      // No reset mechanisms - all caching removed, no performance degradation
 
       String archiveKey = entry.getKey();
       ArchiveInfo archiveInfo = entry.getValue();
@@ -501,123 +488,126 @@ public class Exporter {
         continue;
       }
 
-      //      Future<Void> future =
-      //          executor.submit(
-      //              () -> {
-      //                // Check shutdown signal at the beginning of each task
-      //                if (shutdownRequested) {
-      //                  //                  log.debug("Shutdown requested, skipping archive: {}",
-      //                  // archiveKey);
-      //                  return null;
-      //                }
-      try {
-        // Use streaming processing instead of loading all blocks into memory
-        int localParsedBlocks = 0;
-        int localNonBlocks = 0;
-
-        // Use static GSON instance - thread-safe for serialization
-        Gson localGson = gson;
-
-        // Choose processing approach based on configuration
-        if (useInMemoryProcessing) {
-          // Use in-memory processing for maximum performance
-          if (archiveInfo.getIndexPath() == null) {
-            localParsedBlocks =
-                processFilesPackageInMemory(
-                    archiveKey,
-                    archiveInfo,
-                    outputWriter,
-                    deserialized,
-                    localGson,
-                    errorFilePath,
-                    parsedBlocksCounter,
-                    nonBlocksCounter,
-                    errorCounter);
-          } else {
-            localParsedBlocks =
-                processTraditionalArchiveInMemory(
-                    archiveKey,
-                    archiveInfo,
-                    outputWriter,
-                    deserialized,
-                    localGson,
-                    errorFilePath,
-                    parsedBlocksCounter,
-                    nonBlocksCounter,
-                    errorCounter);
-          }
-        } else {
-          // Use traditional streaming approach
-          if (archiveInfo.getIndexPath() == null) {
-            localParsedBlocks =
-                processFilesPackageStreaming(
-                    archiveKey,
-                    archiveInfo,
-                    outputWriter,
-                    deserialized,
-                    localGson,
-                    errorFilePath,
-                    parsedBlocksCounter,
-                    nonBlocksCounter,
-                    errorCounter);
-          } else {
-            localParsedBlocks =
-                processTraditionalArchiveStreaming(
-                    archiveKey,
-                    archiveInfo,
-                    outputWriter,
-                    deserialized,
-                    localGson,
-                    errorFilePath,
-                    parsedBlocksCounter,
-                    nonBlocksCounter,
-                    errorCounter);
-          }
-        }
-
-        // Mark package as processed (optimized to avoid synchronized file I/O)
-        exportStatus.markPackageProcessed(archiveKey, localParsedBlocks, localNonBlocks);
-
-        // Save status less frequently to avoid performance degradation
-        // Only save every 10th package to reduce file I/O overhead
-        if (statusManager != null && exportStatus.getProcessedCount() % 10 == 0) {
-          // Use separate thread for status saving to avoid blocking processing
-          CompletableFuture.runAsync(
+      Future<Void> future =
+          executor.submit(
               () -> {
-                try {
-                  statusManager.saveStatus(exportStatus);
-                } catch (Exception e) {
-                  log.warn("Error saving export status: {}", e.getMessage());
+                StopWatch stopWatch = new StopWatch();
+                stopWatch.start();
+                // Check shutdown signal at the beginning of each task
+                if (shutdownRequested) {
+                  //                  log.debug("Shutdown requested, skipping archive: {}",
+                  // archiveKey);
+                  return null;
                 }
+                try {
+                  // Use streaming processing instead of loading all blocks into memory
+                  int localParsedBlocks = 0;
+                  int localNonBlocks = 0;
+
+                  // Use static GSON instance - thread-safe for serialization
+                  //        Gson localGson = gson;
+
+                  // Choose processing approach based on configuration
+                  if (useInMemoryProcessing) {
+                    // Use in-memory processing for maximum performance
+                    if (archiveInfo.getIndexPath() == null) {
+                      localParsedBlocks =
+                          processFilesPackageInMemory(
+                              archiveKey,
+                              archiveInfo,
+                              outputWriter,
+                              deserialized,
+                              errorFilePath,
+                              parsedBlocksCounter,
+                              nonBlocksCounter,
+                              errorCounter);
+                    } else {
+                      localParsedBlocks =
+                          processTraditionalArchiveInMemory(
+                              archiveKey,
+                              archiveInfo,
+                              outputWriter,
+                              deserialized,
+                              gson,
+                              errorFilePath,
+                              parsedBlocksCounter,
+                              nonBlocksCounter,
+                              errorCounter);
+                    }
+                  } else {
+                    // Use traditional streaming approach
+                    if (archiveInfo.getIndexPath() == null) {
+                      localParsedBlocks =
+                          processFilesPackageStreaming(
+                              archiveKey,
+                              archiveInfo,
+                              outputWriter,
+                              deserialized,
+                              gson,
+                              errorFilePath,
+                              parsedBlocksCounter,
+                              nonBlocksCounter,
+                              errorCounter);
+                    } else {
+                      localParsedBlocks =
+                          processTraditionalArchiveStreaming(
+                              archiveKey,
+                              archiveInfo,
+                              outputWriter,
+                              deserialized,
+                              gson,
+                              errorFilePath,
+                              parsedBlocksCounter,
+                              nonBlocksCounter,
+                              errorCounter);
+                    }
+                  }
+
+                  // Mark package as processed (optimized to avoid synchronized file I/O)
+                  exportStatus.markPackageProcessed(archiveKey, localParsedBlocks, localNonBlocks);
+
+                  // Save status less frequently to avoid performance degradation
+                  // Only save every 10th package to reduce file I/O overhead
+                  if (statusManager != null && exportStatus.getProcessedCount() % 10 == 0) {
+                    // Use separate thread for status saving to avoid blocking processing
+                    CompletableFuture.runAsync(
+                        () -> {
+                          try {
+                            statusManager.saveStatus(exportStatus);
+                          } catch (Exception e) {
+                            log.warn("Error saving export status: {}", e.getMessage());
+                          }
+                        });
+                  }
+
+                  if (showProgressInfo) {
+                    System.out.printf(
+                        "progress: %5.1f%% %6d/%d, size %7dkb, blocks %6d, elapsed %6dms - %s %n",
+                        exportStatus.getProgressPercentage(),
+                        exportStatus.getProcessedCount(),
+                        exportStatus.getTotalPackages(),
+                        entry.getValue().getPackageSize() / 1024,
+                        localParsedBlocks,
+                        stopWatch.getTime(),
+                        archiveKey);
+                  }
+                } catch (Exception e) {
+                  log.error("Unexpected error reading archive {}: {}", archiveKey, e.getMessage());
+                }
+
+                return null;
               });
-        }
-
-        if (showProgressInfo) {
-          System.out.printf(
-              "progress: %5.1f%% %6d/%d archive %s%n",
-              exportStatus.getProgressPercentage(),
-              exportStatus.getProcessedCount(),
-              exportStatus.getTotalPackages(),
-              archiveKey);
-        }
-      } catch (Exception e) {
-        log.error("Unexpected error reading archive {}: {}", archiveKey, e.getMessage());
-      }
-
-      //                return null;
-
-      //              });
-      //      futures.add(future);
+      futures.add(future);
     }
 
     // Wait for all tasks to complete
-    //    for (Future<Void> future : futures) {
-    //      try {
-    //        future.get();
-    //      } catch (Exception e) {
-    //        log.error("Error waiting for archive reading task: {}", e.getMessage());
-    //      }
-    //    }
+    for (Future<Void> future : futures) {
+      try {
+        future.get();
+      } catch (Exception e) {
+        log.error("Error waiting for archive reading task: {}", e.getMessage());
+      }
+    }
 
     long endTime = System.currentTimeMillis();
     long durationMs = endTime - startTime;
@@ -628,15 +618,15 @@ public class Exporter {
     // globalProfiler.recordWallClockEnd();
 
     // Shutdown executor
-    //    executor.shutdown();
-    //    try {
-    //      if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-    //        executor.shutdownNow();
-    //      }
-    //    } catch (InterruptedException e) {
-    //      executor.shutdownNow();
-    //      Thread.currentThread().interrupt();
-    //    }
+    executor.shutdown();
+    try {
+      if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      executor.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
 
     // Shutdown rate display executor properly
     ScheduledExecutorService rateExecutor = currentRateDisplayExecutor;
@@ -652,8 +642,8 @@ public class Exporter {
         Thread.currentThread().interrupt();
       }
     }
-
-    // Only mark as completed if we actually processed all packages and weren't interrupted
+    //
+    //    // Only mark as completed if we actually processed all packages and weren't interrupted
     boolean actuallyCompleted =
         !shutdownRequested && exportStatus.getProcessedCount() >= exportStatus.getTotalPackages();
 
@@ -1021,7 +1011,6 @@ public class Exporter {
       ArchiveInfo archiveInfo,
       OutputWriter outputWriter,
       boolean deserialized,
-      Gson localGson,
       String errorFilePath,
       AtomicInteger parsedBlocksCounter,
       AtomicInteger nonBlocksCounter,
@@ -1035,7 +1024,6 @@ public class Exporter {
 
     // Use streaming PackageReader instead of loading everything into memory
     try (PackageReader packageReader = new PackageReader(archiveInfo.getPackagePath())) {
-
       // Process each entry as it's read from disk (no memory accumulation)
       packageReader.forEachTyped(
           entry -> {
@@ -1053,7 +1041,7 @@ public class Exporter {
                     entry.getData(),
                     outputWriter,
                     deserialized,
-                    localGson,
+                    Exporter.gson,
                     errorFilePath,
                     parsedBlocksCounter,
                     nonBlocksCounter,
@@ -1070,10 +1058,12 @@ public class Exporter {
           });
 
       long totalTime = System.nanoTime() - startTime;
-      log.debug(
-          "Processed {} blocks using streaming in {}ms",
-          localParsedBlocks.get(),
-          totalTime / 1_000_000);
+      //      log.debug(
+      //          "Processed {} blocks using streaming in {}ms, packName {}, packSize {}",
+      //          localParsedBlocks.get(),
+      //          totalTime / 1_000_000,
+      //          archiveInfo.getPackagePath(),
+      //          archiveInfo.getPackageSize());
 
       return localParsedBlocks.get();
     }
@@ -1206,10 +1196,10 @@ public class Exporter {
           });
 
       long totalTime = System.nanoTime() - startTime;
-      log.debug(
-          "Processed {} blocks from traditional archive using streaming in {}ms",
-          localParsedBlocks.get(),
-          totalTime / 1_000_000);
+      //      log.debug(
+      //          "Processed {} blocks from traditional archive using streaming in {}ms",
+      //          localParsedBlocks.get(),
+      //          totalTime / 1_000_000);
 
       return localParsedBlocks.get();
     }
@@ -1305,6 +1295,9 @@ public class Exporter {
           String shardHex = block.getBlockInfo().getShard().convertShardIdentToShard().toString(16);
           long seqno = block.getBlockInfo().getSeqno();
 
+          //          StopWatch stopWatch = new StopWatch();
+          //          stopWatch.start();
+
           // JSON serialization
           String jsonBlock = localGson.toJson(block);
 
@@ -1320,6 +1313,7 @@ public class Exporter {
               .append(jsonBlock);
 
           lineToWrite = lineBuilder.toString();
+          //          log.info("jsoned {}", stopWatch.getTime());
 
           // Clear JSON string reference immediately after use
           jsonBlock = null;

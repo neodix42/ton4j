@@ -8,7 +8,6 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -41,19 +40,11 @@ public class OutMsgDescr implements Serializable {
   }
 
   public static OutMsgDescr deserialize(CellSlice cs) {
-    StopWatch stopWatch = new StopWatch();
-    stopWatch.start();
-    OutMsgDescr result =
-        OutMsgDescr.builder()
-            .outMsg(
-                cs.loadDictAugE(
-                    256,
-                    k -> k.readUint(256),
-                    OutMsg::deserialize,
-                    CurrencyCollection::deserialize))
-            .build();
-    log.info("{} deserialized in {}ms", OutMsgDescr.class.getSimpleName(), stopWatch.getTime());
-    return result;
+    return OutMsgDescr.builder()
+        .outMsg(
+            cs.loadDictAugE(
+                256, k -> k.readUint(256), OutMsg::deserialize, CurrencyCollection::deserialize))
+        .build();
   }
 
   public long getCount() {
