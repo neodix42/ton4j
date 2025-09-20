@@ -1,14 +1,18 @@
 package org.ton.ton4j.exporter.reader;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.tlb.*;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.utils.Utils;
 
 /** Test class for demonstrating how to use the DbReader to read TON RocksDB files. */
 @Slf4j
@@ -300,31 +304,36 @@ public class TestArchiveDbReader {
   //  }
 
   /** Test reading package files. */
-  //  @Test
-  //  public void testReadPackageFiles() throws IOException {
-  //    // This test demonstrates how to read a specific package file
-  //    try (PackageReader packageReader =
-  //        new PackageReader(TON_DB_PATH + "\\archive\\packages\\arch0000\\archive.00000.pack")) {
-  //      // Read all entries in the package
-  //      packageReader.forEach(
-  //          entry -> {
-  //            Cell c = entry.getCell();
-  //            log.info(
-  //                "Entry filename: {}, size: {} bytes, boc {}",
-  //                entry.getFilename(),
-  //                entry.getData().length,
-  //                c);
-  //            if (c.getBits().preReadUint(8).longValue() == 0xc3) {
-  //              BlockProof blockProof = BlockProof.deserialize(CellSlice.beginParse(c));
-  //              log.info("deserialized blockProof: {}", blockProof);
-  //            } else if (c.getBits().preReadUint(32).longValue() == 0x11ef55aa) {
-  //              //              Cell blockCell = getFirstCellWithBlock(c);
-  //              //              Block block = Block.deserialize(CellSlice.beginParse(c));
-  //              //              log.info("deserialized block: {}", block);
-  //            }
-  //          });
-  //    }
-  //  }
+  @Test
+  public void testReadPackageFiles() throws IOException {
+    // This test demonstrates how to read a specific package file
+    try (PackageReader packageReader =
+        new PackageReader(
+            TON_DB_PATH + "/archive/packages/arch0002/archive.216556.0:8000000000000000.pack")) {
+      // Read all entries in the package
+      AtomicInteger i = new AtomicInteger();
+      packageReader.forEachTyped(
+          entry -> {
+            if (entry.getFilename().startsWith("block_")) {
+              long start = System.currentTimeMillis();
+              Cell c = CellBuilder.beginCell().fromBoc(entry.getData()).endCell();
+              long endC = System.currentTimeMillis() - start;
+
+              start = System.currentTimeMillis();
+              Block block = Block.deserialize(CellSlice.beginParse(c));
+              long endB = System.currentTimeMillis() - start;
+
+              log.info(
+                  "Entry [{}] boc: {}, size: {} bytes, parsed {}ms, deserialized {}ms",
+                  i.incrementAndGet(),
+                  Utils.bytesToHex(entry.getData()),
+                  entry.getData().length,
+                  endC,
+                  endB);
+            }
+          });
+    }
+  }
 
   /** Test reading other RocksDB databases. */
   @Test

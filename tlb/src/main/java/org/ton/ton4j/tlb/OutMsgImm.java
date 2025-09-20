@@ -3,6 +3,8 @@ package org.ton.ton4j.tlb;
 import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -10,6 +12,7 @@ import org.ton.ton4j.cell.CellSlice;
 /** msg_export_imm$010 out_msg:^MsgEnvelope transaction:^Transaction reimport:^InMsg = OutMsg; */
 @Builder
 @Data
+@Slf4j
 public class OutMsgImm implements OutMsg, Serializable {
   int magic;
   MsgEnvelope msg;
@@ -27,11 +30,16 @@ public class OutMsgImm implements OutMsg, Serializable {
   }
 
   public static OutMsgImm deserialize(CellSlice cs) {
-    return OutMsgImm.builder()
-        .magic(cs.loadUint(3).intValue())
-        .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-        .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
-        .reimport(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
-        .build();
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
+    OutMsgImm result =
+        OutMsgImm.builder()
+            .magic(cs.loadUint(3).intValue())
+            .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+            .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+            .reimport(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
+            .build();
+    log.info("{} deserialized in {}ms", OutMsgImm.class.getSimpleName(), stopWatch.getTime());
+    return result;
   }
 }

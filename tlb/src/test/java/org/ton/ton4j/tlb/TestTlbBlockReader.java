@@ -346,6 +346,58 @@ public class TestTlbBlockReader {
     log.info("gson {}", gson.toJson(block));
   }
 
+  /** 462022 bytes, parsed 96ms, deserialized 2005ms, shardAccounts 142 */
+  @Test
+  public void testShouldDeserializeBlock20() {
+    //    TimerNinjaConfiguration.getInstance().toggleSystemOutLog(true);
+    //    TimerNinjaConfiguration.getInstance().isSystemOutLogEnabled();
+
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-17.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info(
+        "getShardAccountBlocks.size {}",
+        block
+            .getExtra()
+            .getShardAccountBlocks()
+            .getShardAccountBlocks()
+            .elements
+            .size()); // block);
+    //    block.toCell();
+    //    block.toCell().toHex();
+    block.getAllTransactions();
+    log.info("------------------");
+    //    log.info("gson {}", gson.toJson(block));
+  }
+
+  /** 453254 bytes, parsed 75ms, deserialized 60ms, shardAccounts 288, big but 20x faster */
+  @Test
+  public void testShouldDeserializeBlock21() {
+    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-18.txt")).endCell();
+    log.info("CellType {}", c.getCellType());
+    Block block = Block.deserialize(CellSlice.beginParse(c));
+    log.info(
+        "getShardAccountBlocks.size {}",
+        block
+            .getExtra()
+            .getShardAccountBlocks()
+            .getShardAccountBlocks()
+            .elements
+            .size()); // block);
+    //    block.toCell();
+    //    block.toCell().toHex();
+    log.info("------------------");
+    //    log.info("gson {}", gson.toJson(block));
+  }
+
+  /** 462022 bytes, parsed 96ms, deserialized 2005ms, shardAccounts 142 */
+  //  @Test
+  //  public void testBenchmark() {
+  //    Cell c = CellBuilder.beginCell().fromBoc(getBoc("boc-17.txt")).endCell();
+  //    log.info("CellType {}", c.getCellType());
+  //    Block block = Block.deserialize(CellSlice.beginParse(c));
+  //  }
+  //
   private String getBoc(String fileName) {
     return Utils.streamToString(
         Objects.requireNonNull(

@@ -1,11 +1,13 @@
 package org.ton.ton4j.tlb;
 
+import io.github.thanglequoc.timerninja.TimerNinjaTracker;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -25,6 +27,7 @@ import org.ton.ton4j.cell.CellSlice;
 @Builder
 @Data
 @Slf4j
+// @Metrics(registry = "objectRunnerBlock")
 public class Block implements Serializable {
   long magic;
   int globalId;
@@ -44,8 +47,10 @@ public class Block implements Serializable {
         .endCell();
   }
 
+  @TimerNinjaTracker
   public static Block deserialize(CellSlice cs) {
-
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
     long magic = cs.loadUint(32).longValue();
     assert (magic == 0x11ef55aaL)
         : "Block: magic not equal to 0x11ef55aa, found 0x" + Long.toHexString(magic);
@@ -60,7 +65,7 @@ public class Block implements Serializable {
     block.setValueFlow(ValueFlow.deserialize(CellSlice.beginParse(cs.loadRef())));
     block.setStateUpdate(MerkleUpdate.deserialize(CellSlice.beginParse(cs.loadRef())));
     block.setExtra(BlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())));
-
+    log.info("{} deserialized in {}ms", Block.class.getSimpleName(), stopWatch.getTime());
     return block;
   }
 
@@ -85,6 +90,7 @@ public class Block implements Serializable {
     return block;
   }
 
+  @TimerNinjaTracker
   public List<Transaction> getAllTransactions() {
     List<Transaction> result = new ArrayList<>();
     Block block = this;

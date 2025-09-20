@@ -21,72 +21,46 @@ public interface OutMsg {
   Cell toCell();
 
   static OutMsg deserialize(CellSlice cs) {
-    int outMsgFlag = cs.loadUint(3).intValue();
+
+    int outMsgFlag = cs.preloadUint(3).intValue();
     switch (outMsgFlag) {
       case 0b000:
         {
-          return OutMsgExt.builder()
-              .msg(Message.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .build();
+          return OutMsgExt.deserialize(cs);
         }
       case 0b010:
         {
-          return OutMsgImm.builder()
-              .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .reimport(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .build();
+          return OutMsgImm.deserialize(cs);
         }
       case 0b001:
         {
-          return OutMsgNew.builder()
-              .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .build();
+          return OutMsgNew.deserialize(cs);
         }
       case 0b011:
         {
-          return OutMsgTr.builder()
-              .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .imported(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .build();
+          return OutMsgTr.deserialize(cs);
         }
       case 0b111:
         {
-          return OutMsgTrReq.builder()
-              .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .imported(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .build();
+          return OutMsgTrReq.deserialize(cs);
         }
       case 0b100:
         {
-          return OutMsgDeqImm.builder()
-              .msg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .reimport(InMsg.deserialize(CellSlice.beginParse(cs.loadRef())))
-              .build();
+          return OutMsgDeqImm.deserialize(cs);
         }
       case 0b110:
         {
-          boolean outMsgSubFlag = cs.loadBit();
+          boolean outMsgSubFlag = cs.preloadBitAt(4);
           if (outMsgSubFlag) {
-            return OutMsgDeqShort.builder()
-                .msgEnvHash(cs.loadUint(256))
-                .nextWorkchain(cs.loadInt(32).longValue())
-                .nextAddrPfx(cs.loadUint(64))
-                .importBlockLt(cs.loadUint(64))
-                .build();
+            return OutMsgDeqShort.deserialize(cs);
           } else {
-            return OutMsgDeq.builder()
-                .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-                .importBlockLt(cs.loadUint(63))
-                .build();
+            return OutMsgDeq.deserialize(cs);
           }
         }
       case 0b101:
         {
-          int outMsgSubFlag = cs.loadUint(2).intValue();
-          if (outMsgSubFlag == 0) {
+          boolean outMsgSubFlag = cs.preloadBitAt(5);
+          if (!outMsgSubFlag) {
             return OutMsgNewDefer.builder()
                 .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
                 .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))

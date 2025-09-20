@@ -3,6 +3,8 @@ package org.ton.ton4j.tlb;
 import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -17,6 +19,7 @@ import org.ton.ton4j.cell.CellSlice;
  */
 @Builder
 @Data
+@Slf4j
 public class OutMsgNew implements OutMsg, Serializable {
   int magic;
   MsgEnvelope outMsg;
@@ -32,10 +35,15 @@ public class OutMsgNew implements OutMsg, Serializable {
   }
 
   public static OutMsgNew deserialize(CellSlice cs) {
-    return OutMsgNew.builder()
-        .magic(cs.loadUint(3).intValue())
-        .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-        .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
-        .build();
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
+    OutMsgNew result =
+        OutMsgNew.builder()
+            .magic(cs.loadUint(3).intValue())
+            .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+            .transaction(Transaction.deserialize(CellSlice.beginParse(cs.loadRef())))
+            .build();
+    log.info("{} deserialized in {}ms", OutMsgNew.class.getSimpleName(), stopWatch.getTime());
+    return result;
   }
 }

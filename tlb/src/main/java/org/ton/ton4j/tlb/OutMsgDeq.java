@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -18,6 +20,7 @@ import org.ton.ton4j.cell.CellSlice;
  */
 @Builder
 @Data
+@Slf4j
 public class OutMsgDeq implements OutMsg, Serializable {
   int magic;
   MsgEnvelope outMsg;
@@ -33,10 +36,15 @@ public class OutMsgDeq implements OutMsg, Serializable {
   }
 
   public static OutMsgDeq deserialize(CellSlice cs) {
-    return OutMsgDeq.builder()
-        .magic(cs.loadUint(4).intValue())
-        .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
-        .importBlockLt(cs.loadUint(63))
-        .build();
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
+    OutMsgDeq result =
+        OutMsgDeq.builder()
+            .magic(cs.loadUint(4).intValue())
+            .outMsg(MsgEnvelope.deserialize(CellSlice.beginParse(cs.loadRef())))
+            .importBlockLt(cs.loadUint(63))
+            .build();
+    log.info("{} deserialized in {}ms", OutMsgDeq.class.getSimpleName(), stopWatch.getTime());
+    return result;
   }
 }

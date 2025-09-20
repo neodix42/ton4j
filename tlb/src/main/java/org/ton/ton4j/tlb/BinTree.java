@@ -2,14 +2,15 @@ package org.ton.ton4j.tlb;
 
 import java.io.Serializable;
 import java.util.*;
-
-import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 
 @Data
+@Slf4j
 public class BinTree implements Serializable {
   private Map<String, HashmapKV> storage;
 
@@ -95,37 +96,38 @@ public class BinTree implements Serializable {
     if (cells.isEmpty()) {
       return null;
     }
-    
+
     BinTree tree = new BinTree();
     int index = 0;
-    
+
     // Convert deque to array for easier indexing
     ShardDescr[] array = cells.toArray(new ShardDescr[0]);
-    
+
     // Build tree using array indices
     buildTreeRecursive(tree, array, index, "");
-    
+
     return tree;
   }
-  
-  private static void buildTreeRecursive(BinTree tree, ShardDescr[] array, int index, String keyPath) {
+
+  private static void buildTreeRecursive(
+      BinTree tree, ShardDescr[] array, int index, String keyPath) {
     if (index >= array.length) {
       return;
     }
-    
+
     // Store current element as leaf
     ShardDescr value = array[index];
     Cell keyCell = tree.createKeyCell(keyPath);
     tree.storage.put(tree.bytesToHex(keyCell.hash()), new HashmapKV(keyCell, value.toCell()));
-    
+
     // Build left and right subtrees
     int leftIndex = 2 * index + 1;
     int rightIndex = 2 * index + 2;
-    
+
     if (leftIndex < array.length) {
       buildTreeRecursive(tree, array, leftIndex, keyPath + "0");
     }
-    
+
     if (rightIndex < array.length) {
       buildTreeRecursive(tree, array, rightIndex, keyPath + "1");
     }
@@ -135,7 +137,7 @@ public class BinTree implements Serializable {
     if (storage.isEmpty()) {
       return CellBuilder.beginCell().endCell();
     }
-    
+
     // Build tree structure from hash map entries
     TreeNode root = buildTreeFromStorage();
     return serializeTreeNode(root);
@@ -171,7 +173,8 @@ public class BinTree implements Serializable {
       if (path.equals(pathPrefix)) {
         leafAtThisPath = new TreeNode();
         leafAtThisPath.isLeaf = true;
-        leafAtThisPath.value = ShardDescr.deserialize(CellSlice.beginParse(entry.getValue().getValue()));
+        leafAtThisPath.value =
+            ShardDescr.deserialize(CellSlice.beginParse(entry.getValue().getValue()));
         break;
       }
     }
@@ -179,7 +182,7 @@ public class BinTree implements Serializable {
     // Check if there are any children with this prefix
     boolean hasLeftChild = false;
     boolean hasRightChild = false;
-    
+
     for (Map.Entry<String, HashmapKV> entry : storage.entrySet()) {
       String path = extractPathFromKey(entry.getValue().getKey());
       if (path.startsWith(pathPrefix) && path.length() > pathPrefix.length()) {
@@ -201,15 +204,15 @@ public class BinTree implements Serializable {
     if (hasLeftChild || hasRightChild) {
       TreeNode forkNode = new TreeNode();
       forkNode.isLeaf = false;
-      
+
       if (hasLeftChild) {
         forkNode.left = buildTreeNodeRecursive(pathPrefix + "0");
       }
-      
+
       if (hasRightChild) {
         forkNode.right = buildTreeNodeRecursive(pathPrefix + "1");
       }
-      
+
       return forkNode;
     }
 
@@ -223,7 +226,7 @@ public class BinTree implements Serializable {
     }
 
     CellBuilder cb = CellBuilder.beginCell();
-    
+
     if (node.isLeaf) {
       // bt_leaf$0: store bit 0 followed by ShardDescr data
       cb.storeBit(false);
@@ -232,10 +235,12 @@ public class BinTree implements Serializable {
       // bt_fork$1: store bit 1 followed by left and right references
       cb.storeBit(true);
       // Always store both references, even if null (as empty cells)
-      cb.storeRef(node.left != null ? serializeTreeNode(node.left) : CellBuilder.beginCell().endCell());
-      cb.storeRef(node.right != null ? serializeTreeNode(node.right) : CellBuilder.beginCell().endCell());
+      cb.storeRef(
+          node.left != null ? serializeTreeNode(node.left) : CellBuilder.beginCell().endCell());
+      cb.storeRef(
+          node.right != null ? serializeTreeNode(node.right) : CellBuilder.beginCell().endCell());
     }
-    
+
     return cb.endCell();
   }
 
@@ -247,6 +252,8 @@ public class BinTree implements Serializable {
   }
 
   public static BinTree deserialize(CellSlice cs) {
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
     if (cs.isExotic() || cs.getRestBits() == 0) {
       return null;
     }
@@ -254,6 +261,8 @@ public class BinTree implements Serializable {
     BinTree tree = new BinTree();
     try {
       tree.loadFromCell(cs, "");
+      log.info("{} deserialized in {}ms", BinTree.class.getSimpleName(), stopWatch.getTime());
+
       return tree;
     } catch (Exception e) {
       return null;
@@ -266,7 +275,7 @@ public class BinTree implements Serializable {
     }
 
     int typeFlag = cs.loadUint(1).intValue();
-    
+
     if (typeFlag == 0) {
       // bt_leaf$0: leaf node with ShardDescr
       Cell finalKey = createKeyCell(keyPath);
@@ -277,10 +286,10 @@ public class BinTree implements Serializable {
       if (cs.getRefsCount() < 2) {
         throw new Exception("Fork node must have 2 references");
       }
-      
+
       Cell leftRef = cs.loadRef();
       Cell rightRef = cs.loadRef();
-      
+
       // Always process both subtrees, even if they appear empty
       // This is crucial for maintaining the correct tree structure
       loadFromCell(CellSlice.beginParse(leftRef), keyPath + "0");

@@ -145,7 +145,11 @@ public class TestExporter {
   @Test
   public void testExporterToFile() throws IOException {
     Exporter exporter =
-        Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
+        Exporter.builder()
+            .tonDatabaseRootPath(TON_DB_ROOT_PATH)
+            .useInMemoryProcessing(true)
+            .showProgress(true)
+            .build();
     assertThat(exporter).isNotNull();
     FileUtils.deleteQuietly(new File("local.txt"));
     exporter.exportToFile("local.txt", true, 32);

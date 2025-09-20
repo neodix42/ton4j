@@ -393,9 +393,9 @@ public class Exporter {
     // globalProfiler.recordWallClockStart();
 
     // Create thread pool
-    ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
-    currentProcessingExecutor = executor; // Store reference for shutdown coordination
-    List<Future<Void>> futures = new ArrayList<>();
+    //    ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
+    //    currentProcessingExecutor = executor; // Store reference for shutdown coordination
+    //    List<Future<Void>> futures = new ArrayList<>();
 
     // Phase 2: Track processed blocks for reset mechanism
     AtomicInteger globalProcessedBlocks = new AtomicInteger(0);
@@ -501,121 +501,123 @@ public class Exporter {
         continue;
       }
 
-      Future<Void> future =
-          executor.submit(
+      //      Future<Void> future =
+      //          executor.submit(
+      //              () -> {
+      //                // Check shutdown signal at the beginning of each task
+      //                if (shutdownRequested) {
+      //                  //                  log.debug("Shutdown requested, skipping archive: {}",
+      //                  // archiveKey);
+      //                  return null;
+      //                }
+      try {
+        // Use streaming processing instead of loading all blocks into memory
+        int localParsedBlocks = 0;
+        int localNonBlocks = 0;
+
+        // Use static GSON instance - thread-safe for serialization
+        Gson localGson = gson;
+
+        // Choose processing approach based on configuration
+        if (useInMemoryProcessing) {
+          // Use in-memory processing for maximum performance
+          if (archiveInfo.getIndexPath() == null) {
+            localParsedBlocks =
+                processFilesPackageInMemory(
+                    archiveKey,
+                    archiveInfo,
+                    outputWriter,
+                    deserialized,
+                    localGson,
+                    errorFilePath,
+                    parsedBlocksCounter,
+                    nonBlocksCounter,
+                    errorCounter);
+          } else {
+            localParsedBlocks =
+                processTraditionalArchiveInMemory(
+                    archiveKey,
+                    archiveInfo,
+                    outputWriter,
+                    deserialized,
+                    localGson,
+                    errorFilePath,
+                    parsedBlocksCounter,
+                    nonBlocksCounter,
+                    errorCounter);
+          }
+        } else {
+          // Use traditional streaming approach
+          if (archiveInfo.getIndexPath() == null) {
+            localParsedBlocks =
+                processFilesPackageStreaming(
+                    archiveKey,
+                    archiveInfo,
+                    outputWriter,
+                    deserialized,
+                    localGson,
+                    errorFilePath,
+                    parsedBlocksCounter,
+                    nonBlocksCounter,
+                    errorCounter);
+          } else {
+            localParsedBlocks =
+                processTraditionalArchiveStreaming(
+                    archiveKey,
+                    archiveInfo,
+                    outputWriter,
+                    deserialized,
+                    localGson,
+                    errorFilePath,
+                    parsedBlocksCounter,
+                    nonBlocksCounter,
+                    errorCounter);
+          }
+        }
+
+        // Mark package as processed (optimized to avoid synchronized file I/O)
+        exportStatus.markPackageProcessed(archiveKey, localParsedBlocks, localNonBlocks);
+
+        // Save status less frequently to avoid performance degradation
+        // Only save every 10th package to reduce file I/O overhead
+        if (statusManager != null && exportStatus.getProcessedCount() % 10 == 0) {
+          // Use separate thread for status saving to avoid blocking processing
+          CompletableFuture.runAsync(
               () -> {
-                // Check shutdown signal at the beginning of each task
-                if (shutdownRequested) {
-                  //                  log.debug("Shutdown requested, skipping archive: {}",
-                  // archiveKey);
-                  return null;
-                }
                 try {
-                  // Use streaming processing instead of loading all blocks into memory
-                  int localParsedBlocks = 0;
-                  int localNonBlocks = 0;
-
-                  // Use static GSON instance - thread-safe for serialization
-                  Gson localGson = gson;
-
-                  // Choose processing approach based on configuration
-                  if (useInMemoryProcessing) {
-                    // Use in-memory processing for maximum performance
-                    if (archiveInfo.getIndexPath() == null) {
-                      localParsedBlocks =
-                          processFilesPackageInMemory(
-                              archiveKey,
-                              archiveInfo,
-                              outputWriter,
-                              deserialized,
-                              localGson,
-                              errorFilePath,
-                              parsedBlocksCounter,
-                              nonBlocksCounter,
-                              errorCounter);
-                    } else {
-                      localParsedBlocks =
-                          processTraditionalArchiveInMemory(
-                              archiveKey,
-                              archiveInfo,
-                              outputWriter,
-                              deserialized,
-                              localGson,
-                              errorFilePath,
-                              parsedBlocksCounter,
-                              nonBlocksCounter,
-                              errorCounter);
-                    }
-                  } else {
-                    // Use traditional streaming approach
-                    if (archiveInfo.getIndexPath() == null) {
-                      localParsedBlocks =
-                          processFilesPackageStreaming(
-                              archiveKey,
-                              archiveInfo,
-                              outputWriter,
-                              deserialized,
-                              localGson,
-                              errorFilePath,
-                              parsedBlocksCounter,
-                              nonBlocksCounter,
-                              errorCounter);
-                    } else {
-                      localParsedBlocks =
-                          processTraditionalArchiveStreaming(
-                              archiveKey,
-                              archiveInfo,
-                              outputWriter,
-                              deserialized,
-                              localGson,
-                              errorFilePath,
-                              parsedBlocksCounter,
-                              nonBlocksCounter,
-                              errorCounter);
-                    }
-                  }
-
-                  // Mark package as processed (optimized to avoid synchronized file I/O)
-                  exportStatus.markPackageProcessed(archiveKey, localParsedBlocks, localNonBlocks);
-
-                  // Save status less frequently to avoid performance degradation
-                  // Only save every 10th package to reduce file I/O overhead
-                  if (statusManager != null && exportStatus.getProcessedCount() % 10 == 0) {
-                    // Use separate thread for status saving to avoid blocking processing
-                    CompletableFuture.runAsync(
-                        () -> {
-                          try {
-                            statusManager.saveStatus(exportStatus);
-                          } catch (Exception e) {
-                            log.warn("Error saving export status: {}", e.getMessage());
-                          }
-                        });
-                  }
-
-                  if (showProgressInfo) {
-                    //                    System.out.printf(
-                    //                        "progress: %5.1f%% %6d/%d archive %s%n",
-                    //                        exportStatus.getProgressPercentage(),
-                    //                        exportStatus.getProcessedCount(),
-                    //                        exportStatus.getTotalPackages(),
-                    //                        archiveKey);
-                  }
+                  statusManager.saveStatus(exportStatus);
                 } catch (Exception e) {
-                  log.error("Unexpected error reading archive {}: {}", archiveKey, e.getMessage());
+                  log.warn("Error saving export status: {}", e.getMessage());
                 }
-                return null;
               });
-      futures.add(future);
+        }
+
+        if (showProgressInfo) {
+          System.out.printf(
+              "progress: %5.1f%% %6d/%d archive %s%n",
+              exportStatus.getProgressPercentage(),
+              exportStatus.getProcessedCount(),
+              exportStatus.getTotalPackages(),
+              archiveKey);
+        }
+      } catch (Exception e) {
+        log.error("Unexpected error reading archive {}: {}", archiveKey, e.getMessage());
+      }
+
+      //                return null;
+
+      //              });
+      //      futures.add(future);
     }
 
     // Wait for all tasks to complete
-    for (Future<Void> future : futures) {
-      try {
-        future.get();
-      } catch (Exception e) {
-        log.error("Error waiting for archive reading task: {}", e.getMessage());
-      }
-    }
+    //    for (Future<Void> future : futures) {
+    //      try {
+    //        future.get();
+    //      } catch (Exception e) {
+    //        log.error("Error waiting for archive reading task: {}", e.getMessage());
+    //      }
+    //    }
 
     long endTime = System.currentTimeMillis();
     long durationMs = endTime - startTime;
@@ -626,15 +628,15 @@ public class Exporter {
     // globalProfiler.recordWallClockEnd();
 
     // Shutdown executor
-    executor.shutdown();
-    try {
-      if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-        executor.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      executor.shutdownNow();
-      Thread.currentThread().interrupt();
-    }
+    //    executor.shutdown();
+    //    try {
+    //      if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+    //        executor.shutdownNow();
+    //      }
+    //    } catch (InterruptedException e) {
+    //      executor.shutdownNow();
+    //      Thread.currentThread().interrupt();
+    //    }
 
     // Shutdown rate display executor properly
     ScheduledExecutorService rateExecutor = currentRateDisplayExecutor;
@@ -749,18 +751,21 @@ public class Exporter {
     int queueCapacity = 10000; // Conservative default queue capacity
     int bufferSizeMB = 64; // Conservative default buffer size per writer thread
 
-    // Use existing AsyncFileWriter instead of HighPerformanceFileWriter to avoid massive queue accumulation
+    // Use existing AsyncFileWriter instead of HighPerformanceFileWriter to avoid massive queue
+    // accumulation
     File outputFile = new File(outputToFile);
     String errorFilePath = new File(outputFile.getParent(), "errors.txt").getAbsolutePath();
-    
-    // Create AsyncFileWriter with reasonable queue size (much smaller than HighPerformanceFileWriter)
-    try (AsyncFileWriter asyncWriter = new AsyncFileWriter(
-        outputToFile, 
-        isResume, 
-        5000,    // Small queue capacity (vs 200,000 in HighPerformanceFileWriter)
-        256 * 1024,  // 256KB buffer
-        1000)) { // Flush every 1000 lines
-      
+
+    // Create AsyncFileWriter with reasonable queue size (much smaller than
+    // HighPerformanceFileWriter)
+    try (AsyncFileWriter asyncWriter =
+        new AsyncFileWriter(
+            outputToFile,
+            isResume,
+            5000, // Small queue capacity (vs 200,000 in HighPerformanceFileWriter)
+            256 * 1024, // 256KB buffer
+            1000)) { // Flush every 1000 lines
+
       // Create output writer using AsyncFileWriter
       OutputWriter outputWriter = asyncWriter::writeLine;
 

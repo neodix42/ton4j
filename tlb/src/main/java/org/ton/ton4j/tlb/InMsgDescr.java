@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
@@ -22,6 +24,7 @@ import org.ton.ton4j.cell.TonHashMapAugE;
  */
 @Builder
 @Data
+@Slf4j
 public class InMsgDescr implements Serializable {
   TonHashMapAugE inMsg;
 
@@ -38,10 +41,16 @@ public class InMsgDescr implements Serializable {
   }
 
   public static InMsgDescr deserialize(CellSlice cs) {
-    return InMsgDescr.builder()
-        .inMsg(
-            cs.loadDictAugE(256, k -> k.readUint(256), InMsg::deserialize, ImportFees::deserialize))
-        .build();
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
+    InMsgDescr result =
+        InMsgDescr.builder()
+            .inMsg(
+                cs.loadDictAugE(
+                    256, k -> k.readUint(256), InMsg::deserialize, ImportFees::deserialize))
+            .build();
+    log.info("{} deserialized in {}ms", InMsgDescr.class.getSimpleName(), stopWatch.getTime());
+    return result;
   }
 
   public long getCount() {

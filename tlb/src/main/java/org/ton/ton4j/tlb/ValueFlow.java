@@ -1,12 +1,13 @@
 package org.ton.ton4j.tlb;
 
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
-
-import java.io.Serializable;
 
 /**
  *
@@ -31,6 +32,7 @@ import java.io.Serializable;
  */
 @Builder
 @Data
+@Slf4j
 public class ValueFlow implements Serializable {
   long magic;
   CurrencyCollection fromPrevBlk;
@@ -74,6 +76,8 @@ public class ValueFlow implements Serializable {
   }
 
   public static ValueFlow deserialize(CellSlice cs) {
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
     long magic = cs.loadUint(32).longValue();
     if (magic == 0xb8e48dfbL) {
 
@@ -91,7 +95,7 @@ public class ValueFlow implements Serializable {
       CurrencyCollection recovered = CurrencyCollection.deserialize(c2);
       CurrencyCollection created = CurrencyCollection.deserialize(c2);
       CurrencyCollection minted = CurrencyCollection.deserialize(c2);
-
+      log.info("{} deserialized in {}ms", ValueFlow.class.getSimpleName(), stopWatch.getTime());
       return ValueFlow.builder()
           .magic(0xb8e48dfbL)
           .fromPrevBlk(fromPrevBlk)
@@ -121,6 +125,8 @@ public class ValueFlow implements Serializable {
       CurrencyCollection recovered = CurrencyCollection.deserialize(c2);
       CurrencyCollection created = CurrencyCollection.deserialize(c2);
       CurrencyCollection minted = CurrencyCollection.deserialize(c2);
+
+      log.info("{} deserialized in {}ms", ValueFlow.class.getSimpleName(), stopWatch.getTime());
 
       return ValueFlow.builder()
           .magic(0xb8e48dfbL)

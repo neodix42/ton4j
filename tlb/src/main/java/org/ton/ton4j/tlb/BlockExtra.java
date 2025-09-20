@@ -6,8 +6,10 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.commons.lang3.time.StopWatch;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
@@ -27,6 +29,7 @@ import org.ton.ton4j.cell.CellSlice;
  */
 @Builder
 @Data
+@Slf4j
 public class BlockExtra implements Serializable {
   InMsgDescr inMsgDesc;
   OutMsgDescr outMsgDesc;
@@ -59,6 +62,8 @@ public class BlockExtra implements Serializable {
   }
 
   public static BlockExtra deserialize(CellSlice cs) {
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
     if (cs.isExotic()) {
       return null;
     }
@@ -81,6 +86,7 @@ public class BlockExtra implements Serializable {
 
     blockExtra.setMcBlockExtra(
         cs.loadBit() ? McBlockExtra.deserialize(CellSlice.beginParse(cs.loadRef())) : null);
+    log.info("{} deserialized in {}ms", BlockExtra.class.getSimpleName(), stopWatch.getTime());
 
     return blockExtra;
   }
