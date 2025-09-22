@@ -14,6 +14,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.types.*;
 import org.ton.ton4j.tlb.Block;
@@ -27,102 +28,16 @@ public class TestExporter {
   public static final String TON_DB_ROOT_PATH =
       "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
 
-  static {
-    // Configure JVM to use 80% of available system memory for tests
-    configureOptimalMemoryUsage();
-  }
-
-  /**
-   * Configures JVM memory settings to use 80% of available system RAM. This method calculates the
-   * optimal heap size and applies it programmatically.
-   */
-  private static void configureOptimalMemoryUsage() {
-    try {
-      Runtime runtime = Runtime.getRuntime();
-      long maxMemory = runtime.maxMemory();
-      long totalMemory = runtime.totalMemory();
-      long freeMemory = runtime.freeMemory();
-
-      // Get system total memory from OS
-      long systemTotalMemory = getSystemTotalMemory();
-
-      log.info("Current JVM Memory Configuration:");
-      log.info("  JVM Max Heap: {}MB", maxMemory / (1024 * 1024));
-      log.info("  JVM Total: {}MB", totalMemory / (1024 * 1024));
-      log.info("  JVM Free: {}MB", freeMemory / (1024 * 1024));
-      log.info("  System Total: {}MB", systemTotalMemory / (1024 * 1024));
-
-      // Calculate 80% of system memory
-      long targetHeapSize = (long) (systemTotalMemory * 0.8);
-
-      if (maxMemory < targetHeapSize) {
-        log.warn(
-            "JVM heap size ({}MB) is less than optimal ({}MB - 80% of system memory)",
-            maxMemory / (1024 * 1024), targetHeapSize / (1024 * 1024));
-        log.warn("Consider running tests with: -Xmx{}g", targetHeapSize / (1024 * 1024 * 1024));
-
-        // Try to expand heap if possible (this won't work but will log the recommendation)
-        System.gc(); // Force garbage collection to free up memory
-
-        // Force memory allocation to use more of available heap
-        try {
-          // Allocate large arrays to force JVM to expand heap usage
-          int arraySize = (int) Math.min(Integer.MAX_VALUE - 8, (targetHeapSize - maxMemory) / 8);
-          if (arraySize > 0) {
-            @SuppressWarnings("unused")
-            byte[] memoryExpander = new byte[arraySize];
-            memoryExpander = null; // Allow GC
-            log.info("Attempted to expand memory usage within current heap limits");
-          }
-        } catch (OutOfMemoryError e) {
-          log.debug("Cannot expand memory usage further within current heap limits");
-        }
-      } else {
-        log.info("JVM heap size is already optimal for system memory");
-      }
-
-    } catch (Exception e) {
-      log.warn("Failed to configure optimal memory usage: {}", e.getMessage());
-    }
-  }
-
-  /**
-   * Gets total system memory in bytes by reading /proc/meminfo on Linux systems. Falls back to JVM
-   * max memory if unable to read system memory.
-   */
-  private static long getSystemTotalMemory() {
-    try {
-      java.nio.file.Path memInfoPath = java.nio.file.Paths.get("/proc/meminfo");
-      if (java.nio.file.Files.exists(memInfoPath)) {
-        java.util.List<String> lines = java.nio.file.Files.readAllLines(memInfoPath);
-        for (String line : lines) {
-          if (line.startsWith("MemTotal:")) {
-            // Extract memory size in KB and convert to bytes
-            String[] parts = line.split("\\s+");
-            if (parts.length >= 2) {
-              long memKB = Long.parseLong(parts[1]);
-              return memKB * 1024; // Convert KB to bytes
-            }
-          }
-        }
-      }
-    } catch (Exception e) {
-      log.debug("Could not read system memory from /proc/meminfo: {}", e.getMessage());
-    }
-
-    // Fallback to JVM max memory * 4 as rough estimate
-    return Runtime.getRuntime().maxMemory() * 4;
-  }
-
   public static final Gson gson =
       new GsonBuilder()
           .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
           .registerTypeHierarchyAdapter(Cell.class, new CellTypeAdapter())
           .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
-          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
-          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
-          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
-          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          .registerTypeAdapter(BitString.class, new BitStringTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+          //          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
           .disableHtmlEscaping()
           .setLenient()
           .create();
@@ -195,7 +110,7 @@ public class TestExporter {
 
     long durationMs = System.currentTimeMillis() - startTime;
 
-    log.info("received last block : {}ms", durationMs);
+    log.info("received last block in {}ms", durationMs);
 
     log.info("Latest block found:");
     log.info("  Workchain: {}", latestBlock.getBlockInfo().getShard().getWorkchain());

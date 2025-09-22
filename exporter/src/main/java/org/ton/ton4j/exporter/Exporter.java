@@ -329,11 +329,6 @@ public class Exporter {
       dbReader = new DbReader(tonDatabaseRootPath);
     }
 
-    // Ensure dbReader and its components are properly initialized
-    if (dbReader == null) {
-      throw new IOException("Failed to initialize DbReader");
-    }
-
     if (dbReader.getArchiveDbReader() == null) {
       throw new IOException("ArchiveDbReader is not initialized");
     }
@@ -495,7 +490,6 @@ public class Exporter {
                             archiveInfo,
                             outputWriter,
                             deserialized,
-                            gson,
                             errorFilePath,
                             parsedBlocksCounter,
                             nonBlocksCounter,
@@ -886,11 +880,23 @@ public class Exporter {
                         }
                       }
 
-                      // Mark package as processed and save status
-                      synchronized (finalExportStatus) { // todo same as for file
-                        finalExportStatus.markPackageProcessed(
-                            archiveKey, localParsedBlocks, localNonBlocks);
-                        statusManager.saveStatus(finalExportStatus);
+                      // Mark package as processed (optimized to avoid synchronized file I/O)
+                      finalExportStatus.markPackageProcessed(
+                          archiveKey, localParsedBlocks, localNonBlocks);
+
+                      // Save status less frequently to avoid performance degradation
+                      // Only save every 10th package to reduce file I/O overhead
+                      if (statusManager != null
+                          && finalExportStatus.getProcessedCount() % 10 == 0) {
+                        // Use separate thread for status saving to avoid blocking processing
+                        CompletableFuture.runAsync(
+                            () -> {
+                              try {
+                                statusManager.saveStatus(finalExportStatus);
+                              } catch (Exception e) {
+                                log.warn("Error saving export status: {}", e.getMessage());
+                              }
+                            });
                       }
 
                       if (showProgress) {
@@ -980,7 +986,6 @@ public class Exporter {
                     entry.getData(),
                     outputWriter,
                     deserialized,
-                    Exporter.gson,
                     errorFilePath,
                     parsedBlocksCounter,
                     nonBlocksCounter,
@@ -1038,7 +1043,6 @@ public class Exporter {
       ArchiveInfo archiveInfo,
       OutputWriter outputWriter,
       boolean deserialized,
-      Gson localGson,
       String errorFilePath,
       AtomicInteger parsedBlocksCounter,
       AtomicInteger nonBlocksCounter,
@@ -1070,7 +1074,6 @@ public class Exporter {
                     entry.getData(),
                     outputWriter,
                     deserialized,
-                    localGson,
                     errorFilePath,
                     parsedBlocksCounter,
                     nonBlocksCounter,
@@ -1107,7 +1110,6 @@ public class Exporter {
       byte[] blockData,
       OutputWriter outputWriter,
       boolean deserialized,
-      Gson localGson,
       String errorFilePath,
       AtomicInteger parsedBlocksCounter,
       AtomicInteger nonBlocksCounter,
@@ -1136,11 +1138,7 @@ public class Exporter {
           String shardHex = block.getBlockInfo().getShard().convertShardIdentToShard().toString(16);
           long seqno = block.getBlockInfo().getSeqno();
 
-          //          StopWatch stopWatch = new StopWatch();
-          //          stopWatch.start();
-
-          // JSON serialization
-          String jsonBlock = localGson.toJson(block);
+          String jsonBlock = Exporter.gson.toJson(block);
 
           // Use StringBuilder for more efficient string construction
           StringBuilder lineBuilder = new StringBuilder(1024); // Pre-allocate reasonable size
@@ -1154,7 +1152,6 @@ public class Exporter {
               .append(jsonBlock);
 
           lineToWrite = lineBuilder.toString();
-          //          log.info("jsoned {}", stopWatch.getTime());
 
           // Clear JSON string reference immediately after use
           jsonBlock = null;
