@@ -62,15 +62,8 @@ public class Exporter {
   // Shutdown signal to stop processing new packages
   private volatile boolean shutdownRequested;
 
-  // All reset mechanisms removed - no caching, no performance degradation
-
-  // High-performance decoupled processing components
-  private volatile boolean useInMemoryProcessing = true; // Enable in-memory processing by default
-
   // Optimal writer thread count (independent of processing threads)
   private volatile int optimalWriterThreads = 32; // Default for modern SSDs
-
-  private volatile boolean useBlockLevelParallelization = true; // Enable by default
 
   // Statistics tracking for interrupted exports
   volatile AtomicInteger totalParsedBlocks;
@@ -196,25 +189,6 @@ public class Exporter {
   public double getErrorRate() {
     int totalBlocks = totalParsedBlocks.get() + totalErrors.get();
     return totalBlocks > 0 ? (double) totalErrors.get() / totalBlocks * 100.0 : 0.0;
-  }
-
-  /**
-   * Enable or disable in-memory processing
-   *
-   * @param enabled true to enable in-memory processing, false to use traditional streaming
-   */
-  public void setInMemoryProcessingEnabled(boolean enabled) {
-    this.useInMemoryProcessing = enabled;
-    log.info("In-memory processing {}", enabled ? "enabled" : "disabled");
-  }
-
-  /**
-   * Check if in-memory processing is enabled
-   *
-   * @return true if in-memory processing is enabled
-   */
-  public boolean isInMemoryProcessingEnabled() {
-    return useInMemoryProcessing;
   }
 
   /**
@@ -480,7 +454,6 @@ public class Exporter {
       String archiveKey = entry.getKey();
       ArchiveInfo archiveInfo = entry.getValue();
 
-      // Skip already processed packages
       if (exportStatus.isPackageProcessed(archiveKey)) {
         if (showProgressInfo) {
           log.info("Skipping already processed archive: {}", archiveKey);
@@ -493,74 +466,35 @@ public class Exporter {
               () -> {
                 StopWatch stopWatch = new StopWatch();
                 stopWatch.start();
-                // Check shutdown signal at the beginning of each task
                 if (shutdownRequested) {
-                  //                  log.debug("Shutdown requested, skipping archive: {}",
-                  // archiveKey);
                   return null;
                 }
                 try {
-                  // Use streaming processing instead of loading all blocks into memory
                   int localParsedBlocks = 0;
                   int localNonBlocks = 0;
-
-                  // Use static GSON instance - thread-safe for serialization
-                  //        Gson localGson = gson;
-
-                  // Choose processing approach based on configuration
-                  if (useInMemoryProcessing) {
-                    // Use in-memory processing for maximum performance
-                    if (archiveInfo.getIndexPath() == null) {
-                      localParsedBlocks =
-                          processFilesPackageInMemory(
-                              archiveKey,
-                              archiveInfo,
-                              outputWriter,
-                              deserialized,
-                              errorFilePath,
-                              parsedBlocksCounter,
-                              nonBlocksCounter,
-                              errorCounter);
-                    } else {
-                      localParsedBlocks =
-                          processTraditionalArchiveInMemory(
-                              archiveKey,
-                              archiveInfo,
-                              outputWriter,
-                              deserialized,
-                              gson,
-                              errorFilePath,
-                              parsedBlocksCounter,
-                              nonBlocksCounter,
-                              errorCounter);
-                    }
+                  if (archiveInfo.getIndexPath() == null) {
+                    localParsedBlocks =
+                        processFilesPackageInMemory(
+                            archiveKey,
+                            archiveInfo,
+                            outputWriter,
+                            deserialized,
+                            errorFilePath,
+                            parsedBlocksCounter,
+                            nonBlocksCounter,
+                            errorCounter);
                   } else {
-                    // Use traditional streaming approach
-                    if (archiveInfo.getIndexPath() == null) {
-                      localParsedBlocks =
-                          processFilesPackageStreaming(
-                              archiveKey,
-                              archiveInfo,
-                              outputWriter,
-                              deserialized,
-                              gson,
-                              errorFilePath,
-                              parsedBlocksCounter,
-                              nonBlocksCounter,
-                              errorCounter);
-                    } else {
-                      localParsedBlocks =
-                          processTraditionalArchiveStreaming(
-                              archiveKey,
-                              archiveInfo,
-                              outputWriter,
-                              deserialized,
-                              gson,
-                              errorFilePath,
-                              parsedBlocksCounter,
-                              nonBlocksCounter,
-                              errorCounter);
-                    }
+                    localParsedBlocks =
+                        processTraditionalArchiveInMemory(
+                            archiveKey,
+                            archiveInfo,
+                            outputWriter,
+                            deserialized,
+                            gson,
+                            errorFilePath,
+                            parsedBlocksCounter,
+                            nonBlocksCounter,
+                            errorCounter);
                   }
 
                   // Mark package as processed (optimized to avoid synchronized file I/O)
@@ -1093,54 +1027,6 @@ public class Exporter {
     return null;
   }
 
-  /** Process Files package using streaming approach to avoid loading all blocks into memory */
-  private int processFilesPackageStreaming(
-      String archiveKey,
-      ArchiveInfo archiveInfo,
-      OutputWriter outputWriter,
-      boolean deserialized,
-      Gson localGson,
-      String errorFilePath,
-      AtomicInteger parsedBlocksCounter,
-      AtomicInteger nonBlocksCounter,
-      AtomicInteger errorCounter)
-      throws IOException {
-
-    AtomicInteger localParsedBlocks = new AtomicInteger(0);
-    AtomicInteger localNonBlocks = new AtomicInteger(0);
-
-    // Use streaming approach with callback to process blocks one by one
-    dbReader
-        .getArchiveDbReader()
-        .streamFromFilesPackage(
-            archiveKey,
-            archiveInfo,
-            (blockKey, blockData) -> {
-              int beforeParsed = parsedBlocksCounter.get();
-              int beforeNonBlocks = nonBlocksCounter.get();
-
-              processBlockData(
-                  blockKey,
-                  blockData,
-                  outputWriter,
-                  deserialized,
-                  localGson,
-                  errorFilePath,
-                  parsedBlocksCounter,
-                  nonBlocksCounter,
-                  errorCounter);
-
-              // Track local increments
-              int afterParsed = parsedBlocksCounter.get();
-              int afterNonBlocks = nonBlocksCounter.get();
-
-              localParsedBlocks.addAndGet(afterParsed - beforeParsed);
-              localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
-            });
-
-    return localParsedBlocks.get();
-  }
-
   /** Process traditional archive using streaming approach to avoid memory accumulation */
   private int processTraditionalArchiveInMemory(
       String archiveKey,
@@ -1203,56 +1089,6 @@ public class Exporter {
 
       return localParsedBlocks.get();
     }
-  }
-
-  /**
-   * Process traditional archive using streaming approach to avoid loading all blocks into memory
-   */
-  private int processTraditionalArchiveStreaming(
-      String archiveKey,
-      ArchiveInfo archiveInfo,
-      OutputWriter outputWriter,
-      boolean deserialized,
-      Gson localGson,
-      String errorFilePath,
-      AtomicInteger parsedBlocksCounter,
-      AtomicInteger nonBlocksCounter,
-      AtomicInteger errorCounter)
-      throws IOException {
-
-    AtomicInteger localParsedBlocks = new AtomicInteger(0);
-    AtomicInteger localNonBlocks = new AtomicInteger(0);
-
-    // Use streaming approach with callback to process blocks one by one
-    dbReader
-        .getArchiveDbReader()
-        .streamFromTraditionalArchive(
-            archiveKey,
-            archiveInfo,
-            (blockKey, blockData) -> {
-              int beforeParsed = parsedBlocksCounter.get();
-              int beforeNonBlocks = nonBlocksCounter.get();
-
-              processBlockData(
-                  blockKey,
-                  blockData,
-                  outputWriter,
-                  deserialized,
-                  localGson,
-                  errorFilePath,
-                  parsedBlocksCounter,
-                  nonBlocksCounter,
-                  errorCounter);
-
-              // Track local increments
-              int afterParsed = parsedBlocksCounter.get();
-              int afterNonBlocks = nonBlocksCounter.get();
-
-              localParsedBlocks.addAndGet(afterParsed - beforeParsed);
-              localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
-            });
-
-    return localParsedBlocks.get();
   }
 
   // Global performance profiler for measurements (shared across all threads)

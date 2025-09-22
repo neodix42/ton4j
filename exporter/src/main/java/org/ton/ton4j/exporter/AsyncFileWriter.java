@@ -19,7 +19,8 @@ public class AsyncFileWriter implements Closeable {
   private static final String SHUTDOWN_SIGNAL = "##SHUTDOWN##";
   private static final int DEFAULT_QUEUE_CAPACITY = 10000;
   private static final int DEFAULT_BUFFER_SIZE = 128 * 1024; // 128KB buffer
-    private static final int DEFAULT_FLUSH_INTERVAL = 5000; // flush every 5000 blocks (reduce I/O frequency)
+  private static final int DEFAULT_FLUSH_INTERVAL =
+      5000; // flush every 5000 blocks (reduce I/O frequency)
 
   private final BlockingQueue<String> writeQueue;
   private final BufferedWriter bufferedWriter;
@@ -191,19 +192,14 @@ public class AsyncFileWriter implements Closeable {
         }
       }
 
-      // Final flush
       try {
         bufferedWriter.flush();
-        log.debug("Final flush completed, total blocks written: {}", totalBlocksWritten.get());
       } catch (IOException e) {
         log.error("Error during final flush: {}", e.getMessage());
       }
 
     } finally {
       writerThreadRunning.set(false);
-      log.debug(
-          "AsyncFileWriter background thread finished, total blocks written: {}",
-          totalBlocksWritten.get());
     }
   }
 
@@ -212,8 +208,6 @@ public class AsyncFileWriter implements Closeable {
     if (isShutdown.getAndSet(true)) {
       return; // Already shutdown
     }
-
-    log.debug("Shutting down AsyncFileWriter, queue size: {}", writeQueue.size());
 
     // Signal shutdown to writer thread
     try {
