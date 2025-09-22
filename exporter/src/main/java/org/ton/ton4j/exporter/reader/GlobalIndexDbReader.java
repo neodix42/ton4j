@@ -13,12 +13,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.exporter.types.ArchiveFileLocation;
+import org.ton.ton4j.exporter.types.ArchiveInfo;
 import org.ton.ton4j.exporter.types.BlockLocation;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tl.types.db.files.key.IndexKey;
-import org.ton.ton4j.tl.types.db.files.key.PackageKey;
 import org.ton.ton4j.tl.types.db.files.pkg.PackageValue;
 
 /**
@@ -41,6 +41,7 @@ public class GlobalIndexDbReader implements Closeable {
 
   // Cache for package metadata
   private final Map<Long, PackageValue> packageMetadata = new HashMap<>();
+
   private IndexValue mainIndexIndexValue;
 
   /**
@@ -121,32 +122,104 @@ public class GlobalIndexDbReader implements Closeable {
     }
   }
 
-  /** Loads metadata for a specific package. */
-  private void loadPackageMetadata(int packageId, boolean isKey, boolean isTemp) {
+  /**
+   * Discovers archives from the Files database global index (fallback method). This is kept as a
+   * fallback in case there are additional packages referenced in the Files database that weren't
+   * found by filesystem scanning. This method uses the Files database index directly without
+   * additional filesystem scanning to avoid duplication.
+   */
+  public void discoverArchivesFromFilesDatabase(Map<String, ArchiveInfo> existingArchives) {
+
+    log.debug("Discovering additional archives from Files database global index...");
+
+    // Use the Files database index directly to get package information
+    // without additional filesystem scanning
     try {
-      PackageKey packageKey =
-          PackageKey.builder().packageId(packageId).key(isKey).temp(isTemp).build();
+      if (getMainIndexIndexValue() != null) {
+        List<Integer> allPackageIds = new ArrayList<>();
+        allPackageIds.addAll(getMainIndexIndexValue().getPackages());
+        allPackageIds.addAll(getMainIndexIndexValue().getKeyPackages());
+        allPackageIds.addAll(getMainIndexIndexValue().getTempPackages());
 
-      byte[] packageKeyBytes = packageKey.serialize();
-      byte[] packageValueBytes = globalIndexDb.get(packageKeyBytes);
+        int newPackages = 0;
 
-      if (packageValueBytes != null) {
-        ByteBuffer buffer = ByteBuffer.wrap(packageValueBytes);
-        PackageValue packageValue = PackageValue.deserialize(buffer);
+        // For each package ID, try to find corresponding archive files that weren't found by
+        // filesystem scan
+        for (Integer packageId : allPackageIds) {
+          // Look for archive files with this package ID that might have been missed
+          String archiveKey = "files/" + String.format("%010d", packageId);
 
-        packageMetadata.put((long) packageId, packageValue);
+          if (!existingArchives.containsKey(archiveKey)) {
+            // Try to find the package file path
+            String packagePath = getPackageFilePath(packageId);
+            if (packagePath != null) {
+              // Create archive info for Files database package (no index file)
+              existingArchives.put(archiveKey, new ArchiveInfo(packageId, null, packagePath, 0));
+              newPackages++;
 
-        log.debug(
-            "Loaded package {} metadata: key={}, temp={}, deleted={}, firstblocks={}",
-            packageId,
-            packageValue.isKey(),
-            packageValue.isTemp(),
-            packageValue.isDeleted(),
-            packageValue.getFirstblocks().size());
+              log.debug(
+                  "Discovered additional Files database package: {} (package: {})",
+                  archiveKey,
+                  packagePath);
+            }
+          }
+        }
+
+        if (newPackages > 0) {
+          log.info("Discovered {} additional packages from Files database index", newPackages);
+        }
       }
     } catch (Exception e) {
-      log.debug("Error loading package {} metadata: {}", packageId, e.getMessage());
+      log.debug("Error discovering archives from Files database index: {}", e.getMessage());
     }
+  }
+
+  /** Reads blocks from a Files database package using the global index. */
+  public void readFromFilesPackage(
+      String archiveKey, ArchiveInfo archiveInfo, Map<String, byte[]> blocks) {
+
+    // Extract package filename from the archive key (e.g., "files/0000000100" -> "0000000100.pack")
+    String packageBaseName = archiveKey.substring(archiveKey.lastIndexOf('/') + 1);
+    String packageFileName = packageBaseName + ".pack";
+
+    globalIndexDb.forEach(
+        (key, value) -> {
+          try {
+            String hash = new String(key);
+            if (!isValidHexString(hash)) {
+              return; // Skip non-hex keys
+            }
+
+            // Parse the value to get package location info
+            if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
+              ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+              long packageId = buffer.getLong();
+              long offset = buffer.getLong();
+
+              // Check if this entry belongs to the current package
+              String entryPackageFileName = String.format("%010d.pack", packageId);
+              if (!entryPackageFileName.equals(packageFileName)) {
+                return; // This entry belongs to a different package
+              }
+
+              try {
+                PackageReader packageReader = getPackageReader(archiveInfo.getPackagePath());
+                Object entryObj = packageReader.getEntryAt(offset);
+
+                if (entryObj instanceof PackageReader.PackageEntry) {
+                  PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
+                  if (entry.getFilename().startsWith("block_")) {
+                    blocks.put(hash, entry.getData());
+                  }
+                }
+              } catch (IOException e) {
+                // Silently skip errors for individual entries
+              }
+            }
+          } catch (Exception e) {
+            // Silently skip errors for individual entries
+          }
+        });
   }
 
   /**
@@ -155,7 +228,7 @@ public class GlobalIndexDbReader implements Closeable {
    *
    * @return Map of file hash to BlockLocation
    */
-  public Map<String, BlockLocation> getAllBlockLocations() {
+  private Map<String, BlockLocation> getAllBlockLocations() {
     Map<String, BlockLocation> blockLocations = new HashMap<>();
 
     log.info("Reading BlockLocations from Files database global index...");
@@ -305,13 +378,6 @@ public class GlobalIndexDbReader implements Closeable {
       return null;
     }
     PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
-    if (entry == null) {
-      log.warn(
-          "No entry found at offset {} in package {}",
-          location.getOffset(),
-          location.getPackageId());
-      return null;
-    }
 
     if (entry.getFilename().startsWith("block_")) {
       return entry.getData();
@@ -352,25 +418,6 @@ public class GlobalIndexDbReader implements Closeable {
       packageReaders.put(packagePath, new PackageReader(packagePath));
     }
     return packageReaders.get(packagePath);
-  }
-
-  /**
-   * Gets the main index value containing package lists.
-   *
-   * @return The main index value
-   */
-  public IndexValue getMainIndexIndexValue() {
-    return mainIndexIndexValue;
-  }
-
-  /**
-   * Gets package metadata for a specific package ID.
-   *
-   * @param packageId The package ID
-   * @return Package metadata or null if not found
-   */
-  public PackageValue getPackageMetadata(long packageId) {
-    return packageMetadata.get(packageId);
   }
 
   /**
@@ -504,7 +551,6 @@ public class GlobalIndexDbReader implements Closeable {
     }
 
     int totalPackages = 0;
-    int totalFiles = 0;
 
     // Scan for archive directories (arch0000, arch0001, etc.)
     try {
@@ -732,13 +778,6 @@ public class GlobalIndexDbReader implements Closeable {
       return null;
     }
     PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
-    if (entry == null) {
-      log.warn(
-          "No entry found at offset {} in archive package {}",
-          location.getOffset(),
-          location.getPackageId());
-      return null;
-    }
 
     if (entry.getFilename().startsWith("block_")) {
       log.debug(
@@ -813,7 +852,7 @@ public class GlobalIndexDbReader implements Closeable {
           .filter(Files::isDirectory)
           .filter(path -> path.getFileName().toString().startsWith("arch"))
           .map(archDir -> findMainPackageFile(archDir, packageId))
-          .filter(path -> path != null)
+          .filter(Objects::nonNull)
           .findFirst()
           .orElse(null);
     } catch (IOException e) {

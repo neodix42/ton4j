@@ -67,9 +67,6 @@ public class Exporter {
   // Shutdown signal to stop processing new packages
   private volatile boolean shutdownRequested;
 
-  // Optimal writer thread count (independent of processing threads)
-  private volatile int optimalWriterThreads = 32; // Default for modern SSDs
-
   // Statistics tracking for interrupted exports
   volatile AtomicInteger totalParsedBlocks;
   volatile AtomicInteger totalNonBlocks;
@@ -194,16 +191,6 @@ public class Exporter {
   public double getErrorRate() {
     int totalBlocks = totalParsedBlocks.get() + totalErrors.get();
     return totalBlocks > 0 ? (double) totalErrors.get() / totalBlocks * 100.0 : 0.0;
-  }
-
-  /**
-   * Set optimal writer thread count (independent of processing threads)
-   *
-   * @param writerThreads Number of writer threads (recommended: 8-64 depending on storage)
-   */
-  public void setOptimalWriterThreads(int writerThreads) {
-    this.optimalWriterThreads = Math.max(1, Math.min(writerThreads, 128));
-    log.info("Optimal writer threads set to: {}", this.optimalWriterThreads);
   }
 
   /**
@@ -333,7 +320,7 @@ public class Exporter {
       throw new IOException("ArchiveDbReader is not initialized");
     }
 
-    Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveDbReader().getArchiveInfos();
+    Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveInfos();
     if (archiveInfos == null) {
       throw new IOException("Archive infos map is null");
     }
@@ -353,11 +340,6 @@ public class Exporter {
 
     long startTime = System.currentTimeMillis();
 
-    // PerformanceProfiler completely disabled to eliminate atomic contention
-    // globalProfiler.setParallelThreads(parallelThreads);
-    // globalProfiler.recordWallClockStart();
-
-    // Create thread pool
     ExecutorService executor = Executors.newFixedThreadPool(parallelThreads);
     currentProcessingExecutor = executor; // Store reference for shutdown coordination
     List<Future<Void>> futures = new ArrayList<>();
@@ -366,7 +348,7 @@ public class Exporter {
     AtomicInteger globalProcessedBlocks = new AtomicInteger(0);
 
     // Create a separate thread for periodic rate display
-    ScheduledExecutorService rateDisplayExecutor = null;
+    ScheduledExecutorService rateDisplayExecutor;
     if (showProgressInfo) {
       // Create a custom thread factory to make threads daemon so they don't keep JVM alive
       ThreadFactory daemonThreadFactory =
@@ -377,9 +359,6 @@ public class Exporter {
           };
       rateDisplayExecutor = Executors.newSingleThreadScheduledExecutor(daemonThreadFactory);
       currentRateDisplayExecutor = rateDisplayExecutor; // Store reference for shutdown coordination
-
-      // Simple counter-based approach - count scheduler runs, report every 6 runs (60 seconds)
-      final AtomicInteger schedulerRunCount = new AtomicInteger(0);
 
       rateDisplayExecutor.scheduleWithFixedDelay(
           () -> {
@@ -410,30 +389,7 @@ public class Exporter {
                     elapsedSeconds,
                     progressPercentage,
                     timeRemainingStr);
-
-                // Print performance analysis every 6 scheduler runs (60 seconds)
-                int runCount = schedulerRunCount.incrementAndGet();
-                //                System.out.println(                    "DEBUG: Scheduler run " +
-                // runCount + " (elapsed: " + elapsedSeconds + "s)");
-                if (runCount % 3
-                    == 0) { // Every 3 runs = 30 seconds (since scheduler runs every 10s)
-                  //                  System.out.println(
-                  //                      "DEBUG: Triggering performance report at run "
-                  //                          + runCount
-                  //                          + " (elapsed: "
-                  //                          + elapsedSeconds
-                  //                          + "s)");
-                  // PerformanceProfiler completely disabled to eliminate atomic contention
-                  // try {
-                  //   globalProfiler.printReport();
-                  // } catch (Exception e) {
-                  //   System.out.println("DEBUG: Error in performance report: " + e.getMessage());
-                  //   e.printStackTrace();
-                  // }
-                }
               }
-              //              System.out.println("DEBUG: Scheduler thread execution completed
-              // successfully");
             } catch (Exception e) {
               System.out.println("DEBUG: CRITICAL ERROR in scheduler thread: " + e.getMessage());
               e.printStackTrace();
@@ -660,7 +616,7 @@ public class Exporter {
       if (dbReader == null) {
         dbReader = new DbReader(tonDatabaseRootPath);
       }
-      long totalPackages = dbReader.getArchiveDbReader().getArchiveInfos().size();
+      long totalPackages = dbReader.getArchiveInfos().size();
       // Don't close dbReader here as we'll reuse it in exportDataWithStatus
 
       exportStatus =
@@ -729,7 +685,7 @@ public class Exporter {
       if (dbReader == null) {
         dbReader = new DbReader(tonDatabaseRootPath);
       }
-      long totalPackages = dbReader.getArchiveDbReader().getArchiveInfos().size();
+      long totalPackages = dbReader.getArchiveInfos().size();
       // Don't close dbReader here as we'll reuse it in exportDataWithStatus
 
       exportStatus =
@@ -791,7 +747,7 @@ public class Exporter {
     dbReader = new DbReader(tonDatabaseRootPath);
 
     // Get all archive entries
-    Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveDbReader().getArchiveInfos();
+    Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveInfos();
 
     // Create new status if not resuming
     if (exportStatus == null) {
@@ -830,6 +786,9 @@ public class Exporter {
                       if (archiveInfo.getIndexPath() == null) {
                         dbReader
                             .getArchiveDbReader()
+                            .readFromFilesPackage(archiveKey, archiveInfo, localBlocks);
+                        dbReader
+                            .getGlobalIndexDbReader()
                             .readFromFilesPackage(archiveKey, archiveInfo, localBlocks);
                       } else {
                         dbReader
@@ -1099,11 +1058,6 @@ public class Exporter {
     }
   }
 
-  // Global performance profiler for measurements (shared across all threads)
-  private static final PerformanceProfiler globalProfiler = new PerformanceProfiler();
-
-  // All reset mechanisms removed - no caching, no performance degradation
-
   /** Process individual block data with optimized performance (profiling disabled) */
   private void processBlockData(
       String blockKey,
@@ -1210,12 +1164,10 @@ public class Exporter {
   public void printADbStats() throws IOException {
     dbReader = new DbReader(tonDatabaseRootPath);
 
-    for (Map.Entry<String, ArchiveInfo> s :
-        dbReader.getArchiveDbReader().getArchiveInfos().entrySet()) {
+    for (Map.Entry<String, ArchiveInfo> s : dbReader.getArchiveInfos().entrySet()) {
       log.info("Archive {}: {}", s.getKey(), s.getValue());
     }
-    log.info(
-        "total archive packs found: {}", dbReader.getArchiveDbReader().getArchiveInfos().size());
+    log.info("total archive packs found: {}", dbReader.getArchiveInfos().size());
   }
 
   /**

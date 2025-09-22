@@ -7,18 +7,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.ton.ton4j.exporter.types.ArchiveInfo;
 
 /**
  * Main entry point for reading TON RocksDB files. This class provides access to various specialized
  * readers for different TON database types.
  */
 @Slf4j
+@Getter
 public class DbReader implements Closeable {
 
   private final String dbRootPath;
   private final Map<String, RocksDbWrapper> openDbs = new HashMap<>();
-  private ArchiveDbReader archiveDbReader;
+  private final ArchiveDbReader archiveDbReader;
+  private final GlobalIndexDbReader globalIndexDbReader;
+  private final Map<String, ArchiveInfo> archiveInfos = new HashMap<>();
 
   /**
    * Creates a new DbReader.
@@ -40,19 +45,23 @@ public class DbReader implements Closeable {
     }
 
     log.info("Initialized DbReader for TON database at: {}", dbRootPath);
+
+    archiveDbReader = new ArchiveDbReader(dbRootPath);
+    log.info("Initialized ArchiveDbReader for TON database at: {}", dbRootPath);
+    globalIndexDbReader = new GlobalIndexDbReader(dbRootPath);
+    log.info("Initialized GlobalIndexDbReader for TON database at: {}", dbRootPath);
+
+    archiveDbReader.discoverAllArchivePackagesFromFilesystem(archiveInfos);
+    globalIndexDbReader.discoverArchivesFromFilesDatabase(archiveInfos);
   }
 
   /**
-   * Gets the archive database reader.
+   * Gets all archive information.
    *
-   * @return The archive database reader
+   * @return Map of archive keys to archive information
    */
-  public ArchiveDbReader getArchiveDbReader() {
-    if (archiveDbReader == null) {
-      archiveDbReader = new ArchiveDbReader(dbRootPath);
-    }
-
-    return archiveDbReader;
+  public Map<String, ArchiveInfo> getArchiveInfos() {
+    return new HashMap<>(archiveInfos);
   }
 
   /**

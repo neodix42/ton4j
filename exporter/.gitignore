@@ -1,4 +1,5 @@
-local.txt
+blocks-tlb.txt
+blocks-boc.txt
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

@@ -18,52 +18,15 @@ import org.ton.ton4j.exporter.types.ArchiveInfo;
 @Data
 public class ArchiveDbReader implements Closeable {
 
-  /** Functional interface for streaming block processing */
-  @FunctionalInterface
-  public interface BlockProcessor {
-    void process(String blockKey, byte[] blockData);
-  }
-
   private final String rootPath;
   String dbPath;
   private final Map<String, RocksDbWrapper> indexDbs = new HashMap<>();
   private final Map<String, PackageReaderInterface> packageReaders = new HashMap<>();
-  private final Map<String, ArchiveInfo> archiveInfos = new HashMap<>();
-  private GlobalIndexDbReader globalIndexDbReader;
-  private final Map<String, PackageReader> filesPackageReaders = new HashMap<>();
 
-  // Track resource usage for cleanup
-  private int processedPackageCount = 0;
-  private static final int CLEANUP_INTERVAL = 50; // Clean up every 50 packages
-
-  /**
-   * Creates a new ArchiveDbReader.
-   *
-   * @param rootPath Path to the archive database directory
-   */
   public ArchiveDbReader(String rootPath) {
 
     this.rootPath = Paths.get(rootPath, "archive").toString();
     this.dbPath = Paths.get(rootPath).toString();
-
-    // Initialize Files database global index
-    initializeFilesDatabase(rootPath);
-
-    // Discover archive packages using GlobalIndexDbReader
-    discoverArchivesFromGlobalIndex();
-  }
-
-  private void discoverArchivesFromGlobalIndex() {
-    // Use comprehensive filesystem scanning instead of relying on Files database global index
-    // This ensures we find ALL archive packages, including those not referenced in the Files
-    // database
-    discoverAllArchivePackagesFromFilesystem();
-
-    // Also try to discover from global index as fallback for any additional packages
-    // but avoid duplicate scanning by using the Files database index directly
-    if (globalIndexDbReader != null) {
-      discoverArchivesFromFilesDatabase();
-    }
   }
 
   /**
@@ -71,16 +34,8 @@ public class ArchiveDbReader implements Closeable {
    * comprehensive approach as GlobalIndexDbReader to find all .pack files and their corresponding
    * .index databases.
    */
-  private void discoverAllArchivePackagesFromFilesystem() {
-    //    log.info("Discovering all archive packages from filesystem (comprehensive scan)...");
-
-    // Get archive packages directory path
+  public void discoverAllArchivePackagesFromFilesystem(Map<String, ArchiveInfo> existingArchives) {
     Path archivePackagesDir = Paths.get(rootPath, "packages");
-
-    if (!Files.exists(archivePackagesDir)) {
-      log.warn("Archive packages directory not found: {}", archivePackagesDir);
-      return;
-    }
 
     try {
       // Scan for archive directories (arch0000, arch0001, etc.)
@@ -124,12 +79,10 @@ public class ArchiveDbReader implements Closeable {
                                 }
                               }
 
-                              // Check if index file exists
                               String indexPathStr =
                                   Files.exists(indexPath) ? indexPath.toString() : null;
 
-                              // Create archive info
-                              archiveInfos.put(
+                              existingArchives.put(
                                   archiveKey,
                                   new ArchiveInfo(
                                       archiveId,
@@ -152,231 +105,8 @@ public class ArchiveDbReader implements Closeable {
       log.error("Error scanning archive packages directory: {}", e.getMessage());
     }
 
-    log.info("Discovered {} total archive packages from filesystem", archiveInfos.size());
+    log.info("Discovered {} total archive packages from filesystem", existingArchives.size());
   }
-
-  /**
-   * Discovers archives from the Files database global index (fallback method). This is kept as a
-   * fallback in case there are additional packages referenced in the Files database that weren't
-   * found by filesystem scanning. This method uses the Files database index directly without
-   * additional filesystem scanning to avoid duplication.
-   */
-  private void discoverArchivesFromFilesDatabase() {
-    log.debug("Discovering additional archives from Files database global index...");
-
-    // Use the Files database index directly to get package information
-    // without additional filesystem scanning
-    try {
-      if (globalIndexDbReader.getMainIndexIndexValue() != null) {
-        List<Integer> allPackageIds = new ArrayList<>();
-        allPackageIds.addAll(globalIndexDbReader.getMainIndexIndexValue().getPackages());
-        allPackageIds.addAll(globalIndexDbReader.getMainIndexIndexValue().getKeyPackages());
-        allPackageIds.addAll(globalIndexDbReader.getMainIndexIndexValue().getTempPackages());
-
-        int newPackages = 0;
-
-        // For each package ID, try to find corresponding archive files that weren't found by
-        // filesystem scan
-        for (Integer packageId : allPackageIds) {
-          // Look for archive files with this package ID that might have been missed
-          String archiveKey = "files/" + String.format("%010d", packageId);
-
-          if (!archiveInfos.containsKey(archiveKey)) {
-            // Try to find the package file path
-            String packagePath = globalIndexDbReader.getPackageFilePath(packageId);
-            if (packagePath != null) {
-              // Create archive info for Files database package (no index file)
-              archiveInfos.put(archiveKey, new ArchiveInfo(packageId, null, packagePath, 0));
-              newPackages++;
-
-              log.debug(
-                  "Discovered additional Files database package: {} (package: {})",
-                  archiveKey,
-                  packagePath);
-            }
-          }
-        }
-
-        if (newPackages > 0) {
-          log.info("Discovered {} additional packages from Files database index", newPackages);
-        }
-      }
-    } catch (Exception e) {
-      log.debug("Error discovering archives from Files database index: {}", e.getMessage());
-    }
-  }
-
-  /** Initializes the Files database global index. */
-  private void initializeFilesDatabase(String rootPath) {
-    // Check if files database exists - it should be at the same level as archive
-    Path globalIndexPath = Paths.get(rootPath);
-
-    if (Files.exists(globalIndexPath)) {
-      try {
-        globalIndexDbReader = new GlobalIndexDbReader(globalIndexPath.toString());
-        log.info("Initialized Files database reader: {}", globalIndexPath);
-      } catch (IOException e) {
-        log.warn("Could not initialize Files database reader: {}", e.getMessage());
-      }
-    } else {
-      log.info("Files database not found at: {}", globalIndexPath);
-    }
-  }
-
-  /**
-   * Gets all available archive keys.
-   *
-   * @return List of archive keys
-   */
-  public List<String> getArchiveKeys() {
-    return new ArrayList<>(archiveInfos.keySet());
-  }
-
-  /**
-   * Gets all archive information.
-   *
-   * @return Map of archive keys to archive information
-   */
-  public Map<String, ArchiveInfo> getArchiveInfos() {
-    return new HashMap<>(archiveInfos);
-  }
-
-  /**
-   * Gets all blocks from all archives.
-   *
-   * @return Map of block hash to block data
-   */
-  public Map<String, byte[]> getAllEntries() {
-    Map<String, byte[]> blocks = new HashMap<>();
-
-    // Iterate through all archives
-    for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
-      String archiveKey = entry.getKey();
-      ArchiveInfo archiveInfo = entry.getValue();
-
-      try {
-        // Check if this is a Files database package (indicated by null indexPath)
-        if (archiveInfo.getIndexPath() == null) {
-          // This is a Files database package, handle it separately
-          readFromFilesPackage(archiveKey, archiveInfo, blocks);
-        } else {
-          // This is a traditional archive package with its own index
-          readFromTraditionalArchive(archiveKey, archiveInfo, blocks);
-        }
-      } catch (IOException e) {
-        log.warn("Error reading blocks from archive {}: {}", archiveKey, e.getMessage());
-      }
-    }
-
-    return blocks;
-  }
-
-  //  /**
-  //   * Gets all blocks from all archives using parallel processing. Uses 32 threads by default for
-  //   * concurrent reading from multiple archive packages.
-  //   *
-  //   * @return Map of block hash to block data
-  //   */
-  //  public Map<String, byte[]> getAllEntriesParallel() {
-  //    return getAllEntriesParallel(32);
-  //  }
-
-  //  /**
-  //   * Gets all blocks from all archives using parallel processing with configurable thread count.
-  //   *
-  //   * @param threadCount Number of threads to use for parallel processing
-  //   * @return Map of block hash to block data
-  //   */
-  //  public Map<String, byte[]> getAllEntriesParallel(int threadCount) {
-  //    if (threadCount <= 1) {
-  //      // Fall back to single-threaded version
-  //      return getAllEntries();
-  //    }
-  //
-  //    log.info(
-  //        "Starting parallel reading from {} archives using {} threads",
-  //        archiveInfos.size(),
-  //        threadCount);
-  //    long startTime = System.currentTimeMillis();
-  //
-  //    // Use ConcurrentHashMap for thread-safe operations
-  //    Map<String, byte[]> blocks = new ConcurrentHashMap<>();
-  //
-  //    // Create thread pool
-  //    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-  //    List<Future<Void>> futures = new ArrayList<>();
-  //
-  //    // Submit tasks for each archive
-  //    for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
-  //      String archiveKey = entry.getKey();
-  //      ArchiveInfo archiveInfo = entry.getValue();
-  //
-  //      Future<Void> future =
-  //          executor.submit(
-  //              () -> {
-  //                try {
-  //                  // Create a local map for this thread's results
-  //                  Map<String, byte[]> localBlocks = new HashMap<>();
-  //
-  //                  // Check if this is a Files database package (indicated by null indexPath)
-  //                  if (archiveInfo.getIndexPath() == null) {
-  //                    // This is a Files database package, handle it separately
-  //                    readFromFilesPackage(archiveKey, archiveInfo, localBlocks);
-  //                  } else {
-  //                    // This is a traditional archive package with its own index
-  //                    readFromTraditionalArchive(archiveKey, archiveInfo, localBlocks);
-  //                  }
-  //
-  //                  // Merge results into the concurrent map
-  //                  blocks.putAll(localBlocks);
-  //
-  //                  log.debug(
-  //                      "Completed reading archive {}: {} entries", archiveKey,
-  // localBlocks.size());
-  //
-  //                } catch (Exception e) {
-  //                  log.error("Unexpected error reading archive {}: {}", archiveKey,
-  // e.getMessage());
-  //                }
-  //                return null;
-  //              });
-  //
-  //      futures.add(future);
-  //    }
-  //
-  //    // Wait for all tasks to complete
-  //    for (Future<Void> future : futures) {
-  //      try {
-  //        future.get();
-  //      } catch (Exception e) {
-  //        log.error("Error waiting for archive reading task: {}", e.getMessage());
-  //      }
-  //    }
-  //
-  //    // Shutdown executor
-  //    executor.shutdown();
-  //    try {
-  //      if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-  //        executor.shutdownNow();
-  //      }
-  //    } catch (InterruptedException e) {
-  //      executor.shutdownNow();
-  //      Thread.currentThread().interrupt();
-  //    }
-  //
-  //    long endTime = System.currentTimeMillis();
-  //    long durationMs = endTime - startTime;
-  //    double durationSeconds = durationMs / 1000.0;
-  //
-  //    log.info(
-  //        "Parallel reading completed: {} entries in {} ms ({} seconds) using {} threads",
-  //        blocks.size(),
-  //        durationMs,
-  //        String.format("%.2f", durationSeconds),
-  //        threadCount);
-  //
-  //    return blocks;
-  //  }
 
   /** Reads blocks from a traditional archive package with its own index. */
   public void readFromTraditionalArchive(
@@ -485,56 +215,6 @@ public class ArchiveDbReader implements Closeable {
       readFromOrphanedPackage(archiveKey, archiveInfo, blocks);
       return;
     }
-
-    if (globalIndexDbReader == null) {
-      return;
-    }
-
-    // Extract package filename from the archive key (e.g., "files/0000000100" -> "0000000100.pack")
-    String packageBaseName = archiveKey.substring(archiveKey.lastIndexOf('/') + 1);
-    String packageFileName = packageBaseName + ".pack";
-
-    globalIndexDbReader
-        .getGlobalIndexDb()
-        .forEach(
-            (key, value) -> {
-              try {
-                String hash = new String(key);
-                if (!isValidHexString(hash)) {
-                  return; // Skip non-hex keys
-                }
-
-                // Parse the value to get package location info
-                if (value.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
-                  ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-                  long packageId = buffer.getLong();
-                  long offset = buffer.getLong();
-
-                  // Check if this entry belongs to the current package
-                  String entryPackageFileName = String.format("%010d.pack", packageId);
-                  if (!entryPackageFileName.equals(packageFileName)) {
-                    return; // This entry belongs to a different package
-                  }
-
-                  try {
-                    PackageReader packageReader =
-                        getFilesPackageReader(packageFileName, archiveInfo.getPackagePath());
-                    Object entryObj = packageReader.getEntryAt(offset);
-
-                    if (entryObj instanceof PackageReader.PackageEntry) {
-                      PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
-                      if (entry.getFilename().startsWith("block_")) {
-                        blocks.put(hash, entry.getData());
-                      }
-                    }
-                  } catch (IOException e) {
-                    // Silently skip errors for individual entries
-                  }
-                }
-              } catch (Exception e) {
-                // Silently skip errors for individual entries
-              }
-            });
   }
 
   /**
@@ -575,19 +255,7 @@ public class ArchiveDbReader implements Closeable {
                 }
               }
             });
-
-        //      log.info(
-        //          "Successfully read {} entries from orphaned package: {}",
-        //          entryCount,
-        //          archiveInfo.getPackagePath());
       }
-      //      else {
-      //        log.warn(
-      //            "PackageReader is null for orphaned package {} with path {}",
-      //            archiveKey,
-      //            archiveInfo.getPackagePath());
-      //      }
-
     } catch (IOException e) {
       log.error(
           "Error reading orphaned package {}: {}", archiveInfo.getPackagePath(), e.getMessage());
@@ -620,93 +288,94 @@ public class ArchiveDbReader implements Closeable {
     return null;
   }
 
-  /**
-   * Reads a specific block from the Files database using the global index.
-   *
-   * @param hash The block hash to look for
-   * @return The block data, or null if not found
-   */
-  private byte[] readBlockFromFilesDatabase(String hash) {
-    if (globalIndexDbReader == null) {
-      return null;
-    }
-
-    try {
-      // Try to get the offset from the global index
-      byte[] offsetBytes = globalIndexDbReader.getGlobalIndexDb().get(hash.getBytes());
-      if (offsetBytes != null) {
-        // Parse the value to get package location info
-        if (offsetBytes.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
-          ByteBuffer buffer = ByteBuffer.wrap(offsetBytes).order(ByteOrder.LITTLE_ENDIAN);
-          long packageId = buffer.getLong();
-          long offset = buffer.getLong();
-
-          // Validate the offset
-          if (offset < 0) {
-            log.warn("Negative seek offset {} for key {} in Files database", offset, hash);
-            return null;
-          }
-
-          // Construct package file path
-          String packageFileName = String.format("%010d.pack", packageId);
-          Path filesPackagesPath = Paths.get(rootPath, "..", "files", "packages");
-          Path packagePath = filesPackagesPath.resolve(packageFileName);
-
-          if (Files.exists(packagePath)) {
-            try {
-              PackageReader packageReader =
-                  getFilesPackageReader(packageFileName, packagePath.toString());
-              Object entryObj = packageReader.getEntryAt(offset);
-
-              if (entryObj instanceof PackageReader.PackageEntry) {
-                PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
-                if (entry.getFilename().startsWith("block_")) {
-                  return entry.getData();
-                }
-              }
-            } catch (IOException e) {
-              log.warn(
-                  "Error reading block {} from Files package {}: {}",
-                  hash,
-                  packageFileName,
-                  e.getMessage());
-            }
-          }
-        }
-      }
-    } catch (Exception e) {
-      log.warn("Error reading block {} from Files database: {}", hash, e.getMessage());
-    }
-
-    return null;
-  }
-
-  /** Gets a package reader for Files database packages. */
-  private PackageReader getFilesPackageReader(String packageKey, String packagePath)
-      throws IOException {
-    if (!filesPackageReaders.containsKey(packageKey)) {
-      filesPackageReaders.put(packageKey, new PackageReader(packagePath));
-    }
-    return filesPackageReaders.get(packageKey);
-  }
-
-  /** Checks if a RocksDB key represents a block info entry. */
-  private boolean isBlockInfoKey(byte[] key) {
-    if (key == null || key.length < 4) {
-      return false;
-    }
-
-    try {
-      // Check for TL-serialized keys with the specific db_blockdb_key_value magic number
-      ByteBuffer buffer = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN);
-      int magic = buffer.getInt();
-
-      // Use the correct magic number for db_blockdb_key_value from ton_api.h
-      return magic == 0x7f57d173; // db_blockdb_key_value::ID = 2136461683
-    } catch (Exception e) {
-      return false;
-    }
-  }
+  //
+  //  /**
+  //   * Reads a specific block from the Files database using the global index.
+  //   *
+  //   * @param hash The block hash to look for
+  //   * @return The block data, or null if not found
+  //   */
+  //  private byte[] readBlockFromFilesDatabase(String hash) {
+  //    if (globalIndexDbReader == null) {
+  //      return null;
+  //    }
+  //
+  //    try {
+  //      // Try to get the offset from the global index
+  //      byte[] offsetBytes = globalIndexDbReader.getGlobalIndexDb().get(hash.getBytes());
+  //      if (offsetBytes != null) {
+  //        // Parse the value to get package location info
+  //        if (offsetBytes.length >= 16) { // At least 8 bytes for package_id + 8 bytes for offset
+  //          ByteBuffer buffer = ByteBuffer.wrap(offsetBytes).order(ByteOrder.LITTLE_ENDIAN);
+  //          long packageId = buffer.getLong();
+  //          long offset = buffer.getLong();
+  //
+  //          // Validate the offset
+  //          if (offset < 0) {
+  //            log.warn("Negative seek offset {} for key {} in Files database", offset, hash);
+  //            return null;
+  //          }
+  //
+  //          // Construct package file path
+  //          String packageFileName = String.format("%010d.pack", packageId);
+  //          Path filesPackagesPath = Paths.get(rootPath, "..", "files", "packages");
+  //          Path packagePath = filesPackagesPath.resolve(packageFileName);
+  //
+  //          if (Files.exists(packagePath)) {
+  //            try {
+  //              PackageReader packageReader =
+  //                  getFilesPackageReader(packageFileName, packagePath.toString());
+  //              Object entryObj = packageReader.getEntryAt(offset);
+  //
+  //              if (entryObj instanceof PackageReader.PackageEntry) {
+  //                PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
+  //                if (entry.getFilename().startsWith("block_")) {
+  //                  return entry.getData();
+  //                }
+  //              }
+  //            } catch (IOException e) {
+  //              log.warn(
+  //                  "Error reading block {} from Files package {}: {}",
+  //                  hash,
+  //                  packageFileName,
+  //                  e.getMessage());
+  //            }
+  //          }
+  //        }
+  //      }
+  //    } catch (Exception e) {
+  //      log.warn("Error reading block {} from Files database: {}", hash, e.getMessage());
+  //    }
+  //
+  //    return null;
+  //  }
+  //
+  //  /** Gets a package reader for Files database packages. */
+  //  private PackageReader getFilesPackageReader(String packageKey, String packagePath)
+  //      throws IOException {
+  //    if (!filesPackageReaders.containsKey(packageKey)) {
+  //      filesPackageReaders.put(packageKey, new PackageReader(packagePath));
+  //    }
+  //    return filesPackageReaders.get(packageKey);
+  //  }
+  //
+  //  /** Checks if a RocksDB key represents a block info entry. */
+  //  private boolean isBlockInfoKey(byte[] key) {
+  //    if (key == null || key.length < 4) {
+  //      return false;
+  //    }
+  //
+  //    try {
+  //      // Check for TL-serialized keys with the specific db_blockdb_key_value magic number
+  //      ByteBuffer buffer = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN);
+  //      int magic = buffer.getInt();
+  //
+  //      // Use the correct magic number for db_blockdb_key_value from ton_api.h
+  //      return magic == 0x7f57d173; // db_blockdb_key_value::ID = 2136461683
+  //    } catch (Exception e) {
+  //      return false;
+  //    }
+  //  }
 
   /**
    * Gets an index DB for a specific archive.
@@ -767,25 +436,6 @@ public class ArchiveDbReader implements Closeable {
         } catch (IOException e) {
           log.warn("Error closing package reader: {}", e.getMessage());
         }
-      }
-    }
-
-    for (PackageReader reader : filesPackageReaders.values()) {
-      if (reader != null) {
-        try {
-          reader.close();
-        } catch (IOException e) {
-          log.warn("Error closing files package reader: {}", e.getMessage());
-        }
-      }
-    }
-
-    // Close global index database reader
-    if (globalIndexDbReader != null) {
-      try {
-        globalIndexDbReader.close();
-      } catch (IOException e) {
-        log.warn("Error closing global index database reader: {}", e.getMessage());
       }
     }
 
