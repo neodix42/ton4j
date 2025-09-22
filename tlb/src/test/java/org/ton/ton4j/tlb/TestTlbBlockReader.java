@@ -5,7 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +16,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
@@ -24,12 +28,13 @@ public class TestTlbBlockReader {
   public static final Gson gson =
       new GsonBuilder()
           .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-          //          .registerTypeAdapter(Cell.class, new CellTypeAdapter())
+          .registerTypeAdapter(Cell.class, new CellTypeAdapter())
+          .registerTypeAdapter(BitString.class, new BitStringTypeAdapter())
           .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
-          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
-          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
-          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
-          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          //          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+          //          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
           //          .excludeFieldsWithModifiers(Modifier.TRANSIENT)
           //          .enableComplexMapKeySerialization()
           .disableHtmlEscaping()
@@ -348,7 +353,7 @@ public class TestTlbBlockReader {
 
   /** 462022 bytes, parsed 96ms, deserialized 2005ms, shardAccounts 142 */
   @Test
-  public void testShouldDeserializeBlock20() {
+  public void testShouldDeserializeBlock20() throws IOException {
     //    TimerNinjaConfiguration.getInstance().toggleSystemOutLog(true);
     //    TimerNinjaConfiguration.getInstance().isSystemOutLogEnabled();
 
@@ -365,9 +370,35 @@ public class TestTlbBlockReader {
             .size()); // block);
     //    block.toCell();
     //    block.toCell().toHex();
-    block.getAllTransactions();
+    log.info(
+        "txs {}, inMsgs {}, outMsgs {}",
+        block.getAllTransactions().size(),
+        block.getAllIncomingMessages().size(),
+        block.getAllOutgoingMessages().size());
     log.info("------------------");
-    //    log.info("gson {}", gson.toJson(block));
+
+    Runtime runtime = Runtime.getRuntime();
+    long usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
+    log.info("usedMemory {}MB", usedMemory);
+    log.info("toString()");
+    long start = System.currentTimeMillis();
+    String blockString = block.toString();
+    Files.writeString(Path.of("string.block.txt"), blockString);
+    log.info("string length {} MB", blockString.length() / (1024 * 1024));
+    long end = System.currentTimeMillis();
+    log.info("elapsed {}ms", end - start);
+    usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
+    log.info("usedMemory {}MB", usedMemory);
+
+    log.info("gson");
+    start = System.currentTimeMillis();
+    String blockGson = block.toString();
+    Files.writeString(Path.of("gson.block.txt"), blockGson);
+    log.info("{} bytes", gson.toJson(block).length());
+    end = System.currentTimeMillis();
+    log.info("elapsed {}ms", end - start);
+    usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
+    log.info("usedMemory {}MB", usedMemory);
   }
 
   /** 453254 bytes, parsed 75ms, deserialized 60ms, shardAccounts 288, big but 20x faster */

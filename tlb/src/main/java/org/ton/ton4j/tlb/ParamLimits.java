@@ -13,12 +13,14 @@ public class ParamLimits implements Serializable {
   int magic;
   long underload;
   long softLimit;
+  long hardLimit;
 
   public Cell toCell() {
     return CellBuilder.beginCell()
         .storeUint(0xc3, 8)
-        .storeUint(underload, 32) // check? todo
+        .storeUint(underload, 32)
         .storeUint(softLimit, 32)
+        .storeUint(hardLimit, 32)
         .endCell();
   }
 
@@ -27,6 +29,7 @@ public class ParamLimits implements Serializable {
         .magic(cs.loadUint(8).intValue())
         .underload(cs.loadUint(32).intValue())
         .softLimit(cs.loadUint(32).intValue())
+        .hardLimit(cs.loadUint(32).intValue())
         .build();
   }
 }

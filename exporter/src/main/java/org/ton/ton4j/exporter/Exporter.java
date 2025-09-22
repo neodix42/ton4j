@@ -21,6 +21,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.LoggerFactory;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.reader.*;
 import org.ton.ton4j.exporter.types.*;
@@ -29,6 +30,8 @@ import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockHandle;
+import org.ton.ton4j.tlb.adapters.BitStringTypeAdapter;
+import org.ton.ton4j.tlb.adapters.ByteArrayToHexTypeAdapter;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
@@ -40,7 +43,9 @@ public class Exporter {
   public static final Gson gson =
       new GsonBuilder()
           .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-          //          .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+          .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+          //          .registerTypeAdapter(Cell.class, new CellTypeAdapter())
+          .registerTypeAdapter(BitString.class, new BitStringTypeAdapter())
           //          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
           //          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
           //          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())

@@ -2,19 +2,41 @@ package org.ton.ton4j.tlb;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.cell.TonHashMap;
+import org.ton.ton4j.tlb.adapters.BitStringTypeAdapter;
+import org.ton.ton4j.tlb.adapters.ByteArrayToHexTypeAdapter;
+import org.ton.ton4j.tlb.adapters.CellTypeAdapter;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class TestTlbDeserialization {
+
+  Gson gson =
+      new GsonBuilder()
+          .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+          .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+          .registerTypeAdapter(Cell.class, new CellTypeAdapter())
+          .registerTypeAdapter(BitString.class, new BitStringTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+          //          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          .disableHtmlEscaping()
+          .setLenient()
+          .create();
 
   @Test
   public void testDeserializeVmStack() {
@@ -127,5 +149,37 @@ public class TestTlbDeserialization {
     String hash = Utils.bytesToHex(message.getNormalizedHash());
     log.info("hash {}", hash);
     assertThat(hash).isEqualTo("23ff6f150d573f64d5599a57813f991882b7b4d5ae0550ebd08ea658431e62f6");
+  }
+
+  @Test
+  public void testBitStringGsonToString() {
+
+    BitString bs = new BitString(new byte[] {7, 7, 7, 7}, 32);
+    AssertionsForClassTypes.assertThat(bs.toBitString())
+        .isEqualTo("00000111000001110000011100000111");
+    AssertionsForClassTypes.assertThat(Utils.bytesToHex(bs.toByteArray())).isEqualTo("07070707");
+    AssertionsForClassTypes.assertThat(bs.toHex()).isEqualTo("07070707");
+    log.info("{}", bs);
+    log.info("{}", gson.toJson(bs));
+  }
+
+  @Test
+  public void testCellGsonToString() {
+
+    // online
+    String t =
+        "b5ee9c72010105010076000201cd01020201200304004348016c5f89ee89fb0151ae1272f35924a90c0d6bdb1100ece090da7340ccefd1919700432002a454624c156e52aa6916661b35f90e1c06187ab4deb0286638abacd1f7546e7400432001d46aba5d40c11911344497965107cce5db77a95cbd22e2bd46c5461a105d3b2c";
+
+    Cell cellWithDict = CellBuilder.beginCell().fromBoc(t).endCell();
+    log.info("cell {}", cellWithDict.print());
+
+    long start = System.currentTimeMillis();
+    log.info("{}", cellWithDict);
+    long end = System.currentTimeMillis();
+    log.info("{}", end - start);
+    start = System.currentTimeMillis();
+    log.info("{}", gson.toJson(cellWithDict));
+    end = System.currentTimeMillis();
+    log.info("{}", end - start);
   }
 }
