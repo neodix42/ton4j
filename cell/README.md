@@ -84,10 +84,10 @@ x{8000002_}
 
 More examples on how to construct [Cell](src/main/java/org/ton/ton4j/cell/Cell.java)
 and [BitString](../bitstring/src/main/java/org/ton/ton4j/bitstring/BitString.java) can be
-found in [TestCell](../cell/src/test/java/org/ton/java/cell/TestCell.java)
-, [TestCellBuilder](../cell/src/test/java/org/ton/java/cell/TestCellBuilder.java)
-, [TestHashMap](../cell/src/test/java/org/ton/java/cell/TestHashMap.java)
-and [TestBitString](../bitstring/src/test/java/org/ton/java/bitstring/TestBitString.java) classes.
+found in [TestCell](../cell/src/test/java/org/ton/ton4j/cell/TestCell.java)
+, [TestCellBuilder](../cell/src/test/java/org/ton/ton4j/cell/TestCellBuilder.java)
+, [TestHashMap](../cell/src/test/java/org/ton/ton4j/cell/TestHashMap.java)
+and [TestBitString](../bitstring/src/test/ton4j/org/ton/ton4j/bitstring/TestBitString.java) classes.
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/cell

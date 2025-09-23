@@ -20,7 +20,7 @@
 </dependency>
 ```
 
-More examples in [TestUtils](../utils/src/test/java/org/ton/java/utils/TestUtils.java) class.
+More examples in [TestUtils](../utils/src/test/java/org/ton/ton4j/utils/TestUtils.java) class.
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/utils
 

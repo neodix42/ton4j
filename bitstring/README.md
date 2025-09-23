@@ -40,7 +40,7 @@ C86408520C002CF55953E92EFBEADAB7BA725C3F93A0B23F842CBBA72D7B8E6F510A70E422E3
 ```
 
 More examples on how to construct [BitString](src/main/java/org/ton/ton4j/bitstring/BitString.java) can be
-found in [TestBitString](../bitstring/src/test/java/org/ton/java/bitstring/TestBitString.java) class.
+found in [TestBitString](../bitstring/src/test/java/org/ton/ton4j/bitstring/TestBitString.java) class.
 
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/bitstring

@@ -32,7 +32,7 @@ log.info("init.wc: {}", info.getInit().getWorkchain());
 
 ```
 
-There are lots of examples on how to work with [AdnlLiteClient](src/test/java/org/ton/java/adnl/AdnlLiteClientTest.java).
+There are lots of examples on how to work with [AdnlLiteClient](src/test/java/org/ton/ton4j/adnl/AdnlLiteClientTest.java).
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/adnl
 

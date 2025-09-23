@@ -2,7 +2,7 @@
 
 Java Tonlib library uses JNA to access methods in native Tonlib shared library.
 
-**For pure Java implementation of ADNL protocol and lite-client see [AdnlLiteClient.java](../adnl/src/main/java/org/ton/java/adnl/AdnlLiteClient.java) in [adnl](../adnl) module**.
+**For pure Java implementation of ADNL protocol and lite-client see [AdnlLiteClient.java](../adnl/src/main/java/org/ton/ton4j/adnl/AdnlLiteClient.java) in [adnl](../adnl) module**.
 
 Since this is Java Tonlib wrapper around the native binary, you have to specify path to the library, see the example
 below.

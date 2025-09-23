@@ -17,7 +17,6 @@ import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.types.*;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.adapters.*;
-import org.ton.ton4j.utils.*;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -99,8 +98,7 @@ public class TestExporter {
           //            }
           //          }
         });
-    blockStream.close(); // to delete status file
-    // -1,8000000000000000,209936,
+    blockStream.close();
   }
 
   @Test

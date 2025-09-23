@@ -26,11 +26,11 @@ Java Emulator wrapper uses JNA to access methods in native emulator shared libra
 
 ## Usage of TxEmulator
 
-See examples in [TestTxEmualtor](../emulator/src/test/java/org/ton/java/emulator/TestTxEmulator.java) class.
+See examples in [TestTxEmualtor](../emulator/src/test/java/org/ton/ton4j/emulator/TestTxEmulator.java) class.
 
 ## Usage of TvmEmulator
 
-See examples in [TestTxEmualtor](../emulator/src/test/java/org/ton/java/emulator/TestTvmEmulator.java) class.
+See examples in [TestTxEmualtor](../emulator/src/test/java/org/ton/ton4j/emulator/TestTvmEmulator.java) class.
 
 [maven-central-svg]: https://img.shields.io/maven-central/v/io.github.neodix42/emulator
 
