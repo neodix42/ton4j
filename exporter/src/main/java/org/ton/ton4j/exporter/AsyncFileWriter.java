@@ -129,7 +129,6 @@ public class AsyncFileWriter implements Closeable {
   /** Background writer thread that consumes from the queue and writes to disk */
   private void writerLoop() {
     writerThreadRunning.set(true);
-    log.debug("AsyncFileWriter background thread started");
 
     try {
       while (!isShutdown.get() || !writeQueue.isEmpty()) {
@@ -142,7 +141,7 @@ public class AsyncFileWriter implements Closeable {
           }
 
           if (SHUTDOWN_SIGNAL.equals(line)) {
-            log.debug("Received shutdown signal, draining remaining queue");
+            //            log.debug("Received shutdown signal, draining remaining queue");
             break;
           }
 
@@ -237,8 +236,5 @@ public class AsyncFileWriter implements Closeable {
       log.error("Error closing buffered writer: {}", e.getMessage());
       throw e;
     }
-
-    log.info(
-        "AsyncFileWriter closed successfully, total blocks written: {}", totalBlocksWritten.get());
   }
 }

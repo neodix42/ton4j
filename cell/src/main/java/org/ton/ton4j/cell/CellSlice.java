@@ -213,9 +213,9 @@ public class CellSlice implements Serializable {
       return new TonHashMapAug(n);
     }
     x.deserialize(this, keyParser, valueParser, extraParser);
-    if (x.elements.isEmpty()) {
-      throw new Error("TonHashMapAug can't be empty");
-    }
+    //    if (x.elements.isEmpty()) {
+    //      throw new Error("TonHashMapAug can't be empty");
+    //    }
     return x;
   }
 
@@ -258,16 +258,6 @@ public class CellSlice implements Serializable {
   }
 
   public TonPfxHashMap loadDictPfx(
-      int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
-    TonPfxHashMap x = new TonPfxHashMap(n);
-    x.deserialize(this, keyParser, valueParser);
-    if (x.elements.isEmpty()) {
-      throw new Error("TonPfxHashMap can't be empty");
-    }
-    return x;
-  }
-
-  public TonPfxHashMap parseDictPfx(
       int n, Function<BitString, Object> keyParser, Function<Cell, Object> valueParser) {
     TonPfxHashMap x = new TonPfxHashMap(n);
     x.deserialize(this, keyParser, valueParser);

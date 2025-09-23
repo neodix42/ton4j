@@ -30,8 +30,7 @@ import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockHandle;
-import org.ton.ton4j.tlb.adapters.BitStringTypeAdapter;
-import org.ton.ton4j.tlb.adapters.ByteArrayToHexTypeAdapter;
+import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
 
 @Builder
@@ -43,15 +42,15 @@ public class Exporter {
   public static final Gson gson =
       new GsonBuilder()
           .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-          .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
-          //          .registerTypeAdapter(Cell.class, new CellTypeAdapter())
+          .registerTypeAdapter(Cell.class, new CellTypeAdapter())
           .registerTypeAdapter(BitString.class, new BitStringTypeAdapter())
-          //          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
-          //          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
-          //          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
-          //          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
           .disableHtmlEscaping()
-          .setLenient()
+          //          .setLenient()
           .create();
 
   /** Functional interface for abstracting output writing operations */
@@ -82,7 +81,6 @@ public class Exporter {
   private Boolean showProgress;
 
   private DbReader dbReader;
-  private StatusManager statusManager;
 
   // No thread-local GSON needed - static GSON is thread-safe for serialization
   // Removed ThreadLocal to eliminate potential memory leaks and state accumulation
@@ -106,7 +104,6 @@ public class Exporter {
       }
 
       Exporter exporter = super.build();
-      exporter.statusManager = new StatusManager();
 
       // Initialize statistics tracking fields
       if (exporter.totalParsedBlocks == null) {
@@ -253,7 +250,7 @@ public class Exporter {
     // Shutdown rate display executor
     ScheduledExecutorService rateExecutor = currentRateDisplayExecutor;
     if (rateExecutor != null && !rateExecutor.isShutdown()) {
-      log.debug("Shutting down rate display executor...");
+      //      log.debug("Shutting down rate display executor...");
       rateExecutor.shutdown();
       try {
         if (!rateExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
@@ -330,12 +327,13 @@ public class Exporter {
     AtomicInteger errorCounter = new AtomicInteger(0);
     long totalPacks = archiveInfos.size();
 
+    // Track blocks processed in current session for accurate rate calculation
+    AtomicInteger sessionParsedBlocks = new AtomicInteger(0);
+
     // Update total packages if it has changed
     if (exportStatus.getTotalPackages() != totalPacks) {
       exportStatus.setTotalPackages(totalPacks);
-      if (statusManager != null) {
-        statusManager.saveStatus(exportStatus);
-      }
+      StatusManager.getInstance().saveStatus(exportStatus);
     }
 
     long startTime = System.currentTimeMillis();
@@ -367,7 +365,8 @@ public class Exporter {
               long currentTime = System.currentTimeMillis();
               long elapsedSeconds = (currentTime - startTime) / 1000;
               if (elapsedSeconds > 0) {
-                double blocksPerSecond = parsedBlocksCounter.get() / (double) elapsedSeconds;
+                // Use session blocks for rate calculation to get accurate current rate
+                double blocksPerSecond = sessionParsedBlocks.get() / (double) elapsedSeconds;
                 double progressPercentage = exportStatus.getProgressPercentage();
 
                 // Calculate estimated time remaining
@@ -383,9 +382,10 @@ public class Exporter {
                 }
 
                 System.out.printf(
-                    "Block rate: %.2f blocks/sec (total: %d blocks, elapsed: %ds, progress: %.1f%%, ETA: %s)%n",
+                    "Block rate: %.2f blocks/sec (total: %d blocks, session: %d blocks, elapsed: %ds, progress: %.1f%%, ETA: %s)%n",
                     blocksPerSecond,
                     parsedBlocksCounter.get(),
+                    sessionParsedBlocks.get(),
                     elapsedSeconds,
                     progressPercentage,
                     timeRemainingStr);
@@ -438,7 +438,8 @@ public class Exporter {
                             errorFilePath,
                             parsedBlocksCounter,
                             nonBlocksCounter,
-                            errorCounter);
+                            errorCounter,
+                            sessionParsedBlocks);
                   } else {
                     localParsedBlocks =
                         processTraditionalArchiveInMemory(
@@ -449,7 +450,8 @@ public class Exporter {
                             errorFilePath,
                             parsedBlocksCounter,
                             nonBlocksCounter,
-                            errorCounter);
+                            errorCounter,
+                            sessionParsedBlocks);
                   }
 
                   // Mark package as processed (optimized to avoid synchronized file I/O)
@@ -457,12 +459,14 @@ public class Exporter {
 
                   // Save status less frequently to avoid performance degradation
                   // Only save every 10th package to reduce file I/O overhead
-                  if (statusManager != null && exportStatus.getProcessedCount() % 10 == 0) {
+                  if (exportStatus.getProcessedCount() % 10 == 0) {
+                    // Capture the current status to avoid race conditions in async operation
+                    final ExportStatus currentStatus = exportStatus;
                     // Use separate thread for status saving to avoid blocking processing
                     CompletableFuture.runAsync(
                         () -> {
                           try {
-                            statusManager.saveStatus(exportStatus);
+                            StatusManager.getInstance().saveStatus(currentStatus);
                           } catch (Exception e) {
                             log.warn("Error saving export status: {}", e.getMessage());
                           }
@@ -520,7 +524,7 @@ public class Exporter {
     // Shutdown rate display executor properly
     ScheduledExecutorService rateExecutor = currentRateDisplayExecutor;
     if (rateExecutor != null && !rateExecutor.isShutdown()) {
-      log.debug("Shutting down rate display executor...");
+      //      log.debug("Shutting down rate display executor...");
       rateExecutor.shutdown();
       try {
         if (!rateExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -538,15 +542,15 @@ public class Exporter {
 
     if (actuallyCompleted) {
       exportStatus.markCompleted();
-      statusManager.saveStatus(exportStatus);
+      StatusManager.getInstance().saveStatus(exportStatus);
       System.out.printf(
           "Export completed successfully. Processed %s/%s packages.%n",
           exportStatus.getProcessedCount(), exportStatus.getTotalPackages());
       // Clean up status file after successful completion
-      statusManager.deleteStatus();
+      StatusManager.getInstance().deleteStatus();
     } else {
       // Save status without marking as completed for potential resume
-      statusManager.saveStatus(exportStatus);
+      StatusManager.getInstance().saveStatus(exportStatus);
       if (shutdownRequested) {
         log.info(
             "Export interrupted by shutdown request. Processed {}/{} packages.",
@@ -587,7 +591,7 @@ public class Exporter {
     }
 
     // Check for existing status and resume if possible
-    ExportStatus exportStatus = statusManager.loadStatus();
+    ExportStatus exportStatus = StatusManager.getInstance().loadStatus();
     boolean isResume = false;
 
     if (exportStatus != null && !exportStatus.isCompleted()) {
@@ -597,15 +601,29 @@ public class Exporter {
           && deserialized == exportStatus.isDeserialized()
           && parallelThreads == exportStatus.getParallelThreads()) {
 
-        log.info(
-            "Resuming export from previous session. Progress: {}% ({}/{})",
-            exportStatus.getProgressPercentage(),
-            exportStatus.getProcessedCount(),
-            exportStatus.getTotalPackages());
-        isResume = true;
+        // Check if the output file still exists for resume
+        File outputFile = new File(outputToFile);
+        File absoluteOutputFile = outputFile.getAbsoluteFile();
+
+        if (absoluteOutputFile.exists() && absoluteOutputFile.length() > 0) {
+          log.info(
+              "Resuming export from previous session. Progress: {}% ({}/{}), file size: {} bytes",
+              exportStatus.getProgressPercentage(),
+              exportStatus.getProcessedCount(),
+              exportStatus.getTotalPackages(),
+              absoluteOutputFile.length());
+          isResume = true;
+        } else {
+          log.warn(
+              "Resume requested but output file '{}' doesn't exist or is empty. Starting fresh export.",
+              absoluteOutputFile.getAbsolutePath());
+          StatusManager.getInstance().deleteStatus();
+          exportStatus = null;
+          isResume = false;
+        }
       } else {
         log.warn("Export parameters don't match existing status. Starting fresh export.");
-        statusManager.deleteStatus();
+        StatusManager.getInstance().deleteStatus();
         exportStatus = null;
       }
     }
@@ -620,30 +638,18 @@ public class Exporter {
       // Don't close dbReader here as we'll reuse it in exportDataWithStatus
 
       exportStatus =
-          statusManager.createNewStatus(
+          StatusManager.getInstance().createNewStatus(
               totalPackages, "file", outputToFile, deserialized, parallelThreads);
-      statusManager.saveStatus(exportStatus);
+      StatusManager.getInstance().saveStatus(exportStatus);
       log.info("Starting new export to file: {}", outputToFile);
     }
 
-    // Use reasonable default buffer sizes and queue capacity
-    int queueCapacity = 10000; // Conservative default queue capacity
-    int bufferSizeMB = 64; // Conservative default buffer size per writer thread
-
-    // Use existing AsyncFileWriter instead of HighPerformanceFileWriter to avoid massive queue
-    // accumulation
     File outputFile = new File(outputToFile);
     String errorFilePath = new File(outputFile.getParent(), "errors.txt").getAbsolutePath();
 
-    // Create AsyncFileWriter with reasonable queue size (much smaller than
-    // HighPerformanceFileWriter)
     try (AsyncFileWriter asyncWriter =
         new AsyncFileWriter(
-            outputToFile,
-            isResume,
-            5000, // Small queue capacity (vs 200,000 in HighPerformanceFileWriter)
-            256 * 1024, // 256KB buffer
-            1000)) { // Flush every 1000 lines
+            outputToFile, isResume, 5000, 256 * 1024, 1000)) { // Flush every 1000 lines
 
       // Create output writer using AsyncFileWriter
       OutputWriter outputWriter = asyncWriter::writeLine;
@@ -659,7 +665,7 @@ public class Exporter {
    * @param parallelThreads number of parallel threads used to export a database
    */
   public void exportToStdout(boolean deserialized, int parallelThreads) throws IOException {
-    ExportStatus exportStatus = statusManager.loadStatus();
+    ExportStatus exportStatus = StatusManager.getInstance().loadStatus();
 
     if (exportStatus != null && !exportStatus.isCompleted()) {
       // Validate that the resume parameters match
@@ -674,7 +680,7 @@ public class Exporter {
             exportStatus.getTotalPackages());
       } else {
         log.warn("Export parameters don't match existing status. Starting fresh export.");
-        statusManager.deleteStatus();
+        StatusManager.getInstance().deleteStatus();
         exportStatus = null;
       }
     }
@@ -689,9 +695,9 @@ public class Exporter {
       // Don't close dbReader here as we'll reuse it in exportDataWithStatus
 
       exportStatus =
-          statusManager.createNewStatus(
+          StatusManager.getInstance().createNewStatus(
               totalPackages, "stdout", null, deserialized, parallelThreads);
-      statusManager.saveStatus(exportStatus);
+      StatusManager.getInstance().saveStatus(exportStatus);
       log.info("Starting new export to stdout");
     }
 
@@ -724,7 +730,7 @@ public class Exporter {
       throws IOException {
 
     // Check for existing status and resume if possible
-    ExportStatus exportStatus = statusManager.loadStatus();
+    ExportStatus exportStatus = StatusManager.getInstance().loadStatus();
 
     if (exportStatus != null && !exportStatus.isCompleted()) {
       // Validate that the resume parameters match
@@ -739,7 +745,7 @@ public class Exporter {
             exportStatus.getTotalPackages());
       } else {
         log.warn("Export parameters don't match existing status. Starting fresh export.");
-        statusManager.deleteStatus();
+        StatusManager.getInstance().deleteStatus();
         exportStatus = null;
       }
     }
@@ -753,9 +759,9 @@ public class Exporter {
     if (exportStatus == null) {
       long totalPackages = archiveInfos.size();
       exportStatus =
-          statusManager.createNewStatus(
+          StatusManager.getInstance().createNewStatus(
               totalPackages, "objects", null, deserialized, parallelThreads);
-      statusManager.saveStatus(exportStatus);
+      StatusManager.getInstance().saveStatus(exportStatus);
       log.info("Starting new export to objects stream");
     }
 
@@ -845,13 +851,12 @@ public class Exporter {
 
                       // Save status less frequently to avoid performance degradation
                       // Only save every 10th package to reduce file I/O overhead
-                      if (statusManager != null
-                          && finalExportStatus.getProcessedCount() % 10 == 0) {
+                      if (finalExportStatus.getProcessedCount() % 10 == 0) {
                         // Use separate thread for status saving to avoid blocking processing
                         CompletableFuture.runAsync(
                             () -> {
                               try {
-                                statusManager.saveStatus(finalExportStatus);
+                                StatusManager.getInstance().saveStatus(finalExportStatus);
                               } catch (Exception e) {
                                 log.warn("Error saving export status: {}", e.getMessage());
                               }
@@ -887,13 +892,13 @@ public class Exporter {
               () -> {
                 try {
                   finalExportStatus.markCompleted();
-                  statusManager.saveStatus(finalExportStatus);
+                  StatusManager.getInstance().saveStatus(finalExportStatus);
                   log.info(
                       "Completed objects export: {} blocks, {} non-blocks processed",
                       finalExportStatus.getParsedBlocksCount(),
                       finalExportStatus.getNonBlocksCount());
                   // Clean up status file after successful completion
-                  statusManager.deleteStatus();
+                  StatusManager.getInstance().deleteStatus();
                 } catch (Exception e) {
                   log.error("Error finalizing export status: {}", e.getMessage());
                 }
@@ -918,7 +923,8 @@ public class Exporter {
       String errorFilePath,
       AtomicInteger parsedBlocksCounter,
       AtomicInteger nonBlocksCounter,
-      AtomicInteger errorCounter)
+      AtomicInteger errorCounter,
+      AtomicInteger sessionParsedBlocks)
       throws IOException {
 
     long startTime = System.nanoTime();
@@ -948,7 +954,8 @@ public class Exporter {
                     errorFilePath,
                     parsedBlocksCounter,
                     nonBlocksCounter,
-                    errorCounter);
+                    errorCounter,
+                    sessionParsedBlocks);
 
                 // Track local increments
                 int afterParsed = parsedBlocksCounter.get();
@@ -960,7 +967,7 @@ public class Exporter {
             }
           });
 
-      long totalTime = System.nanoTime() - startTime;
+      //      long totalTime = System.nanoTime() - startTime;
       //      log.debug(
       //          "Processed {} blocks using streaming in {}ms, packName {}, packSize {}",
       //          localParsedBlocks.get(),
@@ -1005,7 +1012,8 @@ public class Exporter {
       String errorFilePath,
       AtomicInteger parsedBlocksCounter,
       AtomicInteger nonBlocksCounter,
-      AtomicInteger errorCounter)
+      AtomicInteger errorCounter,
+      AtomicInteger sessionParsedBlocks)
       throws IOException {
 
     long startTime = System.nanoTime();
@@ -1036,7 +1044,8 @@ public class Exporter {
                     errorFilePath,
                     parsedBlocksCounter,
                     nonBlocksCounter,
-                    errorCounter);
+                    errorCounter,
+                    sessionParsedBlocks);
 
                 // Track local increments
                 int afterParsed = parsedBlocksCounter.get();
@@ -1047,13 +1056,6 @@ public class Exporter {
               }
             }
           });
-
-      long totalTime = System.nanoTime() - startTime;
-      //      log.debug(
-      //          "Processed {} blocks from traditional archive using streaming in {}ms",
-      //          localParsedBlocks.get(),
-      //          totalTime / 1_000_000);
-
       return localParsedBlocks.get();
     }
   }
@@ -1067,10 +1069,8 @@ public class Exporter {
       String errorFilePath,
       AtomicInteger parsedBlocksCounter,
       AtomicInteger nonBlocksCounter,
-      AtomicInteger errorCounter) {
-
-    // Removed globalProfiler calls - they were causing performance degradation
-    // due to atomic operations on shared counters across 32 threads
+      AtomicInteger errorCounter,
+      AtomicInteger sessionParsedBlocks) {
 
     try {
       // Parse BOC to TLB
@@ -1118,6 +1118,7 @@ public class Exporter {
         outputWriter.writeLine(lineToWrite);
 
         int currentParsedCount = parsedBlocksCounter.getAndIncrement();
+        sessionParsedBlocks.incrementAndGet(); // Track session blocks for accurate rate calculation
         totalParsedBlocks.incrementAndGet();
 
         // Pure reference clearing - No GC calls, just help the garbage collector

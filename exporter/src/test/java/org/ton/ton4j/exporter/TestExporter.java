@@ -5,12 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
-import java.io.File;
 import java.io.IOException;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,10 +32,10 @@ public class TestExporter {
           .registerTypeHierarchyAdapter(Cell.class, new CellTypeAdapter())
           .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
           .registerTypeAdapter(BitString.class, new BitStringTypeAdapter())
-          //          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
-          //          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
-          //          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
-          //          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
           .disableHtmlEscaping()
           .setLenient()
           .create();
@@ -62,8 +60,7 @@ public class TestExporter {
     Exporter exporter =
         Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
     assertThat(exporter).isNotNull();
-    FileUtils.deleteQuietly(new File("blocks-tlb.txt"));
-    exporter.exportToFile("blocks-tlb.txt", true, 32);
+    exporter.exportToFile("blocks-tlb.txt", true, 16);
   }
 
   @Test
@@ -71,7 +68,6 @@ public class TestExporter {
     Exporter exporter =
         Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
     assertThat(exporter).isNotNull();
-    FileUtils.deleteQuietly(new File("blocks-boc.txt"));
     exporter.exportToFile("blocks-boc.txt", false, 32);
   }
 
@@ -96,8 +92,15 @@ public class TestExporter {
               b.getSeqno(),
               b.getBlock().getAllTransactions().size(),
               b.getBlock().getAllMessages().size());
+          //          if (b.getSeqno() == 209936) {
+          //            log.info(gson.toJson(b.getBlock()));
+          //            for (InMsg msg : b.getBlock().getExtra().getInMsgDesc().getInMessages()) {
+          //              log.info("outmsgs {}", msg);
+          //            }
+          //          }
         });
     blockStream.close(); // to delete status file
+    // -1,8000000000000000,209936,
   }
 
   @Test

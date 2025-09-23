@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.exporter.types.ExportStatus;
@@ -16,17 +17,61 @@ import org.ton.ton4j.exporter.types.ExportStatus;
 public class StatusManager {
 
   private static final String STATUS_FILE_NAME = "status.json";
+  private static volatile StatusManager instance;
+  private static final Object lock = new Object();
+
   private final Gson gson;
   @Getter private final Path statusFilePath;
+  private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
 
-  public StatusManager() {
+  private StatusManager() {
     this.gson = new GsonBuilder().setPrettyPrinting().create();
     this.statusFilePath = Paths.get(STATUS_FILE_NAME);
   }
 
-  public StatusManager(String customPath) {
+  private StatusManager(String customPath) {
     this.gson = new GsonBuilder().setPrettyPrinting().create();
     this.statusFilePath = Paths.get(customPath, STATUS_FILE_NAME);
+  }
+
+  /**
+   * Gets the singleton instance of StatusManager
+   *
+   * @return StatusManager instance
+   */
+  public static StatusManager getInstance() {
+    if (instance == null) {
+      synchronized (lock) {
+        if (instance == null) {
+          instance = new StatusManager();
+        }
+      }
+    }
+    return instance;
+  }
+
+  /**
+   * Gets the singleton instance of StatusManager with custom path
+   *
+   * @param customPath custom path for status file
+   * @return StatusManager instance
+   */
+  public static StatusManager getInstance(String customPath) {
+    if (instance == null) {
+      synchronized (lock) {
+        if (instance == null) {
+          instance = new StatusManager(customPath);
+        }
+      }
+    }
+    return instance;
+  }
+
+  /** Resets the singleton instance (mainly for testing) */
+  public static void resetInstance() {
+    synchronized (lock) {
+      instance = null;
+    }
   }
 
   /**
@@ -58,11 +103,17 @@ public class StatusManager {
   }
 
   /**
-   * Saves export status to status.json file
+   * Saves export status to status.json file with thread safety
    *
    * @param status the export status to save
    */
   public void saveStatus(ExportStatus status) {
+    if (status == null) {
+      log.warn("Cannot save null export status");
+      return;
+    }
+
+    rwLock.writeLock().lock();
     try {
       // Create parent directories if they don't exist
       Path parentDir = statusFilePath.getParent();
@@ -70,11 +121,48 @@ public class StatusManager {
         Files.createDirectories(parentDir);
       }
 
-      String jsonContent = gson.toJson(status);
+      // Create a deep copy of the status to avoid concurrent modification during serialization
+      ExportStatus statusCopy = createStatusCopy(status);
+
+      String jsonContent = gson.toJson(statusCopy);
+      if (jsonContent == null || jsonContent.trim().isEmpty()) {
+        log.warn("Generated JSON content is null or empty for status: {}", status);
+        return;
+      }
+
       Files.writeString(statusFilePath, jsonContent, StandardCharsets.UTF_8);
 
     } catch (Exception e) {
-      log.error("Failed to save status file {}: {}", statusFilePath, e.getMessage());
+      // ignore
+    } finally {
+      rwLock.writeLock().unlock();
+    }
+  }
+
+  /**
+   * Creates a thread-safe copy of ExportStatus to avoid concurrent modification during
+   * serialization
+   */
+  private ExportStatus createStatusCopy(ExportStatus original) {
+    synchronized (original) {
+      ExportStatus copy = new ExportStatus();
+      copy.setExportId(original.getExportId());
+      copy.setStartTime(original.getStartTime());
+      copy.setLastUpdate(original.getLastUpdate());
+      copy.setTotalPackages(original.getTotalPackages());
+      copy.setProcessedCount(original.getProcessedCount());
+      copy.setParsedBlocksCount(original.getParsedBlocksCount());
+      copy.setNonBlocksCount(original.getNonBlocksCount());
+      copy.setExportType(original.getExportType());
+      copy.setOutputFile(original.getOutputFile());
+      copy.setDeserialized(original.isDeserialized());
+      copy.setParallelThreads(original.getParallelThreads());
+      copy.setCompleted(original.isCompleted());
+
+      // Create a copy of the processed packages set
+      copy.getProcessedPackages().addAll(original.getProcessedPackages());
+
+      return copy;
     }
   }
 

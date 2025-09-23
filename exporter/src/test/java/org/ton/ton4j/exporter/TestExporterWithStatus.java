@@ -14,17 +14,17 @@ import org.ton.ton4j.exporter.types.ExportStatus;
 public class TestExporterWithStatus {
 
   private Path tempDir;
-  private StatusManager statusManager;
 
   @Before
   public void setUp() throws IOException {
     tempDir = Files.createTempDirectory("exporter-test");
-    statusManager = new StatusManager(tempDir.toString());
+    // StatusManager uses singleton pattern - no initialization needed
   }
 
   @After
   public void tearDown() {
     // Clean up any status files
+    StatusManager statusManager = StatusManager.getInstance();
     if (statusManager.statusExists()) {
       statusManager.deleteStatus();
     }
@@ -33,7 +33,7 @@ public class TestExporterWithStatus {
   @Test
   public void testStatusManagerCreateAndLoad() {
     // Test creating a new status
-    ExportStatus status = statusManager.createNewStatus(100, "file", "/tmp/test.txt", false, 4);
+    ExportStatus status = StatusManager.getInstance().createNewStatus(100, "file", "/tmp/test.txt", false, 4);
     assertThat(status).isNotNull();
     assertThat(status.getTotalPackages()).isEqualTo(100);
     assertThat(status.getExportType()).isEqualTo("file");
@@ -43,11 +43,11 @@ public class TestExporterWithStatus {
     assertThat(status.isCompleted()).isFalse();
 
     // Test saving status
-    statusManager.saveStatus(status);
-    assertThat(statusManager.statusExists()).isTrue();
+    StatusManager.getInstance().saveStatus(status);
+    assertThat(StatusManager.getInstance().statusExists()).isTrue();
 
     // Test loading status
-    ExportStatus loadedStatus = statusManager.loadStatus();
+    ExportStatus loadedStatus = StatusManager.getInstance().loadStatus();
     assertThat(loadedStatus).isNotNull();
     assertThat(loadedStatus.getExportId()).isEqualTo(status.getExportId());
     assertThat(loadedStatus.getTotalPackages()).isEqualTo(status.getTotalPackages());
@@ -57,7 +57,7 @@ public class TestExporterWithStatus {
 
   @Test
   public void testStatusPackageTracking() {
-    ExportStatus status = statusManager.createNewStatus(10, "stdout", null, true, 2);
+    ExportStatus status = StatusManager.getInstance().createNewStatus(10, "stdout", null, true, 2);
 
     // Initially no packages processed
     assertThat(status.getProcessedCount()).isEqualTo(0);
@@ -89,7 +89,7 @@ public class TestExporterWithStatus {
 
   @Test
   public void testStatusCompletion() {
-    ExportStatus status = statusManager.createNewStatus(5, "file", "/tmp/output.txt", false, 1);
+    ExportStatus status = StatusManager.getInstance().createNewStatus(5, "file", "/tmp/output.txt", false, 1);
     assertThat(status.isCompleted()).isFalse();
 
     status.markCompleted();
@@ -100,16 +100,16 @@ public class TestExporterWithStatus {
   @Test
   public void testStatusFilePersistence() {
     ExportStatus originalStatus =
-        statusManager.createNewStatus(50, "file", "/tmp/blocks.txt", true, 8);
+        StatusManager.getInstance().createNewStatus(50, "file", "/tmp/blocks.txt", true, 8);
     originalStatus.markPackageProcessed("archive1", 10, 2);
     originalStatus.markPackageProcessed("archive2", 15, 3);
 
     // Save status
-    statusManager.saveStatus(originalStatus);
+    StatusManager.getInstance().saveStatus(originalStatus);
 
-    // Create new status manager instance to simulate restart
-    StatusManager newStatusManager = new StatusManager(tempDir.toString());
-    ExportStatus loadedStatus = newStatusManager.loadStatus();
+    // Since we're using singleton, we can't create a new instance to simulate restart
+    // Instead, we'll just test that the status persists across calls
+    ExportStatus loadedStatus = StatusManager.getInstance().loadStatus();
 
     assertThat(loadedStatus).isNotNull();
     assertThat(loadedStatus.getExportId()).isEqualTo(originalStatus.getExportId());
@@ -129,27 +129,27 @@ public class TestExporterWithStatus {
     assertThat(loadedStatus.isPackageProcessed("archive3")).isFalse();
 
     // Clean up
-    newStatusManager.deleteStatus();
+    StatusManager.getInstance().deleteStatus();
   }
 
   @Test
   public void testStatusFileNotExists() {
     // Test loading when no status file exists
-    ExportStatus status = statusManager.loadStatus();
+    ExportStatus status = StatusManager.getInstance().loadStatus();
     assertThat(status).isNull();
-    assertThat(statusManager.statusExists()).isFalse();
+    assertThat(StatusManager.getInstance().statusExists()).isFalse();
   }
 
   @Test
   public void testStatusFileDeletion() {
-    ExportStatus status = statusManager.createNewStatus(10, "stdout", null, false, 2);
-    statusManager.saveStatus(status);
-    assertThat(statusManager.statusExists()).isTrue();
+    ExportStatus status = StatusManager.getInstance().createNewStatus(10, "stdout", null, false, 2);
+    StatusManager.getInstance().saveStatus(status);
+    assertThat(StatusManager.getInstance().statusExists()).isTrue();
 
-    statusManager.deleteStatus();
-    assertThat(statusManager.statusExists()).isFalse();
+    StatusManager.getInstance().deleteStatus();
+    assertThat(StatusManager.getInstance().statusExists()).isFalse();
 
-    ExportStatus loadedStatus = statusManager.loadStatus();
+    ExportStatus loadedStatus = StatusManager.getInstance().loadStatus();
     assertThat(loadedStatus).isNull();
   }
 }

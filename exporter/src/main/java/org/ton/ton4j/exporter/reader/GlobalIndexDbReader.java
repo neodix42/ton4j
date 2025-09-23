@@ -67,7 +67,6 @@ public class GlobalIndexDbReader implements Closeable {
 
     try {
       globalIndexDb = new RocksDbWrapper(globalIndexPath.toString());
-      log.info("Initialized Files database global index: {}", globalIndexPath);
 
     } catch (IOException e) {
       throw new IOException(
@@ -95,11 +94,12 @@ public class GlobalIndexDbReader implements Closeable {
               if (globalKey instanceof IndexKey) {
                 mainIndexIndexValue = (IndexValue) GlobalIndexValue.deserialize(value);
 
-                log.info(
-                    "Loaded Files database main index: {} packages, {} key packages, {} temp packages",
-                    mainIndexIndexValue.getPackages().size(),
-                    mainIndexIndexValue.getKeyPackages().size(),
-                    mainIndexIndexValue.getTempPackages().size());
+                //                log.info(
+                //                    "Loaded Files database main index: {} packages, {} key
+                // packages, {} temp packages",
+                //                    mainIndexIndexValue.getPackages().size(),
+                //                    mainIndexIndexValue.getKeyPackages().size(),
+                //                    mainIndexIndexValue.getTempPackages().size());
                 found.set(true);
               }
             } catch (Exception e) {
@@ -130,7 +130,7 @@ public class GlobalIndexDbReader implements Closeable {
    */
   public void discoverArchivesFromFilesDatabase(Map<String, ArchiveInfo> existingArchives) {
 
-    log.debug("Discovering additional archives from Files database global index...");
+    //    log.debug("Discovering additional archives from Files database global index...");
 
     // Use the Files database index directly to get package information
     // without additional filesystem scanning

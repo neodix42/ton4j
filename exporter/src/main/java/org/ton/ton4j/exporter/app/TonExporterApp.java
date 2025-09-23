@@ -10,9 +10,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import org.ton.ton4j.bitstring.BitString;
+import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.exporter.Exporter;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.adapters.BitStringTypeAdapter;
 import org.ton.ton4j.tlb.adapters.ByteArrayToHexTypeAdapter;
+import org.ton.ton4j.tlb.adapters.CellTypeAdapter;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -47,7 +51,6 @@ public class TonExporterApp {
   private static volatile Exporter currentExporter = null;
   private static volatile Thread shutdownHook = null;
 
-
   public static void main(String[] args) {
     // Check for version argument first
     if (args.length == 1 && "-v".equals(args[0])) {
@@ -71,7 +74,7 @@ public class TonExporterApp {
       boolean isLastMode = false;
 
       // Check if the last argument is "last"
-      if (args.length > 0 && "last".equals(args[args.length - 1])) {
+      if ("last".equals(args[args.length - 1])) {
         isLastMode = true;
         // In last mode, ignore show progress and use 1 thread
         showProgressStr = "false";
@@ -80,8 +83,7 @@ public class TonExporterApp {
 
       // For file output, output filename is required
       if (outputDestination.equals("file")) {
-        int requiredArgs = isLastMode ? 6 : 6; // Same number of args, but last one might be "last"
-        if (args.length < requiredArgs) {
+        if (args.length < 6) {
           System.err.println("Error: Output file name is required when using 'file' destination");
           printUsage();
           System.exit(1);
@@ -179,9 +181,9 @@ public class TonExporterApp {
             printUsage();
             System.exit(1);
           }
-          currentExporter.exportToFile(outputFileName, outputFormat.equals("json"), numOfThreads);
+          currentExporter.exportToFile(outputFileName, deserialized, numOfThreads);
         } else {
-          currentExporter.exportToStdout(outputFormat.equals("json"), numOfThreads);
+          currentExporter.exportToStdout(deserialized, numOfThreads);
         }
       }
 
@@ -396,6 +398,9 @@ public class TonExporterApp {
             new GsonBuilder()
                 .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
                 .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
+                .registerTypeAdapter(BitString.class, new BitStringTypeAdapter())
+                .registerTypeAdapter(Cell.class, new CellTypeAdapter())
+                .disableHtmlEscaping()
                 .create();
         String jsonOutput = gson.toJson(block);
 

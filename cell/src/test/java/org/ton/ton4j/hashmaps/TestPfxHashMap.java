@@ -1,5 +1,8 @@
 package org.ton.ton4j.hashmaps;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,9 +13,6 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.cell.TonPfxHashMap;
 import org.ton.ton4j.utils.Utils;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -68,7 +68,7 @@ public class TestPfxHashMap {
         log.info("cell hash {}", Utils.bytesToHex(dictCell.hash()));
 
         CellSlice cs = CellSlice.beginParse(dictCell);
-        TonPfxHashMap dex = cs.parseDictPfx(dictKeySize,
+        TonPfxHashMap dex = cs.loadDictPfx(dictKeySize,
                 k -> k.readUint(dictKeySize),
                 v -> CellSlice.beginParse(v).loadUint(3)
         );

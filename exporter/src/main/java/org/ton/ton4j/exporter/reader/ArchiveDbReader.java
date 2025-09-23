@@ -44,7 +44,7 @@ public class ArchiveDbReader implements Closeable {
           .filter(path -> path.getFileName().toString().startsWith("arch"))
           .forEach(
               archDir -> {
-                log.debug("Scanning archive directory: {}", archDir);
+                //                log.debug("Scanning archive directory: {}", archDir);
 
                 try {
                   // Find all .pack files in this archive directory
