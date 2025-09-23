@@ -24,7 +24,50 @@ Java Exporter module uses RocksDB JNI library to directly access and extract dat
 </dependency>
 ```
 
+# Exporter
+
+Mainly `Exporter` class suggests three methods:
+ - `exportToFile()`
+ - `exportToStdout()`
+ - `exportToObjects()`
+ - `getLast()` and `getLast(X)`
+
+
+First three methods have parameters:
+ - deserialized - true or false
+ - number of threads 
+
+All methods and `TonExporterApp` support resume functionality.
+
 ## Usage of Exporter
+
+The simplest way to fetch all blocks of TON database from Java is to use Exporter's `exportToObjects()` method.
+This way you will get a parallel stream that contains all deserilized blocks.
+
+```java
+Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+
+Stream<ExportedBlock> blockStream = exporter.exportToObjects(true, 20);
+
+blockStream.forEach(
+    block -> {
+        log.info(
+          "Block info - Workchain: {}, Shard: {}, Seqno: {}",
+          block.getWorkchain(),
+          block.getShard(),
+          block.getSeqno());
+});
+```
+### Get last deserialized block
+
+```java
+Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+Block lastBlock = exporter.getLast();
+```
+
+## Usage of TonExporterApp
+
+`TonExporterApp.jar` is a standalone uber-jar application, that allows you to run exports of TON DB on your local host.  
 
 ```java
 java -jar target/TonExporterApp.jar 
@@ -56,13 +99,6 @@ Examples:
   java -jar TonExporterApp.jar /var/ton-work/db stdout boc 8
   java -jar TonExporterApp.jar /var/ton-work/db file json 1 false last_block.json last
   java -jar TonExporterApp.jar /var/ton-work/db stdout json 1 last
-
-```
-
-## TonExporterApp
-
-```java
-
 ```
 
 More examples in [Exporter](../exporter/src/test/java/org/ton/ton4j/exporter) module.
