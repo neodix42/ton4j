@@ -72,6 +72,14 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       throw new RuntimeException(e);
     } finally {
       customPool.shutdown();
+      try {
+        if (!customPool.awaitTermination(60, TimeUnit.SECONDS)) {
+          customPool.shutdownNow();
+        }
+      } catch (InterruptedException ex) {
+        customPool.shutdownNow();
+        Thread.currentThread().interrupt();
+      }
     }
   }
 
@@ -91,9 +99,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().count()).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -102,9 +109,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().min(comparator)).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -113,9 +119,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().max(comparator)).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -124,9 +129,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().anyMatch(predicate)).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -135,9 +139,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().allMatch(predicate)).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -146,9 +149,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().noneMatch(predicate)).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -157,9 +159,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().findFirst()).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -168,9 +169,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().findAny()).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -179,9 +179,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().toArray()).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -190,9 +189,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().toArray(generator)).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -201,9 +199,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().reduce(identity, accumulator)).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -212,9 +209,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().reduce(accumulator)).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -226,9 +222,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
           .get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -240,9 +235,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
           .get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -251,9 +245,8 @@ class ParallelStreamWrapper<T> implements Stream<T> {
       return customPool.submit(() -> delegate.parallel().collect(collector)).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      customPool.shutdown();
     }
+    // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
 
   @Override
@@ -332,7 +325,17 @@ class ParallelStreamWrapper<T> implements Stream<T> {
   @Override
   public void close() {
     delegate.close();
-    customPool.shutdown();
+    if (!customPool.isShutdown()) {
+      customPool.shutdown();
+      try {
+        if (!customPool.awaitTermination(60, TimeUnit.SECONDS)) {
+          customPool.shutdownNow();
+        }
+      } catch (InterruptedException ex) {
+        customPool.shutdownNow();
+        Thread.currentThread().interrupt();
+      }
+    }
   }
 
   @Override

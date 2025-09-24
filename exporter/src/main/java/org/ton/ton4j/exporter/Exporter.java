@@ -751,9 +751,6 @@ public class Exporter {
       log.info("Starting new export to objects stream");
     }
 
-    // Create a custom ForkJoinPool with the specified parallelism level
-    ForkJoinPool customThreadPool = new ForkJoinPool(parallelThreads);
-
     try {
       // Create a stream of archive entries and process them in parallel
       // Filter out already processed packages if resuming
@@ -774,7 +771,6 @@ public class Exporter {
                       int localParsedBlocks = 0;
                       int localNonBlocks = 0;
 
-                      // Read blocks from archive
                       if (archiveInfo.getIndexPath() == null) {
                         dbReader
                             .getArchiveDbReader()
@@ -888,11 +884,14 @@ public class Exporter {
                 }
               });
 
+      // Create a fresh ForkJoinPool for each stream to avoid thread pool reuse issues
+      // The ParallelStreamWrapper will handle the thread pool lifecycle
+      ForkJoinPool customThreadPool = new ForkJoinPool(parallelThreads);
+
       // Return a stream that uses the custom thread pool for parallel operations
       return new ParallelStreamWrapper<>(wrappedStream, customThreadPool);
 
     } catch (Exception e) {
-      customThreadPool.shutdown();
       dbReader.close();
       throw e;
     }
