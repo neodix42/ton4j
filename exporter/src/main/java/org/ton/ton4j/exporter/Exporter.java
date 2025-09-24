@@ -457,21 +457,7 @@ public class Exporter {
                   // Mark package as processed (optimized to avoid synchronized file I/O)
                   exportStatus.markPackageProcessed(archiveKey, localParsedBlocks, localNonBlocks);
 
-                  // Save status less frequently to avoid performance degradation
-                  // Only save every 10th package to reduce file I/O overhead
-                  if (exportStatus.getProcessedCount() % 10 == 0) {
-                    // Capture the current status to avoid race conditions in async operation
-                    final ExportStatus currentStatus = exportStatus;
-                    // Use separate thread for status saving to avoid blocking processing
-                    CompletableFuture.runAsync(
-                        () -> {
-                          try {
-                            StatusManager.getInstance().saveStatus(currentStatus);
-                          } catch (Exception e) {
-                            log.warn("Error saving export status: {}", e.getMessage());
-                          }
-                        });
-                  }
+                  StatusManager.getInstance().saveStatus(exportStatus);
 
                   if (showProgressInfo) {
                     System.out.printf(
@@ -638,8 +624,8 @@ public class Exporter {
       // Don't close dbReader here as we'll reuse it in exportDataWithStatus
 
       exportStatus =
-          StatusManager.getInstance().createNewStatus(
-              totalPackages, "file", outputToFile, deserialized, parallelThreads);
+          StatusManager.getInstance()
+              .createNewStatus(totalPackages, "file", outputToFile, deserialized, parallelThreads);
       StatusManager.getInstance().saveStatus(exportStatus);
       log.info("Starting new export to file: {}", outputToFile);
     }
@@ -695,8 +681,8 @@ public class Exporter {
       // Don't close dbReader here as we'll reuse it in exportDataWithStatus
 
       exportStatus =
-          StatusManager.getInstance().createNewStatus(
-              totalPackages, "stdout", null, deserialized, parallelThreads);
+          StatusManager.getInstance()
+              .createNewStatus(totalPackages, "stdout", null, deserialized, parallelThreads);
       StatusManager.getInstance().saveStatus(exportStatus);
       log.info("Starting new export to stdout");
     }
@@ -759,8 +745,8 @@ public class Exporter {
     if (exportStatus == null) {
       long totalPackages = archiveInfos.size();
       exportStatus =
-          StatusManager.getInstance().createNewStatus(
-              totalPackages, "objects", null, deserialized, parallelThreads);
+          StatusManager.getInstance()
+              .createNewStatus(totalPackages, "objects", null, deserialized, parallelThreads);
       StatusManager.getInstance().saveStatus(exportStatus);
       log.info("Starting new export to objects stream");
     }
@@ -802,8 +788,9 @@ public class Exporter {
                             .readFromTraditionalArchive(archiveKey, archiveInfo, localBlocks);
                       }
 
-                      // Convert to ExportedBlock objects and count blocks/non-blocks
+                      // Convert to ExportedBlock objects and count blocks/non-blocks/errors
                       List<ExportedBlock> exportedBlocks = new ArrayList<>();
+                      int localErrors = 0;
 
                       for (Map.Entry<String, byte[]> kv : localBlocks.entrySet()) {
                         try {
@@ -817,10 +804,11 @@ public class Exporter {
                               try {
                                 deserializedBlock = Block.deserialize(CellSlice.beginParse(c));
                               } catch (Throwable e) {
-                                log.debug(
+                                log.info(
                                     "Error deserializing block {}: {}",
                                     kv.getKey(),
                                     e.getMessage());
+                                localErrors++;
                                 // Continue with null deserializedBlock
                               }
                             }
@@ -845,22 +833,15 @@ public class Exporter {
                         }
                       }
 
-                      // Mark package as processed (optimized to avoid synchronized file I/O)
+                      // Mark package as processed and save status synchronously
                       finalExportStatus.markPackageProcessed(
-                          archiveKey, localParsedBlocks, localNonBlocks);
+                          archiveKey, localParsedBlocks, localNonBlocks, localErrors);
 
-                      // Save status less frequently to avoid performance degradation
-                      // Only save every 10th package to reduce file I/O overhead
-                      if (finalExportStatus.getProcessedCount() % 10 == 0) {
-                        // Use separate thread for status saving to avoid blocking processing
-                        CompletableFuture.runAsync(
-                            () -> {
-                              try {
-                                StatusManager.getInstance().saveStatus(finalExportStatus);
-                              } catch (Exception e) {
-                                log.warn("Error saving export status: {}", e.getMessage());
-                              }
-                            });
+                      // Save status synchronously to ensure all packages are tracked
+                      try {
+                        StatusManager.getInstance().saveStatus(finalExportStatus);
+                      } catch (Exception e) {
+                        log.warn("Error saving export status: {}", e.getMessage());
                       }
 
                       if (showProgress) {
@@ -891,12 +872,15 @@ public class Exporter {
           blockStream.onClose(
               () -> {
                 try {
+                  // Ensure final status is saved before marking as completed
+                  StatusManager.getInstance().saveStatus(finalExportStatus);
                   finalExportStatus.markCompleted();
                   StatusManager.getInstance().saveStatus(finalExportStatus);
                   log.info(
-                      "Completed objects export: {} blocks, {} non-blocks processed",
+                      "Completed objects export: {} blocks, {} non-blocks, {} errors processed",
                       finalExportStatus.getParsedBlocksCount(),
-                      finalExportStatus.getNonBlocksCount());
+                      finalExportStatus.getNonBlocksCount(),
+                      finalExportStatus.getErrors());
                   // Clean up status file after successful completion
                   StatusManager.getInstance().deleteStatus();
                 } catch (Exception e) {

@@ -38,6 +38,9 @@ public class ExportStatus {
   @SerializedName("non_blocks_count")
   private volatile int nonBlocksCount;
 
+  @SerializedName("errors")
+  private volatile int errors;
+
   @SerializedName("export_type")
   private String exportType; // "file" or "stdout"
 
@@ -68,6 +71,7 @@ public class ExportStatus {
     this.processedCount = 0;
     this.parsedBlocksCount = 0;
     this.nonBlocksCount = 0;
+    this.errors = 0;
     this.exportType = exportType;
     this.outputFile = outputFile;
     this.deserialized = deserialized;
@@ -83,6 +87,22 @@ public class ExportStatus {
       nonBlocksCount += nonBlocksFound;
       lastUpdate = Instant.now().toString();
     }
+  }
+
+  public synchronized void markPackageProcessed(String packageKey, int blocksFound, int nonBlocksFound, int errorsFound) {
+    if (!processedPackages.contains(packageKey)) {
+      processedPackages.add(packageKey);
+      processedCount++;
+      parsedBlocksCount += blocksFound;
+      nonBlocksCount += nonBlocksFound;
+      errors += errorsFound;
+      lastUpdate = Instant.now().toString();
+    }
+  }
+
+  public synchronized void incrementErrors() {
+    this.errors++;
+    this.lastUpdate = Instant.now().toString();
   }
 
   public boolean isPackageProcessed(String packageKey) {

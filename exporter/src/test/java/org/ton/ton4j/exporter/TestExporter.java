@@ -174,6 +174,33 @@ public class TestExporter {
         block.getBlockInfo().getShard().getWorkchain());
   }
 
+  /** todo cat blocks-boc.json | wc -l 441787; cat blocks-tlb.json | wc -l 432046 */
+  @Test
+  public void testJsonVsBocCount() throws IOException {
+    Exporter exporter =
+        Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
+
+    //    Stream<ExportedBlock> blockStream = exporter.exportToObjects(true, 20);
+    //    log.info("total blocks {}", blockStream.count()); // output 418198
+    Stream<ExportedBlock> blockStream = exporter.exportToObjects(false, 20);
+    log.info("total blocks {}", blockStream.count()); // output 444273, 445260, 445657, 445657
+    // and compare txs count and shardchains blocks
+    // mainnet stats
+    // export bocs - 1.5k block rate, min pack size 2mb, max pack size 20mb
+    // export tlb - started 900 blockrate,
+  }
+
+  @Test
+  public void testBocCount() throws IOException {
+    Exporter exporter =
+        Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
+
+    Stream<ExportedBlock> blockStream = exporter.exportToObjects(false, 20);
+    log.info(
+        "total blocks {}",
+        blockStream.count()); // output 444273, 445260, 445657, 445657, 445557, 445657, 445559
+  }
+
   @Test
   public void testShouldDeserializeBlock2() {
     Cell c =
