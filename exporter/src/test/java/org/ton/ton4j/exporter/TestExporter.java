@@ -216,25 +216,39 @@ public class TestExporter {
   }
 
   @Test
-  public void testObjectsCount() throws IOException {
-    Exporter exporter =
-        Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
-
+  public void testJsonVsBocFileCount() throws IOException {
     Files.deleteIfExists(Path.of("status.json"));
-    Stream<ExportedBlock> blockStream = exporter.exportToObjects(false, 20);
+
+    // First run
+    log.info("Starting first run deserialized=false...");
+    Exporter exporter1 =
+        Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
+    exporter1.exportToFile("blocks-boc.txt", false, 20);
+
     log.info(
-        "total blocks {}",
-        blockStream
-            .count()); // output 444273, 445260, 445657, 445657, 445557, 445657, 445559, 445557
-  }
-
-  @Test
-  public void testBocsCount() throws IOException {
-    Exporter exporter =
-        Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
+        "First run completed with count: {}, errors {}",
+        exporter1.getParsedBlocksCount(),
+        exporter1.getErrorsCount());
 
     Files.deleteIfExists(Path.of("status.json"));
-    exporter.exportToFile("blocks-boc.txt", false, 20); // 516460, 516460
+
+    // Add delay between runs
+    Utils.sleep(1);
+
+    // Second run
+    log.info("Starting second run deserialized=true...");
+    Exporter exporter2 =
+        Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).showProgress(true).build();
+    exporter2.exportToFile("blocks-tlb.txt", true, 20);
+
+    log.info(
+        "Second run completed with count: {}, errors {}",
+        exporter2.getParsedBlocksCount(),
+        exporter2.getErrorsCount());
+
+    Files.deleteIfExists(Path.of("status.json"));
+
+    assertThat(exporter1.getParsedBlocksCount()).isEqualTo(exporter2.getParsedBlocksCount());
   }
 
   @Test

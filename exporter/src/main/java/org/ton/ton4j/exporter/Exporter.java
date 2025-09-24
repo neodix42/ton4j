@@ -825,7 +825,7 @@ public class Exporter {
                           }
                         } catch (Throwable e) {
                           log.debug("Error processing block {}: {}", kv.getKey(), e.getMessage());
-                          localNonBlocks++;
+                          localErrors++;
                         }
                       }
 
@@ -847,11 +847,6 @@ public class Exporter {
                             finalExportStatus.getProcessedCount(),
                             finalExportStatus.getTotalPackages(),
                             archiveKey);
-                      } else {
-                        log.debug(
-                            "Completed reading archive {}: {} entries",
-                            archiveKey,
-                            localBlocks.size());
                       }
 
                       return exportedBlocks.stream();
@@ -909,8 +904,6 @@ public class Exporter {
       AtomicInteger errorCounter,
       AtomicInteger sessionParsedBlocks)
       throws IOException {
-
-    long startTime = System.nanoTime();
 
     AtomicInteger localParsedBlocks = new AtomicInteger(0);
     AtomicInteger localNonBlocks = new AtomicInteger(0);
