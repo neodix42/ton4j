@@ -96,9 +96,26 @@ class ParallelStreamWrapper<T> implements Stream<T> {
   @Override
   public long count() {
     try {
-      return customPool.submit(() -> delegate.parallel().count()).get();
+      // Execute the parallel count operation within our custom thread pool context
+      // This ensures consistent behavior regardless of workload intensity
+      return customPool.submit(() -> {
+        try {
+          // Execute the parallel count within our custom pool's context
+          return customPool.submit(() -> delegate.parallel().count()).get();
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }).get();
     } catch (Exception e) {
       throw new RuntimeException(e);
+    } finally {
+      // Ensure all parallel tasks in the custom pool are completed
+      try {
+        // Wait for quiescence to ensure all submitted tasks complete
+        customPool.awaitQuiescence(10, TimeUnit.SECONDS);
+      } catch (Exception ex) {
+        // Continue if quiescence times out - the nested get() calls should ensure completion
+      }
     }
     // Note: Thread pool shutdown is handled by the close() method or onClose() handler
   }
