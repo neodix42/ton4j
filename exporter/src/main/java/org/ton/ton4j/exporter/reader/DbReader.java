@@ -52,7 +52,7 @@ public class DbReader implements Closeable {
     log.info("Initialized GlobalIndexDbReader for TON database at: {}", dbRootPath);
 
     archiveDbReader.discoverAllArchivePackagesFromFilesystem(archiveInfos);
-    globalIndexDbReader.discoverArchivesFromFilesDatabase(archiveInfos);
+    //    globalIndexDbReader.discoverArchivesFromFilesDatabase(archiveInfos);
   }
 
   /**

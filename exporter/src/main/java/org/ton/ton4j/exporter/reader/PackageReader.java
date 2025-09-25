@@ -1,6 +1,5 @@
 package org.ton.ton4j.exporter.reader;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;

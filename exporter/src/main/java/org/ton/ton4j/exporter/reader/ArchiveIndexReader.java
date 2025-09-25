@@ -21,23 +21,20 @@ import lombok.extern.slf4j.Slf4j;
 public class ArchiveIndexReader implements Closeable {
 
   private final String archiveIndexPath;
-  private final String packagePath;
-  private final int packageId;
+  //  private final String packagePath;
+  //  private final int packageId;
   private RocksDbWrapper indexDb;
 
   /**
    * Creates a new ArchiveIndexReader for a specific archive index database.
    *
    * @param archiveIndexPath Path to the archive.XXXXX.index directory
-   * @param packagePath Path to the corresponding archive.XXXXX.pack file
-   * @param packageId The package ID (extracted from filename)
    * @throws IOException If the index database cannot be opened
    */
-  public ArchiveIndexReader(String archiveIndexPath, String packagePath, int packageId)
-      throws IOException {
+  public ArchiveIndexReader(String archiveIndexPath) throws IOException {
     this.archiveIndexPath = archiveIndexPath;
-    this.packagePath = packagePath;
-    this.packageId = packageId;
+    //    this.packagePath = packagePath;
+    //    this.packageId = packageId;
 
     if (!Files.exists(Paths.get(archiveIndexPath))) {
       throw new IOException("Archive index database not found at: " + archiveIndexPath);
@@ -45,7 +42,7 @@ public class ArchiveIndexReader implements Closeable {
 
     try {
       indexDb = new RocksDbWrapper(archiveIndexPath);
-      log.debug("Opened archive index database: {}", archiveIndexPath);
+      //      log.debug("Opened archive index database: {}", archiveIndexPath);
     } catch (IOException e) {
       throw new IOException("Could not open archive index database: " + e.getMessage(), e);
     }
@@ -73,24 +70,27 @@ public class ArchiveIndexReader implements Closeable {
             String valueStr = new String(value);
 
             // Skip special keys like "status"
-            if ("status".equals(keyStr)) {
+            if (keyStr.startsWith("status")) {
               return;
             }
 
             // Validate that key looks like a hash (hex string)
-            if (!isValidHexString(keyStr) || keyStr.length() != 64) {
-              return; // Skip non-hash keys
-            }
+            if (isValidHash(keyStr)) {
 
-            // Parse offset from value (stored as string in C++ implementation)
-            try {
-              long offset = Long.parseLong(valueStr);
-              hashOffsetMap.put(keyStr, offset);
-              validMappings.incrementAndGet();
-            } catch (NumberFormatException e) {
-              parseErrors.incrementAndGet();
-              log.debug("Error parsing offset for hash {}: {}", keyStr, e.getMessage());
+              // Parse offset from value (stored as string in C++ implementation)
+              try {
+                long offset = Long.parseLong(valueStr);
+                hashOffsetMap.put(keyStr, offset);
+                validMappings.incrementAndGet();
+              } catch (NumberFormatException e) {
+                parseErrors.incrementAndGet();
+                log.debug("Error parsing offset for hash {}: {}", keyStr, e.getMessage());
+              }
             }
+            //            else if (isPrintableAscii(keyStr)) { // info.1 ...
+            //              hashOffsetMap.put(keyStr, valueStr);
+            //              validMappings.incrementAndGet();
+            //            }
 
           } catch (Exception e) {
             parseErrors.incrementAndGet();
@@ -98,12 +98,12 @@ public class ArchiveIndexReader implements Closeable {
           }
         });
 
-    log.debug(
-        "Archive index {}: {} total entries, {} valid hash mappings, {} parse errors",
-        packageId,
-        totalEntries.get(),
-        validMappings.get(),
-        parseErrors.get());
+    //    log.debug(
+    //        "Index {}, {} total entries, {} valid hash mappings, {} parse errors",
+    //        archiveIndexPath,
+    //        totalEntries.get(),
+    //        validMappings.get(),
+    //        parseErrors.get());
 
     return hashOffsetMap;
   }
@@ -165,18 +165,25 @@ public class ArchiveIndexReader implements Closeable {
    * @param s The string to check
    * @return True if the string is a valid hexadecimal string, false otherwise
    */
-  private static boolean isValidHexString(String s) {
+  private static boolean isValidHash(String s) {
     if (s == null || s.isEmpty()) {
       return false;
     }
+    if (s.length() != 64) {
+      return false;
+    }
     return s.matches("^[0-9A-Fa-f]+$");
+  }
+
+  public static boolean isPrintableAscii(String s) {
+    return s.chars().allMatch(c -> c >= 32 && c <= 126);
   }
 
   @Override
   public void close() throws IOException {
     if (indexDb != null) {
       indexDb.close();
-      log.debug("Closed archive index database: {}", archiveIndexPath);
+      //      log.debug("Closed archive index database: {}", archiveIndexPath);
     }
   }
 }

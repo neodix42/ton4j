@@ -18,13 +18,10 @@ public class ArchiveFileLocation {
   private final String indexPath;
 
   /** Offset within the package file where the file data starts */
-  private final long offset;
+  private final long offset; //
 
   /** Package ID (extracted from filename, e.g., 100 for archive.00100.pack) */
   private final int packageId;
-
-  /** File hash (hex string) used as key in the index database */
-  private final String hash;
 
   /**
    * Checks if this location is valid for reading.
@@ -32,12 +29,7 @@ public class ArchiveFileLocation {
    * @return true if all required fields are present and valid
    */
   public boolean isValid() {
-    return packagePath != null
-        && indexPath != null
-        && hash != null
-        && !hash.isEmpty()
-        && offset >= 0
-        && packageId >= 0;
+    return packagePath != null && indexPath != null && packageId >= 0;
   }
 
   /**
@@ -55,7 +47,6 @@ public class ArchiveFileLocation {
     return ArchiveFileLocation.builder()
         .packagePath(packagePath)
         .indexPath(indexPath)
-        .hash(hash)
         .packageId(packageId)
         .offset(offset)
         .build();

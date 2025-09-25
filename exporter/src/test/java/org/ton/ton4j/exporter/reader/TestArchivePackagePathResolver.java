@@ -2,8 +2,10 @@ package org.ton.ton4j.exporter.reader;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 
 /**
  * Test class for the archive package path resolution functionality in GlobalIndexDbReader. This
@@ -19,10 +21,10 @@ public class TestArchivePackagePathResolver {
   public void testArchivePackagePathResolution() throws IOException {
     log.info("=== Testing Archive Package Path Resolution ===");
 
-    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
+    try (GlobalIndexDbReader globalIndexDbReader = new GlobalIndexDbReader(DB_PATH)) {
 
       // Get the main index to see available package IDs
-      var mainIndex = reader.getMainIndexIndexValue();
+      var mainIndex = globalIndexDbReader.getMainIndexIndexValue();
       if (mainIndex == null) {
         log.warn("Main index not found");
         return;
@@ -34,8 +36,8 @@ public class TestArchivePackagePathResolver {
       log.info("  Temp packages: {}", mainIndex.getTempPackages().size());
 
       // Test getting all archive package file paths
-      log.info("Testing getArchivePackageFilePaths()...");
-      List<String> allArchiveFiles = reader.getArchivePackageFilePaths();
+      log.info("Testing getArchivePackagesFromMainIndex()...");
+      List<String> allArchiveFiles = globalIndexDbReader.getArchivePackagesFromMainIndex();
       log.info("Found {} total archive package files", allArchiveFiles.size());
 
       // Show first few files as examples
@@ -60,7 +62,7 @@ public class TestArchivePackagePathResolver {
         log.info("Testing package ID: {}", packageId);
 
         // Test single main package file
-        String mainPackageFile = reader.getArchivePackageFilePath(packageId);
+        String mainPackageFile = globalIndexDbReader.getArchivePackagesByDirScan(packageId);
         if (mainPackageFile != null) {
           log.info("  Main package file: {}", mainPackageFile);
         } else {
@@ -68,7 +70,7 @@ public class TestArchivePackagePathResolver {
         }
 
         // Test all files for this package ID (including shard-specific)
-        List<String> allPackageFiles = reader.getAllArchivePackageFilePaths(packageId);
+        List<String> allPackageFiles = globalIndexDbReader.getAllArchivePackageFilePaths(packageId);
         log.info("  All files for package {}: {} files", packageId, allPackageFiles.size());
         for (String file : allPackageFiles) {
           log.info("    {}", file);
@@ -81,7 +83,7 @@ public class TestArchivePackagePathResolver {
         Integer tempPackageId = mainIndex.getTempPackages().get(0);
         log.info("Testing temp package ID: {}", tempPackageId);
 
-        String tempPackageFile = reader.getArchivePackageFilePath(tempPackageId);
+        String tempPackageFile = globalIndexDbReader.getArchivePackagesByDirScan(tempPackageId);
         if (tempPackageFile != null) {
           log.info("  Temp package file: {}", tempPackageFile);
         } else {
@@ -99,7 +101,7 @@ public class TestArchivePackagePathResolver {
 
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
 
-      var mainIndex = reader.getMainIndexIndexValue();
+      IndexValue mainIndex = reader.getMainIndexIndexValue();
       if (mainIndex == null) {
         log.warn("Main index not found");
         return;
@@ -108,6 +110,7 @@ public class TestArchivePackagePathResolver {
       // Create a mapping of package IDs to their file paths
       log.info("Creating package ID to path mapping...");
 
+      // oridinary
       for (Integer packageId : mainIndex.getPackages()) {
         List<String> packageFiles = reader.getAllArchivePackageFilePaths(packageId);
         if (!packageFiles.isEmpty()) {
@@ -120,6 +123,31 @@ public class TestArchivePackagePathResolver {
         }
       }
 
+      // key
+      for (Integer packageId : mainIndex.getKeyPackages()) {
+        List<String> packageFiles = reader.getAllArchivePackageFilePaths(packageId);
+        if (!packageFiles.isEmpty()) {
+          log.info("KeyPackage ID {} -> {} files:", packageId, packageFiles.size());
+          for (String file : packageFiles) {
+            log.info("  {}", file);
+          }
+        } else {
+          log.debug("Package ID {} -> NO FILES FOUND", packageId);
+        }
+      }
+
+      // temp
+      for (Integer packageId : mainIndex.getTempPackages()) {
+        List<String> packageFiles = reader.getAllArchivePackageFilePaths(packageId);
+        if (!packageFiles.isEmpty()) {
+          log.info("TempPackage ID {} -> {} files:", packageId, packageFiles.size());
+          for (String file : packageFiles) {
+            log.info("  {}", file);
+          }
+        } else {
+          log.debug("Package ID {} -> NO FILES FOUND", packageId);
+        }
+      }
       log.info("✓ Package ID to path mapping test completed");
     }
   }
@@ -131,7 +159,7 @@ public class TestArchivePackagePathResolver {
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
 
       // Test the directory scanning functionality
-      List<String> allArchiveFiles = reader.getArchivePackageFilePaths();
+      List<String> allArchiveFiles = reader.getArchivePackagesFromMainIndex();
 
       // Analyze the structure
       log.info("Archive directory structure analysis:");
@@ -158,12 +186,12 @@ public class TestArchivePackagePathResolver {
       }
 
       log.info("Files by directory:");
-      for (java.util.Map.Entry<String, Integer> entry : directoryCounts.entrySet()) {
+      for (Map.Entry<String, Integer> entry : directoryCounts.entrySet()) {
         log.info("  {}: {} files", entry.getKey(), entry.getValue());
       }
 
       log.info("Files by type:");
-      for (java.util.Map.Entry<String, Integer> entry : fileTypeCounts.entrySet()) {
+      for (Map.Entry<String, Integer> entry : fileTypeCounts.entrySet()) {
         log.info("  {}: {} files", entry.getKey(), entry.getValue());
       }
 

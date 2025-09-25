@@ -428,31 +428,17 @@ public class Exporter {
                 try {
                   int localParsedBlocks = 0;
                   int localNonBlocks = 0;
-                  if (archiveInfo.getIndexPath() == null) {
-                    localParsedBlocks =
-                        processFilesPackageInMemory(
-                            archiveKey,
-                            archiveInfo,
-                            outputWriter,
-                            deserialized,
-                            errorFilePath,
-                            parsedBlocksCounter,
-                            nonBlocksCounter,
-                            errorCounter,
-                            sessionParsedBlocks);
-                  } else {
-                    localParsedBlocks =
-                        processTraditionalArchiveInMemory(
-                            archiveKey,
-                            archiveInfo,
-                            outputWriter,
-                            deserialized,
-                            errorFilePath,
-                            parsedBlocksCounter,
-                            nonBlocksCounter,
-                            errorCounter,
-                            sessionParsedBlocks);
-                  }
+                  localParsedBlocks =
+                      processFilesPackageInMemory(
+                          archiveKey,
+                          archiveInfo,
+                          outputWriter,
+                          deserialized,
+                          errorFilePath,
+                          parsedBlocksCounter,
+                          nonBlocksCounter,
+                          errorCounter,
+                          sessionParsedBlocks);
 
                   // Mark package as processed (optimized to avoid synchronized file I/O)
                   exportStatus.markPackageProcessed(archiveKey, localParsedBlocks, localNonBlocks);
@@ -767,71 +753,99 @@ public class Exporter {
                     ArchiveInfo archiveInfo = entry.getValue();
 
                     try {
-                      Map<String, byte[]> localBlocks = new HashMap<>();
-                      int localParsedBlocks = 0;
-                      int localNonBlocks = 0;
+                      //                      Map<String, byte[]> localBlocks = new HashMap<>();
+                      AtomicInteger localParsedBlocks = new AtomicInteger();
+                      AtomicInteger localNonBlocks = new AtomicInteger();
+                      List<ExportedBlock> exportedBlocks = new ArrayList<>();
+                      AtomicInteger localErrors = new AtomicInteger();
 
-                      if (archiveInfo.getIndexPath() == null) {
-                        dbReader
-                            .getArchiveDbReader()
-                            .readFromFilesPackage(archiveKey, archiveInfo, localBlocks);
-                        dbReader
-                            .getGlobalIndexDbReader()
-                            .readFromFilesPackage(archiveKey, archiveInfo, localBlocks);
-                      } else {
-                        dbReader
-                            .getArchiveDbReader()
-                            .readFromTraditionalArchive(archiveKey, archiveInfo, localBlocks);
+                      try (PackageReader packageReader =
+                          new PackageReader(archiveInfo.getPackagePath())) {
+                        packageReader.forEachTyped(
+                            kv -> {
+                              String filename = kv.getFilename();
+                              if (filename.startsWith("block_")) {
+                                String blockKey = extractHashFromFilename(filename);
+                                if (blockKey != null) {
+                                  try {
+                                    Cell c = kv.getCell();
+                                    long magic = c.getBits().preReadUint(32).longValue();
+
+                                    if (magic == 0x11ef55aaL) {
+                                      Block deserializedBlock = null;
+
+                                      if (deserialized) {
+                                        try {
+                                          deserializedBlock =
+                                              Block.deserialize(CellSlice.beginParse(c));
+                                        } catch (Throwable e) {
+                                          log.info(
+                                              "Error deserializing block {}: {}",
+                                              kv.getFilename(),
+                                              e.getMessage());
+                                          localErrors.getAndIncrement();
+                                          // Continue with null deserializedBlock
+                                        }
+                                      }
+
+                                      ExportedBlock exportedBlock =
+                                          ExportedBlock.builder()
+                                              .archiveKey(archiveKey)
+                                              .blockKey(kv.getFilename())
+                                              .rawData(kv.getData())
+                                              .deserializedBlock(deserializedBlock)
+                                              .isDeserialized(
+                                                  deserialized && deserializedBlock != null)
+                                              .build();
+
+                                      exportedBlocks.add(exportedBlock);
+                                      localParsedBlocks.getAndIncrement();
+                                    } else {
+                                      localNonBlocks.getAndIncrement();
+                                    }
+                                  } catch (Throwable e) {
+                                    log.debug(
+                                        "Error processing block {}: {}",
+                                        kv.getFilename(),
+                                        e.getMessage());
+                                    localErrors.getAndIncrement();
+                                  }
+                                }
+                              }
+                            });
                       }
+                      //                      if (archiveInfo.getIndexPath() == null) {
+                      //                        dbReader
+                      //                            .getArchiveDbReader()
+                      //                            .readFromFilesPackage(archiveKey, archiveInfo,
+                      // localBlocks);
+                      //                        dbReader
+                      //                            .getGlobalIndexDbReader()
+                      //                            .readFromFilesPackage(archiveKey, archiveInfo,
+                      // localBlocks);
+                      //                      } else {
+                      //                        dbReader
+                      //                            .getArchiveDbReader()
+                      //                            .readFromTraditionalArchive(archiveKey,
+                      // archiveInfo, localBlocks);
+                      //                      }
 
                       // Convert to ExportedBlock objects and count blocks/non-blocks/errors
-                      List<ExportedBlock> exportedBlocks = new ArrayList<>();
-                      int localErrors = 0;
-
-                      for (Map.Entry<String, byte[]> kv : localBlocks.entrySet()) {
-                        try {
-                          Cell c = CellBuilder.beginCell().fromBoc(kv.getValue()).endCell();
-                          long magic = c.getBits().preReadUint(32).longValue();
-
-                          if (magic == 0x11ef55aaL) {
-                            Block deserializedBlock = null;
-
-                            if (deserialized) {
-                              try {
-                                deserializedBlock = Block.deserialize(CellSlice.beginParse(c));
-                              } catch (Throwable e) {
-                                log.info(
-                                    "Error deserializing block {}: {}",
-                                    kv.getKey(),
-                                    e.getMessage());
-                                localErrors++;
-                                // Continue with null deserializedBlock
-                              }
-                            }
-
-                            ExportedBlock exportedBlock =
-                                ExportedBlock.builder()
-                                    .archiveKey(archiveKey)
-                                    .blockKey(kv.getKey())
-                                    .rawData(kv.getValue())
-                                    .deserializedBlock(deserializedBlock)
-                                    .isDeserialized(deserialized && deserializedBlock != null)
-                                    .build();
-
-                            exportedBlocks.add(exportedBlock);
-                            localParsedBlocks++;
-                          } else {
-                            localNonBlocks++;
-                          }
-                        } catch (Throwable e) {
-                          log.debug("Error processing block {}: {}", kv.getKey(), e.getMessage());
-                          localErrors++;
-                        }
-                      }
+                      //                      List<ExportedBlock> exportedBlocks = new
+                      // ArrayList<>();
+                      //                      int localErrors = 0;
+                      //
+                      //                      for (Map.Entry<String, byte[]> kv :
+                      // localBlocks.entrySet()) {
+                      //
+                      //                      }
 
                       // Mark package as processed and save status synchronously
                       finalExportStatus.markPackageProcessed(
-                          archiveKey, localParsedBlocks, localNonBlocks, localErrors);
+                          archiveKey,
+                          localParsedBlocks.get(),
+                          localNonBlocks.get(),
+                          localErrors.get());
 
                       // Save status synchronously to ensure all packages are tracked
                       try {
@@ -943,14 +957,6 @@ public class Exporter {
             }
           });
 
-      //      long totalTime = System.nanoTime() - startTime;
-      //      log.debug(
-      //          "Processed {} blocks using streaming in {}ms, packName {}, packSize {}",
-      //          localParsedBlocks.get(),
-      //          totalTime / 1_000_000,
-      //          archiveInfo.getPackagePath(),
-      //          archiveInfo.getPackageSize());
-
       return localParsedBlocks.get();
     }
   }
@@ -991,8 +997,6 @@ public class Exporter {
       AtomicInteger errorCounter,
       AtomicInteger sessionParsedBlocks)
       throws IOException {
-
-    long startTime = System.nanoTime();
 
     AtomicInteger localParsedBlocks = new AtomicInteger(0);
     AtomicInteger localNonBlocks = new AtomicInteger(0);

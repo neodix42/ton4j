@@ -9,7 +9,8 @@ import org.junit.Test;
 import org.ton.ton4j.exporter.types.ArchiveFileLocation;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
-import org.ton.ton4j.tl.types.db.files.pkg.PackageValue;
+import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.utils.Utils;
 
 /**
  * Test class for the FilesDbReader that demonstrates the optimized block reading approach using the
@@ -38,10 +39,23 @@ public class TestGlobalIndexDbReader {
   }
 
   @Test
-  public void testGlobalIndexReadingPaths() throws IOException {
+  public void testGlobalIndexReadingIndex() throws IOException {
 
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
-      for (String path : reader.getArchivePackageFilePaths()) {
+      for (String path :
+          reader.getArchivePackagesFromMainIndex()) { // still missing pack files, need to look for
+        // info.x entries etc
+        log.info("path: {}", path);
+      }
+    }
+  }
+
+  @Test
+  public void testGlobalIndexReadingDirectories() throws IOException {
+
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
+      for (String path :
+          reader.getAllArchivePackageByDirScan()) { // this is the fastest way to get all pack files
         log.info("path: {}", path);
       }
     }
@@ -51,50 +65,71 @@ public class TestGlobalIndexDbReader {
   public void testGlobalIndexReadingPathsIndexed() throws IOException {
 
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
+      log.info("total indexes {}", reader.getMainIndexIndexValue().getPackages().size());
+      int count = 0;
       for (Map.Entry<String, ArchiveFileLocation> path :
-          reader.getAllArchiveFileLocationsFromIndexDatabases().entrySet()) {
+          reader.getAllPackagesHashOffsetMappings().entrySet()) {
         log.info("key {}, value: {}", path.getKey(), path.getValue());
+        if (count++ > 5) {
+          break;
+        }
       }
     }
   }
 
-  /** Test the Files database structure and metadata parsing. */
   @Test
-  public void testFilesDbStructure() throws IOException {
-    log.info("=== Testing Files Database Structure ===");
+  public void testGlobalIndexReadingByPkgId() throws IOException {
+    int packageId = 6400;
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
+      Map<String, ArchiveFileLocation> result = reader.getPackageHashOffsetMappings(packageId);
+      for (Map.Entry<String, ArchiveFileLocation> entry : result.entrySet()) {
+        log.info("key {}, value: {}", entry.getKey(), entry.getValue());
+        //        String packFilePath = entry.getValue().getIndexPath().replace("index", "pack");
+        //        log.info("packFilePath: {}", packFilePath);
+        //        packFilePath =
+        //            packFilePath.replace("archive.06400.pack",
+        // "archive.06400.0:8000000000000000.pack");
+        //        PackageReader packageReader = new PackageReader(packFilePath);
+        //        PackageReader.PackageEntry packageEntry =
+        //            (PackageReader.PackageEntry)
+        // packageReader.getEntryAt(entry.getValue().getOffset());
+        //        log.info(
+        //            "packageEntry: {}, dataSize {}, {}",
+        //            packageEntry.getFilename(),
+        //            packageEntry.getData().length,
+        //            Utils.bytesToHex(packageEntry.getData()));
+      }
+    }
+  }
+
+  /** lists all proof_(-1,8000000000000000,125647):D35.... */
+  @Test
+  public void testGlobalIndexReadingIndexedPackages() throws IOException {
 
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
 
-      // Test main index loading
-      log.info("Testing main index loading...");
-      var mainIndex = reader.getMainIndexIndexValue();
-      if (mainIndex != null) {
-        log.info("Main index loaded successfully:");
-        log.info("  Regular packages: {}", mainIndex.getPackages().size());
-        log.info("  Key packages: {}", mainIndex.getKeyPackages().size());
-        log.info("  Temp packages: {}", mainIndex.getTempPackages().size());
-      } else {
-        log.warn("Main index not found or empty");
-      }
-
-      // Test package metadata loading
-      log.info("Testing package metadata loading...");
-      Map<Long, PackageValue> packageMetadata = reader.getAllPackageMetadata();
-      log.info("Loaded metadata for {} packages", packageMetadata.size());
-
-      // Show sample package metadata
       int count = 0;
-      for (Map.Entry<Long, PackageValue> entry : packageMetadata.entrySet()) {
-        if (count++ < 5) {
-          long packageId = entry.getKey();
-          var metadata = entry.getValue();
-          log.info(
-              "  Package {}: key={}, temp={}, deleted={}, firstblocks={}",
-              packageId,
-              metadata.isKey(),
-              metadata.isTemp(),
-              metadata.isDeleted(),
-              metadata.getFirstblocks().size());
+      for (Map.Entry<String, ArchiveFileLocation> path :
+          reader.getAllPackagesHashOffsetMappings().entrySet()) {
+
+        PackageReader packageReader =
+            new PackageReader(path.getValue().getIndexPath().replace("index", "pack"));
+        PackageReader.PackageEntry packageEntry =
+            (PackageReader.PackageEntry) packageReader.getEntryAt(path.getValue().getOffset());
+        log.info(
+            "packageEntry: {}, dataSize {}, {}",
+            packageEntry.getFilename(),
+            packageEntry.getData().length,
+            Utils.bytesToHex(packageEntry.getData()));
+        if (packageEntry.getFilename().startsWith("proof_")) { // "block_"
+          log.info("Found block {}", packageEntry.getFilename());
+          Block block = packageEntry.getBlock();
+          log.info("block: {}", block);
+        }
+
+        packageReader.close();
+        if (count++ > 5000) {
+          break;
         }
       }
     }
@@ -109,7 +144,7 @@ public class TestGlobalIndexDbReader {
 
       // Test the original method (only finds files from global index)
       log.info("Files from global index method:");
-      List<String> filesFromIndex = reader.getArchivePackageFilePaths();
+      List<String> filesFromIndex = reader.getArchivePackagesFromMainIndex();
       for (String path : filesFromIndex) {
         log.info("  From index: {}", path);
       }
@@ -119,7 +154,7 @@ public class TestGlobalIndexDbReader {
 
       // Test the new method (finds ALL files from filesystem)
       log.info("Files from filesystem scan method:");
-      List<String> filesFromFilesystem = reader.getAllArchivePackageFilePathsFromFilesystem();
+      List<String> filesFromFilesystem = reader.getAllArchivePackageByDirScan();
       for (String path : filesFromFilesystem) {
         log.info("  From filesystem: {}", path);
       }
@@ -155,22 +190,21 @@ public class TestGlobalIndexDbReader {
 
       // Method 1: Files from global index (original - limited)
       log.info("1. Files from Files database global index:");
-      List<String> filesFromGlobalIndex = reader.getArchivePackageFilePaths();
+      List<String> filesFromGlobalIndex = reader.getArchivePackagesFromMainIndex();
       log.info("   Found {} package files", filesFromGlobalIndex.size());
 
       log.info("");
 
       // Method 2: Files from filesystem scan (previous improvement)
       log.info("2. Files from filesystem scan:");
-      List<String> filesFromFilesystem = reader.getAllArchivePackageFilePathsFromFilesystem();
+      List<String> filesFromFilesystem = reader.getAllArchivePackageByDirScan();
       log.info("   Found {} package files", filesFromFilesystem.size());
 
       log.info("");
 
       // Method 3: Files from archive index databases (NEW - C++ approach)
       log.info("3. Files from archive index databases (C++ approach):");
-      Map<String, ArchiveFileLocation> fileLocations =
-          reader.getAllArchiveFileLocationsFromIndexDatabases();
+      Map<String, ArchiveFileLocation> fileLocations = reader.getAllPackagesHashOffsetMappings();
       log.info("   Found {} individual files with hash->offset mappings", fileLocations.size());
 
       // Show package file counts
