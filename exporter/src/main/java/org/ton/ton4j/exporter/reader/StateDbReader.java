@@ -11,16 +11,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.Options;
-import org.rocksdb.RocksDB;
-import org.rocksdb.RocksDBException;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.exporter.types.BlockId;
 import org.ton.ton4j.exporter.types.StateFileInfo;
 import org.ton.ton4j.exporter.types.StateFileType;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
-import org.ton.ton4j.tl.types.db.files.index.IndexValue;
-import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -35,7 +30,7 @@ public class StateDbReader implements Closeable {
   private final Map<String, StateFileInfo> stateFiles = new HashMap<>();
 
   // RocksDB components for state database access
-  private RocksDB stateRocksDb;
+  private RocksDbWrapper stateRocksDb;
   private Options stateDbOptions;
   private final String stateDbPath;
 
@@ -57,26 +52,15 @@ public class StateDbReader implements Closeable {
     discoverStateFiles();
   }
 
-  /**
-   * Initializes RocksDB for state database access.
-   *
-   * @throws IOException If RocksDB initialization fails
-   */
-  private void initializeRocksDb() throws IOException {
+  /** Initializes RocksDB for state database access. */
+  private void initializeRocksDb() {
     try {
-      RocksDB.loadLibrary();
-      stateDbOptions = new Options().setCreateIfMissing(false);
 
-      Path stateDbDir = Paths.get(stateDbPath);
-      if (Files.exists(stateDbDir)) {
-        stateRocksDb = RocksDB.openReadOnly(stateDbOptions, stateDbPath);
-        log.debug("Opened RocksDB state database at: {}", stateDbPath);
-      } else {
-        log.warn("State database directory not found: {}", stateDbPath);
-      }
-    } catch (RocksDBException e) {
-      log.warn("Failed to initialize RocksDB state database: {}", e.getMessage());
-      // Continue without RocksDB - fall back to file-based access only
+      stateRocksDb = new RocksDbWrapper(stateDbPath);
+      log.debug("Opened RocksDB state database at: {}", stateDbPath);
+
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -365,160 +349,6 @@ public class StateDbReader implements Closeable {
   }
 
   /**
-   * Gets a block handle from the files database (temp packages), similar to how getLast() works.
-   * This method uses the same approach as exporter.getLast() to find recent blocks.
-   *
-   * @param blockId The block ID to look up
-   * @return Block handle data, or null if not found
-   */
-  public byte[] getBlockHandle(BlockIdExt blockId) {
-    log.debug("Getting block handle for: {}", blockId);
-
-    try {
-      // Use the same approach as getLast() - query temp packages in files database
-      try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(dbPath)) {
-        IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
-
-        if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
-          log.debug("No temp packages found in global index for block handle lookup");
-          return null;
-        }
-
-        // Get temp package timestamps (they are Unix timestamps)
-        List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
-        log.debug("Searching {} temp packages for block handle", tempPackageTimestamps.size());
-
-        // Sort timestamps in descending order (most recent first)
-        List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
-        Collections.sort(sortedTimestamps, Collections.reverseOrder());
-
-        // Search through temp packages to find the block
-        for (Integer packageTimestamp : sortedTimestamps) {
-          try (TempPackageIndexReader tempIndexReader =
-              new TempPackageIndexReader(dbPath, packageTimestamp)) {
-
-            // Get all blocks from this temp package
-            Map<BlockId, Block> blocks = tempIndexReader.getAllBlocks();
-
-            // Look for the specific block
-            for (Map.Entry<BlockId, Block> entry : blocks.entrySet()) {
-              BlockId foundBlockId = entry.getKey();
-              Block foundBlock = entry.getValue();
-
-              // Check if this matches our target block
-              if (foundBlockId.getWorkchain() == blockId.getWorkchain()
-                  && foundBlockId.shard == blockId.getShard()
-                  && foundBlockId.getSeqno() == blockId.getSeqno()) {
-
-                log.debug("Found matching block in temp package {}", packageTimestamp);
-
-                // Create a simple block handle (block info serialized)
-                // In the real implementation, this would be the actual block handle format
-                // todo
-                String blockHandle =
-                    String.format(
-                        "blockhandle_%d_%016x_%d",
-                        foundBlockId.getWorkchain(),
-                        foundBlockId.getShard(),
-                        foundBlockId.getSeqno());
-                return blockHandle.getBytes();
-              }
-            }
-          } catch (Exception e) {
-            log.debug("Error searching temp package {}: {}", packageTimestamp, e.getMessage());
-            continue;
-          }
-        }
-
-        log.debug("Block handle not found in any temp package for: {}", blockId);
-        return null;
-      }
-    } catch (Exception e) {
-      log.warn("Error getting block handle from files database: {}", e.getMessage());
-      return null;
-    }
-  }
-
-  /**
-   * Gets a state hash reference from the files database (temp packages), similar to how getLast()
-   * works. This method uses the same approach as exporter.getLast() to find recent block states.
-   *
-   * @param blockId The block ID to look up
-   * @return State hash data, or null if not found
-   */
-  public byte[] getStateHash(BlockIdExt blockId) {
-    log.debug("Getting state hash for: {}", blockId);
-
-    try {
-      // Use the same approach as getLast() - query temp packages in files database
-      try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(dbPath)) {
-        org.ton.ton4j.tl.types.db.files.index.IndexValue mainIndex =
-            globalIndexReader.getMainIndexIndexValue();
-
-        if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
-          log.debug("No temp packages found in global index for state hash lookup");
-          return null;
-        }
-
-        // Get temp package timestamps (they are Unix timestamps)
-        List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
-        log.debug("Searching {} temp packages for state hash", tempPackageTimestamps.size());
-
-        // Sort timestamps in descending order (most recent first)
-        List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
-        Collections.sort(sortedTimestamps, Collections.reverseOrder());
-
-        // Search through temp packages to find the block
-        for (Integer packageTimestamp : sortedTimestamps) {
-          try (TempPackageIndexReader tempIndexReader =
-              new TempPackageIndexReader(dbPath, packageTimestamp)) {
-
-            // Get all blocks from this temp package
-            Map<BlockId, Block> blocks = tempIndexReader.getAllBlocks();
-
-            // Look for the specific block
-            for (Map.Entry<BlockId, Block> entry : blocks.entrySet()) {
-              BlockId foundBlockId = entry.getKey();
-              Block foundBlock = entry.getValue();
-
-              // Check if this matches our target block
-              if (foundBlockId.getWorkchain() == blockId.getWorkchain()
-                  && foundBlockId.shard == blockId.getShard()
-                  && foundBlockId.getSeqno() == blockId.getSeqno()) {
-
-                log.debug("Found matching block in temp package {}", packageTimestamp);
-
-                // Extract state hash from the block
-                // For now, create a synthetic state hash since the block structure access is
-                // complex
-
-                // foundBlock.toCell().getHash(); // todo
-                String stateHashStr =
-                    String.format(
-                        "statehash_%d_%016x_%d",
-                        foundBlockId.getWorkchain(),
-                        foundBlockId.getShard(),
-                        foundBlockId.getSeqno());
-                log.debug("Created synthetic state hash for block: {}", stateHashStr);
-                return stateHashStr.getBytes();
-              }
-            }
-          } catch (Exception e) {
-            log.debug("Error searching temp package {}: {}", packageTimestamp, e.getMessage());
-            continue;
-          }
-        }
-
-        log.debug("State hash not found in any temp package for: {}", blockId);
-        return null;
-      }
-    } catch (Exception e) {
-      log.warn("Error getting state hash from files database: {}", e.getMessage());
-      return null;
-    }
-  }
-
-  /**
    * Gets the latest masterchain block ID from the state database. If not found in RocksDB, falls
    * back to using the highest sequence number from available state files.
    *
@@ -569,7 +399,7 @@ public class StateDbReader implements Closeable {
             return blockId;
           }
         }
-      } catch (RocksDBException e) {
+      } catch (Exception e) {
         log.warn("Error reading latest masterchain block from RocksDB: {}", e.getMessage());
         // Continue to fallback method
       }
@@ -586,12 +416,7 @@ public class StateDbReader implements Closeable {
 
     // Find the state with the highest sequence number
     StateFileInfo latestState =
-        masterchainStates.stream().max((a, b) -> Long.compare(a.seqno, b.seqno)).orElse(null);
-
-    if (latestState == null) {
-      log.debug("No valid masterchain state found");
-      return null;
-    }
+        masterchainStates.stream().max(Comparator.comparingLong(a -> a.seqno)).orElse(null);
 
     // Create BlockIdExt from the latest state file
     try {

@@ -21,7 +21,7 @@ public class DbReader implements Closeable {
 
   private final String dbRootPath;
   private final Map<String, RocksDbWrapper> openDbs = new HashMap<>();
-  private final ArchiveDbReader archiveDbReader;
+  //  private final ArchiveDbReader archiveDbReader;
   private final GlobalIndexDbReader globalIndexDbReader;
   private final Map<String, ArchiveInfo> archiveInfos = new HashMap<>();
 
@@ -46,13 +46,81 @@ public class DbReader implements Closeable {
 
     log.info("Initialized DbReader for TON database at: {}", dbRootPath);
 
-    archiveDbReader = new ArchiveDbReader(dbRootPath);
+    //    archiveDbReader = new ArchiveDbReader(dbRootPath);
     log.info("Initialized ArchiveDbReader for TON database at: {}", dbRootPath);
     globalIndexDbReader = new GlobalIndexDbReader(dbRootPath);
     log.info("Initialized GlobalIndexDbReader for TON database at: {}", dbRootPath);
 
-    archiveDbReader.discoverAllArchivePackagesFromFilesystem(archiveInfos);
+    discoverAllArchivePackagesFromFilesystem(archiveInfos);
     //    globalIndexDbReader.discoverArchivesFromFilesDatabase(archiveInfos);
+  }
+
+  /**
+   * Discovers ALL archive packages by directly scanning the filesystem. This is the faster than
+   * searching using global index db.
+   */
+  public void discoverAllArchivePackagesFromFilesystem(Map<String, ArchiveInfo> existingArchives) {
+    Path archivePackagesDir = Paths.get(dbRootPath, "packages");
+
+    try {
+      // Scan for archive directories (arch0000, arch0001, etc.)
+      Files.list(archivePackagesDir)
+          .filter(Files::isDirectory)
+          .filter(path -> path.getFileName().toString().startsWith("arch"))
+          .forEach(
+              archDir -> {
+                //                log.debug("Scanning archive directory: {}", archDir);
+
+                try {
+                  // Find all .pack files in this archive directory
+                  Files.list(archDir)
+                      .filter(Files::isRegularFile)
+                      .filter(path -> path.getFileName().toString().endsWith(".pack"))
+                      .forEach(
+                          packFile -> {
+                            try {
+                              String packFileName = packFile.getFileName().toString();
+
+                              Path parentDir = packFile.getParent();
+                              String dirName = parentDir.getFileName().toString();
+
+                              String packageBaseName =
+                                  packFileName.substring(0, packFileName.lastIndexOf('.'));
+                              String archiveKey = dirName + "/" + packageBaseName;
+
+                              // Extract archive ID from directory name (arch0000 -> 0)
+                              int archiveId = 0;
+                              if (dirName.startsWith("arch")) {
+                                try {
+                                  archiveId = Integer.parseInt(dirName.substring(4));
+                                } catch (NumberFormatException e) {
+                                  log.debug(
+                                      "Could not parse archive ID from directory name: {}",
+                                      dirName);
+                                }
+                              }
+
+                              existingArchives.put(
+                                  archiveKey,
+                                  new ArchiveInfo(
+                                      archiveId, packFile.toString(), Files.size(packFile)));
+
+                            } catch (Exception e) {
+                              log.debug(
+                                  "Error processing archive package file {}: {}",
+                                  packFile,
+                                  e.getMessage());
+                            }
+                          });
+                } catch (IOException e) {
+                  log.debug("Error scanning archive directory {}: {}", archDir, e.getMessage());
+                }
+              });
+    } catch (IOException e) {
+      log.error("Error scanning archive packages directory: {}", e.getMessage());
+    }
+
+    log.info("Discovered {} total archive packages from filesystem", existingArchives.size());
   }
 
   /**
@@ -87,9 +155,9 @@ public class DbReader implements Closeable {
       db.close();
     }
 
-    // Close the archive database reader
-    if (archiveDbReader != null) {
-      archiveDbReader.close();
-    }
+    //    // Close the archive database reader
+    //    if (archiveDbReader != null) {
+    //      archiveDbReader.close();
+    //    }
   }
 }

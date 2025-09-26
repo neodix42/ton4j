@@ -3,14 +3,11 @@ package org.ton.ton4j.exporter.reader;
 import java.io.IOException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.exporter.Exporter;
 import org.ton.ton4j.exporter.types.StateFileInfo;
 import org.ton.ton4j.exporter.types.StateFileType;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
-import org.ton.ton4j.tlb.Block;
 
 @Slf4j
 public class TestStateDbReader {
@@ -207,21 +204,6 @@ public class TestStateDbReader {
     try (StateDbReader stateReader = new StateDbReader(TON_DB_ROOT_PATH)) {
       BlockIdExt blockIdExt = stateReader.getLatestMasterchainBlock();
       log.info("blockIdExt: {}", blockIdExt);
-    }
-  }
-
-  /** todo bug in Block serialization */
-  @Test
-  public void testReadStateDbGetBlockHandle() throws IOException {
-    log.info("Opening State database: {}", TON_DB_ROOT_PATH);
-    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
-    Pair<Cell, Block> latestCellBlock = exporter.getLastAsPair();
-
-    try (StateDbReader stateReader = new StateDbReader(TON_DB_ROOT_PATH)) {
-      byte[] blockHandle = stateReader.getBlockHandle(BlockIdExt.fromBlock(latestCellBlock));
-      log.info(
-          "blockHandle: {}",
-          blockHandle != null ? "found (" + blockHandle.length + " bytes)" : "not found");
     }
   }
 }

@@ -29,7 +29,6 @@ import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
-import org.ton.ton4j.tlb.BlockHandle;
 import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
 
@@ -313,9 +312,9 @@ public class Exporter {
       dbReader = new DbReader(tonDatabaseRootPath);
     }
 
-    if (dbReader.getArchiveDbReader() == null) {
-      throw new IOException("ArchiveDbReader is not initialized");
-    }
+    //    if (dbReader.getArchiveDbReader() == null) {
+    //      throw new IOException("ArchiveDbReader is not initialized");
+    //    }
 
     Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveInfos();
     if (archiveInfos == null) {
@@ -1406,11 +1405,9 @@ public class Exporter {
    * @param address The address to find the shard for
    * @param masterchainBlock The latest masterchain block
    * @return The shard block containing the address, or null if not found
-   * @throws IOException If an I/O error occurs
    */
   // way to slow, will be reworked one day
-  private Block findShardBlockForAddress(Address address, Block masterchainBlock)
-      throws IOException {
+  private Block findShardBlockForAddress(Address address, Block masterchainBlock) {
     try {
       // Use the same approach as getLast() to search through temp packages
       try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
@@ -1508,28 +1505,8 @@ public class Exporter {
               .fileHash(new byte[32]) // Simplified - would extract from block
               .build();
 
-      // Use StateDbReader to get block handle and state hash
-      try (StateDbReader stateDbReader = new StateDbReader(tonDatabaseRootPath)) {
-        byte[] blockHandle = stateDbReader.getBlockHandle(shardBlockId);
-        byte[] stateHash = stateDbReader.getStateHash(shardBlockId);
-
-        if (blockHandle != null && stateHash != null) {
-          log.debug("Found block handle and state hash for shard block");
-
-          // For now, fall back to the existing cell database approach for account extraction
-          // This provides the account dictionary navigation functionality
-          // In a full implementation, we would parse the shard state directly here
-          try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
-            return cellDbReader.retrieveAccountByAddress(address).getAccount();
-          }
-        } else {
-          log.debug("No block handle or state hash found, using direct cell database access");
-
-          // Direct cell database access as fallback
-          try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
-            return cellDbReader.retrieveAccountByAddress(address).getAccount();
-          }
-        }
+      try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
+        return cellDbReader.retrieveAccountByAddress(address).getAccount();
       }
 
     } catch (Exception e) {
@@ -1539,34 +1516,6 @@ public class Exporter {
       try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
         return cellDbReader.retrieveAccountByAddress(address).getAccount();
       }
-    }
-  }
-
-  //  public Account getAccountByAddress(Address address) throws IOException {
-  //    Block block = getLast();
-  //  }
-
-  // review required
-  private BlockHandle getLastBlockHandle() {
-
-    try {
-      // Step 1: Get the latest masterchain block using the same approach as getLast()
-      // This uses the files database (temp packages) where recent blocks are stored
-      Block latestMcBlock = getLast();
-      if (latestMcBlock == null) {
-        log.debug("No latest masterchain block found in files database");
-        return null;
-      }
-      try (StateDbReader stateReader = new StateDbReader(tonDatabaseRootPath)) {
-
-        byte[] blockHandleBytes = stateReader.getBlockHandle(BlockIdExt.builder().build());
-        log.info("blockHandle bytes: {}", blockHandleBytes);
-        // TODO: Convert bytes to BlockHandle object if needed
-        return null; // Placeholder return
-      }
-    } catch (Exception e) {
-      log.error("Error getting last block handle: {}", e.getMessage());
-      return null;
     }
   }
 }

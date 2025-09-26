@@ -6,12 +6,24 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.ton4j.tl.types.db.celldb.Value;
+import org.ton.ton4j.utils.Utils;
 
 @Slf4j
 public class TestCellDbReader {
 
   private static final String TEST_DB_PATH =
       "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+
+  @Test
+  public void testCellDbReader() throws IOException {
+    CellDbReader cellDb = new CellDbReader(TEST_DB_PATH);
+    cellDb
+        .getCellDb()
+        .forEach(
+            (key, value) -> {
+              log.info("key:{}, value:{}", Utils.bytesToHex(key), Utils.bytesToHex(value));
+            });
+  }
 
   @Test
   public void testCellDbReaderBasicFunctionality() {
