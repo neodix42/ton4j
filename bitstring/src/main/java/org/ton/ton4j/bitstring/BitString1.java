@@ -59,34 +59,6 @@ public class BitString1 implements Bits<Boolean>, Serializable {
     }
   }
 
-  //    public BitString1(byte[] bytes, int size) {
-  //        this(Utils.signedBytesToUnsigned(bytes), size); // todo redo below
-  //    }
-
-  public BitString1(byte[] bytes, int size) {
-    if (bytes.length == 0) {
-      array = new ArrayDeque<>(0);
-      initialLength = 0;
-    } else {
-      byte[] bits =
-          Utils.leftPadBytes(
-              Utils.bytesToBitString(bytes).getBytes(StandardCharsets.UTF_8),
-              bytes.length * 8,
-              '0');
-      array = new ArrayDeque<>(bits.length);
-      for (int i = 0; i < size; i++) { // specified length
-        if (bits[i] == (byte) '1') {
-          array.addLast(true);
-        } else if (bits[i] == (byte) '0') {
-          array.addLast(false);
-        } else {
-          // else '-' sign - do nothing
-        }
-      }
-      initialLength = bits.length;
-    }
-  }
-
   /**
    * Create BitString1 limited by length
    *

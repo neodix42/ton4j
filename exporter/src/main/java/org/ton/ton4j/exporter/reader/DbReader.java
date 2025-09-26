@@ -47,7 +47,7 @@ public class DbReader implements Closeable {
     log.info("Initialized DbReader for TON database at: {}", dbRootPath);
 
     //    archiveDbReader = new ArchiveDbReader(dbRootPath);
-    log.info("Initialized ArchiveDbReader for TON database at: {}", dbRootPath);
+    //    log.info("Initialized ArchiveDbReader for TON database at: {}", dbRootPath);
     globalIndexDbReader = new GlobalIndexDbReader(dbRootPath);
     log.info("Initialized GlobalIndexDbReader for TON database at: {}", dbRootPath);
 
@@ -60,7 +60,7 @@ public class DbReader implements Closeable {
    * searching using global index db.
    */
   public void discoverAllArchivePackagesFromFilesystem(Map<String, ArchiveInfo> existingArchives) {
-    Path archivePackagesDir = Paths.get(dbRootPath, "packages");
+    Path archivePackagesDir = Paths.get(dbRootPath, "archive", "packages");
 
     try {
       // Scan for archive directories (arch0000, arch0001, etc.)

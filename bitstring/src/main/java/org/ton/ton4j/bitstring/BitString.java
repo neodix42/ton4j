@@ -515,7 +515,7 @@ public class BitString implements Serializable {
    * @return BitString with length n read from original BitString
    */
   public BitString readBits() {
-    BitString result = new BitString(); // todo
+    BitString result = new BitString();
     for (int i = 0; i < writeCursor; i++) {
       result.writeBit(readBit());
     }

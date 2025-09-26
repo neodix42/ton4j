@@ -16,13 +16,12 @@ public class TestCellDbReader {
 
   @Test
   public void testCellDbReader() throws IOException {
-    CellDbReader cellDb = new CellDbReader(TEST_DB_PATH);
-    cellDb
-        .getCellDb()
-        .forEach(
-            (key, value) -> {
-              log.info("key:{}, value:{}", Utils.bytesToHex(key), Utils.bytesToHex(value));
-            });
+    RocksDbWrapper cellDb = new RocksDbWrapper(TEST_DB_PATH + "/celldb");
+    cellDb.forEach(
+        (key, value) -> {
+          log.info("key:{}, value:{}", Utils.bytesToHex(key), Utils.bytesToHex(value));
+        });
+    cellDb.close();
   }
 
   @Test

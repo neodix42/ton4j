@@ -107,32 +107,6 @@ public class CryptoUtils {
     return sb.toString();
   }
 
-  //  public static byte[] convertEd25519ToX25519Public(byte[] ed25519PublicKey) {
-  //    // Manual conversion from Ed25519 to X25519 public key
-  //    // This is a simplified implementation - in production you might want to use BouncyCastle
-  //    try {
-  //      // For now, we'll use the Ed25519 key directly as X25519
-  //      // This is not cryptographically correct but allows compilation
-  //      // TODO: Implement proper Ed25519 to X25519 conversion
-  //      return ed25519PublicKey;
-  //    } catch (Exception e) {
-  //      throw new RuntimeException("Error converting Ed25519 to X25519 public key", e);
-  //    }
-  //  }
-  //
-  //  public static byte[] convertEd25519ToX25519Private(byte[] ed25519PrivateKey) {
-  //    // Manual conversion from Ed25519 to X25519 private key
-  //    // This is a simplified implementation - in production you might want to use BouncyCastle
-  //    try {
-  //      // For now, we'll use the Ed25519 key directly as X25519
-  //      // This is not cryptographically correct but allows compilation
-  //      // TODO: Implement proper Ed25519 to X25519 conversion
-  //      return ed25519PrivateKey;
-  //    } catch (Exception e) {
-  //      throw new RuntimeException("Error converting Ed25519 to X25519 private key", e);
-  //    }
-  //  }
-
   /**
    * Compute shared key from Ed25519 private key and Ed25519 public key This method converts Ed25519
    * keys to X25519 and computes the shared secret Mirrors the Go implementation: SharedKey(ourKey

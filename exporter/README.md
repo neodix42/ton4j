@@ -45,7 +45,7 @@ Currently export to JSON is straight forward in terms that same Cells (BoCs) are
 This makes block in JSON format much bigger than its original BoC representation.
 For example, I found one block which BoC was 1MB size and its JSON turned to 200MB (there were about 1000 Txs where each Tx had same InitState (code+body)).
 
-In the future, this might be optmized so export would produce a sepate file where each cell would be referenced by its hash, and that hash would be used in block as reference.
+In the future, this might be optmized so export would produce a sepate file where each cell would be referenced by its hash, and that hash would be used in block as a reference.
 
 ## Usage of Exporter
 
@@ -71,6 +71,37 @@ blockStream.forEach(
 ```java
 Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 Block lastBlock = exporter.getLast();
+```
+
+## Generic RockDB access
+For that use `RocksDbWrapper`. Below are few examples of how to traverse any RockDB key-value database.
+
+Cell DB traversal
+```java
+  @Test
+  public void testCellDbReader() throws IOException {
+    RocksDbWrapper cellDb = new RocksDbWrapper(TON_ROOT_DB_PATH + "/celldb");
+    cellDb.forEach(
+        (key, value) -> {
+          log.info("key:{}, value:{}", Utils.bytesToHex(key), Utils.bytesToHex(value));
+        });
+    cellDb.close();
+  }
+```
+
+Global Index DB traversal
+```java
+  @Test
+public void testGlobalIndexReading() throws IOException {
+    try (RocksDbWrapper reader = new RocksDbWrapper(TON_ROOT_DB_PATH + "/files/globalindex")) {
+        reader.forEach((key, value) -> {
+            log.info(
+                "globalIndexKey: {}, globalIndexValue: {}",
+                GlobalIndexKey.deserialize(key),
+                GlobalIndexValue.deserialize(value));
+            });
+    }
+}
 ```
 
 ## Usage of TonExporterApp

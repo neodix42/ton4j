@@ -181,7 +181,6 @@ public class TestExporter {
   // mainnet stats
   // export bocs - 1.5k block rate, min pack size 2mb, max pack size 20mb
   // export tlb - started 900 blockrate,
-  /** todo cat blocks-boc.json | wc -l 441787; cat blocks-tlb.json | wc -l 432046 */
   @Test
   public void testJsonVsBocCount() throws IOException {
     Files.deleteIfExists(Path.of("status.json"));
@@ -323,11 +322,7 @@ public class TestExporter {
     }
   }
 
-  /**
-   * Count 1: 445562, Count 2: 445657, Count 3: 445557
-   *
-   * @throws IOException
-   */
+  /** Count 1: 445562, Count 2: 445657, Count 3: 445557 */
   @Test
   public void testTlbCountConsistency() throws IOException {
     // Test to verify that the fix for premature thread pool shutdown works

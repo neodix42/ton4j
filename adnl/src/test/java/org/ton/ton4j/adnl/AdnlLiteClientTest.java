@@ -348,7 +348,6 @@ public class AdnlLiteClientTest {
     assertTrue(client.isConnected(), "Client should be connected");
 
     log.info("configParams6 {}", client.getConfigParam6());
-    // todo
   }
 
   @Test
@@ -1168,7 +1167,6 @@ public class AdnlLiteClientTest {
         client.sendMessage(Message.deserialize(CellSlice.beginParse(Cell.fromBoc(bocMessage))));
 
     log.info("sendMsgStatus {}", sendMsgStatus);
-    // todo
   }
 
   @Test
@@ -1193,7 +1191,6 @@ public class AdnlLiteClientTest {
         client.getValidatorStats(masterchainInfo.getLast(), 1, 10, null, 0);
 
     log.info("validatorStats {}", validatorStats);
-    // todo
   }
 
   @Test
@@ -1230,7 +1227,6 @@ public class AdnlLiteClientTest {
 
     log.info("partialBlockProof {}", partialBlockProof);
     assertThat(partialBlockProof.getFrom().getSeqno()).isGreaterThan(0);
-    // todo BlockLink
   }
 
   @Test
