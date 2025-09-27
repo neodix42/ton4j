@@ -19,7 +19,21 @@ public class TestCellDbReader {
     RocksDbWrapper cellDb = new RocksDbWrapper(TEST_DB_PATH + "/celldb");
     cellDb.forEach(
         (key, value) -> {
-          log.info("key:{}, value:{}", Utils.bytesToHex(key), Utils.bytesToHex(value));
+          String s = new String(key);
+          if (s.startsWith("desc")) {
+            // meta data
+            log.info("block hash: {}, value: {}", s.substring(4), Value.deserialize(value));
+          } else if (s.startsWith("desczero")) {
+            log.info("empty");
+          } else {
+            // raw cell
+            log.info(
+                "cell hash: {}, value (size {}): {}",
+                Utils.bytesToHex(key),
+                value.length,
+                Utils.bytesToHex(value));
+            // Cell cell = CellBuilder.beginCell().storeBytes(value).endCell();
+          }
         });
     cellDb.close();
   }
@@ -31,22 +45,25 @@ public class TestCellDbReader {
 
       try (CellDbReader reader = new CellDbReader(TEST_DB_PATH)) {
 
-        //        // Test 1: Get statistics
-        //        log.info("=== Test 1: Getting CellDB Statistics ===");
-        //        Map<String, Object> stats = reader.getStatistics();
-        //        for (Map.Entry<String, Object> entry : stats.entrySet()) {
-        //          log.info("Stat: {} = {}", entry.getKey(), entry.getValue());
-        //        }
-        //
-        //        // Test 2: Get empty entry
-        //        log.info("=== Test 2: Getting Empty Entry ===");
-        //        Value emptyEntry = reader.getEmptyEntry();
-        //        if (emptyEntry != null) {
-        //          log.info("Empty entry found: prev={}, next={}, rootHash={}",
-        //                   emptyEntry.getPrev(), emptyEntry.getNext(), emptyEntry.getRootHash());
-        //        } else {
-        //          log.warn("Empty entry not found");
-        //        }
+        // Test 1: Get statistics
+        log.info("=== Test 1: Getting CellDB Statistics ===");
+        Map<String, Object> stats = reader.getStatistics();
+        for (Map.Entry<String, Object> entry : stats.entrySet()) {
+          log.info("Stat: {} = {}", entry.getKey(), entry.getValue());
+        }
+
+        // Test 2: Get empty entry
+        log.info("=== Test 2: Getting Empty Entry ===");
+        Value emptyEntry = reader.getEmptyEntry();
+        if (emptyEntry != null) {
+          log.info(
+              "Empty entry found: prev={}, next={}, rootHash={}",
+              emptyEntry.getPrev(),
+              emptyEntry.getNext(),
+              emptyEntry.getRootHash());
+        } else {
+          log.warn("Empty entry not found");
+        }
 
         // Test 3: Get all cell hashes
         log.info("=== Test 3: Getting All Cell Hashes ===");

@@ -21,19 +21,19 @@ import org.ton.ton4j.utils.Utils;
 public class Value implements Serializable {
 
   BlockIdExt blockId;
-  public byte[] prev;  // int256
-  public byte[] next;  // int256
-  public byte[] rootHash;  // int256
+  public byte[] prev; // int256
+  public byte[] next; // int256
+  public byte[] rootHash; // int256
 
   // Convenience getters
   public String getPrev() {
     return Utils.bytesToHex(prev);
   }
-  
+
   public String getNext() {
     return Utils.bytesToHex(next);
   }
-  
+
   public String getRootHash() {
     return Utils.bytesToHex(rootHash);
   }
@@ -44,13 +44,8 @@ public class Value implements Serializable {
     byte[] prev = Utils.read(buffer, 32);
     byte[] next = Utils.read(buffer, 32);
     byte[] rootHash = Utils.read(buffer, 32);
-    
-    return Value.builder()
-        .blockId(blockId)
-        .prev(prev)
-        .next(next)
-        .rootHash(rootHash)
-        .build();
+
+    return Value.builder().blockId(blockId).prev(prev).next(next).rootHash(rootHash).build();
   }
 
   public byte[] serialize() {
@@ -61,5 +56,9 @@ public class Value implements Serializable {
     buffer.put(next);
     buffer.put(rootHash);
     return buffer.array();
+  }
+
+  public static Value deserialize(byte[] data) {
+    return deserialize(ByteBuffer.wrap(data));
   }
 }
