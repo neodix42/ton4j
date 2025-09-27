@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
 
 public class TonHashMapAugE extends TonHashMapAug {
@@ -40,12 +39,12 @@ public class TonHashMapAugE extends TonHashMapAug {
       Function<Object, Object> extraParser,
       BiFunction<Object, Object, Object> forkExtra) {
     List<Node> nodes = new ArrayList<>();
-    for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
+    for (Map.Entry<Object, ValueExtra> entry : elements.entrySet()) {
       BitString key = keyParser.apply(entry.getKey());
       Cell value =
-          isNull(valueParser) ? null : (Cell) valueParser.apply(entry.getValue().getLeft());
+          isNull(valueParser) ? null : (Cell) valueParser.apply(entry.getValue().getValue());
       Cell extra =
-          isNull(extraParser) ? null : (Cell) extraParser.apply(entry.getValue().getRight());
+          isNull(extraParser) ? null : (Cell) extraParser.apply(entry.getValue().getExtra());
       CellBuilder both = CellBuilder.beginCell();
       if (nonNull(value)) {
         both.storeSlice(CellSlice.beginParse(value));

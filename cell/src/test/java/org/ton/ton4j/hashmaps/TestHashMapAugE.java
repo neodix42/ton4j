@@ -4,14 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.TonHashMapAugE;
+import org.ton.ton4j.cell.*;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -26,7 +22,7 @@ public class TestHashMapAugE {
       long value = i * 3;
       long extra = value * value;
       forkExtra += extra;
-      hashmapAugE.elements.put(i, Pair.of(value, extra));
+      hashmapAugE.elements.put(i, new ValueExtra(value, extra));
       log.info("forkextra {}", forkExtra);
     }
     log.info("HashmapAugE {}", hashmapAugE);

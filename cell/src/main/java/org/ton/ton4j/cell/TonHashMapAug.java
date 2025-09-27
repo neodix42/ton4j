@@ -9,14 +9,13 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.utils.Utils;
 
 @Data
 public class TonHashMapAug implements Serializable {
 
-  public HashMap<Object, Pair<Object, Object>> elements; // Pair<Value,Extra>
+  public HashMap<Object, ValueExtra> elements; // Pair<Value,Extra>
   int keySize;
 
   public TonHashMapAug(int keySize) {
@@ -73,7 +72,7 @@ public class TonHashMapAug implements Serializable {
       CellSlice valueAndExtra = CellSlice.beginParse(node.value);
       Object extra = extraParser.apply(valueAndExtra);
       Object value = valueParser.apply(valueAndExtra);
-      elements.put(keyParser.apply(node.key), Pair.of(value, extra));
+      elements.put(keyParser.apply(node.key), new ValueExtra(value, extra));
     }
   }
 
@@ -225,12 +224,12 @@ public class TonHashMapAug implements Serializable {
       Function<Object, Object> extraParser,
       BiFunction<Object, Object, Object> forkExtra) {
     List<Node> nodes = new ArrayList<>();
-    for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
+    for (Map.Entry<Object, ValueExtra> entry : elements.entrySet()) {
       BitString key = keyParser.apply(entry.getKey());
       Cell value =
-          isNull(valueParser) ? null : (Cell) valueParser.apply(entry.getValue().getLeft());
+          isNull(valueParser) ? null : (Cell) valueParser.apply(entry.getValue().getValue());
       Cell extra =
-          isNull(extraParser) ? null : (Cell) extraParser.apply(entry.getValue().getRight());
+          isNull(extraParser) ? null : (Cell) extraParser.apply(entry.getValue().getExtra());
       CellBuilder both = CellBuilder.beginCell();
       if (nonNull(value)) {
         both.storeSlice(CellSlice.beginParse(value));
@@ -319,7 +318,7 @@ public class TonHashMapAug implements Serializable {
 
   public Object getKeyByIndex(long index) {
     long i = 0;
-    for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
+    for (Map.Entry<Object, ValueExtra> entry : elements.entrySet()) {
       if (i == index) {
         return entry.getKey();
       }
@@ -329,9 +328,9 @@ public class TonHashMapAug implements Serializable {
 
   public Object getValueByIndex(long index) {
     long i = 0;
-    for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
+    for (Map.Entry<Object, ValueExtra> entry : elements.entrySet()) {
       if (i++ == index) {
-        return entry.getValue().getLeft();
+        return entry.getValue().getValue();
       }
     }
     throw new Error("value not found at index " + index);
@@ -339,9 +338,9 @@ public class TonHashMapAug implements Serializable {
 
   public Object getEdgeByIndex(long index) {
     long i = 0;
-    for (Map.Entry<Object, Pair<Object, Object>> entry : elements.entrySet()) {
+    for (Map.Entry<Object, ValueExtra> entry : elements.entrySet()) {
       if (i++ == index) {
-        return entry.getValue().getRight();
+        return entry.getValue().getExtra();
       }
     }
     throw new Error("edge not found at index " + index);

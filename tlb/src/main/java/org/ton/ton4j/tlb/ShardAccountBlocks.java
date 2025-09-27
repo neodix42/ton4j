@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.cell.*;
 
 /**
@@ -45,9 +44,8 @@ public class ShardAccountBlocks {
 
   public List<ShardAccount> getShardAccountBlocksAsList() {
     List<ShardAccount> shardAccounts = new ArrayList<>();
-    for (Map.Entry<Object, Pair<Object, Object>> entry :
-        this.shardAccountBlocks.elements.entrySet()) {
-      shardAccounts.add((ShardAccount) entry.getValue().getLeft());
+    for (Map.Entry<Object, ValueExtra> entry : this.shardAccountBlocks.elements.entrySet()) {
+      shardAccounts.add((ShardAccount) entry.getValue().getValue());
     }
     return shardAccounts;
   }

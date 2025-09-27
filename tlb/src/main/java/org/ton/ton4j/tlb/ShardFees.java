@@ -6,11 +6,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.TonHashMapAugE;
+import org.ton.ton4j.cell.*;
 
 /**
  *
@@ -50,8 +46,8 @@ public class ShardFees {
 
   public List<ShardFeeCreated> getShardFeesCreatedAsList() {
     List<ShardFeeCreated> shardFeesCreated = new ArrayList<>();
-    for (Map.Entry<Object, Pair<Object, Object>> entry : shardFees.elements.entrySet()) {
-      shardFeesCreated.add((ShardFeeCreated) entry.getValue().getLeft());
+    for (Map.Entry<Object, ValueExtra> entry : shardFees.elements.entrySet()) {
+      shardFeesCreated.add((ShardFeeCreated) entry.getValue().getValue());
     }
     return shardFeesCreated;
   }

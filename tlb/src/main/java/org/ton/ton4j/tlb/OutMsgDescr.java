@@ -8,11 +8,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.TonHashMapAugE;
+import org.ton.ton4j.cell.*;
 
 /**
  *
@@ -53,8 +49,8 @@ public class OutMsgDescr implements Serializable {
 
   public List<OutMsg> getOutMessages() {
     List<OutMsg> outMsgs = new ArrayList<>();
-    for (Map.Entry<Object, Pair<Object, Object>> entry : outMsg.elements.entrySet()) {
-      outMsgs.add((OutMsg) entry.getValue().getLeft());
+    for (Map.Entry<Object, ValueExtra> entry : outMsg.elements.entrySet()) {
+      outMsgs.add((OutMsg) entry.getValue().getValue());
     }
     return outMsgs;
   }

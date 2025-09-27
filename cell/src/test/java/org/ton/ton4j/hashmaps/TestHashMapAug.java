@@ -4,14 +4,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.ton.ton4j.cell.CellSlice.beginParse;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.TonHashMapAug;
+import org.ton.ton4j.cell.*;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -26,7 +22,7 @@ public class TestHashMapAug {
     for (long i = 1; i <= 10; i++) {
       long value = i * 3;
       long extra = value * value;
-      hashmapAug.elements.put(i, Pair.of(value, extra));
+      hashmapAug.elements.put(i, new ValueExtra(value, extra));
     }
 
     Cell cell =
