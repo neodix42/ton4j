@@ -42,11 +42,11 @@ public class ShardAccountBlocks {
         .build();
   }
 
-  public List<ShardAccount> getShardAccountBlocksAsList() {
-    List<ShardAccount> shardAccounts = new ArrayList<>();
+  public List<AccountBlock> getShardAccountBlocksAsList() {
+    List<AccountBlock> accountBlocks = new ArrayList<>();
     for (Map.Entry<Object, ValueExtra> entry : this.shardAccountBlocks.elements.entrySet()) {
-      shardAccounts.add((ShardAccount) entry.getValue().getValue());
+      accountBlocks.add((AccountBlock) entry.getValue().getValue());
     }
-    return shardAccounts;
+    return accountBlocks;
   }
 }

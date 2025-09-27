@@ -1,6 +1,5 @@
 package org.ton.ton4j.tlb;
 
-import io.github.thanglequoc.timerninja.TimerNinjaTracker;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,48 +87,52 @@ public class Block implements Serializable {
     return block;
   }
 
-  @TimerNinjaTracker
+  /** returns list of transactions out of all shard account blocks */
   public List<Transaction> getAllTransactions() {
     List<Transaction> result = new ArrayList<>();
     Block block = this;
-
-    List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
-
-    for (OutMsg outMsg : outMsgs) {
-      if (outMsg instanceof OutMsgExt) {
-        result.add(((OutMsgExt) outMsg).getTransaction());
-      }
-      if (outMsg instanceof OutMsgImm) {
-        result.add(((OutMsgImm) outMsg).getTransaction());
-      }
-      if (outMsg instanceof OutMsgNew) {
-        result.add(((OutMsgNew) outMsg).getTransaction());
-      }
-      if (outMsg instanceof OutMsgNew) {
-        result.add(((OutMsgNew) outMsg).getTransaction());
-      }
+    for (AccountBlock accountBlock :
+        block.getExtra().getShardAccountBlocks().getShardAccountBlocksAsList()) {
+      result.addAll(accountBlock.getTransactionsAsList());
     }
 
-    List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
-    for (InMsg inMsg : inMsgs) {
-      if (inMsg instanceof InMsgImportExt) {
-        result.add(((InMsgImportExt) inMsg).getTransaction());
-      }
-      if (inMsg instanceof InMsgImportIhr) {
-        result.add(((InMsgImportIhr) inMsg).getTransaction());
-      }
-      if (inMsg instanceof InMsgImportImm) {
-        result.add(((InMsgImportImm) inMsg).getTransaction());
-      }
-      if (inMsg instanceof InMsgImportFin) {
-        result.add(((InMsgImportFin) inMsg).getTransaction());
-      }
-    }
+    //    List<OutMsg> outMsgs = block.getExtra().getOutMsgDesc().getOutMessages();
+    //
+    //    for (OutMsg outMsg : outMsgs) {
+    //      if (outMsg instanceof OutMsgExt) {
+    //        result.add(((OutMsgExt) outMsg).getTransaction());
+    //      }
+    //      if (outMsg instanceof OutMsgImm) {
+    //        result.add(((OutMsgImm) outMsg).getTransaction());
+    //      }
+    //      if (outMsg instanceof OutMsgNew) {
+    //        result.add(((OutMsgNew) outMsg).getTransaction());
+    //      }
+    //      if (outMsg instanceof OutMsgNew) {
+    //        result.add(((OutMsgNew) outMsg).getTransaction());
+    //      }
+    //    }
+    //
+    //    List<InMsg> inMsgs = block.getExtra().getInMsgDesc().getInMessages();
+    //    for (InMsg inMsg : inMsgs) {
+    //      if (inMsg instanceof InMsgImportExt) {
+    //        result.add(((InMsgImportExt) inMsg).getTransaction());
+    //      }
+    //      if (inMsg instanceof InMsgImportIhr) {
+    //        result.add(((InMsgImportIhr) inMsg).getTransaction());
+    //      }
+    //      if (inMsg instanceof InMsgImportImm) {
+    //        result.add(((InMsgImportImm) inMsg).getTransaction());
+    //      }
+    //      if (inMsg instanceof InMsgImportFin) {
+    //        result.add(((InMsgImportFin) inMsg).getTransaction());
+    //      }
+    //    }
     return result;
   }
 
   /**
-   * @return List of messages of Message or MsgEnvelope type
+   * @return List of messages of Message or MsgEnvelope type from all OutMsgDesc and InMsgDesc
    */
   public List<Object> getAllMessages() {
     List<Object> result = new ArrayList<>();
@@ -171,7 +174,7 @@ public class Block implements Serializable {
   }
 
   /**
-   * @return List of incoming messages of Message or MsgEnvelope type
+   * @return List of incoming messages of Message or MsgEnvelope type from all InMsgDesc
    */
   public List<Object> getAllIncomingMessages() {
     List<Object> result = new ArrayList<>();
@@ -196,7 +199,7 @@ public class Block implements Serializable {
   }
 
   /**
-   * @return List of outgoing messages of Message or MsgEnvelope type
+   * @return List of outgoing messages of Message or MsgEnvelope type from all OutMsgDesc
    */
   public List<Object> getAllOutgoingMessages() {
     List<Object> result = new ArrayList<>();

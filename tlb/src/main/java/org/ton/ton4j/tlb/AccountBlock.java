@@ -2,6 +2,9 @@ package org.ton.ton4j.tlb;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.*;
@@ -76,5 +79,13 @@ public class AccountBlock implements Serializable {
         // HashUpdate: magic not equal to 0x72, found 0x70
         .stateUpdate(cs.loadRef())
         .build();
+  }
+
+  public List<Transaction> getTransactionsAsList() {
+    List<Transaction> transactions = new ArrayList<>();
+    for (Map.Entry<Object, ValueExtra> entry : this.transactions.elements.entrySet()) {
+      transactions.add((Transaction) entry.getValue().getValue());
+    }
+    return transactions;
   }
 }
