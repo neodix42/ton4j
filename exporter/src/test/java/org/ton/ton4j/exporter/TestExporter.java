@@ -132,6 +132,8 @@ public class TestExporter {
     //    log.info("block {}", latestBlock);
 
     log.info("blockGson {}", gson.toJson(latestBlock));
+
+    log.info("shards {}", latestBlock.getAllShardDescrs());
   }
 
   @Test

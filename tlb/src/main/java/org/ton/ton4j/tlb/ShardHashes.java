@@ -2,13 +2,13 @@ package org.ton.ton4j.tlb;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.TonHashMapE;
+import org.ton.ton4j.cell.*;
 
 /**
  *
@@ -41,5 +41,15 @@ public class ShardHashes implements Serializable {
                 k -> k.readUint(32),
                 v -> BinTree.deserialize(CellSlice.beginParse(CellSlice.beginParse(v).loadRef()))))
         .build();
+  }
+
+  public List<ShardDescr> getShardDescrAsList() {
+    List<ShardDescr> result = new ArrayList<>();
+
+    for (Map.Entry<Object, Object> entry : shardHashes.elements.entrySet()) {
+      BinTree binTree = (BinTree) entry.getValue();
+      result.addAll(binTree.toList());
+    }
+    return result;
   }
 }

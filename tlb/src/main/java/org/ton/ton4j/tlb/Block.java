@@ -223,4 +223,8 @@ public class Block implements Serializable {
     }
     return result;
   }
+
+  public List<ShardDescr> getAllShardDescrs() {
+    return extra.getMcBlockExtra().getShardHashes().getShardDescrAsList();
+  }
 }
