@@ -34,10 +34,10 @@ public class TestExporter {
           .registerTypeHierarchyAdapter(Cell.class, new CellTypeAdapter())
           .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
           .registerTypeAdapter(BitString.class, new BitStringTypeAdapter())
-          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
-          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
-          .registerTypeAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
-          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
+          //          .registerTypeAdapter(TonHashMapAug.class, new TonHashMapAugTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapAugE.class, new TonHashMapAugETypeAdapter())
+          //          .registerTypeHierarchyAdapter(TonHashMap.class, new TonHashMapTypeAdapter())
+          //          .registerTypeAdapter(TonHashMapE.class, new TonHashMapETypeAdapter())
           .disableHtmlEscaping()
           .setLenient()
           .create();
@@ -129,12 +129,8 @@ public class TestExporter {
         latestBlock.getAllMessages().size(),
         latestBlock.getAllIncomingMessages().size(),
         latestBlock.getAllOutgoingMessages().size());
-    log.info("block {}", latestBlock);
-    Gson gson =
-        new GsonBuilder()
-            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
-            .registerTypeAdapter(byte[].class, new ByteArrayToHexTypeAdapter())
-            .create();
+    //    log.info("block {}", latestBlock);
+
     log.info("blockGson {}", gson.toJson(latestBlock));
   }
 

@@ -2,11 +2,11 @@ package org.ton.ton4j.tlb.adapters;
 
 import com.google.gson.*;
 import java.lang.reflect.Type;
+import org.apache.commons.lang3.NotImplementedException;
 import org.ton.ton4j.cell.TonHashMapAug;
-import org.ton.ton4j.utils.Utils;
 
 public class TonHashMapAugTypeAdapter
-    implements JsonSerializer<TonHashMapAug>, JsonDeserializer<byte[]> {
+    implements JsonSerializer<TonHashMapAug>, JsonDeserializer<TonHashMapAug> {
   @Override
   public JsonElement serialize(
       TonHashMapAug src, Type typeOfSrc, JsonSerializationContext context) {
@@ -14,8 +14,9 @@ public class TonHashMapAugTypeAdapter
   }
 
   @Override
-  public byte[] deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+  public TonHashMapAug deserialize(
+      JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
-    return Utils.hexToSignedBytes(json.getAsString());
+    throw new NotImplementedException();
   }
 }

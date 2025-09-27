@@ -1170,10 +1170,7 @@ public class Exporter {
 
       // Get temp package timestamps (they are Unix timestamps)
       List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
-      log.debug(
-          "Found {} temp packages in global index: {}",
-          tempPackageTimestamps.size(),
-          tempPackageTimestamps);
+      log.debug("Found {} temp packages in global index", tempPackageTimestamps.size());
 
       // Sort timestamps in descending order (most recent first)
       List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
@@ -1211,10 +1208,7 @@ public class Exporter {
 
       // Get temp package timestamps (they are Unix timestamps)
       List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
-      log.debug(
-          "Found {} temp packages in global index: {}",
-          tempPackageTimestamps.size(),
-          tempPackageTimestamps);
+      log.debug("Found {} temp packages in global index", tempPackageTimestamps.size());
 
       // Sort timestamps in descending order (most recent first)
       List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
@@ -1243,10 +1237,7 @@ public class Exporter {
 
       // Get temp package timestamps (they are Unix timestamps)
       List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
-      log.debug(
-          "Found {} temp packages in global index: {}",
-          tempPackageTimestamps.size(),
-          tempPackageTimestamps);
+      log.debug("Found {} temp packages in global index", tempPackageTimestamps.size());
 
       // Sort timestamps in descending order (most recent first)
       List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
@@ -1285,10 +1276,7 @@ public class Exporter {
 
         // Get temp package timestamps (they are Unix timestamps)
         List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
-        log.debug(
-            "Found {} temp packages in global index: {}",
-            tempPackageTimestamps.size(),
-            tempPackageTimestamps);
+        log.debug("Found {} temp packages in global index", tempPackageTimestamps.size());
 
         // Sort timestamps in descending order (most recent first)
         List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
