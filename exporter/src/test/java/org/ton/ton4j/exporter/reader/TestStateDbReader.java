@@ -1,6 +1,9 @@
 package org.ton.ton4j.exporter.reader;
 
+import static org.ton.ton4j.exporter.reader.StateDbReader.*;
+
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -8,12 +11,105 @@ import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.exporter.types.StateFileInfo;
 import org.ton.ton4j.exporter.types.StateFileType;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
+import org.ton.ton4j.tl.types.db.state.GcBlockId;
+import org.ton.ton4j.tl.types.db.state.InitBlockId;
+import org.ton.ton4j.tl.types.db.state.PersistentStateDescriptionShards;
+import org.ton.ton4j.tl.types.db.state.PersistentStateDescriptionsList;
+import org.ton.ton4j.tl.types.db.state.key.PersistentStateDescriptionShardsKey;
+import org.ton.ton4j.utils.Utils;
 
 @Slf4j
 public class TestStateDbReader {
 
   public static final String TON_DB_ROOT_PATH =
       "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+
+  @Test
+  public void testStateDbReader() throws IOException {
+    //    InitBlockId initBlockIdA = InitBlockId.builder().build();
+    //    log.info("initBlockIdA: {}", Utils.sha256(InitBlockId.builder().build().serialize()));
+
+    log.info("initBlockKeyHash {}", Utils.bytesToHex(INIT_BLOCK_KEY_HASH));
+    log.info("shardClientKeyHash {}", Utils.bytesToHex(SHARD_CLIENT_KEY_HASH));
+
+    RocksDbWrapper stateDb = new RocksDbWrapper(TON_DB_ROOT_PATH + "/state");
+    stateDb.forEach(
+        (key, value) -> {
+          String s = new String(key);
+          String v = new String(value);
+
+          log.info(
+              "key: {}, value (size {}): {}",
+              Utils.bytesToHex(key),
+              value.length,
+              Utils.bytesToHex(value));
+          if (value.length == 84) {
+            InitBlockId initBlockId = InitBlockId.deserialize(ByteBuffer.wrap(value));
+            log.info("initBlockId: {}", initBlockId);
+          }
+          //          log.info("key: {}, value : {}", s, v);
+        });
+    stateDb.close();
+  }
+
+  @Test
+  public void testStateDbReaderGetLastBlockIdExtBlockIdext() throws IOException {
+    RocksDbWrapper stateDb = new RocksDbWrapper(TON_DB_ROOT_PATH + "/state");
+    byte[] value = stateDb.get(SHARD_CLIENT_KEY_HASH);
+    InitBlockId initBlockId = InitBlockId.deserialize(ByteBuffer.wrap(value));
+    log.info("initBlockId: {}", initBlockId);
+    log.info("blockExtId: {}", initBlockId.getBlock());
+    stateDb.close();
+  }
+
+  @Test
+  public void testStateDbReaderGetInitBlockId() throws IOException {
+    RocksDbWrapper stateDb = new RocksDbWrapper(TON_DB_ROOT_PATH + "/state");
+    byte[] value = stateDb.get(INIT_BLOCK_KEY_HASH);
+    InitBlockId initBlockId = InitBlockId.deserialize(ByteBuffer.wrap(value));
+    log.info("initBlockId: {}", initBlockId);
+    log.info("blockExtId: {}", initBlockId.getBlock());
+    stateDb.close();
+  }
+
+  @Test
+  public void testStateDbReaderGetGcBlockId() throws IOException {
+    RocksDbWrapper stateDb = new RocksDbWrapper(TON_DB_ROOT_PATH + "/state");
+    byte[] value = stateDb.get(GC_BLOCK_KEY_HASH);
+    GcBlockId gcBlockId = GcBlockId.deserialize(ByteBuffer.wrap(value));
+    log.info("gcBlockId: {}", gcBlockId);
+    log.info("blockExtId: {}", gcBlockId.getBlock());
+    stateDb.close();
+  }
+
+  @Test
+  public void testStateDbReaderGetPersistentStateDescriptionShards() throws IOException {
+    RocksDbWrapper stateDb = new RocksDbWrapper(TON_DB_ROOT_PATH + "/state");
+    byte[] keyHash =
+        Utils.sha256AsArray(
+            PersistentStateDescriptionShardsKey.builder()
+                .masterchainSeqno(226831)
+                .build()
+                .serialize());
+    byte[] value = stateDb.get(keyHash);
+    assert value != null;
+    PersistentStateDescriptionShards persistentStateDescriptionShards =
+        PersistentStateDescriptionShards.deserialize(ByteBuffer.wrap(value));
+    log.info("persistentStateDescriptionShards: {}", persistentStateDescriptionShards);
+    stateDb.close();
+  }
+
+  @Test
+  public void testStateDbReaderGetPersistentStateDescriptionsList() throws IOException {
+    RocksDbWrapper stateDb = new RocksDbWrapper(TON_DB_ROOT_PATH + "/state");
+    byte[] value = stateDb.get(PERSISTENT_STATE_DESC_LIST_KEY_HASH);
+    assert value != null;
+    PersistentStateDescriptionsList persistentStateDescriptionsList =
+        PersistentStateDescriptionsList.deserialize(ByteBuffer.wrap(value));
+    log.info("persistentStateDescriptionShards: {}", persistentStateDescriptionsList);
+
+    stateDb.close();
+  }
 
   @Test
   public void testReadStateDb() throws IOException {
@@ -174,14 +270,14 @@ public class TestStateDbReader {
             BlockIdExt.builder()
                 .workchain(persistentState.workchain)
                 .shard(Long.parseUnsignedLong(persistentState.shard, 16))
-                .seqno(persistentState.seqno)
+                .seqno((int) persistentState.seqno)
                 .build();
 
         BlockIdExt mcBlockId =
             BlockIdExt.builder()
                 .workchain(-1)
                 .shard(-9223372036854775808L) // 0x8000000000000000
-                .seqno(persistentState.seqno)
+                .seqno((int) persistentState.seqno)
                 .build();
 
         byte[] persistentStateData = stateReader.readPersistentState(blockId, mcBlockId);
@@ -196,14 +292,18 @@ public class TestStateDbReader {
     }
   }
 
-  /** this works, but state db is not updated locally, todo */
   @Test
-  public void testReadStateDbGetLast() throws IOException {
+  public void testReadStateDbGetLastBlockIdExtBlockIdExt2() throws IOException {
+    // Update this path to point to your actual TON database
+
     log.info("Opening State database: {}", TON_DB_ROOT_PATH);
 
     try (StateDbReader stateReader = new StateDbReader(TON_DB_ROOT_PATH)) {
-      BlockIdExt blockIdExt = stateReader.getLatestMasterchainBlock();
-      log.info("blockIdExt: {}", blockIdExt);
+      // Get all state file keys
+      long startTime = System.currentTimeMillis();
+      BlockIdExt last = stateReader.getLastBlockIdExt();
+      long endTime = System.currentTimeMillis() - startTime;
+      log.info("elapsed {}ms, last: {}", endTime, last);
     }
   }
 }

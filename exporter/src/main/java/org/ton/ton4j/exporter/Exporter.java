@@ -25,10 +25,11 @@ import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.reader.*;
 import org.ton.ton4j.exporter.types.*;
-import org.ton.ton4j.tl.types.db.block.BlockIdExt;
+import org.ton.ton4j.tl.types.db.filedb.key.BlockFileKey;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockIdExt;
 import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
 
@@ -79,7 +80,7 @@ public class Exporter {
   /** whether to show blocks' reading progress every second, default false */
   private Boolean showProgress;
 
-  private DbReader dbReader;
+  private static DbReader dbReader;
 
   // No thread-local GSON needed - static GSON is thread-safe for serialization
   // Removed ThreadLocal to eliminate potential memory leaks and state accumulation
@@ -96,6 +97,11 @@ public class Exporter {
     public Exporter build() {
       if (isNull(super.tonDatabaseRootPath)) {
         throw new Error("tonDatabaseRootPath is null");
+      }
+      try {
+        dbReader = new DbReader(super.tonDatabaseRootPath);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
 
       if (isNull(super.showProgress)) {
@@ -316,15 +322,15 @@ public class Exporter {
     //      throw new IOException("ArchiveDbReader is not initialized");
     //    }
 
-    Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveInfos();
-    if (archiveInfos == null) {
+    Map<String, ArchiveInfo> packFiles = dbReader.getAllPackFiles();
+    if (packFiles == null) {
       throw new IOException("Archive infos map is null");
     }
 
     AtomicInteger parsedBlocksCounter = new AtomicInteger(exportStatus.getParsedBlocksCount());
     AtomicInteger nonBlocksCounter = new AtomicInteger(exportStatus.getNonBlocksCount());
     AtomicInteger errorCounter = new AtomicInteger(0);
-    long totalPacks = archiveInfos.size();
+    long totalPacks = packFiles.size();
 
     // Track blocks processed in current session for accurate rate calculation
     AtomicInteger sessionParsedBlocks = new AtomicInteger(0);
@@ -400,7 +406,7 @@ public class Exporter {
           TimeUnit.SECONDS);
     }
 
-    for (Map.Entry<String, ArchiveInfo> entry : archiveInfos.entrySet()) {
+    for (Map.Entry<String, ArchiveInfo> entry : packFiles.entrySet()) {
       if (shutdownRequested) {
         log.info("Shutdown requested, stopping submission of new packages");
         break;
@@ -605,7 +611,7 @@ public class Exporter {
       if (dbReader == null) {
         dbReader = new DbReader(tonDatabaseRootPath);
       }
-      long totalPackages = dbReader.getArchiveInfos().size();
+      long totalPackages = dbReader.getAllPackFiles().size();
       // Don't close dbReader here as we'll reuse it in exportDataWithStatus
 
       exportStatus =
@@ -662,7 +668,7 @@ public class Exporter {
       if (dbReader == null) {
         dbReader = new DbReader(tonDatabaseRootPath);
       }
-      long totalPackages = dbReader.getArchiveInfos().size();
+      long totalPackages = dbReader.getAllPackFiles().size();
       // Don't close dbReader here as we'll reuse it in exportDataWithStatus
 
       exportStatus =
@@ -724,7 +730,7 @@ public class Exporter {
     dbReader = new DbReader(tonDatabaseRootPath);
 
     // Get all archive entries
-    Map<String, ArchiveInfo> archiveInfos = dbReader.getArchiveInfos();
+    Map<String, ArchiveInfo> archiveInfos = dbReader.getAllPackFiles();
 
     // Create new status if not resuming
     if (exportStatus == null) {
@@ -984,60 +990,61 @@ public class Exporter {
     return null;
   }
 
-  /** Process traditional archive using streaming approach to avoid memory accumulation */
-  private int processTraditionalArchiveInMemory(
-      String archiveKey,
-      ArchiveInfo archiveInfo,
-      OutputWriter outputWriter,
-      boolean deserialized,
-      String errorFilePath,
-      AtomicInteger parsedBlocksCounter,
-      AtomicInteger nonBlocksCounter,
-      AtomicInteger errorCounter,
-      AtomicInteger sessionParsedBlocks)
-      throws IOException {
-
-    AtomicInteger localParsedBlocks = new AtomicInteger(0);
-    AtomicInteger localNonBlocks = new AtomicInteger(0);
-
-    // Use streaming PackageReader instead of loading everything into memory
-    try (PackageReader packageReader = new PackageReader(archiveInfo.getPackagePath())) {
-
-      // Process each entry as it's read from disk (no memory accumulation)
-      packageReader.forEachTyped(
-          entry -> {
-            String filename = entry.getFilename();
-
-            // Only process block files
-            if (filename.startsWith("block_")) {
-              String blockKey = extractHashFromFilename(filename);
-              if (blockKey != null) {
-                int beforeParsed = parsedBlocksCounter.get();
-                int beforeNonBlocks = nonBlocksCounter.get();
-
-                processBlockData(
-                    blockKey,
-                    entry.getData(),
-                    outputWriter,
-                    deserialized,
-                    errorFilePath,
-                    parsedBlocksCounter,
-                    nonBlocksCounter,
-                    errorCounter,
-                    sessionParsedBlocks);
-
-                // Track local increments
-                int afterParsed = parsedBlocksCounter.get();
-                int afterNonBlocks = nonBlocksCounter.get();
-
-                localParsedBlocks.addAndGet(afterParsed - beforeParsed);
-                localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
-              }
-            }
-          });
-      return localParsedBlocks.get();
-    }
-  }
+  //
+  //  /** Process traditional archive using streaming approach to avoid memory accumulation */
+  //  private int processTraditionalArchiveInMemory(
+  //      String archiveKey,
+  //      ArchiveInfo archiveInfo,
+  //      OutputWriter outputWriter,
+  //      boolean deserialized,
+  //      String errorFilePath,
+  //      AtomicInteger parsedBlocksCounter,
+  //      AtomicInteger nonBlocksCounter,
+  //      AtomicInteger errorCounter,
+  //      AtomicInteger sessionParsedBlocks)
+  //      throws IOException {
+  //
+  //    AtomicInteger localParsedBlocks = new AtomicInteger(0);
+  //    AtomicInteger localNonBlocks = new AtomicInteger(0);
+  //
+  //    // Use streaming PackageReader instead of loading everything into memory
+  //    try (PackageReader packageReader = new PackageReader(archiveInfo.getPackagePath())) {
+  //
+  //      // Process each entry as it's read from disk (no memory accumulation)
+  //      packageReader.forEachTyped(
+  //          entry -> {
+  //            String filename = entry.getFilename();
+  //
+  //            // Only process block files
+  //            if (filename.startsWith("block_")) {
+  //              String blockKey = extractHashFromFilename(filename);
+  //              if (blockKey != null) {
+  //                int beforeParsed = parsedBlocksCounter.get();
+  //                int beforeNonBlocks = nonBlocksCounter.get();
+  //
+  //                processBlockData(
+  //                    blockKey,
+  //                    entry.getData(),
+  //                    outputWriter,
+  //                    deserialized,
+  //                    errorFilePath,
+  //                    parsedBlocksCounter,
+  //                    nonBlocksCounter,
+  //                    errorCounter,
+  //                    sessionParsedBlocks);
+  //
+  //                // Track local increments
+  //                int afterParsed = parsedBlocksCounter.get();
+  //                int afterNonBlocks = nonBlocksCounter.get();
+  //
+  //                localParsedBlocks.addAndGet(afterParsed - beforeParsed);
+  //                localNonBlocks.addAndGet(afterNonBlocks - beforeNonBlocks);
+  //              }
+  //            }
+  //          });
+  //      return localParsedBlocks.get();
+  //    }
+  //  }
 
   /** Process individual block data with optimized performance (profiling disabled) */
   private void processBlockData(
@@ -1144,11 +1151,63 @@ public class Exporter {
   public void printADbStats() throws IOException {
     dbReader = new DbReader(tonDatabaseRootPath);
 
-    for (Map.Entry<String, ArchiveInfo> s : dbReader.getArchiveInfos().entrySet()) {
+    for (Map.Entry<String, ArchiveInfo> s : dbReader.getAllPackFiles().entrySet()) {
       log.info("Archive {}: {}", s.getKey(), s.getValue());
     }
-    log.info("total archive packs found: {}", dbReader.getArchiveInfos().size());
+    log.info("total archive packs found: {}", dbReader.getAllPackFiles().size());
   }
+
+  public Block getBlock(BlockIdExt blockIdExt) throws IOException {
+    org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExtTl =
+        org.ton.ton4j.tl.types.db.block.BlockIdExt.builder()
+            .seqno((int) blockIdExt.getSeqno())
+            .workchain(blockIdExt.getWorkchain())
+            .shard(blockIdExt.shard)
+            .fileHash(blockIdExt.fileHash)
+            .rootHash(blockIdExt.rootHash)
+            .build();
+
+    BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExtTl).build();
+    log.info("key hash {}", blockFileKey.getKeyHash());
+    int archiveIndex =
+        dbReader
+            .getGlobalIndexDbReader()
+            .getArchiveIndexBySeqno(blockIdExt.getWorkchain(), blockIdExt.getSeqno());
+    log.info("archive index {}", archiveIndex);
+    long offset;
+    try (ArchiveIndexReader archiveIndexReader =
+        new ArchiveIndexReader(dbReader.getDbRootPath(), archiveIndex)) {
+      offset = archiveIndexReader.getOffsetByHash(blockFileKey.getKeyHash());
+      log.info("found offset: {}", offset);
+
+      long mcSeqno;
+      if (blockIdExt.getWorkchain() == -1) {
+        mcSeqno = blockIdExt.getSeqno();
+      } else {
+        mcSeqno = 234048; // blockIdExt.getSeqno(); // todo find refMcSeqno minRefMcSeqno
+      }
+      log.info("found mcSeqno: {}", mcSeqno);
+      String packFilename =
+          archiveIndexReader.getExactPackFilename(
+              archiveIndex,
+              blockIdExt.getSeqno(),
+              blockIdExt.getWorkchain(),
+              blockIdExt.shard,
+              mcSeqno);
+      log.info("found pack filename: {}", packFilename);
+      try (PackageReader packageReader = new PackageReader(packFilename)) {
+        PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
+        return packageEntry.getBlock();
+      }
+    }
+  }
+
+  //  public Block getBlock(
+  //      int wc, long shard, int seqno, byte[] rootHash, byte[] fileHash) throws IOException {
+  //
+  //    try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath))
+  // {}
+  //  }
 
   /**
    * Gets the very last (most recently added) deserialized block from the RocksDB database. This
@@ -1158,7 +1217,7 @@ public class Exporter {
    * @return The most recently added Block of masterchain, or null if no blocks are found
    * @throws IOException If an I/O error occurs while reading the database
    */
-  public Block getLast() throws IOException {
+  public Pair<BlockIdExt, Block> getLast() throws IOException {
 
     try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
       IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
@@ -1225,7 +1284,7 @@ public class Exporter {
     }
   }
 
-  public Pair<Cell, Block> getLastAsPair() throws IOException {
+  public Cell getLastAsCell() throws IOException {
 
     try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
       IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
@@ -1249,7 +1308,7 @@ public class Exporter {
       Integer packageTimestamp = sortedTimestamps.get(0);
       try (TempPackageIndexReader tempIndexReader =
           new TempPackageIndexReader(tonDatabaseRootPath, packageTimestamp)) {
-        return tempIndexReader.getLastAsPair();
+        return tempIndexReader.getLastAsCell();
       }
     }
   }
@@ -1262,7 +1321,7 @@ public class Exporter {
    * @return The most recently added number of blocks of masterchain and any workchain.
    * @throws IOException If an I/O error occurs while reading the database
    */
-  public TreeMap<BlockId, Block> getLast(int limit) throws IOException {
+  public TreeMap<BlockIdExt, Block> getLast(int limit) throws IOException {
     dbReader = new DbReader(tonDatabaseRootPath);
 
     try {
@@ -1302,208 +1361,6 @@ public class Exporter {
   private Account getAccountByAddress(Address address) throws IOException {
     try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
       return cellDbReader.retrieveAccountByAddress(address).getAccount();
-    }
-  }
-
-  /**
-   * Gets account state by address following the same database access patterns as the original C++
-   * TON node implementation. This method implements the raw.getAccountState() TL API functionality.
-   *
-   * <p>The process follows these steps: 1. Get the latest masterchain block from the files database
-   * (same as getLast()) 2. Extract shard prefix from the address using Address.getShardAsLong() 3.
-   * Resolve the appropriate shard for the account 4. Read the shard state from the most recent
-   * block 5. Navigate the account dictionary in the shard state 6. Extract and return the account
-   * state
-   *
-   * <p>Note: This implementation uses the files database (temp packages) to get recent blocks and
-   * follows the original C++ implementation patterns for fast account state retrieval.
-   *
-   * @param address The account address to look up
-   * @return The Account state, or null if not found
-   * @throws IOException If an I/O error occurs while reading the database
-   */
-  // way to slow, will be reworked one day
-  private Account getAccountState(Address address) throws IOException {
-    log.debug("Getting account state for address: {}", address.toString(false));
-
-    try {
-      // Step 1: Get the latest masterchain block using the same approach as getLast()
-      // This uses the files database (temp packages) where recent blocks are stored
-      Block latestMcBlock = getLast();
-      if (latestMcBlock == null) {
-        log.debug("No latest masterchain block found in files database");
-        return null;
-      }
-
-      log.debug(
-          "Latest masterchain block found: workchain={}, shard={}, seqno={}",
-          latestMcBlock.getBlockInfo().getShard().getWorkchain(),
-          latestMcBlock.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
-          latestMcBlock.getBlockInfo().getSeqno());
-
-      // Step 2: Extract shard prefix from address
-      long shardPrefix = address.getShardAsLong();
-      log.debug(
-          "Address {} has shard prefix: 0x{}",
-          address.toString(false),
-          Long.toHexString(shardPrefix));
-
-      // Step 3: Resolve the appropriate shard for the account
-      // In TON, accounts are distributed across shards based on their address hash
-      // For the account's workchain, we need to find the shard that contains this address
-
-      // Step 4: Find and read the appropriate shard state
-      Block shardBlock = findShardBlockForAddress(address, latestMcBlock);
-      if (shardBlock == null) {
-        log.debug("No shard block found for address: {}", address.toString(false));
-        return null;
-      }
-
-      log.debug(
-          "Found shard block for address: workchain={}, shard={}, seqno={}",
-          shardBlock.getBlockInfo().getShard().getWorkchain(),
-          shardBlock.getBlockInfo().getShard().convertShardIdentToShard().toString(16),
-          shardBlock.getBlockInfo().getSeqno());
-
-      // Step 5: Navigate the account dictionary in the shard state
-      // The shard block contains the shard state with account dictionary
-      Account account = extractAccountFromShardState(address, shardBlock);
-
-      if (account != null) {
-        log.debug("Successfully retrieved account state for address: {}", address.toString(false));
-      } else {
-        log.debug("No account state found for address: {}", address.toString(false));
-      }
-
-      return account;
-
-    } catch (Exception e) {
-      log.error(
-          "Error getting account state for address {}: {}",
-          address.toString(false),
-          e.getMessage());
-      throw new IOException("Failed to get account state: " + e.getMessage(), e);
-    }
-  }
-
-  /**
-   * Finds the appropriate shard block for the given address. This method searches through temp
-   * packages to find the shard block that contains the address.
-   *
-   * @param address The address to find the shard for
-   * @param masterchainBlock The latest masterchain block
-   * @return The shard block containing the address, or null if not found
-   */
-  // way to slow, will be reworked one day
-  private Block findShardBlockForAddress(Address address, Block masterchainBlock) {
-    try {
-      // Use the same approach as getLast() to search through temp packages
-      try (GlobalIndexDbReader globalIndexReader = new GlobalIndexDbReader(tonDatabaseRootPath)) {
-        IndexValue mainIndex = globalIndexReader.getMainIndexIndexValue();
-
-        if (mainIndex == null || mainIndex.getTempPackages().isEmpty()) {
-          log.debug("No temp packages found for shard block lookup");
-          return null;
-        }
-
-        // Get temp package timestamps and sort them (most recent first)
-        List<Integer> tempPackageTimestamps = mainIndex.getTempPackages();
-        List<Integer> sortedTimestamps = new ArrayList<>(tempPackageTimestamps);
-        sortedTimestamps.sort(Collections.reverseOrder());
-
-        // Search through temp packages to find the appropriate shard block
-        for (Integer packageTimestamp : sortedTimestamps) {
-          try (TempPackageIndexReader tempIndexReader =
-              new TempPackageIndexReader(tonDatabaseRootPath, packageTimestamp)) {
-
-            // Get all blocks from this temp package
-            Map<BlockId, Block> blocks = tempIndexReader.getAllBlocks();
-
-            // Look for shard blocks in the target workchain
-            for (Map.Entry<BlockId, Block> entry : blocks.entrySet()) {
-              BlockId blockId = entry.getKey();
-              Block block = entry.getValue();
-
-              // Check if this is a shard block for the target workchain
-              if (blockId.getWorkchain() == address.wc && blockId.getWorkchain() != -1) {
-                // Check if this shard contains the address
-                if (shardContainsAddress(blockId.shard, address.getShardAsLong())) {
-                  log.debug(
-                      "Found shard block for address in temp package {}: workchain={}, shard=0x{}",
-                      packageTimestamp,
-                      blockId.getWorkchain(),
-                      blockId.getShard());
-                  return block;
-                }
-              }
-            }
-          } catch (Exception e) {
-            log.debug("Error searching temp package {}: {}", packageTimestamp, e.getMessage());
-            continue;
-          }
-        }
-
-        // If no specific shard block found, try to use the masterchain block
-        // In some cases, account state might be accessible through masterchain
-        log.debug("No specific shard block found, using masterchain block");
-        return masterchainBlock;
-      }
-    } catch (Exception e) {
-      log.warn("Error finding shard block for address: {}", e.getMessage());
-      return masterchainBlock; // Fallback to masterchain block
-    }
-  }
-
-  /**
-   * Checks if a shard contains the given address based on shard prefix matching.
-   *
-   * @param shardId The shard ID
-   * @param addressShardPrefix The address shard prefix
-   * @return True if the shard contains the address
-   */
-  private boolean shardContainsAddress(long shardId, long addressShardPrefix) {
-    // Simplified shard matching - in practice, this would involve more complex shard tree logic
-    // For now, we'll use a basic prefix matching approach
-    return (shardId & 0xF000000000000000L) == (addressShardPrefix & 0xF000000000000000L);
-  }
-
-  /**
-   * Extracts account state from the shard state contained in the shard block. This method navigates
-   * the account dictionary in the shard state to find the specific account.
-   *
-   * @param address The address to look up
-   * @param shardBlock The shard block containing the state
-   * @return The Account state, or null if not found
-   * @throws IOException If an I/O error occurs
-   */
-  private Account extractAccountFromShardState(Address address, Block shardBlock)
-      throws IOException {
-    try {
-      // The shard block contains state information
-      // For now, we'll use a simplified approach that leverages existing cell database access
-      // In a full implementation, this would parse the shard state TLB structure directly
-
-      // Create a BlockIdExt for the shard block to use with StateDbReader
-      BlockIdExt shardBlockId =
-          BlockIdExt.builder()
-              .workchain(shardBlock.getBlockInfo().getShard().getWorkchain())
-              .shard(shardBlock.getBlockInfo().getShard().convertShardIdentToShard().longValue())
-              .seqno(shardBlock.getBlockInfo().getSeqno())
-              .rootHash(new byte[32]) // Simplified - would extract from block
-              .fileHash(new byte[32]) // Simplified - would extract from block
-              .build();
-
-      try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
-        return cellDbReader.retrieveAccountByAddress(address).getAccount();
-      }
-
-    } catch (Exception e) {
-      log.warn("Error extracting account from shard state: {}", e.getMessage());
-
-      // Final fallback to direct cell database access
-      try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
-        return cellDbReader.retrieveAccountByAddress(address).getAccount();
-      }
     }
   }
 }

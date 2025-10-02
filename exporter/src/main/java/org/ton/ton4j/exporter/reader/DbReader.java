@@ -20,10 +20,10 @@ import org.ton.ton4j.exporter.types.ArchiveInfo;
 public class DbReader implements Closeable {
 
   private final String dbRootPath;
-  private final Map<String, RocksDbWrapper> openDbs = new HashMap<>();
-  //  private final ArchiveDbReader archiveDbReader;
+  //  private final Map<String, RocksDbWrapper> openDbs = new HashMap<>();
+
   private final GlobalIndexDbReader globalIndexDbReader;
-  private final Map<String, ArchiveInfo> archiveInfos = new HashMap<>();
+  private final Map<String, ArchiveInfo> packFilesInfo = new HashMap<>();
 
   /**
    * Creates a new DbReader.
@@ -46,12 +46,12 @@ public class DbReader implements Closeable {
 
     log.info("Initialized DbReader for TON database at: {}", dbRootPath);
 
-    //    archiveDbReader = new ArchiveDbReader(dbRootPath);
+    //    archiveIndexReader = new ArchiveIndexReader(dbRootPath);
     //    log.info("Initialized ArchiveDbReader for TON database at: {}", dbRootPath);
     globalIndexDbReader = new GlobalIndexDbReader(dbRootPath);
     log.info("Initialized GlobalIndexDbReader for TON database at: {}", dbRootPath);
 
-    discoverAllArchivePackagesFromFilesystem(archiveInfos);
+    discoverAllArchivePackagesFromFilesystem(packFilesInfo);
     //    globalIndexDbReader.discoverArchivesFromFilesDatabase(archiveInfos);
   }
 
@@ -128,36 +128,15 @@ public class DbReader implements Closeable {
    *
    * @return Map of archive keys to archive information
    */
-  public Map<String, ArchiveInfo> getArchiveInfos() {
-    return new HashMap<>(archiveInfos);
-  }
-
-  /**
-   * Opens a RocksDB database.
-   *
-   * @param name The name of the database (e.g., "celldb", "files", "adnl")
-   * @return The RocksDB wrapper
-   * @throws IOException If an I/O error occurs
-   */
-  public RocksDbWrapper openDb(String name) throws IOException {
-    if (!openDbs.containsKey(name)) {
-      String dbPath = Paths.get(dbRootPath, name).toString();
-      openDbs.put(name, new RocksDbWrapper(dbPath));
-    }
-
-    return openDbs.get(name);
+  public Map<String, ArchiveInfo> getAllPackFiles() {
+    return new HashMap<>(packFilesInfo);
   }
 
   @Override
   public void close() throws IOException {
-    // Close all open databases
-    for (RocksDbWrapper db : openDbs.values()) {
-      db.close();
+    if (globalIndexDbReader != null) {
+      globalIndexDbReader.close();
+      log.debug("Closed globalIndex database");
     }
-
-    //    // Close the archive database reader
-    //    if (archiveDbReader != null) {
-    //      archiveDbReader.close();
-    //    }
   }
 }

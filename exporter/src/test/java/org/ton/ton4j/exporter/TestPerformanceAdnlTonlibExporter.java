@@ -1,12 +1,14 @@
 package org.ton.ton4j.exporter;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.ton.ton4j.adnl.AdnlLiteClient;
 import org.ton.ton4j.adnl.globalconfig.TonGlobalConfig;
 import org.ton.ton4j.tl.liteserver.responses.BlockData;
 import org.ton.ton4j.tl.liteserver.responses.MasterchainInfo;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockIdExt;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -21,7 +23,7 @@ public class TestPerformanceAdnlTonlibExporter {
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     long start = System.currentTimeMillis();
 
-    Block block = exporter.getLast();
+    Pair<BlockIdExt, Block> block = exporter.getLast();
     long end = System.currentTimeMillis();
     log.info("Direct TON DB: {} ms", end - start);
   }

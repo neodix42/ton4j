@@ -1,12 +1,13 @@
 package org.ton.ton4j.tlb;
 
 import java.io.Serializable;
-import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.utils.Utils;
 
 /**
  *
@@ -23,18 +24,18 @@ import org.ton.ton4j.cell.CellSlice;
 @Data
 public class BlockIdExt implements Serializable {
   int workchain;
-  long shard;
+  public long shard;
   //    ShardIdent shardId;
   long seqno;
-  BigInteger rootHash;
-  BigInteger fileHash;
+  public byte[] rootHash;
+  public byte[] fileHash;
 
   private String getRootHash() {
-    return rootHash.toString(16);
+    return Utils.bytesToHex(rootHash);
   }
 
   private String getFileHash() {
-    return fileHash.toString(16);
+    return Utils.bytesToHex(fileHash);
   }
 
   public String getShard() {
@@ -47,8 +48,8 @@ public class BlockIdExt implements Serializable {
         .storeInt(workchain, 32)
         .storeUint(shard, 64)
         .storeUint(seqno, 32)
-        .storeUint(rootHash, 256)
-        .storeUint(fileHash, 256)
+        .storeBytes(rootHash)
+        .storeBytes(fileHash)
         .endCell();
   }
 
@@ -59,8 +60,22 @@ public class BlockIdExt implements Serializable {
         //                        .shardId((ShardIdent) cs.loadTlb(ShardIdent.class)) // todo weird
         // - this does not work
         .seqno(cs.loadUint(32).longValue())
-        .rootHash(cs.loadUint(256))
-        .fileHash(cs.loadUint(256))
+        .rootHash(cs.loadBytes(32))
+        .fileHash(cs.loadBytes(32))
         .build();
+  }
+
+  public static BlockIdExt deserialize(byte[] cs) {
+    ByteBuffer bb = ByteBuffer.wrap(cs);
+    BlockIdExt blockIdExt =
+        BlockIdExt.builder().workchain(bb.getInt()).shard(bb.getLong()).seqno(bb.getInt()).build();
+    byte[] temp = new byte[32];
+    bb.get(temp);
+    blockIdExt.setRootHash(temp);
+    temp = new byte[32];
+    bb.get(temp);
+    blockIdExt.setFileHash(temp);
+
+    return blockIdExt;
   }
 }

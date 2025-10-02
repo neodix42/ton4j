@@ -4,8 +4,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
-import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
+import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 import org.ton.ton4j.tl.types.db.filedb.Key;
+import org.ton.ton4j.utils.Utils;
 
 /**
  *
@@ -18,20 +19,27 @@ import org.ton.ton4j.tl.types.db.filedb.Key;
 @Builder
 @Data
 public class BlockFileKey extends Key {
-
-  BlockIdExt blockId;
+  int magic;
+  BlockIdExt blockIdExt;
 
   public static BlockFileKey deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-    BlockIdExt blockId = BlockIdExt.deserialize(buffer);
-    
+
     return BlockFileKey.builder()
-        .blockId(blockId)
+        .magic(buffer.getInt())
+        .blockIdExt(BlockIdExt.deserialize(buffer))
         .build();
   }
 
-  @Override
   public byte[] serialize() {
-    return blockId.serialize();
+    ByteBuffer buffer = ByteBuffer.allocate(4 + 80);
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
+    buffer.putInt(-1326783375);
+    buffer.put(blockIdExt.serialize());
+    return buffer.array();
+  }
+
+  public String getKeyHash() {
+    return Utils.bytesToHex(Utils.sha256AsArray(serialize())).toUpperCase();
   }
 }

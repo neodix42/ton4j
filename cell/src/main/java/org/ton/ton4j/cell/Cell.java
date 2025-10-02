@@ -417,6 +417,26 @@ public class Cell implements Serializable {
     }
   }
 
+  /**
+   * loads cell data without refs
+   *
+   * @param data
+   * @return
+   */
+  public static Cell fromBytes(byte[] data) {
+    return CellBuilder.beginCell().storeBytes(data).endCell();
+  }
+
+  /**
+   * loads cell data without refs bypassing 1023 bits limit
+   *
+   * @param data
+   * @return
+   */
+  public static Cell fromBytesUnlimited(byte[] data) {
+    return CellBuilder.beginCell().storeBytesUnlimited(data).endCell();
+  }
+
   static List<Cell> fromBocMultiRoot(byte[] data) {
     if (data.length < 10) {
       throw new Error("Invalid boc");

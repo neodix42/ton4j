@@ -2,6 +2,7 @@ package org.ton.ton4j.exporter.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,6 +17,9 @@ import org.ton.ton4j.cell.CellBuilder;
 import org.ton.ton4j.exporter.types.StateFileInfo;
 import org.ton.ton4j.exporter.types.StateFileType;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
+import org.ton.ton4j.tl.types.db.state.*;
+import org.ton.ton4j.tl.types.db.state.key.PersistentStateDescriptionShardsKey;
+import org.ton.ton4j.tl.types.db.state.key.PersistentStateDescriptionsListKey;
 import org.ton.ton4j.utils.Utils;
 
 /**
@@ -25,7 +29,6 @@ import org.ton.ton4j.utils.Utils;
 @Slf4j
 public class StateDbReader implements Closeable {
 
-  private final String dbPath;
   private final String statesPath;
   private final Map<String, StateFileInfo> stateFiles = new HashMap<>();
 
@@ -34,6 +37,15 @@ public class StateDbReader implements Closeable {
   private Options stateDbOptions;
   private final String stateDbPath;
 
+  public static final byte[] INIT_BLOCK_KEY_HASH =
+      Utils.sha256AsArray(InitBlockId.builder().build().serialize());
+  public static final byte[] SHARD_CLIENT_KEY_HASH =
+      Utils.sha256AsArray(ShardClient.builder().build().serialize());
+  public static final byte[] GC_BLOCK_KEY_HASH =
+      Utils.sha256AsArray(GcBlockId.builder().build().serialize());
+  public static final byte[] PERSISTENT_STATE_DESC_LIST_KEY_HASH =
+      Utils.sha256AsArray(PersistentStateDescriptionsListKey.builder().build().serialize());
+
   /**
    * Creates a new StateDbReader.
    *
@@ -41,7 +53,6 @@ public class StateDbReader implements Closeable {
    * @throws IOException If an I/O error occurs
    */
   public StateDbReader(String dbPath) throws IOException {
-    this.dbPath = dbPath;
     this.statesPath = Paths.get(dbPath, "archive", "states").toString();
     this.stateDbPath = Paths.get(dbPath, "state").toString();
 
@@ -348,114 +359,49 @@ public class StateDbReader implements Closeable {
     }
   }
 
-  /**
-   * Gets the latest masterchain block ID from the state database. If not found in RocksDB, falls
-   * back to using the highest sequence number from available state files.
-   *
-   * @return Latest masterchain block ID, or null if not found
-   */
-  public BlockIdExt getLatestMasterchainBlock() {
-    // First try to get from RocksDB
-    if (stateRocksDb != null) {
-      try {
-        // Look for latest masterchain block key
-        byte[] keyBytes = "latest_mc_block".getBytes();
-        byte[] value = stateRocksDb.get(keyBytes);
+  public org.ton.ton4j.tl.types.db.block.BlockIdExt getLastBlockIdExt() throws IOException {
+    byte[] value = stateRocksDb.get(SHARD_CLIENT_KEY_HASH);
+    org.ton.ton4j.tl.liteserver.responses.BlockIdExt blockIdExtTL =
+        InitBlockId.deserialize(ByteBuffer.wrap(value)).getBlock();
+    return org.ton.ton4j.tl.types.db.block.BlockIdExt.builder()
+        .seqno(blockIdExtTL.getSeqno())
+        .workchain(blockIdExtTL.getWorkchain())
+        .shard(blockIdExtTL.shard)
+        .fileHash(blockIdExtTL.fileHash)
+        .rootHash(blockIdExtTL.rootHash)
+        .build();
+  }
 
-        if (value != null) {
-          // Parse the block ID from the stored value
-          // This is a simplified implementation - actual format may vary
-          String blockIdStr = new String(value);
-          String[] parts = blockIdStr.split(":");
-          if (parts.length >= 4) {
-            int workchain = Integer.parseInt(parts[0]);
-            long shard = Long.parseUnsignedLong(parts[1], 16);
-            long seqno = Long.parseLong(parts[2]);
-            // parts[3] would be root hash, parts[4] would be file hash
+  public PersistentStateDescriptionShards getPersistentStateDescriptionsList(int masterSeqno)
+      throws IOException {
+    byte[] keyHash =
+        Utils.sha256AsArray(
+            PersistentStateDescriptionShardsKey.builder()
+                .masterchainSeqno(masterSeqno)
+                .build()
+                .serialize());
+    byte[] value = stateRocksDb.get(keyHash);
+    return PersistentStateDescriptionShards.deserialize(ByteBuffer.wrap(value));
+  }
 
-            byte[] rootHash = new byte[32]; // Default empty hash
-            byte[] fileHash = new byte[32]; // Default empty hash
+  public GcBlockId getBlockIdExt() throws IOException {
+    byte[] value = stateRocksDb.get(SHARD_CLIENT_KEY_HASH);
+    return GcBlockId.deserialize(ByteBuffer.wrap(value));
+  }
 
-            // Try to parse hashes if available
-            if (parts.length >= 5) {
-              try {
-                rootHash = Utils.hexToSignedBytes(parts[3]);
-                fileHash = Utils.hexToSignedBytes(parts[4]);
-              } catch (Exception e) {
-                log.warn("Error parsing hashes from latest masterchain block: {}", e.getMessage());
-              }
-            }
+  public GcBlockId getInitBlockId() throws IOException {
+    byte[] value = stateRocksDb.get(INIT_BLOCK_KEY_HASH);
+    return GcBlockId.deserialize(ByteBuffer.wrap(value));
+  }
 
-            BlockIdExt blockId =
-                BlockIdExt.builder()
-                    .workchain(workchain)
-                    .shard(shard)
-                    .seqno(seqno)
-                    .rootHash(rootHash)
-                    .fileHash(fileHash)
-                    .build();
+  public GcBlockId getGcBlockId() throws IOException {
+    byte[] value = stateRocksDb.get(GC_BLOCK_KEY_HASH);
+    return GcBlockId.deserialize(ByteBuffer.wrap(value));
+  }
 
-            log.debug("Found latest masterchain block from RocksDB: {}", blockId);
-            return blockId;
-          }
-        }
-      } catch (Exception e) {
-        log.warn("Error reading latest masterchain block from RocksDB: {}", e.getMessage());
-        // Continue to fallback method
-      }
-    }
-
-    // Fallback: Find the highest sequence number masterchain state file
-    log.debug("RocksDB latest masterchain block not found, using fallback method");
-
-    List<StateFileInfo> masterchainStates = getStateFilesByWorkchain(-1);
-    if (masterchainStates.isEmpty()) {
-      log.debug("No masterchain state files found");
-      return null;
-    }
-
-    // Find the state with the highest sequence number
-    StateFileInfo latestState =
-        masterchainStates.stream().max(Comparator.comparingLong(a -> a.seqno)).orElse(null);
-
-    // Create BlockIdExt from the latest state file
-    try {
-      byte[] rootHash = new byte[32];
-      byte[] fileHash = new byte[32];
-
-      // Try to parse hashes from the state file info
-      if (latestState.rootHash != null && latestState.rootHash.length() >= 8) {
-        try {
-          rootHash = Utils.hexToSignedBytes(latestState.rootHash);
-        } catch (Exception e) {
-          log.debug("Could not parse root hash: {}", e.getMessage());
-        }
-      }
-
-      if (latestState.fileHash != null && latestState.fileHash.length() >= 8) {
-        try {
-          fileHash = Utils.hexToSignedBytes(latestState.fileHash);
-        } catch (Exception e) {
-          log.debug("Could not parse file hash: {}", e.getMessage());
-        }
-      }
-
-      BlockIdExt blockId =
-          BlockIdExt.builder()
-              .workchain(latestState.workchain)
-              .shard(Long.parseUnsignedLong(latestState.shard, 16))
-              .seqno(latestState.seqno)
-              .rootHash(rootHash)
-              .fileHash(fileHash)
-              .build();
-
-      log.debug("Found latest masterchain block from state files: {}", blockId);
-      return blockId;
-
-    } catch (Exception e) {
-      log.warn("Error creating BlockIdExt from state file: {}", e.getMessage());
-      return null;
-    }
+  public PersistentStateDescriptionsList getPersistentStateDescriptionsList() throws IOException {
+    byte[] value = stateRocksDb.get(PERSISTENT_STATE_DESC_LIST_KEY_HASH);
+    return PersistentStateDescriptionsList.deserialize(ByteBuffer.wrap(value));
   }
 
   @Override

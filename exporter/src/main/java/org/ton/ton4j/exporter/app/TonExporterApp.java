@@ -10,10 +10,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.exporter.Exporter;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockIdExt;
 import org.ton.ton4j.tlb.adapters.BitStringTypeAdapter;
 import org.ton.ton4j.tlb.adapters.ByteArrayToHexTypeAdapter;
 import org.ton.ton4j.tlb.adapters.CellTypeAdapter;
@@ -387,7 +389,8 @@ public class TonExporterApp {
     try {
       if (outputFormat.equals("json")) {
         // Get last block as deserialized Block object
-        Block block = currentExporter.getLast();
+        Pair<BlockIdExt, Block> b = currentExporter.getLast();
+        Block block = b.getRight();
         if (block == null) {
           System.err.println("No last block found in database");
           return;

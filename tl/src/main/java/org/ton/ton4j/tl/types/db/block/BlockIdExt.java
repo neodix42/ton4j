@@ -4,23 +4,20 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import lombok.Builder;
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.utils.Utils;
 
 /**
- * Extended block identifier for TON blockchain. Based on the TL schema definition for
- * tonNode.blockIdExt.
+ * tonNode.blockIdExt workchain:int shard:long seqno:int root_hash:int256 file_hash:int256 =
+ * tonNode.BlockIdExt;
  */
 @Builder
 @Data
 public class BlockIdExt {
-  public static final int SERIALIZED_SIZE = 4 + 4 + 8 + 32; // workchain + shard + seqno + rootHash
-
+  public static final int SERIALIZED_SIZE =
+      4 + 8 + 4 + 32 + 32; //  workchain + shard + seqno + rootHash + fileHash = 80
   private int workchain;
   private long shard;
-  private long seqno;
+  private int seqno;
   public byte[] rootHash;
   public byte[] fileHash;
 
@@ -42,10 +39,9 @@ public class BlockIdExt {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
 
     BlockIdExt blockIdExt = BlockIdExt.builder().build();
-
     blockIdExt.workchain = buffer.getInt();
     blockIdExt.shard = buffer.getLong();
-    blockIdExt.seqno = buffer.getLong();
+    blockIdExt.seqno = buffer.getInt();
 
     blockIdExt.rootHash = new byte[32];
     buffer.get(blockIdExt.rootHash);
@@ -56,47 +52,21 @@ public class BlockIdExt {
     return blockIdExt;
   }
 
-  /**
-   * Serializes this BlockIdExt to a ByteBuffer.
-   *
-   * @param buffer The ByteBuffer to write to
-   */
-  public byte[] serialize(ByteBuffer buffer) {
+  /** Serializes this BlockIdExt to a ByteBuffer. */
+  public byte[] serialize() {
+    ByteBuffer buffer = ByteBuffer.allocate(SERIALIZED_SIZE);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-
     buffer.putInt(workchain);
     buffer.putLong(shard);
-    buffer.putLong(seqno);
+    buffer.putInt(seqno);
     buffer.put(rootHash);
     buffer.put(fileHash);
     return buffer.array();
   }
 
-  @Override
-  public String toString() {
-    return "BlockIdExt{"
-        + "workchain="
-        + workchain
-        + ", shard="
-        + shard
-        + ", seqno="
-        + seqno
-        + ", rootHash="
-        + Utils.bytesToHex(rootHash)
-        + ", fileHash="
-        + Utils.bytesToHex(fileHash)
-        + '}';
-  }
-
-  public static BlockIdExt fromBlock(Pair<Cell, Block> cellBlock) {
-    Block block = cellBlock.getRight();
-    Cell cell = cellBlock.getLeft();
-    return BlockIdExt.builder()
-        .seqno(block.getBlockInfo().getSeqno())
-        .shard(block.getBlockInfo().getShard().convertShardIdentToShard().longValue())
-        .workchain(block.getBlockInfo().getShard().getWorkchain())
-        .rootHash(block.toCell().getHash()) // bug in block serialization?
-        .fileHash(cell.getHash())
-        .build();
+  public String toFilename() {
+    return String.format(
+        "(%d,%x,%d):%s:%s",
+        workchain, shard, seqno, getRootHash().toUpperCase(), getFileHash().toUpperCase());
   }
 }

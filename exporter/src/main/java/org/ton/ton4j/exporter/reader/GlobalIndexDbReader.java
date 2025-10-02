@@ -14,7 +14,6 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.exporter.types.ArchiveFileLocation;
 import org.ton.ton4j.exporter.types.ArchiveInfo;
-import org.ton.ton4j.exporter.types.BlockLocation;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
@@ -173,190 +172,6 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Gets all BlockLocations from the Files database global index. This reads file hash entries that
-   * map hash → (package_id, offset, size).
-   *
-   * @return Map of file hash to BlockLocation
-   */
-  private Map<String, BlockLocation> getAllBlockLocations() {
-    Map<String, BlockLocation> blockLocations = new HashMap<>();
-
-    log.info("Reading BlockLocations from Files database global index...");
-
-    AtomicInteger totalEntries = new AtomicInteger(0);
-    AtomicInteger validLocations = new AtomicInteger(0);
-    AtomicInteger parseErrors = new AtomicInteger(0);
-
-    globalIndexDb.forEach(
-        (key, value) -> {
-          try {
-            totalEntries.incrementAndGet();
-
-            String hash = new String(key);
-
-            // Skip TL-serialized keys (they are metadata, not file hash entries)
-            if (!isValidHexString(hash) || hash.length() != 64) {
-              return; // Skip non-hex keys or wrong length
-            }
-
-            // Parse the value as direct location data (package_id, offset, size)
-            BlockLocation location = parseFileHashEntry(hash, value);
-            if (location != null && location.isValid()) {
-              blockLocations.put(hash, location);
-              validLocations.incrementAndGet();
-            } else {
-              parseErrors.incrementAndGet();
-            }
-          } catch (Exception e) {
-            parseErrors.incrementAndGet();
-            log.debug("Error processing global index entry: {}", e.getMessage());
-          }
-        });
-
-    log.info(
-        "Files database parsing: {} total entries, {} valid BlockLocations, {} parse errors",
-        totalEntries.get(),
-        validLocations.get(),
-        parseErrors.get());
-
-    return blockLocations;
-  }
-
-  /**
-   * Parses a file hash entry from the global index. Based on the original C++ implementation, file
-   * hash entries contain: Format: [package_id: 8 bytes][offset: 8 bytes][size: 8 bytes]
-   * (little-endian)
-   *
-   * @param hash The file hash
-   * @param value The raw value from RocksDB
-   * @return BlockLocation or null if parsing fails
-   */
-  private BlockLocation parseFileHashEntry(String hash, byte[] value) {
-    if (value == null || value.length < 16) {
-      return null; // Need at least package_id + offset
-    }
-
-    try {
-      ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-
-      // Extract package_id (8 bytes)
-      long packageId = buffer.getLong();
-
-      // Extract offset (8 bytes)
-      long offset = buffer.getLong();
-
-      // Extract size (8 bytes if available, otherwise default)
-      long size = 1024; // Default size
-      if (value.length >= 24) {
-        size = buffer.getLong();
-      } else if (value.length >= 20) {
-        size = buffer.getInt() & 0xFFFFFFFFL; // 4-byte unsigned size
-      }
-
-      // Validate values
-      if (packageId >= 0
-          && packageId < 1_000_000_000L
-          && // Reasonable package ID range
-          offset >= 0
-          && offset < 10_000_000_000L
-          && // Reasonable offset range
-          size > 0
-          && size < 100_000_000) { // Reasonable size range
-        return BlockLocation.create(hash, packageId, offset, size);
-      }
-
-      return null;
-    } catch (Exception e) {
-      log.debug("Error parsing file hash entry for {}: {}", hash, e.getMessage());
-      return null;
-    }
-  }
-
-  /**
-   * Reads a block by its hash using the optimized Files database approach.
-   *
-   * @param hash The block hash
-   * @return The block data, or null if not found
-   * @throws IOException If an I/O error occurs
-   */
-  public byte[] readBlock(String hash) throws IOException {
-    log.debug("Reading block from Files database: {}", hash);
-
-    // Get the location from global index
-    byte[] locationBytes = globalIndexDb.get(hash.getBytes());
-    if (locationBytes == null) {
-      log.debug("Block {} not found in Files database global index", hash);
-      return null;
-    }
-
-    // Parse location data
-    BlockLocation location = parseFileHashEntry(hash, locationBytes);
-    if (location == null || !location.isValid()) {
-      log.warn("Invalid location data for block {}", hash);
-      return null;
-    }
-
-    // Read from package file
-    return readBlockFromPackage(location);
-  }
-
-  /**
-   * Reads a block from a package file using BlockLocation.
-   *
-   * @param location The BlockLocation containing package_id, offset, and size
-   * @return The block data, or null if not found
-   * @throws IOException If an I/O error occurs
-   */
-  public byte[] readBlockFromPackage(BlockLocation location) throws IOException {
-    if (location == null || !location.isValid()) {
-      return null;
-    }
-
-    // Get package file path
-    String packagePath = getPackageFilePath(location.getPackageId());
-    if (packagePath == null) {
-      log.warn("Package file not found for package ID: {}", location.getPackageId());
-      return null;
-    }
-
-    // Get package reader
-    PackageReader packageReader = getPackageReader(packagePath);
-
-    // Read entry at offset
-    Object entryObj = packageReader.getEntryAt(location.getOffset().longValue());
-    if (!(entryObj instanceof PackageReader.PackageEntry)) {
-      return null;
-    }
-    PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
-
-    if (entry.getFilename().startsWith("block_")) {
-      return entry.getData();
-    }
-    return null;
-  }
-
-  /**
-   * Gets the file path for a package by its ID.
-   *
-   * @param packageId The package ID
-   * @return The file path or null if not found
-   */
-  public String getPackageFilePath(long packageId) {
-    try {
-      String packageFileName = String.format("%010d.pack", packageId);
-      Path filesPackagesPath = Paths.get(dbPath, "files", "packages");
-      Path packagePath = filesPackagesPath.resolve(packageFileName);
-
-      if (Files.exists(packagePath)) {
-        return packagePath.toString();
-      }
-    } catch (Exception e) {
-      log.debug("Error getting package file path for ID {}: {}", packageId, e.getMessage());
-    }
-    return null;
-  }
-
-  /**
    * Gets a package reader for a specific package file.
    *
    * @param packagePath Path to the package file
@@ -368,15 +183,6 @@ public class GlobalIndexDbReader implements Closeable {
       packageReaders.put(packagePath, new PackageReader(packagePath));
     }
     return packageReaders.get(packagePath);
-  }
-
-  /**
-   * Gets all package metadata.
-   *
-   * @return Map of package ID to package metadata
-   */
-  public Map<Long, PackageValue> getAllPackageMetadata() {
-    return new HashMap<>(packageMetadata);
   }
 
   /**
@@ -482,13 +288,46 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Gets ALL archive file locations by reading individual archive index databases. This method
-   * follows the C++ implementation approach by opening each archive.XXXXX.index database and
-   * reading the hash-&gt;offset mappings. This provides complete access to all files stored in
-   * archive packages, including those not referenced in the Files database.
-   *
-   * @return Map of file hash to ArchiveFileLocation
+   * @return might be thousands
    */
+  public List<String> getAllPackFiles() {
+    List<String> packFilenames = new ArrayList<>();
+
+    // Get archive packages directory path
+    Path archivePackagesDir = Paths.get(dbPath, "archive", "packages");
+
+    if (!Files.exists(archivePackagesDir)) {
+      log.warn("Archive packages directory not found: {}", archivePackagesDir);
+      return packFilenames;
+    }
+
+    globalIndexDb.forEach(
+        (key, value) -> {
+          GlobalIndexKey globalIndexKey = GlobalIndexKey.deserialize(key);
+          if (globalIndexKey instanceof PackageKey) {
+            GlobalIndexValue globalIndexValue = GlobalIndexValue.deserialize(value);
+            PackageValue packageValue = ((PackageValue) globalIndexValue);
+            if (!packageValue.isTemp()) { // exclude temp
+
+              int packageId = ((PackageKey) globalIndexKey).getPackageId();
+
+              String absoluteIndexFolder =
+                  ArchiveIndexReader.getArchiveIndexPath(dbPath, packageId);
+
+              try (ArchiveIndexReader archiveIndexReader =
+                  new ArchiveIndexReader(absoluteIndexFolder)) {
+                packFilenames.addAll(archiveIndexReader.getAllPackFiles());
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            }
+          }
+        });
+
+    log.info("Found total pack files {}", packFilenames.size());
+    return packFilenames;
+  }
+
   public Map<String, ArchiveFileLocation> getAllPackagesHashOffsetMappings() {
     Map<String, ArchiveFileLocation> packagesHashOffset = new HashMap<>();
 
@@ -508,23 +347,14 @@ public class GlobalIndexDbReader implements Closeable {
             PackageValue packageValue = ((PackageValue) globalIndexValue);
             if (!packageValue.isTemp()) { // exclude temp
 
-              //              for (FirstBlock firstBlock : packageValue.getFirstblocks()) {
+              int packageId = ((PackageKey) globalIndexKey).getPackageId();
 
-              int index = ((PackageKey) globalIndexKey).getPackageId();
-              String archFolder = String.format("arch%04d", (index / 100000));
-
-              //                if (firstBlock.getWorkchain() == -1) {
-
-              String indexStr = String.format("%05d", index);
-              String absoluteArchFolder = archivePackagesDir.resolve(archFolder).toString();
               String absoluteIndexFolder =
-                  Paths.get(absoluteArchFolder, "archive." + indexStr + ".index").toString();
+                  ArchiveIndexReader.getArchiveIndexPath(dbPath, packageId);
 
               Map<String, ArchiveFileLocation> packageFiles =
-                  readArchiveIndexDatabase("", absoluteIndexFolder, index);
+                  readArchiveIndexDatabase("", absoluteIndexFolder, packageId);
               packagesHashOffset.putAll(packageFiles);
-              //                }
-              //              }
             }
           }
         });
@@ -534,6 +364,34 @@ public class GlobalIndexDbReader implements Closeable {
         packagesHashOffset.size(),
         mainIndexIndexValue.getPackages().size());
     return packagesHashOffset;
+  }
+
+  public List<Integer> getAllArchiveIndexesIds() {
+    List<Integer> packageIds = new ArrayList<>();
+
+    // Get archive packages directory path
+    Path archivePackagesDir = Paths.get(dbPath, "archive", "packages");
+
+    if (!Files.exists(archivePackagesDir)) {
+      log.warn("Archive packages directory not found: {}", archivePackagesDir);
+      return packageIds;
+    }
+
+    globalIndexDb.forEach(
+        (key, value) -> {
+          GlobalIndexKey globalIndexKey = GlobalIndexKey.deserialize(key);
+          if (globalIndexKey instanceof PackageKey) {
+            GlobalIndexValue globalIndexValue = GlobalIndexValue.deserialize(value);
+            PackageValue packageValue = ((PackageValue) globalIndexValue);
+            if (!packageValue.isTemp()) { // exclude temp
+
+              packageIds.add(((PackageKey) globalIndexKey).getPackageId());
+            }
+          }
+        });
+
+    log.info("Found total package ids {}", packageIds.size());
+    return packageIds;
   }
 
   public Map<String, ArchiveFileLocation> getPackageHashOffsetMappings(int packageId) {
@@ -706,76 +564,6 @@ public class GlobalIndexDbReader implements Closeable {
   }
 
   /**
-   * Reads a file from archive packages using hash-&gt;offset lookup. This follows the C++
-   * implementation approach where files are accessed by their hash using the individual archive
-   * index databases.
-   *
-   * @param hash The file hash (hex string)
-   * @return The file data, or null if not found
-   * @throws IOException If an I/O error occurs
-   */
-  public byte[] readArchiveFileByHash(String hash) throws IOException {
-    log.debug("Reading archive file by hash: {}", hash);
-
-    // Get all archive file locations
-    Map<String, ArchiveFileLocation> fileLocations = getAllPackagesHashOffsetMappings();
-
-    // Find the file location for this hash
-    ArchiveFileLocation location = fileLocations.get(hash);
-    if (location == null) {
-      log.debug("File with hash {} not found in archive indexes", hash);
-      return null;
-    }
-
-    if (!location.isValid()) {
-      log.warn("Invalid location data for hash {}", hash);
-      return null;
-    }
-
-    // Read from the archive package file
-    return readArchiveFileFromPackage(location);
-  }
-
-  /**
-   * Reads a file from an archive package using ArchiveFileLocation. This method opens the package
-   * file and reads data at the specified offset.
-   *
-   * @param location The ArchiveFileLocation containing package path and offset
-   * @return The file data, or null if not found
-   * @throws IOException If an I/O error occurs
-   */
-  public byte[] readArchiveFileFromPackage(ArchiveFileLocation location) throws IOException {
-    if (location == null || !location.isValid()) {
-      return null;
-    }
-
-    log.debug(
-        "Reading from archive package: {}, offset: {}",
-        location.getPackageId(),
-        location.getOffset());
-
-    // Get package reader for the archive package
-    PackageReader packageReader = getPackageReader(location.getPackagePath());
-
-    // Read entry at the specified offset
-    Object entryObj = packageReader.getEntryAt(location.getOffset());
-    if (!(entryObj instanceof PackageReader.PackageEntry)) {
-      return null;
-    }
-    PackageReader.PackageEntry entry = (PackageReader.PackageEntry) entryObj;
-
-    if (entry.getFilename().startsWith("block_")) {
-      log.debug(
-          "Successfully read block's {} bytes from archive package {}",
-          entry.getData().length,
-          location.getPackageId());
-
-      return entry.getData();
-    }
-    return null;
-  }
-
-  /**
    * Finds all package files for a given package ID in a specific archive directory. This includes
    * both main package files (archive.{packageId:05d}.pack) and shard-specific files
    * (archive.{packageId:05d}.{workchain}:{shard}.pack).
@@ -912,6 +700,35 @@ public class GlobalIndexDbReader implements Closeable {
     return s.matches("^[0-9A-Fa-f]+$");
   }
 
+  public int getArchiveIndexBySeqno(long wc, long seqno) {
+    AtomicInteger foundPackageId = new AtomicInteger();
+    AtomicInteger maximum = new AtomicInteger();
+    globalIndexDb.forEach(
+        (key, value) -> {
+          GlobalIndexKey globalIndexKey = GlobalIndexKey.deserialize(key);
+          GlobalIndexValue globalIndexValue = GlobalIndexValue.deserialize(value);
+
+          if (globalIndexValue instanceof PackageValue) {
+            if (!(((PackageValue) globalIndexValue).getFirstblocks()).isEmpty()) {
+              for (FirstBlock firstBlock : (((PackageValue) globalIndexValue).getFirstblocks())) {
+                if (firstBlock.getWorkchain() != wc) {
+                  continue;
+                }
+                if (firstBlock.getSeqno() > maximum.get()) {
+                  maximum.set(firstBlock.getSeqno());
+                }
+                if (firstBlock.getSeqno() < seqno) {
+                  if (foundPackageId.get() < ((PackageValue) globalIndexValue).getPackageId()) {
+                    foundPackageId.set(((PackageValue) globalIndexValue).getPackageId());
+                  }
+                }
+              }
+            }
+          }
+        });
+    return foundPackageId.get();
+  }
+
   @Override
   public void close() throws IOException {
     // Close all package readers
@@ -924,7 +741,6 @@ public class GlobalIndexDbReader implements Closeable {
     }
     packageReaders.clear();
 
-    // Close global index database
     if (globalIndexDb != null) {
       globalIndexDb.close();
     }

@@ -12,14 +12,12 @@ import org.ton.ton4j.cell.CellSlice;
 /**
  *
  *
- * <pre>{@code
+ * <pre>
  * shard_ident$00
  *  shard_pfx_bits:(#<= 60)
  *  workchain_id:int32
  *  shard_prefix:uint64
  *  = ShardIdent;
- *  }
- *
  * </pre>
  */
 @Builder
@@ -40,7 +38,7 @@ public class ShardIdent {
         .storeUint(prefixBits, 6)
         .storeInt(workchain, 32)
         .storeUint(shardPrefix, 64)
-        .endCell();
+        .endCell(); // 104 bits
   }
 
   public static ShardIdent deserialize(CellSlice cs) {

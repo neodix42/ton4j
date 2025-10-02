@@ -19,7 +19,7 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class Value implements Serializable {
-
+  int magic;
   BlockIdExt blockId;
   public byte[] prev; // int256
   public byte[] next; // int256
@@ -40,17 +40,26 @@ public class Value implements Serializable {
 
   public static Value deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
+    int magic = buffer.getInt();
     BlockIdExt blockId = BlockIdExt.deserialize(buffer);
+
     byte[] prev = Utils.read(buffer, 32);
     byte[] next = Utils.read(buffer, 32);
     byte[] rootHash = Utils.read(buffer, 32);
 
-    return Value.builder().blockId(blockId).prev(prev).next(next).rootHash(rootHash).build();
+    return Value.builder()
+        .magic(magic)
+        .blockId(blockId)
+        .prev(prev)
+        .next(next)
+        .rootHash(rootHash)
+        .build();
   }
 
   public byte[] serialize() {
-    ByteBuffer buffer = ByteBuffer.allocate(BlockIdExt.getSize() + 32 + 32 + 32);
+    ByteBuffer buffer = ByteBuffer.allocate(4 + BlockIdExt.getSize() + 32 + 32 + 32);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
+    buffer.putInt(magic);
     buffer.put(blockId.serialize());
     buffer.put(prev);
     buffer.put(next);

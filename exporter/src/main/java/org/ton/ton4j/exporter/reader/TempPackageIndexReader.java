@@ -10,10 +10,13 @@ import java.nio.file.Paths;
 import java.util.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.exporter.types.BlockId;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockIdExt;
+import org.ton.ton4j.utils.Utils;
 
 /**
  * Reader for temp package index databases. Each temp package (e.g., temp.archive.1756843200.pack)
@@ -160,27 +163,30 @@ public class TempPackageIndexReader implements Closeable {
   }
 
   /** returns last <code>limit</code> blocks, might include blocks of not only master chain */
-  public TreeMap<BlockId, Block> getLast(int limit) throws IOException {
-    TreeMap<BlockId, Block> blocks =
-        new TreeMap<>(Comparator.comparing(BlockId::getSeqno).reversed());
+  public TreeMap<BlockIdExt, Block> getLast(int limit) throws IOException {
+    TreeMap<BlockIdExt, Block> blocks =
+        new TreeMap<>(Comparator.comparing(BlockIdExt::getSeqno).reversed());
     TreeMap<Long, Long> mappings = getAllSortedOffsets();
 
     PackageReader packageReader = new PackageReader(packagePath);
     int count = 0;
 
     for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
-      Object entryObj = packageReader.getEntryAt(kv.getKey());
-      if (!(entryObj instanceof PackageReader.PackageEntry)) {
+      PackageReader.PackageEntry entryObj = packageReader.getEntryAt(kv.getKey());
+      if (entryObj == null) {
         continue;
       }
-      PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
-      if (packageEntry.getFilename().startsWith("block_")) {
-        Block block = packageEntry.getBlock();
+      if (entryObj.getFilename().startsWith("block_")) {
+        String rootHash = StringUtils.substringBetween(entryObj.getFilename(), ":", ":");
+        String fileHash = StringUtils.substringAfterLast(entryObj.getFilename(), ":");
+        Block block = entryObj.getBlock();
         blocks.put(
-            BlockId.builder()
+            BlockIdExt.builder()
                 .workchain(block.getBlockInfo().getShard().getWorkchain())
                 .shard(block.getBlockInfo().getShard().convertShardIdentToShard().longValue())
                 .seqno(block.getBlockInfo().getSeqno())
+                .rootHash(Utils.hexToSignedBytes(rootHash))
+                .fileHash(Utils.hexToSignedBytes(fileHash))
                 .build(),
             block);
         count++;
@@ -194,24 +200,35 @@ public class TempPackageIndexReader implements Closeable {
   }
 
   /** returns last master chain block */
-  public Block getLast() throws IOException {
+  public Pair<BlockIdExt, Block> getLast() throws IOException {
 
     TreeMap<Long, Long> mappings = getAllSortedOffsets();
 
     PackageReader packageReader = new PackageReader(packagePath);
 
     for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
-      Object entryObj = packageReader.getEntryAt(kv.getKey());
-      if (!(entryObj instanceof PackageReader.PackageEntry)) {
+      PackageReader.PackageEntry entryObj = packageReader.getEntryAt(kv.getKey());
+      if (entryObj == null) {
         continue;
       }
-      PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
-      if (packageEntry.getFilename().startsWith("block_")) {
-        Block block = packageEntry.getBlock();
+      if (entryObj.getFilename().startsWith("block_")) {
+        String rootHash = StringUtils.substringBetween(entryObj.getFilename(), ":", ":");
+        String fileHash = StringUtils.substringAfterLast(entryObj.getFilename(), ":");
+        Block block = entryObj.getBlock();
+
+        BlockIdExt blockIdExt =
+            BlockIdExt.builder()
+                .workchain(block.getBlockInfo().getShard().getWorkchain())
+                .shard(block.getBlockInfo().getShard().convertShardIdentToShard().longValue())
+                .seqno(block.getBlockInfo().getSeqno())
+                .rootHash(Utils.hexToSignedBytes(rootHash))
+                .fileHash(Utils.hexToSignedBytes(fileHash))
+                .build();
+
         //        log.info("block {}", block);
         if (block.getBlockInfo().getShard().getWorkchain() == -1) {
           packageReader.close();
-          return block;
+          return Pair.of(blockIdExt, block);
         }
       }
     }
@@ -227,16 +244,15 @@ public class TempPackageIndexReader implements Closeable {
     PackageReader packageReader = new PackageReader(packagePath);
 
     for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
-      Object entryObj = packageReader.getEntryAt(kv.getKey());
-      if (!(entryObj instanceof PackageReader.PackageEntry)) {
+      PackageReader.PackageEntry entryObj = packageReader.getEntryAt(kv.getKey());
+      if (entryObj == null) {
         continue;
       }
-      PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
-      if (packageEntry.getFilename().startsWith("block_")) {
-        Block block = packageEntry.getBlock();
+      if (entryObj.getFilename().startsWith("block_")) {
+        Block block = entryObj.getBlock();
         if (block.getBlockInfo().getShard().getWorkchain() == -1) {
           packageReader.close();
-          return packageEntry.getData();
+          return entryObj.getData();
         }
       }
     }
@@ -246,22 +262,20 @@ public class TempPackageIndexReader implements Closeable {
 
   /**
    * @return Block as cell and Block as TL-B
-   * @throws IOException
    */
-  public Pair<Cell, Block> getLastAsPair() throws IOException {
+  public Cell getLastAsCell() throws IOException {
 
     TreeMap<Long, Long> mappings = getAllSortedOffsets();
 
     PackageReader packageReader = new PackageReader(packagePath);
 
     for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
-      Object entryObj = packageReader.getEntryAt(kv.getKey());
-      if (!(entryObj instanceof PackageReader.PackageEntry)) {
+      PackageReader.PackageEntry entryObj = packageReader.getEntryAt(kv.getKey());
+      if (entryObj == null) {
         continue;
       }
-      PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
-      if (packageEntry.getFilename().startsWith("block_")) {
-        return Pair.of(packageEntry.getCell(), packageEntry.getBlock());
+      if (entryObj.getFilename().startsWith("block_")) {
+        return entryObj.getCell();
       }
     }
     packageReader.close();

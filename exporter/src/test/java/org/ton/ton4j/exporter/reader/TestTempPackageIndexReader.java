@@ -3,9 +3,11 @@ package org.ton.ton4j.exporter.reader;
 import java.io.IOException;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.ton.ton4j.exporter.types.BlockId;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockIdExt;
 
 @Slf4j
 public class TestTempPackageIndexReader {
@@ -58,12 +60,11 @@ public class TestTempPackageIndexReader {
 
         for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
           log.info("{} {}", kv.getKey(), kv.getValue());
-          Object entryObj = packageReader.getEntryAt(kv.getKey());
-          if (entryObj instanceof PackageReader.PackageEntry) {
-            PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
-            log.info("result {}", packageEntry.getFilename());
-            if (packageEntry.getFilename().startsWith("block_")) {
-              log.info("block {}", packageEntry.getBlock());
+          PackageReader.PackageEntry entryObj = packageReader.getEntryAt(kv.getKey());
+          if (entryObj != null) {
+            log.info("result {}", entryObj.getFilename());
+            if (entryObj.getFilename().startsWith("block_")) {
+              log.info("block {}", entryObj.getBlock());
             }
           }
         }
@@ -92,10 +93,10 @@ public class TestTempPackageIndexReader {
 
     TempPackageIndexReader indexReader =
         new TempPackageIndexReader(TON_DB_ROOT_PATH, PACKAGE_TIMESTAMP);
-    Map<BlockId, Block> mappings = indexReader.getLast(10);
+    Map<BlockIdExt, Block> mappings = indexReader.getLast(10);
     indexReader.close();
 
-    for (Map.Entry<BlockId, Block> kv : mappings.entrySet()) {
+    for (Map.Entry<BlockIdExt, Block> kv : mappings.entrySet()) {
       log.info("{} {}", kv.getKey(), kv.getValue());
     }
   }
@@ -105,8 +106,8 @@ public class TestTempPackageIndexReader {
 
     TempPackageIndexReader indexReader =
         new TempPackageIndexReader(TON_DB_ROOT_PATH, PACKAGE_TIMESTAMP);
-    Block block = indexReader.getLast();
+    Pair<BlockIdExt, Block> block = indexReader.getLast();
     indexReader.close();
-    log.info("{} {}", block.getBlockInfo().getSeqno(), block);
+    log.info("{} {}", block.getRight().getBlockInfo().getSeqno(), block);
   }
 }

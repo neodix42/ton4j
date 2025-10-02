@@ -291,6 +291,12 @@ public class CellBuilder {
     return this;
   }
 
+  /** same as storeBytes but bypasses overflow limit of 1023 bits */
+  public CellBuilder storeBytesUnlimited(byte[] number) {
+    cell.bits.writeBytes(number);
+    return this;
+  }
+
   public CellBuilder storeBytes(int[] number) {
     checkBitsOverflow(number.length * 8);
     cell.bits.writeBytes(number);

@@ -75,7 +75,7 @@ public class PackageReader implements PackageReaderInterface {
     int dataSize = readInt();
 
     // Read filename
-    byte[] filenameBytes = new byte[filenameLength];
+    byte[] filenameBytes = new byte[filenameLength]; // 164
     file.readFully(filenameBytes);
     String filename = new String(filenameBytes);
 
@@ -97,7 +97,7 @@ public class PackageReader implements PackageReaderInterface {
    * @throws IOException If an I/O error occurs
    */
   @Override
-  public Object getEntryAt(long offset) throws IOException {
+  public PackageEntry getEntryAt(long offset) throws IOException {
     if (offset < 0) {
       throw new IOException("Negative seek offset: " + offset);
     }
@@ -116,6 +116,26 @@ public class PackageReader implements PackageReaderInterface {
       throw new IOException("Error reading entry at offset " + offset + ": " + e.getMessage(), e);
     } finally {
       currentPosition = oldPosition;
+    }
+  }
+
+  public PackageEntry getEntryAtSkipPackageHeader(long offset) throws IOException {
+    if (offset < 0) {
+      throw new IOException("Negative seek offset: " + offset);
+    }
+
+    try {
+
+      // Check if the position is valid
+      if (offset >= file.length()) {
+        throw new IOException("Offset beyond file size: " + offset);
+      }
+
+      file.seek(offset + 4);
+
+      return readNextEntry();
+    } catch (IOException e) {
+      throw new IOException("Error reading entry at offset " + offset + ": " + e.getMessage(), e);
     }
   }
 

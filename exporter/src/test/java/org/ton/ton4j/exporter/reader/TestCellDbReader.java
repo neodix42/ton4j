@@ -1,11 +1,20 @@
 package org.ton.ton4j.exporter.reader;
 
+import static org.ton.ton4j.exporter.reader.CellDbReader.parseCell;
+
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.ton.ton4j.cell.Cell;
+import org.ton.ton4j.cell.CellSlice;
+import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 import org.ton.ton4j.tl.types.db.celldb.Value;
+import org.ton.ton4j.tlb.ShardStateUnsplit;
 import org.ton.ton4j.utils.Utils;
 
 @Slf4j
@@ -35,6 +44,68 @@ public class TestCellDbReader {
             // Cell cell = CellBuilder.beginCell().storeBytes(value).endCell();
           }
         });
+    cellDb.close();
+  }
+
+  /**
+   * WIP
+   *
+   * @throws IOException
+   */
+  @Test
+  public void testCellDbReaderByKeyLastBlockAccountBalance() throws IOException {
+    RocksDbWrapper cellDb = new RocksDbWrapper(TEST_DB_PATH + "/celldb");
+    StateDbReader stateReader = new StateDbReader(TEST_DB_PATH);
+    BlockIdExt last = stateReader.getLastBlockIdExt();
+    log.info("last: {}", last);
+    byte[] key = Utils.sha256AsArray(last.serialize());
+    // construct key = "desc+base64(serialized(last))"
+    String fullKey = "desc" + Utils.bytesToBase64(key);
+    byte[] value = cellDb.get(fullKey.getBytes());
+    log.info("key: {}, value: {}", Utils.bytesToHex(key), Utils.bytesToHex(value));
+
+    Value shardState = Value.deserialize(ByteBuffer.wrap(value));
+    log.info("shardStateValue: {}", shardState);
+    byte[] shardStateRootHash = shardState.rootHash;
+
+    // find full cell containing ShardStateUnsplit by shardStateRootHash
+    byte[] rawShardStateUnsplit = cellDb.get(shardStateRootHash);
+    log.info("rawShardStateUnsplit: {}", Utils.bytesToHex(rawShardStateUnsplit));
+
+    //    rawShardStateUnsplit = Utils.slice(rawShardStateUnsplit, 6, rawShardStateUnsplit.length -
+    // 6);
+    //    ShardStateUnsplit shardStateUnsplit =
+    //        ShardStateUnsplit.deserializeWithoutRefs(
+    //            CellSlice.beginParse(Cell.fromBytesUnlimited(rawShardStateUnsplit)));
+    rawShardStateUnsplit[4] = 2;
+    Set<String> visited = new HashSet<>();
+    Map<String, Cell> cellHash = new HashMap<>();
+    Cell c = parseCell(cellDb, ByteBuffer.wrap(rawShardStateUnsplit), visited, cellHash);
+    log.info("c: {}", c);
+
+    ShardStateUnsplit shardStateUnsplit = ShardStateUnsplit.deserialize(CellSlice.beginParse(c));
+
+    log.info("shardStateUnsplit: {}", shardStateUnsplit);
+    log.info("visited: {}", visited.size());
+
+    //    ShardStateUnsplit shardStateUnsplit =
+    //        ShardStateUnsplit.deserializeWithoutRefs(CellSlice.beginParse(c));
+    //    log.info("shardStateUnsplit: {}", shardStateUnsplit);
+
+    //    ShardStateParser shardStateParser =
+    //        ShardStateParser.deserialize(ByteBuffer.wrap(rawShardStateUnsplit));
+    //    log.info("shardStateUnsplit: {}", shardStateParser);
+
+    //    byte[] ref0Hash = CellSlice.beginParse(c.getRefs().get(0)).loadSignedBytes();
+    //    byte[] valueOutMsgQueueInfo = cellDb.get(ref0Hash);
+    //    log.info("valueOutMsgQueueInfo: {}", Utils.bytesToHex(valueOutMsgQueueInfo));
+    //    OutMsgQueueInfo outMsgQueueInfo =
+    //        OutMsgQueueInfo.deserialize(ByteBuffer.wrap(valueOutMsgQueueInfo));
+
+    //    byte[] ref1Hash = CellSlice.beginParse(c.getRefs().get(1)).loadSignedBytes();
+    //    byte[] valueShardAccounts = cellDb.get(ref1Hash);
+    //    log.info("valueShardAccounts: {}", Utils.bytesToHex(valueShardAccounts));
+
     cellDb.close();
   }
 

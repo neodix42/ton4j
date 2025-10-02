@@ -87,7 +87,7 @@ public class TestGetAccountState {
   //    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
   //
   //    // First, get the latest block to verify we're working with recent data
-  //    Block latestBlock = exporter.getLast();
+  //    Block latestBlock = exporter.getLastBlockIdExt();
   //    assertThat(latestBlock).isNotNull();
   //
   //    log.info("Latest block info:");

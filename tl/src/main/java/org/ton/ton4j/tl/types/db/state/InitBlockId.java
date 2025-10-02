@@ -18,19 +18,24 @@ import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 @Builder
 @Data
 public class InitBlockId implements Serializable {
-
+  long magic;
   BlockIdExt block;
 
   public static InitBlockId deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
+    long magic = buffer.getInt();
     BlockIdExt block = BlockIdExt.deserialize(buffer);
-    
-    return InitBlockId.builder()
-        .block(block)
-        .build();
+
+    return InitBlockId.builder().magic(magic).block(block).build();
   }
 
   public byte[] serialize() {
-    return block.serialize();
+    ByteBuffer buffer = ByteBuffer.allocate(4 + ((block != null) ? BlockIdExt.getSize() : 0));
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
+    buffer.putInt(1971484899);
+    if (block != null) {
+      buffer.put(block.serialize());
+    }
+    return buffer.array();
   }
 }

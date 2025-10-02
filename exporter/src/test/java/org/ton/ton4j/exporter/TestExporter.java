@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -18,6 +19,7 @@ import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.types.*;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockIdExt;
 import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
 
@@ -105,12 +107,58 @@ public class TestExporter {
   }
 
   @Test
+  public void testExporterGetBlockByBlockExtId() throws IOException {
+    BlockIdExt blockIdExtMc =
+        BlockIdExt.builder()
+            .workchain(-1)
+            .seqno(229441)
+            .shard(0x8000000000000000L)
+            .rootHash(
+                Utils.hexToSignedBytes(
+                    "439233F8D4B99BAD7A2CC84FFE0D16150ADC0E1058BCDF82243D1445A75CA5BF"))
+            .fileHash(
+                Utils.hexToSignedBytes(
+                    "E24EA0E5F520135DA4FC0B0477E5440E0D1C4E7EDB2026941F0457376BB3D97E"))
+            .build();
+
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+
+    Block block = exporter.getBlock(blockIdExtMc);
+    log.info("block {}", block);
+  }
+
+  @Test
+  public void testExporterGetBlockByBlockExtIdNonMc() throws IOException {
+    BlockIdExt blockIdExtMc =
+        BlockIdExt.builder()
+            .workchain(0)
+            .seqno(229441)
+            .shard(0x8000000000000000L)
+            .rootHash(
+                Utils.hexToSignedBytes(
+                    "5F49521AD8EC570C82B6DA6D1AF9D16884CA17F3310044BBB66ED6B94A15608C"))
+            .fileHash(
+                Utils.hexToSignedBytes(
+                    "7925B49AF1FF46550998947C05EC2B2AAD2F89B1C4FA98F3A19DDB62ACDF36EC"))
+            .build();
+
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+
+    Block block = exporter.getBlock(blockIdExtMc);
+    log.info("block {}", block);
+  }
+
+  @Test
+  public void testExporterGetBlockByBlockId() throws IOException {}
+
+  @Test
   public void testExporterGetLast() throws IOException {
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
     long startTime = System.currentTimeMillis();
 
-    Block latestBlock = exporter.getLast();
+    Pair<BlockIdExt, Block> block = exporter.getLast();
+    Block latestBlock = block.getRight();
 
     long durationMs = System.currentTimeMillis() - startTime;
 
@@ -141,15 +189,15 @@ public class TestExporter {
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
     long startTime = System.currentTimeMillis();
 
-    TreeMap<BlockId, Block> latestBlocks = exporter.getLast(10);
+    TreeMap<BlockIdExt, Block> latestBlocks = exporter.getLast(10);
 
     long durationMs = System.currentTimeMillis() - startTime;
 
     log.info("received last block : {}ms", durationMs);
 
     latestBlocks.forEach(
-        (blockId, block) -> {
-          log.info("blockId {}", blockId);
+        (blockIdExt, block) -> {
+          log.info("blockId {}", blockIdExt);
         });
   }
 

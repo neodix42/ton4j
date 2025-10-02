@@ -15,11 +15,9 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.ton.ton4j.address.Address;
 import org.ton.ton4j.bitstring.BitString;
-import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.cell.CellBuilder;
-import org.ton.ton4j.cell.CellSlice;
-import org.ton.ton4j.cell.LevelMask;
+import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.types.*;
+import org.ton.ton4j.exporter.types.CellType;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tl.types.db.celldb.Value;
 import org.ton.ton4j.tlb.Account;
@@ -143,7 +141,7 @@ public class CellDbReader implements Closeable {
             buffer.order(ByteOrder.LITTLE_ENDIAN);
 
             // Skip the TL constructor ID (4 bytes)
-            if (buffer.remaining() >= 4) {
+            if (buffer.remaining() >= 4) { // add const in value deseralize
               buffer.getInt();
             }
             // db.celldb.value block_id:tonNode.blockIdExt prev:int256 next:int256 root_hash:int256
@@ -1557,6 +1555,186 @@ public class CellDbReader implements Closeable {
     }
 
     return stats;
+  }
+
+  /** specifically to read/parse celldb values that contain cell data */
+  public static Cell parseCell(RocksDbWrapper cellDb, ByteBuffer data, Set<String> visited)
+      throws IOException {
+
+    int flag = data.getInt();
+    boolean storedBoc = false;
+    if (flag == -1) {
+      storedBoc = true;
+      flag = data.getInt();
+    }
+
+    if (storedBoc) {
+      byte[] remaining = new byte[data.remaining()];
+      data.get(remaining);
+      return Cell.fromBoc(remaining); // remaining buffer
+    } else {
+      int d1 = data.get() & 0xFF;
+      int d2 = data.get() & 0xFF;
+
+      CellSerializationInfo cellSerializationInfo = CellSerializationInfo.create(d1, d2);
+
+      byte[] payload = new byte[cellSerializationInfo.getDataLength()];
+      data.get(payload);
+
+      List<Cell> refCells = new ArrayList<>();
+
+      if (cellSerializationInfo.getRefsCount() != 0) {
+
+        data.position(cellSerializationInfo.getRefsOffset());
+
+        for (int i = 0; i < cellSerializationInfo.getRefsCount(); i++) {
+          int lMask = data.get() & 0xFF;
+          //          LevelMask levelMask = cellSerializationInfo.getLevelMask();
+          LevelMask levelMask = new LevelMask(lMask);
+          int hashesCount = levelMask.getHashesCount();
+
+          int endOffset = 1 + hashesCount * (32 + 2);
+          byte[] hashes = new byte[hashesCount * 32];
+          data.get(hashes);
+          byte[] depths = new byte[hashesCount * 2];
+          data.get(depths);
+          byte[] primaryHash = Arrays.copyOfRange(hashes, 0, 32);
+          byte[] value = cellDb.get(primaryHash);
+          log.info("value: {}", Utils.bytesToHex(value));
+          //          Cell refCell = parseCell(cellDb, ByteBuffer.wrap(value), visited);
+          //          refCells.add(refCell);
+          //          data.get();
+
+          //          for (int j = 0; j < hashesCount; j++) {
+          //            byte[] hash = new byte[32];
+          //            data.get(hash);
+          //            log.info("hash {}", Utils.bytesToHex(hash));
+          //            Cell refCell;
+          //            if (visited.contains(Utils.bytesToHex(hash))) {
+          //              // refCell = null;
+          //              continue;
+          //            } else {
+          //              visited.add(Utils.bytesToHex(hash));
+          //              byte[] value = cellDb.get(hash);
+          //              if (value == null) {
+          //                return null;
+          //              }
+          //
+          //              refCell =
+          //                  parseCell(cellDb,
+          // ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN), visited);
+          //            }
+          //
+          //            refCells.add(refCell);
+          //            byte[] skipDepths = new byte[hashesCount * 2];
+          //            data.get(skipDepths);
+          //          }
+        }
+      }
+
+      return CellBuilder.beginCell()
+          .storeBitString(new BitString(payload, cellSerializationInfo.getDataLength() * 8))
+          .storeRefs(refCells)
+          .setExotic(cellSerializationInfo.isSpecial())
+          .setLevelMask(cellSerializationInfo.getLevelMask())
+          .endCell();
+    }
+  }
+
+  public static Cell parseCell(
+      RocksDbWrapper cellDb, ByteBuffer data, Set<String> visited, Map<String, Cell> cache)
+      throws IOException {
+
+    int flag = data.getInt();
+    boolean storedBoc = false;
+    if (flag == -1) {
+      storedBoc = true;
+      flag = data.getInt();
+    }
+
+    if (storedBoc) {
+      byte[] remaining = new byte[data.remaining()];
+      data.get(remaining);
+      return Cell.fromBoc(remaining);
+    } else {
+      int d1 = data.get() & 0xFF;
+      int d2 = data.get() & 0xFF;
+
+      CellSerializationInfo cellSerializationInfo = CellSerializationInfo.create(d1, d2);
+
+      byte[] payload = new byte[cellSerializationInfo.getDataLength()];
+      data.get(payload);
+
+      List<Cell> refCells = new ArrayList<>();
+
+      if (cellSerializationInfo.getRefsCount() != 0) {
+        data.position(cellSerializationInfo.getRefsOffset());
+
+        // Process each reference (NOT each hash!)
+        for (int i = 0; i < cellSerializationInfo.getRefsCount(); i++) {
+          int lMask = data.get() & 0xFF;
+          LevelMask levelMask = new LevelMask(lMask);
+          int hashesCount = levelMask.getHashesCount();
+
+          // Read all hashes for this reference
+          byte[] hashes = new byte[hashesCount * 32];
+          data.get(hashes);
+
+          // Read all depths for this reference
+          byte[] depths = new byte[hashesCount * 2];
+          data.get(depths);
+
+          // Use PRIMARY hash (first hash) to load the cell
+          byte[] primaryHash = Arrays.copyOfRange(hashes, 0, 32);
+          String hashHex = Utils.bytesToHex(primaryHash);
+
+          Cell refCell = null;
+
+          // Check cache first
+          if (cache.containsKey(hashHex)) {
+            refCell = cache.get(hashHex);
+            log.debug("Cache hit for hash: {}", hashHex);
+          } else if (visited.contains(hashHex)) {
+            // Cycle detected - skip this reference
+            log.warn("Cycle detected for hash: {}, skipping", hashHex);
+            continue;
+          } else {
+            // Load from database
+            byte[] value = cellDb.get(primaryHash);
+            if (value != null) {
+              visited.add(hashHex);
+              try {
+                // RECURSIVE CALL - but only ONCE per reference!
+                refCell =
+                    parseCell(
+                        cellDb,
+                        ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN),
+                        visited,
+                        cache);
+
+                if (refCell != null) {
+                  cache.put(hashHex, refCell);
+                }
+              } finally {
+                visited.remove(hashHex);
+              }
+            }
+          }
+
+          // Add the single reference cell (not multiple!)
+          if (refCell != null) {
+            refCells.add(refCell);
+          }
+        }
+      }
+
+      return CellBuilder.beginCell()
+          .storeBitString(new BitString(payload, cellSerializationInfo.getDataLength() * 8))
+          .storeRefs(refCells)
+          .setExotic(cellSerializationInfo.isSpecial())
+          .setLevelMask(cellSerializationInfo.getLevelMask())
+          .endCell();
+    }
   }
 
   @Override

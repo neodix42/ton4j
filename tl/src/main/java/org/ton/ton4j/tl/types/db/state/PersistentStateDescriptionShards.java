@@ -20,40 +20,39 @@ import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 @Builder
 @Data
 public class PersistentStateDescriptionShards implements Serializable {
-
+  int magic;
   List<BlockIdExt> shardBlocks;
 
   public static PersistentStateDescriptionShards deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-    
+
     // Read shard_blocks vector
+    int magic = buffer.getInt();
     int shardBlocksCount = buffer.getInt();
     List<BlockIdExt> shardBlocks = new ArrayList<>(shardBlocksCount);
     for (int i = 0; i < shardBlocksCount; i++) {
       shardBlocks.add(BlockIdExt.deserialize(buffer));
     }
-    
-    return PersistentStateDescriptionShards.builder()
-        .shardBlocks(shardBlocks)
-        .build();
+
+    return PersistentStateDescriptionShards.builder().magic(magic).shardBlocks(shardBlocks).build();
   }
 
   public byte[] serialize() {
     // Calculate buffer size
-    int size = 4; // 4 bytes for vector size
+    int size = 8; // 4 bytes for vector size
     for (BlockIdExt block : shardBlocks) {
       size += block.serialize().length;
     }
-    
+
     ByteBuffer buffer = ByteBuffer.allocate(size);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-    
+    buffer.putInt(-433023920);
     // Write shard_blocks vector
     buffer.putInt(shardBlocks.size());
     for (BlockIdExt block : shardBlocks) {
       buffer.put(block.serialize());
     }
-    
+
     return buffer.array();
   }
 }

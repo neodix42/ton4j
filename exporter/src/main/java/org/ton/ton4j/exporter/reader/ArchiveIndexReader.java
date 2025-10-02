@@ -2,17 +2,24 @@ package org.ton.ton4j.exporter.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.ton.ton4j.tl.types.db.blockdb.BlockDbValue;
 
 /**
  * Reader for individual archive index databases (archive.XXXXX.index). Each archive package has a
  * corresponding RocksDB index that contains hash-&gt;offset mappings for files within that package.
+ * Addtionally contains keys: "status.", slices, slice_size, "info."
  *
  * <p>Based on the C++ implementation in ArchiveFile class.
  */
@@ -21,8 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ArchiveIndexReader implements Closeable {
 
   private final String archiveIndexPath;
-  //  private final String packagePath;
-  //  private final int packageId;
   private RocksDbWrapper indexDb;
 
   /**
@@ -33,8 +38,6 @@ public class ArchiveIndexReader implements Closeable {
    */
   public ArchiveIndexReader(String archiveIndexPath) throws IOException {
     this.archiveIndexPath = archiveIndexPath;
-    //    this.packagePath = packagePath;
-    //    this.packageId = packageId;
 
     if (!Files.exists(Paths.get(archiveIndexPath))) {
       throw new IOException("Archive index database not found at: " + archiveIndexPath);
@@ -42,10 +45,87 @@ public class ArchiveIndexReader implements Closeable {
 
     try {
       indexDb = new RocksDbWrapper(archiveIndexPath);
-      //      log.debug("Opened archive index database: {}", archiveIndexPath);
     } catch (IOException e) {
       throw new IOException("Could not open archive index database: " + e.getMessage(), e);
     }
+  }
+
+  /**
+   * Creates a new ArchiveIndexReader for a specific archive index database.
+   *
+   * @param tonDbRootDir Path to the TON DB ROOT DIR
+   * @param index of index folder
+   * @throws IOException If the index database cannot be opened
+   */
+  public ArchiveIndexReader(String tonDbRootDir, int index) throws IOException {
+    this.archiveIndexPath = ArchiveIndexReader.getArchiveIndexPath(tonDbRootDir, index);
+
+    if (!Files.exists(Paths.get(archiveIndexPath))) {
+      throw new IOException("Archive index database not found at: " + archiveIndexPath);
+    }
+
+    try {
+      indexDb = new RocksDbWrapper(archiveIndexPath);
+    } catch (IOException e) {
+      throw new IOException("Could not open archive index database: " + e.getMessage(), e);
+    }
+  }
+
+  public List<String> getAllPackFiles() throws IOException {
+    List<String> result = new ArrayList<>();
+    byte[] sliced = indexDb.get("status".getBytes());
+    if ("sliced".equals(new String(sliced))) {
+      int numberOfSlices = Integer.parseInt(new String(indexDb.get("slices".getBytes())));
+      //      int sliceSize = Integer.parseInt(new String(indexDb.get("slice_size".getBytes())));
+      for (int i = 0; i < numberOfSlices; i++) {
+        String rawPack = new String(indexDb.get(("info." + i).getBytes())) + ".pack";
+        rawPack = rawPack.replace(".-1:8000000000000000", "");
+        if (rawPack.contains(":")) {
+          rawPack = "archive." + StringUtils.leftPad(rawPack, 30, "0");
+        } else {
+          rawPack = "archive." + StringUtils.leftPad(rawPack, 10, "0");
+        }
+        result.add(Path.of(archiveIndexPath).getParent().resolve(rawPack).toString());
+      }
+    }
+
+    return result;
+  }
+
+  public static String getArchiveIndexPath(String tonRootDbPath, int archiveIndex) {
+    String archFolder = String.format("arch%04d", (archiveIndex / 100000));
+    String indexStr = String.format("%05d", archiveIndex);
+    String absoluteArchFolder =
+        Path.of(tonRootDbPath, "archive", "packages", archFolder).toString();
+    return Paths.get(absoluteArchFolder, "archive." + indexStr + ".index").toString();
+  }
+
+  public String getExactPackFilename(
+      int packageId, long seqno, int wc, long shard, long masterChainSeqno) throws IOException {
+    long baseSeqno = (wc != -1) ? masterChainSeqno : seqno;
+    long sliceSeqno = (baseSeqno - (baseSeqno - packageId) % 100);
+    //    int sliceSeqno = (seqno - (seqno % 20000));
+    byte[] sliced = indexDb.get("status".getBytes());
+    if ("sliced".equals(new String(sliced))) {
+      int numberOfSlices = Integer.parseInt(new String(indexDb.get("slices".getBytes())));
+      for (int i = 0; i < numberOfSlices; i++) {
+        String packFilename = new String(indexDb.get(("info." + i).getBytes())) + ".pack";
+        //        System.out.println(packFilename);
+        String searchString = String.format("%d.%d:%16x.pack", sliceSeqno, wc, shard);
+        if (packFilename.equals(searchString)) {
+
+          packFilename = packFilename.replace(".-1:8000000000000000", "");
+          if (packFilename.contains(":")) {
+            packFilename = "archive." + StringUtils.leftPad(packFilename, 30, "0");
+          } else {
+            packFilename = "archive." + StringUtils.leftPad(packFilename, 10, "0");
+          }
+
+          return Path.of(archiveIndexPath).getParent().resolve(packFilename).toString();
+        }
+      }
+    }
+    return null;
   }
 
   /**
@@ -87,10 +167,6 @@ public class ArchiveIndexReader implements Closeable {
                 log.debug("Error parsing offset for hash {}: {}", keyStr, e.getMessage());
               }
             }
-            //            else if (isPrintableAscii(keyStr)) { // info.1 ...
-            //              hashOffsetMap.put(keyStr, valueStr);
-            //              validMappings.incrementAndGet();
-            //            }
 
           } catch (Exception e) {
             parseErrors.incrementAndGet();
@@ -98,56 +174,19 @@ public class ArchiveIndexReader implements Closeable {
           }
         });
 
-    //    log.debug(
-    //        "Index {}, {} total entries, {} valid hash mappings, {} parse errors",
-    //        archiveIndexPath,
-    //        totalEntries.get(),
-    //        validMappings.get(),
-    //        parseErrors.get());
-
     return hashOffsetMap;
   }
 
-  /**
-   * Gets the offset for a specific file hash.
-   *
-   * @param hash The file hash (hex string)
-   * @return The offset within the package file, or null if not found
-   */
-  public Long getFileOffset(String hash) {
-    try {
-      byte[] valueBytes = indexDb.get(hash.getBytes());
-      if (valueBytes == null) {
-        return null;
-      }
-
-      String valueStr = new String(valueBytes);
-      return Long.parseLong(valueStr);
-    } catch (Exception e) {
-      log.debug("Error getting offset for hash {}: {}", hash, e.getMessage());
-      return null;
-    }
+  public long getOffsetByHash(String hash) throws IOException {
+    return Long.parseLong(new String(indexDb.get(hash.getBytes())));
   }
 
-  /**
-   * Gets the package status (current size) from the archive index. This corresponds to the "status"
-   * key in the C++ implementation.
-   *
-   * @return The package size, or null if not found
-   */
-  public Long getPackageStatus() {
-    try {
-      byte[] valueBytes = indexDb.get("status".getBytes());
-      if (valueBytes == null) {
-        return null;
-      }
+  public BlockDbValue getDbValueByHash(String hash) throws IOException {
+    return BlockDbValue.deserialize(ByteBuffer.wrap(indexDb.get(hash.getBytes())));
+  }
 
-      String valueStr = new String(valueBytes);
-      return Long.parseLong(valueStr);
-    } catch (Exception e) {
-      log.debug("Error getting package status: {}", e.getMessage());
-      return null;
-    }
+  public BlockDbValue getDbValueByHash(byte[] hash) throws IOException {
+    return BlockDbValue.deserialize(ByteBuffer.wrap(indexDb.get(hash)));
   }
 
   /**
@@ -183,7 +222,6 @@ public class ArchiveIndexReader implements Closeable {
   public void close() throws IOException {
     if (indexDb != null) {
       indexDb.close();
-      //      log.debug("Closed archive index database: {}", archiveIndexPath);
     }
   }
 }

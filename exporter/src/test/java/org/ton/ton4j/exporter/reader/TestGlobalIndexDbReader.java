@@ -7,6 +7,10 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.ton4j.exporter.types.ArchiveFileLocation;
+import org.ton.ton4j.tl.types.db.block.BlockIdExt;
+import org.ton.ton4j.tl.types.db.blockdb.BlockDbValue;
+import org.ton.ton4j.tl.types.db.blockdb.key.BlockDbValueKey;
+import org.ton.ton4j.tl.types.db.filedb.key.BlockFileKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
 import org.ton.ton4j.tlb.Block;
@@ -19,13 +23,199 @@ import org.ton.ton4j.utils.Utils;
 @Slf4j
 public class TestGlobalIndexDbReader {
 
-  private static final String DB_PATH = "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+  BlockIdExt blockIdExtMc =
+      BlockIdExt.builder()
+          .workchain(-1)
+          .seqno(229441)
+          .shard(0x8000000000000000L)
+          .rootHash(
+              Utils.hexToSignedBytes(
+                  "439233F8D4B99BAD7A2CC84FFE0D16150ADC0E1058BCDF82243D1445A75CA5BF"))
+          .fileHash(
+              Utils.hexToSignedBytes(
+                  "E24EA0E5F520135DA4FC0B0477E5440E0D1C4E7EDB2026941F0457376BB3D97E"))
+          .build();
+
+  BlockIdExt blockIdExt =
+      BlockIdExt.builder()
+          .workchain(0)
+          .seqno(229441)
+          .shard(0x8000000000000000L)
+          .rootHash(
+              Utils.hexToSignedBytes(
+                  "5F49521AD8EC570C82B6DA6D1AF9D16884CA17F3310044BBB66ED6B94A15608C"))
+          .fileHash(
+              Utils.hexToSignedBytes(
+                  "7925B49AF1FF46550998947C05EC2B2AAD2F89B1C4FA98F3A19DDB62ACDF36EC"))
+          .build();
+
+  private static final String TON_DB_ROOT_PATH =
+      "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db";
+
+  public static String mcBlock =
+      "(-1,8000000000000000,229441):439233F8D4B99BAD7A2CC84FFE0D16150ADC0E1058BCDF82243D1445A75CA5BF:E24EA0E5F520135DA4FC0B0477E5440E0D1C4E7EDB2026941F0457376BB3D97E";
+  public static String block =
+      "(0,8000000000000000,229441):5F49521AD8EC570C82B6DA6D1AF9D16884CA17F3310044BBB66ED6B94A15608C:7925B49AF1FF46550998947C05EC2B2AAD2F89B1C4FA98F3A19DDB62ACDF36EC";
+
+  @Test
+  public void testGetOffsetByHash() throws IOException {
+
+    BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
+
+    // BlockExtId hash
+    String keyHash = "C71E95AB52F673185AD62AC52F3DFEAFE2CB2DEA12B802061F770FDA498E2E97";
+
+    int archiveIndex;
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+      archiveIndex =
+          reader.getArchiveIndexBySeqno(blockIdExt.getWorkchain(), blockIdExt.getSeqno());
+      log.info("archiveIndex: {}", archiveIndex); // index is correct
+    }
+
+    try (ArchiveIndexReader archiveIndexReader =
+        new ArchiveIndexReader(TON_DB_ROOT_PATH, archiveIndex)) {
+      long offset = archiveIndexReader.getOffsetByHash(blockFileKey.getKeyHash());
+      log.info("offset: {}", offset);
+    }
+  }
+
+  @Test
+  public void testGetNonMasterchainBlock() throws IOException {
+    int mcSeqno = 234048;
+
+    BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
+    String keyHash = "C71E95AB52F673185AD62AC52F3DFEAFE2CB2DEA12B802061F770FDA498E2E97";
+
+    int archiveIndex;
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+      archiveIndex =
+          reader.getArchiveIndexBySeqno(blockIdExt.getWorkchain(), blockIdExt.getSeqno());
+      log.info("found archiveIndex: {}", archiveIndex); // index is correct
+    }
+
+    long offset;
+    try (ArchiveIndexReader archiveIndexReader =
+        new ArchiveIndexReader(TON_DB_ROOT_PATH, archiveIndex)) {
+      offset = archiveIndexReader.getOffsetByHash(blockFileKey.getKeyHash());
+      log.info("found offset: {}", offset);
+
+      String packFilename =
+          archiveIndexReader.getExactPackFilename(
+              archiveIndex,
+              blockIdExt.getSeqno(),
+              blockIdExt.getWorkchain(),
+              blockIdExt.getShard(),
+              mcSeqno);
+      log.info("found pack filename: {}", packFilename);
+      try (PackageReader packageReader = new PackageReader(packFilename)) {
+        PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
+        Block block = packageEntry.getBlock();
+        log.info("block: {}", block);
+      }
+    }
+  }
+
+  @Test
+  public void testGetMasterchainBlock() throws IOException {
+
+    BlockFileKey keyHash = BlockFileKey.builder().blockIdExt(blockIdExtMc).build();
+    log.info("keyHash: {}", keyHash.getKeyHash());
+    //    String keyHash = "827905DC8B797D1E80EFF7CACB2A5606A30F90C91C2A74CDBAF306594E7C8813";
+
+    int archiveIndex;
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+      archiveIndex =
+          reader.getArchiveIndexBySeqno(blockIdExtMc.getWorkchain(), blockIdExtMc.getSeqno());
+      log.info("found archiveIndex: {}", archiveIndex);
+    }
+
+    long offset;
+    try (ArchiveIndexReader archiveIndexReader =
+        new ArchiveIndexReader(TON_DB_ROOT_PATH, archiveIndex)) {
+      offset = archiveIndexReader.getOffsetByHash(keyHash.getKeyHash());
+      log.info("found offset: {}", offset);
+
+      String packFilename =
+          archiveIndexReader.getExactPackFilename(
+              archiveIndex,
+              blockIdExtMc.getSeqno(),
+              blockIdExtMc.getWorkchain(),
+              blockIdExtMc.getShard(),
+              blockIdExtMc.getSeqno());
+      log.info("found pack filename: {}", packFilename);
+      try (PackageReader packageReader = new PackageReader(packFilename)) {
+        PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
+        Block block = packageEntry.getBlock();
+        log.info("block: {}", block);
+      }
+    }
+  }
+
+  @Test
+  public void testGetMasterchainBlockHandle() throws IOException {
+
+    //    BlockFileKey keyHash = BlockFileKey.builder().blockIdExt(blockIdExtMc).build();
+    //    BlockInfoKey keyHash = BlockInfoKey.builder().blockIdExt(blockIdExtMc).build();
+    BlockDbValueKey keyHash = BlockDbValueKey.builder().blockIdExt(blockIdExtMc).build();
+    log.info("keyHash: {}", keyHash.getKeyHash());
+
+    int archiveIndex;
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+      archiveIndex =
+          reader.getArchiveIndexBySeqno(blockIdExtMc.getWorkchain(), blockIdExtMc.getSeqno());
+      log.info("found archiveIndex: {}", archiveIndex);
+    }
+
+    try (ArchiveIndexReader archiveIndexReader =
+        new ArchiveIndexReader(TON_DB_ROOT_PATH, archiveIndex)) {
+      BlockDbValue blockDbValue = archiveIndexReader.getDbValueByHash(keyHash.getKeyHashBytes());
+
+      log.info("found blockDbValue (blockHandle): {}", blockDbValue);
+    }
+  }
+
+  @Test
+  public void testReadOffsetsOfAllIndexes() throws IOException {
+    // BlockExtId hash
+    String keyHash = "267363F4522711EDF2EE27B45E94592467BEC5BECD4FEBBC250A000D0E479E6A";
+    //    String keyHash = "C71E95AB52F673185AD62AC52F3DFEAFE2CB2DEA12B802061F770FDA498E2E97";
+
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+      reader
+          .getAllArchiveIndexesIds()
+          .forEach(
+              id -> {
+                try (ArchiveIndexReader archiveIndexReader =
+                    new ArchiveIndexReader(TON_DB_ROOT_PATH, id)) {
+
+                  //                  Map<String, Long> offsets =
+                  // archiveIndexReader.getAllHashOffsetMappings();
+
+                  //                  log.info(
+                  //                      "archiveIndexPath: {}, offsets {}",
+                  //                      archiveIndexReader.getArchiveIndexPath(),
+                  //                      offsets.size());
+
+                  byte[] val = archiveIndexReader.getIndexDb().get(keyHash.getBytes());
+
+                  if (val != null) {
+                    int v = Utils.bytesToIntX(val);
+                    log.info(
+                        "hoorray {}, offset {}",
+                        archiveIndexReader.getArchiveIndexPath(),
+                        new String(val)); // 858995001, string 1893399
+                  }
+
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+    }
+  }
 
   @Test
   public void testGlobalIndexReading() throws IOException {
-
-    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
-
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
       reader
           .getGlobalIndexDb()
           .forEach(
@@ -39,21 +229,280 @@ public class TestGlobalIndexDbReader {
   }
 
   @Test
+  public void testGlobalIndexReadingFindPackageBySeqno() throws IOException {
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+      int packageId = reader.getArchiveIndexBySeqno(0, 229441);
+      log.info("packageId: {}", packageId); // index is correct
+    }
+  }
+
+  @Test
+  public void testArchiveIndexReaderGetExactPackFilename() throws IOException {
+    int wc = 0;
+    int seqno = 229441;
+    int mcSeqno = 234048; // "minRefMcSeqno": 234048,
+    long shard = 0x8000000000000000L;
+
+    int packageId = 228715;
+
+    String archiveIndexPath = ArchiveIndexReader.getArchiveIndexPath(TON_DB_ROOT_PATH, packageId);
+    try (ArchiveIndexReader archiveIndexReader = new ArchiveIndexReader(archiveIndexPath)) {
+      String packFilename =
+          archiveIndexReader.getExactPackFilename(packageId, seqno, wc, shard, mcSeqno);
+      log.info("packFilename: {}", packFilename);
+      // for wc -1, seqno 229441 :
+      // arch0002/archive.229415.pack
+      // for wc 0, seqno 229441 based on mcSeqno = 234048
+      // archive.234015.0:8000000000000000.pack
+    }
+  }
+
+  @Test
+  public void testBlockFileKeyGeneration() {
+
+    // in file arch0002/archive.229415.pack
+    //
+    // actual file pos - 669037, (exists offset 669036) with hash
+    // 353DB2CEF7A9E86310D975713D894D808B4AC1091D1E1CD572AEC5D116175C02
+
+    // actual file pos 679194, (exists offset 679190) - with hash
+    // 827905DC8B797D1E80EFF7CACB2A5606A30F90C91C2A74CDBAF306594E7C8813
+    // datasize 9985
+
+    String blockFileKeyMagic =
+        "db.filedb.key.blockFile block_id:tonNode.blockIdExt = db.filedb.Key";
+    String blockIdExtMagic =
+        "tonNode.blockIdExt workchain:int shard:long seqno:int root_hash:int256 file_hash:int256 = tonNode.BlockIdExt";
+
+    int l1 = (int) Utils.getQueryCrc32IEEEE(blockFileKeyMagic);
+    int l2 = (int) Utils.getQueryCrc32IEEEE(blockIdExtMagic);
+
+    log.info("l1: {}, l2 {}", l1, l2);
+
+    BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
+    BlockFileKey blockFileKeyMc = BlockFileKey.builder().blockIdExt(blockIdExtMc).build();
+
+    log.info(
+        "serialized blockFileKey: {}", Utils.bytesToHex(blockFileKey.serialize()).toUpperCase());
+    String hexKey = Utils.bytesToHex(Utils.sha256AsArray(blockFileKey.serialize())).toUpperCase();
+    String hexKeyMc =
+        Utils.bytesToHex(Utils.sha256AsArray(blockFileKeyMc.serialize())).toUpperCase();
+
+    log.info("keyHash: {}", hexKey);
+    log.info("keyHashMc: {}", hexKeyMc);
+    // FD848735B1D8C84AF500560E2C7CFFD46FC7EC679C6213B284F2061F0B8A2025
+    // 8CFFFB4F8FAFD15046FCFC2BA01162AADB322B276AEF89E24D7F16347EAE65C4
+
+    // correct hash for wc=0, seqno=229441
+    // C71E95AB52F673185AD62AC52F3DFEAFE2CB2DEA12B802061F770FDA498E2E97
+    // correct hash for wc-1, seqno=229441
+    // 827905DC8B797D1E80EFF7CACB2A5606A30F90C91C2A74CDBAF306594E7C8813
+
+  }
+
+  // 71E4EAB0000000000000000000000080418003005F49521AD8EC570C82B6DA6D1AF9D16884CA17F3310044BBB66ED6B94A15608C7925B49AF1FF46550998947C05EC2B2AAD2F89B1C4FA98F3A19DDB62ACDF36EC00000000
+  // 71E4EAB0000000000000000000000080418003005F49521AD8EC570C82B6DA6D1AF9D16884CA17F3310044BBB66ED6B94A15608C7925B49AF1FF46550998947C05EC2B2AAD2F89B1C4FA98F3A19DDB62ACDF36EC
+
+  @Test
+  public void testArchiveIndexReaderGetAllPackFiles() throws IOException {
+    int archiveIndex = 228715;
+    String archiveIndexPath =
+        ArchiveIndexReader.getArchiveIndexPath(TON_DB_ROOT_PATH, archiveIndex);
+    try (ArchiveIndexReader archiveIndexReader = new ArchiveIndexReader(archiveIndexPath)) {
+      archiveIndexReader
+          .getAllPackFiles()
+          .forEach(
+              packFile -> {
+                log.info("packFile: {}", packFile);
+              });
+    }
+  }
+
+  @Test
+  public void testFindFilenameInAllPackFilesOfIndex() throws IOException {
+
+    int archiveIndex = 228715;
+
+    // found offset 679190, hash 827905DC8B797D1E80EFF7CACB2A5606A30F90C91C2A74CDBAF306594E7C8813,
+    // archive.229415.pack
+    String targetFilename = "block_" + blockIdExt.toFilename();
+
+    // found offset 1893399, hash C71E95AB52F673185AD62AC52F3DFEAFE2CB2DEA12B802061F770FDA498E2E97,
+    // archive.234015.0:8000000000000000.pack
+    //    String targetFilename = "block_" + blockIdExt.toFilename();
+
+    String archiveIndexPath =
+        ArchiveIndexReader.getArchiveIndexPath(TON_DB_ROOT_PATH, archiveIndex);
+    try (ArchiveIndexReader archiveIndexReader = new ArchiveIndexReader(archiveIndexPath)) {
+      archiveIndexReader
+          .getAllPackFiles()
+          .forEach(
+              packFile -> {
+                //                log.info("packFile: {}", packFile);
+                // Get all hash->offset mappings
+                Map<String, Long> allMappings = archiveIndexReader.getAllHashOffsetMappings();
+                // For each hash, check what file it points to
+                try (PackageReader packageReader = new PackageReader(packFile)) {
+                  for (Map.Entry<String, Long> entry : allMappings.entrySet()) {
+                    String hash = entry.getKey();
+                    long offset = entry.getValue();
+
+                    try {
+                      PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
+                      String filename = packageEntry.getFilename();
+                      //                      log.info("filename: {}", filename);
+
+                      if (filename.equals(targetFilename)) {
+                        log.info("*** FOUND THE CORRECT HASH! ***");
+                        log.info("packFile: {}", packFile);
+                        log.info("Hash: {}", hash);
+                        log.info("Offset: {}", offset);
+                        log.info("Filename: {}", filename);
+                        log.info("block {}", packageEntry.getBlock());
+
+                        log.info("*** ACTUAL WORKING OFFSET: {} ***", offset);
+                        log.info("*** ENTRY DATA SIZE: {} ***", packageEntry.getData().length);
+
+                        // Now we know what the correct hash should be!
+                        return;
+                      }
+                    } catch (Exception e) {
+                      // Skip invalid entries
+                    }
+                  }
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+    }
+  }
+
+  @Test
+  public void findCorrectHashForBlock229441() throws IOException {
+
+    // good 827905DC8B797D1E80EFF7CACB2A5606A30F90C91C2A74CDBAF306594E7C8813, offset 679190
+    //    String targetFilename =
+    //
+    // "block_(-1,8000000000000000,229441):439233F8D4B99BAD7A2CC84FFE0D16150ADC0E1058BCDF82243D1445A75CA5BF:E24EA0E5F520135DA4FC0B0477E5440E0D1C4E7EDB2026941F0457376BB3D97E";
+    // could not find in archive.229415.pack, but exist in archive.234015.0:8000000000000000.pack
+    String targetFilename = "block_" + blockIdExt.toFilename();
+
+    int packageId = 228715;
+    String archiveIndexPath = ArchiveIndexReader.getArchiveIndexPath(TON_DB_ROOT_PATH, packageId);
+    String packFilePath =
+        "/home/neodix/gitProjects/MyLocalTon/myLocalTon/genesis/db/archive/packages/arch0002/archive.234015.0:8000000000000000.pack";
+    try (ArchiveIndexReader archiveIndexReader = new ArchiveIndexReader(archiveIndexPath)) {
+      // Get all hash->offset mappings
+      Map<String, Long> allMappings = archiveIndexReader.getAllHashOffsetMappings();
+
+      // For each hash, check what file it points to
+      try (PackageReader packageReader = new PackageReader(packFilePath)) {
+        for (Map.Entry<String, Long> entry : allMappings.entrySet()) {
+          String hash = entry.getKey();
+          long offset = entry.getValue();
+
+          try {
+            PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
+            String filename = packageEntry.getFilename();
+            log.info("filename: {}", filename);
+
+            if (filename.equals(targetFilename)) {
+              log.info("*** FOUND THE CORRECT HASH! ***");
+              log.info("Hash: {}", hash);
+              log.info("Offset: {}", offset);
+              log.info("Filename: {}", filename);
+              log.info("block {}", packageEntry.getBlock());
+
+              log.info("*** ACTUAL WORKING OFFSET: {} ***", offset);
+              log.info("*** ENTRY DATA SIZE: {} ***", packageEntry.getData().length);
+
+              // Now we know what the correct hash should be!
+              return;
+            }
+          } catch (Exception e) {
+            // Skip invalid entries
+          }
+        }
+      }
+
+      log.error("Could not find hash for target filename: {}", targetFilename);
+    }
+  }
+
+  @Test
+  public void testArchiveIndexReaderGetExactPackFilenameAndParsePackgeEntries() throws IOException {
+    int wc = 0;
+    int seqno = 229441;
+    int mcSeqno = 234048;
+    long shard = 0x8000000000000000L;
+
+    int packageId = 228715;
+
+    String archiveIndexPath = ArchiveIndexReader.getArchiveIndexPath(TON_DB_ROOT_PATH, packageId);
+    try (ArchiveIndexReader archiveIndexReader = new ArchiveIndexReader(archiveIndexPath)) {
+      String packFilename =
+          archiveIndexReader.getExactPackFilename(packageId, seqno, wc, shard, mcSeqno);
+      log.info("packFilename: {}", packFilename);
+      try (PackageReader packageReader = new PackageReader(packFilename)) {
+        packageReader.forEachTyped(
+            entry -> {
+              String filename = entry.getFilename();
+              log.info("filename: {}, value size {}", filename, entry.getData().length);
+            });
+      }
+    }
+  }
+
+  @Test
+  public void testArchiveIndexReader() throws IOException {
+
+    int wc = -1;
+    int seqno = 229441;
+
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+
+      int packageId = reader.getArchiveIndexBySeqno(wc, seqno);
+      log.info("packageId: {}", packageId);
+
+      String archiveIndexPath = ArchiveIndexReader.getArchiveIndexPath(TON_DB_ROOT_PATH, packageId);
+
+      try (ArchiveIndexReader archiveIndexReader = new ArchiveIndexReader(archiveIndexPath)) {
+        byte[] sliced = archiveIndexReader.getIndexDb().get("status".getBytes());
+        log.info("sliced: {}", new String(sliced));
+
+        byte[] numOfSlices = archiveIndexReader.getIndexDb().get("slices".getBytes());
+        log.info("numOfSlices: {}", new String(numOfSlices));
+
+        byte[] sliceSize = archiveIndexReader.getIndexDb().get("slice_size".getBytes());
+        log.info("sliceSize: {}", new String(sliceSize));
+
+        for (int i = 0; i < Integer.parseInt(new String(numOfSlices)); i++) {
+          byte[] pkgSize =
+              archiveIndexReader.getIndexDb().get(("status." + i).getBytes()); // read package size
+
+          byte[] pkgInfo =
+              archiveIndexReader.getIndexDb().get(("info." + i).getBytes()); // read package info
+          log.info("slicedPackageInfo {}, size {}", new String(pkgInfo), new String(pkgSize));
+        }
+      }
+    }
+  }
+
+  @Test
   public void testGlobalIndexReadingIndex() throws IOException {
 
-    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
       for (String path :
-          reader.getArchivePackagesFromMainIndex()) { // still missing pack files, need to look for
-        // info.x entries etc
+          reader.getArchivePackagesFromMainIndex()) { // list pack files without their slices
         log.info("path: {}", path);
       }
     }
   }
 
   @Test
-  public void testGlobalIndexReadingDirectories() throws IOException {
+  public void testGetAllArchivePackFilesByDirScan() throws IOException {
 
-    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
       for (String path :
           reader.getAllArchivePackageByDirScan()) { // this is the fastest way to get all pack files
         log.info("path: {}", path);
@@ -62,25 +511,30 @@ public class TestGlobalIndexDbReader {
   }
 
   @Test
-  public void testGlobalIndexReadingPathsIndexed() throws IOException {
+  public void testGetAllArchivePackFilesByIndexScan() throws IOException {
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+      reader.getAllPackFiles().forEach(log::info);
+    }
+  }
 
-    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
-      log.info("total indexes {}", reader.getMainIndexIndexValue().getPackages().size());
-      int count = 0;
-      for (Map.Entry<String, ArchiveFileLocation> path :
-          reader.getAllPackagesHashOffsetMappings().entrySet()) {
-        log.info("key {}, value: {}", path.getKey(), path.getValue());
-        if (count++ > 5) {
-          break;
-        }
-      }
+  @Test
+  public void testGetAllArchiveIndexes() throws IOException {
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+      reader
+          .getAllArchiveIndexesIds()
+          .forEach(
+              id -> {
+                String archiveIndexPath =
+                    ArchiveIndexReader.getArchiveIndexPath(TON_DB_ROOT_PATH, id);
+                log.info("{},  archiveIndexPath: {}", id, archiveIndexPath);
+              });
     }
   }
 
   @Test
   public void testGlobalIndexReadingByPkgId() throws IOException {
     int packageId = 6400;
-    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
       Map<String, ArchiveFileLocation> result = reader.getPackageHashOffsetMappings(packageId);
       for (Map.Entry<String, ArchiveFileLocation> entry : result.entrySet()) {
         log.info("key {}, value: {}", entry.getKey(), entry.getValue());
@@ -106,7 +560,7 @@ public class TestGlobalIndexDbReader {
   @Test
   public void testGlobalIndexReadingIndexedPackages() throws IOException {
 
-    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
 
       int count = 0;
       for (Map.Entry<String, ArchiveFileLocation> path :
@@ -115,7 +569,7 @@ public class TestGlobalIndexDbReader {
         PackageReader packageReader =
             new PackageReader(path.getValue().getIndexPath().replace("index", "pack"));
         PackageReader.PackageEntry packageEntry =
-            (PackageReader.PackageEntry) packageReader.getEntryAt(path.getValue().getOffset());
+            packageReader.getEntryAt(path.getValue().getOffset());
         log.info(
             "packageEntry: {}, dataSize {}, {}",
             packageEntry.getFilename(),
@@ -140,7 +594,7 @@ public class TestGlobalIndexDbReader {
   public void testAllArchivePackageFilesFromFilesystem() throws IOException {
     log.info("=== Testing All Archive Package Files From Filesystem ===");
 
-    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
 
       // Test the original method (only finds files from global index)
       log.info("Files from global index method:");
@@ -186,7 +640,7 @@ public class TestGlobalIndexDbReader {
   public void testArchiveIndexDatabaseReading() throws IOException {
     log.info("=== Testing Archive Index Database Reading (C++ Approach) ===");
 
-    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(DB_PATH)) {
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
 
       // Method 1: Files from global index (original - limited)
       log.info("1. Files from Files database global index:");

@@ -144,7 +144,8 @@ public class BlockInfo {
     // Write master reference sequence numbers
     buffer.putInt(masterRefSeqno.size());
     for (BlockIdExt blockIdExt : masterRefSeqno) {
-      blockIdExt.serialize(buffer);
+      // blockIdExt.serialize(buffer);
+      buffer.put(blockIdExt.serialize()); // magic
     }
 
     buffer.flip();

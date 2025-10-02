@@ -1,4 +1,4 @@
-package org.ton.ton4j.tl.types.db.filedb.key;
+package org.ton.ton4j.tl.types.db.blockdb.key;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -13,19 +13,19 @@ import org.ton.ton4j.utils.Utils;
  *
  * <pre>
  * ton_api.tl
- * db.filedb.key.blockInfo block_id:tonNode.blockIdExt = db.filedb.Key;
+ * db.blockdb.key.value id:tonNode.blockIdExt = db.blockdb.Key;
  * </pre>
  */
 @Builder
 @Data
-public class BlockInfoKey extends Key {
+public class BlockDbValueKey extends Key {
   int magic;
-  org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExt;
+  BlockIdExt blockIdExt;
 
-  public static BlockInfoKey deserialize(ByteBuffer buffer) {
+  public static BlockDbValueKey deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
 
-    return BlockInfoKey.builder()
+    return BlockDbValueKey.builder()
         .magic(buffer.getInt())
         .blockIdExt(BlockIdExt.deserialize(buffer))
         .build();
@@ -34,12 +34,16 @@ public class BlockInfoKey extends Key {
   public byte[] serialize() {
     ByteBuffer buffer = ByteBuffer.allocate(4 + BlockIdExt.SERIALIZED_SIZE);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
-    buffer.putInt(-996551428);
+    buffer.putInt(2136461683);
     buffer.put(blockIdExt.serialize());
     return buffer.array();
   }
 
   public String getKeyHash() {
     return Utils.bytesToHex(Utils.sha256AsArray(serialize())).toUpperCase();
+  }
+
+  public byte[] getKeyHashBytes() {
+    return Utils.sha256AsArray(serialize());
   }
 }

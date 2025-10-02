@@ -50,4 +50,8 @@ public class LevelMask implements Serializable {
   public boolean isSignificant(int level) {
     return (level == 0) || ((mask >> (level - 1)) % 2 != 0);
   }
+
+  public int getHashesCount() {
+    return getHashIndex() + 1;
+  }
 }
