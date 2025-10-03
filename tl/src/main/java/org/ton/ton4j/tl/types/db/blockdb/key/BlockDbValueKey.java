@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 import org.ton.ton4j.tl.types.db.filedb.Key;
-import org.ton.ton4j.utils.Utils;
 
 /**
  *
@@ -39,11 +38,7 @@ public class BlockDbValueKey extends Key {
     return buffer.array();
   }
 
-  public String getKeyHash() {
-    return Utils.bytesToHex(Utils.sha256AsArray(serialize())).toUpperCase();
-  }
-
-  public byte[] getKeyHashBytes() {
-    return Utils.sha256AsArray(serialize());
+  public byte[] getKeyHash() {
+    return serialize();
   }
 }

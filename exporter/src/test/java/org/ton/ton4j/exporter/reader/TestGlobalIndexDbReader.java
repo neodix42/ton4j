@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.ton4j.exporter.types.ArchiveFileLocation;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
-import org.ton.ton4j.tl.types.db.blockdb.BlockDbValue;
+import org.ton.ton4j.tl.types.db.block.BlockInfo;
 import org.ton.ton4j.tl.types.db.blockdb.key.BlockDbValueKey;
 import org.ton.ton4j.tl.types.db.filedb.key.BlockFileKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
@@ -81,10 +81,10 @@ public class TestGlobalIndexDbReader {
 
   @Test
   public void testGetNonMasterchainBlock() throws IOException {
-    int mcSeqno = 234048;
+    //    int mcSeqno = 234048;
 
     BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
-    String keyHash = "C71E95AB52F673185AD62AC52F3DFEAFE2CB2DEA12B802061F770FDA498E2E97";
+    //    String keyHash = "C71E95AB52F673185AD62AC52F3DFEAFE2CB2DEA12B802061F770FDA498E2E97";
 
     int archiveIndex;
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
@@ -98,6 +98,9 @@ public class TestGlobalIndexDbReader {
         new ArchiveIndexReader(TON_DB_ROOT_PATH, archiveIndex)) {
       offset = archiveIndexReader.getOffsetByHash(blockFileKey.getKeyHash());
       log.info("found offset: {}", offset);
+      BlockDbValueKey key = BlockDbValueKey.builder().blockIdExt(blockIdExt).build();
+      BlockInfo blockInfo = archiveIndexReader.getDbInfoByHash(key.getKeyHash());
+      log.info("found masterchainRefSeqno: {}", blockInfo.getMasterRefSeqno());
 
       String packFilename =
           archiveIndexReader.getExactPackFilename(
@@ -105,7 +108,7 @@ public class TestGlobalIndexDbReader {
               blockIdExt.getSeqno(),
               blockIdExt.getWorkchain(),
               blockIdExt.getShard(),
-              mcSeqno);
+              blockInfo.getMasterRefSeqno());
       log.info("found pack filename: {}", packFilename);
       try (PackageReader packageReader = new PackageReader(packFilename)) {
         PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
@@ -154,10 +157,7 @@ public class TestGlobalIndexDbReader {
   @Test
   public void testGetMasterchainBlockHandle() throws IOException {
 
-    //    BlockFileKey keyHash = BlockFileKey.builder().blockIdExt(blockIdExtMc).build();
-    //    BlockInfoKey keyHash = BlockInfoKey.builder().blockIdExt(blockIdExtMc).build();
     BlockDbValueKey keyHash = BlockDbValueKey.builder().blockIdExt(blockIdExtMc).build();
-    log.info("keyHash: {}", keyHash.getKeyHash());
 
     int archiveIndex;
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
@@ -168,16 +168,36 @@ public class TestGlobalIndexDbReader {
 
     try (ArchiveIndexReader archiveIndexReader =
         new ArchiveIndexReader(TON_DB_ROOT_PATH, archiveIndex)) {
-      BlockDbValue blockDbValue = archiveIndexReader.getDbValueByHash(keyHash.getKeyHashBytes());
+      BlockInfo block = archiveIndexReader.getDbInfoByHash(keyHash.getKeyHash());
+      log.info("found BlockInfo: {}", block);
+      log.info("found masterRefSeqno: {}", block.getMasterRefSeqno());
+    }
+  }
 
-      log.info("found blockDbValue (blockHandle): {}", blockDbValue);
+  @Test
+  public void testGetNonMasterchainBlockHandle() throws IOException {
+    BlockDbValueKey keyHash = BlockDbValueKey.builder().blockIdExt(blockIdExt).build();
+
+    int archiveIndex;
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+      archiveIndex =
+          reader.getArchiveIndexBySeqno(blockIdExt.getWorkchain(), blockIdExt.getSeqno());
+      log.info("found archiveIndex: {}", archiveIndex);
+    }
+
+    try (ArchiveIndexReader archiveIndexReader =
+        new ArchiveIndexReader(TON_DB_ROOT_PATH, archiveIndex)) {
+      BlockInfo block = archiveIndexReader.getDbInfoByHash(keyHash.getKeyHash());
+      log.info("found BlockInfo: {}", block);
+      log.info("found masterRefSeqno: {}", block.getMasterRefSeqno());
     }
   }
 
   @Test
   public void testReadOffsetsOfAllIndexes() throws IOException {
+    BlockDbValueKey keyHash = BlockDbValueKey.builder().blockIdExt(blockIdExtMc).build();
     // BlockExtId hash
-    String keyHash = "267363F4522711EDF2EE27B45E94592467BEC5BECD4FEBBC250A000D0E479E6A";
+    //    String keyHash = "267363F4522711EDF2EE27B45E94592467BEC5BECD4FEBBC250A000D0E479E6A";
     //    String keyHash = "C71E95AB52F673185AD62AC52F3DFEAFE2CB2DEA12B802061F770FDA498E2E97";
 
     try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
@@ -188,15 +208,7 @@ public class TestGlobalIndexDbReader {
                 try (ArchiveIndexReader archiveIndexReader =
                     new ArchiveIndexReader(TON_DB_ROOT_PATH, id)) {
 
-                  //                  Map<String, Long> offsets =
-                  // archiveIndexReader.getAllHashOffsetMappings();
-
-                  //                  log.info(
-                  //                      "archiveIndexPath: {}, offsets {}",
-                  //                      archiveIndexReader.getArchiveIndexPath(),
-                  //                      offsets.size());
-
-                  byte[] val = archiveIndexReader.getIndexDb().get(keyHash.getBytes());
+                  byte[] val = archiveIndexReader.getIndexDb().get(keyHash.getKeyHash());
 
                   if (val != null) {
                     int v = Utils.bytesToIntX(val);
@@ -271,14 +283,19 @@ public class TestGlobalIndexDbReader {
 
     String blockFileKeyMagic =
         "db.filedb.key.blockFile block_id:tonNode.blockIdExt = db.filedb.Key";
-    String blockIdExtMagic =
-        "tonNode.blockIdExt workchain:int shard:long seqno:int root_hash:int256 file_hash:int256 = tonNode.BlockIdExt";
+    String blockValueKeyMagic =
+        "db.block.archivedInfo id:tonNode.blockIdExt flags:# next:flags.0?tonNode.blockIdExt = db.block.Info";
+    //    String blockIdExtMagic =
+    //        "tonNode.blockIdExt workchain:int shard:long seqno:int root_hash:int256
+    // file_hash:int256 = tonNode.BlockIdExt";
 
-    int l1 = (int) Utils.getQueryCrc32IEEEE(blockFileKeyMagic);
-    int l2 = (int) Utils.getQueryCrc32IEEEE(blockIdExtMagic);
+    int l1 = (int) Utils.getQueryCrc32IEEEE(blockValueKeyMagic);
+    //    int l2 = (int) Utils.getQueryCrc32IEEEE(blockIdExtMagic);
 
-    log.info("l1: {}, l2 {}", l1, l2);
+    log.info("db.block.packedInfo: {} 0x{}", l1, Integer.toHexString(l1));
 
+    // db.block.packedInfo: 1186697618 0x46bb9192
+    // db.block.archivedInfo: db.block.packedInfo: 543128145 0x205f7a51
     BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
     BlockFileKey blockFileKeyMc = BlockFileKey.builder().blockIdExt(blockIdExtMc).build();
 

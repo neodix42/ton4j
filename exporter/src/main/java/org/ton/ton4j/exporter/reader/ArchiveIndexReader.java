@@ -2,7 +2,6 @@ package org.ton.ton4j.exporter.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.ton.ton4j.tl.types.db.blockdb.BlockDbValue;
+import org.ton.ton4j.tl.types.db.block.BlockInfo;
 
 /**
  * Reader for individual archive index databases (archive.XXXXX.index). Each archive package has a
@@ -181,12 +180,8 @@ public class ArchiveIndexReader implements Closeable {
     return Long.parseLong(new String(indexDb.get(hash.getBytes())));
   }
 
-  public BlockDbValue getDbValueByHash(String hash) throws IOException {
-    return BlockDbValue.deserialize(ByteBuffer.wrap(indexDb.get(hash.getBytes())));
-  }
-
-  public BlockDbValue getDbValueByHash(byte[] hash) throws IOException {
-    return BlockDbValue.deserialize(ByteBuffer.wrap(indexDb.get(hash)));
+  public BlockInfo getDbInfoByHash(byte[] hash) throws IOException {
+    return BlockInfo.deserialize(indexDb.get(hash));
   }
 
   /**

@@ -42,4 +42,8 @@ public class BlockFileKey extends Key {
   public String getKeyHash() {
     return Utils.bytesToHex(Utils.sha256AsArray(serialize())).toUpperCase();
   }
+
+  //  public byte[] getKeyHashAsBytes() {
+  //    return Utils.sha256AsArray(serialize());
+  //  }
 }

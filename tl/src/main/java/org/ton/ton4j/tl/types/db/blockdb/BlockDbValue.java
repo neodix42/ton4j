@@ -9,7 +9,7 @@ import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 import org.ton.ton4j.utils.Utils;
 
 /**
- *
+ * NOT USED IN TON
  *
  * <pre>
  * ton_api.tl
@@ -19,7 +19,7 @@ import org.ton.ton4j.utils.Utils;
 @Builder
 @Data
 public class BlockDbValue implements Serializable {
-
+  int magic;
   BlockIdExt next;
   public byte[] data;
 
@@ -29,10 +29,11 @@ public class BlockDbValue implements Serializable {
 
   public static BlockDbValue deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
+    int magic = buffer.getInt();
     BlockIdExt next = BlockIdExt.deserialize(buffer);
     byte[] data = Utils.fromBytes(buffer);
 
-    return BlockDbValue.builder().next(next).data(data).build();
+    return BlockDbValue.builder().magic(magic).next(next).data(data).build();
   }
 
   public byte[] serialize() {
