@@ -25,6 +25,8 @@ import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.reader.*;
 import org.ton.ton4j.exporter.types.*;
+import org.ton.ton4j.tl.types.db.block.BlockInfo;
+import org.ton.ton4j.tl.types.db.blockdb.key.BlockDbValueKey;
 import org.ton.ton4j.tl.types.db.filedb.key.BlockFileKey;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tlb.Account;
@@ -1184,7 +1186,9 @@ public class Exporter {
       if (blockIdExt.getWorkchain() == -1) {
         mcSeqno = blockIdExt.getSeqno();
       } else {
-        mcSeqno = 234048; // blockIdExt.getSeqno(); // todo find refMcSeqno minRefMcSeqno
+        BlockDbValueKey key = BlockDbValueKey.builder().blockIdExt(blockIdExtTl).build();
+        BlockInfo blockInfo = archiveIndexReader.getDbInfoByHash(key.getKeyHash());
+        mcSeqno = blockInfo.getMasterRefSeqno();
       }
       log.info("found mcSeqno: {}", mcSeqno);
       String packFilename =

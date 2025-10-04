@@ -107,7 +107,7 @@ public class TestExporter {
   }
 
   @Test
-  public void testExporterGetBlockByBlockExtId() throws IOException {
+  public void testExporterGetBlockByBlockIdExtMc() throws IOException {
     BlockIdExt blockIdExtMc =
         BlockIdExt.builder()
             .workchain(-1)
@@ -128,8 +128,8 @@ public class TestExporter {
   }
 
   @Test
-  public void testExporterGetBlockByBlockExtIdNonMc() throws IOException {
-    BlockIdExt blockIdExtMc =
+  public void testExporterGetBlockByBlockIdExtNonMc() throws IOException {
+    BlockIdExt blockIdExt =
         BlockIdExt.builder()
             .workchain(0)
             .seqno(229441)
@@ -144,12 +144,14 @@ public class TestExporter {
 
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
-    Block block = exporter.getBlock(blockIdExtMc);
+    Block block = exporter.getBlock(blockIdExt);
     log.info("block {}", block);
   }
 
   @Test
-  public void testExporterGetBlockByBlockId() throws IOException {}
+  public void testExporterGetBlockByBlockId() {
+    // todo
+  }
 
   @Test
   public void testExporterGetLast() throws IOException {

@@ -26,18 +26,19 @@ Java Exporter module uses RocksDB JNI library to directly access and extract dat
 
 # Exporter
 
-Mainly `Exporter` class suggests three methods:
+Mainly `Exporter` class suggests following methods:
  - `exportToFile()` - used to export blocks of all shards to file. 
  - `exportToStdout()` - used to export blocks in JSON or BoC (hex format) to Stdout.
  - `exportToObjects()` - used to get access to parallel stream of all blocks of TL-B type [Block](https://github.com/ton-blockchain/ton/blob/master/crypto/block/block.tlb). 
  - `getLast()` and `getLast(X)` - used to get very last block or list of last blocks limited by X.
+ - `getLast(BlockIdExt)` - used to get a Block of TL-B type by seqno, workchain, shard, root and file hashes. 
+ - `getLast(BlockId)` - used to get a Block of TL-B type by seqno, workchain and shard. 
 
 
 First three methods have parameters:
  - deserialized - true or false. If `true` TL-B object of type Block in JSON format will be stored per line, otherwise only BoC in hex format.
- - number of threads 
-
-All methods and `TonExporterApp` support resume functionality.
+ - number of threads
+ - support resume functionality.
 
 **Important**
 
