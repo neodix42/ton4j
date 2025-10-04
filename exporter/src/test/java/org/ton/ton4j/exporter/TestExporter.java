@@ -151,24 +151,31 @@ public class TestExporter {
 
   @Test
   public void testExporterGetBlockByBlockId() throws IOException {
+    long startTime = System.currentTimeMillis();
+
     BlockId blockIdMc =
         BlockId.builder().workchain(-1).seqno(229441).shard(0x8000000000000000L).build();
 
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
     Block block = exporter.getBlock(blockIdMc);
+    long endTime = System.currentTimeMillis();
     log.info("block {}", block);
+    log.info("elapsed time: {} ms", endTime - startTime);
   }
 
   @Test
   public void testExporterGetBlockByBlockIdNonMc() throws IOException {
+    long startTime = System.currentTimeMillis();
     BlockId blockId =
         BlockId.builder().workchain(0).seqno(229441).shard(0x8000000000000000L).build();
 
     Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
 
     Block block = exporter.getBlock(blockId);
+    long endTime = System.currentTimeMillis();
     log.info("block {}", block);
+    log.info("elapsed time: {} ms", endTime - startTime);
   }
 
   @Test
@@ -197,11 +204,12 @@ public class TestExporter {
         latestBlock.getAllMessages().size(),
         latestBlock.getAllIncomingMessages().size(),
         latestBlock.getAllOutgoingMessages().size());
-    //    log.info("block {}", latestBlock);
 
-    log.info("blockGson {}", gson.toJson(latestBlock));
+    log.info("block: {}", latestBlock);
 
-    log.info("shards {}", latestBlock.getAllShardDescrs());
+    log.info("blockGson: {}", gson.toJson(latestBlock));
+
+    log.info("shards: {}", latestBlock.getAllShardDescrs());
   }
 
   @Test

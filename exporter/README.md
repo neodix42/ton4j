@@ -31,8 +31,8 @@ Mainly `Exporter` class suggests following methods:
  - `exportToStdout()` - used to export blocks in JSON or BoC (hex format) to Stdout.
  - `exportToObjects()` - used to get access to parallel stream of all blocks of TL-B type [Block](https://github.com/ton-blockchain/ton/blob/master/crypto/block/block.tlb). 
  - `getLast()` and `getLast(X)` - used to get very last block or list of last blocks limited by X.
- - `getLast(BlockIdExt)` - used to get a Block of TL-B type by seqno, workchain, shard, root and file hashes. 
- - `getLast(BlockId)` - used to get a Block of TL-B type by seqno, workchain and shard. 
+ - `getBlock(BlockIdExt)` - used to get a Block of TL-B type by seqno, workchain, shard, root and file hashes. 
+ - `getBlock(BlockId)` - used to get a Block of TL-B type by seqno, workchain and shard. 
 
 
 First three methods have parameters:
