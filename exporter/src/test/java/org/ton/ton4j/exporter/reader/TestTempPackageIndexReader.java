@@ -5,8 +5,8 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
-import org.ton.ton4j.exporter.types.BlockId;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockId;
 import org.ton.ton4j.tlb.BlockIdExt;
 
 @Slf4j
@@ -32,9 +32,9 @@ public class TestTempPackageIndexReader {
 
         for (Map.Entry<String, Long> kv : mappings.entrySet()) {
           log.info("{} {}", kv.getKey(), kv.getValue());
-          Object entryObj = packageReader.getEntryAt(kv.getValue());
-          if (entryObj instanceof PackageReader.PackageEntry) {
-            PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
+          PackageReader.PackageEntry entryObj = packageReader.getEntryAt(kv.getValue());
+          if (entryObj != null) {
+            PackageReader.PackageEntry packageEntry = entryObj;
             log.info(" - filename {}", packageEntry.getFilename());
             //      log.info(" - seqno {}", packageEntry.getBlock().getBlockInfo().getSeqno());
           }

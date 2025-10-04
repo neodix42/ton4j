@@ -16,23 +16,25 @@ import lombok.Data;
  */
 @Builder
 @Data
-public class Value implements Serializable {
-
+public class DbLtDescValue implements Serializable {
+  int magic;
   int firstIdx;
   int lastIdx;
   int lastSeqno;
   long lastLt;
   int lastTs;
 
-  public static Value deserialize(ByteBuffer buffer) {
+  public static DbLtDescValue deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
+    int magic = buffer.getInt();
     int firstIdx = buffer.getInt();
     int lastIdx = buffer.getInt();
     int lastSeqno = buffer.getInt();
     long lastLt = buffer.getLong();
     int lastTs = buffer.getInt();
-    
-    return Value.builder()
+
+    return DbLtDescValue.builder()
+        .magic(magic)
         .firstIdx(firstIdx)
         .lastIdx(lastIdx)
         .lastSeqno(lastSeqno)
@@ -42,8 +44,9 @@ public class Value implements Serializable {
   }
 
   public byte[] serialize() {
-    ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + 4 + 8 + 4);
+    ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + 4 + 4 + 8 + 4);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
+    buffer.putInt(1907315124);
     buffer.putInt(firstIdx);
     buffer.putInt(lastIdx);
     buffer.putInt(lastSeqno);

@@ -19,6 +19,7 @@ import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.types.*;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockId;
 import org.ton.ton4j.tlb.BlockIdExt;
 import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
@@ -149,8 +150,25 @@ public class TestExporter {
   }
 
   @Test
-  public void testExporterGetBlockByBlockId() {
-    // todo
+  public void testExporterGetBlockByBlockId() throws IOException {
+    BlockId blockIdMc =
+        BlockId.builder().workchain(-1).seqno(229441).shard(0x8000000000000000L).build();
+
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+
+    Block block = exporter.getBlock(blockIdMc);
+    log.info("block {}", block);
+  }
+
+  @Test
+  public void testExporterGetBlockByBlockIdNonMc() throws IOException {
+    BlockId blockId =
+        BlockId.builder().workchain(0).seqno(229441).shard(0x8000000000000000L).build();
+
+    Exporter exporter = Exporter.builder().tonDatabaseRootPath(TON_DB_ROOT_PATH).build();
+
+    Block block = exporter.getBlock(blockId);
+    log.info("block {}", block);
   }
 
   @Test

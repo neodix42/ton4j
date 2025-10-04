@@ -2,6 +2,7 @@ package org.ton.ton4j.exporter.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,7 +14,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 import org.ton.ton4j.tl.types.db.block.BlockInfo;
+import org.ton.ton4j.tl.types.db.lt.desc.DbLtDescKey;
+import org.ton.ton4j.tl.types.db.lt.desc.DbLtDescValue;
+import org.ton.ton4j.tl.types.db.lt.el.DbLtElKey;
+import org.ton.ton4j.tl.types.db.lt.el.DbLtElValue;
 
 /**
  * Reader for individual archive index databases (archive.XXXXX.index). Each archive package has a
@@ -182,6 +188,34 @@ public class ArchiveIndexReader implements Closeable {
 
   public BlockInfo getDbInfoByHash(byte[] hash) throws IOException {
     return BlockInfo.deserialize(indexDb.get(hash));
+  }
+
+  public BlockIdExt getBlockIdExtByDbLtDescKey(DbLtDescKey dbLtDescKey, long seqno)
+      throws IOException {
+
+    DbLtDescValue dbLtDescValue =
+        DbLtDescValue.deserialize(ByteBuffer.wrap(indexDb.get(dbLtDescKey.serialize())));
+
+    for (int i = dbLtDescValue.getFirstIdx(); i < dbLtDescValue.getLastIdx(); i++) {
+      DbLtElKey dbLtElKey =
+          DbLtElKey.builder()
+              .shard(dbLtDescKey.getShard())
+              .workchain(dbLtDescKey.getWorkchain())
+              .idx(i)
+              .build();
+      DbLtElValue dbLtElValue =
+          DbLtElValue.deserialize(ByteBuffer.wrap(indexDb.get(dbLtElKey.serialize())));
+      if (dbLtElValue.getId().getSeqno() == seqno) {
+        return BlockIdExt.builder()
+            .seqno(dbLtElValue.getId().getSeqno())
+            .workchain(dbLtElValue.getId().getWorkchain())
+            .shard(dbLtElValue.getId().getShard())
+            .rootHash(dbLtElValue.getId().rootHash)
+            .fileHash(dbLtElValue.getId().fileHash)
+            .build();
+      }
+    }
+    return null;
   }
 
   /**

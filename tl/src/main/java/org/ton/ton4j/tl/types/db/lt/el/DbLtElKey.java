@@ -16,29 +16,27 @@ import org.ton.ton4j.tl.types.db.lt.Key;
  */
 @Builder
 @Data
-public class ElKey extends Key {
-
+public class DbLtElKey extends Key {
+  int magic;
   int workchain;
   long shard;
   int idx;
 
-  public static ElKey deserialize(ByteBuffer buffer) {
+  public static DbLtElKey deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
+    int magic = buffer.getInt();
     int workchain = buffer.getInt();
     long shard = buffer.getLong();
     int idx = buffer.getInt();
-    
-    return ElKey.builder()
-        .workchain(workchain)
-        .shard(shard)
-        .idx(idx)
-        .build();
+
+    return DbLtElKey.builder().magic(magic).workchain(workchain).shard(shard).idx(idx).build();
   }
 
   @Override
   public byte[] serialize() {
-    ByteBuffer buffer = ByteBuffer.allocate(4 + 8 + 4);
+    ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + 8 + 4);
     buffer.order(ByteOrder.LITTLE_ENDIAN);
+    buffer.putInt(-1523442974);
     buffer.putInt(workchain);
     buffer.putLong(shard);
     buffer.putInt(idx);

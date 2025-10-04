@@ -29,8 +29,10 @@ import org.ton.ton4j.tl.types.db.block.BlockInfo;
 import org.ton.ton4j.tl.types.db.blockdb.key.BlockDbValueKey;
 import org.ton.ton4j.tl.types.db.filedb.key.BlockFileKey;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
+import org.ton.ton4j.tl.types.db.lt.desc.DbLtDescKey;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockId;
 import org.ton.ton4j.tlb.BlockIdExt;
 import org.ton.ton4j.tlb.adapters.*;
 import org.ton.ton4j.utils.Utils;
@@ -1170,17 +1172,17 @@ public class Exporter {
             .build();
 
     BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExtTl).build();
-    log.info("key hash {}", blockFileKey.getKeyHash());
+    //    log.info("key hash {}", blockFileKey.getKeyHash());
     int archiveIndex =
         dbReader
             .getGlobalIndexDbReader()
             .getArchiveIndexBySeqno(blockIdExt.getWorkchain(), blockIdExt.getSeqno());
-    log.info("archive index {}", archiveIndex);
+    //    log.info("archive index {}", archiveIndex);
     long offset;
     try (ArchiveIndexReader archiveIndexReader =
         new ArchiveIndexReader(dbReader.getDbRootPath(), archiveIndex)) {
       offset = archiveIndexReader.getOffsetByHash(blockFileKey.getKeyHash());
-      log.info("found offset: {}", offset);
+      //      log.info("found offset: {}", offset);
 
       long mcSeqno;
       if (blockIdExt.getWorkchain() == -1) {
@@ -1190,7 +1192,7 @@ public class Exporter {
         BlockInfo blockInfo = archiveIndexReader.getDbInfoByHash(key.getKeyHash());
         mcSeqno = blockInfo.getMasterRefSeqno();
       }
-      log.info("found mcSeqno: {}", mcSeqno);
+      //      log.info("found mcSeqno: {}", mcSeqno);
       String packFilename =
           archiveIndexReader.getExactPackFilename(
               archiveIndex,
@@ -1198,7 +1200,55 @@ public class Exporter {
               blockIdExt.getWorkchain(),
               blockIdExt.shard,
               mcSeqno);
-      log.info("found pack filename: {}", packFilename);
+      //      log.info("found pack filename: {}", packFilename);
+      try (PackageReader packageReader = new PackageReader(packFilename)) {
+        PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
+        return packageEntry.getBlock();
+      }
+    }
+  }
+
+  public Block getBlock(BlockId blockId) throws IOException {
+
+    DbLtDescKey keyHash =
+        DbLtDescKey.builder().workchain(blockId.getWorkchain()).shard(blockId.shard).build();
+
+    int archiveIndex =
+        dbReader
+            .getGlobalIndexDbReader()
+            .getArchiveIndexBySeqno(blockId.getWorkchain(), blockId.getSeqno());
+    //    log.info("archive index {}", archiveIndex);
+
+    try (ArchiveIndexReader archiveIndexReader =
+        new ArchiveIndexReader(dbReader.getDbRootPath(), archiveIndex)) {
+
+      // getting blockExtId
+      org.ton.ton4j.tl.types.db.block.BlockIdExt blockIdExt =
+          archiveIndexReader.getBlockIdExtByDbLtDescKey(keyHash, blockId.getSeqno());
+
+      // mcSeqno
+      long mcSeqno;
+      if (blockIdExt.getWorkchain() == -1) {
+        mcSeqno = blockIdExt.getSeqno();
+      } else {
+        BlockDbValueKey key = BlockDbValueKey.builder().blockIdExt(blockIdExt).build();
+        BlockInfo blockInfo = archiveIndexReader.getDbInfoByHash(key.getKeyHash());
+        mcSeqno = blockInfo.getMasterRefSeqno();
+      }
+
+      // offset
+      BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
+      long offset = archiveIndexReader.getOffsetByHash(blockFileKey.getKeyHash());
+      //      log.info("found mcSeqno: {}", mcSeqno);
+
+      String packFilename =
+          archiveIndexReader.getExactPackFilename(
+              archiveIndex,
+              blockIdExt.getSeqno(),
+              blockIdExt.getWorkchain(),
+              blockIdExt.getShard(),
+              mcSeqno);
+      //      log.info("found pack filename: {}", packFilename);
       try (PackageReader packageReader = new PackageReader(packFilename)) {
         PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
         return packageEntry.getBlock();

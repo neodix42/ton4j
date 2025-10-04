@@ -1,6 +1,7 @@
 package org.ton.ton4j.exporter.reader;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,10 @@ import org.ton.ton4j.tl.types.db.blockdb.key.BlockDbValueKey;
 import org.ton.ton4j.tl.types.db.filedb.key.BlockFileKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexKey;
 import org.ton.ton4j.tl.types.db.files.GlobalIndexValue;
+import org.ton.ton4j.tl.types.db.lt.desc.DbLtDescKey;
+import org.ton.ton4j.tl.types.db.lt.desc.DbLtDescValue;
+import org.ton.ton4j.tl.types.db.lt.el.DbLtElKey;
+import org.ton.ton4j.tl.types.db.lt.el.DbLtElValue;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.utils.Utils;
 
@@ -80,7 +85,7 @@ public class TestGlobalIndexDbReader {
   }
 
   @Test
-  public void testGetNonMasterchainBlock() throws IOException {
+  public void testGetNonMasterchainBlockByBlockIdExt() throws IOException {
     //    int mcSeqno = 234048;
 
     BlockFileKey blockFileKey = BlockFileKey.builder().blockIdExt(blockIdExt).build();
@@ -119,7 +124,7 @@ public class TestGlobalIndexDbReader {
   }
 
   @Test
-  public void testGetMasterchainBlock() throws IOException {
+  public void testGetMasterchainBlockByBlockIdExt() throws IOException {
 
     BlockFileKey keyHash = BlockFileKey.builder().blockIdExt(blockIdExtMc).build();
     log.info("keyHash: {}", keyHash.getKeyHash());
@@ -150,6 +155,47 @@ public class TestGlobalIndexDbReader {
         PackageReader.PackageEntry packageEntry = packageReader.getEntryAt(offset);
         Block block = packageEntry.getBlock();
         log.info("block: {}", block);
+      }
+    }
+  }
+
+  @Test
+  public void testGetMasterchainBlockByBlockId() throws IOException {
+
+    DbLtDescKey keyHash =
+        DbLtDescKey.builder()
+            .workchain(blockIdExtMc.getWorkchain())
+            .shard(blockIdExtMc.getShard())
+            .build();
+    log.info("keyHash: {}", keyHash.getKeyHash());
+
+    int archiveIndex;
+    try (GlobalIndexDbReader reader = new GlobalIndexDbReader(TON_DB_ROOT_PATH)) {
+      archiveIndex =
+          reader.getArchiveIndexBySeqno(blockIdExtMc.getWorkchain(), blockIdExtMc.getSeqno());
+      log.info("found archiveIndex: {}", archiveIndex);
+    }
+
+    long offset;
+    try (ArchiveIndexReader archiveIndexReader =
+        new ArchiveIndexReader(TON_DB_ROOT_PATH, archiveIndex)) {
+      //      byte[] value = archiveIndexReader.getIndexDb().get(keyHash.getKeyHashAsBytes());
+      //      value = archiveIndexReader.getIndexDb().get(keyHash.getKeyHash().getBytes());
+      byte[] value = archiveIndexReader.getIndexDb().get(keyHash.serialize());
+      log.info("value: {}", Utils.bytesToHex(value));
+      DbLtDescValue dbLtDescValue = DbLtDescValue.deserialize(ByteBuffer.wrap(value));
+      log.info("dbLtDescValue: {}", dbLtDescValue);
+      for (int i = dbLtDescValue.getFirstIdx(); i < dbLtDescValue.getLastIdx(); i++) {
+        DbLtElKey dbLtElKey =
+            DbLtElKey.builder()
+                .shard(blockIdExtMc.getShard())
+                .workchain(blockIdExtMc.getWorkchain())
+                .idx(i)
+                .build();
+        value = archiveIndexReader.getIndexDb().get(dbLtElKey.serialize());
+        log.info("value: {}", Utils.bytesToHex(value));
+        DbLtElValue dbLtElValue = DbLtElValue.deserialize(ByteBuffer.wrap(value));
+        log.info("dbLtElValue: {}", dbLtElValue);
       }
     }
   }

@@ -13,8 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ton.ton4j.cell.Cell;
-import org.ton.ton4j.exporter.types.BlockId;
 import org.ton.ton4j.tlb.Block;
+import org.ton.ton4j.tlb.BlockId;
 import org.ton.ton4j.tlb.BlockIdExt;
 import org.ton.ton4j.utils.Utils;
 
@@ -141,14 +141,13 @@ public class TempPackageIndexReader implements Closeable {
 
     for (Map.Entry<Long, Long> kv : mappings.entrySet()) {
       //      log.info("{} {}", kv.getKey(), kv.getValue());
-      Object entryObj = packageReader.getEntryAt(kv.getKey());
-      if (!(entryObj instanceof PackageReader.PackageEntry)) {
+      PackageReader.PackageEntry entryObj = packageReader.getEntryAt(kv.getKey());
+      if (entryObj == null) {
         continue;
       }
-      PackageReader.PackageEntry packageEntry = (PackageReader.PackageEntry) entryObj;
-      if (packageEntry.getFilename().startsWith("block_")) {
+      if (entryObj.getFilename().startsWith("block_")) {
         //        log.info("Found block {}", packageEntry.getFilename());
-        Block block = packageEntry.getBlock();
+        Block block = entryObj.getBlock();
         blocks.put(
             BlockId.builder()
                 .workchain(block.getBlockInfo().getShard().getWorkchain())
