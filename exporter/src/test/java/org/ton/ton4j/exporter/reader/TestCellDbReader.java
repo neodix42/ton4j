@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
@@ -74,7 +75,7 @@ public class TestCellDbReader {
     //    ShardStateUnsplit shardStateUnsplit =
     //        ShardStateUnsplit.deserializeWithoutRefs(
     //            CellSlice.beginParse(Cell.fromBytesUnlimited(rawShardStateUnsplit)));
-    rawShardStateUnsplit[4] = 2;
+    //    rawShardStateUnsplit[4] = 2; // limit by first 2 refs only
     Set<String> visited = new HashSet<>();
     Map<String, Cell> cellHash = new HashMap<>();
     Cell c = parseCell(cellDb, ByteBuffer.wrap(rawShardStateUnsplit), visited, cellHash);
@@ -82,13 +83,49 @@ public class TestCellDbReader {
 
     ShardStateUnsplit shardStateUnsplitWithoutRefs =
         ShardStateUnsplit.deserializeWithoutRefs(CellSlice.beginParse(c));
+    log.info("deserialized shardStateUnsplitWithoutRefs");
     log.info("shardStateUnsplitWithoutRefs: {}", shardStateUnsplitWithoutRefs);
 
     log.info("visited: {}", visited.size());
 
-    ShardStateUnsplit shardStateUnsplitWithRefs =
-        ShardStateUnsplit.deserialize(CellSlice.beginParse(c));
-    log.info("shardStateUnsplitWithRefs: {}", shardStateUnsplitWithRefs);
+    ShardStateUnsplit shardStateUnsplitWith2Refs =
+        ShardStateUnsplit.deserializeWith2RefsOnly(CellSlice.beginParse(c));
+    log.info("deserialized shardStateUnsplitWith2Refs");
+    //    log.info("shardStateUnsplitWith2Refs: {}", shardStateUnsplitWith2Refs);
+    //    log.info(
+    //        "accounts {}",
+    //        shardStateUnsplitWith2Refs.getShardAccounts().getShardAccountsAsList().size());
+    log.info(
+        "ShardAccount balance: {}",
+        Utils.formatNanoValue(
+            shardStateUnsplitWith2Refs
+                .getShardAccounts()
+                .getShardAccountByAddress(
+                    Address.of(
+                        "-1:0000000000000000000000000000000000000000000000000000000000000000"))
+                .getBalance()));
+
+    log.info(
+        "ShardAccount balance: {}",
+        Utils.formatNanoValue(
+            shardStateUnsplitWith2Refs
+                .getShardAccounts()
+                .getShardAccountByAddress(
+                    Address.of(
+                        "-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"))
+                .getBalance()));
+    //    for (ShardAccount shardAccount :
+    //        shardStateUnsplitWith2Refs.getShardAccounts().getShardAccountsAsList()) {
+    //      log.info(
+    //          "acc {}, balance {}",
+    //          shardAccount.getAccount().getAddress().toAddress().toRaw(),
+    //          Utils.formatNanoValue(shardAccount.getBalance()));
+    //    }
+
+    // too slow, too big
+    //    ShardStateUnsplit shardStateUnsplit =
+    // ShardStateUnsplit.deserialize(CellSlice.beginParse(c));
+    //    log.info("shardStateUnsplit: {}", shardStateUnsplit);
 
     cellDb.close();
   }

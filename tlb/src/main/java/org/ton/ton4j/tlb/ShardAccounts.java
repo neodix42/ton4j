@@ -8,10 +8,11 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
+import org.ton.ton4j.address.Address;
 import org.ton.ton4j.cell.*;
 
 /**
- *
+ * The key here is the account address
  *
  * <pre>
  * _ (HashmapAugE 256 ShardAccount DepthBalanceInfo) = ShardAccounts;
@@ -70,5 +71,10 @@ public class ShardAccounts {
       shardAccounts.add((ShardAccount) entry.getValue().getValue());
     }
     return shardAccounts;
+  }
+
+  public ShardAccount getShardAccountByAddress(Address address) {
+    ValueExtra valueExtra = this.shardAccounts.elements.get(address.toBigInteger());
+    return (ShardAccount) valueExtra.getValue();
   }
 }
