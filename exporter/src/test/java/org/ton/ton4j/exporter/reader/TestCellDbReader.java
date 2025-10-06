@@ -13,7 +13,7 @@ import org.junit.Test;
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellSlice;
 import org.ton.ton4j.tl.types.db.block.BlockIdExt;
-import org.ton.ton4j.tl.types.db.celldb.Value;
+import org.ton.ton4j.tl.types.db.celldb.CellDbValue;
 import org.ton.ton4j.tlb.ShardStateUnsplit;
 import org.ton.ton4j.utils.Utils;
 
@@ -31,7 +31,7 @@ public class TestCellDbReader {
           String s = new String(key);
           if (s.startsWith("desc")) {
             // meta data
-            log.info("block hash: {}, value: {}", s.substring(4), Value.deserialize(value));
+            log.info("block hash: {}, value: {}", s.substring(4), CellDbValue.deserialize(value));
           } else if (s.startsWith("desczero")) {
             log.info("empty");
           } else {
@@ -47,26 +47,22 @@ public class TestCellDbReader {
     cellDb.close();
   }
 
-  /**
-   * WIP
-   *
-   * @throws IOException
-   */
+  /** WIP */
   @Test
   public void testCellDbReaderByKeyLastBlockAccountBalance() throws IOException {
     RocksDbWrapper cellDb = new RocksDbWrapper(TEST_DB_PATH + "/celldb");
     StateDbReader stateReader = new StateDbReader(TEST_DB_PATH);
     BlockIdExt last = stateReader.getLastBlockIdExt();
     log.info("last: {}", last);
-    byte[] key = Utils.sha256AsArray(last.serialize());
+    byte[] key = Utils.sha256AsArray(last.serializeBoxed());
     // construct key = "desc+base64(serialized(last))"
     String fullKey = "desc" + Utils.bytesToBase64(key);
     byte[] value = cellDb.get(fullKey.getBytes());
     log.info("key: {}, value: {}", Utils.bytesToHex(key), Utils.bytesToHex(value));
 
-    Value shardState = Value.deserialize(ByteBuffer.wrap(value));
-    log.info("shardStateValue: {}", shardState);
-    byte[] shardStateRootHash = shardState.rootHash;
+    CellDbValue cellDbValue = CellDbValue.deserialize(ByteBuffer.wrap(value));
+    log.info("cellDbValue: {}", cellDbValue);
+    byte[] shardStateRootHash = cellDbValue.rootHash;
 
     // find full cell containing ShardStateUnsplit by shardStateRootHash
     byte[] rawShardStateUnsplit = cellDb.get(shardStateRootHash);
@@ -125,7 +121,7 @@ public class TestCellDbReader {
 
         // Test 2: Get empty entry
         log.info("=== Test 2: Getting Empty Entry ===");
-        Value emptyEntry = reader.getEmptyEntry();
+        CellDbValue emptyEntry = reader.getEmptyEntry();
         if (emptyEntry != null) {
           log.info(
               "Empty entry found: prev={}, next={}, rootHash={}",
@@ -161,19 +157,19 @@ public class TestCellDbReader {
 
         // Test 4: Get all cell entries (metadata)
         log.info("=== Test 4: Getting All Cell Entries (Metadata) ===");
-        Map<String, Value> cellEntries = reader.getAllCellEntries();
+        Map<String, CellDbValue> cellEntries = reader.getAllCellEntries();
         log.info("Found {} cell metadata entries", cellEntries.size());
 
         // Show first few entries as examples
         count = 0;
-        for (Map.Entry<String, Value> entry : cellEntries.entrySet()) {
+        for (Map.Entry<String, CellDbValue> entry : cellEntries.entrySet()) {
           if (count < 5) {
-            Value value = entry.getValue();
+            CellDbValue cellDbValue = entry.getValue();
             log.info("Cell entry {}: keyHash={}", count + 1, entry.getKey());
-            if (value.getBlockId() != null) {
-              log.info("  -> value : {}", value.getBlockId());
+            if (cellDbValue.getBlockId() != null) {
+              log.info("  -> value : {}", cellDbValue.getBlockId());
             }
-            log.info("  -> RootHash: {}", value.getRootHash());
+            log.info("  -> RootHash: {}", cellDbValue.getRootHash());
           }
           count++;
           if (count >= 5) break;
@@ -238,28 +234,29 @@ public class TestCellDbReader {
       try (CellDbReader reader = new CellDbReader(TEST_DB_PATH)) {
 
         // Test looking up a specific block (if we have any entries)
-        Map<String, Value> allEntries = reader.getAllCellEntries();
+        Map<String, CellDbValue> allEntries = reader.getAllCellEntries();
 
         if (!allEntries.isEmpty()) {
           // Get the first entry to test specific lookup
-          Map.Entry<String, Value> firstEntry = allEntries.entrySet().iterator().next();
+          Map.Entry<String, CellDbValue> firstEntry = allEntries.entrySet().iterator().next();
           String keyHash = firstEntry.getKey();
-          Value originalValue = firstEntry.getValue();
+          CellDbValue originalCellDbValue = firstEntry.getValue();
 
           log.info("Testing specific lookup for keyHash: {}", keyHash);
 
           // Test getCellEntryByHash
-          Value lookedUpValue = reader.getCellEntryByHash(keyHash);
-          if (lookedUpValue != null) {
+          CellDbValue lookedUpCellDbValue = reader.getCellEntryByHash(keyHash);
+          if (lookedUpCellDbValue != null) {
             log.info("Successfully looked up entry by hash");
 
             // Verify the values match
-            if (originalValue.getBlockId() != null && lookedUpValue.getBlockId() != null) {
+            if (originalCellDbValue.getBlockId() != null
+                && lookedUpCellDbValue.getBlockId() != null) {
               boolean matches =
-                  originalValue.getBlockId().getWorkchain()
-                          == lookedUpValue.getBlockId().getWorkchain()
-                      && originalValue.getBlockId().getSeqno()
-                          == lookedUpValue.getBlockId().getSeqno();
+                  originalCellDbValue.getBlockId().getWorkchain()
+                          == lookedUpCellDbValue.getBlockId().getWorkchain()
+                      && originalCellDbValue.getBlockId().getSeqno()
+                          == lookedUpCellDbValue.getBlockId().getSeqno();
               log.info("Entry lookup verification: {}", matches ? "PASSED" : "FAILED");
             }
           } else {
@@ -267,8 +264,8 @@ public class TestCellDbReader {
           }
 
           // Test getCellEntry by BlockId (if we have a valid BlockId)
-          if (originalValue.getBlockId() != null) {
-            Value blockLookup = reader.getCellEntry(originalValue.getBlockId());
+          if (originalCellDbValue.getBlockId() != null) {
+            CellDbValue blockLookup = reader.getCellEntry(originalCellDbValue.getBlockId());
             if (blockLookup != null) {
               log.info("Successfully looked up entry by BlockId");
             } else {

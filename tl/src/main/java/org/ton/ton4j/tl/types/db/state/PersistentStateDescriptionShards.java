@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
+import org.ton.ton4j.tl.types.db.block.BlockIdExt;
 
 /**
  *
@@ -38,7 +38,6 @@ public class PersistentStateDescriptionShards implements Serializable {
   }
 
   public byte[] serialize() {
-    // Calculate buffer size
     int size = 8; // 4 bytes for vector size
     for (BlockIdExt block : shardBlocks) {
       size += block.serialize().length;

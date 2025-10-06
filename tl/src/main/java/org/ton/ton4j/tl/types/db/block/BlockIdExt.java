@@ -64,6 +64,19 @@ public class BlockIdExt {
     return buffer.array();
   }
 
+  /** Serializes this BlockIdExt to a ByteBuffer. */
+  public byte[] serializeBoxed() {
+    ByteBuffer buffer = ByteBuffer.allocate(4 + SERIALIZED_SIZE);
+    buffer.order(ByteOrder.LITTLE_ENDIAN);
+    buffer.putInt(1733487480);
+    buffer.putInt(workchain);
+    buffer.putLong(shard);
+    buffer.putInt(seqno);
+    buffer.put(rootHash);
+    buffer.put(fileHash);
+    return buffer.array();
+  }
+
   public String toFilename() {
     return String.format(
         "(%d,%x,%d):%s:%s",

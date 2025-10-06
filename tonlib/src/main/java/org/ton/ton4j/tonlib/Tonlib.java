@@ -33,6 +33,7 @@ import org.ton.ton4j.tlb.print.TransactionPrintInfo;
 import org.ton.ton4j.tonlib.queries.*;
 import org.ton.ton4j.tonlib.types.*;
 import org.ton.ton4j.tonlib.types.BlockHeader;
+import org.ton.ton4j.tonlib.types.BlockId;
 import org.ton.ton4j.tonlib.types.BlockIdExt;
 import org.ton.ton4j.tonlib.types.globalconfig.*;
 import org.ton.ton4j.utils.Utils;

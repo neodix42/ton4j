@@ -7,7 +7,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.ton.ton4j.exporter.types.CellType;
-import org.ton.ton4j.tl.types.db.celldb.Value;
+import org.ton.ton4j.tl.types.db.celldb.CellDbValue;
 
 @Slf4j
 public class TestCellTreeTraversal {
@@ -25,7 +25,7 @@ public class TestCellTreeTraversal {
 
         // Test 1: Get basic statistics
         log.info("=== Test 1: Basic CellDB Statistics ===");
-        Map<String, Value> metadata = reader.getAllCellEntries();
+        Map<String, CellDbValue> metadata = reader.getAllCellEntries();
         Set<String> cellHashes = reader.getAllCellHashes();
 
         log.info("Metadata entries: {}", metadata.size());
@@ -37,11 +37,11 @@ public class TestCellTreeTraversal {
         // Test 2: Analyze a few root cells and their trees
         log.info("=== Test 2: Cell Tree Analysis ===");
         int count = 0;
-        for (Map.Entry<String, Value> entry : metadata.entrySet()) {
+        for (Map.Entry<String, CellDbValue> entry : metadata.entrySet()) {
           if (count >= 3) break; // Analyze only first 3 entries
 
-          Value value = entry.getValue();
-          String rootHash = value.getRootHash();
+          CellDbValue cellDbValue = entry.getValue();
+          String rootHash = cellDbValue.getRootHash();
 
           if (rootHash != null
               && !rootHash.equals(

@@ -18,7 +18,7 @@ import org.ton.ton4j.utils.Utils;
  */
 @Builder
 @Data
-public class Value implements Serializable {
+public class CellDbValue implements Serializable {
   int magic;
   BlockIdExt blockId;
   public byte[] prev; // int256
@@ -38,7 +38,7 @@ public class Value implements Serializable {
     return Utils.bytesToHex(rootHash);
   }
 
-  public static Value deserialize(ByteBuffer buffer) {
+  public static CellDbValue deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
     int magic = buffer.getInt();
     BlockIdExt blockId = BlockIdExt.deserialize(buffer);
@@ -47,7 +47,7 @@ public class Value implements Serializable {
     byte[] next = Utils.read(buffer, 32);
     byte[] rootHash = Utils.read(buffer, 32);
 
-    return Value.builder()
+    return CellDbValue.builder()
         .magic(magic)
         .blockId(blockId)
         .prev(prev)
@@ -67,7 +67,7 @@ public class Value implements Serializable {
     return buffer.array();
   }
 
-  public static Value deserialize(byte[] data) {
+  public static CellDbValue deserialize(byte[] data) {
     return deserialize(ByteBuffer.wrap(data));
   }
 }

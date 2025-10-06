@@ -17,22 +17,20 @@ import org.ton.ton4j.utils.Utils;
  */
 @Builder
 @Data
-public class Value implements Serializable {
+public class CellDbKeyValue implements Serializable {
 
-  public byte[] hash;  // int256
+  public byte[] hash; // int256
 
   // Convenience getter
   public String getHash() {
     return Utils.bytesToHex(hash);
   }
 
-  public static Value deserialize(ByteBuffer buffer) {
+  public static CellDbKeyValue deserialize(ByteBuffer buffer) {
     buffer.order(ByteOrder.LITTLE_ENDIAN);
     byte[] hash = Utils.read(buffer, 32);
-    
-    return Value.builder()
-        .hash(hash)
-        .build();
+
+    return CellDbKeyValue.builder().hash(hash).build();
   }
 
   public byte[] serialize() {

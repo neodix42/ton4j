@@ -29,6 +29,7 @@ import org.ton.ton4j.tl.liteserver.responses.AccountState;
 import org.ton.ton4j.tl.liteserver.responses.AllShardsInfo;
 import org.ton.ton4j.tl.liteserver.responses.BlockData;
 import org.ton.ton4j.tl.liteserver.responses.BlockHeader;
+import org.ton.ton4j.tl.liteserver.responses.BlockId;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
 import org.ton.ton4j.tlb.*;
 import org.ton.ton4j.tlb.JettonBridgeParamsV1;

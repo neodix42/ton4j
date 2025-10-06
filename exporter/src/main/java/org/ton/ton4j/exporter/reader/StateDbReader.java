@@ -305,43 +305,6 @@ public class StateDbReader implements Closeable {
   }
 
   /**
-   * Gets all state files of a specific type.
-   *
-   * @param type The state file type to filter by
-   * @return List of state file information matching the type
-   */
-  public List<StateFileInfo> getStateFilesByType(StateFileType type) {
-    return stateFiles.values().stream()
-        .filter(info -> info.type == type)
-        .collect(Collectors.toList());
-  }
-
-  /**
-   * Gets all state files for a specific workchain.
-   *
-   * @param workchain The workchain ID
-   * @return List of state file information for the workchain
-   */
-  public List<StateFileInfo> getStateFilesByWorkchain(int workchain) {
-    return stateFiles.values().stream()
-        .filter(info -> info.workchain == workchain)
-        .collect(Collectors.toList());
-  }
-
-  /**
-   * Gets all state files for a specific sequence number range.
-   *
-   * @param minSeqno Minimum sequence number (inclusive)
-   * @param maxSeqno Maximum sequence number (inclusive)
-   * @return List of state file information in the sequence number range
-   */
-  public List<StateFileInfo> getStateFilesBySeqnoRange(long minSeqno, long maxSeqno) {
-    return stateFiles.values().stream()
-        .filter(info -> info.seqno >= minSeqno && info.seqno <= maxSeqno)
-        .collect(Collectors.toList());
-  }
-
-  /**
    * Checks if a shard string matches a shard ID. This is a simplified implementation - in practice,
    * shard matching is more complex.
    *
@@ -372,7 +335,7 @@ public class StateDbReader implements Closeable {
         .build();
   }
 
-  public PersistentStateDescriptionShards getPersistentStateDescriptionsList(int masterSeqno)
+  public PersistentStateDescriptionShards getPersistentStateDescriptionsShards(int masterSeqno)
       throws IOException {
     byte[] keyHash =
         Utils.sha256AsArray(
@@ -384,14 +347,9 @@ public class StateDbReader implements Closeable {
     return PersistentStateDescriptionShards.deserialize(ByteBuffer.wrap(value));
   }
 
-  public GcBlockId getBlockIdExt() throws IOException {
-    byte[] value = stateRocksDb.get(SHARD_CLIENT_KEY_HASH);
-    return GcBlockId.deserialize(ByteBuffer.wrap(value));
-  }
-
-  public GcBlockId getInitBlockId() throws IOException {
+  public InitBlockId getInitBlockId() throws IOException {
     byte[] value = stateRocksDb.get(INIT_BLOCK_KEY_HASH);
-    return GcBlockId.deserialize(ByteBuffer.wrap(value));
+    return InitBlockId.deserialize(ByteBuffer.wrap(value));
   }
 
   public GcBlockId getGcBlockId() throws IOException {

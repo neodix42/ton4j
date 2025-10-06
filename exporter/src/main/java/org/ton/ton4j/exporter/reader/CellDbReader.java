@@ -19,7 +19,7 @@ import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.types.*;
 import org.ton.ton4j.exporter.types.CellType;
 import org.ton.ton4j.tl.liteserver.responses.BlockIdExt;
-import org.ton.ton4j.tl.types.db.celldb.Value;
+import org.ton.ton4j.tl.types.db.celldb.CellDbValue;
 import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.ShardAccount;
 import org.ton.ton4j.tlb.ShardAccounts;
@@ -47,8 +47,8 @@ public class CellDbReader implements Closeable {
   private RocksDbWrapper cellDb;
 
   // Cache for parsed entries
-  private final Map<String, Value> entryCache = new HashMap<>();
-  private Value emptyEntry;
+  private final Map<String, CellDbValue> entryCache = new HashMap<>();
+  private CellDbValue emptyEntry;
 
   /**
    * Creates a new CellDbReader.
@@ -93,12 +93,12 @@ public class CellDbReader implements Closeable {
           buffer.getInt();
         }
 
-        emptyEntry = Value.deserialize(buffer);
+        emptyEntry = CellDbValue.deserialize(buffer);
       } else {
         log.warn("Empty entry not found in CellDB");
         // Create a placeholder empty entry
         emptyEntry =
-            Value.builder()
+            CellDbValue.builder()
                 .blockId(getEmptyBlockId())
                 .prev(new byte[32])
                 .next(new byte[32])
@@ -116,8 +116,8 @@ public class CellDbReader implements Closeable {
    *
    * @return Map of key hash to CellDB Value
    */
-  public Map<String, Value> getAllCellEntries() {
-    Map<String, Value> cellEntries = new HashMap<>();
+  public Map<String, CellDbValue> getAllCellEntries() {
+    Map<String, CellDbValue> cellEntries = new HashMap<>();
 
     log.info("Reading all cell entries from CellDB...");
 
@@ -146,7 +146,7 @@ public class CellDbReader implements Closeable {
             }
             // db.celldb.value block_id:tonNode.blockIdExt prev:int256 next:int256 root_hash:int256
             // = db.celldb.Value;
-            Value cellValue = Value.deserialize(buffer);
+            CellDbValue cellCellDbValue = CellDbValue.deserialize(buffer);
 
             // Extract key hash from the key (remove "desc" prefix for regular entries)
             String keyHash;
@@ -165,8 +165,8 @@ public class CellDbReader implements Closeable {
               }
             }
 
-            cellEntries.put(keyHash, cellValue);
-            entryCache.put(keyHash, cellValue);
+            cellEntries.put(keyHash, cellCellDbValue);
+            entryCache.put(keyHash, cellCellDbValue);
             validEntries.incrementAndGet();
 
           } catch (Exception e) {
@@ -190,7 +190,7 @@ public class CellDbReader implements Closeable {
    * @param keyHash The key hash (hex string)
    * @return The cell entry, or null if not found
    */
-  public Value getCellEntryByHash(String keyHash) {
+  public CellDbValue getCellEntryByHash(String keyHash) {
     if (entryCache.containsKey(keyHash)) {
       return entryCache.get(keyHash);
     }
@@ -208,9 +208,9 @@ public class CellDbReader implements Closeable {
           buffer.getInt();
         }
 
-        Value cellValue = Value.deserialize(buffer);
-        entryCache.put(keyHash, cellValue);
-        return cellValue;
+        CellDbValue cellCellDbValue = CellDbValue.deserialize(buffer);
+        entryCache.put(keyHash, cellCellDbValue);
+        return cellCellDbValue;
       }
     } catch (Exception e) {
       log.debug("Error getting cell entry by hash {}: {}", keyHash, e.getMessage());
@@ -225,7 +225,7 @@ public class CellDbReader implements Closeable {
    * @param blockId The block ID
    * @return The cell entry, or null if not found
    */
-  public Value getCellEntry(BlockIdExt blockId) {
+  public CellDbValue getCellEntry(BlockIdExt blockId) {
     if (blockId == null) {
       return null;
     }
@@ -430,7 +430,7 @@ public class CellDbReader implements Closeable {
    *
    * @return The empty entry
    */
-  public Value getEmptyEntry() {
+  public CellDbValue getEmptyEntry() {
     return emptyEntry;
   }
 
@@ -631,7 +631,7 @@ public class CellDbReader implements Closeable {
    * @return The cell data, or null if not found
    * @throws IOException If an I/O error occurs
    */
-  public byte[] getCellDataForEntry(Value entry) throws IOException {
+  public byte[] getCellDataForEntry(CellDbValue entry) throws IOException {
     if (entry == null || entry.getRootHash() == null) {
       return null;
     }
@@ -647,7 +647,7 @@ public class CellDbReader implements Closeable {
   public CellDataAnalysis analyzeCellDataRelationships() {
     log.info("Analyzing CellDB metadata -> cell data relationships...");
 
-    Map<String, Value> metadata = getAllCellEntries();
+    Map<String, CellDbValue> metadata = getAllCellEntries();
     Set<String> cellHashes = getAllCellHashes();
 
     int connectedEntries = 0;
@@ -657,7 +657,7 @@ public class CellDbReader implements Closeable {
     Set<String> referencedHashes = new HashSet<>();
 
     // Check metadata -> cell data connections
-    for (Value entry : metadata.values()) {
+    for (CellDbValue entry : metadata.values()) {
       if (entry.getRootHash() != null) {
         String rootHash = entry.getRootHash();
         referencedHashes.add(rootHash);
@@ -699,17 +699,17 @@ public class CellDbReader implements Closeable {
    */
   public Map<String, CellDataInfo> getDetailedCellDataInfo(int maxEntries) {
     Map<String, CellDataInfo> detailedInfo = new HashMap<>();
-    Map<String, Value> metadata = getAllCellEntries();
+    Map<String, CellDbValue> metadata = getAllCellEntries();
 
     int count = 0;
-    for (Map.Entry<String, Value> entry : metadata.entrySet()) {
+    for (Map.Entry<String, CellDbValue> entry : metadata.entrySet()) {
       if (maxEntries > 0 && count >= maxEntries) {
         break;
       }
 
       String keyHash = entry.getKey();
-      Value value = entry.getValue();
-      String rootHash = value.getRootHash();
+      CellDbValue cellDbValue = entry.getValue();
+      String rootHash = cellDbValue.getRootHash();
 
       try {
         byte[] cellData = readCellData(rootHash);
@@ -717,14 +717,14 @@ public class CellDbReader implements Closeable {
         int dataSize = hasData ? cellData.length : 0;
 
         CellDataInfo info =
-            new CellDataInfo(keyHash, rootHash, value.getBlockId(), hasData, dataSize);
+            new CellDataInfo(keyHash, rootHash, cellDbValue.getBlockId(), hasData, dataSize);
 
         detailedInfo.put(keyHash, info);
         count++;
 
       } catch (IOException e) {
         log.debug("Error reading cell data for {}: {}", rootHash, e.getMessage());
-        CellDataInfo info = new CellDataInfo(keyHash, rootHash, value.getBlockId(), false, 0);
+        CellDataInfo info = new CellDataInfo(keyHash, rootHash, cellDbValue.getBlockId(), false, 0);
         detailedInfo.put(keyHash, info);
       }
     }
@@ -742,7 +742,7 @@ public class CellDbReader implements Closeable {
     Map<String, Object> stats = new HashMap<>();
 
     try {
-      Map<String, Value> allEntries = getAllCellEntries();
+      Map<String, CellDbValue> allEntries = getAllCellEntries();
       Set<String> cellHashes = getAllCellHashes();
 
       stats.put("total_metadata_entries", allEntries.size());
@@ -756,7 +756,7 @@ public class CellDbReader implements Closeable {
 
       // Count entries by workchain
       Map<Integer, Integer> workchainCounts = new HashMap<>();
-      for (Value entry : allEntries.values()) {
+      for (CellDbValue entry : allEntries.values()) {
         if (entry.getBlockId() != null) {
           int workchain = entry.getBlockId().getWorkchain();
           workchainCounts.put(workchain, workchainCounts.getOrDefault(workchain, 0) + 1);
@@ -1224,14 +1224,14 @@ public class CellDbReader implements Closeable {
    */
   public Set<String> findStateRootHashes(int maxResults) {
     Set<String> stateRootHashes = new HashSet<>();
-    Map<String, Value> allEntries = getAllCellEntries();
+    Map<String, CellDbValue> allEntries = getAllCellEntries();
 
     log.info("Searching for shardState root hashes among {} metadata entries", allEntries.size());
 
     int processed = 0;
     int candidates = 0;
 
-    for (Value entry : allEntries.values()) {
+    for (CellDbValue entry : allEntries.values()) {
       if (maxResults > 0 && candidates >= maxResults) {
         break;
       }
