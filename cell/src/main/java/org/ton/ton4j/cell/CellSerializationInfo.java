@@ -27,7 +27,9 @@ public class CellSerializationInfo {
     if (refsNum > 4) {
       throw new Error("too many refs in cell");
     }
-    int dataOffset = 4 + 2; // originally 2, but we add 4 since parsing from cell db
+    int dataOffset =
+        4 + 2; // originally 2, but we add 4 since parsing from cell db and read previously flags
+    // (int)
     int dataLength = (d2 >> 1) + (d2 & 1);
     boolean dataWithBits = (d2 & 1) != 0;
     int refsOffset = dataOffset + dataLength;

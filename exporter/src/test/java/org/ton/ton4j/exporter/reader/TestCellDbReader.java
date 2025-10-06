@@ -34,31 +34,32 @@ public class TestCellDbReader {
             log.info("block hash: {}, value: {}", s.substring(4), CellDbValue.deserialize(value));
           } else if (s.startsWith("desczero")) {
             log.info("empty");
-          } else {
-            // raw cell
-            log.info(
-                "cell hash: {}, value (size {}): {}",
-                Utils.bytesToHex(key),
-                value.length,
-                Utils.bytesToHex(value));
-            // Cell cell = CellBuilder.beginCell().storeBytes(value).endCell();
           }
+          //          else {
+          //            // raw cell
+          //            log.info(
+          //                "cell hash: {}, value (size {}): {}",
+          //                Utils.bytesToHex(key),
+          //                value.length,
+          //                Utils.bytesToHex(value));
+          //            // Cell cell = CellBuilder.beginCell().storeBytes(value).endCell();
+          //          }
         });
     cellDb.close();
   }
 
   /** WIP */
   @Test
-  public void testCellDbReaderByKeyLastBlockAccountBalance() throws IOException {
+  public void testCellDbReaderGetAccountBalance() throws IOException {
     RocksDbWrapper cellDb = new RocksDbWrapper(TEST_DB_PATH + "/celldb");
     StateDbReader stateReader = new StateDbReader(TEST_DB_PATH);
-    BlockIdExt last = stateReader.getLastBlockIdExt();
-    log.info("last: {}", last);
-    byte[] key = Utils.sha256AsArray(last.serializeBoxed());
+    BlockIdExt blockIdExt = stateReader.getLastBlockIdExt();
+    log.info("last: {}", blockIdExt);
+    //    byte[] key = Utils.sha256AsArray(last.serializeBoxed());
     // construct key = "desc+base64(serialized(last))"
-    String fullKey = "desc" + Utils.bytesToBase64(key);
-    byte[] value = cellDb.get(fullKey.getBytes());
-    log.info("key: {}, value: {}", Utils.bytesToHex(key), Utils.bytesToHex(value));
+    String key = "desc" + Utils.bytesToBase64(Utils.sha256AsArray(blockIdExt.serializeBoxed()));
+    byte[] value = cellDb.get(key.getBytes());
+    log.info("key: {}, value: {}", key, Utils.bytesToHex(value));
 
     CellDbValue cellDbValue = CellDbValue.deserialize(ByteBuffer.wrap(value));
     log.info("cellDbValue: {}", cellDbValue);
@@ -66,7 +67,7 @@ public class TestCellDbReader {
 
     // find full cell containing ShardStateUnsplit by shardStateRootHash
     byte[] rawShardStateUnsplit = cellDb.get(shardStateRootHash);
-    log.info("rawShardStateUnsplit: {}", Utils.bytesToHex(rawShardStateUnsplit));
+    log.info("rawShardStateUnsplit: {}", Utils.bytesToHex(rawShardStateUnsplit)); // top level cell
 
     //    rawShardStateUnsplit = Utils.slice(rawShardStateUnsplit, 6, rawShardStateUnsplit.length -
     // 6);
@@ -79,28 +80,13 @@ public class TestCellDbReader {
     Cell c = parseCell(cellDb, ByteBuffer.wrap(rawShardStateUnsplit), visited, cellHash);
     log.info("c: {}", c);
 
-    ShardStateUnsplit shardStateUnsplit = ShardStateUnsplit.deserialize(CellSlice.beginParse(c));
+    //    ShardStateUnsplit shardStateUnsplit =
+    // ShardStateUnsplit.deserialize(CellSlice.beginParse(c));
+    ShardStateUnsplit shardStateUnsplit =
+        ShardStateUnsplit.deserializeWithoutRefs(CellSlice.beginParse(c));
 
     log.info("shardStateUnsplit: {}", shardStateUnsplit);
     log.info("visited: {}", visited.size());
-
-    //    ShardStateUnsplit shardStateUnsplit =
-    //        ShardStateUnsplit.deserializeWithoutRefs(CellSlice.beginParse(c));
-    //    log.info("shardStateUnsplit: {}", shardStateUnsplit);
-
-    //    ShardStateParser shardStateParser =
-    //        ShardStateParser.deserialize(ByteBuffer.wrap(rawShardStateUnsplit));
-    //    log.info("shardStateUnsplit: {}", shardStateParser);
-
-    //    byte[] ref0Hash = CellSlice.beginParse(c.getRefs().get(0)).loadSignedBytes();
-    //    byte[] valueOutMsgQueueInfo = cellDb.get(ref0Hash);
-    //    log.info("valueOutMsgQueueInfo: {}", Utils.bytesToHex(valueOutMsgQueueInfo));
-    //    OutMsgQueueInfo outMsgQueueInfo =
-    //        OutMsgQueueInfo.deserialize(ByteBuffer.wrap(valueOutMsgQueueInfo));
-
-    //    byte[] ref1Hash = CellSlice.beginParse(c.getRefs().get(1)).loadSignedBytes();
-    //    byte[] valueShardAccounts = cellDb.get(ref1Hash);
-    //    log.info("valueShardAccounts: {}", Utils.bytesToHex(valueShardAccounts));
 
     cellDb.close();
   }
