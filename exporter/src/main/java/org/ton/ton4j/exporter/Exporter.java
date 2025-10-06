@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.LoggerFactory;
-import org.ton.ton4j.address.Address;
 import org.ton.ton4j.bitstring.BitString;
 import org.ton.ton4j.cell.*;
 import org.ton.ton4j.exporter.reader.*;
@@ -30,7 +29,6 @@ import org.ton.ton4j.tl.types.db.blockdb.key.BlockDbValueKey;
 import org.ton.ton4j.tl.types.db.filedb.key.BlockFileKey;
 import org.ton.ton4j.tl.types.db.files.index.IndexValue;
 import org.ton.ton4j.tl.types.db.lt.desc.DbLtDescKey;
-import org.ton.ton4j.tlb.Account;
 import org.ton.ton4j.tlb.Block;
 import org.ton.ton4j.tlb.BlockId;
 import org.ton.ton4j.tlb.BlockIdExt;
@@ -1408,13 +1406,6 @@ public class Exporter {
       if (dbReader != null) {
         dbReader.close();
       }
-    }
-  }
-
-  // way to slow, will be reworked one day
-  private Account getAccountByAddress(Address address) throws IOException {
-    try (CellDbReader cellDbReader = new CellDbReader(tonDatabaseRootPath)) {
-      return cellDbReader.retrieveAccountByAddress(address).getAccount();
     }
   }
 }
