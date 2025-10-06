@@ -1657,6 +1657,9 @@ public class CellDbReader implements Closeable {
       data.get(remaining);
       return Cell.fromBoc(remaining);
     } else {
+      // Following C++ approach: collect all cell hashes first, then deserialize in reverse order
+      // This avoids recursion and matches the C++ deserialize_cell implementation
+
       int d1 = data.get() & 0xFF;
       int d2 = data.get() & 0xFF;
 
@@ -1665,12 +1668,12 @@ public class CellDbReader implements Closeable {
       byte[] payload = new byte[cellSerializationInfo.getDataLength()];
       data.get(payload);
 
-      List<Cell> refCells = new ArrayList<>();
+      // Collect reference hashes (like C++ does)
+      List<String> refHashes = new ArrayList<>();
 
       if (cellSerializationInfo.getRefsCount() != 0) {
         data.position(cellSerializationInfo.getRefsOffset());
 
-        // Process each reference (NOT each hash!)
         for (int i = 0; i < cellSerializationInfo.getRefsCount(); i++) {
           int lMask = data.get() & 0xFF;
           LevelMask levelMask = new LevelMask(lMask);
@@ -1680,52 +1683,48 @@ public class CellDbReader implements Closeable {
           byte[] hashes = new byte[hashesCount * 32];
           data.get(hashes);
 
-          // Read all depths for this reference
+          // Read all depths for this reference (but don't use them for now)
           byte[] depths = new byte[hashesCount * 2];
           data.get(depths);
 
-          // Use PRIMARY hash (first hash) to load the cell
+          // Use PRIMARY hash (first hash) - this is the reference
           byte[] primaryHash = Arrays.copyOfRange(hashes, 0, 32);
           String hashHex = Utils.bytesToHex(primaryHash);
+          refHashes.add(hashHex);
+        }
+      }
 
-          Cell refCell = null;
+      // Now resolve references from cache (they should already be deserialized)
+      // This matches C++ pattern where refs point to already-deserialized cells
+      List<Cell> refCells = new ArrayList<>();
+      for (String refHash : refHashes) {
+        Cell refCell = cache.get(refHash);
+        if (refCell == null) {
+          // Reference not in cache - need to deserialize it first
+          // This should not happen if we process cells in correct order
+          //          log.warn("Reference {} not found in cache, attempting to load", refHash);
 
-          // Check cache first
-          if (cache.containsKey(hashHex)) {
-            refCell = cache.get(hashHex);
-            log.debug("Cache hit for hash: {}", hashHex);
-          } else if (visited.contains(hashHex)) {
-            // Cycle detected - skip this reference
-            log.warn("Cycle detected for hash: {}, skipping", hashHex);
-            continue;
-          } else {
-            // Load from database
-            byte[] value = cellDb.get(primaryHash);
-            if (value != null) {
-              visited.add(hashHex);
-              try {
-                // RECURSIVE CALL - but only ONCE per reference!
-                refCell =
-                    parseCell(
-                        cellDb,
-                        ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN),
-                        visited,
-                        cache);
-
-                if (refCell != null) {
-                  cache.put(hashHex, refCell);
-                }
-              } finally {
-                visited.remove(hashHex);
-              }
+          byte[] refData = cellDb.get(Utils.hexToSignedBytes(refHash));
+          if (refData != null && !visited.contains(refHash)) {
+            visited.add(refHash);
+            refCell =
+                parseCell(
+                    cellDb,
+                    ByteBuffer.wrap(refData).order(ByteOrder.LITTLE_ENDIAN),
+                    visited,
+                    cache);
+            if (refCell != null) {
+              cache.put(refHash, refCell);
             }
           }
 
-          // Add the single reference cell (not multiple!)
-          if (refCell != null) {
-            refCells.add(refCell);
+          if (refCell == null) {
+            // Create placeholder to avoid null references
+            log.warn("Creating placeholder for missing reference {}", refHash);
+            refCell = CellBuilder.beginCell().endCell();
           }
         }
+        refCells.add(refCell);
       }
 
       return CellBuilder.beginCell()

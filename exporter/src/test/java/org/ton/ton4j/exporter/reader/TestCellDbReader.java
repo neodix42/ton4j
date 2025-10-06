@@ -78,15 +78,17 @@ public class TestCellDbReader {
     Set<String> visited = new HashSet<>();
     Map<String, Cell> cellHash = new HashMap<>();
     Cell c = parseCell(cellDb, ByteBuffer.wrap(rawShardStateUnsplit), visited, cellHash);
-    log.info("c: {}", c);
+    log.info("getMaxLevel: {}, getDepthLevels: {}", c.getMaxLevel(), c.getDepthLevels());
 
-    //    ShardStateUnsplit shardStateUnsplit =
-    // ShardStateUnsplit.deserialize(CellSlice.beginParse(c));
-    ShardStateUnsplit shardStateUnsplit =
+    ShardStateUnsplit shardStateUnsplitWithoutRefs =
         ShardStateUnsplit.deserializeWithoutRefs(CellSlice.beginParse(c));
+    log.info("shardStateUnsplitWithoutRefs: {}", shardStateUnsplitWithoutRefs);
 
-    log.info("shardStateUnsplit: {}", shardStateUnsplit);
     log.info("visited: {}", visited.size());
+
+    ShardStateUnsplit shardStateUnsplitWithRefs =
+        ShardStateUnsplit.deserialize(CellSlice.beginParse(c));
+    log.info("shardStateUnsplitWithRefs: {}", shardStateUnsplitWithRefs);
 
     cellDb.close();
   }
