@@ -30,6 +30,9 @@ public class Cell implements Serializable {
   // Use lazy initialization for hashes and depthLevels
   @Getter private byte[] hashes;
   @Getter private int[] depthLevels;
+  // Store the original refs count from cell descriptor for lazy loading
+  // This is needed because lazy-loaded cells have no actual refs, only hashes
+  @Getter private int refsCount = -1;
 
   public List<Cell> getRefs() {
     return new ArrayList<>(refs);
@@ -104,6 +107,20 @@ public class Cell implements Serializable {
     this.levelMask = new LevelMask(0);
 
     this.hashes = hashes;
+    // Initialize hashes and depthLevels as empty arrays
+    this.depthLevels = new int[0];
+  }
+
+  public Cell(BitString bits, byte[] hashes, int refsCount) {
+    this.bits = new BitString(bits.getUsedBits());
+    this.bits.writeBitString(bits.clone());
+    this.refs = Collections.emptyList();
+    this.exotic = false;
+    this.type = ORDINARY;
+    this.levelMask = new LevelMask(0);
+
+    this.hashes = hashes;
+    this.refsCount = refsCount;
     // Initialize hashes and depthLevels as empty arrays
     this.depthLevels = new int[0];
   }
@@ -293,6 +310,10 @@ public class Cell implements Serializable {
 
   void setLevelMask(LevelMask pLevelMask) {
     levelMask = pLevelMask;
+  }
+
+  void setRefsCount(int pRefsCount) {
+    refsCount = pRefsCount;
   }
 
   /**

@@ -108,19 +108,19 @@ public class CellDbReader implements Closeable {
           // Read all depths for this reference (but don't use them for now)
           byte[] depths = new byte[hashesCount * 2];
           data.get(depths);
-
-          // Use PRIMARY hash (first hash) - this is the reference
-          byte[] primaryHash = Arrays.copyOfRange(hashes, 0, 32);
-          allHashes = Utils.concatBytes(allHashes, primaryHash);
+          allHashes = Utils.concatBytes(allHashes, hashes);
         }
       }
 
-      return CellBuilder.beginCell()
-          .storeBitString(new BitString(payload, cellSerializationInfo.getDataLength() * 8))
-          .storeHashes(allHashes)
-          .setExotic(cellSerializationInfo.isSpecial())
-          .setLevelMask(cellSerializationInfo.getLevelMask())
-          .endCellNoRecalculation();
+      Cell cell =
+          CellBuilder.beginCell()
+              .storeBitString(new BitString(payload, cellSerializationInfo.getDataLength() * 8))
+              .storeHashes(allHashes)
+              .setExotic(cellSerializationInfo.isSpecial())
+              .setLevelMask(cellSerializationInfo.getLevelMask())
+              .setRefsCount(cellSerializationInfo.getRefsCount())
+              .endCellNoRecalculation();
+      return cell;
     }
   }
 

@@ -27,6 +27,9 @@ public class CellSliceLazy implements Serializable {
   byte[] hashes;
   public CellType type;
   CellDbReader cellDbReader;
+  // Store the original refs count from cell descriptor for lazy loading
+  // This is needed because lazy-loaded cells have no actual refs, only hashes
+  int refsCount;
 
   private CellSliceLazy() {}
 
@@ -59,7 +62,8 @@ public class CellSliceLazy implements Serializable {
     this.type = cellType;
   }
 
-  private CellSliceLazy(BitString bits, List<Cell> refs, CellType cellType, byte[] hashes) {
+  private CellSliceLazy(
+      BitString bits, List<Cell> refs, CellType cellType, byte[] hashes, int refsCount) {
     this.bits = bits.clone();
     // Use more efficient list initialization for better performance
     if (refs.isEmpty()) {
@@ -71,6 +75,7 @@ public class CellSliceLazy implements Serializable {
     }
     this.type = cellType;
     this.hashes = hashes;
+    this.refsCount = refsCount;
   }
 
   private CellSliceLazy(
@@ -78,7 +83,8 @@ public class CellSliceLazy implements Serializable {
       BitString bits,
       List<Cell> refs,
       CellType cellType,
-      byte[] hashes) {
+      byte[] hashes,
+      int refsCount) {
     this.cellDbReader = cellDbReader;
     this.bits = bits.clone();
     // Use more efficient list initialization for better performance
@@ -91,6 +97,7 @@ public class CellSliceLazy implements Serializable {
     }
     this.type = cellType;
     this.hashes = hashes;
+    this.refsCount = refsCount;
   }
 
   public boolean isExotic() {
@@ -101,7 +108,8 @@ public class CellSliceLazy implements Serializable {
     if (isNull(cell)) {
       throw new IllegalArgumentException("cell is null");
     }
-    return new CellSliceLazy(cell.getBits(), cell.getRefs(), cell.getCellType(), hashes);
+    return new CellSliceLazy(
+        cell.getBits(), cell.getRefs(), cell.getCellType(), hashes, cell.getRefsCount());
   }
 
   public static CellSliceLazy beginParse(CellDbReader cellDbReader, Cell cell) {
@@ -109,28 +117,13 @@ public class CellSliceLazy implements Serializable {
       throw new IllegalArgumentException("cell is null");
     }
     return new CellSliceLazy(
-        cellDbReader, cell.getBits(), cell.getRefs(), cell.getCellType(), cell.getHashes());
+        cellDbReader,
+        cell.getBits(),
+        cell.getRefs(),
+        cell.getCellType(),
+        cell.getHashes(),
+        cell.getRefsCount());
   }
-
-  //  public static CellSliceLazy beginParse(Object cell) {
-  //    if (!((cell instanceof Cell) || (cell instanceof CellSliceLazy))) {
-  //      throw new Error("CellSlice works only with Cell types");
-  //    }
-  //    if ((cell instanceof Cell)) {
-  //      return beginParse((Cell) cell);
-  //    }
-  //    return (CellSliceLazy) cell;
-  //  }
-
-  //  public static CellSliceLazy of(Object cell) {
-  //    if (!((cell instanceof Cell) || (cell instanceof CellSliceLazy))) {
-  //      throw new Error("CellSlice accepts only Cell or CellSlice types");
-  //    }
-  //    if ((cell instanceof Cell)) {
-  //      return beginParse((Cell) cell);
-  //    }
-  //    return (CellSliceLazy) cell;
-  //  }
 
   /**
    * Create an optimized clone of this CellSlice This is a performance-critical method used in many
@@ -153,11 +146,13 @@ public class CellSliceLazy implements Serializable {
     }
 
     result.type = this.type;
+    result.hashes = this.hashes;
+    result.refsCount = this.refsCount;
     return result;
   }
 
   public Cell sliceToCell() {
-    return new Cell(bits, hashes);
+    return new Cell(bits, hashes, refsCount);
   }
 
   public void endParse() {
@@ -210,6 +205,10 @@ public class CellSliceLazy implements Serializable {
 
   public int getRefsCount() {
     return refs.size();
+  }
+
+  public int getRefsCountLazy() {
+    return refsCount;
   }
 
   public CellSliceLazy skipRefs(int length) {

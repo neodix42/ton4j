@@ -55,10 +55,6 @@ public class ShardAccountsLazy {
 
   public static ShardAccountsLazy deserialize(CellSliceLazy cs) {
 
-    //    if (cs.isExotic()) {
-    //      return ShardAccountsLazy.builder().build();
-    //    }
-
     return ShardAccountsLazy.builder()
         .shardAccounts(
             cs.loadDictAugE(256, k -> k.readUint(256), v -> v, e -> e)
@@ -78,10 +74,10 @@ public class ShardAccountsLazy {
 
   public ShardAccountLazy getShardAccountByAddress(Address address) {
     log.info("searching among {} shard accounts", this.shardAccounts.elements.size());
-    //    for (Map.Entry<Object, ValueExtra> entry : this.shardAccounts.elements.entrySet()) {
-    //      CellSliceLazy cs = (CellSliceLazy) entry.getValue().getValue();
-    //      log.info("key {} value {}", entry.getKey(), (ShardAccountLazy.deserialize(cs)));
-    //    }
+    for (Map.Entry<Object, ValueExtra> entry : this.shardAccounts.elements.entrySet()) {
+      CellSliceLazy cs = (CellSliceLazy) entry.getValue().getValue();
+      log.info("key {} value {}", entry.getKey(), (ShardAccountLazy.deserialize(cs)));
+    }
     ValueExtra valueExtra = this.shardAccounts.elements.get(address.toBigInteger());
 
     CellSliceLazy cs = (CellSliceLazy) valueExtra.getValue();

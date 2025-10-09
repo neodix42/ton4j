@@ -366,6 +366,17 @@ public class CellBuilder {
     return this;
   }
 
+  /**
+   * do not set it directly unless you are plan to use with lazy loading
+   *
+   * @param refsCount
+   * @return
+   */
+  public CellBuilder setRefsCount(int refsCount) {
+    cell.setRefsCount(refsCount);
+    return this;
+  }
+
   public CellBuilder storeRefs(Cell... cells) {
     checkRefsOverflow(cells.length);
     for (Cell c : cells) {

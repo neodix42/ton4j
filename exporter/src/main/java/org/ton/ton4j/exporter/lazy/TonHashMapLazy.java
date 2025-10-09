@@ -47,15 +47,22 @@ public class TonHashMapLazy implements Serializable {
       return nodes;
     }
 
-    for (int j = 0; j < edge.hashes.length / 32; j++) {
-      byte[] hash = Utils.slice(edge.hashes, (j * 32), 32);
-      Cell refCell = edge.getRefByHash(hash);
+    int refsCount = edge.getRefsCountLazy();
 
-      CellSliceLazy forkEdge = CellSliceLazy.beginParse(edge.cellDbReader, refCell);
+    if (refsCount > 0) {
+      int hashesPerRef = edge.hashes.length / 32 / refsCount;
 
-      BitString forkKey = key.clone();
-      forkKey.writeBit(j != 0);
-      nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
+      for (int j = 0; j < refsCount; j++) {
+        // Get the PRIMARY hash (first hash) for this reference
+        byte[] hash = Utils.slice(edge.hashes, (j * hashesPerRef * 32), 32);
+        Cell refCell = edge.getRefByHash(hash);
+
+        CellSliceLazy forkEdge = CellSliceLazy.beginParse(edge.cellDbReader, refCell);
+
+        BitString forkKey = key.clone();
+        forkKey.writeBit(j != 0);
+        nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
+      }
     }
     return nodes;
   }

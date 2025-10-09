@@ -30,15 +30,20 @@ public class TonPfxHashMapLazy extends TonHashMapLazy {
       return nodes;
     }
 
-    //    for (int j = 0; j < edge.refs.size(); j++) {
-    for (int j = 0; j < edge.hashes.length / 32; j++) {
-      byte[] hash = Utils.slice(edge.hashes, j, ((j == 0) ? 1 : j + 1) * 32);
-      Cell refCell = edge.getRefByHash(hash);
-      CellSliceLazy forkEdge = CellSliceLazy.beginParse(edge.cellDbReader, refCell);
-      //      CellSliceLazy forkEdge = CellSliceLazy.beginParse(edge.refs.get(j));
-      BitString forkKey = key.clone();
-      forkKey.writeBit(j != 0);
-      nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
+    int refsCount = edge.getRefsCountLazy();
+
+    if (refsCount > 0) {
+      int hashesPerRef = edge.hashes.length / 32 / refsCount;
+
+      for (int j = 0; j < refsCount; j++) {
+        // Get the PRIMARY hash (first hash) for this reference
+        byte[] hash = Utils.slice(edge.hashes, (j * hashesPerRef * 32), 32);
+        Cell refCell = edge.getRefByHash(hash);
+        CellSliceLazy forkEdge = CellSliceLazy.beginParse(edge.cellDbReader, refCell);
+        BitString forkKey = key.clone();
+        forkKey.writeBit(j != 0);
+        nodes.addAll(deserializeEdge(forkEdge, keySize, forkKey));
+      }
     }
     return nodes;
   }
