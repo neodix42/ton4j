@@ -1448,13 +1448,12 @@ public class Exporter {
       // level cell
 
       Cell c = parseCell(ByteBuffer.wrap(rawShardStateUnsplit));
-      //      log.info("getMaxLevel: {}, getDepthLevels: {}", c.getMaxLevel(), c.getDepthLevels());
+      log.info("getMaxLevel: {}, getDepthLevels: {}", c.getMaxLevel(), c.getDepthLevels());
 
       ShardStateUnsplitLazy shardStateUnsplitLazy =
           ShardStateUnsplitLazy.deserialize(
               cellDbReader, CellSliceLazy.beginParse(cellDbReader, c));
-      //      FileUtils.write(new File("temp.txt"), shardStateUnsplitLazy.toString());
-      //      log.info("shardStateUnsplit lazy {}", shardStateUnsplitLazy);
+
       return shardStateUnsplitLazy.getShardAccounts().getShardAccountByAddress(address);
     }
   }

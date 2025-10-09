@@ -148,6 +148,7 @@ public class CellSliceLazy implements Serializable {
     result.type = this.type;
     result.hashes = this.hashes;
     result.refsCount = this.refsCount;
+    result.cellDbReader = this.cellDbReader;
     return result;
   }
 

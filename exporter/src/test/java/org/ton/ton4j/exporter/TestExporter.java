@@ -552,6 +552,7 @@ public class TestExporter {
             Address.of("-1:3333333333333333333333333333333333333333333333333333333333333333"));
 
     // Address.of("-1:22f53b7d9aba2cef44755f7078b01614cd4dde2388a1729c2c386cf8f9898afe"));
+    log.info("shardAccount {}", shardAccount);
     log.info("shardAccount.balance {}", Utils.formatNanoValue(shardAccount.getBalance()));
   }
 }
